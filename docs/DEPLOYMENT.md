@@ -1,0 +1,225 @@
+# Deployment
+
+Getting MineShell running on the machine that will actually host your servers.
+
+Two decisions shape everything else: which systemd scope to use, and whether MineShell
+itself should start at boot.
+
+---
+
+## Choosing a scope
+
+### User scope (recommended)
+
+`MINESHELL_SYSTEMD_SCOPE=user`, the default.
+
+Servers run as `systemctl --user` units owned by your login account. Nothing needs root,
+nothing writes to `/etc`, and a bug in MineShell cannot touch anything your user account
+cannot already touch.
+
+The one catch: user services stop when your last session ends. Fix it once:
+
+```sh
+loginctl enable-linger $USER
+```
+
+Check it took:
+
+```sh
+loginctl show-user $USER -p Linger --value    # should print: yes
+```
+
+### System scope
+
+`MINESHELL_SYSTEMD_SCOPE=system`.
+
+Use this when MineShell itself runs as a system service, or when servers must start before
+any user logs in and lingering is not an option.
+
+MineShell then needs permission to run specific `systemctl` commands. Rather than running
+the whole app as root, give it narrow sudo rules. Create `/etc/sudoers.d/mineshell` with
+`visudo -f /etc/sudoers.d/mineshell`:
+
+```
+# Replace "mineshell" with the user MineShell runs as.
+mineshell ALL=(root) NOPASSWD: /usr/bin/systemctl start minecraft@*, \
+                               /usr/bin/systemctl stop minecraft@*, \
+                               /usr/bin/systemctl restart minecraft@*, \
+                               /usr/bin/systemctl enable minecraft@*, \
+                               /usr/bin/systemctl disable minecraft@*, \
+                               /usr/bin/systemctl reset-failed minecraft@*, \
+                               /usr/bin/systemctl show minecraft@*, \
+                               /usr/bin/systemctl is-enabled minecraft@*, \
+                               /usr/bin/systemctl daemon-reload
+```
+
+That user also needs to be in the `systemd-journal` group to read server output:
+
+```sh
+sudo usermod -aG systemd-journal mineshell
+```
+
+and it needs write access to `/etc/systemd/system` to install the template unit, or you can
+install it once yourself with `sudo npm run setup` and leave the directory alone
+afterwards.
+
+`MINESHELL_PRIVILEGE_PREFIX` controls the prefix MineShell puts in front of `systemctl`;
+it defaults to `sudo -n`. The `-n` matters — it makes sudo fail immediately rather than
+hang forever waiting for a password nobody will type.
+
+---
+
+## Installing
+
+```sh
+git clone <your repo> /srv/mineshell
+cd /srv/mineshell
+npm install
+```
+
+Create `.env` from `.env.example`. On a server you will usually want:
+
+```
+MINESHELL_DATA=/srv/mineshell-data
+MINESHELL_SYSTEMD_SCOPE=user
+MINESHELL_AUTH=on
+PORT=3000
+HOST=0.0.0.0
+```
+
+Put `MINESHELL_DATA` on whatever disk has room. Modpack instances are several gigabytes
+each and worlds grow.
+
+Then:
+
+```sh
+npm run setup     # directories + template unit + daemon-reload
+npm run doctor    # verifies systemd, journal, lingering, Java, permissions
+npm run build
+npm start
+```
+
+Open `http://<server-ip>:3000`, set an admin password, add a server.
+
+---
+
+## Starting MineShell at boot
+
+MineShell manages your Minecraft servers; something has to manage MineShell. A user
+service is the simplest answer.
+
+`~/.config/systemd/user/mineshell.service`:
+
+```ini
+[Unit]
+Description=MineShell
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/mineshell
+EnvironmentFile=/srv/mineshell/.env
+ExecStart=/usr/bin/node build/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+```
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now mineshell
+systemctl --user status mineshell
+```
+
+Lingering (above) is what makes this survive logout.
+
+If MineShell is stopped, your Minecraft servers keep running — they are independent
+systemd units, not children of the panel. That is the point of the design.
+
+---
+
+## Upgrading
+
+```sh
+cd /srv/mineshell
+git pull
+npm install
+npm run build
+systemctl --user restart mineshell
+```
+
+Database migrations run automatically at startup. Back up
+`$MINESHELL_DATA/mineshell.db` first if you want to be careful; it is a single file.
+
+Re-run `npm run setup` after an upgrade only if the release notes say the unit file
+changed. Reinstalling the unit is safe — the Settings page has a button for it, and it
+re-syncs every instance's environment file afterwards.
+
+---
+
+## Network exposure
+
+MineShell is designed for a LAN. It has no rate limiting beyond the login throttle, no
+audit trail suitable for a shared environment, and its file browser can read every file in
+an instance directory.
+
+If you want to reach it from outside your network, put it behind Tailscale or a similar
+mesh VPN. That gets you an encrypted, authenticated path without exposing anything to the
+public internet.
+
+If you must expose it directly, terminate TLS at a reverse proxy and keep the app bound to
+localhost. One nginx detail: SSE needs buffering off, or the console will appear frozen
+and then dump everything at once.
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_buffering off;
+    proxy_read_timeout 3600s;
+}
+```
+
+Never expose an RCON port. It is plaintext and only weakly authenticated. MineShell binds
+RCON for its own use; nothing outside the host needs it.
+
+---
+
+## Troubleshooting
+
+**`npm run doctor` says systemctl is unreachable, user scope.**
+The process has no session bus. This happens when MineShell is started from a system
+service, from cron, or over an SSH command with no PTY. Either run it as a user service
+(above) or switch to system scope.
+
+**A server will not start and the console is empty.**
+Check the unit directly:
+
+```sh
+systemctl --user status minecraft@<id>
+journalctl --user-unit=minecraft@<id> -n 100 --no-pager
+```
+
+The usual causes are a missing or mismatched Java runtime, the EULA not accepted, or a
+port already taken.
+
+**Console shows nothing but the server is clearly running.**
+Journal permissions. In system scope, the MineShell user needs to be in
+`systemd-journal`. Confirm with `journalctl -u minecraft@<id> -n 5` as that user.
+
+**Server starts, then stops seconds later, repeatedly.**
+A crash loop. systemd gives up after the configured attempt limit; the overview page shows
+the last output before it stopped. Almost always a mod incompatibility — check the log for
+the mod named in the stack trace, and disable it from the Mods page.
+
+**"Java 21 expected, found 17."**
+Install the right JDK through your package manager, then Settings → Java runtimes → Scan
+again. If it is somewhere unusual, add it by path. Automatic downloads are not implemented.
+
+**Everything worked, then stopped after a reboot.**
+Lingering was never enabled, so your user services did not come back.

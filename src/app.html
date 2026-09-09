@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-theme="deep-slate">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark light" />
+		<script>
+			// Applied before first paint so switching themes never flashes.
+			try {
+				const stored = localStorage.getItem('mineshell:theme');
+				if (stored) document.documentElement.dataset.theme = stored;
+			} catch {}
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

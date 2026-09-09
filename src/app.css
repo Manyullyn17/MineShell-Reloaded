@@ -1,0 +1,554 @@
+/*
+ * Every colour, radius and spacing step in MineShell is a custom property
+ * declared here. To add a theme, copy the [data-theme='deep-slate'] block,
+ * change the values, and add the name to THEMES in src/lib/shared/themes.ts.
+ * No component hard-codes a colour.
+ */
+
+:root,
+[data-theme='deep-slate'] {
+	--bg: #1b1e26;
+	--bg-sunken: #16181f;
+	--panel: #232834;
+	--panel-raised: #2a303d;
+	--line: #2f3644;
+	--line-strong: #3d4557;
+
+	--text: #e0e0e0;
+	--text-muted: #98a0b0;
+	--text-faint: #6b7383;
+
+	--accent: #4da08f;
+	--accent-hover: #6ab19e;
+	--accent-contrast: #10231f;
+
+	--error: #e06c75;
+	--warning: #e5c07b;
+	--info: #61afef;
+	--success: #4da08f;
+
+	color-scheme: dark;
+}
+
+/* Higher contrast for bright rooms and cheap monitors. */
+[data-theme='midnight'] {
+	--bg: #0d0f14;
+	--bg-sunken: #07080b;
+	--panel: #161a22;
+	--panel-raised: #1e232d;
+	--line: #262c38;
+	--line-strong: #39404f;
+
+	--text: #f2f4f8;
+	--text-muted: #a8b0c0;
+	--text-faint: #767e8e;
+
+	--accent: #57c2a8;
+	--accent-hover: #78d4bd;
+	--accent-contrast: #06120f;
+
+	--error: #ef7079;
+	--warning: #f0c67e;
+	--info: #6cb8f5;
+	--success: #57c2a8;
+
+	color-scheme: dark;
+}
+
+[data-theme='daylight'] {
+	--bg: #f4f5f7;
+	--bg-sunken: #e8eaee;
+	--panel: #ffffff;
+	--panel-raised: #f0f2f5;
+	--line: #d9dde3;
+	--line-strong: #b9c0ca;
+
+	--text: #1e2430;
+	--text-muted: #5b6472;
+	--text-faint: #8a929e;
+
+	--accent: #2f7d6e;
+	--accent-hover: #24645a;
+	--accent-contrast: #ffffff;
+
+	--error: #c0303c;
+	--warning: #9a6a08;
+	--info: #1f6fb2;
+	--success: #2f7d6e;
+
+	color-scheme: light;
+}
+
+:root {
+	/* MineShell's own voice. */
+	--font-ui:
+		system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+	/* Anything the machine said: console output, paths, versions, ports, hashes. */
+	--font-mono:
+		ui-monospace, 'JetBrains Mono', 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+
+	--radius: 4px;
+	--radius-lg: 6px;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.5rem;
+	--space-6: 2rem;
+	--space-7: 3rem;
+
+	--rail-width: 15rem;
+	--measure: 68ch;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+body {
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-ui);
+	font-size: 15px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	margin: 0;
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: -0.01em;
+}
+
+h1 {
+	font-size: 1.55rem;
+}
+h2 {
+	font-size: 1.15rem;
+}
+h3 {
+	font-size: 1rem;
+}
+
+p {
+	margin: 0 0 var(--space-3);
+	max-width: var(--measure);
+}
+
+a {
+	color: var(--accent-hover);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+
+a:hover {
+	color: var(--accent);
+}
+
+code,
+kbd,
+samp,
+pre,
+.mono {
+	font-family: var(--font-mono);
+	font-size: 0.87em;
+}
+
+code {
+	background: var(--bg-sunken);
+	border: 1px solid var(--line);
+	border-radius: 3px;
+	padding: 0.05em 0.35em;
+}
+
+pre {
+	margin: 0;
+}
+
+hr {
+	border: 0;
+	border-top: 1px solid var(--line);
+	margin: var(--space-5) 0;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent-hover);
+	outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- forms --- */
+
+label {
+	display: block;
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	margin-bottom: var(--space-1);
+}
+
+input[type='text'],
+input[type='password'],
+input[type='number'],
+input[type='time'],
+input[type='search'],
+input[type='file'],
+select,
+textarea {
+	width: 100%;
+	background: var(--bg-sunken);
+	color: var(--text);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius);
+	padding: 0.45rem 0.6rem;
+	font: inherit;
+	font-size: 0.92rem;
+}
+
+input[type='number'],
+input[type='time'] {
+	font-family: var(--font-mono);
+}
+
+textarea {
+	resize: vertical;
+	min-height: 4.5rem;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+input[type='checkbox'] {
+	accent-color: var(--accent);
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+}
+
+.field {
+	margin-bottom: var(--space-4);
+}
+
+.field .hint {
+	margin: var(--space-1) 0 0;
+	font-size: 0.8rem;
+	color: var(--text-faint);
+	max-width: var(--measure);
+}
+
+.check {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-2);
+}
+
+.check label {
+	margin: 0;
+	color: var(--text);
+	font-size: 0.92rem;
+}
+
+fieldset {
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	padding: var(--space-4);
+	margin: 0 0 var(--space-4);
+}
+
+legend {
+	padding: 0 var(--space-2);
+	font-size: 0.85rem;
+	color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------- buttons --- */
+
+button,
+.button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-2);
+	font: inherit;
+	font-size: 0.9rem;
+	font-weight: 500;
+	padding: 0.42rem 0.85rem;
+	border-radius: var(--radius);
+	border: 1px solid var(--line-strong);
+	background: var(--panel-raised);
+	color: var(--text);
+	cursor: pointer;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+button:hover:not(:disabled),
+.button:hover {
+	border-color: var(--accent);
+	color: var(--text);
+}
+
+button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.button-primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-contrast);
+}
+
+.button-primary:hover:not(:disabled) {
+	background: var(--accent-hover);
+	border-color: var(--accent-hover);
+	color: var(--accent-contrast);
+}
+
+.button-danger {
+	color: var(--error);
+	border-color: color-mix(in srgb, var(--error) 45%, transparent);
+}
+
+.button-danger:hover:not(:disabled) {
+	border-color: var(--error);
+}
+
+.button-quiet {
+	background: transparent;
+	border-color: transparent;
+	color: var(--text-muted);
+}
+
+.button-quiet:hover:not(:disabled) {
+	background: var(--panel-raised);
+	color: var(--text);
+}
+
+.button-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+/* --------------------------------------------------------------- panels --- */
+
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-lg);
+	padding: var(--space-5);
+}
+
+.panel + .panel {
+	margin-top: var(--space-4);
+}
+
+.panel-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.panel-head p {
+	margin: var(--space-1) 0 0;
+	color: var(--text-muted);
+	font-size: 0.88rem;
+}
+
+/* ---------------------------------------------------------------- table --- */
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9rem;
+}
+
+th {
+	text-align: left;
+	font-weight: 500;
+	color: var(--text-muted);
+	font-size: 0.82rem;
+	padding: 0 var(--space-3) var(--space-2);
+	border-bottom: 1px solid var(--line);
+}
+
+td {
+	padding: var(--space-2) var(--space-3);
+	border-bottom: 1px solid var(--line);
+	vertical-align: middle;
+}
+
+tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+/* --------------------------------------------------------------- status --- */
+
+/* Square rather than round: the whole subject is made of blocks. */
+.dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	flex: 0 0 8px;
+	background: var(--text-faint);
+	border-radius: 1px;
+}
+
+.dot.running {
+	background: var(--success);
+}
+.dot.failed {
+	background: var(--error);
+}
+.dot.busy {
+	background: var(--warning);
+	animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+.tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	padding: 0.1rem 0.4rem;
+	border: 1px solid var(--line-strong);
+	border-radius: 3px;
+	color: var(--text-muted);
+}
+
+.tag.accent {
+	color: var(--accent-hover);
+	border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.tag.warn {
+	color: var(--warning);
+	border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+}
+.tag.bad {
+	color: var(--error);
+	border-color: color-mix(in srgb, var(--error) 45%, transparent);
+}
+
+/* -------------------------------------------------------------- notices --- */
+
+.notice {
+	border: 1px solid var(--line-strong);
+	border-left-width: 3px;
+	border-radius: var(--radius);
+	padding: var(--space-3) var(--space-4);
+	margin-bottom: var(--space-4);
+	font-size: 0.9rem;
+	background: var(--panel);
+}
+
+.notice p:last-child {
+	margin-bottom: 0;
+}
+
+.notice.error {
+	border-left-color: var(--error);
+}
+.notice.warning {
+	border-left-color: var(--warning);
+}
+.notice.success {
+	border-left-color: var(--success);
+}
+.notice.info {
+	border-left-color: var(--info);
+}
+
+.empty {
+	border: 1px dashed var(--line-strong);
+	border-radius: var(--radius-lg);
+	padding: var(--space-6);
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.empty p {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* ------------------------------------------------------------ utilities --- */
+
+.muted {
+	color: var(--text-muted);
+}
+.faint {
+	color: var(--text-faint);
+}
+.small {
+	font-size: 0.85rem;
+}
+.nowrap {
+	white-space: nowrap;
+}
+.stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+.spread {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4);
+}
+.grid-2 {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+	gap: var(--space-4);
+}
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}

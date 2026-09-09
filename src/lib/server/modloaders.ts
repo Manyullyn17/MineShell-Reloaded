@@ -1,0 +1,379 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { downloadFile, fetchJson, fetchText } from './download';
+import { run } from './systemd';
+import type { TaskHandle } from './tasks';
+
+/**
+ * Every loader answers the same two questions: what versions exist, and how do I
+ * end up with something runnable in this directory. Adding Quilt-like loader X
+ * means adding one entry to LOADERS - nothing else in the app changes.
+ *
+ * `launchArgs` is what goes after the JVM args in the systemd unit. Modern Forge
+ * and NeoForge do not ship a fat server jar any more, so they return an @argfile
+ * form instead of `-jar something.jar`.
+ */
+
+export type ModloaderId = 'vanilla' | 'fabric' | 'quilt' | 'forge' | 'neoforge';
+
+export type InstallContext = {
+	dir: string;
+	minecraftVersion: string;
+	loaderVersion?: string | null;
+	javaPath: string;
+	task?: TaskHandle;
+};
+
+export type InstallResult = {
+	launchArgs: string;
+	loaderVersion: string | null;
+};
+
+export type Modloader = {
+	id: ModloaderId;
+	label: string;
+	/** Shown in the UI under the loader picker. */
+	blurb: string;
+	supportsMods: boolean;
+	listGameVersions: () => Promise<string[]>;
+	listLoaderVersions: (minecraftVersion: string) => Promise<string[]>;
+	install: (ctx: InstallContext) => Promise<InstallResult>;
+};
+
+function log(ctx: InstallContext, message: string) {
+	ctx.task?.log(message);
+}
+
+// ---------------------------------------------------------------- vanilla ---
+
+type MojangManifest = {
+	latest: { release: string; snapshot: string };
+	versions: { id: string; type: string; url: string }[];
+};
+
+const MOJANG_MANIFEST = 'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json';
+
+let manifestCache: { at: number; data: MojangManifest } | null = null;
+
+async function mojangManifest(): Promise<MojangManifest> {
+	if (manifestCache && Date.now() - manifestCache.at < 10 * 60_000) return manifestCache.data;
+	const data = await fetchJson<MojangManifest>(MOJANG_MANIFEST);
+	manifestCache = { at: Date.now(), data };
+	return data;
+}
+
+export async function listReleaseVersions(): Promise<string[]> {
+	const manifest = await mojangManifest();
+	return manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);
+}
+
+async function downloadVanillaServer(ctx: InstallContext, filename = 'server.jar'): Promise<string> {
+	const manifest = await mojangManifest();
+	const entry = manifest.versions.find((v) => v.id === ctx.minecraftVersion);
+	if (!entry) throw new Error(`Minecraft ${ctx.minecraftVersion} is not in Mojang's manifest.`);
+	const detail = await fetchJson<{ downloads?: { server?: { url: string; sha1: string } } }>(
+		entry.url
+	);
+	const server = detail.downloads?.server;
+	if (!server) throw new Error(`Minecraft ${ctx.minecraftVersion} has no server download.`);
+	const target = path.join(ctx.dir, filename);
+	log(ctx, `Downloading Minecraft ${ctx.minecraftVersion} server jar`);
+	await downloadFile(server.url, target, {
+		hash: { algo: 'sha1', value: server.sha1 },
+		onProgress: (received, total) => {
+			if (total) ctx.task?.setProgress((received / total) * 100, 'Downloading server jar');
+		}
+	});
+	return target;
+}
+
+const vanilla: Modloader = {
+	id: 'vanilla',
+	label: 'Vanilla',
+	blurb: 'No mod loader. Datapacks only.',
+	supportsMods: false,
+	listGameVersions: listReleaseVersions,
+	listLoaderVersions: async () => [],
+	install: async (ctx) => {
+		await downloadVanillaServer(ctx);
+		return { launchArgs: '-jar server.jar nogui', loaderVersion: null };
+	}
+};
+
+// ----------------------------------------------------------------- fabric ---
+
+const FABRIC_META = 'https://meta.fabricmc.net/v2';
+
+const fabric: Modloader = {
+	id: 'fabric',
+	label: 'Fabric',
+	blurb: 'Lightweight and fast to update. The usual choice for performance packs.',
+	supportsMods: true,
+	listGameVersions: async () => {
+		const versions = await fetchJson<{ version: string; stable: boolean }[]>(
+			`${FABRIC_META}/versions/game`
+		);
+		return versions.filter((v) => v.stable).map((v) => v.version);
+	},
+	listLoaderVersions: async (mc) => {
+		const loaders = await fetchJson<{ loader: { version: string; stable: boolean } }[]>(
+			`${FABRIC_META}/versions/loader/${encodeURIComponent(mc)}`
+		);
+		return loaders.map((l) => l.loader.version);
+	},
+	install: async (ctx) => {
+		const loaders = await fetchJson<{ loader: { version: string } }[]>(
+			`${FABRIC_META}/versions/loader/${encodeURIComponent(ctx.minecraftVersion)}`
+		);
+		const loaderVersion = ctx.loaderVersion || loaders[0]?.loader.version;
+		if (!loaderVersion) throw new Error(`No Fabric loader for Minecraft ${ctx.minecraftVersion}.`);
+
+		const installers = await fetchJson<{ version: string; stable: boolean }[]>(
+			`${FABRIC_META}/versions/installer`
+		);
+		const installerVersion = installers.find((i) => i.stable)?.version ?? installers[0]?.version;
+
+		// Fabric serves a ready-made server launcher jar, so no installer run needed.
+		const url = `${FABRIC_META}/versions/loader/${encodeURIComponent(ctx.minecraftVersion)}/${loaderVersion}/${installerVersion}/server/jar`;
+		log(ctx, `Downloading Fabric ${loaderVersion} server launcher`);
+		await downloadFile(url, path.join(ctx.dir, 'server.jar'));
+
+		// The launcher downloads the vanilla jar itself on first boot, but doing it
+		// now means a start failure is an install failure instead of a mystery.
+		await downloadVanillaServer(ctx, path.join('.fabric-cache', 'vanilla.jar')).catch(() =>
+			log(ctx, 'Could not pre-cache the vanilla jar; Fabric will fetch it on first start.')
+		);
+
+		return { launchArgs: '-jar server.jar nogui', loaderVersion };
+	}
+};
+
+// ------------------------------------------------------------------ quilt ---
+
+const QUILT_META = 'https://meta.quiltmc.org/v3';
+
+const quilt: Modloader = {
+	id: 'quilt',
+	label: 'Quilt',
+	blurb: 'Fabric-compatible fork. Most Fabric mods load unchanged.',
+	supportsMods: true,
+	listGameVersions: async () => {
+		const versions = await fetchJson<{ version: string; stable: boolean }[]>(
+			`${QUILT_META}/versions/game`
+		);
+		return versions.filter((v) => v.stable).map((v) => v.version);
+	},
+	listLoaderVersions: async (mc) => {
+		const loaders = await fetchJson<{ loader: { version: string } }[]>(
+			`${QUILT_META}/versions/loader/${encodeURIComponent(mc)}`
+		);
+		return loaders.map((l) => l.loader.version);
+	},
+	install: async (ctx) => {
+		const loaders = await fetchJson<{ loader: { version: string } }[]>(
+			`${QUILT_META}/versions/loader/${encodeURIComponent(ctx.minecraftVersion)}`
+		);
+		const loaderVersion = ctx.loaderVersion || loaders[0]?.loader.version;
+		if (!loaderVersion) throw new Error(`No Quilt loader for Minecraft ${ctx.minecraftVersion}.`);
+
+		// Quilt has no server-jar endpoint; run the installer like Forge does.
+		const metadata = await fetchText(
+			'https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/maven-metadata.xml'
+		);
+		const installerVersion = metadata.match(/<release>([^<]+)<\/release>/)?.[1];
+		if (!installerVersion) throw new Error('Could not resolve the Quilt installer version.');
+
+		const installerJar = path.join(ctx.dir, '.mineshell', 'quilt-installer.jar');
+		log(ctx, `Downloading Quilt installer ${installerVersion}`);
+		await downloadFile(
+			`https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/${installerVersion}/quilt-installer-${installerVersion}.jar`,
+			installerJar
+		);
+
+		log(ctx, 'Running the Quilt installer');
+		const res = await run(
+			[
+				ctx.javaPath,
+				'-jar',
+				installerJar,
+				'install',
+				'server',
+				ctx.minecraftVersion,
+				loaderVersion,
+				`--install-dir=${ctx.dir}`,
+				'--download-server'
+			],
+			{ cwd: ctx.dir, timeoutMs: 15 * 60_000 }
+		);
+		if (res.code !== 0) {
+			throw new Error(`Quilt installer failed: ${res.stderr.trim() || res.stdout.trim()}`);
+		}
+		return { launchArgs: '-jar quilt-server-launch.jar nogui', loaderVersion };
+	}
+};
+
+// -------------------------------------------------------- forge / neoforge ---
+
+/**
+ * Since 1.17 both Forge and NeoForge generate an @argfile rather than a runnable
+ * jar. This finds whichever launch shape the installer produced.
+ */
+async function resolveInstalledLoaderLaunch(dir: string): Promise<string> {
+	const argFiles = [
+		'libraries/net/minecraftforge/forge',
+		'libraries/net/neoforged/neoforge'
+	];
+	for (const base of argFiles) {
+		const abs = path.join(dir, base);
+		let versions: string[] = [];
+		try {
+			versions = await fs.readdir(abs);
+		} catch {
+			continue;
+		}
+		for (const version of versions) {
+			const argFile = path.join(base, version, 'unix_args.txt');
+			try {
+				await fs.access(path.join(dir, argFile));
+				// user_jvm_args.txt is where the installer expects people to put -Xmx.
+				// MineShell passes JVM args from the unit instead, so it stays empty.
+				const userArgs = path.join(dir, 'user_jvm_args.txt');
+				await fs.writeFile(
+					userArgs,
+					'# MineShell sets JVM arguments in instance settings; this file is left empty.\n',
+					{ flag: 'w' }
+				);
+				return `@user_jvm_args.txt @${argFile} nogui`;
+			} catch {
+				/* keep looking */
+			}
+		}
+	}
+
+	// Pre-1.17 Forge ships a runnable universal jar.
+	const entries = await fs.readdir(dir);
+	const jar = entries.find((f) => /^forge-.*\.jar$/.test(f) && !f.includes('installer'));
+	if (jar) return `-jar ${jar} nogui`;
+
+	throw new Error(
+		'The loader installer finished but produced no recognisable launch target. Check the task log.'
+	);
+}
+
+async function runInstallerJar(ctx: InstallContext, url: string, name: string): Promise<void> {
+	const installer = path.join(ctx.dir, '.mineshell', name);
+	log(ctx, `Downloading ${name}`);
+	await downloadFile(url, installer);
+	log(ctx, 'Running the installer (this pulls a few hundred MB of libraries)');
+	ctx.task?.setProgress(null, 'Running the loader installer');
+	const res = await run([ctx.javaPath, '-jar', installer, '--installServer'], {
+		cwd: ctx.dir,
+		timeoutMs: 20 * 60_000
+	});
+	if (res.code !== 0) {
+		throw new Error(`Installer failed: ${(res.stderr || res.stdout).trim().slice(-600)}`);
+	}
+	await fs.rm(installer, { force: true });
+	await fs.rm(`${installer}.log`, { force: true });
+}
+
+const forge: Modloader = {
+	id: 'forge',
+	label: 'Forge',
+	blurb: 'The long-established loader. Most large kitchen-sink packs are Forge.',
+	supportsMods: true,
+	listGameVersions: listReleaseVersions,
+	listLoaderVersions: async (mc) => {
+		const xml = await fetchText(
+			'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'
+		);
+		return [...xml.matchAll(/<version>([^<]+)<\/version>/g)]
+			.map((m) => m[1])
+			.filter((v) => v.startsWith(`${mc}-`))
+			.map((v) => v.slice(mc.length + 1))
+			.reverse();
+	},
+	install: async (ctx) => {
+		let loaderVersion = ctx.loaderVersion;
+		if (!loaderVersion) {
+			const promos = await fetchJson<{ promos: Record<string, string> }>(
+				'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'
+			);
+			loaderVersion =
+				promos.promos[`${ctx.minecraftVersion}-recommended`] ??
+				promos.promos[`${ctx.minecraftVersion}-latest`];
+		}
+		if (!loaderVersion) throw new Error(`No Forge build found for Minecraft ${ctx.minecraftVersion}.`);
+		const full = `${ctx.minecraftVersion}-${loaderVersion}`;
+		await runInstallerJar(
+			ctx,
+			`https://maven.minecraftforge.net/net/minecraftforge/forge/${full}/forge-${full}-installer.jar`,
+			`forge-${full}-installer.jar`
+		);
+		return { launchArgs: await resolveInstalledLoaderLaunch(ctx.dir), loaderVersion };
+	}
+};
+
+/** NeoForge versions look like 21.1.72 where 21.1 maps to Minecraft 1.21.1. */
+function neoforgePrefix(minecraftVersion: string): string {
+	const parts = minecraftVersion.split('.');
+	const minor = parts[1] ?? '0';
+	const patch = parts[2] ?? '0';
+	return `${minor}.${patch}.`;
+}
+
+const neoforge: Modloader = {
+	id: 'neoforge',
+	label: 'NeoForge',
+	blurb: 'Community fork of Forge, standard for 1.20.2 and newer.',
+	supportsMods: true,
+	listGameVersions: listReleaseVersions,
+	listLoaderVersions: async (mc) => {
+		const data = await fetchJson<{ versions: string[] }>(
+			'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge'
+		);
+		const prefix = neoforgePrefix(mc);
+		return data.versions.filter((v) => v.startsWith(prefix) && !v.includes('beta')).reverse();
+	},
+	install: async (ctx) => {
+		let loaderVersion = ctx.loaderVersion;
+		if (!loaderVersion) {
+			const candidates = await neoforge.listLoaderVersions(ctx.minecraftVersion);
+			loaderVersion = candidates[0];
+		}
+		if (!loaderVersion) {
+			throw new Error(`No NeoForge build found for Minecraft ${ctx.minecraftVersion}.`);
+		}
+		await runInstallerJar(
+			ctx,
+			`https://maven.neoforged.net/releases/net/neoforged/neoforge/${loaderVersion}/neoforge-${loaderVersion}-installer.jar`,
+			`neoforge-${loaderVersion}-installer.jar`
+		);
+		return { launchArgs: await resolveInstalledLoaderLaunch(ctx.dir), loaderVersion };
+	}
+};
+
+export const LOADERS: Record<ModloaderId, Modloader> = {
+	vanilla,
+	fabric,
+	quilt,
+	forge,
+	neoforge
+};
+
+export const LOADER_LIST = Object.values(LOADERS);
+
+export function getLoader(id: string): Modloader {
+	const loader = LOADERS[id as ModloaderId];
+	if (!loader) throw new Error(`Unknown mod loader "${id}".`);
+	return loader;
+}
+
+/**
+ * Cross-loader compatibility, off by default, per the original design notes.
+ * NeoForge can generally load Forge mods; Quilt can load Fabric mods.
+ */
+export const LOADER_FALLBACKS: Partial<Record<ModloaderId, ModloaderId[]>> = {
+	neoforge: ['forge'],
+	quilt: ['fabric']
+};
