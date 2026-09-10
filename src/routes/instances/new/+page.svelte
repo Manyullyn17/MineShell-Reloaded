@@ -101,8 +101,8 @@
 			versionId = '';
 			searchError = '';
 			filterSelections = { minecraftVersions: filterSelections.minecraftVersions ?? [] };
+			void search();
 		}
-		void search();
 	});
 
 	// ---- filter sidebar
