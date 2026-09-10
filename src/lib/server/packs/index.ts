@@ -234,13 +234,19 @@ export async function resolveCurseforgeDownload(
 		};
 	}
 
-	// No key: ask modpacks.ch, which mirrors the same metadata.
-	const info = await fetchJson<{ name?: string; url?: string; sha1?: string }>(
-		`https://api.modpacks.ch/public/curseforge/mod/${projectId}/${fileId}`
-	).catch(() => ({}) as { name?: string; url?: string; sha1?: string });
+	// No key: ask modpacks.ch, which mirrors the same metadata. There's no
+	// single-file lookup by (project, file) id in its public API - the real
+	// shape is a per-project record with every file's version embedded, so
+	// the file id is matched against that list instead.
+	const info = await fetchJson<{
+		versions?: { id: number; name: string; url: string; sha1?: string }[];
+	}>(`https://api.modpacks.ch/public/mod/${projectId}`).catch(
+		() => ({}) as { versions?: { id: number; name: string; url: string; sha1?: string }[] }
+	);
 
-	if (info.url && info.name) {
-		return { url: info.url, filename: info.name, sha1: info.sha1 ?? null };
+	const file = info.versions?.find((v) => v.id === fileId);
+	if (file) {
+		return { url: file.url, filename: file.name, sha1: file.sha1 ?? null };
 	}
 	throw new Error(
 		`Could not resolve CurseForge file ${fileId}. Add CURSEFORGE_API_KEY to your .env for reliable pack imports.`

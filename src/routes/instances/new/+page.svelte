@@ -2,6 +2,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
+	import { fitToViewport } from '$lib/shared/fitToViewport';
 
 	let { data, form } = $props();
 
@@ -11,6 +12,7 @@
 
 	// ---- shared fields
 	let name = $state('');
+	let nameTouched = $state(false);
 	// Seeded from load data but user-editable afterwards, so it tracks a change
 	// of suggestion without discarding an edit already in progress.
 	let memoryMaxMb = $state(data.suggestedMaxMb);
@@ -84,7 +86,10 @@
 	}
 
 	// Switching source left the previous provider's results on screen, which
-	// looked like the new source had returned them.
+	// looked like the new source had returned them. Minecraft version isn't
+	// source-specific, so that part of the selection survives the reset.
+	// This also runs once on mount (lastSource starts equal to source), which
+	// is what gets a first page of results showing without pressing Search.
 	let lastSource = $state(source);
 	$effect(() => {
 		const current = source;
@@ -95,8 +100,9 @@
 			packVersions = [];
 			versionId = '';
 			searchError = '';
-			filterSelections = {};
+			filterSelections = { minecraftVersions: filterSelections.minecraftVersions ?? [] };
 		}
+		void search();
 	});
 
 	// ---- filter sidebar
@@ -104,6 +110,16 @@
 	let filterGroups = $state<FilterGroupData[]>([]);
 	let filterSelections = $state<Record<string, string[]>>({});
 	let loadingFilters = $state(false);
+
+	// Minecraft version applies to every source the same way, so it's built
+	// client-side from the version list already loaded for the page rather
+	// than through the per-source /api/mods/filters round trip.
+	const versionFilterGroup = $derived({
+		id: 'minecraftVersions',
+		label: 'Minecraft version',
+		options: data.minecraftVersions.map((v) => ({ value: v, label: v }))
+	});
+	const combinedFilterGroups = $derived([versionFilterGroup, ...filterGroups]);
 
 	$effect(() => {
 		const currentSource = source;
@@ -125,12 +141,15 @@
 		};
 	});
 
-	// CurseForge/FTB take one tag and one loader per request, not a real
-	// facet system - only the first checked box in each group can apply.
+	// CurseForge/FTB take one tag, one loader, and one game version per
+	// browse request, not a real facet system - only the first checked box
+	// in each group applies there. Searching by name is different: it goes
+	// through a plain id search, so every loader/version you've picked is
+	// applied afterward against the results, not just the first.
 	const filterLimitNote = $derived(
 		source === 'modrinth'
 			? ''
-			: 'This source only supports one loader and one category at a time - the first checked box in each applies.'
+			: 'Browsing without a search term only applies the first checked loader, category, and version. Searching by name applies every one you\'ve picked.'
 	);
 
 	/** Newest-first, de-duplicated, and trimmed - packs can list dozens. */
@@ -160,6 +179,7 @@
 		packVersions = [];
 		try {
 			const params = new URLSearchParams({ source, term });
+			for (const version of filterSelections.minecraftVersions ?? []) params.append('mc', version);
 			for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
 			for (const category of filterSelections.categories ?? []) {
 				params.append('category', category);
@@ -178,7 +198,7 @@
 
 	async function choose(hit: Hit) {
 		selected = hit;
-		if (!name) name = hit.name;
+		if (!nameTouched) name = hit.name;
 		loadingVersions = true;
 		packVersions = [];
 		versionId = '';
@@ -250,7 +270,7 @@
 {#if mode === 'browse'}
 	<div class="browse-layout">
 		<FilterSidebar
-			groups={filterGroups}
+			groups={combinedFilterGroups}
 			bind:selected={filterSelections}
 			loading={loadingFilters}
 			limitNote={filterLimitNote}
@@ -286,7 +306,7 @@
 		{/if}
 
 		{#if hits.length}
-			<ul class="hits">
+			<ul class="hits" use:fitToViewport={40}>
 				{#each hits as hit (hit.id)}
 					<li>
 						<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
@@ -325,35 +345,40 @@
 
 				<h2 class="selected-name">{selected.name}</h2>
 
-				<div class="field">
-					<label for="pack-name">Server name</label>
-					<input id="pack-name" name="name" bind:value={name} required />
-				</div>
-
-				<div class="version-row">
-					<div class="field version-field">
-						<label for="versionId">Pack version</label>
-						{#if loadingVersions}
-							<p class="muted small">Loading versions.</p>
-						{:else if packVersions.length === 0}
-							<p class="muted small">No versions were returned for this pack.</p>
-						{:else}
-							<select id="versionId" name="versionId" bind:value={versionId} required>
-								{#each packVersions as v (v.id)}
-									<option value={v.id}>
-										{v.versionNumber}
-										{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}
-										{v.channel !== 'release' ? ` (${v.channel})` : ''}
-									</option>
-								{/each}
-							</select>
-						{/if}
+				<div class="name-row">
+					<div class="field name-field">
+						<label for="pack-name">Server name</label>
+						<input
+							id="pack-name"
+							name="name"
+							bind:value={name}
+							oninput={() => (nameTouched = true)}
+							required
+						/>
 					</div>
-
 					<div class="detail-buttons">
 						<button type="button" onclick={() => openDetails('description')}>Description</button>
 						<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
 					</div>
+				</div>
+
+				<div class="field version-field">
+					<label for="versionId">Pack version</label>
+					{#if loadingVersions}
+						<p class="muted small">Loading versions.</p>
+					{:else if packVersions.length === 0}
+						<p class="muted small">No versions were returned for this pack.</p>
+					{:else}
+						<select id="versionId" name="versionId" bind:value={versionId} required>
+							{#each packVersions as v (v.id)}
+								<option value={v.id}>
+									{v.versionNumber}
+									{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}
+									{v.channel !== 'release' ? ` (${v.channel})` : ''}
+								</option>
+							{/each}
+						</select>
+					{/if}
 				</div>
 
 				{@render memoryFields()}
@@ -544,19 +569,19 @@
 		height: 2.15rem;
 	}
 
-	/* Sidebar plus the search/results/install column. No viewport-height math
-	   here on purpose: an earlier version tried to make this panel fill
-	   exactly one screen, which meant guessing how much space the surrounding
-	   chrome took - guessed wrong twice, and any small miscalculation pushed
-	   the overflow out to the page's own scrollbar instead of staying inside
-	   the panel. Simpler and more robust: this panel just grows with its
-	   content like every other page, and the results list caps itself at a
-	   fixed, generous height that scrolls internally once there is enough to
-	   show. */
+	/* Sidebar plus the search/results/install column. An earlier version
+	   tried viewport-height math directly on this panel (guessed the
+	   surrounding chrome's height wrong twice) and then gave up on filling
+	   the screen at all, capping the results list at a fixed height instead.
+	   The sidebar and .hits below each cap their own height via the
+	   fitToViewport action (measures real remaining space) rather than
+	   depending on this row stretching them to a shared height - min-height
+	   here is just the floor for a short viewport. */
 	.browse-layout {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-5);
+		min-height: 22rem;
 	}
 
 	.browse-layout :global(.sidebar) {
@@ -577,7 +602,8 @@
 		display: grid;
 		gap: var(--space-1);
 		overflow-y: auto;
-		max-height: 28rem;
+		min-height: 10rem;
+		align-content: start;
 	}
 
 	/* Nothing searched yet, or nothing matched: a short hint rather than a
@@ -663,23 +689,39 @@
 		margin: 0 0 var(--space-4);
 	}
 
-	.version-row {
+	/* Server name is the reference width everything else in this form is
+	   sized against - fixed in rem rather than left fluid, so "2x that" and
+	   "same as that" below are both real, stable numbers instead of guesses
+	   at whatever the container happens to be. */
+	.install .name-row {
 		display: flex;
 		align-items: flex-end;
 		gap: var(--space-3);
 		flex-wrap: wrap;
 	}
 
+	.install .name-field {
+		max-width: 20rem;
+	}
+
+	.install .grid-2 {
+		grid-template-columns: repeat(auto-fit, 20rem);
+	}
+
 	.version-field {
 		flex: 1 1 auto;
-		max-width: 50%;
 		margin-bottom: 0;
+	}
+
+	.install .version-field {
+		max-width: 40rem;
 	}
 
 	.detail-buttons {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
+		flex-direction: row;
+		gap: var(--space-2);
+		margin-bottom: 0.35rem;
 	}
 
 	.detail-buttons button {

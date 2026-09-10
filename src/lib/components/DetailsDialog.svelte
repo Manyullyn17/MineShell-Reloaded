@@ -9,8 +9,29 @@
 	import DOMPurify from 'dompurify';
 
 	function renderMarkdown(text: string): string {
-		const html = marked.parse(text, { async: false }) as string;
+		// CurseForge's HTML-to-Markdown conversion leaves Pandoc-style image
+		// attribute blocks after the image itself, e.g.
+		// `![](url){width=1126 height=378}` - `marked` doesn't parse that
+		// trailing `{...}`, so it shows up as literal text under the image
+		// instead of being applied or dropped. The image already scales via
+		// max-width: 100% below, so the attributes aren't needed - just strip
+		// them rather than trying to reproduce them as real HTML attributes.
+		const cleaned = text.replace(/(!\[[^\]]*\]\([^)]*\))\s*\{[^}]*\}/g, '$1');
+		const html = marked.parse(cleaned, { async: false }) as string;
 		return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
+	}
+
+	/**
+	 * FTB's changelog field sometimes comes back as nothing but a link to
+	 * view the changelog elsewhere, rather than the changelog text itself.
+	 * Run through the same markdown pipeline, that just autolinks the bare
+	 * URL with no surrounding context - a single blue line and nothing else.
+	 * Detecting that case and showing it as an actual "open changelog" link
+	 * is clearer than pretending it's prose.
+	 */
+	function bareUrl(text: string): string | null {
+		const trimmed = text.trim();
+		return /^https?:\/\/\S+$/.test(trimmed) ? trimmed : null;
 	}
 	let {
 		source,
@@ -106,12 +127,22 @@
 		<div class="body markdown">
 			{#if tab === 'description'}
 				{#if details.description}
-					{@html renderMarkdown(details.description)}
+					{@const link = bareUrl(details.description)}
+					{#if link}
+						<p><a href={link} target="_blank" rel="noreferrer">Open the full description</a></p>
+					{:else}
+						{@html renderMarkdown(details.description)}
+					{/if}
 				{:else}
 					<p class="muted">No description was provided.</p>
 				{/if}
 			{:else if details.changelog}
-				{@html renderMarkdown(details.changelog)}
+				{@const link = bareUrl(details.changelog)}
+				{#if link}
+					<p><a href={link} target="_blank" rel="noreferrer">Open the changelog</a></p>
+				{:else}
+					{@html renderMarkdown(details.changelog)}
+				{/if}
 			{:else}
 				<p class="muted">
 					{versionId
@@ -145,8 +176,8 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: min(46rem, calc(100vw - var(--space-5)));
-		max-height: min(80vh, 48rem);
+		width: min(58rem, calc(100vw - var(--space-5)));
+		max-height: min(88vh, 60rem);
 		display: flex;
 		flex-direction: column;
 		background: var(--panel);

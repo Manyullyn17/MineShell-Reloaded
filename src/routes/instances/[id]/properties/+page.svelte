@@ -6,12 +6,38 @@
 
 	let showRaw = $state(false);
 
-	function valueOf(key: string, fallback = '') {
-		return data.values[key] ?? fallback;
-	}
+	// Plain one-way value={...}/checked={...} bindings on <select> and
+	// checkboxes did not pick up a fresh save until switching tabs and back -
+	// confirmed here and on the instance settings page, both built the same
+	// way. bind:value/bind:checked against local state that re-syncs
+	// whenever `data` changes (the pattern the JVM preset picker on settings
+	// already used, and which never showed the bug) fixes it.
+	let rawValue = $state(data.raw);
+	let fieldValues = $state<Record<string, string>>({});
+	let fieldChecks = $state<Record<string, boolean>>({});
+	$effect(() => {
+		rawValue = data.raw;
+		const values: Record<string, string> = {};
+		const checks: Record<string, boolean> = {};
+		for (const field of data.schema) {
+			if (field.type === 'boolean') checks[field.key] = data.values[field.key] === 'true';
+			else values[field.key] = data.values[field.key] ?? '';
+		}
+		for (const extra of data.extras) values[`extra:${extra.key}`] = extra.value;
+		fieldValues = values;
+		fieldChecks = checks;
+	});
 
-	function isOn(key: string) {
-		return valueOf(key) === 'true';
+	// use:enhance's default success handling includes form.reset(), which
+	// reverts every field in the form to its hydration-time default - for a
+	// form editing existing values (as opposed to one that's adding a new
+	// item) that's a brief, visible flash back to blank/default before the
+	// effect above re-syncs everything to the actual saved values a moment
+	// later. Keeping every other default behaviour, just not that part.
+	function keepValues() {
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+		};
 	}
 
 	const grouped = $derived(
@@ -35,20 +61,20 @@
 </div>
 
 {#if showRaw}
-	<form class="panel" method="POST" action="?/saveRaw" use:enhance>
+	<form class="panel" method="POST" action="?/saveRaw" use:enhance={keepValues}>
 		<div class="panel-head">
 			<div>
 				<h2>server.properties</h2>
 				<p>Anything you write here is saved as-is. Comments and ordering are not preserved.</p>
 			</div>
 		</div>
-		<textarea name="raw" rows="24" spellcheck="false" class="mono">{data.raw}</textarea>
+		<textarea name="raw" rows="24" spellcheck="false" class="mono" bind:value={rawValue}></textarea>
 		<div class="button-row save-row">
 			<button class="button-primary" type="submit">Save file</button>
 		</div>
 	</form>
 {:else}
-	<form method="POST" action="?/save" use:enhance>
+	<form method="POST" action="?/save" use:enhance={keepValues}>
 		{#each grouped as section (section.group)}
 			<section class="panel">
 				<h2>{section.group}</h2>
@@ -62,7 +88,7 @@
 										id={field.key}
 										name={field.key}
 										type="checkbox"
-										checked={isOn(field.key)}
+										bind:checked={fieldChecks[field.key]}
 									/>
 									<label for={field.key}>{field.label}</label>
 								</div>
@@ -74,13 +100,14 @@
 									{/if}
 								</label>
 								{#if field.type === 'select'}
-									<select id={field.key} name={field.key} value={valueOf(field.key)}>
+									<select id={field.key} name={field.key} bind:value={fieldValues[field.key]}>
 										{#each field.options ?? [] as option (option.value)}
 											<option value={option.value}>{option.label}</option>
 										{/each}
 									</select>
 								{:else if field.type === 'textarea'}
-									<textarea id={field.key} name={field.key} rows="2">{valueOf(field.key)}</textarea>
+									<textarea id={field.key} name={field.key} rows="2" bind:value={fieldValues[field.key]}
+									></textarea>
 								{:else if field.type === 'number'}
 									<input
 										id={field.key}
@@ -88,10 +115,10 @@
 										type="number"
 										min={field.min}
 										max={field.max}
-										value={valueOf(field.key)}
+										bind:value={fieldValues[field.key]}
 									/>
 								{:else}
-									<input id={field.key} name={field.key} type="text" value={valueOf(field.key)} />
+									<input id={field.key} name={field.key} type="text" bind:value={fieldValues[field.key]} />
 								{/if}
 							{/if}
 							{#if field.help}
@@ -122,7 +149,7 @@
 								id={`extra-${extra.key}`}
 								name={`extra:${extra.key}`}
 								type="text"
-								value={extra.value}
+								bind:value={fieldValues[`extra:${extra.key}`]}
 							/>
 						</div>
 					{/each}

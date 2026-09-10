@@ -150,7 +150,14 @@ function buildFacets(query: SearchQuery): string[][] {
 		facets.push(types.map((t) => `project_type:${t}`));
 	}
 
-	if (query.minecraftVersion) facets.push([`versions:${query.minecraftVersion}`]);
+	{
+		const versions = query.minecraftVersions?.length
+			? query.minecraftVersions
+			: query.minecraftVersion
+				? [query.minecraftVersion]
+				: [];
+		if (versions.length) facets.push(versions.map((v) => `versions:${v}`));
+	}
 
 	if (query.categories?.length) {
 		facets.push(query.categories.map((c) => `categories:${c}`));

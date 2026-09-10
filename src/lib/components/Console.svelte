@@ -9,8 +9,15 @@
 	let {
 		instanceId,
 		bufferLines = 2000,
-		canSend = true
-	}: { instanceId: string; bufferLines?: number; canSend?: boolean } = $props();
+		canSend = true,
+		resetKey = null
+	}: {
+		instanceId: string;
+		bufferLines?: number;
+		canSend?: boolean;
+		/** Bump this (any changed value) to clear the view without reconnecting. */
+		resetKey?: unknown;
+	} = $props();
 
 	type Line = { id: number; text: string; tone: string };
 
@@ -73,6 +80,16 @@
 		if (autoscroll && viewport) {
 			viewport.scrollTop = viewport.scrollHeight;
 		}
+	});
+
+	$effect(() => {
+		// journalctl -f follows the unit straight through a restart, with
+		// nothing in the stream itself marking where the old process's
+		// output ends and the new one's begins. The console page bumps
+		// resetKey as soon as the unit starts leaving "running", so the view
+		// is already clear by the time the new process's lines arrive.
+		resetKey;
+		lines = [];
 	});
 
 	function onScroll() {

@@ -10,19 +10,73 @@
 	let presetName = $state('');
 	let showSavePreset = $state(false);
 
-	// Seeded from the server but editable locally. Keyed on the saved value so a
-	// save re-syncs it - previously this was seeded once and went stale, leaving
-	// the interval/daily fields showing the pre-save choice.
-	let scheduleOverride = $state<string | null>(null);
-	let lastSaved = $state(data.settings.restartSchedule);
-	$effect(() => {
-		const saved = data.settings.restartSchedule;
-		if (saved !== lastSaved) {
-			lastSaved = saved;
-			scheduleOverride = null;
-		}
+	// Plain one-way value={...}/checked={...} bindings on <select> and
+	// checkboxes did not pick up a fresh save until switching tabs and back -
+	// this page used to work around it just for the restart-schedule select
+	// (a scheduleOverride/lastSaved pair, now removed). bind:value/bind:checked
+	// against local state that re-syncs whenever `data` changes - the same
+	// pattern the JVM preset picker already used, and which never showed the
+	// bug - fixes every field at once instead of needing a one-off per field.
+	let sv = $state({
+		name: data.settings.name,
+		minecraftVersion: data.settings.minecraftVersion,
+		modloaderVersion: data.settings.modloaderVersion ?? '',
+		javaPath: data.settings.javaPath ?? '',
+		javaPathManual: data.settings.javaPath ?? '',
+		memoryMaxMb: data.settings.memoryMaxMb,
+		memoryMinMb: data.settings.memoryMinMb,
+		jvmArgs: data.settings.jvmArgs,
+		launchArgs: data.settings.launchArgs,
+		serverPort: data.settings.serverPort,
+		rconPort: data.settings.rconPort,
+		autoRestartOnCrash: data.settings.autoRestartOnCrash,
+		crashRestartLimit: data.settings.crashRestartLimit,
+		crashRestartWindowSec: data.settings.crashRestartWindowSec,
+		restartSchedule: data.settings.restartSchedule,
+		restartIntervalHours: data.settings.restartIntervalHours,
+		restartDailyTime: data.settings.restartDailyTime,
+		restartWarnMinutes: data.settings.restartWarnMinutes,
+		restartSkipIfPlayers: data.settings.restartSkipIfPlayers,
+		consoleBacklogLines: data.settings.consoleBacklogLines,
+		consoleBufferLines: data.settings.consoleBufferLines
 	});
-	const schedule = $derived(scheduleOverride ?? s.restartSchedule);
+	$effect(() => {
+		sv = {
+			name: data.settings.name,
+			minecraftVersion: data.settings.minecraftVersion,
+			modloaderVersion: data.settings.modloaderVersion ?? '',
+			javaPath: data.settings.javaPath ?? '',
+			javaPathManual: data.settings.javaPath ?? '',
+			memoryMaxMb: data.settings.memoryMaxMb,
+			memoryMinMb: data.settings.memoryMinMb,
+			jvmArgs: data.settings.jvmArgs,
+			launchArgs: data.settings.launchArgs,
+			serverPort: data.settings.serverPort,
+			rconPort: data.settings.rconPort,
+			autoRestartOnCrash: data.settings.autoRestartOnCrash,
+			crashRestartLimit: data.settings.crashRestartLimit,
+			crashRestartWindowSec: data.settings.crashRestartWindowSec,
+			restartSchedule: data.settings.restartSchedule,
+			restartIntervalHours: data.settings.restartIntervalHours,
+			restartDailyTime: data.settings.restartDailyTime,
+			restartWarnMinutes: data.settings.restartWarnMinutes,
+			restartSkipIfPlayers: data.settings.restartSkipIfPlayers,
+			consoleBacklogLines: data.settings.consoleBacklogLines,
+			consoleBufferLines: data.settings.consoleBufferLines
+		};
+	});
+
+	// use:enhance's default success handling includes form.reset(), which
+	// reverts every field in the form to its hydration-time default - for a
+	// form editing existing values that's a brief, visible flash back to
+	// blank/default before the effect above re-syncs everything to the
+	// actual saved values a moment later. Keeping every other default
+	// behaviour, just not that part.
+	function keepValues() {
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+		};
+	}
 </script>
 
 <Flash {form} />
@@ -39,25 +93,25 @@
 			</p>
 		</div>
 	</div>
-	<form method="POST" action="?/general" use:enhance>
+	<form method="POST" action="?/general" use:enhance={keepValues}>
 		<div class="grid-2">
 			<div class="field">
 				<label for="name">Display name</label>
-				<input id="name" name="name" value={s.name} required />
+				<input id="name" name="name" bind:value={sv.name} required />
 			</div>
 			<div class="field">
 				<label for="minecraftVersion">Minecraft version</label>
 				{#if data.minecraftVersions.length}
-					<select id="minecraftVersion" name="minecraftVersion" value={s.minecraftVersion}>
-						{#if !data.minecraftVersions.includes(s.minecraftVersion)}
-							<option value={s.minecraftVersion}>{s.minecraftVersion} (installed)</option>
+					<select id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion}>
+						{#if !data.minecraftVersions.includes(sv.minecraftVersion)}
+							<option value={sv.minecraftVersion}>{sv.minecraftVersion} (installed)</option>
 						{/if}
 						{#each data.minecraftVersions as version (version)}
 							<option value={version}>{version}</option>
 						{/each}
 					</select>
 				{:else}
-					<input id="minecraftVersion" name="minecraftVersion" value={s.minecraftVersion} />
+					<input id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion} />
 					<p class="hint">Mojang's version list was unreachable, so this is a plain field.</p>
 				{/if}
 				<p class="hint">Used to choose a Java runtime and to filter mod searches.</p>
@@ -65,17 +119,17 @@
 			<div class="field">
 				<label for="modloaderVersion">{data.instance.modloaderLabel} version</label>
 				{#if data.loaderVersions.length}
-					<select id="modloaderVersion" name="modloaderVersion" value={s.modloaderVersion ?? ''}>
+					<select id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion}>
 						<option value="">Not recorded</option>
-						{#if s.modloaderVersion && !data.loaderVersions.includes(s.modloaderVersion)}
-							<option value={s.modloaderVersion}>{s.modloaderVersion} (installed)</option>
+						{#if sv.modloaderVersion && !data.loaderVersions.includes(sv.modloaderVersion)}
+							<option value={sv.modloaderVersion}>{sv.modloaderVersion} (installed)</option>
 						{/if}
 						{#each data.loaderVersions.slice(0, 60) as version (version)}
 							<option value={version}>{version}</option>
 						{/each}
 					</select>
 				{:else}
-					<input id="modloaderVersion" name="modloaderVersion" value={s.modloaderVersion ?? ''} />
+					<input id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion} />
 				{/if}
 			</div>
 		</div>
@@ -101,10 +155,10 @@
 		<div class="notice warning"><p>{data.javaResolution.warning}</p></div>
 	{/if}
 
-	<form method="POST" action="?/runtime" use:enhance>
+	<form method="POST" action="?/runtime" use:enhance={keepValues}>
 		<div class="field">
 			<label for="javaPath">Java runtime</label>
-			<select id="javaPath" name="javaPath" value={s.javaPath ?? ''}>
+			<select id="javaPath" name="javaPath" bind:value={sv.javaPath}>
 				<option value="">
 					Match automatically (currently {data.javaResolution.path ?? 'nothing installed'})
 				</option>
@@ -125,18 +179,18 @@
 				name="javaPathManual"
 				class="mono"
 				placeholder="/usr/lib/jvm/java-21-openjdk/bin/java"
-				value={s.javaPath ?? ''}
+				bind:value={sv.javaPathManual}
 			/>
 		</div>
 
 		<div class="grid-2">
 			<div class="field">
 				<label for="memoryMaxMb">Maximum memory (MB)</label>
-				<input id="memoryMaxMb" name="memoryMaxMb" type="number" min="512" step="256" value={s.memoryMaxMb} />
+				<input id="memoryMaxMb" name="memoryMaxMb" type="number" min="512" step="256" bind:value={sv.memoryMaxMb} />
 			</div>
 			<div class="field">
 				<label for="memoryMinMb">Starting memory (MB)</label>
-				<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" value={s.memoryMinMb} />
+				<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={sv.memoryMinMb} />
 			</div>
 		</div>
 
@@ -173,8 +227,9 @@
 				rows="4"
 				class="mono"
 				spellcheck="false"
-				disabled={Boolean(presetToApply)}>{s.jvmArgs}</textarea
-			>
+				disabled={Boolean(presetToApply)}
+				bind:value={sv.jvmArgs}
+			></textarea>
 			<p class="hint">
 				<code>-Xms</code> and <code>-Xmx</code> are rewritten from the memory fields above, so you
 				do not have to keep them in sync.
@@ -185,7 +240,7 @@
 			<summary>Launch arguments</summary>
 			<div class="field advanced">
 				<label for="launchArgs">Arguments after the JVM options</label>
-				<input id="launchArgs" name="launchArgs" class="mono" value={s.launchArgs} />
+				<input id="launchArgs" name="launchArgs" class="mono" bind:value={sv.launchArgs} />
 				<p class="hint">
 					Written into the systemd unit environment as
 					<code>MS_LAUNCH_ARGS</code>. Modern Forge and NeoForge use an <code>@argfile</code>
@@ -200,7 +255,7 @@
 	<div class="preset-tools">
 		{#if showSavePreset}
 			<form method="POST" action="?/savePreset" use:enhance class="row wrap">
-				<input type="hidden" name="jvmArgs" value={s.jvmArgs} />
+				<input type="hidden" name="jvmArgs" value={sv.jvmArgs} />
 				<div class="field grow">
 					<label for="presetName">Preset name</label>
 					<input id="presetName" name="presetName" bind:value={presetName} placeholder="My tuning" />
@@ -238,15 +293,15 @@
 
 <section class="panel">
 	<h2>Network</h2>
-	<form method="POST" action="?/network" use:enhance>
+	<form method="POST" action="?/network" use:enhance={keepValues}>
 		<div class="grid-2">
 			<div class="field">
 				<label for="serverPort">Game port</label>
-				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" value={s.serverPort} />
+				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" bind:value={sv.serverPort} />
 			</div>
 			<div class="field">
 				<label for="rconPort">RCON port</label>
-				<input id="rconPort" name="rconPort" type="number" min="1" max="65535" value={s.rconPort} />
+				<input id="rconPort" name="rconPort" type="number" min="1" max="65535" bind:value={sv.rconPort} />
 				<p class="hint">Used by MineShell to send console commands. Do not expose it.</p>
 			</div>
 		</div>
@@ -273,7 +328,7 @@
 
 <section class="panel">
 	<h2>Restarts</h2>
-	<form method="POST" action="?/restarts" use:enhance>
+	<form method="POST" action="?/restarts" use:enhance={keepValues}>
 		<fieldset>
 			<legend>After a crash</legend>
 			<div class="check field">
@@ -281,19 +336,19 @@
 					id="autoRestartOnCrash"
 					name="autoRestartOnCrash"
 					type="checkbox"
-					checked={s.autoRestartOnCrash}
+					bind:checked={sv.autoRestartOnCrash}
 				/>
 				<label for="autoRestartOnCrash">Bring the server back automatically if it exits badly</label>
 			</div>
 			<div class="grid-2">
 				<div class="field">
 					<label for="crashRestartLimit">Give up after</label>
-					<input id="crashRestartLimit" name="crashRestartLimit" type="number" min="1" max="50" value={s.crashRestartLimit} />
+					<input id="crashRestartLimit" name="crashRestartLimit" type="number" min="1" max="50" bind:value={sv.crashRestartLimit} />
 					<p class="hint">Attempts before systemd stops trying.</p>
 				</div>
 				<div class="field">
 					<label for="crashRestartWindowSec">Counted over (seconds)</label>
-					<input id="crashRestartWindowSec" name="crashRestartWindowSec" type="number" min="60" max="86400" step="60" value={s.crashRestartWindowSec} />
+					<input id="crashRestartWindowSec" name="crashRestartWindowSec" type="number" min="60" max="86400" step="60" bind:value={sv.crashRestartWindowSec} />
 					<p class="hint">A crash loop trips the limit; occasional crashes reset it.</p>
 				</div>
 			</div>
@@ -303,37 +358,32 @@
 			<legend>On a schedule</legend>
 			<div class="field">
 				<label for="restartSchedule">Restart</label>
-				<select
-					id="restartSchedule"
-					name="restartSchedule"
-					value={schedule}
-					onchange={(e) => (scheduleOverride = e.currentTarget.value)}
-				>
+				<select id="restartSchedule" name="restartSchedule" bind:value={sv.restartSchedule}>
 					<option value="none">Never</option>
 					<option value="interval">Every few hours</option>
 					<option value="daily">At a fixed time each day</option>
 				</select>
 			</div>
 
-			{#if schedule === 'interval'}
+			{#if sv.restartSchedule === 'interval'}
 				<div class="field">
 					<label for="restartIntervalHours">Hours between restarts</label>
-					<input id="restartIntervalHours" name="restartIntervalHours" type="number" min="1" max="168" value={s.restartIntervalHours} />
+					<input id="restartIntervalHours" name="restartIntervalHours" type="number" min="1" max="168" bind:value={sv.restartIntervalHours} />
 				</div>
 			{/if}
 
-			{#if schedule === 'daily'}
+			{#if sv.restartSchedule === 'daily'}
 				<div class="field">
 					<label for="restartDailyTime">Time of day</label>
-					<input id="restartDailyTime" name="restartDailyTime" type="time" value={s.restartDailyTime} />
+					<input id="restartDailyTime" name="restartDailyTime" type="time" bind:value={sv.restartDailyTime} />
 					<p class="hint">In the server machine's local timezone.</p>
 				</div>
 			{/if}
 
-			{#if schedule !== 'none'}
+			{#if sv.restartSchedule !== 'none'}
 				<div class="field">
 					<label for="restartWarnMinutes">Warn players this many minutes ahead</label>
-					<input id="restartWarnMinutes" name="restartWarnMinutes" type="number" min="0" max="60" value={s.restartWarnMinutes} />
+					<input id="restartWarnMinutes" name="restartWarnMinutes" type="number" min="0" max="60" bind:value={sv.restartWarnMinutes} />
 					<p class="hint">Sends in-game messages at 15, 10, 5 and 1 minutes, within this window. 0 sends nothing.</p>
 				</div>
 				<div class="check field">
@@ -341,7 +391,7 @@
 						id="restartSkipIfPlayers"
 						name="restartSkipIfPlayers"
 						type="checkbox"
-						checked={s.restartSkipIfPlayers}
+						bind:checked={sv.restartSkipIfPlayers}
 					/>
 					<label for="restartSkipIfPlayers">
 						Wait while players are online, up to an hour past the scheduled time
@@ -356,17 +406,17 @@
 
 <section class="panel">
 	<h2>Console</h2>
-	<form method="POST" action="?/console" use:enhance>
+	<form method="POST" action="?/console" use:enhance={keepValues}>
 		<div class="grid-2">
 			<div class="field">
 				<label for="consoleBacklogLines">History loaded on connect</label>
-				<input id="consoleBacklogLines" name="consoleBacklogLines" type="number" min="0" max="10000" value={s.consoleBacklogLines} />
+				<input id="consoleBacklogLines" name="consoleBacklogLines" type="number" min="0" max="10000" bind:value={sv.consoleBacklogLines} />
 			</div>
 			<div class="field">
 				<label for="consoleBufferLines">Lines kept in the browser</label>
-				<input id="consoleBufferLines" name="consoleBufferLines" type="number" min="100" max="100000" value={s.consoleBufferLines} />
+				<input id="consoleBufferLines" name="consoleBufferLines" type="number" min="100" max="100000" bind:value={sv.consoleBufferLines} />
 				<p class="hint">
-					{s.consoleBufferLines > 20000
+					{sv.consoleBufferLines > 20000
 						? 'Above about 20,000 lines the console gets sluggish in most browsers.'
 						: 'Older lines drop off once this is reached.'}
 				</p>

@@ -56,7 +56,10 @@ export type ProjectVersion = {
 
 export type SearchQuery = {
 	term: string;
+	/** Single-version filter, still used by callers that only ever need one (the per-instance mod browser, locked to that instance's version). */
 	minecraftVersion?: string;
+	/** Multi-select, OR'd together where the provider supports it (Modrinth facets it for real; CurseForge/FTB browsing can only ever apply the first). */
+	minecraftVersions?: string[];
 	/** Multi-select, OR'd together. Empty/absent means no loader restriction. */
 	loaders?: string[];
 	/** Multi-select, OR'd together. Category ids are provider-specific. */

@@ -92,6 +92,22 @@ A Discord webhook on crash loops and scheduled restarts. The event bus in `event
 already emits everything needed, so this is a settings form, a fetch, and a subscriber.
 Deliberately kept out of v1 to avoid designing a notification framework for one webhook.
 
+### Configurable instance-creation defaults
+
+Every default a new instance gets right now is either hard-coded or computed on the spot -
+`suggestedMaxMb` in `instances/new/+page.server.ts` guesses from total system RAM, starting
+memory is a bare `1024` in the new-instance form, JVM preset/restart policy/console buffer
+sizes are whatever `instances.ts` falls back to when a field is left blank. None of it is
+stored or user-editable; it is recalculated or hard-coded fresh every time.
+
+The goal: one place on the global settings page where every one of those defaults can be
+overridden, read by the new-instance form (replacing the inline fallbacks) and by
+`instances.ts`'s own defaulting logic. Needs a small schema addition to hold them (a
+single-row table, or a key-value table if the list keeps growing) plus a form. No design
+work has started - first real decision is which defaults belong here versus staying
+computed (system RAM detection for suggested memory is arguably still worth keeping as the
+*default* default, with a stored override on top, rather than replacing it outright).
+
 ---
 
 ## Later

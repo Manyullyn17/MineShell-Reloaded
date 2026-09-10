@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getProvider } from '$lib/server/mods';
 import { projectBody } from '$lib/server/mods/modrinth';
-import { packChangelog, packDescription } from '$lib/server/mods/modpacksch';
+import { packDescription } from '$lib/server/mods/modpacksch';
 
 /**
  * Full description and changelog for one project/version.
@@ -33,18 +33,17 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 		if (source === 'modrinth') {
 			description = await projectBody(projectId);
-			if (versionId) {
-				const version = await provider.getVersion(projectId, versionId);
-				changelog = version.changelog?.trim() || null;
-			}
 		} else {
-			const kind = source === 'ftb' ? 'ftb' : 'curseforge';
-			description = await packDescription(kind, projectId);
-			// Only FTB's own packs expose a changelog through this API; a
-			// CurseForge pack simply has none to show.
-			if (versionId && kind === 'ftb') {
-				changelog = await packChangelog(projectId, versionId);
-			}
+			description = await packDescription(source === 'ftb' ? 'ftb' : 'curseforge', projectId);
+		}
+
+		// CurseForge and FTB's version-detail responses both carry the
+		// changelog inline (confirmed in the API spec) - same call every
+		// source needs anyway for gameVersions/loaders, so one getVersion()
+		// covers it instead of a second changelog-specific request.
+		if (versionId) {
+			const version = await provider.getVersion(projectId, versionId);
+			changelog = version.changelog?.trim() || null;
 		}
 
 		return json({

@@ -5,10 +5,12 @@ import { getProvider } from '$lib/server/mods';
 export const GET: RequestHandler = async ({ url }) => {
 	const source = url.searchParams.get('source') ?? 'modrinth';
 	try {
+		const mcVersions = url.searchParams.getAll('mc');
 		const provider = getProvider(source);
 		const hits = await provider.search({
 			term: url.searchParams.get('term') ?? '',
-			minecraftVersion: url.searchParams.get('mc') || undefined,
+			minecraftVersion: mcVersions[0],
+			minecraftVersions: mcVersions.length ? mcVersions : undefined,
 			loaders: url.searchParams.getAll('loader'),
 			categories: url.searchParams.getAll('category'),
 			kind: 'modpack',

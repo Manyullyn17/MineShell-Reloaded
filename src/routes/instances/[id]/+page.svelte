@@ -153,11 +153,10 @@
 			<dt>Address</dt>
 			<dd class="wrap">
 				<span class="mono">{data.detail.host}:{data.detail.serverPort}</span>
-				<span class="faint small">
-					Connecting from outside this LAN? Also allow it through your firewall:
+				<div class="faint small">
+					Can't connect? Also allow it through your firewall:
 					<code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>
-					(or the equivalent for whatever you're running).
-				</span>
+				</div>
 			</dd>
 
 			<dt>Minecraft</dt>

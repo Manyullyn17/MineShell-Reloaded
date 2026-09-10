@@ -3,6 +3,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
+	import { fitToViewport } from '$lib/shared/fitToViewport';
 	import { formatBytes } from '$lib/shared/format';
 
 	let { data, form } = $props();
@@ -255,7 +256,7 @@
 			{#if searchError}<p class="notice warning">{searchError}</p>{/if}
 
 			{#if hits.length}
-				<ul class="hits">
+				<ul class="hits" use:fitToViewport={40}>
 					{#each hits as hit (hit.id)}
 						<li>
 							<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
@@ -480,6 +481,12 @@
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-4);
+		/* Never collapse the browser below a usable size, even in a short
+		   window or above a tall installed-mods list. The sidebar and .hits
+		   below each cap their own height via the fitToViewport action
+		   (measures real remaining space) rather than depending on this row
+		   stretching them to a shared height. */
+		min-height: 22rem;
 	}
 
 	.browse-layout :global(.sidebar) {
@@ -511,8 +518,12 @@
 		list-style: none;
 		margin: var(--space-3) 0 0;
 		padding: 0;
-		max-height: 18rem;
 		overflow-y: auto;
+		/* Was a fixed max-height, capping the list well short of the sidebar
+		   next to it however tall the window was. fitToViewport (see the
+		   use: directive on this element) now measures the real remaining
+		   space instead of a guessed number. */
+		min-height: 10rem;
 	}
 
 	.hit {

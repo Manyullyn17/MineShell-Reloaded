@@ -8,19 +8,24 @@
 	 * "category" group are rendered identically. The caller decides what
 	 * groups exist and what to do with the selections.
 	 */
+	import { fitToViewport } from '$lib/shared/fitToViewport';
+
 	type FilterGroup = { id: string; label: string; options: { value: string; label: string }[] };
 
 	let {
 		groups = [],
 		selected = $bindable({}),
 		loading = false,
-		limitNote = ''
+		limitNote = '',
+		maxHeightMarginPx = 24
 	}: {
 		groups?: FilterGroup[];
 		selected?: Record<string, string[]>;
 		loading?: boolean;
 		/** Shown once at the top - e.g. "only the first pick per group applies here". */
 		limitNote?: string;
+		/** Room to leave below the sidebar before its own scrollbar kicks in. */
+		maxHeightMarginPx?: number;
 	} = $props();
 
 	// Every group starts open except ones with a lot of options, which start
@@ -57,7 +62,7 @@
 	}
 </script>
 
-<aside class="sidebar">
+<aside class="sidebar" use:fitToViewport={maxHeightMarginPx}>
 	<div class="head">
 		<h3>Filters</h3>
 		{#if activeCount > 0}
@@ -107,6 +112,7 @@
 		flex-direction: column;
 		gap: var(--space-2);
 		min-width: 0;
+		overflow-y: auto;
 	}
 
 	.head {
