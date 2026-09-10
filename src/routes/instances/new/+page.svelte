@@ -258,7 +258,7 @@
 				bind:value={memoryMaxMb}
 				oninput={() => (memoryTouched = true)}
 			/>
-			<p class="hint">Large modpacks want 6144 or more. Leave room for the rest of the machine.</p>
+			<p class="hint">Large modpacks want 6144 or more. <br>Leave room for the rest of the machine.</p>
 		</div>
 		<div class="field">
 			<label for="memoryMinMb">Starting memory (MB)</label>
@@ -593,11 +593,12 @@
 	.browse-panel {
 		flex: 1 1 auto;
 		min-width: 0;
+		overflow-y: auto;
 	}
 
 	.hits {
 		list-style: none;
-		margin: 0 0 var(--space-4);
+		margin: 0 0 0 0;
 		padding: 0;
 		display: grid;
 		gap: var(--space-1);
@@ -705,23 +706,23 @@
 	}
 
 	.install .grid-2 {
-		grid-template-columns: repeat(auto-fit, 20rem);
+		grid-template-columns: repeat(auto-fit, 15rem);
 	}
 
 	.version-field {
 		flex: 1 1 auto;
-		margin-bottom: 0;
 	}
 
 	.install .version-field {
-		max-width: 40rem;
+		max-width: 31rem;
 	}
 
 	.detail-buttons {
 		display: flex;
 		flex-direction: row;
 		gap: var(--space-2);
-		margin-bottom: 0.35rem;
+		margin-bottom: var(--space-4);
+		height: 2.5rem;
 	}
 
 	.detail-buttons button {
