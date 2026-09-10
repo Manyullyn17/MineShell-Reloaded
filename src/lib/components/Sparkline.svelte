@@ -27,13 +27,14 @@
 	} = $props();
 
 	const WIDTH = 600;
-	const PAD_LEFT = 46;
+	const PAD_LEFT = 45;
+	const PAD_RIGHT = 5;
 	const PAD_BOTTOM = 18;
-	const PAD_TOP = 6;
+	const PAD_TOP = 7;
 	/** Below this the axis labels would all read the same time. */
 	const MIN_SPAN_MS = 60_000;
 
-	const plotWidth = WIDTH - PAD_LEFT;
+	const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
 	const plotHeight = $derived(height - PAD_BOTTOM - PAD_TOP);
 
 	// The axis spans the data that actually exists, capped at the requested
@@ -117,7 +118,7 @@
 	});
 </script>
 
-<figure class="spark">
+<figure class="spark" style="--height: {height}px; --width: {WIDTH}px">
 	<figcaption>
 		<span class="muted small">{label}</span>
 		<span class="row">
@@ -131,7 +132,7 @@
 			{#each yTicks as tick (tick.fraction)}
 				<line
 					x1={PAD_LEFT}
-					x2={WIDTH}
+					x2={WIDTH - PAD_RIGHT}
 					y1={tick.y}
 					y2={tick.y}
 					class="grid"
@@ -168,7 +169,7 @@
 	}
 
 	.value {
-		font-size: 1.05rem;
+		font-size: 1rem;
 		color: var(--text);
 	}
 
@@ -206,14 +207,17 @@
 	.axis {
 		fill: var(--text-faint);
 		font-family: var(--font-mono);
-		font-size: 9px;
+		font-size: 8px;
 	}
 
 	.no-data {
 		border: 1px dashed var(--line);
 		border-radius: var(--radius);
-		padding: var(--space-4);
+		padding: 2.5rem;
+		font-size: 1rem;
 		text-align: center;
 		margin: 0;
+		height: var(--height);
+		max-width: none;
 	}
 </style>
