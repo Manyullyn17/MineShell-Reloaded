@@ -703,6 +703,7 @@
 
 	.install .name-field {
 		max-width: 20rem;
+		width: 17.25rem;
 	}
 
 	.install .grid-2 {
