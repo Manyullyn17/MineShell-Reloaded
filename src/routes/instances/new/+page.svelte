@@ -77,6 +77,7 @@
 	};
 	let hits = $state<Hit[]>([]);
 	let selected = $state<Hit | null>(null);
+	let installEl = $state<HTMLElement | null>(null);
 	let showDetails = $state(false);
 	let detailsTab = $state<'description' | 'changelog'>('description');
 
@@ -306,7 +307,11 @@
 		{/if}
 
 		{#if hits.length}
-			<ul class="hits" use:fitToViewport={40}>
+			<ul
+				class="hits"
+				class:compact={!!selected}
+				use:fitToViewport={{ bottomMarginPx: 50, reserveElement: installEl }}
+			>
 				{#each hits as hit (hit.id)}
 					<li>
 						<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
@@ -339,7 +344,13 @@
 		{/if}
 
 		{#if selected}
-			<form method="POST" action="?/install" class="install" onsubmit={() => (submitting = true)}>
+			<form
+				method="POST"
+				action="?/install"
+				class="install"
+				bind:this={installEl}
+				onsubmit={() => (submitting = true)}
+			>
 				<input type="hidden" name="source" value={source} />
 				<input type="hidden" name="projectId" value={selected.id} />
 
@@ -605,6 +616,14 @@
 		overflow-y: auto;
 		min-height: 10rem;
 		align-content: start;
+	}
+
+	/* Once a pack is selected, the install section below needs to fit on
+	   screen too - fitToViewport shrinks this list's max-height to make
+	   room for it, and that has to be free to go below the floor above,
+	   or the two heights fight and the page grows a scrollbar again. */
+	.hits.compact {
+		min-height: 0;
 	}
 
 	/* Nothing searched yet, or nothing matched: a short hint rather than a
