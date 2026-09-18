@@ -185,7 +185,13 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: min(58rem, calc(100vw - var(--space-5)));
+		/* A percentage of the viewport rather than a fixed cap, so it actually
+		   uses the space available on a wide screen instead of sitting at a
+		   fraction of it - clamped between a floor that stays readable on a
+		   small window and a ceiling so text lines don't get absurd on an
+		   ultrawide or 4K display. */
+		width: clamp(34rem, 50vw, 80rem);
+		max-width: calc(100vw - var(--space-5));
 		max-height: min(88vh, 60rem);
 		display: flex;
 		flex-direction: column;
@@ -322,6 +328,11 @@
 
 	.body.markdown :global(img) {
 		max-width: 100%;
+		/* Some sources embed raw <img> tags with explicit width/height HTML
+		   attributes, which stop matching once max-width above shrinks the
+		   rendered width - height:auto keeps the image scaling proportionally
+		   instead of stretching to the original, now-wrong pixel height. */
+		height: auto;
 		border-radius: var(--radius);
 	}
 
