@@ -12,6 +12,8 @@
 	// way. bind:value/bind:checked against local state that re-syncs
 	// whenever `data` changes (the pattern the JVM preset picker on settings
 	// already used, and which never showed the bug) fixes it.
+	// The $effect below keeps this current - this initial read is deliberate.
+	// svelte-ignore state_referenced_locally
 	let rawValue = $state(data.raw);
 	let fieldValues = $state<Record<string, string>>({});
 	let fieldChecks = $state<Record<string, boolean>>({});

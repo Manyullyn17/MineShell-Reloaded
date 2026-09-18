@@ -61,7 +61,16 @@
 	let details = $state<Details | null>(null);
 	let loading = $state(true);
 	let error = $state('');
+	// svelte-ignore state_referenced_locally
 	let tab = $state<'description' | 'changelog'>(defaultTab);
+	// The parent reuses this dialog instance rather than remounting it when
+	// it's already open and the user clicks the other "Description" /
+	// "Changelog" pill - that only changes the defaultTab prop, so without
+	// this the dialog would silently keep showing whichever tab it first
+	// opened on.
+	$effect(() => {
+		tab = defaultTab;
+	});
 
 	$effect(() => {
 		const params = new URLSearchParams({ source, id: projectId });

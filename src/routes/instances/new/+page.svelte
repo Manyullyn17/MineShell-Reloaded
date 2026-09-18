@@ -14,7 +14,9 @@
 	let name = $state('');
 	let nameTouched = $state(false);
 	// Seeded from load data but user-editable afterwards, so it tracks a change
-	// of suggestion without discarding an edit already in progress.
+	// of suggestion without discarding an edit already in progress. The
+	// effect right below keeps it in sync - this initial read is deliberate.
+	// svelte-ignore state_referenced_locally
 	let memoryMaxMb = $state(data.suggestedMaxMb);
 	let memoryTouched = $state(false);
 	$effect(() => {
@@ -24,6 +26,8 @@
 	let memoryMinMb = $state(1024);
 
 	// ---- loader-only mode
+	// Seeded once, kept in sync by the effect below - deliberate initial read.
+	// svelte-ignore state_referenced_locally
 	let minecraftVersion = $state(data.minecraftVersions[0] ?? '');
 	let versionTouched = $state(false);
 	$effect(() => {
@@ -91,6 +95,7 @@
 	// source-specific, so that part of the selection survives the reset.
 	// This also runs once on mount (lastSource starts equal to source), which
 	// is what gets a first page of results showing without pressing Search.
+	// svelte-ignore state_referenced_locally
 	let lastSource = $state(source);
 	$effect(() => {
 		const current = source;
@@ -626,12 +631,6 @@
 		min-height: 0;
 	}
 
-	/* Nothing searched yet, or nothing matched: a short hint rather than a
-	   tall empty box reserving space for a list that has nothing in it. */
-	.empty-hint {
-		padding: var(--space-3) 0;
-	}
-
 	.hit-title {
 		display: flex;
 		align-items: baseline;
@@ -644,10 +643,6 @@
 		gap: var(--space-1);
 		flex-wrap: wrap;
 		margin-top: 0.25rem;
-	}
-
-	.memory-fields {
-		margin-top: var(--space-4);
 	}
 
 	.hit {

@@ -17,6 +17,8 @@
 	// against local state that re-syncs whenever `data` changes - the same
 	// pattern the JVM preset picker already used, and which never showed the
 	// bug - fixes every field at once instead of needing a one-off per field.
+	// The $effect below keeps every field current - this initial read is deliberate.
+	// svelte-ignore state_referenced_locally
 	let sv = $state({
 		name: data.settings.name,
 		minecraftVersion: data.settings.minecraftVersion,

@@ -74,8 +74,26 @@
 	type FilterGroupData = { id: string; label: string; options: { value: string; label: string }[] };
 	let filterGroups = $state<FilterGroupData[]>([]);
 	let loadingFilters = $state(true);
+	// The $effect below keeps this in sync on instance switches - deliberate initial read.
+	// svelte-ignore state_referenced_locally
 	let filterSelections = $state<Record<string, string[]>>({
 		loaders: [...data.compatibleLoaders]
+	});
+
+	// This page persists across `/instances/[id]/mods` navigations (same
+	// route, different `id`), so a plain one-time seed above would leave the
+	// previous instance's mod-loader default checked after switching to a
+	// server on a different loader. `data.modloader` only changes when the
+	// instance actually does, unlike `data.compatibleLoaders`'s array
+	// identity, which would also flip on an incidental revalidation and
+	// wipe out filters the user picked by hand.
+	// svelte-ignore state_referenced_locally
+	let lastModloader = data.modloader;
+	$effect(() => {
+		if (data.modloader !== lastModloader) {
+			lastModloader = data.modloader;
+			filterSelections = { loaders: [...data.compatibleLoaders] };
+		}
 	});
 
 	$effect(() => {
@@ -611,10 +629,6 @@
 
 	.install-submit {
 		margin-top: var(--space-4);
-	}
-
-	.install .check {
-		margin-top: var(--space-3);
 	}
 
 	.list-controls {
