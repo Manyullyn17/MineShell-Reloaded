@@ -286,6 +286,10 @@ function makeFtbProvider(): ModProvider {
 			return detailToVersion(String(projectId), version);
 		},
 
+		async description(id): Promise<string | null> {
+			return packDescription('ftb', id);
+		},
+
 		async filterGroups(): Promise<FilterGroup[]> {
 			const tags = await cached('ftb:tags', CACHE_TTL.TAGS, () => fetchTagList(`${API}/public/modpack/tags`));
 			const categoryGroup: FilterGroup = {
@@ -361,6 +365,10 @@ function makeCurseforgeProvider(): ModProvider {
 		async getVersion(projectId, versionId): Promise<ProjectVersion> {
 			const version = await fetchJson<VersionDetail>(`${API}/public/curseforge/${projectId}/${versionId}`);
 			return detailToVersion(String(projectId), version);
+		},
+
+		async description(id): Promise<string | null> {
+			return packDescription('curseforge', id);
 		},
 
 		async filterGroups(kind): Promise<FilterGroup[]> {

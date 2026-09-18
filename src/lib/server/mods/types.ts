@@ -97,6 +97,8 @@ export interface ModProvider {
 		filter?: { minecraftVersion?: string; loader?: string }
 	): Promise<ProjectVersion[]>;
 	getVersion(projectId: string, versionId: string): Promise<ProjectVersion>;
+	/** The project's full description, only fetched when a user asks to read it. */
+	description?(id: string): Promise<string | null>;
 	/**
 	 * The filter groups this provider can actually apply, for the given search
 	 * kind. Absent or empty means the browse UI shows no filter sidebar for

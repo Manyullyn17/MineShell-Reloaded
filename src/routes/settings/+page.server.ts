@@ -1,7 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
-	CURSEFORGE_API_KEY,
 	DATA_DIR,
 	INSTANCES_DIR,
 	SYSTEMD_SCOPE,
@@ -9,6 +8,7 @@ import {
 	UNITS_DIR,
 	systemdUnitDir
 } from '$lib/server/config';
+import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '$lib/server/curseforge';
 import {
 	installTemplateUnit,
 	probeSystemd,
@@ -36,7 +36,7 @@ export const load: PageServerLoad = async () => {
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: listJavaRuntimes(),
 		authEnabled: authEnabled(),
-		curseforgeKeySet: Boolean(CURSEFORGE_API_KEY),
+		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all()
 	};
 };
@@ -78,6 +78,18 @@ export const actions: Actions = {
 	removeJava: async ({ request }) => {
 		removeJavaRuntime(String((await request.formData()).get('path') ?? ''));
 		return { ok: true, message: 'Removed from the list. The file itself is untouched.' };
+	},
+
+	curseforgeKey: async ({ request }) => {
+		const apiKey = String((await request.formData()).get('apiKey') ?? '');
+		if (!apiKey) return fail(400, { ok: false, message: 'Enter a key, or use "Remove" to clear it.' });
+		const result = await setCurseforgeApiKey(apiKey);
+		return { ok: result.ok, message: result.message };
+	},
+
+	removeCurseforgeKey: async () => {
+		const result = await setCurseforgeApiKey('');
+		return { ok: result.ok, message: result.message };
 	},
 
 	password: async ({ request }) => {

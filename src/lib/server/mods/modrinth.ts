@@ -220,6 +220,10 @@ export const modrinthProvider: ModProvider = {
 		return toVersion(version);
 	},
 
+	async description(id): Promise<string | null> {
+		return projectBody(id);
+	},
+
 	async filterGroups(kind): Promise<FilterGroup[]> {
 		const [categories, loaders] = await Promise.all([fetchCategoryTags(), fetchLoaderTags()]);
 

@@ -92,6 +92,39 @@ A Discord webhook on crash loops and scheduled restarts. The event bus in `event
 already emits everything needed, so this is a settings form, a fetch, and a subscriber.
 Deliberately kept out of v1 to avoid designing a notification framework for one webhook.
 
+### CurseForge installs through the official API, not just metadata
+
+A CurseForge API key (Settings page) currently only upgrades *metadata*: search, browse,
+project details, description and changelog go through `api.curseforge.com` instead of the
+modpacks.ch mirror once a key tests as working (see `lib/server/mods/curseforge.ts` and
+`curseforge-official.ts`). Installing a picked pack still resolves its file list through
+the mirror regardless of key state, because modpacks.ch conveniently hands back a
+pre-flattened per-mod-file list for a modpack version, and the official API does not - a
+CurseForge modpack "file" through that API is the pack's zip (`manifest.json` plus an
+`overrides/` folder), the same format `lib/server/packs/index.ts` already parses for
+uploaded CurseForge zips.
+
+Going further - making the official API the source for installs too, not just browsing -
+means: download that zip via the resolved `downloadUrl`, parse its manifest with the
+existing `parseCurseforge()` parser, and resolve each `{projectID, fileID}` pair
+individually (`resolveCurseforgeDownload()` already does the per-file part, for uploads).
+Two things make this worth doing eventually rather than immediately:
+
+- It would let installs prefer a modpack's dedicated **Server Pack** file
+  (`isServerPack`/`serverPackFileId` on the CurseForge file object) over the default
+  client file, which is the real fix for the "client-only mods slipping into server
+  installs" issue flagged elsewhere in this doc/CLAUDE.md - CurseForge's manifest format
+  has no client/server field, but a proper Server Pack zip is curated by the pack author
+  to exclude client-only mods already.
+- It also means `overrides/` support (server.properties tweaks, config files bundled in
+  the pack) for CurseForge packs picked through the browser, which today only the Upload
+  flow gets.
+
+Not started. The metadata-only version above was deliberately scoped smaller because the
+happy path here could not be verified live (no working CurseForge API key was available
+while building it) - this is a bigger, riskier follow-up that deserves its own pass with a
+real key in hand to confirm the file/manifest shapes against.
+
 ### Configurable instance-creation defaults
 
 Every default a new instance gets right now is either hard-coded or computed on the spot -

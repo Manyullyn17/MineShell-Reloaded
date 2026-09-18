@@ -1,8 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getProvider } from '$lib/server/mods';
-import { projectBody } from '$lib/server/mods/modrinth';
-import { packDescription } from '$lib/server/mods/modpacksch';
 
 /**
  * Full description and changelog for one project/version.
@@ -28,19 +26,12 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const provider = getProvider(source);
 		const project = await provider.getProject(projectId);
 
-		let description: string | null = null;
+		const description = (await provider.description?.(projectId)) ?? null;
 		let changelog: string | null = null;
 
-		if (source === 'modrinth') {
-			description = await projectBody(projectId);
-		} else {
-			description = await packDescription(source === 'ftb' ? 'ftb' : 'curseforge', projectId);
-		}
-
-		// CurseForge and FTB's version-detail responses both carry the
-		// changelog inline (confirmed in the API spec) - same call every
-		// source needs anyway for gameVersions/loaders, so one getVersion()
-		// covers it instead of a second changelog-specific request.
+		// Every provider's getVersion() already carries the changelog (a
+		// second, changelog-only request for the version this app already
+		// needs for gameVersions/loaders would be redundant).
 		if (versionId) {
 			const version = await provider.getVersion(projectId, versionId);
 			changelog = version.changelog?.trim() || null;

@@ -2,7 +2,7 @@ import AdmZip from 'adm-zip';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { downloadFile, fetchJson } from '../download';
-import { CURSEFORGE_API_KEY } from '../config';
+import { getCurseforgeApiKey } from '../curseforge';
 import type { ModloaderId } from '../modloaders';
 import type { TaskHandle } from '../tasks';
 
@@ -217,10 +217,11 @@ export async function resolveCurseforgeDownload(
 	projectId: number,
 	fileId: number
 ): Promise<{ url: string; filename: string; sha1: string | null }> {
-	if (CURSEFORGE_API_KEY) {
+	const apiKey = getCurseforgeApiKey();
+	if (apiKey) {
 		const info = await fetchJson<CfFileInfo>(
 			`https://api.curseforge.com/v1/mods/${projectId}/files/${fileId}`,
-			{ headers: { 'x-api-key': CURSEFORGE_API_KEY } }
+			{ headers: { 'x-api-key': apiKey } }
 		);
 		const sha1 = info.data.hashes?.find((h) => h.algo === 1)?.value ?? null;
 		if (info.data.downloadUrl) {
@@ -249,7 +250,7 @@ export async function resolveCurseforgeDownload(
 		return { url: file.url, filename: file.name, sha1: file.sha1 ?? null };
 	}
 	throw new Error(
-		`Could not resolve CurseForge file ${fileId}. Add CURSEFORGE_API_KEY to your .env for reliable pack imports.`
+		`Could not resolve CurseForge file ${fileId}. Add a CurseForge API key on the Settings page (or set CURSEFORGE_API_KEY) for reliable pack imports.`
 	);
 }
 

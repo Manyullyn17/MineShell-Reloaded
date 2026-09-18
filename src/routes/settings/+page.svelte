@@ -174,13 +174,56 @@
 		<dd class="mono wrap">{data.paths.instances}</dd>
 		<dt>Unit environment files</dt>
 		<dd class="mono wrap">{data.paths.units}</dd>
-		<dt>CurseForge API key</dt>
-		<dd>
-			{data.curseforgeKeySet
-				? 'Set. Pack imports can resolve every project.'
-				: 'Not set. Most packs still work through the public modpacks.ch mirror.'}
-		</dd>
 	</dl>
+</section>
+
+<section class="panel">
+	<h2>CurseForge API key</h2>
+	<p>
+		Optional. Without a working key, CurseForge browsing, search, and pack installs all go
+		through the public modpacks.ch mirror. With one, search and project pages use CurseForge's
+		own API instead - more reliable, and it's the only way to get a real changelog. Installing a
+		picked pack still resolves its files through the mirror either way.
+	</p>
+
+	{#if data.curseforge.source !== 'none'}
+		<div class="notice {data.curseforge.valid ? 'success' : 'warning'}">
+			<p>
+				{#if data.curseforge.valid}
+					Working{data.curseforge.source === 'env' ? ' (from the CURSEFORGE_API_KEY environment variable)' : ''}.
+				{:else}
+					{data.curseforge.source === 'env'
+						? 'The CURSEFORGE_API_KEY environment variable is'
+						: 'The saved key is'} not confirmed working - falling back to the public modpacks.ch mirror.
+				{/if}
+			</p>
+		</div>
+	{/if}
+
+	<form method="POST" action="?/curseforgeKey" use:enhance class="inline-form">
+		<div class="field grow">
+			<label for="curseforge-key">
+				{data.curseforge.source === 'none' ? 'API key' : 'Replace the key'}
+			</label>
+			<input
+				id="curseforge-key"
+				name="apiKey"
+				type="password"
+				autocomplete="new-password"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				data-form-type="other"
+				placeholder="Paste a key from console.curseforge.com"
+			/>
+		</div>
+		<button class="button-primary" type="submit">Save &amp; test</button>
+	</form>
+	{#if data.curseforge.source === 'saved'}
+		<form method="POST" action="?/removeCurseforgeKey" use:enhance class="inline-form">
+			<button class="button-quiet" type="submit">Remove saved key</button>
+		</form>
+	{/if}
 </section>
 
 <section class="panel">

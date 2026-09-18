@@ -5,7 +5,8 @@ import { db } from '../db';
 import { instanceMods, mods as modsTable, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
 import { modrinthProvider, projectsByIds, versionsFromHashes } from './modrinth';
-import { curseforgeProvider, ftbProvider } from './modpacksch';
+import { ftbProvider } from './modpacksch';
+import { curseforgeProvider } from './curseforge';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeJoin } from '../files';
 
