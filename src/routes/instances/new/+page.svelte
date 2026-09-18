@@ -38,6 +38,7 @@
 	let loaderVersions = $state<string[]>([]);
 	let modloaderVersion = $state('');
 	let loaderVersionError = $state('');
+	let loadingLoaderVersions = $state(false);
 
 	$effect(() => {
 		const mc = minecraftVersion;
@@ -45,9 +46,11 @@
 		modloaderVersion = '';
 		loaderVersions = [];
 		loaderVersionError = '';
+		loadingLoaderVersions = false;
 		if (!mc || loader === 'vanilla') return;
 
 		let cancelled = false;
+		loadingLoaderVersions = true;
 		fetch(`/api/loaders/versions?loader=${loader}&mc=${encodeURIComponent(mc)}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error('lookup failed'))))
 			.then((body) => {
@@ -58,6 +61,9 @@
 					loaderVersionError =
 						'Could not reach the loader metadata server. Leave the version blank to take the latest, or type one in.';
 				}
+			})
+			.finally(() => {
+				if (!cancelled) loadingLoaderVersions = false;
 			});
 		return () => {
 			cancelled = true;
@@ -311,98 +317,108 @@
 			<p class="notice warning">{searchError}</p>
 		{/if}
 
-		{#if hits.length}
-			<ul
-				class="hits"
-				class:compact={!!selected}
-				use:fitToViewport={{ bottomMarginPx: 50, reserveElement: installEl }}
-			>
-				{#each hits as hit (hit.id)}
-					<li>
-						<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
-							{#if hit.iconUrl}
-								<img src={hit.iconUrl} alt="" width="40" height="40" loading="lazy" />
-							{:else}
-								<span class="icon-fallback" aria-hidden="true"></span>
-							{/if}
-							<span class="hit-body">
-								<span class="hit-title">
-									<strong>{hit.name}</strong>
-									{#if hit.author}<span class="faint small">by {hit.author}</span>{/if}
-								</span>
-								<span class="small muted summary">{hit.summary ?? ''}</span>
-								{#if hit.loaders?.length || hit.gameVersions?.length}
-									<span class="hit-meta">
-										{#each [...new Set(hit.loaders ?? [])].slice(0, 2) as loader (loader)}
-											<span class="tag accent">{loader}</span>
-										{/each}
-										{#if hit.gameVersions?.length}
-											<span class="tag">{summariseVersions(hit.gameVersions)}</span>
+		{#if hits.length || selected}
+			<div class="browse-results">
+				{#if hits.length}
+					<ul
+					class="hits"
+					class:compact={!!selected}
+					use:fitToViewport={{ bottomMarginPx: 65, reserveElement: installEl }}
+				>
+						{#each hits as hit (hit.id)}
+							<li>
+								<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
+									{#if hit.iconUrl}
+										<img src={hit.iconUrl} alt="" width="40" height="40" loading="lazy" />
+									{:else}
+										<span class="icon-fallback" aria-hidden="true"></span>
+									{/if}
+									<span class="hit-body">
+										<span class="hit-title">
+											<strong>{hit.name}</strong>
+											{#if hit.author}<span class="faint small">by {hit.author}</span>{/if}
+										</span>
+										<span class="small muted summary">{hit.summary ?? ''}</span>
+										{#if hit.loaders?.length || hit.gameVersions?.length}
+											<span class="hit-meta">
+												{#each [...new Set(hit.loaders ?? [])].slice(0, 2) as loader (loader)}
+													<span class="tag accent">{loader}</span>
+												{/each}
+												{#if hit.gameVersions?.length}
+													<span class="tag">{summariseVersions(hit.gameVersions)}</span>
+												{/if}
+											</span>
 										{/if}
 									</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				{#if selected}
+					<form
+						method="POST"
+						action="?/install"
+						class="install"
+						bind:this={installEl}
+						onsubmit={() => (submitting = true)}
+					>
+						<input type="hidden" name="source" value={source} />
+						<input type="hidden" name="projectId" value={selected.id} />
+
+						<h2 class="selected-name">{selected.name}</h2>
+
+						<div class="name-row">
+							<div class="field name-field">
+								<label for="pack-name">Server name</label>
+								<input
+									id="pack-name"
+									name="name"
+									bind:value={name}
+									oninput={() => (nameTouched = true)}
+									required
+								/>
+							</div>
+							<div class="detail-buttons">
+								<button type="button" onclick={() => openDetails('description')}>Description</button>
+								<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
+							</div>
+						</div>
+
+						<div class="field version-field">
+							<label for="versionId">Pack version</label>
+							<select
+								id="versionId"
+								name="versionId"
+								bind:value={versionId}
+								required
+								disabled={loadingVersions || packVersions.length === 0}
+							>
+								{#if loadingVersions}
+									<option value="">Loading.</option>
+								{:else if packVersions.length === 0}
+									<option value="">No versions were returned for this pack.</option>
+								{:else}
+									{#each packVersions as v (v.id)}
+										<option value={v.id}>
+											{v.versionNumber}
+											{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}
+											{v.channel !== 'release' ? ` (${v.channel})` : ''}
+										</option>
+									{/each}
 								{/if}
-							</span>
+							</select>
+						</div>
+
+						{@render memoryFields()}
+
+						<button class="button-primary" type="submit" disabled={submitting || !versionId}>
+							{submitting ? 'Starting install' : 'Install pack'}
 						</button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-
-		{#if selected}
-			<form
-				method="POST"
-				action="?/install"
-				class="install"
-				bind:this={installEl}
-				onsubmit={() => (submitting = true)}
-			>
-				<input type="hidden" name="source" value={source} />
-				<input type="hidden" name="projectId" value={selected.id} />
-
-				<h2 class="selected-name">{selected.name}</h2>
-
-				<div class="name-row">
-					<div class="field name-field">
-						<label for="pack-name">Server name</label>
-						<input
-							id="pack-name"
-							name="name"
-							bind:value={name}
-							oninput={() => (nameTouched = true)}
-							required
-						/>
-					</div>
-					<div class="detail-buttons">
-						<button type="button" onclick={() => openDetails('description')}>Description</button>
-						<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
-					</div>
-				</div>
-
-				<div class="field version-field">
-					<label for="versionId">Pack version</label>
-					{#if loadingVersions}
-						<p class="muted small">Loading versions.</p>
-					{:else if packVersions.length === 0}
-						<p class="muted small">No versions were returned for this pack.</p>
-					{:else}
-						<select id="versionId" name="versionId" bind:value={versionId} required>
-							{#each packVersions as v (v.id)}
-								<option value={v.id}>
-									{v.versionNumber}
-									{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}
-									{v.channel !== 'release' ? ` (${v.channel})` : ''}
-								</option>
-							{/each}
-						</select>
-					{/if}
-				</div>
-
-				{@render memoryFields()}
-
-				<button class="button-primary" type="submit" disabled={submitting || !versionId}>
-					{submitting ? 'Starting install' : 'Install pack'}
-				</button>
-			</form>
+					</form>
+				{/if}
+			</div>
 		{/if}
 	</section>
 
@@ -497,12 +513,21 @@
 			{#if modloader !== 'vanilla'}
 				<div class="field">
 					<label for="modloaderVersion">Loader version</label>
-					{#if loaderVersions.length}
-						<select id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion}>
-							<option value="">Latest ({loaderVersions[0]})</option>
-							{#each loaderVersions.slice(0, 40) as version (version)}
-								<option value={version}>{version}</option>
-							{/each}
+					{#if loadingLoaderVersions || loaderVersions.length}
+						<select
+							id="modloaderVersion"
+							name="modloaderVersion"
+							bind:value={modloaderVersion}
+							disabled={loadingLoaderVersions}
+						>
+							{#if loadingLoaderVersions}
+								<option value="">Loading.</option>
+							{:else}
+								<option value="">Latest ({loaderVersions[0]})</option>
+								{#each loaderVersions.slice(0, 40) as version (version)}
+									<option value={version}>{version}</option>
+								{/each}
+							{/if}
 						</select>
 					{:else}
 						<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
@@ -585,14 +610,9 @@
 		height: 2.15rem;
 	}
 
-	/* Sidebar plus the search/results/install column. An earlier version
-	   tried viewport-height math directly on this panel (guessed the
-	   surrounding chrome's height wrong twice) and then gave up on filling
-	   the screen at all, capping the results list at a fixed height instead.
-	   The sidebar and .hits below each cap their own height via the
-	   fitToViewport action (measures real remaining space) rather than
-	   depending on this row stretching them to a shared height - min-height
-	   here is just the floor for a short viewport. */
+	/* Sidebar plus the search/results/install column. The sidebar caps its
+	   own height via the fitToViewport action (measures real remaining
+	   space) - min-height here is just the floor for a short viewport. */
 	.browse-layout {
 		display: flex;
 		align-items: flex-start;
@@ -609,12 +629,24 @@
 	.browse-panel {
 		flex: 1 1 auto;
 		min-width: 0;
-		overflow-y: auto;
+	}
+
+	/* .hits shrinks itself (via fitToViewport, reserving space for whatever
+	   the install form currently measures) so the pair always fits the
+	   viewport together, using as much of the screen as is actually there
+	   rather than stopping at a fraction of it - unlike the per-instance mod
+	   browser below, this page's install form has no unbounded content (no
+	   dependency list) to need a hard cap against. */
+	.browse-results {
+		margin-top: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 
 	.hits {
 		list-style: none;
-		margin: 0 0 0 0;
+		margin: 0;
 		padding: 0;
 		display: grid;
 		gap: var(--space-1);
@@ -623,10 +655,10 @@
 		align-content: start;
 	}
 
-	/* Once a pack is selected, the install section below needs to fit on
-	   screen too - fitToViewport shrinks this list's max-height to make
-	   room for it, and that has to be free to go below the floor above,
-	   or the two heights fight and the page grows a scrollbar again. */
+	/* Once a pack is selected, the install section below needs room to show
+	   without scrolling if it can - fitToViewport shrinks this list's
+	   max-height to make that room, and that has to be free to go below the
+	   floor above, or the two heights fight each other. */
 	.hits.compact {
 		min-height: 0;
 	}

@@ -16,6 +16,15 @@ export type FitToViewportParams =
 			 * way reading it directly in the attribute expression is.
 			 */
 			reserveElement?: HTMLElement | null;
+			/**
+			 * An absolute ceiling as a fraction of the viewport height (e.g.
+			 * 0.66), applied regardless of how much room is actually left
+			 * below the node. Without this, a tall enough viewport lets the
+			 * node fill nearly the whole screen just because the space is
+			 * there - fine for a short list, too much for one with a couple
+			 * dozen rows.
+			 */
+			maxViewportFraction?: number;
 	  };
 
 /**
@@ -40,11 +49,14 @@ export type FitToViewportParams =
 export function fitToViewport(node: HTMLElement, params: FitToViewportParams = 24) {
 	let bottomMarginPx = typeof params === 'number' ? params : params.bottomMarginPx ?? 24;
 	let reserveElement = typeof params === 'number' ? null : params.reserveElement ?? null;
+	let maxViewportFraction = typeof params === 'number' ? undefined : params.maxViewportFraction;
 
 	function recompute() {
 		const top = node.getBoundingClientRect().top;
 		const reservedHeight = reserveElement?.getBoundingClientRect().height ?? 0;
-		const available = window.innerHeight - top - bottomMarginPx - reservedHeight;
+		const remaining = window.innerHeight - top - bottomMarginPx;
+		const budget = maxViewportFraction != null ? Math.min(remaining, maxViewportFraction * window.innerHeight) : remaining;
+		const available = budget - reservedHeight;
 		node.style.maxHeight = `${Math.max(available, 0)}px`;
 	}
 
@@ -64,6 +76,7 @@ export function fitToViewport(node: HTMLElement, params: FitToViewportParams = 2
 	return {
 		update(nextParams: FitToViewportParams) {
 			bottomMarginPx = typeof nextParams === 'number' ? nextParams : nextParams.bottomMarginPx ?? 24;
+			maxViewportFraction = typeof nextParams === 'number' ? undefined : nextParams.maxViewportFraction;
 			const nextReserveElement = typeof nextParams === 'number' ? null : nextParams.reserveElement ?? null;
 			if (nextReserveElement !== reserveElement) {
 				if (reserveElement) reserveObserver.unobserve(reserveElement);

@@ -36,6 +36,7 @@
 	};
 	let hits = $state<Hit[]>([]);
 	let selected = $state<Hit | null>(null);
+	let installEl = $state<HTMLElement | null>(null);
 	type Version = {
 		id: string;
 		versionNumber: string;
@@ -44,6 +45,7 @@
 	};
 	let versions = $state<Version[]>([]);
 	let versionId = $state('');
+	let loadingVersions = $state(false);
 
 	type Dependency = {
 		projectId: string;
@@ -137,16 +139,21 @@
 		selected = hit;
 		versions = [];
 		versionId = '';
+		loadingVersions = true;
 		const params = new URLSearchParams({
 			source: 'modrinth',
 			id: hit.id,
 			mc: data.minecraftVersion,
 			loader: data.modloader
 		});
-		const res = await fetch(`/api/mods/versions?${params}`);
-		if (res.ok) {
-			versions = (await res.json()).versions ?? [];
-			versionId = versions[0]?.id ?? '';
+		try {
+			const res = await fetch(`/api/mods/versions?${params}`);
+			if (res.ok) {
+				versions = (await res.json()).versions ?? [];
+				versionId = versions[0]?.id ?? '';
+			}
+		} finally {
+			loadingVersions = false;
 		}
 	}
 
@@ -273,113 +280,134 @@
 
 			{#if searchError}<p class="notice warning">{searchError}</p>{/if}
 
-			{#if hits.length}
-				<ul class="hits" use:fitToViewport={40}>
-					{#each hits as hit (hit.id)}
-						<li>
-							<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
-								{#if hit.iconUrl}
-									<img src={hit.iconUrl} alt="" width="32" height="32" loading="lazy" />
-								{:else}
-									<span class="icon-fallback" aria-hidden="true"></span>
-								{/if}
-								<span class="hit-body">
-									<strong>{hit.name}</strong>
-									<span class="small muted summary">{hit.summary ?? ''}</span>
-								</span>
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-
-			{#if selected}
-				<form
-					method="POST"
-					action="?/install"
-					class="install"
-					use:enhance={() => {
-						return async ({ result, update }) => {
-							await update();
-							// A finished install should leave the browser out of the
-							// way rather than sitting there on the mod just added.
-							if (result.type === 'success') {
-								resetBrowser();
-								showBrowser = false;
-							}
-						};
-					}}
-				>
-					<input type="hidden" name="source" value="modrinth" />
-					<input type="hidden" name="projectId" value={selected.id} />
-					<p class="selected-name"><strong>{selected.name}</strong></p>
-
-					<div class="version-row">
-						<div class="field version-field">
-							<label for="mod-version">Version</label>
-							<select id="mod-version" name="versionId" bind:value={versionId} required>
-								{#each versions as v (v.id)}
-									<option value={v.id}>
-										{v.versionNumber}{v.channel !== 'release' ? ` (${v.channel})` : ''}
-									</option>
-								{/each}
-							</select>
-						</div>
-						<div class="detail-buttons">
-							<button type="button" onclick={() => openDetails('description')}>Description</button>
-							<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
-						</div>
-					</div>
-
-					{#if loadingDeps}
-						<p class="muted small">Checking dependencies.</p>
-					{:else if dependencies.length}
-						<fieldset class="deps">
-							<legend>Dependencies</legend>
-							{#each dependencies as dep (dep.projectId)}
-								<div class="dep">
-									<input
-										id="dep-{dep.projectId}"
-										type="checkbox"
-										disabled={!dep.installable}
-										bind:checked={chosenDeps[dep.projectId]}
-									/>
-									{#if chosenDeps[dep.projectId] && dep.versionId}
-										<input
-											type="hidden"
-											name="dependency"
-											value="{dep.projectId}:{dep.versionId}"
-										/>
-									{/if}
-									<label for="dep-{dep.projectId}">
-										<span class="dep-name">
-											{dep.name}
-											<span class="tag" class:warn={dep.type === 'required'}>{dep.type}</span>
-											{#if dep.alreadyInstalled}
-												<span class="tag ok">installed</span>
-											{/if}
+			{#if hits.length || selected}
+				<div class="browse-results">
+					{#if hits.length}
+						<ul
+							class="hits"
+							class:compact={!!selected}
+							use:fitToViewport={{ bottomMarginPx: 36, reserveElement: installEl, maxViewportFraction: 0.66 }}
+						>
+							{#each hits as hit (hit.id)}
+								<li>
+									<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
+										{#if hit.iconUrl}
+											<img src={hit.iconUrl} alt="" width="32" height="32" loading="lazy" />
+										{:else}
+											<span class="icon-fallback" aria-hidden="true"></span>
+										{/if}
+										<span class="hit-body">
+											<strong>{hit.name}</strong>
+											<span class="small muted summary">{hit.summary ?? ''}</span>
 										</span>
-										{#if dep.summary}
-											<span class="small muted dep-summary">{dep.summary}</span>
-										{/if}
-										{#if dep.alreadyInstalled}
-											<span class="small muted">Already in this instance.</span>
-										{:else if !dep.installable}
-											<span class="small warn-text">
-												No build for {data.modloader}
-												{data.minecraftVersion}. Install it by hand if the mod needs it.
-											</span>
-										{/if}
-									</label>
-								</div>
+									</button>
+								</li>
 							{/each}
-						</fieldset>
+						</ul>
 					{/if}
 
-					<button class="button-primary install-submit" type="submit" disabled={!versionId}>
-						Install
-					</button>
-				</form>
+					{#if selected}
+						<form
+							method="POST"
+							action="?/install"
+							class="install"
+							bind:this={installEl}
+							use:enhance={() => {
+								return async ({ result, update }) => {
+									await update();
+									// A finished install should leave the browser out of the
+									// way rather than sitting there on the mod just added.
+									if (result.type === 'success') {
+										resetBrowser();
+										showBrowser = false;
+									}
+								};
+							}}
+						>
+							<input type="hidden" name="source" value="modrinth" />
+							<input type="hidden" name="projectId" value={selected.id} />
+							<p class="selected-name"><strong>{selected.name}</strong></p>
+
+							<div class="version-row">
+								<div class="field version-field">
+									<label for="mod-version">Version</label>
+									<select
+										id="mod-version"
+										name="versionId"
+										bind:value={versionId}
+										required
+										disabled={loadingVersions || versions.length === 0}
+									>
+										{#if loadingVersions}
+											<option value="">Loading.</option>
+										{:else if versions.length === 0}
+											<option value="">No versions were returned for this mod.</option>
+										{:else}
+											{#each versions as v (v.id)}
+												<option value={v.id}>
+													{v.versionNumber}{v.channel !== 'release' ? ` (${v.channel})` : ''}
+												</option>
+											{/each}
+										{/if}
+									</select>
+								</div>
+								<div class="detail-buttons">
+									<button type="button" onclick={() => openDetails('description')}>Description</button>
+									<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
+								</div>
+							</div>
+
+							{#if loadingDeps}
+								<p class="muted small">Checking dependencies.</p>
+							{:else if dependencies.length}
+								<fieldset class="deps">
+									<legend>Dependencies</legend>
+									{#each dependencies as dep (dep.projectId)}
+										<div class="dep">
+											<input
+												id="dep-{dep.projectId}"
+												type="checkbox"
+												disabled={!dep.installable}
+												bind:checked={chosenDeps[dep.projectId]}
+											/>
+											{#if chosenDeps[dep.projectId] && dep.versionId}
+												<input
+													type="hidden"
+													name="dependency"
+													value="{dep.projectId}:{dep.versionId}"
+												/>
+											{/if}
+											<label for="dep-{dep.projectId}">
+												<span class="dep-name">
+													{dep.name}
+													<span class="tag" class:warn={dep.type === 'required'}>{dep.type}</span>
+													{#if dep.alreadyInstalled}
+														<span class="tag ok">installed</span>
+													{/if}
+												</span>
+												{#if dep.summary}
+													<span class="small muted dep-summary">{dep.summary}</span>
+												{/if}
+												{#if dep.alreadyInstalled}
+													<span class="small muted">Already in this instance.</span>
+												{:else if !dep.installable}
+													<span class="small warn-text">
+														No build for {data.modloader}
+														{data.minecraftVersion}. Install it by hand if the mod needs it.
+													</span>
+												{/if}
+											</label>
+										</div>
+									{/each}
+								</fieldset>
+							{/if}
+
+							<button class="button-primary install-submit" type="submit" disabled={!versionId}>
+								Install
+							</button>
+						</form>
+					{/if}
+				</div>
 			{/if}
 
 			{#if showDetails && selected}
@@ -500,10 +528,9 @@
 		align-items: flex-start;
 		gap: var(--space-4);
 		/* Never collapse the browser below a usable size, even in a short
-		   window or above a tall installed-mods list. The sidebar and .hits
-		   below each cap their own height via the fitToViewport action
-		   (measures real remaining space) rather than depending on this row
-		   stretching them to a shared height. */
+		   window. The sidebar caps its own height via the fitToViewport
+		   action (measures real remaining space) rather than depending on
+		   this row stretching it to match .browse-main. */
 		min-height: 22rem;
 	}
 
@@ -532,16 +559,38 @@
 		height: 2.15rem;
 	}
 
+	/*
+	 * Two layers: .hits shrinks itself (via fitToViewport, reserving space
+	 * for whatever the install form currently measures) so the common case -
+	 * a handful of dependencies - needs no scrolling at all to reach the
+	 * Install button. .browse-results is the hard backstop underneath that:
+	 * capped at a fraction of the viewport no matter what, so an unusually
+	 * tall install form (a long dependency list) scrolls internally instead
+	 * of pushing past that ceiling the way it used to before this existed.
+	 */
+	.browse-results {
+		margin-top: var(--space-3);
+		max-height: 66vh;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
 	.hits {
 		list-style: none;
-		margin: var(--space-3) 0 0;
+		margin: 0;
 		padding: 0;
 		overflow-y: auto;
-		/* Was a fixed max-height, capping the list well short of the sidebar
-		   next to it however tall the window was. fitToViewport (see the
-		   use: directive on this element) now measures the real remaining
-		   space instead of a guessed number. */
 		min-height: 10rem;
+	}
+
+	/* Once a mod is selected, the install form below needs room to show
+	   without scrolling if it can - fitToViewport shrinks this list's
+	   max-height to make that room, and that has to be free to go below the
+	   floor above, or the two heights fight each other. */
+	.hits.compact {
+		min-height: 0;
 	}
 
 	.hit {
@@ -594,7 +643,8 @@
 	}
 
 	.install {
-		margin-top: var(--space-4);
+		/* Spacing above comes from .browse-results' flex gap now, not a
+		   margin here - this stays just for the visual divider line. */
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--line);
 	}
@@ -612,14 +662,14 @@
 
 	.version-field {
 		flex: 1 1 auto;
-		max-width: 50%;
+		max-width: 16rem;
 		margin-bottom: 0;
 	}
 
 	.detail-buttons {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
+		flex-direction: row;
+		gap: var(--space-2);
 	}
 
 	.detail-buttons button {
