@@ -135,11 +135,15 @@ export async function rconExec(
 	}
 }
 
-/** Parse the vanilla `list` output: "There are 2 of a max of 20 players online: a, b" */
+/**
+ * Parse the vanilla `list` output. 1.13+ says "There are 2 of a max of 20
+ * players online: a, b"; 1.12 and older say "There are 2/20 players online:"
+ * with the names after it (on the next line over RCON).
+ */
 export function parsePlayerList(raw: string): { online: number; max: number; names: string[] } {
-	const counts = raw.match(/There are (\d+)(?: of a max(?: of)? (\d+))? players? online/i);
+	const counts = raw.match(/There are (\d+)(?:\/(\d+)| of a max(?: of)? (\d+))? players? online/i);
 	const online = counts ? Number(counts[1]) : 0;
-	const max = counts && counts[2] ? Number(counts[2]) : 0;
+	const max = counts ? Number(counts[2] ?? counts[3] ?? 0) : 0;
 	const namesPart = raw.split(':').slice(1).join(':').trim();
 	const names = namesPart
 		? namesPart
