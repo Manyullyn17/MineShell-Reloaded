@@ -1,0 +1,2996 @@
+{
+ "GET https://api.modrinth.com/v2/project/fugue": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "client_side": "required",
+   "server_side": "required",
+   "game_versions": [
+    "1.12.2"
+   ],
+   "environment": [
+    "client_and_server"
+   ],
+   "id": "vylTACsh",
+   "slug": "fugue",
+   "project_type": "mod",
+   "team": "e32if7Uh",
+   "organization": null,
+   "title": "Fugue",
+   "description": "Patch mods for Cleanroom",
+   "body": "Fugue is a patch mod for Cleanroom, it patches most of the incompatibilities between existing Forge mods and Cleanroom.\n\nWith this mod, migrating from Forge to Cleanroom is seamless. Every patch is configurable!\n\nFAQ:\n\n- Q: What is Cleanroom?\n- A: Cleanroom is a 1.12.2 Forge fork, providing newer toolchain, new APIs and 99% compatibility. Our plan is to make 1.12.2 up-to-date with latest toolchain while adding more feature to Forge & vanilla, so we don't need to care about higher versions' X point release * Y Mod API headache.\n- Q: How to install Cleanroom?\n- A: Please follow the instructions in README.\n- Q: Can I include this in my Forge modpack? Will it crash my Forge pack?\n- A: Yes, you can, and it is safe! This mod won't be loaded or crash anything in a Forge environment.\n- Q: Java version?\n- A: 21 or 22. We are planning to support development using latest LTS version Java and running with latest Java.\n- Q: Current state?\n- A: Cleanroom have reached well usability, many small and large packs have been ported to Cleanroom after some tweaks, even SpongeForge has a solution. But we are lacking manpower, please join our Discord if you are willing to help.\n\n\n\nNote: mod files marked as \"Forge\" because CurseForge doesn't support Cleanroom yet.\n\n\n\nPatched mod list(outdated):\n\n- Charset\n- CodeChickenLib\n- Custom Main Menu\n- Hammer Lib\n- Forge Multipart\n- Project:Red\n- Solar Flux Reborn\n- Xaero Plus\n- EnderCore\n- Lag Goggles\n- Snow! Real Magic\n- Botania Tweaks\n- Advanced Rocketry\n- Entity Distance\n- FoamFix\n- Shoulder Surfing Reloaded\n- SplashAnimation\n- Logistics Pipes\n- OpenDisks\n- OpenSecurity\n- Enchantments Control\n- GregTech CE Unofficial (Before 2.8.8)\n- TFC Medicinal\n- Mcjty Core\n- LoliASM\n- Howling Moon\n- Custom NPCs\n- XNet\n- ZeroCore (ExtremeReactor)\n- Smooth Font\n- Water Power\n- Survival Inc.\n- Subauqatic (Temporary)\n- Nothirium\n- IC2C Extra\n- Simply Hot Spring\n- OpenModsLib\n- Valkyrie (Temporary)\n- ReplayMod\n- Thaumic Speedup (Temporary)\n- Astral Sorcery\n- Armourer's Workshop\n- Vampirism\n- MAGE (Graphical Tweaks)\n- Extra Utilities 2\n- In Control!",
+   "body_url": null,
+   "published": "2025-06-06T07:25:06.604317Z",
+   "updated": "2026-09-14T07:52:17.037902Z",
+   "approved": "2025-06-12T19:43:45.827565Z",
+   "queued": "2025-06-06T07:59:29.100627Z",
+   "status": "approved",
+   "requested_status": "approved",
+   "moderator_message": null,
+   "license": {
+    "id": "GPL-3.0-or-later",
+    "name": "GNU General Public License v3.0 or later",
+    "url": null
+   },
+   "downloads": 31142,
+   "followers": 3,
+   "categories": [],
+   "additional_categories": [],
+   "loaders": [
+    "forge"
+   ],
+   "versions": [
+    "k8WAROqM",
+    "nQMVvjYb",
+    "nJv7zquc",
+    "yqrbb6yi",
+    "nRWf3wzA",
+    "obpHEIEj",
+    "UpzW5FmY",
+    "2eCcXsfT",
+    "oeLDxBj6",
+    "EtB9HNzS",
+    "5TmWTPhm",
+    "6bf2LXK9",
+    "5dgERPCU",
+    "hMdgksDB",
+    "k3fbP5H3",
+    "Jww7sPOy",
+    "Y1DDBUt8",
+    "bYziBcL5",
+    "c1Odlx4Z",
+    "MPsEtrwz",
+    "6e1mLBeo",
+    "z35k60xY",
+    "yS3c46gV",
+    "zXHOQy87",
+    "QpdKzVNW",
+    "QlELDqbC",
+    "gPpseFX3",
+    "7fp79UCu",
+    "U5UVFdNR",
+    "pswuwvsj",
+    "XrjS1z6s",
+    "IW4ambiy",
+    "CNLYrrWD",
+    "aMk9Nonw",
+    "9T43RGc3",
+    "BoeDHUKw",
+    "GCfYQKM1",
+    "xaB49OW2",
+    "jViSfJQF",
+    "Wy9kZZUW"
+   ],
+   "icon_url": "https://cdn.modrinth.com/data/vylTACsh/5f815e5dee60cedd5b4cbd90f854884759fa813d_96.webp",
+   "raw_icon_url": "https://cdn.modrinth.com/data/vylTACsh/5f815e5dee60cedd5b4cbd90f854884759fa813d.png",
+   "issues_url": "https://github.com/CleanroomMC/Fugue/issues",
+   "source_url": "https://github.com/CleanroomMC/Fugue",
+   "wiki_url": null,
+   "discord_url": "https://discord.gg/sgQxDJdrnY",
+   "donation_urls": [
+    {
+     "id": "ko-fi",
+     "platform": "Ko-fi",
+     "url": "https://ko-fi.com/G2G6TQH08"
+    }
+   ],
+   "gallery": [],
+   "color": 263172,
+   "thread_id": "VKXklUkL",
+   "monetization_status": "monetized"
+  }
+ },
+ "GET https://api.modrinth.com/v2/project/fugue/version?game_versions=%5B%221.12.2%22%5D&loaders=%5B%22forge%22%5D": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": [
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "Wy9kZZUW",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": true,
+    "name": "0.24.4",
+    "version_number": "0.24.4",
+    "changelog": "- 1f2cc3e Update git ignore\n- e393f5c Add a transformer to remove reflection on Field.modifier",
+    "changelog_url": null,
+    "date_published": "2026-09-14T07:52:17.037902Z",
+    "downloads": 1313,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "ZigfcLc8",
+      "hashes": {
+       "sha512": "1f5ca4bb8e8d03da5c843e70ecf3d29ed25abd2fbb68a0fcb72deb11ff05ad1dd185c4109c3193d7c204e7195c3958140b6fc69bb6aa018dea4e8d50331fbdf5",
+       "sha1": "2292c5074314b85904909a45bb3b93a88ed7378c"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4.jar",
+      "filename": "+Fugue-0.24.4.jar",
+      "primary": true,
+      "size": 309884,
+      "file_type": null
+     },
+     {
+      "id": "ApvXhSrk",
+      "hashes": {
+       "sha512": "626da6ee0ee3af8c1251167bb363ea69100a7c8966a3516fa67e0081c12ee17e016b2ebee457c36fd3d22867f5804da268096fd34417c03757c642a9818238bd",
+       "sha1": "e2541488891fcf641fdf67a2e3ac4b2d35e175d9"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4-dev.jar",
+      "filename": "+Fugue-0.24.4-dev.jar",
+      "primary": false,
+      "size": 312075,
+      "file_type": null
+     },
+     {
+      "id": "5Bk3mlLr",
+      "hashes": {
+       "sha512": "c3def1103ea110aa4e591c8effea16f5bbc3126455a66941d4a650f7a8a65347718c6229a1fd0f1bb1830c9f9e6898c7c7370941baf45ce4375808c3d162aafd",
+       "sha1": "7db762dc0a1a16e2e8fda64710906d7a416a485d"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4-sources.jar",
+      "filename": "+Fugue-0.24.4-sources.jar",
+      "primary": false,
+      "size": 170677,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "jViSfJQF",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.24.3",
+    "version_number": "0.24.3",
+    "changelog": "- d8725c2 Revert \"Removed patches for ccl and charset. They have working forks\"",
+    "changelog_url": null,
+    "date_published": "2026-08-12T05:04:32.930772Z",
+    "downloads": 2320,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "Gpn4yF0i",
+      "hashes": {
+       "sha1": "2f0935e476bc218dd4e1b8d9877ad2ae16a66b58",
+       "sha512": "a7673bb0753c9c15fb17895630b96940637efc8934752ebf0f82ebcfed4cbad865603e63259c803499b707a90018075e9550d991dc981668948fe5782fb9fcc6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/jViSfJQF/%2BFugue-0.24.3.jar",
+      "filename": "+Fugue-0.24.3.jar",
+      "primary": true,
+      "size": 305146,
+      "file_type": null
+     },
+     {
+      "id": "hV80xn17",
+      "hashes": {
+       "sha1": "8fdde1092d05d18bbce63b604f4a598ebba7e92a",
+       "sha512": "aec93d52a7bf226a4feb36627a4093f67219fb10103aaa9d57f2b6dbc3bb15c399fc440af5312f0ea108796796a768c5c102d1c8c0bd06dc4e95cac21ea5b4d7"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/jViSfJQF/%2BFugue-0.24.3-dev.jar",
+      "filename": "+Fugue-0.24.3-dev.jar",
+      "primary": false,
+      "size": 307242,
+      "file_type": null
+     },
+     {
+      "id": "AJEZXkWg",
+      "hashes": {
+       "sha1": "ee27bd90281670544f63624d6d4e2db415af1e0a",
+       "sha512": "91103a88392587a978bf81bcb527b1990b2b86eade361ae451a2017a03573bb51ed4fafdc20a634aa12f11152f2dfe3a669935381f80615883fcef42ab27124d"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/jViSfJQF/%2BFugue-0.24.3-sources.jar",
+      "filename": "+Fugue-0.24.3-sources.jar",
+      "primary": false,
+      "size": 168957,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "xaB49OW2",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.24.2",
+    "version_number": "0.24.2",
+    "changelog": "- c57c615 Fix file name not contain +\n- bc14bd1 Fix publish action\n- 33a94be Removed patches for ccl and charset. They have working forks\n- ecc52b0 Remove patch for ancient dj2addon\n- aa6f6ba Remove fluidlogged patch, latest version just works\n- 98f866c Remove Nothirium transformers\n- f64f5a4 Remove old gtceu & HEI(???) mixin\n- 9abb25d Add Tombstone to default addCallback list\n- 35f9858 Remove useless isModLoaded check in config plugin\n- a8b6e69 Disable VintageFix bugfix.tab_complete_ddos through ASM\n- 5a0f0b6 Update fugue build script to latest template",
+    "changelog_url": null,
+    "date_published": "2026-08-11T04:08:16.435773Z",
+    "downloads": 199,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "2ZgOyI27",
+      "hashes": {
+       "sha512": "7d6115a8594f5b5ee73f2641e360cd28ffa862c9808602df9567d94f1476a69f2d4815bbc9405974745ece60fa58bb20ac6f5b5755e053542390ab8389058e96",
+       "sha1": "472cb9fec59bbee63fa1ca980cdfe5366f10be39"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/xaB49OW2/%2BFugue-0.24.2.jar",
+      "filename": "+Fugue-0.24.2.jar",
+      "primary": true,
+      "size": 302817,
+      "file_type": null
+     },
+     {
+      "id": "9sgYoHAA",
+      "hashes": {
+       "sha512": "33716e3beca1c84c65d99a445beef6e3ccc40ad861d8bc2bfd9fdfc91e687d8e2575944091a756480286cbeb49f6a269f9ddf6905f5bdde92fe893a41a850ade",
+       "sha1": "a65056ef6daf9140d7ceb4bcffeaf86bbdcc89a5"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/xaB49OW2/%2BFugue-0.24.2-dev.jar",
+      "filename": "+Fugue-0.24.2-dev.jar",
+      "primary": false,
+      "size": 304917,
+      "file_type": null
+     },
+     {
+      "id": "N4Ml7If3",
+      "hashes": {
+       "sha1": "7c02ab56c2a6ed36ca2cc7571dff5947b95c9643",
+       "sha512": "74a0c9ef2bc9ef88c33fd7ab8f8e164b3b02f9f611554d52a33d0c484baebce94caa4dbf6cf04c9414ccb5f3e46cc4f2460c6a1a8aa15d6ff557f7b68ec20673"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/xaB49OW2/%2BFugue-0.24.2-sources.jar",
+      "filename": "+Fugue-0.24.2-sources.jar",
+      "primary": false,
+      "size": 167213,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "GCfYQKM1",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.24.1",
+    "version_number": "0.24.1",
+    "changelog": "- bc14bd1 Fix publish action",
+    "changelog_url": null,
+    "date_published": "2026-08-11T00:22:58.935515Z",
+    "downloads": 54,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "UXJmDLAk",
+      "hashes": {
+       "sha1": "13dd3908e8842a7d850c0b9befcc0b5dfc9fd47b",
+       "sha512": "c916eeaa657d0474d0ee90e5fbbb08f58a9e3a365baf9dd26faf374f452ab0c23b50f3ee90758fe2f520819c40db634598b399f95d056af5475b36f88c23b9e1"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/GCfYQKM1/fugue-0.24.1.jar",
+      "filename": "fugue-0.24.1.jar",
+      "primary": true,
+      "size": 302821,
+      "file_type": null
+     },
+     {
+      "id": "nP02PagB",
+      "hashes": {
+       "sha1": "4007c703dcf9f0d758aad1b8f186be76d2ab0a3a",
+       "sha512": "7a310c503a34c93434b898c355f1223ea77eb1b02d1c64c7ade6407696c5b321be78a4258a656c30ee4e70d46779c8d2631f23aea1181f69b8ec56ee9bc86494"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/GCfYQKM1/fugue-0.24.1-dev.jar",
+      "filename": "fugue-0.24.1-dev.jar",
+      "primary": false,
+      "size": 304921,
+      "file_type": null
+     },
+     {
+      "id": "pgjhMrUl",
+      "hashes": {
+       "sha512": "a49122b86ef5bdc4d16083af7f8e72564aa0000ae81e1bef150fb564738c31773ba31cda3964f6700c6e0cd94bbaf4e3152b39fe56929ed259b74abeb73fcedd",
+       "sha1": "798d3fa0f170445223dece7f9f742d707bbb965a"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/GCfYQKM1/fugue-0.24.1-sources.jar",
+      "filename": "fugue-0.24.1-sources.jar",
+      "primary": false,
+      "size": 167215,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "BoeDHUKw",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.7",
+    "version_number": "0.23.7",
+    "changelog": "- b0b513a Fix ftbauxilium crash\n- a64863e Merge branch 'master' of github.com:CleanroomMC/Fugue\n- 24bd6d7 Update default config\n- 465e0a2 Add  Galacticraft Gravity compatibility (#131)",
+    "changelog_url": null,
+    "date_published": "2026-07-10T04:04:02.890770Z",
+    "downloads": 4102,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "pvzRpHqO",
+      "hashes": {
+       "sha1": "d753d4108ed0136dcf0eabf25fd515e12378a5b9",
+       "sha512": "5881c11e525f8c02a6e1365c8eb1d228c9a45de93de056a3c267f4d8c032b5a6badd6a22ac96c7214153f2406aa282697375e0bf3971bb2fa78d12de7fe8dcb1"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/BoeDHUKw/%2BFugue-0.23.7.jar",
+      "filename": "+Fugue-0.23.7.jar",
+      "primary": true,
+      "size": 311828,
+      "file_type": null
+     },
+     {
+      "id": "Px34ZsXE",
+      "hashes": {
+       "sha1": "e15a5e4f36d5d1dbfe72587f5e17a43f3deefdcb",
+       "sha512": "062bb5de35bce6ce64395cc824a050d81f33bcbdb44680d4dce9311889833bf925b2b9b86bd8b05ac0306fdb5454a153c7c2fe6a882e8ab998f70a1bf81ab117"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/BoeDHUKw/%2BFugue-0.23.7-dev.jar",
+      "filename": "+Fugue-0.23.7-dev.jar",
+      "primary": false,
+      "size": 313962,
+      "file_type": null
+     },
+     {
+      "id": "t5wVLKo2",
+      "hashes": {
+       "sha512": "9ab339f98d5c30c54d5a75af03968e99be65f44d318b063304bc8b03da3f633cc276626077392c5fbff86fdac03af5737af9fda872fa290b3ae2584469306c43",
+       "sha1": "6a983afe9428f42bb1b25b6559ade9f0200f5773"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/BoeDHUKw/%2BFugue-0.23.7-sources.jar",
+      "filename": "+Fugue-0.23.7-sources.jar",
+      "primary": false,
+      "size": 173313,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "9T43RGc3",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.6",
+    "version_number": "0.23.6",
+    "changelog": "- 6af3a68 Change gradle Xmx to 8g\n- 70f823d Add Transcend patch\n- ecec2ee Update gradle to 9.5.1\n- 75665d8 Revert \"Fix compat with new lwjgl change\"\n- 09d84cf Fix Railcraft compatibility (#129)\n- 58c5d2d Fix compat with new lwjgl change\n- adf679e Update gradle",
+    "changelog_url": null,
+    "date_published": "2026-06-11T10:01:29.586395Z",
+    "downloads": 1822,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "vtbHUlNT",
+      "hashes": {
+       "sha512": "90a599317c979af0f9286590542ecc8c3bc8109ce448df2ea0e1317804451dd349b40cc0d4e9da6243005f84f80416e5ee4391d0a1a080582aff215052f98c34",
+       "sha1": "4838adc13a1bd5e47361fc65c2e1f97e4ca83fe5"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/9T43RGc3/%2BFugue-0.23.6.jar",
+      "filename": "+Fugue-0.23.6.jar",
+      "primary": true,
+      "size": 311578,
+      "file_type": null
+     },
+     {
+      "id": "by2fQZtX",
+      "hashes": {
+       "sha512": "59729e33482b3730346fc3a704c0e5830e29083c7d2ad57bb8dad3641de6fc93d9ad8e39f7efae2284ec9c0d12c4863d302bb3a97e3e9c6cd24437d9d0449bc3",
+       "sha1": "773d2fe8c458ae901d4df9ca51c82cd5abf98dfc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/9T43RGc3/%2BFugue-0.23.6-dev.jar",
+      "filename": "+Fugue-0.23.6-dev.jar",
+      "primary": false,
+      "size": 313705,
+      "file_type": null
+     },
+     {
+      "id": "t6xrPbSF",
+      "hashes": {
+       "sha1": "dcc219988fa2cbdf185263f52ae8d7a9598142f2",
+       "sha512": "538182dd31fe89d611652c54b129e685460f4de70e0596dc5719824041bd3433ed3d8e9d2b2bbfb1edc6fecb5845dc125f035063cae04cd93ef0d7502e1ac524"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/9T43RGc3/%2BFugue-0.23.6-sources.jar",
+      "filename": "+Fugue-0.23.6-sources.jar",
+      "primary": false,
+      "size": 173130,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "aMk9Nonw",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.4",
+    "version_number": "0.23.4",
+    "changelog": "- f0a9cf9 Update java version in release wrokflow\n- 9ea4aca Patch new crash from Subaquatic",
+    "changelog_url": null,
+    "date_published": "2026-04-01T01:40:52.005086Z",
+    "downloads": 2620,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "iVyeQ15L",
+      "hashes": {
+       "sha1": "7ed08cd84a22e2f3fbf81d6bf263cd409c88a674",
+       "sha512": "59847c348d7336ab60d90bba335bcfea4babe0dbe4a90e29b97542b0bd5cf0268cfdf6bf07f5ff7b8b79cb4d6f762bc7b94e76043c942bb41d69ec190d65f6ac"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/aMk9Nonw/%2BFugue-0.23.4.jar",
+      "filename": "+Fugue-0.23.4.jar",
+      "primary": true,
+      "size": 303943,
+      "file_type": null
+     },
+     {
+      "id": "NY62im3D",
+      "hashes": {
+       "sha512": "ea9362434335b51db46efeed97444f34142f946b735767e1a9f96fa910641297c4642a28acd815592126c4fd3a8d8f08e4d2878b806c01683ae0df3b31c7a883",
+       "sha1": "4d06f258ecfec00781a1e9d4eb5118eaf88ae2e2"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/aMk9Nonw/%2BFugue-0.23.4-dev.jar",
+      "filename": "+Fugue-0.23.4-dev.jar",
+      "primary": false,
+      "size": 305985,
+      "file_type": null
+     },
+     {
+      "id": "s4ykoUWo",
+      "hashes": {
+       "sha512": "fbcc545c6852a0c248f525f8efa208e41a19c635107fbd6d1ce1804cc79e2cea037802c4c170ab2b8c83cf63c127d3cbbd2a2f257fbda5c0bd4b854ce59fd120",
+       "sha1": "37cd34221df3f2fbb0bac4856b121c02c5afdf61"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/aMk9Nonw/%2BFugue-0.23.4-sources.jar",
+      "filename": "+Fugue-0.23.4-sources.jar",
+      "primary": false,
+      "size": 170152,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "CNLYrrWD",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.3",
+    "version_number": "0.23.3",
+    "changelog": "- 8eae290 Fix getURL patch under Cleanroom 0.5.0+",
+    "changelog_url": null,
+    "date_published": "2026-03-15T08:47:04.986552Z",
+    "downloads": 1243,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "3Pfgsc8G",
+      "hashes": {
+       "sha512": "83b15d729b284bdf6e844ccee1643a5292a4e936986e18a22cc1b5ba96f0c8abab2770e77858765252f692fe06e424efd64ef975cc001e5b2879cd8944821e8c",
+       "sha1": "988a18c12c24fe501b9d2bf3291d7242a0ce6530"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/CNLYrrWD/%2BFugue-0.23.3.jar",
+      "filename": "+Fugue-0.23.3.jar",
+      "primary": true,
+      "size": 300650,
+      "file_type": null
+     },
+     {
+      "id": "kvppnjRM",
+      "hashes": {
+       "sha1": "609636a6ac22ed7cfa0368918988035e211d9877",
+       "sha512": "ff459080fa6ca5fb911da44cd4b717533de9873ab2528d539fb95a069037714517b7118d37a71dfcd7650db15e8a0bead1f311e97751d5507139a135f333eda0"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/CNLYrrWD/%2BFugue-0.23.3-dev.jar",
+      "filename": "+Fugue-0.23.3-dev.jar",
+      "primary": false,
+      "size": 302638,
+      "file_type": null
+     },
+     {
+      "id": "eyBVVlaB",
+      "hashes": {
+       "sha1": "14d69d09b750e84f7a65ac5287f74e3a9c3efff4",
+       "sha512": "64ce3f88f816b7fd8845fbd02e2239018d987fcc46c4e34689123a56ddd6ad9659060d4c6a09abe42d2bd8c9803247d14914e7608ea2ed3b36c9e28b0212b53e"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/CNLYrrWD/%2BFugue-0.23.3-sources.jar",
+      "filename": "+Fugue-0.23.3-sources.jar",
+      "primary": false,
+      "size": 169338,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "IW4ambiy",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.2",
+    "version_number": "0.23.2",
+    "changelog": "- d6fef0f Better disable refmap here too\n- f90c2f7 Fix refmap\n- dee7fbb Attempts to fix enhanced visuals problem\n- a8a0a22 Actually fix Recurrent Compled, close #122\n- 40058c5 Enable archive in upload\n- 02807c1 Upload-artifact v7\n- 84a5c5b Patch Chiseled Me\n- 5bd2a35 Add default config for NTM",
+    "changelog_url": null,
+    "date_published": "2026-03-11T02:41:23.945222Z",
+    "downloads": 1430,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "yUA5i7Az",
+      "hashes": {
+       "sha512": "4b0f4b6762e74e662e667da448726e684f1f8d44bb8a16c004dd54a5f459fec8ee112cf84761873b228b337ce3e54fa5b7c1a80d0fddd606ce20d826d664a61b",
+       "sha1": "af07026bfd1a3239350805b2e8a002f583983d7d"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/IW4ambiy/%2BFugue-0.23.2.jar",
+      "filename": "+Fugue-0.23.2.jar",
+      "primary": true,
+      "size": 300049,
+      "file_type": null
+     },
+     {
+      "id": "eBkfjaYf",
+      "hashes": {
+       "sha1": "55e6445c626c6dfed34a66751d228d8daef3d867",
+       "sha512": "001aac76d48456c7d25eee50a3cf8c63f3f8fc709e9656a9205995437c9c7922d40d8ec564f711362e57c31b3dce9c7c8f31159a2b7aa75017ca5e47bc72e29f"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/IW4ambiy/%2BFugue-0.23.2-dev.jar",
+      "filename": "+Fugue-0.23.2-dev.jar",
+      "primary": false,
+      "size": 302031,
+      "file_type": null
+     },
+     {
+      "id": "gpwrmwN1",
+      "hashes": {
+       "sha1": "fda6f84511eb4ba4a2a828834ac3f0c60a317928",
+       "sha512": "13da6fcea2c8055eb44de183cecebaaf27ef95ffb5538864d1b02f0b44704362a530baeadcba313e8c71a97f2a048b88bd469f1d4945fb988c1dfe921438e6c7"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/IW4ambiy/%2BFugue-0.23.2-sources.jar",
+      "filename": "+Fugue-0.23.2-sources.jar",
+      "primary": false,
+      "size": 169045,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "XrjS1z6s",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.1",
+    "version_number": "0.23.1",
+    "changelog": "- 09a7fa2 Move toArray patches to a universal patch\n- c0b44c6 Update gradle in action\n- 051c7ff Add valkyrie to javax list",
+    "changelog_url": null,
+    "date_published": "2026-02-22T14:53:42.206507Z",
+    "downloads": 919,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "oM4zkfTQ",
+      "hashes": {
+       "sha1": "71262bf3c3f0f3979cce787d3bb6435b8242cc58",
+       "sha512": "57acb1f9c2e8fb7b2af440dcbbdc6184edacb391e9cfa45e735bf405bae8fe8b4ef0c10e95fa200729eb9c484706fbf37e8b8db209964ddbcb7fe4a6384e90b6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/XrjS1z6s/%2BFugue-0.23.1.jar",
+      "filename": "+Fugue-0.23.1.jar",
+      "primary": true,
+      "size": 296250,
+      "file_type": null
+     },
+     {
+      "id": "33LCim8e",
+      "hashes": {
+       "sha512": "e178c4d141eddefce7cc74d7b911154f633f99f27729e1ad2d3cb3ca2f5adce380c25a1404523f9a1f0994160f61a6a0d826fc25bf4fb9c54148cf2e3ffc0c57",
+       "sha1": "043fec6fff09d5844272c43437da833d15b5b6d2"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/XrjS1z6s/%2BFugue-0.23.1-dev.jar",
+      "filename": "+Fugue-0.23.1-dev.jar",
+      "primary": false,
+      "size": 298148,
+      "file_type": null
+     },
+     {
+      "id": "4FdP2FO4",
+      "hashes": {
+       "sha512": "5d31bbae28a9eb41b39d23ff0a75cc34b834791221e0cd4fcd48979e925802328578ceaf1b91571f946d743b11887c1165824d4a6d5a7cf522166a1581c12ebb",
+       "sha1": "8f3f9e84274bfc0ed6c8d44a1af05932f546f8ca"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/XrjS1z6s/%2BFugue-0.23.1-sources.jar",
+      "filename": "+Fugue-0.23.1-sources.jar",
+      "primary": false,
+      "size": 167083,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "pswuwvsj",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.0",
+    "version_number": "0.23.0",
+    "changelog": "- f6425e5 Patch Metroid Cubed 4",
+    "changelog_url": null,
+    "date_published": "2026-02-09T05:21:05.824162Z",
+    "downloads": 846,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "MJ7G6RYv",
+      "hashes": {
+       "sha1": "7f364944b1fbacad048b02196ab2b36f74859cc0",
+       "sha512": "48844fc5df4d89c76b18222831acb6d5657d4811ac3dcb1c6cd519198d0ca522c0b2f4c2b326e2f5b7dcf6823330fe0ed8e891c92fa9b1c77959089941de9662"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/pswuwvsj/%2BFugue-0.23.0.jar",
+      "filename": "+Fugue-0.23.0.jar",
+      "primary": true,
+      "size": 299677,
+      "file_type": null
+     },
+     {
+      "id": "jjzywFm0",
+      "hashes": {
+       "sha1": "85374e7691243f9844d71c6e58bf72a5a728d431",
+       "sha512": "ed4632de8cd0d38d32569754922e9b9122146a9f68c21aed8348dc3136e27240be76e7bebe2d3fec4a4070362fe0bd5aa45f83a19c64fb4cfea9ec9a4dff2bdc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/pswuwvsj/%2BFugue-0.23.0-dev.jar",
+      "filename": "+Fugue-0.23.0-dev.jar",
+      "primary": false,
+      "size": 301644,
+      "file_type": null
+     },
+     {
+      "id": "6QbOI86B",
+      "hashes": {
+       "sha512": "06f74674cae3a87ebe3e61f10917a2918308720e446c1812a909cc4f42b7eb8674e7a81d9f1bbc09853704b81e10b88db239ac7816fd590c9d40e4d7418d2fa9",
+       "sha1": "eea72aa1a6cf83a1616871e57e65168cf156b870"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/pswuwvsj/%2BFugue-0.23.0-sources.jar",
+      "filename": "+Fugue-0.23.0-sources.jar",
+      "primary": false,
+      "size": 169262,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "U5UVFdNR",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.23.0",
+    "version_number": "0.23.0",
+    "changelog": "- f6425e5 Patch Metroid Cubed 4",
+    "changelog_url": null,
+    "date_published": "2026-02-09T05:20:53.422090Z",
+    "downloads": 55,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "6ZOWMdxt",
+      "hashes": {
+       "sha1": "7f364944b1fbacad048b02196ab2b36f74859cc0",
+       "sha512": "48844fc5df4d89c76b18222831acb6d5657d4811ac3dcb1c6cd519198d0ca522c0b2f4c2b326e2f5b7dcf6823330fe0ed8e891c92fa9b1c77959089941de9662"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/U5UVFdNR/%2BFugue-0.23.0.jar",
+      "filename": "+Fugue-0.23.0.jar",
+      "primary": true,
+      "size": 299677,
+      "file_type": null
+     },
+     {
+      "id": "B6yCiEOE",
+      "hashes": {
+       "sha1": "85374e7691243f9844d71c6e58bf72a5a728d431",
+       "sha512": "ed4632de8cd0d38d32569754922e9b9122146a9f68c21aed8348dc3136e27240be76e7bebe2d3fec4a4070362fe0bd5aa45f83a19c64fb4cfea9ec9a4dff2bdc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/U5UVFdNR/%2BFugue-0.23.0-dev.jar",
+      "filename": "+Fugue-0.23.0-dev.jar",
+      "primary": false,
+      "size": 301644,
+      "file_type": null
+     },
+     {
+      "id": "MeNDRstN",
+      "hashes": {
+       "sha1": "eea72aa1a6cf83a1616871e57e65168cf156b870",
+       "sha512": "06f74674cae3a87ebe3e61f10917a2918308720e446c1812a909cc4f42b7eb8674e7a81d9f1bbc09853704b81e10b88db239ac7816fd590c9d40e4d7418d2fa9"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/U5UVFdNR/%2BFugue-0.23.0-sources.jar",
+      "filename": "+Fugue-0.23.0-sources.jar",
+      "primary": false,
+      "size": 169262,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "7fp79UCu",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.12",
+    "version_number": "0.22.12",
+    "changelog": "- 18dcc2b Patch Heavy Falling\n- 5be8a4c Add heavy falling to default LW config",
+    "changelog_url": null,
+    "date_published": "2026-02-09T03:19:35.995397Z",
+    "downloads": 97,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "3wGVjez5",
+      "hashes": {
+       "sha1": "d4aea3d0dfae0ff5b93ddf94aeba4fc96b0d4a23",
+       "sha512": "8fab1d0c1252911d530db8aae7caa18e61ac6bca2a77af283ef203f58a8a94b2fb0ebc2bb2eae4871ece83c9da0a0000a51a31fdcb8b0ff10e2143ae60cd25a0"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/7fp79UCu/%2BFugue-0.22.12.jar",
+      "filename": "+Fugue-0.22.12.jar",
+      "primary": true,
+      "size": 297796,
+      "file_type": null
+     },
+     {
+      "id": "zNgWyDu1",
+      "hashes": {
+       "sha1": "1ba67e06313f59384b069b283b5c7e4144ba00e2",
+       "sha512": "c11dcbb303fcc745bb61db9533d29f62b2694655021df6f8d34876f6f51a995011014fec7e3b5ef1089e7bd68aadb388c0e9a3f8acc053452176d9cc518a746f"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/7fp79UCu/%2BFugue-0.22.12-dev.jar",
+      "filename": "+Fugue-0.22.12-dev.jar",
+      "primary": false,
+      "size": 299731,
+      "file_type": null
+     },
+     {
+      "id": "WelZrgax",
+      "hashes": {
+       "sha1": "4dfb26ea1765aab0eb3f9158c6c769db9dd0af84",
+       "sha512": "325a731f19182c90ea7e5d0c33280189bbd7c201e3b8ccd94be60c8f42b0b271122fe2aba9251b2d4048313d29e4b3f2c0d79b29275617699f4f0f424d936195"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/7fp79UCu/%2BFugue-0.22.12-sources.jar",
+      "filename": "+Fugue-0.22.12-sources.jar",
+      "primary": false,
+      "size": 168192,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "gPpseFX3",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.11",
+    "version_number": "0.22.11",
+    "changelog": "- 06d1d82 Patch Mechanimation\n- ffd6f80 Patch javax inject",
+    "changelog_url": null,
+    "date_published": "2026-02-08T02:14:46.863072Z",
+    "downloads": 130,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "LeqORXBQ",
+      "hashes": {
+       "sha1": "b219319541b69177b7680a125ae40c15aba7939e",
+       "sha512": "75e848dabd7b4059723fb1c8af3e76bd5144c1a6b6307bf51c13c6b56910a9ee85a9f21b3800cfaaf9923f6fa774bab4e3e0681dd6ade62db73696ffe4fb89b6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/gPpseFX3/%2BFugue-0.22.11.jar",
+      "filename": "+Fugue-0.22.11.jar",
+      "primary": true,
+      "size": 296285,
+      "file_type": null
+     },
+     {
+      "id": "V5zu2dyO",
+      "hashes": {
+       "sha512": "78fd8e07f795ceec43e43c92ea485797cf1a59a2e2680a5e40583eb4155ac313d5f40bdbaf95e52da48eebc4222676e2360e7af2429609ae07559728722d6e82",
+       "sha1": "42dc7dafdd209157709508ec464e9169d3d310e6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/gPpseFX3/%2BFugue-0.22.11-dev.jar",
+      "filename": "+Fugue-0.22.11-dev.jar",
+      "primary": false,
+      "size": 298212,
+      "file_type": null
+     },
+     {
+      "id": "jOfNIXIP",
+      "hashes": {
+       "sha512": "eedca87714c20d1dc13a467c129286264f1704e04e268278d48f72f47d3a5c43001aa35a50461c225850706422ce8853c50f579c9b97008fa8e1e5f9a5575e0f",
+       "sha1": "e4a870f98e84b3325aa94a2ee3e30a7c1225d3e6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/gPpseFX3/%2BFugue-0.22.11-sources.jar",
+      "filename": "+Fugue-0.22.11-sources.jar",
+      "primary": false,
+      "size": 167247,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "QlELDqbC",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.10",
+    "version_number": "0.22.10",
+    "changelog": "- 118f714 Add Optifine check to fix #118\n- 31862a3 Great Scrollable Tooltips 4.3.0 compatibility (#119)",
+    "changelog_url": null,
+    "date_published": "2026-01-19T00:49:26.322018Z",
+    "downloads": 1019,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "zQrcYrvj",
+      "hashes": {
+       "sha512": "ab7d13188d979f0c5055bfd38a006092ac1d6d3b54a655076f3445543872f1a9eb461a2a35152b795084fadeff14587fd5645dc70d320a81942304c63383a5cd",
+       "sha1": "35cad1c31eaf4b1134692b49d713212dc91fe099"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QlELDqbC/%2BFugue-0.22.10.jar",
+      "filename": "+Fugue-0.22.10.jar",
+      "primary": true,
+      "size": 294626,
+      "file_type": null
+     },
+     {
+      "id": "X3q6QU3x",
+      "hashes": {
+       "sha512": "1d9f9a9f0ec58ded2ce7cf6aa48b6a2a47617bb54532cf900cc8c5999743972322d8eba2fb407f0007895f902ad3130e7541dbce982720157b37ce465c55f1bd",
+       "sha1": "9711328d41d35ab3ceff7edc1200a54a3bcedc8f"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QlELDqbC/%2BFugue-0.22.10-dev.jar",
+      "filename": "+Fugue-0.22.10-dev.jar",
+      "primary": false,
+      "size": 296517,
+      "file_type": null
+     },
+     {
+      "id": "3F4I6FRR",
+      "hashes": {
+       "sha1": "ce7487b842e4eeecf2304f28e97546571e887871",
+       "sha512": "33bf050ff90f93f62ed7590e316c04677ab142c2a5d76d2a3202c6a9f65ba3db4dbb9f039bf60658c6afc203d51d7e5f6ed48a1aa3b354472f0868b9f65c4200"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QlELDqbC/%2BFugue-0.22.10-sources.jar",
+      "filename": "+Fugue-0.22.10-sources.jar",
+      "primary": false,
+      "size": 166163,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "QpdKzVNW",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.9",
+    "version_number": "0.22.9",
+    "changelog": "- 8603eea Remove unused xaeroplus mixin\n- 57329e2 Fix xaero plus mixin no. 1",
+    "changelog_url": null,
+    "date_published": "2026-01-18T14:20:14.464539Z",
+    "downloads": 83,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "pEzMqbcC",
+      "hashes": {
+       "sha1": "0cb5bf039cd944285de7f31ab2fbf5795232034f",
+       "sha512": "5990fc308edd6a6b6e95cd9ff13110a42086ceb95f243a04f6c9203ce06445dd33e0eb9d2538ed7e9da4059c20b333b43558b6972c65540672d0530156437084"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QpdKzVNW/%2BFugue-0.22.9.jar",
+      "filename": "+Fugue-0.22.9.jar",
+      "primary": true,
+      "size": 294497,
+      "file_type": null
+     },
+     {
+      "id": "PHXPcOmi",
+      "hashes": {
+       "sha1": "4cec0dec83be0e71c4e39b1132bdfc429c12bb7d",
+       "sha512": "70bde4e392ef3a4aa80221217cc08dc9e4eef2db0a09eb3b2af9411b161d1e47c2873c469968f9f3e438436ede92b15eb39f5af72790ec15b0e7b8b21b953634"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QpdKzVNW/%2BFugue-0.22.9-dev.jar",
+      "filename": "+Fugue-0.22.9-dev.jar",
+      "primary": false,
+      "size": 296388,
+      "file_type": null
+     },
+     {
+      "id": "UDm79P1K",
+      "hashes": {
+       "sha512": "5fbda53c9a76e62422681a4e3a6045ef488536b14cee3ae7a03b5224a7246b1990c6799a08088314219e2db4110c0bd503a9a9c959a646ebc20ed47cc6572121",
+       "sha1": "f07309ef47ad80d60182459cd87814f3f1f2af01"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/QpdKzVNW/%2BFugue-0.22.9-sources.jar",
+      "filename": "+Fugue-0.22.9-sources.jar",
+      "primary": false,
+      "size": 166096,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "zXHOQy87",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.8",
+    "version_number": "0.22.8",
+    "changelog": "- efe31c4 Fix Serene Seasons for real this time",
+    "changelog_url": null,
+    "date_published": "2026-01-18T08:00:12.326476Z",
+    "downloads": 81,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "WqDeHyxi",
+      "hashes": {
+       "sha512": "879ccf2483468acb4940a24e744190cb9d3f9797e61abd35a8c9c6ed966fd546131772874289e6339f749e4f8a3f3d0da65c111386c08ed21269a04c6f8061cc",
+       "sha1": "8aee8613ec18b584d69bdd675853afc2dbf33a46"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/zXHOQy87/%2BFugue-0.22.8.jar",
+      "filename": "+Fugue-0.22.8.jar",
+      "primary": true,
+      "size": 296834,
+      "file_type": null
+     },
+     {
+      "id": "fc5ob520",
+      "hashes": {
+       "sha1": "06e083b6e28d158eaf186d9cf33e807b4d1ebdf4",
+       "sha512": "baf7597f5daf610d32458a25e0139589b6118d6194484db3173be02b5c976e81c0ef13b75f8f59026198ffdaaacd6ff0a45eeab348b65d37627c8da5ff4bed30"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/zXHOQy87/%2BFugue-0.22.8-dev.jar",
+      "filename": "+Fugue-0.22.8-dev.jar",
+      "primary": false,
+      "size": 298726,
+      "file_type": null
+     },
+     {
+      "id": "Bm88CQRy",
+      "hashes": {
+       "sha1": "ec1a409d1c7aaf7f8b405bf6e307e430e5f8b9dd",
+       "sha512": "c7ff740205b3252fc7118436a3b0aa6ea78bfbff5c65dd0930963ac0be4a3190013ee037af63d78e4a6f326e01afff7168c45bd4500b8239fbc88759a48feb3a"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/zXHOQy87/%2BFugue-0.22.8-sources.jar",
+      "filename": "+Fugue-0.22.8-sources.jar",
+      "primary": false,
+      "size": 167309,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "yS3c46gV",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.7",
+    "version_number": "0.22.7",
+    "changelog": "- eb524de Try to patch RecurrentComplex broken on Java 22+\n- df2f6be Update Cleanroom version\n- 877383e Add rcc to javax list, fix #117\n- 290c964 Update issue template\n- e6dc64f Fully tag-based version",
+    "changelog_url": null,
+    "date_published": "2026-01-18T02:31:28.776670Z",
+    "downloads": 93,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "G06aM6Rt",
+      "hashes": {
+       "sha1": "8dd8c36f4f7d94d54d2a2767c9b7f01d7df4304f",
+       "sha512": "538fff35cad94b01e07089bc0e5511a4e9e0b1c4709f9df98d3356a69ff979b2fe025133b844010b0e8e017e67ec5dc4f48ab0b3b0a0e059f167e7c8eca2ec5e"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yS3c46gV/%2BFugue-0.22.7.jar",
+      "filename": "+Fugue-0.22.7.jar",
+      "primary": true,
+      "size": 296950,
+      "file_type": null
+     },
+     {
+      "id": "nWcHaCzo",
+      "hashes": {
+       "sha512": "3c1462251155f5d04ab2a278c7fea742d50bfd75433314e48434f016e3e469c87b6e6bf95dadda6441575fed456a8299c2a834cc3743200f79f35e317635cfe2",
+       "sha1": "3546637226a645798e624dda3532b224d4a5ba9c"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yS3c46gV/%2BFugue-0.22.7-dev.jar",
+      "filename": "+Fugue-0.22.7-dev.jar",
+      "primary": false,
+      "size": 298843,
+      "file_type": null
+     },
+     {
+      "id": "A12ji7de",
+      "hashes": {
+       "sha512": "7b5447b4142b9497b86657780106e3db07811db396c5480aabed2074d91a7550c3f1894d149751121a6455a8597f186810957162f949befc2c008829442f2105",
+       "sha1": "eb20409cfad66136faf1f35a5415eabe071a075b"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yS3c46gV/%2BFugue-0.22.7-sources.jar",
+      "filename": "+Fugue-0.22.7-sources.jar",
+      "primary": false,
+      "size": 167347,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "z35k60xY",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.6",
+    "version_number": "0.22.6",
+    "changelog": "- 3875b59 Bump version. Time to employ plugin for this",
+    "changelog_url": null,
+    "date_published": "2025-12-20T03:01:21.390908Z",
+    "downloads": 1678,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "Pa2tWsy5",
+      "hashes": {
+       "sha1": "c61eac0a7c0a82071c9093932bd39013a11acc8f",
+       "sha512": "fc958195a463b56fbccc630a88c12297a4740f93baa0b430ee4492440aea24014bb895a276ec10053dffec3f978a97c054726e742363cb733f0cd44c3c355392"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/z35k60xY/%2BFugue-0.22.6.jar",
+      "filename": "+Fugue-0.22.6.jar",
+      "primary": true,
+      "size": 295613,
+      "file_type": null
+     },
+     {
+      "id": "oBhs2KOB",
+      "hashes": {
+       "sha512": "367ed76bef4f010aa7e4ddfa8cff25cd75b5bada0104845d40a9bd67a7f3660cd278d9e5659df67eea265ab6ea051d1aca386228b67c00a616ab344ff6dbd632",
+       "sha1": "5c7387b1acdb3e31b5357e7960a2e01610911d07"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/z35k60xY/%2BFugue-0.22.6-dev.jar",
+      "filename": "+Fugue-0.22.6-dev.jar",
+      "primary": false,
+      "size": 297562,
+      "file_type": null
+     },
+     {
+      "id": "Xp3hOwGd",
+      "hashes": {
+       "sha1": "fe79b5af0383cb4d3e09c09d24df253a63199afc",
+       "sha512": "d63a2524765a207507fd899db4a739f07ad227296b1adee7f05b418fcbd8bc2c0a3a8fc8e136b50d7922ce88a8920e1ed195a27daee4a6f297d4825e5f0b62ca"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/z35k60xY/%2BFugue-0.22.6-sources.jar",
+      "filename": "+Fugue-0.22.6-sources.jar",
+      "primary": false,
+      "size": 166619,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "6e1mLBeo",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.5",
+    "version_number": "0.22.5",
+    "changelog": "- e58f9ad Update workflow\n- 3488e4a Add update URL in mod class\n- 3921329 Add update URL",
+    "changelog_url": null,
+    "date_published": "2025-12-20T02:39:33.104950Z",
+    "downloads": 51,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "jw2VpNUJ",
+      "hashes": {
+       "sha512": "790bb1fa7d0945e9a412d03c651f7956e0addaa361189b1e4b07dd462a3151936c02c56b3edcfc0ce361d52dc89a652ed5f6a649e8e4bfab16d06fa25d8c4b83",
+       "sha1": "cf45a715f06a0722ce1ebe10d3ad18d80547be65"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6e1mLBeo/%2BFugue-0.22.4.jar",
+      "filename": "+Fugue-0.22.4.jar",
+      "primary": true,
+      "size": 295613,
+      "file_type": null
+     },
+     {
+      "id": "QVDDW8ZO",
+      "hashes": {
+       "sha512": "b2604c4e99c49ebb6c321449ac0f117def35f3040da8352ba4f94971538bb48b5e1a4dc539a6bb75c906ea1947ac9fd998a00a29efc24c4ddc8fbc3f6e11da33",
+       "sha1": "efa40eb9ef0eaadbceeb274f5aa1484d8c1a30e4"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6e1mLBeo/%2BFugue-0.22.4-dev.jar",
+      "filename": "+Fugue-0.22.4-dev.jar",
+      "primary": false,
+      "size": 297562,
+      "file_type": null
+     },
+     {
+      "id": "Vvm0xbMs",
+      "hashes": {
+       "sha1": "3657c5f7eb8a8344efe4f122b6555950f270b0d8",
+       "sha512": "1f392a21d082ed2ba1d5ac7bdeb3510f7036517cb5354d596be96002f7b57780b69ccf301089d58c287f27e22265a11f2743144541be65b0b7b8ed10fc6460a7"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6e1mLBeo/%2BFugue-0.22.4-sources.jar",
+      "filename": "+Fugue-0.22.4-sources.jar",
+      "primary": false,
+      "size": 166619,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "MPsEtrwz",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.4",
+    "version_number": "0.22.4",
+    "changelog": "- 15373d8 Bump version in build script since I forgot to do so in 0.22.3",
+    "changelog_url": null,
+    "date_published": "2025-12-05T10:03:22.060319Z",
+    "downloads": 491,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "H6B1qqzU",
+      "hashes": {
+       "sha1": "40e5d988ff8e215436e2e164c77062579304ce75",
+       "sha512": "039e15ec3afa0cfe8237e343d76117649a78080999494f778a4f003e01a7c080dd060e67ad673c22a590dc30e61ab14d4e5c1415440ba8aa0725d72af6a0bc33"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/MPsEtrwz/%2BFugue-0.22.4.jar",
+      "filename": "+Fugue-0.22.4.jar",
+      "primary": true,
+      "size": 295552,
+      "file_type": null
+     },
+     {
+      "id": "gUoxjk2v",
+      "hashes": {
+       "sha512": "331dc482c3fe9f4db541c844f51128429e1b8f43f0b5ee8bcda005d967420c4d26b79657e1e7201ca5c6673ebc00426ec8f212433fe6f26ec9c07eb147964499",
+       "sha1": "780ef9c04620f54d41f46eecad2927f2b417c201"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/MPsEtrwz/%2BFugue-0.22.4-dev.jar",
+      "filename": "+Fugue-0.22.4-dev.jar",
+      "primary": false,
+      "size": 297500,
+      "file_type": null
+     },
+     {
+      "id": "VbdY7D7v",
+      "hashes": {
+       "sha1": "e467cc4731d74c9bbb1a969392ae1e592bb07370",
+       "sha512": "2802507afe0532ca598ff7d2deb47842194f32642b30e5f2f637127a852c787b2e05356a27020e8634728a463a97ce0342cb6f7f005500968bfd145573d86316"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/MPsEtrwz/%2BFugue-0.22.4-sources.jar",
+      "filename": "+Fugue-0.22.4-sources.jar",
+      "primary": false,
+      "size": 166554,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "c1Odlx4Z",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.3",
+    "version_number": "0.22.3",
+    "changelog": "- b096a5e patch FinalFieldHelper from HammerCore (#116)",
+    "changelog_url": null,
+    "date_published": "2025-12-04T14:34:01.644414Z",
+    "downloads": 97,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "D4qhfz7w",
+      "hashes": {
+       "sha512": "aee69d7912bf458f09a8052f7207bd29a4dc696abe5c1b3b9874efaf083c434d068db6b4e47a798b496a9ec3ea84b1b918dd2625122bfc629c539b72d19513d1",
+       "sha1": "24b69bebe4be055991a2836fac248de3c4b4230e"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/c1Odlx4Z/%2BFugue-0.22.2.jar",
+      "filename": "+Fugue-0.22.2.jar",
+      "primary": true,
+      "size": 295547,
+      "file_type": null
+     },
+     {
+      "id": "rRvWbUbg",
+      "hashes": {
+       "sha512": "3a3ba1b533da87860f1c6f1e280abbf8c9d436d80adff2f97d32e422b9c9b41f2156698dcaa1bcb31a832726ca61c449e70847c9e36e4f6def62459d59e2088b",
+       "sha1": "249bce95bff0ea0cb05379783dc7ed755db623c2"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/c1Odlx4Z/%2BFugue-0.22.2-dev.jar",
+      "filename": "+Fugue-0.22.2-dev.jar",
+      "primary": false,
+      "size": 297494,
+      "file_type": null
+     },
+     {
+      "id": "UUj6eOeR",
+      "hashes": {
+       "sha1": "860f7d460884223c198cf2fb8885272a862a5d14",
+       "sha512": "6d55be85475f841395d73ff28979d286f970cfdcd72313a60f5ea241513a4ea17c08e470cc1f35b392df0fe455baee0a0c86f1f9e54f07f7322dc369ee371172"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/c1Odlx4Z/%2BFugue-0.22.2-sources.jar",
+      "filename": "+Fugue-0.22.2-sources.jar",
+      "primary": false,
+      "size": 166551,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "bYziBcL5",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.2",
+    "version_number": "0.22.2",
+    "changelog": "- d31b77c Fix serene seasons patch",
+    "changelog_url": null,
+    "date_published": "2025-11-30T04:18:20.261278Z",
+    "downloads": 231,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "y9EJNOC0",
+      "hashes": {
+       "sha512": "e2aae49da4965b5f43f4acc9cf0e11f2f38914ec1c07f45049eeeaecae49c97a2a98bddb5193874339649aff1416442a169f349cb1fd1b2c7f98c97913a3889d",
+       "sha1": "6a8ea3440f7815e2bf140d08dd35a9754dea1876"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/bYziBcL5/%2BFugue-0.22.2.jar",
+      "filename": "+Fugue-0.22.2.jar",
+      "primary": true,
+      "size": 294336,
+      "file_type": null
+     },
+     {
+      "id": "ynJ8frfY",
+      "hashes": {
+       "sha512": "3800ce2d96eac0de5f5329ed77f25f6b406eaf683592a38ece158acd7e7475aa873e7025f713095ccd31dbb98075489e61fe37a7639857ee1b0e26433f0a2391",
+       "sha1": "7422c4c4b4dd4ce00136980ae5c8e80c6c5a093c"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/bYziBcL5/%2BFugue-0.22.2-dev.jar",
+      "filename": "+Fugue-0.22.2-dev.jar",
+      "primary": false,
+      "size": 296274,
+      "file_type": null
+     },
+     {
+      "id": "AWWQ3wZH",
+      "hashes": {
+       "sha1": "2f117c5d7c47ba731011ea6d41bdade49060b3dd",
+       "sha512": "013ec7c738b5994ae70295acef9e104797620b41a2e20f0f13f7e70f5022f7ed57caaa3a52fdf7e029154a80187bf0a43659e4cd82d98f9ce3f4e3a97ed09ff8"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/bYziBcL5/%2BFugue-0.22.2-sources.jar",
+      "filename": "+Fugue-0.22.2-sources.jar",
+      "primary": false,
+      "size": 165766,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "Y1DDBUt8",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.1",
+    "version_number": "0.22.1",
+    "changelog": "- 6b6b46f Bump version\n- 9ccd831 Patch BetterSprinting\n- 710e987 Only Redirect the constructor to CleanroomScriptEngineManager (#115)\n- 3f50586 Add remain file\n- 5de74a6 Patch 7-Days-to-Mine",
+    "changelog_url": null,
+    "date_published": "2025-11-28T13:03:35.342385Z",
+    "downloads": 141,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "hUp5M2Co",
+      "hashes": {
+       "sha1": "d490a68c7e41d341ddb48184b1f4633e93876ff9",
+       "sha512": "822d36ee34bc4301767db6866e437c9c28ca44f5286ee5bf8034efbcd5678225ab63457be8cbe89779c04669db211eb482f6b4c2bd889780f5380355eb21e35d"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Y1DDBUt8/%2BFugue-0.22.1.jar",
+      "filename": "+Fugue-0.22.1.jar",
+      "primary": true,
+      "size": 292497,
+      "file_type": null
+     },
+     {
+      "id": "8ntiylqH",
+      "hashes": {
+       "sha1": "97d3989444ef3ec4a8ddbd84f0950cbb45625240",
+       "sha512": "093c65453a0091b5d6a1b4349a4bb861999479c8693e306232bb594506987352ddd2b076ff09821ba5fc9a084351c3cb8bd15a050c56cba335313a5cec997e04"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Y1DDBUt8/%2BFugue-0.22.1-dev.jar",
+      "filename": "+Fugue-0.22.1-dev.jar",
+      "primary": false,
+      "size": 294421,
+      "file_type": null
+     },
+     {
+      "id": "GW8VZQVh",
+      "hashes": {
+       "sha512": "6a43784b21b7570046e5a6c09db6022e257015185fd71e3fc30846e4ddab59e5ce4d0545dc874d9d2bbcf8c24b1281d97720fdc9af9e7167001c3faf2eee3c3f",
+       "sha1": "2b7d8a353e6bcf1843a6c472d296778fb8266d2f"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Y1DDBUt8/%2BFugue-0.22.1-sources.jar",
+      "filename": "+Fugue-0.22.1-sources.jar",
+      "primary": false,
+      "size": 164660,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "Jww7sPOy",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.22.0",
+    "version_number": "0.22.0",
+    "changelog": "- d7effb1 Update Cleanroom version requirement\n- e134112 Incomplete terra++ patch\n- a1a59e3 Patch Damage Indicators Mod\n- 0e486d3 Patch Future MC scaffolding\n- 461a496 Remove grs patch\n- 89dac0d Patch fluidlogged\n- f66113a Patch rebind\n- 9e6cf9d Patch Serene Seasons\n- 27fe6ca Update gradle version in action\n- e795421 Default config for Custom Loading Screen\n- 8aedbb9 Add back mouse wheel transformer\n- 1df719a Revert \"Remove inv tweaks patch\"\n- 479342f Update gradle\n- 98ba74f Add gtce2oc to config",
+    "changelog_url": null,
+    "date_published": "2025-11-27T14:14:00.404281Z",
+    "downloads": 129,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "DzEJuIxx",
+      "hashes": {
+       "sha1": "b2cedccfe157d363ff7cbe60d9fd5de312656262",
+       "sha512": "8a8875309286b3257b33231719aa512615080f9c43d7c9c47aa6dc037765ff46bb9b8ab2c0419fd9bf66a25916d7b63b6f56b654632da0d8ddb83d03e6bf47dc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Jww7sPOy/%2BFugue-0.22.0.jar",
+      "filename": "+Fugue-0.22.0.jar",
+      "primary": true,
+      "size": 287790,
+      "file_type": null
+     },
+     {
+      "id": "U4rKejGG",
+      "hashes": {
+       "sha512": "770a6ce36b65ef8346f7e2b91b0ceaed7b186855e9dd886d4b32df821810949ef86b0d0312a7ba7ef24282f06c9d1b3233d0e555b5edefd2ae5899f86791de09",
+       "sha1": "1516bb69c58d14d1f3d22593c954ba5b7a8526b5"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Jww7sPOy/%2BFugue-0.22.0-dev.jar",
+      "filename": "+Fugue-0.22.0-dev.jar",
+      "primary": false,
+      "size": 289654,
+      "file_type": null
+     },
+     {
+      "id": "s19nT416",
+      "hashes": {
+       "sha512": "9ee6a7f8f6c30461217b082e0b53762f18562444a2d4b3a4f262c7e2c3c742409ead9acb608e9b5597f7fde8a7c237dace048af8b34b3d93f19b9bb8674e7899",
+       "sha1": "a0d65fd10747a11a754c5bd2d4106a74cd497c52"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Jww7sPOy/%2BFugue-0.22.0-sources.jar",
+      "filename": "+Fugue-0.22.0-sources.jar",
+      "primary": false,
+      "size": 162475,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "k3fbP5H3",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.21.0",
+    "version_number": "0.21.0",
+    "changelog": "- 73174ae Update requirement\n- a4f960e Update cleanroom version\n- 31f1d2e Remove openmodslib patch\n- a2423ac Add a few comments about CRE ports to config\n- c35fa3c Merge branch 'old'\n- 299fbfb Update gradle to 9.1.0\n- 7aa4d89 Merge branch 'old'\n- 0f17d43 Cleanup import\n- 6d0842e Default config\n- 3e8bd52 Fix LW transformer, remove useless visit class method\n- e5f6096 Add back config plugin for test\n- 63bf96a Add Aether II patch\n- 9473e7c Rewrite universal transformers in core API\n- c4b75b0 Update Gradle wrappers\n- 4fa8dee Remove patches for outdated mods",
+    "changelog_url": null,
+    "date_published": "2025-10-11T03:21:23.680381Z",
+    "downloads": 4735,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "vCHL1JVE",
+      "hashes": {
+       "sha512": "4972c0987f4ed2970c5550bbc976a261156232318ae9eaca347c51e6b9e0aaaef5e1ac63777e8a95e76c3638394cb9cddffc0fed6e9c667dd94b65107c64fa46",
+       "sha1": "b3bed5f0bddbd3ad08efcc16535ea2f95acde49f"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/k3fbP5H3/%2BFugue-0.21.0.jar",
+      "filename": "+Fugue-0.21.0.jar",
+      "primary": true,
+      "size": 270289,
+      "file_type": null
+     },
+     {
+      "id": "yClcwEvV",
+      "hashes": {
+       "sha512": "1a46933ab75834c74195518d0e70ef762935181e64fe3e3b15b7089dd85fd371560b05fdc466c98fd5f2ff5b753c9b2b73ea0bf0c7b6484a34f859e7c38a3e50",
+       "sha1": "1eed1fdfaa2db14a5d72b12676677d236bd4a725"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/k3fbP5H3/%2BFugue-0.21.0-dev.jar",
+      "filename": "+Fugue-0.21.0-dev.jar",
+      "primary": false,
+      "size": 271932,
+      "file_type": null
+     },
+     {
+      "id": "oKb4jBgh",
+      "hashes": {
+       "sha512": "d067a4cb50a4dedd29d59eb169407a30876667ad3bacd75e88b7344886c7a1f068475bed1e5087abe2eda59e23733ef37c70bc3385539f9c56f91396f506d98c",
+       "sha1": "ca67a6ce9fe58c8d2789a976d9fc348a8516be59"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/k3fbP5H3/%2BFugue-0.21.0-sources.jar",
+      "filename": "+Fugue-0.21.0-sources.jar",
+      "primary": false,
+      "size": 151986,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "hMdgksDB",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.20.4",
+    "version_number": "0.20.4",
+    "changelog": "- d90f2d4 Merge remote-tracking branch 'upstream/master' into old\n- cd45cf5 Remove inv tweaks patch\n- 49a756f Dark Theme Fix (#108)",
+    "changelog_url": null,
+    "date_published": "2025-09-20T04:43:15.489168Z",
+    "downloads": 1256,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "50Me897P",
+      "hashes": {
+       "sha512": "9ca60e6abf4be06479bcba6c6a864c924e90cc7bc7fc71d4a94a4237b6a9eb458aca682176de247a98243bce13a8849ef7b24d49c0f92aceb5b5d8879087a3e1",
+       "sha1": "b6cc1bedfbd17e2a337bce715c20ccae74ea9dd9"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/hMdgksDB/%2BFugue-0.20.4.jar",
+      "filename": "+Fugue-0.20.4.jar",
+      "primary": true,
+      "size": 275202,
+      "file_type": null
+     },
+     {
+      "id": "baE6UGoL",
+      "hashes": {
+       "sha1": "708be241c7db55da96c576c5f3e7765a53dd15f2",
+       "sha512": "5af7a0223651af83f38ba664e33082ac39712334ee14de357918d804509a1b6948ade0e330d1b1e8b3ec6c9ff98e56b3f819a82163bbdb88e1d8f95182a5a5ed"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/hMdgksDB/%2BFugue-0.20.4-dev.jar",
+      "filename": "+Fugue-0.20.4-dev.jar",
+      "primary": false,
+      "size": 276883,
+      "file_type": null
+     },
+     {
+      "id": "G2YGWEfP",
+      "hashes": {
+       "sha1": "a13e41f3ded05c9697d89bdefa4bb81e986a4cf3",
+       "sha512": "39696149c7142e20ab2ef1fc5818dd36639fcde3fed6a0f943b1fdd3933451009a3b70ba6d637f9bc276eb7ea9a0037b3a103bfe92fb01e5f311031a56ab0b18"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/hMdgksDB/%2BFugue-0.20.4-sources.jar",
+      "filename": "+Fugue-0.20.4-sources.jar",
+      "primary": false,
+      "size": 154870,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "5dgERPCU",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.20.3",
+    "version_number": "0.20.3",
+    "changelog": "- 9a9182d Fix wrong version number",
+    "changelog_url": null,
+    "date_published": "2025-09-01T04:13:21.464114Z",
+    "downloads": 438,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "YUC19Krl",
+      "hashes": {
+       "sha512": "43a6b43d018033e09950876d54991e88f2c50d3b4485670f5dd53f656707e9a34ff6782a79f5b9393576f5d09da03708a48fe56a969777b69d74c4f5d51f479d",
+       "sha1": "a97115d53cf896b7d446cfb59769040c98cb9235"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5dgERPCU/%2BFugue-0.20.3.jar",
+      "filename": "+Fugue-0.20.3.jar",
+      "primary": true,
+      "size": 275122,
+      "file_type": null
+     },
+     {
+      "id": "V4AmhSVQ",
+      "hashes": {
+       "sha512": "fd82d57a8841f87e8de2a9b33d9ee0c881a25ede771b39098c4b47b1a616fb1cbba28d1aed209a794788a239009beef632aa3b94edf43d5f7ffe570b0bd5043c",
+       "sha1": "c7f067ad3eba02278fb070f64c3ba690b5ec56f7"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5dgERPCU/%2BFugue-0.20.3-dev.jar",
+      "filename": "+Fugue-0.20.3-dev.jar",
+      "primary": false,
+      "size": 276800,
+      "file_type": null
+     },
+     {
+      "id": "Gqy5aYzv",
+      "hashes": {
+       "sha512": "7061ecf016184789a3c0d53c2419899f1e93076b0c74de7277fc0ffb520c7c5d9d0f9af7809ef9617de96bb05faf8a23a8a6c1dde4ce863b90be57c919b07bba",
+       "sha1": "3951264a9577c063beb04e8fecc4c2f6bbd3a998"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5dgERPCU/%2BFugue-0.20.3-sources.jar",
+      "filename": "+Fugue-0.20.3-sources.jar",
+      "primary": false,
+      "size": 154937,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "6bf2LXK9",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.20.2",
+    "version_number": "0.20.2",
+    "changelog": "- a159d9a Cleanup import\n- 63ed9f1 Fix LW transformer, remove useless visit class method\n- 8e690b5 Add back config plugin for test\n- d56d23b Rewrite universal transformers in core API\n- 0699d2d Remove JM's httpclient4 based update checker\n- eb96899 More remap for mo'bends\n- 3959ed9 Merge remote-tracking branch 'upstream/master' into old\n- 0fd6657 Fix extension name\n- 260ef94 Patch all music\n- 64e6f8f Fix for Gliby's Physics (#107)\n- d4d8261 Random title patch ver 2\n- c2c02b7 Patch random title, version 1\n- 893cd12 Default config\n- 2069889 Add Aether II patch\n- a63ee2f Fix JavaFixes transformer\n- 9c18d3b Won't apply JavaFixes patch if lolasm >= 5.29\n- ba30ebf Fix use before read\n- b40b7c9 Remove another duplicated mixin\n- 4b2e222 Move many Futures.addCallback mixin to transformer\n- dafa79d Move computeIfAbsent patching to universal transformer\n- 41861f1 Remove a patch with target not exists in 1.12",
+    "changelog_url": null,
+    "date_published": "2025-09-01T03:26:30.582983Z",
+    "downloads": 81,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "IywRgK4H",
+      "hashes": {
+       "sha1": "4003c8fcde384eff3faded36aee55295e0182bf4",
+       "sha512": "b42e36fe0b1ab43481a2b0d637cb67d8ea1f3c0fabd73120a5781e84279116a070feb14e049b93f39cc500ca3228f063faf07c67997370b9f684d0465740d6ed"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6bf2LXK9/%2BFugue-0.21.0.jar",
+      "filename": "+Fugue-0.21.0.jar",
+      "primary": true,
+      "size": 275124,
+      "file_type": null
+     },
+     {
+      "id": "L9qt1unV",
+      "hashes": {
+       "sha512": "48b173d780ecb9e8560b41720b210d2f51301d0d3ef3615721aa545655ff9944a8d87b7c434f6eb684a0c84e8c6ca1774abee6a7b1f22fc1fd5ab6e6c8628ee6",
+       "sha1": "32ae4dabdd055090fd8fc5c3eadf05c7b23bb717"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6bf2LXK9/%2BFugue-0.21.0-dev.jar",
+      "filename": "+Fugue-0.21.0-dev.jar",
+      "primary": false,
+      "size": 276801,
+      "file_type": null
+     },
+     {
+      "id": "ec3ROwG5",
+      "hashes": {
+       "sha1": "547888da438506908cf8a49fe982ff94ef6b5ae6",
+       "sha512": "deb054c49c6256b5df648727fe98fb9441092fdf3fbf1663b2a2a6290cd6fe14e804757d34183322fbbf89dc859ab086133e2e07b706d73a59597b1b7a7999d6"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/6bf2LXK9/%2BFugue-0.21.0-sources.jar",
+      "filename": "+Fugue-0.21.0-sources.jar",
+      "primary": false,
+      "size": 154937,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "5TmWTPhm",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.20.1",
+    "version_number": "0.20.1",
+    "changelog": "- f1267bb Add WirelessUtils patch",
+    "changelog_url": null,
+    "date_published": "2025-08-02T15:16:44.609320Z",
+    "downloads": 844,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "6Thj7Ech",
+      "hashes": {
+       "sha512": "799cab7fbb139a37b82a2f3df432e587a2873213e00b8763551a7c8bce0c512a579eb7d04328a7a125f0c65f60363b122bcb6911b89358acc44ec33b20be081d",
+       "sha1": "9634ee44a7f89123653116cfd51bcf4605623211"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5TmWTPhm/%2BFugue-0.20.1.jar",
+      "filename": "+Fugue-0.20.1.jar",
+      "primary": true,
+      "size": 257302,
+      "file_type": null
+     },
+     {
+      "id": "ilhkL6zC",
+      "hashes": {
+       "sha1": "eb517fc597ddcfa10477092166e3f0a86e158e8d",
+       "sha512": "5ff0c6aa0ee9cc8a1191a344d527e8d9b1025444e672d183e5655b2a1a1adb0d9b555ab710caf6ee9048e2e426d4ff3b88719aff0c8c5e8d735a6178932255b0"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5TmWTPhm/%2BFugue-0.20.1-dev.jar",
+      "filename": "+Fugue-0.20.1-dev.jar",
+      "primary": false,
+      "size": 258492,
+      "file_type": null
+     },
+     {
+      "id": "QskBFWB9",
+      "hashes": {
+       "sha1": "127809b54453d7c96da3fee858cc874466f315f6",
+       "sha512": "556891fac27155b925ee59f1e7ca516ca8b53465880c7c3ce4c80a6f207ca361c8dee10217b1c2f198189cc30e8d4247a2ebe176fc468a6c2a29aa0e65608662"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/5TmWTPhm/%2BFugue-0.20.1-sources.jar",
+      "filename": "+Fugue-0.20.1-sources.jar",
+      "primary": false,
+      "size": 145626,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "EtB9HNzS",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.20.0",
+    "version_number": "0.20.0",
+    "changelog": "- cae8418 Add Mo'Bends patch",
+    "changelog_url": null,
+    "date_published": "2025-07-26T08:14:30.478936Z",
+    "downloads": 289,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "OrpEjWm1",
+      "hashes": {
+       "sha1": "b487fd47fe086e574971df378dfd283ece92c917",
+       "sha512": "71aecb56ffc29ebdaa8cef6b0564c1f3fc80d0dabb757df3480b49a68eb13abeae7b2a042fd4ac5f318c08f5efe40fa6876fd5bba952189ae9f7e2d025526ebb"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/EtB9HNzS/%2BFugue-0.20.0.jar",
+      "filename": "+Fugue-0.20.0.jar",
+      "primary": true,
+      "size": 255849,
+      "file_type": null
+     },
+     {
+      "id": "4yiI1uI1",
+      "hashes": {
+       "sha512": "ccfffe3067afdcb93b3f4080c26febead9404207fa78a48b31685b2050d2a26ece859d06315976167b141bc6ab83e77b6866d7338054d6aa9ee7751a1849330e",
+       "sha1": "7aace4830328cd37438b945bb56ac3f2870a80f5"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/EtB9HNzS/%2BFugue-0.20.0-dev.jar",
+      "filename": "+Fugue-0.20.0-dev.jar",
+      "primary": false,
+      "size": 257113,
+      "file_type": null
+     },
+     {
+      "id": "hwHY2oGm",
+      "hashes": {
+       "sha512": "83358d433af470641b8f0c7b8b08bb4efa211e7a22fdfc27321fdafc451bbf07850891077141ceb7eeaa4aeb73c4f1671a5a219a14d784ad87f4df5b1817ac69",
+       "sha1": "1f18fded286dfe03d7a378ef8717c647e1d0ed21"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/EtB9HNzS/%2BFugue-0.20.0-sources.jar",
+      "filename": "+Fugue-0.20.0-sources.jar",
+      "primary": false,
+      "size": 144748,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "oeLDxBj6",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.9",
+    "version_number": "0.19.9",
+    "changelog": "- 0d5fb3c Bump version\n- 2f45788 Fix valkyrie patch not applied\n- 1022a27 Add iceandfire to config\n- 79e9581 Add Unvalkyried Heavens patch\n- 666e92e Update issue template",
+    "changelog_url": null,
+    "date_published": "2025-07-24T12:24:57.942679Z",
+    "downloads": 137,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "KHmWDclu",
+      "hashes": {
+       "sha1": "90eee2cea32e40e30c409b9e259bef87509f67ec",
+       "sha512": "780bcad8c598f43e6dd0cc376feeb1557d74941fee74308fb63e56be597819775cf183b5f1d08c4d464f4170d25f08e0322dc73d8ce06b843844c5d27f84c0ef"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/oeLDxBj6/%2BFugue-0.19.9.jar",
+      "filename": "+Fugue-0.19.9.jar",
+      "primary": true,
+      "size": 250966,
+      "file_type": null
+     },
+     {
+      "id": "CBtR29mM",
+      "hashes": {
+       "sha512": "cea9a188a3fc07ab18dfbd4cd7da6d0782a7bb388f2892dd7a8431a83876f421615f92af049f3336c5acea015597ba35922f0eef2e4a297ed4b71c156a147c74",
+       "sha1": "f0e5fd0fe65380f27a5f7834a383f457b92eb5ca"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/oeLDxBj6/%2BFugue-0.19.9-dev.jar",
+      "filename": "+Fugue-0.19.9-dev.jar",
+      "primary": false,
+      "size": 252208,
+      "file_type": null
+     },
+     {
+      "id": "Lr6JTIIq",
+      "hashes": {
+       "sha1": "b5342dad29f1c07182779dcf446913e9b0f08498",
+       "sha512": "f106ffb0137bb3cd6f0a2c3f117c1f5907b9001906c04ea850fc0b03d8813846d9beb57f5cc7cf73fd2df94eebae8dffb1ce0bf174d306a8caa43e25cd24c33e"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/oeLDxBj6/%2BFugue-0.19.9-sources.jar",
+      "filename": "+Fugue-0.19.9-sources.jar",
+      "primary": false,
+      "size": 142475,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "2eCcXsfT",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.8",
+    "version_number": "0.19.8",
+    "changelog": "- ec2a633 Bump version\n- a9fdb85 Fix refmap\n- 3c3bae5 Patch Requiem/Dissolution\n- 5b600ce Patch mpm",
+    "changelog_url": null,
+    "date_published": "2025-07-15T14:09:14.488658Z",
+    "downloads": 333,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "ECnR76iy",
+      "hashes": {
+       "sha1": "fdd7b203ad16e9146124acbc4d299b6efcd1b09b",
+       "sha512": "10952ede2af376241528f1c099caed7687590fcd436827ce2de56d71886fe6f6a4e235263296cb64ef8d9b77b8455a2cd2a30f80d40b7b38b995555a0725222a"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/2eCcXsfT/%2BFugue-0.19.8.jar",
+      "filename": "+Fugue-0.19.8.jar",
+      "primary": true,
+      "size": 249199,
+      "file_type": null
+     },
+     {
+      "id": "928CG6wX",
+      "hashes": {
+       "sha512": "eb777ade70e3bcd0a32bd8e8b374e54037f50a25c937967b32740f6ec397632f8896e9a8c2ffca7aee1d319f980cf583e9e5d6e6004403069eafc7f1761fa498",
+       "sha1": "df2f0b174eee5e5c46b52e5984bcc7174f690f20"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/2eCcXsfT/%2BFugue-0.19.8-dev.jar",
+      "filename": "+Fugue-0.19.8-dev.jar",
+      "primary": false,
+      "size": 250409,
+      "file_type": null
+     },
+     {
+      "id": "mIEWJEYp",
+      "hashes": {
+       "sha512": "f11e40f139149349118244c2f02f20e45343163b54d7e9661e8b46ae0b3cb39d066dc09f84659c5c9206083197815c68e3b8666fd0996f9731faa3a63445a006",
+       "sha1": "fa5bc21fba0341f537f0a001d052730f45c72147"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/2eCcXsfT/%2BFugue-0.19.8-sources.jar",
+      "filename": "+Fugue-0.19.8-sources.jar",
+      "primary": false,
+      "size": 141345,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "UpzW5FmY",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.6",
+    "version_number": "0.19.6",
+    "changelog": "- 7dab57d Should be the final version of action\n- b69a74c Add patch to forge endertech\n- 81e686a Update Gradle, add default config for simple login\n- a79ac7a Update unimined & cleanroom\n- 72fbe5f Update gradle\n- 974c99a Add SAO UI patch (#96)\n- b936e0b Update changelog generating action",
+    "changelog_url": null,
+    "date_published": "2025-07-11T02:56:25.301382Z",
+    "downloads": 209,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "B8X0i9Dt",
+      "hashes": {
+       "sha512": "802f21cb5baecde23e8025732be85c6651f085db6139796ab3d3bf644b8f44cf4302d2540ff71d10e9d304919b2c68938e196d78735085be91f0578ab16a8688",
+       "sha1": "6e16a1eb527b694783e3cf4a9a1db06251be3664"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/UpzW5FmY/%2BFugue-0.19.5.jar",
+      "filename": "+Fugue-0.19.5.jar",
+      "primary": true,
+      "size": 246222,
+      "file_type": null
+     },
+     {
+      "id": "rDEggzQn",
+      "hashes": {
+       "sha1": "81c8ecc4a7fa797ca1e62035c9f4f923bde52564",
+       "sha512": "ceef3ddf4fd4dd270b2d090dece10cd506b3eb85545e433ea3a9d186f2c0cbce63a8f31d5b19f8a171b8e06d24c413669c3c63ad2a6cfaba69478977ebedfe93"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/UpzW5FmY/%2BFugue-0.19.5-dev.jar",
+      "filename": "+Fugue-0.19.5-dev.jar",
+      "primary": false,
+      "size": 247400,
+      "file_type": null
+     },
+     {
+      "id": "b7M7Ss6k",
+      "hashes": {
+       "sha1": "9e7de04d9cb4fb9b918123e0366213330f9cb630",
+       "sha512": "d69adb0a100e37ee34e83d635910aee474d896de5e0d77b942eaa793c3d2e3e8955d4e65f5ebfeb85fa71158c012100b2f312a3d4311f2addd353089867ad9b3"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/UpzW5FmY/%2BFugue-0.19.5-sources.jar",
+      "filename": "+Fugue-0.19.5-sources.jar",
+      "primary": false,
+      "size": 139411,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "obpHEIEj",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.5",
+    "version_number": "0.19.5",
+    "changelog": "- Improve Recurrent Complex patch",
+    "changelog_url": null,
+    "date_published": "2025-06-24T12:56:25.881932Z",
+    "downloads": 733,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "788IWFWg",
+      "hashes": {
+       "sha1": "1ce36478097a39da7111cfac0269533829941404",
+       "sha512": "95e73a7d4d9e1202c87ee5cfaa93787aa4a0e937e5ec3292da73a23792ecb622a0a9e8a680b6bed34bc3cc945c963fe3163449792dd0bd7fa1334a38f732a215"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/obpHEIEj/%2BFugue-0.19.5.jar",
+      "filename": "+Fugue-0.19.5.jar",
+      "primary": true,
+      "size": 242133,
+      "file_type": null
+     },
+     {
+      "id": "taJQfkRm",
+      "hashes": {
+       "sha512": "67dccf9b9b736fc69596c97d903e57634b839d91b9f549fd2ac931810a1ab3fa5b55415482c1466b683efa365e9bcd4c2e0946ab67a9d138fdf6ea72b3d2a1a8",
+       "sha1": "14c98887f7d4be1fdf98a3dcb6dc5ad4adfea29b"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/obpHEIEj/%2BFugue-0.19.5-dev.jar",
+      "filename": "+Fugue-0.19.5-dev.jar",
+      "primary": false,
+      "size": 243265,
+      "file_type": null
+     },
+     {
+      "id": "t0bQmCqS",
+      "hashes": {
+       "sha1": "487421c620cc8da3cc1ab06f084f12f588f4cce1",
+       "sha512": "d7186fb9ee81d3d262da537560c9bf435c63da18ed36c8a5579844fd61d746d217f54fc7fe48533f0da547906954a783472f091c9ce8333f2eac5fa6cdcc78d8"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/obpHEIEj/%2BFugue-0.19.5-sources.jar",
+      "filename": "+Fugue-0.19.5-sources.jar",
+      "primary": false,
+      "size": 137325,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "nRWf3wzA",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.4",
+    "version_number": "0.19.4",
+    "changelog": "- Fixed Patchouli error",
+    "changelog_url": null,
+    "date_published": "2025-06-24T03:13:02.528625Z",
+    "downloads": 94,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "nHRlFvZB",
+      "hashes": {
+       "sha512": "b6555cb6ad021af299beafae8930fe651914fff366bb74d8942201cb21d4e460fb3ea8a392dead2c49d21cf3fb59e2f525ddb260ed1bbb600354d1dbbea7717a",
+       "sha1": "f959e0b19de20e7b4458b31344ad5ba23f7cb7c3"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nRWf3wzA/%2BFugue-0.19.4.jar",
+      "filename": "+Fugue-0.19.4.jar",
+      "primary": true,
+      "size": 242090,
+      "file_type": null
+     },
+     {
+      "id": "l0wbVDrN",
+      "hashes": {
+       "sha1": "509e59bc233b66703e00a7df466f9a4618bcd36d",
+       "sha512": "1b8e8caccbb975a434ba2074133e1e8e60fbf82244ff6e6e59118ea96a603d80ac3f6a369669d8aa7f45cbd69cd46976ce4695aae15429fc4cd0097bd91ea158"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nRWf3wzA/%2BFugue-0.19.4-dev.jar",
+      "filename": "+Fugue-0.19.4-dev.jar",
+      "primary": false,
+      "size": 243227,
+      "file_type": null
+     },
+     {
+      "id": "d4LMBLnx",
+      "hashes": {
+       "sha512": "6a66b1bde27bc09248b70bf0d18bd6f9c54732ca5cd6de3d5ecce777197abe9188d8d72856c29bdbc81a81b962b6d1683c5d6fb2f08c2feb0d3db84b3b4ab11b",
+       "sha1": "1cba19369089e019b34a9159604b026d5eaf6c98"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nRWf3wzA/%2BFugue-0.19.4-sources.jar",
+      "filename": "+Fugue-0.19.4-sources.jar",
+      "primary": false,
+      "size": 137315,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "yqrbb6yi",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.3",
+    "version_number": "0.19.3",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2025-06-24T01:31:41.596031Z",
+    "downloads": 80,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "pqgxIm66",
+      "hashes": {
+       "sha512": "0f11d43b5a7702fcc0f63d6f453eccf844662fa0b9c9302734298ad7ee7fae230ff9a545a90bf79ee669397fae85eb4f7322ce5ebf30aab4900f494dbfe1197e",
+       "sha1": "4ad7604aa2ccdeb39e10838b139ed149955cd359"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yqrbb6yi/%2BFugue-0.19.3.jar",
+      "filename": "+Fugue-0.19.3.jar",
+      "primary": true,
+      "size": 240891,
+      "file_type": null
+     },
+     {
+      "id": "Yvq631kE",
+      "hashes": {
+       "sha1": "a7e41a4f0362e9b0815aca3ea87def7cae7d923b",
+       "sha512": "bc1503406e07de7e71b632e0363159fa89361b0c3a395fa2e8217d307d24f35520eab3afd90a6baf87d3bdb713f7569da95277c26316808c63dcf153f89588bc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yqrbb6yi/%2BFugue-0.19.3-dev.jar",
+      "filename": "+Fugue-0.19.3-dev.jar",
+      "primary": false,
+      "size": 242075,
+      "file_type": null
+     },
+     {
+      "id": "YtrLUHFm",
+      "hashes": {
+       "sha1": "375e99027ee59ed75d593a0be8567ea694cbf346",
+       "sha512": "6efbfda3384ce8591db21c9d0935cd228fb8ff6ee3ecd2a0f835a93c1575811804bb576e374c9df69135923db312bc368597846a4423318dfcc6689dd063b5d5"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/yqrbb6yi/%2BFugue-0.19.3-sources.jar",
+      "filename": "+Fugue-0.19.3-sources.jar",
+      "primary": false,
+      "size": 136556,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "nJv7zquc",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.2",
+    "version_number": "0.19.2",
+    "changelog": "",
+    "changelog_url": null,
+    "date_published": "2025-06-24T01:06:49.157097Z",
+    "downloads": 80,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "x6cSNpLw",
+      "hashes": {
+       "sha1": "2f80ec0ab15ac691ba1b0216bf2aab11b7d505ad",
+       "sha512": "fae14c13be4a50efa5b59a29ddf797b4300e82e2468dd01b929dbf05bcd9f9c3b270ea98ad8012802503da04aafb1a388d0db15308c68e77422864da2434066a"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nJv7zquc/%2BFugue-0.19.2-dev.jar",
+      "filename": "+Fugue-0.19.2-dev.jar",
+      "primary": true,
+      "size": 242072,
+      "file_type": null
+     },
+     {
+      "id": "UprSlZb8",
+      "hashes": {
+       "sha1": "f875a690d9d3a753002c2b1267f37637359f4d76",
+       "sha512": "4b61ea8effbfba9e196830a601ca18b01667753cfd64047a4cd55b9ab41ae56ccf3e5e0e65c6d022754acb618e35241ef318a9f0d96e4352185907ed9d60f2fc"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nJv7zquc/%2BFugue-0.19.2-sources.jar",
+      "filename": "+Fugue-0.19.2-sources.jar",
+      "primary": false,
+      "size": 136554,
+      "file_type": null
+     },
+     {
+      "id": "4pQfEvAG",
+      "hashes": {
+       "sha1": "4263bcb3acb8186ead206015f7d4d578eb0916fc",
+       "sha512": "4866b46289a01e81f42ca7da4af6e3e3436fb3a9574efb5e375bf791659210bb729d8ec3097dff7a45929f71fd7ef7b4a824c8d6dca83b545686b7976e5173e3"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nJv7zquc/%2BFugue-0.19.2.jar",
+      "filename": "+Fugue-0.19.2.jar",
+      "primary": false,
+      "size": 240887,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "nQMVvjYb",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.19.0",
+    "version_number": "0.19.0",
+    "changelog": "- Patch Patchouli and Recurrent Complex\n- Add more default config\n- Now require Cleanroom 0.3.5-alpha",
+    "changelog_url": null,
+    "date_published": "2025-06-22T04:28:51.474148Z",
+    "downloads": 98,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "KvL1Ipzc",
+      "hashes": {
+       "sha1": "eb27144c2e05bfc32fee9e5ba5e438826846864e",
+       "sha512": "0bbd547affa9976975108411e6ace1228fcba5b3340ab93d8084e40a139df6a35fdd9878fbdc068fee65b90996759fb9af1c03cdd459cd9c8409832f32661225"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/nQMVvjYb/%2BFugue-0.19.0.jar",
+      "filename": "+Fugue-0.19.0.jar",
+      "primary": true,
+      "size": 240891,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "k8WAROqM",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": false,
+    "name": "0.18.6",
+    "version_number": "0.18.6",
+    "changelog": "First release on Modrinth",
+    "changelog_url": null,
+    "date_published": "2025-06-06T07:56:13.790355Z",
+    "downloads": 492,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "m7Po0NeP",
+      "hashes": {
+       "sha1": "bf923f2dcae6ee4e14ee6d4f7dd939b1fdddbdbd",
+       "sha512": "1346db3d722b8ee5e3d602e0c5ca4929bc96395028bd6a8fb571cdde8b8f12830cb6038e0c13815025aacf791de93a1e2543f7a9ef9314ae2e5b26838f14e828"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/k8WAROqM/%2BFugue-0.18.6.jar",
+      "filename": "+Fugue-0.18.6.jar",
+      "primary": true,
+      "size": 238488,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   }
+  ]
+ },
+ "GET https://api.modrinth.com/v2/search?limit=20&offset=0&index=relevance&facets=%5B%5B%22environment%3Aclient_and_server%22%2C%22environment%3Aclient_only_server_optional%22%2C%22environment%3Aserver_only%22%2C%22environment%3Aserver_only_client_optional%22%2C%22environment%3Adedicated_server_only%22%2C%22environment%3Aclient_or_server%22%2C%22environment%3Aclient_or_server_prefers_both%22%2C%22environment%3Aunknown%22%5D%2C%5B%22project_type%3Amod%22%2C%22project_type%3Adatapack%22%5D%2C%5B%22versions%3A1.21.1%22%5D%2C%5B%22categories%3Afabric%22%2C%22categories%3Adatapack%22%5D%5D&query=chunky": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "hits": [
+    {
+     "project_id": "fALzjamp",
+     "project_type": "mod",
+     "all_project_types": [
+      "mod",
+      "plugin"
+     ],
+     "slug": "chunky",
+     "author": "pop4959",
+     "author_id": "nfBsvT1J",
+     "organization": null,
+     "organization_id": null,
+     "title": "Chunky",
+     "description": "Pre-generates chunks, quickly and efficiently",
+     "categories": [
+      "bukkit",
+      "fabric",
+      "folia",
+      "forge",
+      "neoforge",
+      "optimization",
+      "paper",
+      "spigot",
+      "sponge",
+      "utility",
+      "worldgen"
+     ],
+     "display_categories": [
+      "bukkit",
+      "fabric",
+      "folia",
+      "forge",
+      "neoforge",
+      "optimization",
+      "paper",
+      "spigot",
+      "sponge",
+      "utility",
+      "worldgen"
+     ],
+     "versions": [
+      "1.13.2",
+      "1.14",
+      "1.14.1",
+      "1.14.2",
+      "1.14.3",
+      "1.14.4",
+      "1.15",
+      "1.15.1",
+      "1.15.2",
+      "1.16",
+      "1.16.1",
+      "1.16.2",
+      "1.16.3",
+      "1.16.4",
+      "1.16.5",
+      "1.17",
+      "1.17.1",
+      "1.18",
+      "1.18.1",
+      "1.18.2",
+      "1.19",
+      "1.19.1",
+      "1.19.2",
+      "1.19.3",
+      "1.19.4",
+      "1.20",
+      "1.20.1",
+      "1.20.2",
+      "1.20.3",
+      "1.20.4",
+      "1.20.5",
+      "1.20.6",
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11",
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2",
+      "26.3"
+     ],
+     "downloads": 18505771,
+     "follows": 6365,
+     "icon_url": "https://cdn.modrinth.com/data/fALzjamp/e1954413665e57b7bae1feef44eda530270c7d47_96.webp",
+     "date_created": "2021-04-04T21:18:30.574917+00:00",
+     "date_modified": "2026-07-23T04:22:27.486544+00:00",
+     "latest_version": "RVFHfo1D",
+     "license": "GPL-3.0-only",
+     "client_side": "optional",
+     "server_side": "optional",
+     "environment": [
+      "client_or_server_prefers_both"
+     ],
+     "disclosure_types": [],
+     "gallery": [],
+     "featured_gallery": null,
+     "color": 2391573
+    },
+    {
+     "project_id": "s86X568j",
+     "project_type": "mod",
+     "all_project_types": [
+      "mod",
+      "plugin"
+     ],
+     "slug": "chunkyborder",
+     "author": "pop4959",
+     "author_id": "nfBsvT1J",
+     "organization": null,
+     "organization_id": null,
+     "title": "Chunky Border",
+     "description": "An add-on for Chunky which lets you create and manage world borders",
+     "categories": [
+      "bukkit",
+      "fabric",
+      "folia",
+      "forge",
+      "game-mechanics",
+      "management",
+      "neoforge",
+      "paper",
+      "spigot",
+      "transportation",
+      "utility"
+     ],
+     "display_categories": [
+      "bukkit",
+      "fabric",
+      "folia",
+      "forge",
+      "game-mechanics",
+      "management",
+      "neoforge",
+      "paper",
+      "spigot",
+      "utility"
+     ],
+     "versions": [
+      "1.14.4",
+      "1.15",
+      "1.15.1",
+      "1.15.2",
+      "1.16",
+      "1.16.1",
+      "1.16.2",
+      "1.16.3",
+      "1.16.4",
+      "1.16.5",
+      "1.17",
+      "1.17.1",
+      "1.18",
+      "1.18.1",
+      "1.18.2",
+      "1.19",
+      "1.19.1",
+      "1.19.2",
+      "1.19.3",
+      "1.19.4",
+      "1.20",
+      "1.20.1",
+      "1.20.2",
+      "1.20.3",
+      "1.20.4",
+      "1.20.5",
+      "1.20.6",
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11",
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2"
+     ],
+     "downloads": 371549,
+     "follows": 507,
+     "icon_url": "https://cdn.modrinth.com/data/s86X568j/c7133164c01d0944b68082b81b39257a90d5eb81_96.webp",
+     "date_created": "2022-08-22T03:07:55.943514+00:00",
+     "date_modified": "2024-12-08T18:30:11.655675+00:00",
+     "latest_version": "uT1cdd3k",
+     "license": "GPL-3.0-only",
+     "client_side": "optional",
+     "server_side": "optional",
+     "environment": [
+      "client_or_server_prefers_both"
+     ],
+     "disclosure_types": [],
+     "gallery": [
+      "https://cdn.modrinth.com/data/s86X568j/images/089a31eb37e26efa58da59fb41807dfd98c7f4ad_350.webp",
+      "https://cdn.modrinth.com/data/s86X568j/images/045b495214641989a7628433ae0bb4507f352767_350.webp",
+      "https://cdn.modrinth.com/data/s86X568j/images/c8c9a90cc61a899f17869ce4837786166d76f4e1_350.webp",
+      "https://cdn.modrinth.com/data/s86X568j/images/b06ccc8dd424b59a86e9e892e58ec9584efaabb7_350.webp"
+     ],
+     "featured_gallery": null,
+     "color": 4094761
+    },
+    {
+     "project_id": "VfHc5JEX",
+     "project_type": "mod",
+     "all_project_types": [
+      "datapack",
+      "mod"
+     ],
+     "slug": "chunky-offline",
+     "author": "lullaby",
+     "author_id": "U5ZYLCzs",
+     "organization": null,
+     "organization_id": null,
+     "title": "Chunky Offline",
+     "description": "An add-on/extension of Chunky to generate chunks when no players are online.",
+     "categories": [
+      "datapack",
+      "fabric",
+      "forge",
+      "management",
+      "neoforge",
+      "optimization",
+      "quilt",
+      "utility",
+      "worldgen"
+     ],
+     "display_categories": [
+      "datapack",
+      "fabric",
+      "forge",
+      "management",
+      "neoforge",
+      "optimization",
+      "quilt",
+      "worldgen"
+     ],
+     "versions": [
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11",
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2"
+     ],
+     "downloads": 91618,
+     "follows": 63,
+     "icon_url": "https://cdn.modrinth.com/data/VfHc5JEX/f9a1f1d144892597794b3ffd89c06a09e397117a_96.webp",
+     "date_created": "2025-10-22T00:34:52.680805+00:00",
+     "date_modified": "2025-11-26T14:37:42.788786+00:00",
+     "latest_version": "56xL4i2r",
+     "license": "MIT",
+     "client_side": "optional",
+     "server_side": "required",
+     "environment": [
+      "server_only",
+      "unknown"
+     ],
+     "disclosure_types": [],
+     "gallery": [],
+     "featured_gallery": null,
+     "color": 7039851
+    },
+    {
+     "project_id": "LFJf0Klb",
+     "project_type": "mod",
+     "all_project_types": [
+      "mod"
+     ],
+     "slug": "chunky-extension",
+     "author": "Lynk",
+     "author_id": "YkADmhL5",
+     "organization": "Codx",
+     "organization_id": "dFtBNGpX",
+     "title": "Chunky Extension",
+     "description": "Ce (Chunky-extend)\n\nA small extension for Chunky, auto start and stop Chunky if players are online or offline.",
+     "categories": [
+      "fabric",
+      "forge",
+      "neoforge",
+      "optimization",
+      "quilt",
+      "utility",
+      "worldgen"
+     ],
+     "display_categories": [
+      "fabric",
+      "forge",
+      "neoforge",
+      "optimization",
+      "quilt",
+      "utility",
+      "worldgen"
+     ],
+     "versions": [
+      "1.19.2",
+      "1.19.3",
+      "1.19.4",
+      "1.20",
+      "1.20.1",
+      "1.20.2",
+      "1.20.3",
+      "1.20.4",
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "26.1",
+      "26.1.1",
+      "26.1.2"
+     ],
+     "downloads": 45432,
+     "follows": 59,
+     "icon_url": "https://cdn.modrinth.com/data/LFJf0Klb/ab6dc508004889bf80ab3b6a6501f6af17b269a2.png",
+     "date_created": "2023-06-11T23:54:35.603978+00:00",
+     "date_modified": "2026-06-13T07:02:48.993523+00:00",
+     "latest_version": "ng4sBq0s",
+     "license": "MIT",
+     "client_side": "unsupported",
+     "server_side": "required",
+     "environment": [
+      "server_only"
+     ],
+     "disclosure_types": [],
+     "gallery": [
+      "https://cdn.modrinth.com/data/LFJf0Klb/images/877c913a50ce50e5d19aba361668b7f3933ac07d_350.webp"
+     ],
+     "featured_gallery": null,
+     "color": 2405451
+    },
+    {
+     "project_id": "NFASTzJC",
+     "project_type": "mod",
+     "all_project_types": [
+      "mod"
+     ],
+     "slug": "auto-chunky",
+     "author": "tollg92",
+     "author_id": "Qad9WzaC",
+     "organization": null,
+     "organization_id": null,
+     "title": "Auto Chunky",
+     "description": "A lightweight, server-side utility mod that automatically pauses world pre-generation when players are online and resumes when they leave.",
+     "categories": [
+      "fabric",
+      "management",
+      "optimization",
+      "storage",
+      "technology",
+      "utility",
+      "worldgen"
+     ],
+     "display_categories": [
+      "fabric",
+      "optimization",
+      "utility",
+      "worldgen"
+     ],
+     "versions": [
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11"
+     ],
+     "downloads": 8938,
+     "follows": 13,
+     "icon_url": "https://cdn.modrinth.com/data/NFASTzJC/f305460cb7011659571ea8b86fc0d70af12b2726_96.webp",
+     "date_created": "2026-03-27T06:52:22.631735+00:00",
+     "date_modified": "2026-03-26T19:53:05.455189+00:00",
+     "latest_version": "9vX4DQE0",
+     "license": "MIT",
+     "client_side": "unsupported",
+     "server_side": "required",
+     "environment": [
+      "dedicated_server_only"
+     ],
+     "disclosure_types": [],
+     "gallery": [],
+     "featured_gallery": null,
+     "color": 3039304
+    }
+   ],
+   "offset": 0,
+   "limit": 20,
+   "total_hits": 5
+  }
+ },
+ "POST https://api.modrinth.com/v2/version_files #109c7b0a59ca": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "1f5ca4bb8e8d03da5c843e70ecf3d29ed25abd2fbb68a0fcb72deb11ff05ad1dd185c4109c3193d7c204e7195c3958140b6fc69bb6aa018dea4e8d50331fbdf5": {
+    "game_versions": [
+     "1.12.2"
+    ],
+    "loaders": [
+     "forge"
+    ],
+    "environment": "client_and_server",
+    "id": "Wy9kZZUW",
+    "project_id": "vylTACsh",
+    "author_id": "Ne8CdXO5",
+    "featured": true,
+    "name": "0.24.4",
+    "version_number": "0.24.4",
+    "changelog": "- 1f2cc3e Update git ignore\n- e393f5c Add a transformer to remove reflection on Field.modifier",
+    "changelog_url": null,
+    "date_published": "2026-09-14T07:52:17.037902Z",
+    "downloads": 1313,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "ZigfcLc8",
+      "hashes": {
+       "sha512": "1f5ca4bb8e8d03da5c843e70ecf3d29ed25abd2fbb68a0fcb72deb11ff05ad1dd185c4109c3193d7c204e7195c3958140b6fc69bb6aa018dea4e8d50331fbdf5",
+       "sha1": "2292c5074314b85904909a45bb3b93a88ed7378c"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4.jar",
+      "filename": "+Fugue-0.24.4.jar",
+      "primary": true,
+      "size": 309884,
+      "file_type": null
+     },
+     {
+      "id": "ApvXhSrk",
+      "hashes": {
+       "sha512": "626da6ee0ee3af8c1251167bb363ea69100a7c8966a3516fa67e0081c12ee17e016b2ebee457c36fd3d22867f5804da268096fd34417c03757c642a9818238bd",
+       "sha1": "e2541488891fcf641fdf67a2e3ac4b2d35e175d9"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4-dev.jar",
+      "filename": "+Fugue-0.24.4-dev.jar",
+      "primary": false,
+      "size": 312075,
+      "file_type": null
+     },
+     {
+      "id": "5Bk3mlLr",
+      "hashes": {
+       "sha1": "7db762dc0a1a16e2e8fda64710906d7a416a485d",
+       "sha512": "c3def1103ea110aa4e591c8effea16f5bbc3126455a66941d4a650f7a8a65347718c6229a1fd0f1bb1830c9f9e6898c7c7370941baf45ce4375808c3d162aafd"
+      },
+      "url": "https://cdn.modrinth.com/data/vylTACsh/versions/Wy9kZZUW/%2BFugue-0.24.4-sources.jar",
+      "filename": "+Fugue-0.24.4-sources.jar",
+      "primary": false,
+      "size": 170677,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   }
+  }
+ }
+}

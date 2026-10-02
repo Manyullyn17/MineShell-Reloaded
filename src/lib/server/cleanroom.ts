@@ -106,6 +106,9 @@ const ADVISE_RULES: Rule[] = [
 	{ label: "Oh The Biomes You'll Go", reason: 'MCreator-based with extensive bugs.', modids: ['biomesyougo'] }
 ];
 
+/** Fugue's first build compiled for Java 25 (measured from the release jars). */
+export const FUGUE_JAVA25_FROM = '0.23.4';
+
 type RequiredMod = {
 	label: string;
 	reason: string;
@@ -131,7 +134,7 @@ const REQUIRED_MODS: RequiredMod[] = [
 		file: /fugue/i,
 		// Measured from the release jars' class-file versions (and a failed
 		// boot of 0.24.4 on Cleanroom 0.4.4 / Java 21).
-		java25From: '0.23.4'
+		java25From: FUGUE_JAVA25_FROM
 	},
 	{
 		label: 'Scalar Legacy',
@@ -276,6 +279,21 @@ function curseforgeCdnUrl(fileId: string, fileName: string): string {
 	return `https://mediafilez.forgecdn.net/files/${Math.floor(id / 1000)}/${id % 1000}/${encodeURIComponent(fileName)}`;
 }
 
+/**
+ * The newest suitable build of a required mod for the Cleanroom generation in
+ * use: builds from `java25From` on need Java 25, which a Java 21 Cleanroom
+ * (<= 0.4.x) cannot load.
+ */
+export function pickVersionForJava(
+	versions: ProjectVersion[],
+	java25From: string | undefined,
+	java: number
+): ProjectVersion | null {
+	const usable =
+		java25From && java < 25 ? versions.filter((v) => compareVersions(v.versionNumber, java25From) < 0) : versions;
+	return bestVersion(usable);
+}
+
 async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
 	const provider = mod.source === 'modrinth' ? modrinthProvider : curseforgeProvider;
 	const [project, all] = await Promise.all([
@@ -283,11 +301,7 @@ async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): P
 		provider.listVersions(mod.projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
 	]);
 	const java = cleanroomJavaMajor(instance.modloaderVersion);
-	const versions =
-		mod.java25From && java < 25
-			? all.filter((v) => compareVersions(v.versionNumber, mod.java25From!) < 0)
-			: all;
-	let version: ProjectVersion | null = bestVersion(versions);
+	let version = pickVersionForJava(all, mod.java25From, java);
 	if (!version) throw new Error(`no ${CLEANROOM_MINECRAFT} build for Java ${java} found`);
 
 	// The modpacks.ch mirror lists CurseForge mod versions (named by filename)

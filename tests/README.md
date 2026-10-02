@@ -1,7 +1,7 @@
 # Tests
 
 ```sh
-npm test                  # whole suite (Vitest), about 3 seconds
+npm test                  # whole suite (Vitest), about 5 seconds, fully offline
 npm run test:watch        # re-runs affected tests on save
 npx vitest run java       # only test files whose path contains "java"
 ```
@@ -51,9 +51,35 @@ await unitState('alpha');
 expect(spawnCalls[0].args).toContain('show');
 ```
 
-The fake is reset after every test. Tests must not hit the network either; code that does is
-tested through its pure parts (planning, parsing, matching), which is why some modules export
-small helpers such as `targetModNames` in `packchange.ts`.
+The fake is reset after every test.
+
+## No network: recorded API responses
+
+`fetch` throws in tests too. Code that talks to Modrinth, CurseForge, the modpacks.ch mirror
+or loader metadata servers is tested against **real responses recorded once** and replayed
+offline:
+
+```ts
+import { useRecordedHttp, fetchCalls } from '../../../../tests/helpers/http';
+
+useRecordedHttp('modrinth');   // replays tests/fixtures/http/modrinth.json
+```
+
+A request that was not recorded fails with a message saying so. To record a new test, or to
+re-record after an API changed shape, run that file against the live APIs:
+
+```sh
+RECORD_HTTP=1 npx vitest run src/lib/server/mods/modrinth.test.ts
+```
+
+Re-recording replaces the whole fixture with what the current tests request; review the diff
+before committing, since live data moves (new versions appear). Write assertions that survive
+that: "contains 0.4.4-alpha", not "exactly these 37 versions". Large downloads (a `.mrpack`,
+a mod jar) are not recorded; pass a small stand-in through the `extra` option instead.
+
+Code with side effects beyond that is tested through its pure parts (planning, parsing,
+matching), which is why some modules export small helpers such as `targetModNames` in
+`packchange.ts` and `pickVersionForJava` in `cleanroom.ts`.
 
 ## Helpers
 
@@ -69,7 +95,15 @@ small helpers such as `targetModNames` in `packchange.ts`.
 
 `tests/helpers/process.ts`: `fakeProcesses(handler)` and `spawnCalls`, see above.
 
+`tests/helpers/http.ts`: `useRecordedHttp(name, { extra })` and `fetchCalls`, see above.
+
 ## When fixing a bug
 
-Add a test that fails without the fix first. The suite has caught the rollback bug this way:
-removing the `keep` check in `removeEntries` makes `instances.test.ts` fail.
+Add a test that fails without the fix first. Each of these fails if its bug comes back:
+
+| Bug | Test |
+|---|---|
+| Rollback deleted originals not yet moved aside | `instances.test.ts` |
+| CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
+| Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
+| Player count 0 on Minecraft 1.12 | `rcon.test.ts` |

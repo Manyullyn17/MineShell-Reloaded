@@ -20,6 +20,10 @@ describe('test isolation', () => {
 		expect(path.resolve(systemdUnitDir()).startsWith(path.resolve(DATA_DIR))).toBe(true);
 	});
 
+	it('cannot use the network', async () => {
+		await expect(fetch('https://api.modrinth.com/v2/tag/loader')).rejects.toThrow(/must not use the network/);
+	});
+
 	it('cannot start real processes', () => {
 		expect(() => spawn('systemctl', ['--user', 'daemon-reload'])).toThrow(/must not start real processes/);
 	});

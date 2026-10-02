@@ -28,6 +28,9 @@ export default defineConfig({
     setupFiles: ['tests/setup.ts'],
     globalSetup: ['tests/global-setup.ts'],
     environment: 'node',
+    // Recording real API responses (RECORD_HTTP=1, tests/helpers/http.ts)
+    // waits on live servers; replaying them is instant.
+    testTimeout: process.env.RECORD_HTTP ? 60_000 : 5_000,
     // Every test file shares the one throwaway database (SvelteKit fixes the
     // env once per run), and parallel workers migrating it at the same time
     // lock it. The suite takes about a second, so files simply run in turn.

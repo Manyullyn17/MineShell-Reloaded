@@ -56,7 +56,7 @@ To have MineShell itself start at boot, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT
 Tests:
 
 ```sh
-npm test                  # the whole suite, about 3 seconds
+npm test                  # the whole suite, about 5 seconds, offline
 npm run test:watch        # re-runs affected tests on save
 ```
 
