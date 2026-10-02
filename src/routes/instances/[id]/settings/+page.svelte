@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
+	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
 	import { CLEANROOM_GUIDE_URL } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
@@ -124,6 +125,10 @@
 		<button class="button-primary" type="submit">Save</button>
 	</form>
 </section>
+
+{#if data.pack}
+	<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} />
+{/if}
 
 {#if data.settings.modloader !== 'vanilla'}
 	<section class="panel">

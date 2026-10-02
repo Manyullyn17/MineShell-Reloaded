@@ -16,6 +16,7 @@ import {
 	syncUnit
 } from '$lib/server/instances';
 import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
+import { applyPackChange } from '$lib/server/packchange';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
 import { portConflict } from '$lib/server/ports';
@@ -87,6 +88,15 @@ export const load: PageServerLoad = async ({ params }) => {
 		javaResolution: java,
 		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label })),
 		running,
+		pack:
+			instance.packSource && instance.packProjectId
+				? {
+						source: instance.packSource,
+						projectId: instance.packProjectId,
+						name: instance.packName,
+						versionId: instance.packVersionId
+					}
+				: null,
 		cleanroom: cleanroomRelevant
 			? {
 					onCleanroom: instance.modloader === 'cleanroom',
@@ -134,6 +144,26 @@ export const actions: Actions = {
 					? 'Saved. Note this only updates the recorded Minecraft version - the installed server files are unchanged.'
 					: 'Saved.'
 		};
+	},
+
+	changePack: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const versionId = String(form.get('versionId') ?? '').trim();
+		if (!versionId) return fail(400, { ok: false, message: 'Pick a pack version first.' });
+		try {
+			await applyPackChange(instance, versionId, {
+				updateMods: form.getAll('updateMod').map(String),
+				confirmMinecraftChange: form.get('confirmMinecraft') === 'on'
+			});
+			return {
+				ok: true,
+				message: 'Changing the pack version. Follow it in Tasks; the server stays stopped until it finishes.'
+			};
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			return fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
+		}
 	},
 
 	loaderVersion: async ({ request, params }) => {
