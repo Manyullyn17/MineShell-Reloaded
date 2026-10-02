@@ -8,7 +8,40 @@
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 
-	function renderMarkdown(text: string): string {
+	/**
+	 * Descriptions are written for the platform's own site, so their links
+	 * assume they are on it. CurseForge wraps every outbound link in its own
+	 * redirector as a relative `/linkout?remoteUrl=...` (the target URL
+	 * encoded twice), and other relative links point at pages on the
+	 * platform. Rendered here both resolved against MineShell instead and
+	 * 404'd. Redirector links are unwrapped to their real target, other
+	 * relative links resolve against the project page, and anything that is
+	 * not http(s)/mailto is dropped.
+	 */
+	function fixLink(href: string, base: string | null): string | null {
+		if (href.startsWith('#')) return href;
+		let url: URL;
+		try {
+			url = new URL(href, base ?? undefined);
+		} catch {
+			return null;
+		}
+		const remote = url.pathname === '/linkout' ? url.searchParams.get('remoteUrl') : null;
+		if (remote) {
+			let target = remote;
+			for (let i = 0; i < 3 && /%[0-9a-f]{2}/i.test(target); i++) {
+				try {
+					target = decodeURIComponent(target);
+				} catch {
+					break;
+				}
+			}
+			return /^https?:\/\//i.test(target) ? target : null;
+		}
+		return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? url.href : null;
+	}
+
+	function renderMarkdown(text: string, base: string | null): string {
 		// CurseForge's HTML-to-Markdown conversion leaves Pandoc-style image
 		// attribute blocks after the image itself, e.g.
 		// `![](url){width=1126 height=378}` - `marked` doesn't parse that
@@ -18,7 +51,22 @@
 		// them rather than trying to reproduce them as real HTML attributes.
 		const cleaned = text.replace(/(!\[[^\]]*\]\([^)]*\))\s*\{[^}]*\}/g, '$1');
 		const html = marked.parse(cleaned, { async: false }) as string;
-		return DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'] });
+		const fragment = DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel'], RETURN_DOM_FRAGMENT: true });
+		for (const a of fragment.querySelectorAll('a[href]')) {
+			const href = fixLink(a.getAttribute('href') ?? '', base);
+			if (!href) {
+				a.removeAttribute('href');
+			} else {
+				a.setAttribute('href', href);
+				if (!href.startsWith('#')) {
+					a.setAttribute('target', '_blank');
+					a.setAttribute('rel', 'noreferrer');
+				}
+			}
+		}
+		const holder = document.createElement('div');
+		holder.append(fragment);
+		return holder.innerHTML;
 	}
 
 	/**
@@ -140,7 +188,7 @@
 					{#if link}
 						<p><a href={link} target="_blank" rel="noreferrer">Open the full description</a></p>
 					{:else}
-						{@html renderMarkdown(details.description)}
+						{@html renderMarkdown(details.description, details.projectUrl)}
 					{/if}
 				{:else}
 					<p class="muted">No description was provided.</p>
@@ -150,7 +198,7 @@
 				{#if link}
 					<p><a href={link} target="_blank" rel="noreferrer">Open the changelog</a></p>
 				{:else}
-					{@html renderMarkdown(details.changelog)}
+					{@html renderMarkdown(details.changelog, details.projectUrl)}
 				{/if}
 			{:else}
 				<p class="muted">
