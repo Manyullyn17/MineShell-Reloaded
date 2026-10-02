@@ -1,0 +1,42 @@
+# Type check, tests and a production build on every push and pull request.
+# Nothing here needs Java, systemd or network access beyond installing
+# packages: the tests run against a throwaway data directory and recorded
+# fixtures (see tests/README.md).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # package.json declares node >=20.11; 22 is what development uses.
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
