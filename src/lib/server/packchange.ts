@@ -107,7 +107,7 @@ function overrideRelative(entry: string): string {
 }
 
 /** Jar names the target version installs into mods/, from downloads and bundled overrides. */
-function targetModNames(pack: ParsedPack): Set<string> {
+export function targetModNames(pack: ParsedPack): Set<string> {
 	const names = new Set<string>();
 	for (const d of pack.downloads) {
 		const dir = path.posix.dirname(d.target);
@@ -121,14 +121,14 @@ function targetModNames(pack: ParsedPack): Set<string> {
 }
 
 /** Top-level entries the target version writes, other than mods and protected files. */
-function packTopLevel(pack: ParsedPack): string[] {
+export function packTopLevel(pack: ParsedPack): string[] {
 	const tops = new Set<string>();
 	for (const e of pack.overrideEntries) tops.add(overrideRelative(e).split('/')[0]);
 	for (const d of pack.downloads) if (d.target.includes('/')) tops.add(d.target.split('/')[0]);
 	return [...tops].filter((t) => t && !PROTECTED.has(t) && !isLoaderInstallEntry(t)).sort();
 }
 
-function targetLoaderFor(
+export function targetLoaderFor(
 	instance: ServerInstance,
 	pack: ParsedPack
 ): { loader: ModloaderId; version: string | null } {

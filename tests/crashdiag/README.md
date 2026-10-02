@@ -5,17 +5,19 @@ section of the crash panel on an instance's overview page.
 
 ## Run
 
+Part of the normal suite (`npm test`); on its own:
+
 ```sh
-npm run test:crashdiag          # or: node --experimental-strip-types tests/crashdiag/run.mjs -v
+npx vitest run tests/crashdiag
 ```
 
-Needs Node 22.6+ (for `--experimental-strip-types`), nothing else. A case passes when the
-expected diagnosis is listed first and marked fatal; `-v` prints every diagnosis per case.
+A case passes when the expected diagnosis is listed first and marked fatal.
 
 ## What is in here
 
 | Path | What |
 |---|---|
+| `crashdiag.test.ts` | Runs every case, plus a direct test of the mods indexer |
 | `cases.json` | Expected result per case: diagnosis `kind`, regex for the culprit mod's name, optional regex for the related mod |
 | `fixtures/<case>.log` | The console output of a failed start (machine paths replaced by `<instance>` / `<home>`) |
 | `fixtures/<case>.mods.json` | The mods folder at the time, trimmed to the jars and class names the log refers to |
@@ -40,12 +42,13 @@ The cases cover each loader's own wording, old and new:
 journalctl --user -u minecraft@<id> -o cat > /tmp/crash.log     # or any saved console log
 node --experimental-strip-types tests/crashdiag/capture.mjs \
   <case-name> /tmp/crash.log ~/mineshell-data/instances/<id>/mods <kind> '<culprit regex>' ['<related regex>']
-npm run test:crashdiag
+npx vitest run tests/crashdiag
 ```
 
-Trim the log to the failed run first (from the last `Started minecraft@...` line), or the
-earlier runs are included too. Check the fixture log for anything you would not want in the
-repo (player names, IPs) before committing; crashes at startup normally contain neither.
+`capture.mjs` runs under plain Node (22.6+, for `--experimental-strip-types`). Trim the log
+to the failed run first (from the last `Started minecraft@...` line), or the earlier runs are
+included too. Check the fixture log for anything you would not want in the repo (player
+names, IPs) before committing; crashes at startup normally contain neither.
 
 ## Record logs for a new loader or version
 

@@ -53,6 +53,15 @@ Open the app, set an admin password on first visit, and add a server.
 
 To have MineShell itself start at boot, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
+Tests:
+
+```sh
+npm test                  # the whole suite, about 3 seconds
+npm run test:watch        # re-runs affected tests on save
+```
+
+Tests never touch real data; see [tests/README.md](tests/README.md).
+
 ---
 
 ## What it does
@@ -99,6 +108,7 @@ src/lib/server/      everything that touches the system: systemd, RCON, journal,
                      mod providers, pack parsing, scheduling, monitoring
 src/lib/components/  console, sparkline, status pill, flash message
 src/routes/          pages and endpoints
+tests/               test setup, shared helpers, recorded crash fixtures
 docs/                architecture, deployment, roadmap
 ```
 
