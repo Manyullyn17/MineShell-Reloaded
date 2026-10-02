@@ -1,0 +1,149 @@
+2026-10-01T15:16:00.734005331Z main WARN Disabling terminal, you're running in an unsupported environment.
+[17:16:00] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[17:16:00] [main/INFO] [FML.TWEAK]: Initializing Mixins...
+[17:16:00] [main/INFO] [mixin]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=jar:file:/tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/libraries/com/cleanroommc/sponge-mixin/0.20.12+mixin.0.8.7/sponge-mixin-0.20.12+mixin.0.8.7.jar!/org/spongepowered/asm/mixin/MixinEnvironment.class Service=LaunchWrapper Env=UNKNOWN
+[17:16:00] [main/INFO] [FML.TWEAK]: Initializing MixinExtras...
+[17:16:00] [main/INFO] [Foundation]: Using primary tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[17:16:00] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker
+[17:16:00] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLServerTweaker@5733f295
+[17:16:00] [main/INFO] [FML.TWEAK]: Jar location: file:/tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/cleanroom-0.4.3-alpha.jar
+[17:16:00] [main/INFO] [FML]: Forge Mod Loader version 14.23.5.2864 for Minecraft 1.12.2 loading
+[17:16:00] [main/INFO] [FML]: Cleanroom version 0.4.3-alpha
+[17:16:00] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 21.0.12.1, running on Linux:amd64:6.8.0-139-generic, installed at /usr/lib/jvm/java-21-openjdk-amd64
+[17:16:01] [main/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/./mods for mods
+[17:16:01] [main/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/./mods/1.12.2 for mods
+[17:16:01] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in +Fugue-0.23.3.jar.
+[17:16:01] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in UniversalTweaks-1.12.2-1.21.0.jar.
+[17:16:01] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.mixin.EnvironmentStateTweaker@1162410a
+[17:16:01] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[17:16:01] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.launch.MixinTweaker
+[17:16:01] [main/INFO] [Foundation]: Loading tweak name com.cleanroommc.fugue.common.LateBootstrapTweaker
+[17:16:01] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[17:16:01] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@66f66866
+[17:16:01] [main/INFO] [Foundation]: Calling tweak UniversalTweaksCore
+[17:16:01] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@66f66866
+[17:16:01] [main/INFO] [Foundation]: Calling tweak FMLCorePlugin
+[17:16:01] [main/INFO] [mixin]: Initialised Mixin FML Remapper Adapter with net.minecraftforge.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper@25290bca
+[17:16:01] [main/INFO] [FML]: FML appears to be missing any signature data. This is expected, don't worry.
+[17:16:01] [main/INFO] [Foundation]: Calling tweak FMLForgePlugin
+[17:16:01] [main/INFO] [Foundation]: Calling tweak Fugue
+[17:16:01] [main/INFO] [Foundation]: Calling tweak ScalarLoadingPlugin
+[17:16:01] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.launch.MixinTweaker@1e58512c
+[17:16:01] [main/INFO] [Foundation]: Calling tweak com.cleanroommc.fugue.common.LateBootstrapTweaker@78054f54
+[17:16:01] [main/INFO] [Foundation]: Calling tweak MixinBooter
+[17:16:01] [main/INFO] [FML]: Loading early loader mod.acgaming.universaltweaks.core.UTLoadingPlugin for its mixins.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.difficulty.multiplayer.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.buttons.snooper.server.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.ai.saddledwandering.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.despawning.horse.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.chunksaving.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.itementities.server.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.leafdecay.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.bottle.cauldron.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.spawning.husk.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.maxhealth.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.falling.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.crafteditemstatistics.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.spawning.stray.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.comparatortiming.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.hopper.boundingbox.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.ai.rails.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.entityradiuscheck.lesscollisions.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.burning.mobs.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.tileentities.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.deathtime.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.tracker.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.pathfinding.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.ai.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.enchantmentlevel.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.minecart.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.skeletonaim.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.prefixcheck.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.particlespawning.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.durabilitycap.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.suffocation.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.rarity.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.packetsize.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.sapling.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.sleeping.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.dragonkill.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.eating.soupbowl.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.dyeblending.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.craftingcache.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.commands.locate.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.desync.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.attackradius.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.usefulhoes.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.entitylists.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.itemframevoid.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.miningglitch.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.hopper.tile.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.lenientpaths.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.villagerharvest.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.difficulty.singleplayer.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.timeouts.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.village.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/mixins.vanilla.mod.accessors.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.sleeping.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.taming.horse.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.ladderflying.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.anvil.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.world.stronghold.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.entityradiuscheck.reducesearchsize.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.dimensionchange.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.destroypacket.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.horsefalling.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.incurablepotions.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.witchhut.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boundingbox.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.mount.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.blockfire.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.saturation.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.falling.dupe.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boat.breaking.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.commands.seed.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.portal.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boat.offset.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.ocelot.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.piston.tile.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.endportal.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.untippedarrowparticles.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.bedobstruction.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.entityid.json mixin configuration.
+[17:16:01] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.advancements.triggers.json mixin configuration.
+[17:16:01] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLDeobfTweaker@f6de586
+[17:16:01] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker has already been visited -- skipping
+[17:16:01] [main/INFO] [MixinExtras|Service]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.3).
+[17:16:02] [main/INFO] [Foundation]: Launching wrapped minecraft net.minecraft.server.MinecraftServer
+[17:16:03] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.12.2
+[17:16:03] [Server thread/INFO] [FML]: Cleanroom v0.4.3-alpha Initialized
+[17:16:03] [Server thread/INFO] [FML]: Starts to replace vanilla recipe ingredients with ore ingredients.
+[17:16:03] [Server thread/INFO] [FML]: Invalid recipe found with multiple oredict ingredients in the same ingredient...
+[17:16:03] [Server thread/INFO] [FML]: Replaced 1227 ore ingredients
+[17:16:03] [Server thread/INFO] [Kirino Core]: Initializing Kirino-Engine's Mod Container.
+[17:16:03] [Server thread/INFO] [Kirino Core]: Initializing Kirino-ECS's Mod Container.
+[17:16:03] [Server thread/INFO] [Kirino Core]: Initializing Kirino-GL's Mod Container.
+[17:16:03] [Server thread/INFO] [FML]: Forge Mod Loader has identified 14 mods to load
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for cleanroom: assets/cleanroom/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for mixinbooter: assets/mixinbooter/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for configanytime: assets/configanytime/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for kirino_engine: assets/kirino_engine/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for kirino_ecs: assets/kirino_ecs/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for kirino_gl: assets/kirino_gl/lang/en_us.lang
+[17:16:03] [Server thread/WARN] [FML]: Missing English translation for FML: assets/fml/lang/en_us.lang
+[17:16:03] [Server thread/FATAL] [FML]: net.minecraftforge.fml.common.MissingModsException: Mod fugue (Fugue) requires [cleanroom@[0.4.4-alpha,)]
+[17:16:03] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception
+net.minecraftforge.fml.common.MissingModsException: Mod fugue (Fugue) requires [cleanroom@[0.4.4-alpha,)]
+	at net.minecraftforge.fml.common.Loader.sortModList(Loader.java:268) ~[Loader.class:?]
+	at net.minecraftforge.fml.common.Loader.loadMods(Loader.java:566) ~[Loader.class:?]
+	at net.minecraftforge.fml.server.FMLServerHandler.beginServerLoading(FMLServerHandler.java:101) ~[FMLServerHandler.class:?]
+	at net.minecraftforge.fml.common.FMLCommonHandler.onServerStart(FMLCommonHandler.java:344) ~[FMLCommonHandler.class:?]
+	at net.minecraft.server.dedicated.DedicatedServer.func_71197_b(DedicatedServer.java:127) ~[nz.class:?]
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:486) ~[MinecraftServer.class:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+[17:16:03] [Server thread/ERROR] [minecraft/MinecraftServer]: This crash report has been saved to: /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/./crash-reports/crash-2026-10-01_17.16.03-server.txt
+[17:16:03] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[17:16:03] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[17:16:03] [Server thread/INFO] [FML]: The state engine was in incorrect state CONSTRUCTING and forced into state SERVER_STOPPED. Errors may have been discarded.
+[17:16:03] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[17:16:03] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Saving worlds

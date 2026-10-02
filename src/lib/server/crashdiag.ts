@@ -244,7 +244,8 @@ export type DiagnosisKind =
 	| 'missing-dependency'
 	| 'incompatible-method'
 	| 'mixin-failure'
-	| 'java-version';
+	| 'java-version'
+	| 'loader-version';
 
 export type ModRef = { fileName: string; name: string; enabled: boolean; clientOnly: boolean };
 
@@ -273,6 +274,20 @@ function ref(jar: ModJar | null | undefined): ModRef | null {
 		clientOnly: jar.clientOnly
 	};
 }
+
+/** Dependency ids that name the loader or the game rather than a mod. */
+const LOADER_IDS: Record<string, string> = {
+	minecraft: 'Minecraft',
+	forge: 'Forge',
+	fml: 'Forge',
+	cleanroom: 'Cleanroom',
+	neoforge: 'NeoForge',
+	fabricloader: 'Fabric Loader',
+	'fabric-loader': 'Fabric Loader',
+	quilt_loader: 'Quilt Loader',
+	'quilt-loader': 'Quilt Loader',
+	java: 'Java'
+};
 
 const FRAME = /^\s*at\s+(?:[\w.$]+\/\/)?([\w$.]+)\.([\w$<>]+)\(/;
 // Loader, launcher and JDK frames never point at the mod to blame.
@@ -420,7 +435,7 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 		let m: RegExpMatchArray | null;
 
 		// ---- loader dependency checks (each loader words these its own way)
-		const deps: { who: string; needs: string }[] = [];
+		const deps: { who: string; needs: string; range?: string }[] = [];
 		if ((m = line.match(/Mod '([^']+)' \(([\w.\-]+)\) \S+ requires .*?(?:of|mod) '?([\w.\-]+)'?.*?(?:which is missing|is not installed)/))) {
 			deps.push({ who: m[2], needs: m[3] }); // Fabric 0.14+
 		} else if ((m = line.match(/HARD_DEP_NO_CANDIDATE ([\w.\-]+) \S+ \{depends ([\w.\-]+)/))) {
@@ -429,18 +444,39 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 			deps.push({ who: m[1], needs: m[2] }); // Fabric <= 0.13
 		} else if ((m = line.match(/mod ([\w.\-]+) .*?requires .*?([\w.\-]+) .*?(?:which is missing|missing)/i)) && /quilt|Quilt/.test(rawLog) && !/Mod '/.test(line)) {
 			deps.push({ who: m[1], needs: m[2] }); // Quilt
-		} else if ((m = line.match(/Mod ([\w.\-]+) \(([^)]+)\) requires \[([^\]]+)\]/))) {
-			for (const d of m[3].split(',')) deps.push({ who: m[1], needs: d.trim().split('@')[0] }); // legacy Forge
-		} else if ((m = line.match(/Mod ID: '([^']+)', Requested by: '([^']+)'/))) {
-			deps.push({ who: m[2], needs: m[1] }); // modern Forge
+		} else if ((m = line.match(/Mod ([\w.\-]+) \(([^)]+)\) requires \[(.*)\]/))) {
+			// legacy Forge: "requires [cleanroom@[0.4.4-alpha,), jei]" - ranges contain commas
+			for (const d of m[3].matchAll(/([\w.\-]+)(?:@([\[(][^\])]*[\])]|[^,\s\]]+))?/g)) {
+				deps.push({ who: m[1], needs: d[1], range: d[2] });
+			}
+		} else if ((m = line.match(/Mod ID: '([^']+)', Requested by: '([^']+)'(?:, Expected range: '([^']+)')?/))) {
+			deps.push({ who: m[2], needs: m[1], range: m[3] }); // modern Forge
 		} else if ((m = line.match(/^(?:\[[^\]]*\]\s*)*(.+?) requires (?:any version|version \S+|.+?) of ([\w.\-]+), which is missing!/)) && !/Mod '/.test(line)) {
 			deps.push({ who: m[1].trim(), needs: m[2] }); // Quilt (display names)
 		} else if ((m = line.match(/Mod (.+?) requires (.+?) (?:[\d.\-\[\]()]+ or above|any version)/)) && !/Mod '/.test(line)) {
 			// NeoForge: names, not ids; next line says whether it is missing
 			if (/not installed/i.test(lines[i + 1] ?? '') || /not installed/i.test(line)) deps.push({ who: m[1], needs: m[2] });
 		}
-		for (const { who, needs } of deps) {
+		for (const { who, needs, range } of deps) {
 			const jar = jarForMod(who);
+			const loaderName = LOADER_IDS[needs.toLowerCase()];
+			if (loaderName) {
+				// Installed, but not in the version the mod asks for.
+				const name = ref(jar)?.name ?? who;
+				push(
+					{
+						kind: 'loader-version',
+						title: `${name} needs ${loaderName}${range ? ` ${range}` : ''}`,
+						detail: `The installed ${loaderName} does not match. Change the version in the instance settings to one in that range, or use a version of ${name} made for this setup.`,
+						culprit: ref(jar),
+						related: null,
+						evidence: line.trim(),
+						fix: null
+					},
+					`loaderdep:${who}:${needs}`
+				);
+				continue;
+			}
 			const provider = jarForMod(needs);
 			if (provider && !provider.enabled) {
 				push(

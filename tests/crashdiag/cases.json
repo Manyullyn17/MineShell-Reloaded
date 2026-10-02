@@ -123,6 +123,11 @@
 		"culprit": "Fugue"
 	},
 	{
+		"name": "real-fugue-on-cleanroom-0.4.3",
+		"kind": "loader-version",
+		"culprit": "Fugue"
+	},
+	{
 		"name": "real-meatballcraft-alfheim",
 		"kind": "mixin-failure",
 		"culprit": "Alfheim"
