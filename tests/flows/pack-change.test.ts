@@ -42,9 +42,16 @@ const fakeModrinth: Partial<ModProvider> = {
 		}];
 	}
 };
+// Lets a test make re-tracking mods (after the change is committed) fail.
+const syncControl = vi.hoisted(() => ({ fail: false }));
 vi.mock('$lib/server/mods', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/server/mods')>();
-	return { ...actual, getProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getProvider(id)) };
+	return {
+		...actual,
+		getProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getProvider(id)),
+		syncMods: (...args: Parameters<typeof actual.syncMods>) =>
+			syncControl.fail ? Promise.reject(new Error('mod index broke')) : actual.syncMods(...args)
+	};
 });
 
 const { createFromPack } = await import('$lib/server/instances');
@@ -119,7 +126,10 @@ describe('changing the pack version', () => {
 			return { launchArgs: '-jar server.jar nogui', loaderVersion: '0.16.0' };
 		});
 	});
-	afterEach(() => vi.restoreAllMocks());
+	afterEach(() => {
+		vi.restoreAllMocks();
+		syncControl.fail = false;
+	});
 
 	it('previews the change without touching anything', async () => {
 		const instance = await installedAndUsed();
@@ -205,5 +215,61 @@ describe('changing the pack version', () => {
 		const after = reload(instance.id);
 		expect(after).toMatchObject({ minecraftVersion: '1.20.1', packVersionId: 'v1', launchArgs: before.row.launchArgs, status: 'ready' });
 		expect(after.statusMessage).toMatch(/restored/);
+	});
+	/** Apply v2 with the given step broken; everything must be exactly as before. */
+	async function expectRestoredAfter(breakStep: () => void) {
+		const instance = await installedAndUsed();
+		const before = { files: await tree(instance.path), row: reload(instance.id) };
+		breakStep();
+		const task = await waitForTask(await applyPackChange(instance, 'v2', { updateMods: ['chunky-1.0.jar'], confirmMinecraftChange: false }));
+		expect(task.state).toBe('failed');
+		expect(await tree(instance.path)).toEqual(before.files);
+		const after = reload(instance.id);
+		expect(after).toMatchObject({ packVersionId: before.row.packVersionId, packVersionName: before.row.packVersionName, status: 'ready' });
+		expect(after.statusMessage).toMatch(/restored/);
+	}
+
+	it('restores everything when moving configs aside fails part-way', async () => {
+		await expectRestoredAfter(() => {
+			// config/ moves fine, scripts/ fails: config must come back, scripts must survive.
+			const realRename = fs.rename.bind(fs);
+			let moves = 0;
+			vi.spyOn(fs, 'rename').mockImplementation(async (from, to) => {
+				if (String(to).includes('/old-configs/') && ++moves === 2) throw new Error('EIO: disk hiccup');
+				return realRename(from, to);
+			});
+		});
+	});
+
+	it('restores everything when unpacking the new overrides fails', async () => {
+		await expectRestoredAfter(() => {
+			const realWrite = fs.writeFile.bind(fs);
+			vi.spyOn(fs, 'writeFile').mockImplementation(async (file, data, opts) => {
+				if (String(file).endsWith('scripts/new.zs')) throw new Error('ENOSPC: no space left');
+				return realWrite(file, data, opts);
+			});
+		});
+	});
+
+	it('restores everything when downloading a mod update fails', async () => {
+		const original = served['https://mods.test/chunky-1.1.jar'];
+		try {
+			await expectRestoredAfter(() => {
+				served['https://mods.test/chunky-1.1.jar'] = () => new Response('gone', { status: 404 });
+			});
+		} finally {
+			served['https://mods.test/chunky-1.1.jar'] = original;
+		}
+	});
+
+	it('keeps a committed change and reports problems that happen after it', async () => {
+		const instance = await installedAndUsed();
+		syncControl.fail = true;
+		const task = await waitForTask(await applyPackChange(instance, 'v2', { updateMods: [], confirmMinecraftChange: false }));
+		expect(task.state).toBe('done');
+		expect(await tree(instance.path, /^(\.mineshell|old-configs)\//)).toMatchObject({ 'mods/c.jar': 'c.jar from v2', 'config/pack.cfg': 'v2' });
+		const row = reload(instance.id);
+		expect(row).toMatchObject({ packVersionId: 'v2', status: 'ready' });
+		expect(row.statusMessage).toMatch(/Re-tracking mods failed: mod index broke/);
 	});
 });

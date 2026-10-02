@@ -74,6 +74,8 @@ describe('unit files', () => {
 
 	it('writes nothing into the systemd folder while the template unit is not installed', async () => {
 		fakeProcesses(() => ({}));
+		// The unit folder is shared by the whole run; another test may have installed it.
+		await fs.rm(path.join(systemdUnitDir(), TEMPLATE_UNIT), { force: true });
 		await writeRestartPolicy('eta', true, 3, 600);
 		await expect(fs.access(path.join(systemdUnitDir(), `${unitName('eta')}.d`))).rejects.toThrow();
 		expect(spawnCalls).toEqual([]);
