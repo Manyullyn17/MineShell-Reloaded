@@ -13,6 +13,9 @@ import { defineConfig } from 'vitest/config';
 const testing = Boolean(process.env.VITEST);
 if (testing) {
   process.env.MINESHELL_DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'mineshell-test-'));
+  // The systemd user unit folder lives under XDG_CONFIG_HOME; keep it in the
+  // throwaway directory too so no test can write real unit files.
+  process.env.XDG_CONFIG_HOME = path.join(process.env.MINESHELL_DATA, 'xdg-config');
   process.env.MINESHELL_UNIT_PREFIX = 'mineshell-test';
   process.env.MINESHELL_AUTH = 'off';
 }

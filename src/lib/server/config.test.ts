@@ -1,7 +1,8 @@
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DATA_DIR, INSTANCES_DIR, UNIT_PREFIX } from './config';
+import { spawn } from 'node:child_process';
+import { DATA_DIR, INSTANCES_DIR, UNIT_PREFIX, systemdUnitDir } from './config';
 
 // The guard in tests/setup.ts is what keeps tests off real data; this makes
 // sure it actually took effect.
@@ -13,5 +14,13 @@ describe('test isolation', () => {
 
 	it('uses a test unit prefix, never minecraft@', () => {
 		expect(UNIT_PREFIX).toBe('mineshell-test');
+	});
+
+	it('writes systemd unit files inside the temporary directory', () => {
+		expect(path.resolve(systemdUnitDir()).startsWith(path.resolve(DATA_DIR))).toBe(true);
+	});
+
+	it('cannot start real processes', () => {
+		expect(() => spawn('systemctl', ['--user', 'daemon-reload'])).toThrow(/must not start real processes/);
 	});
 });
