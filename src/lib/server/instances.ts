@@ -14,7 +14,7 @@ import {
 	readProperties,
 	writeProperties
 } from './properties';
-import { listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
+import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
 import {
 	restartUnit,
 	startUnit,
@@ -205,6 +205,7 @@ export function setStatus(id: string, status: string, message: string | null) {
 }
 
 async function resolveJavaForInstall(instance: ServerInstance): Promise<string> {
+	await learnJavaRequirement(instance.minecraftVersion);
 	let java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
@@ -763,6 +764,7 @@ export async function changeLoaderVersion(
 
 	// A different loader version can need a different Java (Cleanroom 0.4 runs
 	// on 21, 0.5+ on 25), so resolve for the target before touching anything.
+	await learnJavaRequirement(instance.minecraftVersion);
 	const java = resolveJava({ ...instance, modloaderVersion: loaderVersion });
 	if (!java.path || (instance.javaPath && java.warning)) {
 		throw new InstanceError(

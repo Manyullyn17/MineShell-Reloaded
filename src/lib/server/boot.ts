@@ -1,6 +1,7 @@
 import { startMonitor } from './monitor';
 import { startScheduler } from './scheduler';
-import { scanJavaRuntimes } from './java';
+import { learnJavaRequirement, scanJavaRuntimes } from './java';
+import { listInstances } from './instances';
 import { stopAllTails } from './journal';
 
 /**
@@ -20,6 +21,14 @@ export function boot(): void {
 	void scanJavaRuntimes().catch((err) =>
 		console.warn('[mineshell] Java scan failed:', err instanceof Error ? err.message : err)
 	);
+
+	// Learn the Java each existing instance's Minecraft version needs, so
+	// versions newer than the built-in rules (26.x needs Java 25) resolve right.
+	void (async () => {
+		for (const mc of new Set(listInstances().map((i) => i.minecraftVersion))) {
+			await learnJavaRequirement(mc);
+		}
+	})();
 
 	const shutdown = () => {
 		stopAllTails();

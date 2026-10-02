@@ -18,7 +18,9 @@ describe('requiredJavaMajor', () => {
 		['1.18.2', 17],
 		['1.20.4', 17],
 		['1.20.5', 21],
-		['1.21.1', 21]
+		['1.21.1', 21],
+		['26.1.2', 25],
+		['26.3', 25]
 	])('Minecraft %s needs Java %i', (mc, java) => {
 		expect(requiredJavaMajor(mc)).toBe(java);
 	});

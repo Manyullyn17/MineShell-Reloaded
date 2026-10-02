@@ -19,7 +19,7 @@ import { applyOverrides, downloadPackFiles, loadOverridesArchive, type ParsedPac
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
-import { resolveJava } from './java';
+import { learnJavaRequirement, resolveJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
@@ -377,6 +377,7 @@ export async function applyPackChange(
 	const loader = getLoader(plan.target.loader);
 	let javaPath: string | null = null;
 	if (plan.loaderChange) {
+		await learnJavaRequirement(plan.target.minecraft);
 		const java = resolveJava({
 			...instance,
 			minecraftVersion: plan.target.minecraft,

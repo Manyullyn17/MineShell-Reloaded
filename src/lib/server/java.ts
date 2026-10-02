@@ -3,9 +3,10 @@ import path from 'node:path';
 import { homedir } from 'node:os';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { javaRuntimes } from './db/schema';
+import { javaRuntimes, settings } from './db/schema';
 import { run } from './systemd';
 import { cleanroomJavaMajor } from '$lib/shared/cleanroom';
+import { minecraftJavaMajor } from './modloaders';
 
 /**
  * Two jobs: work out which Java a given Minecraft version needs, and find the
@@ -16,15 +17,55 @@ import { cleanroomJavaMajor } from '$lib/shared/cleanroom';
 type JavaRule = { minInclusive: string; java: number };
 
 /**
- * Ordered newest-first. `minInclusive` is the first Minecraft version that
- * requires the given Java major. Add a row when Mojang bumps the requirement.
+ * Fallback only: what Mojang declares per version (learnJavaRequirement) wins.
+ * Ordered newest-first; `minInclusive` is the first Minecraft version that
+ * requires the given Java major.
  */
 const JAVA_RULES: JavaRule[] = [
+	{ minInclusive: '26.1', java: 25 },
 	{ minInclusive: '1.20.5', java: 21 },
 	{ minInclusive: '1.18', java: 17 },
 	{ minInclusive: '1.17', java: 16 },
 	{ minInclusive: '1.0', java: 8 }
 ];
+
+// Java majors Mojang declared per Minecraft version, kept in the settings
+// table so they survive restarts and work offline.
+const LEARNED_KEY = 'java.minecraftRequirements';
+let learned: Record<string, number> | null = null;
+
+function learnedRequirements(): Record<string, number> {
+	if (learned) return learned;
+	const row = db.select().from(settings).where(eq(settings.key, LEARNED_KEY)).get();
+	try {
+		learned = row?.value ? JSON.parse(row.value) : {};
+	} catch {
+		learned = {};
+	}
+	return learned!;
+}
+
+/**
+ * Look up (once) and remember the Java major Mojang declares for a Minecraft
+ * version. Call before anything resolves Java for that version; offline it is
+ * a no-op and the fallback rules apply.
+ */
+export async function learnJavaRequirement(minecraftVersion: string): Promise<void> {
+	const known = learnedRequirements();
+	if (known[minecraftVersion]) return;
+	try {
+		const major = await minecraftJavaMajor(minecraftVersion);
+		if (!major) return;
+		known[minecraftVersion] = major;
+		const value = JSON.stringify(known);
+		db.insert(settings)
+			.values({ key: LEARNED_KEY, value })
+			.onConflictDoUpdate({ target: settings.key, set: { value } })
+			.run();
+	} catch {
+		/* offline or unknown version: the rules below still answer */
+	}
+}
 
 /** Compare dotted versions numerically; missing components count as zero. */
 export function compareVersions(a: string, b: string): number {
@@ -49,6 +90,8 @@ export function requiredJavaMajor(
 	// Cleanroom is 1.12.2 rebuilt for modern Java; Mojang's 1.12.2 -> 8 rule does not apply.
 	if (modloader === 'cleanroom') return cleanroomJavaMajor(modloaderVersion);
 	const clean = minecraftVersion.trim();
+	const declared = learnedRequirements()[clean];
+	if (declared) return declared;
 	for (const rule of JAVA_RULES) {
 		if (compareVersions(clean, rule.minInclusive) >= 0) return rule.java;
 	}

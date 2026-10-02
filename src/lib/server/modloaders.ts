@@ -74,6 +74,18 @@ async function mojangManifest(): Promise<MojangManifest> {
 	return data;
 }
 
+/**
+ * The Java major Mojang declares for a Minecraft version (`javaVersion` in the
+ * version's metadata), or null if the version or field is unknown.
+ */
+export async function minecraftJavaMajor(minecraftVersion: string): Promise<number | null> {
+	const manifest = await mojangManifest();
+	const entry = manifest.versions.find((v) => v.id === minecraftVersion);
+	if (!entry) return null;
+	const detail = await fetchJson<{ javaVersion?: { majorVersion?: number } }>(entry.url);
+	return detail.javaVersion?.majorVersion ?? null;
+}
+
 export async function listReleaseVersions(): Promise<string[]> {
 	const manifest = await mojangManifest();
 	return manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);
