@@ -9,7 +9,7 @@ import {
 	writeRestartPolicy,
 	writeUnitEnv
 } from './systemd';
-import { UNITS_DIR, systemdUnitDir, unitName } from './config';
+import { TEMPLATE_UNIT, UNITS_DIR, systemdUnitDir, unitName } from './config';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const SHOW_RUNNING = [
@@ -72,8 +72,17 @@ describe('unit files', () => {
 		expect(scopedCommand('journalctl', ['-n', '5'])).toEqual(['journalctl', '-n', '5']);
 	});
 
+	it('writes nothing into the systemd folder while the template unit is not installed', async () => {
+		fakeProcesses(() => ({}));
+		await writeRestartPolicy('eta', true, 3, 600);
+		await expect(fs.access(path.join(systemdUnitDir(), `${unitName('eta')}.d`))).rejects.toThrow();
+		expect(spawnCalls).toEqual([]);
+	});
+
 	it('writes the restart policy as a drop-in and reloads systemd', async () => {
 		fakeProcesses(() => ({}));
+		await fs.mkdir(systemdUnitDir(), { recursive: true });
+		await fs.writeFile(path.join(systemdUnitDir(), TEMPLATE_UNIT), renderTemplateUnit());
 		await writeRestartPolicy('epsilon', true, 3, 600);
 		const file = await fs.readFile(path.join(systemdUnitDir(), `${unitName('epsilon')}.d`, 'restart.conf'), 'utf8');
 		expect(file).toContain('Restart=on-failure');

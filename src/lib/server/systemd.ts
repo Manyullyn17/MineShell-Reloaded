@@ -211,6 +211,10 @@ export async function writeRestartPolicy(
 	limit: number,
 	windowSec: number
 ): Promise<void> {
+	// Without MineShell's template unit the drop-in would belong to no unit and
+	// just litter the user's systemd folder. Installing the template re-syncs
+	// every instance, so nothing is lost by waiting.
+	if (!(await templateUnitInstalled())) return;
 	const dropInDir = path.join(systemdUnitDir(), `${unitName(id)}.d`);
 	await fs.mkdir(dropInDir, { recursive: true });
 	await fs.writeFile(
