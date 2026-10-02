@@ -4,11 +4,9 @@ import { LOADER_LIST, listReleaseVersions, type ModloaderId } from '$lib/server/
 import {
 	createFromArchive,
 	createFromLoader,
-	createFromPack,
-	createFromPackUrl
+	createFromPack
 } from '$lib/server/instances';
-import { getProvider } from '$lib/server/mods';
-import { packFromFileList } from '$lib/server/packs';
+import { resolveProviderPack } from '$lib/server/packs/resolve';
 import { listJavaRuntimes } from '$lib/server/java';
 import { totalmem } from 'node:os';
 
@@ -112,56 +110,9 @@ export const actions: Actions = {
 		}
 
 		try {
-			const provider = getProvider(source);
-			const version = await provider.getVersion(projectId, versionId);
-			const project = await provider.getProject(projectId);
-
-			if (source === 'modrinth') {
-				// Modrinth ships a real .mrpack archive.
-				const file = version.files.find((f) => f.primary) ?? version.files[0];
-				if (!file) {
-					return fail(400, {
-						ok: false,
-						message: 'That Modrinth version has no downloadable pack file.'
-					});
-				}
-				const { instance } = await createFromPackUrl({
-					name: name || project.name,
-					url: file.url,
-					source,
-					projectId,
-					versionId,
-					overrides: memoryFrom(form)
-				});
-				redirect(303, `/instances/${instance.id}`);
-			}
-
-			// CurseForge and FTB come back as a file list rather than an archive.
-			const loader = (version.loaders[0] ?? 'forge') as ModloaderId;
-			const pack = packFromFileList({
-				name: project.name,
-				version: version.versionNumber,
-				minecraftVersion: version.gameVersions[0] ?? '',
-				modloader: loader,
-				modloaderVersion: null,
-				files: version.files.map((f) => ({
-					path: 'mods',
-					name: f.filename,
-					url: f.url,
-					sha1: f.hash?.algo === 'sha1' ? f.hash.value : null
-				}))
-			});
-
-			if (!pack.minecraftVersion) {
-				return fail(400, {
-					ok: false,
-					message:
-						'That version does not declare a Minecraft version. Download the pack and use the upload option instead.'
-				});
-			}
-
+			const { pack, projectName } = await resolveProviderPack(source, projectId, versionId);
 			const { instance } = await createFromPack(
-				name || project.name,
+				name || projectName,
 				pack,
 				{ source, projectId, versionId },
 				memoryFrom(form)

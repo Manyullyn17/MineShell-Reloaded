@@ -77,7 +77,16 @@ export const curseforgeProvider: ModProvider = {
 		try {
 			const metadata = await official.getVersion(projectId, versionId);
 			const mirrored = await fromMirror;
-			return { ...metadata, files: mirrored.files };
+			// The official file tags list every compatible game version in no
+			// useful order (MeatballCraft: "1.12" before "1.12.2") and carry no
+			// loader build; the mirror's targets are the exact install target.
+			return {
+				...metadata,
+				files: mirrored.files,
+				gameVersions: mirrored.gameVersions.length ? mirrored.gameVersions : metadata.gameVersions,
+				loaders: mirrored.loaders.length ? mirrored.loaders : metadata.loaders,
+				loaderVersions: mirrored.loaderVersions
+			};
 		} catch (err) {
 			if (err instanceof CurseforgeAuthError) markCurseforgeKeyInvalid();
 			return fromMirror;

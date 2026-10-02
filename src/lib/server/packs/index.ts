@@ -5,6 +5,7 @@ import { downloadFile, fetchJson } from '../download';
 import { getCurseforgeApiKey } from '../curseforge';
 import type { ModloaderId } from '../modloaders';
 import type { TaskHandle } from '../tasks';
+import { TMP_DIR } from '../config';
 
 /**
  * Both supported pack formats are zips with a manifest plus an `overrides/`
@@ -27,6 +28,14 @@ export type ParsedPack = {
 	overrideEntries: string[];
 	/** Null when the pack came from an API file list rather than an archive. */
 	zip: AdmZip | null;
+	/**
+	 * File lists (modpacks.ch) ship configs, scripts and bundled jars as one
+	 * `overrides.zip` at the instance root rather than as separate files.
+	 * It is fetched and unpacked by loadOverridesArchive, never installed as
+	 * a file - previously it landed in mods/ unextracted, so packs ran with
+	 * none of their own configs.
+	 */
+	overridesArchive?: { url: string; hash: PackDownload['hash'] } | null;
 };
 
 export type PackDownload = {
@@ -343,6 +352,10 @@ export function packFromFileList(input: {
 	modloaderVersion: string | null;
 	files: { path: string; name: string; url: string; sha1?: string | null }[];
 }): ParsedPack {
+	const files = input.files
+		.filter((f) => Boolean(f.url))
+		.map((f) => ({ ...f, dir: f.path.replace(/^\.?\/*/, '').replace(/\/+$/, '') }));
+	const archive = files.find((f) => f.dir === '' && f.name.toLowerCase() === 'overrides.zip');
 	return {
 		kind: 'curseforge',
 		name: input.name,
@@ -350,15 +363,37 @@ export function packFromFileList(input: {
 		minecraftVersion: input.minecraftVersion,
 		modloader: input.modloader,
 		modloaderVersion: input.modloaderVersion,
-		downloads: input.files
-			.filter((f) => Boolean(f.url))
+		downloads: files
+			.filter((f) => f !== archive)
 			.map((f) => ({
-				target: path.posix.join(f.path.replace(/^\.?\/*/, ''), f.name),
+				target: path.posix.join(f.dir, f.name),
 				urls: [f.url],
 				hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
 				required: true
 			})),
 		overrideEntries: [],
-		zip: null
+		zip: null,
+		overridesArchive: archive
+			? { url: archive.url, hash: archive.sha1 ? { algo: 'sha1', value: archive.sha1 } : null }
+			: null
 	};
+}
+
+/** Fetch and open a file-list pack's overrides.zip so applyOverrides can unpack it. */
+export async function loadOverridesArchive(pack: ParsedPack, task?: TaskHandle): Promise<void> {
+	if (!pack.overridesArchive || pack.zip) return;
+	const file = path.join(TMP_DIR, `overrides-${Date.now()}.zip`);
+	try {
+		task?.log('Downloading the pack overrides (configs, scripts, bundled files)');
+		await downloadFile(pack.overridesArchive.url, file, {
+			hash: pack.overridesArchive.hash,
+			onProgress: (received, total) => {
+				if (total) task?.setProgress((received / total) * 100, 'Downloading pack overrides');
+			}
+		});
+		pack.zip = new AdmZip(file);
+		pack.overrideEntries = zipEntriesUnder(pack.zip, ['overrides/']);
+	} finally {
+		await fs.rm(file, { force: true });
+	}
 }

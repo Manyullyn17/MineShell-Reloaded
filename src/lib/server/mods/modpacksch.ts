@@ -89,7 +89,14 @@ type VersionDetail = {
 	updated: number;
 	targets?: Target[];
 	changelog?: string;
-	files?: { name: string; url: string; sha1?: string; size?: number; clientonly?: boolean }[];
+	files?: {
+		name: string;
+		path?: string;
+		url: string;
+		sha1?: string;
+		size?: number;
+		clientonly?: boolean;
+	}[];
 };
 
 function artUrl(entity: { art?: ArtEntry[] }): string | null {
@@ -155,9 +162,15 @@ function detailToVersion(projectId: string, version: VersionDetail): ProjectVers
 		datePublished: version.updated ? new Date(version.updated * 1000).toISOString() : null,
 		gameVersions: targetsToGameVersions(version.targets),
 		loaders: targetsToLoaders(version.targets),
+		loaderVersions: Object.fromEntries(
+			(version.targets ?? [])
+				.filter((t) => t.type === 'modloader' && t.version && t.version !== t.name)
+				.map((t) => [t.name.toLowerCase(), t.version])
+		),
 		changelog: version.changelog?.trim() || null,
 		files: files.map((f) => ({
 			filename: f.name,
+			path: f.path,
 			url: f.url,
 			primary: true,
 			size: f.size ?? null,

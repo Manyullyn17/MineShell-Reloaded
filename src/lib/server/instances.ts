@@ -29,7 +29,7 @@ import {
 import { rconExec, parsePlayerList } from './rcon';
 import { getTask, startTask } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
-import { applyOverrides, downloadPackFiles, parsePack, type ParsedPack } from './packs';
+import { applyOverrides, downloadPackFiles, loadOverridesArchive, parsePack, type ParsedPack } from './packs';
 import { syncMods } from './mods';
 import { directorySize } from './files';
 
@@ -300,6 +300,7 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack): string {
 
 			task.setProgress(0, 'Downloading mods');
 			const { failures } = await downloadPackFiles(pack, instance.path, task);
+			await loadOverridesArchive(pack, task);
 
 			const copied = await applyOverrides(pack, instance.path);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
@@ -402,26 +403,6 @@ export async function createFromPack(
 	const taskId = provisionFromPack(instance, pack);
 	watchTaskFailure(taskId, instance.id);
 	return { instance, taskId };
-}
-
-/** Download a .mrpack or CurseForge zip by URL, then install it. */
-export async function createFromPackUrl(opts: {
-	name: string;
-	url: string;
-	source: string;
-	projectId: string;
-	versionId: string;
-	overrides?: Partial<CreateInstanceInput>;
-}): Promise<{ instance: ServerInstance; taskId: string }> {
-	const res = await fetch(opts.url);
-	if (!res.ok) throw new InstanceError(`Could not download the pack (${res.status}).`);
-	const pack = parsePack(Buffer.from(await res.arrayBuffer()));
-	return createFromPack(
-		opts.name,
-		pack,
-		{ source: opts.source, projectId: opts.projectId, versionId: opts.versionId },
-		opts.overrides
-	);
 }
 
 function watchTaskFailure(taskId: string, instanceId: string) {

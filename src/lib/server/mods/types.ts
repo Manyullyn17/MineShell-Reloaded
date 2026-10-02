@@ -24,6 +24,12 @@ export type SearchHit = {
 
 export type VersionFile = {
 	filename: string;
+	/**
+	 * Where the file goes inside the instance, for pack file lists that say
+	 * (modpacks.ch: "./mods/", "./config/", or "./" for the overrides
+	 * archive). Absent for a mod's own files.
+	 */
+	path?: string;
 	url: string;
 	primary: boolean;
 	hash: { algo: 'sha1' | 'sha512'; value: string } | null;
@@ -52,6 +58,12 @@ export type ProjectVersion = {
 	changelog: string | null;
 	files: VersionFile[];
 	dependencies: Dependency[];
+	/**
+	 * Exact loader builds the version declares, keyed by loader id, where the
+	 * platform says (modpacks.ch targets do: forge -> 14.23.5.2860). Lets a
+	 * pack install use the build it was made for instead of "latest".
+	 */
+	loaderVersions?: Record<string, string>;
 };
 
 export type SearchQuery = {
