@@ -81,6 +81,23 @@ Code with side effects beyond that is tested through its pure parts (planning, p
 matching), which is why some modules export small helpers such as `targetModNames` in
 `packchange.ts` and `pickVersionForJava` in `cleanroom.ts`.
 
+## Flow tests
+
+`tests/flows/` runs whole operations - pack install, pack version change, loader version
+change, Cleanroom migration and revert - on throwaway instances. The orchestration is real
+(what gets moved aside, installed, restored, recorded in the database); only the outside world
+is faked: each loader's `install` (spied to write files or fail on cue), downloads (served by
+`useRecordedHttp`'s `extra`), systemd (`systemdStopped()`) and Java (`addJava()`).
+
+The pattern for anything that can fail part-way:
+
+```ts
+const before = await tree(instance.path);
+vi.spyOn(LOADERS.forge, 'install').mockRejectedValue(new Error('installer crashed'));
+await waitForTask(await changeLoaderVersion(instance, '1.2.3'));
+expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing left over
+```
+
 ## Helpers
 
 `tests/helpers/fs.ts`:
@@ -97,6 +114,17 @@ matching), which is why some modules export small helpers such as `targetModName
 
 `tests/helpers/http.ts`: `useRecordedHttp(name, { extra })` and `fetchCalls`, see above.
 
+`tests/helpers/instances.ts`:
+
+| Helper | Use |
+|---|---|
+| `createInstance(fields, files)` | An instance row plus its folder with the given files |
+| `reload(id)` | The instance row as the database has it now |
+| `tree(dir)` | Every file and its content, for before/after comparisons |
+| `waitForTask(id)` | Wait for a background task and return it |
+| `systemdStopped()` | systemctl reports the server stopped and accepts everything else |
+| `addJava(major)` / `clearJava()` | Register fake Java runtimes; clear them first, the database is shared |
+
 ## When fixing a bug
 
 Add a test that fails without the fix first. Each of these fails if its bug comes back:
@@ -107,3 +135,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
 | Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
 | Player count 0 on Minecraft 1.12 | `rcon.test.ts` |
+| Pack update kept old jars that changed under the same name | `flows/pack-change.test.ts` |
+| Failure while moving a loader aside lost files | `flows/loader-version.test.ts` |
