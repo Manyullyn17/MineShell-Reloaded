@@ -93,6 +93,20 @@ export async function waitForTask(id: string, timeoutMs = 4000): Promise<Task> {
 }
 
 /**
+ * Wait until an instance is no longer "provisioning". A failed task's status is
+ * flipped by a watcher that checks once a second (watchTaskFailure).
+ */
+export async function waitForStatusSettled(id: string, timeoutMs = 4000): Promise<ServerInstance> {
+	const until = Date.now() + timeoutMs;
+	for (;;) {
+		const row = reload(id);
+		if (row.status !== 'provisioning') return row;
+		if (Date.now() > until) throw new Error(`Instance ${id} still provisioning after ${timeoutMs}ms`);
+		await new Promise((r) => setTimeout(r, 50));
+	}
+}
+
+/**
  * Every file under `dir` with its content, for before/after comparisons.
  * Paths matching `ignore` are skipped.
  */

@@ -694,8 +694,14 @@ export async function revertToForge(instance: ServerInstance): Promise<string> {
 		async (task) => {
 			const dir = backupDir(instance);
 			task.setProgress(null, 'Restoring Forge');
-			await removeEntries(instance.path, isCleanroomInstallEntry);
+			// A previous revert that failed part-way already moved some entries
+			// back; they are no longer in the backup and must not be deleted as
+			// "Cleanroom files" (libraries/ and the vanilla jar match both).
+			const stillBackedUp = new Set(await fs.readdir(dir).catch(() => [] as string[]));
+			const alreadyRestored = new Set(backup.files.filter((name) => !stillBackedUp.has(name)));
+			await removeEntries(instance.path, isCleanroomInstallEntry, alreadyRestored);
 			for (const name of backup.files) {
+				if (!stillBackedUp.has(name)) continue;
 				await fs.rename(path.join(dir, name), path.join(instance.path, name));
 			}
 

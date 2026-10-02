@@ -21,7 +21,7 @@ vi.mock('$lib/server/cleanroom', async (importOriginal) => {
 
 const { migrateToCleanroom, readForgeBackup, revertToForge } = await import('$lib/server/instances');
 const { LOADERS } = await import('$lib/server/modloaders');
-const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
+const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForStatusSettled, waitForTask } = await import('../helpers/instances');
 
 const FORGE_FILES = {
 	'forge-1.12.2-14.23.5.2860.jar': 'forge',
@@ -120,6 +120,29 @@ describe('Cleanroom migration', () => {
 		for (const key of ['modloader', 'modloaderVersion', 'launchArgs', 'jvmArgs', 'javaPath'] as const) {
 			expect(after[key]).toBe(before.row[key]);
 		}
+	});
+
+	it('a revert that fails part-way can be retried without losing Forge files', async () => {
+		fakeCleanroomInstall();
+		const instance = await forgeInstance();
+		const before = await tree(instance.path);
+		await waitForTask(await migrateToCleanroom(instance, '0.5.17-alpha'));
+
+		// The first revert dies after restoring one Forge entry.
+		const realRename = fs.rename.bind(fs);
+		let restores = 0;
+		const rename = vi.spyOn(fs, 'rename').mockImplementation(async (from, to) => {
+			if (String(from).includes('forge-backup') && ++restores === 2) throw new Error('EIO: disk hiccup');
+			return realRename(from, to);
+		});
+		expect((await waitForTask(await revertToForge(reload(instance.id)))).state).toBe('failed');
+		rename.mockRestore();
+		expect((await waitForStatusSettled(instance.id)).status).toBe('failed');
+
+		// The backup is still there, and a second attempt finishes the job.
+		expect(await readForgeBackup(reload(instance.id))).not.toBeNull();
+		expect((await waitForTask(await revertToForge(reload(instance.id)))).state).toBe('done');
+		expect(await tree(instance.path)).toEqual(before);
 	});
 
 	it('rolls everything back when the Cleanroom install fails', async () => {
