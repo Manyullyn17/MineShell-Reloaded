@@ -12,7 +12,7 @@
 		running
 	}: {
 		instanceId: string;
-		pack: { source: string; projectId: string; name: string | null; versionId: string | null };
+		pack: { source: string; projectId: string; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
 	} = $props();
 
@@ -69,7 +69,7 @@
 	});
 
 	let currentLabel = $derived(
-		versions.find((v) => v.id === pack.versionId)?.versionNumber ?? pack.versionId ?? 'unknown'
+		versions.find((v) => v.id === pack.versionId)?.versionNumber ?? pack.versionName ?? pack.versionId ?? 'unknown'
 	);
 
 	async function preview() {

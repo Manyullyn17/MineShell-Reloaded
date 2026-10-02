@@ -142,7 +142,13 @@ function jvmArgsFor(minMb: number, maxMb: number): string {
 }
 
 async function insertInstanceRow(
-	input: CreateInstanceInput & { packSource?: string | null; packName?: string | null; packProjectId?: string | null; packVersionId?: string | null }
+	input: CreateInstanceInput & {
+		packSource?: string | null;
+		packName?: string | null;
+		packProjectId?: string | null;
+		packVersionId?: string | null;
+		packVersionName?: string | null;
+	}
 ): Promise<ServerInstance> {
 	const id = uniqueId(input.name);
 	const dir = instanceDir(id);
@@ -167,6 +173,7 @@ async function insertInstanceRow(
 			packName: input.packName ?? null,
 			packProjectId: input.packProjectId ?? null,
 			packVersionId: input.packVersionId ?? null,
+			packVersionName: input.packVersionName ?? null,
 			launchArgs: '-jar server.jar nogui',
 			jvmArgs: jvmArgsFor(minMb, maxMb),
 			memoryMinMb: minMb,
@@ -433,7 +440,8 @@ export async function createFromPack(
 		packSource: meta.source,
 		packName: pack.name,
 		packProjectId: meta.projectId ?? null,
-		packVersionId: meta.versionId ?? pack.version
+		packVersionId: meta.versionId ?? pack.version,
+		packVersionName: pack.version
 	});
 
 	const taskId = provisionFromPack(instance, pack, notes);

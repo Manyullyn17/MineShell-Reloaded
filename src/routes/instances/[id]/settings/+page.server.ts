@@ -94,7 +94,8 @@ export const load: PageServerLoad = async ({ params }) => {
 						source: instance.packSource,
 						projectId: instance.packProjectId,
 						name: instance.packName,
-						versionId: instance.packVersionId
+						versionId: instance.packVersionId,
+						versionName: instance.packVersionName
 					}
 				: null,
 		cleanroom: cleanroomRelevant

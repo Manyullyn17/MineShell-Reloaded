@@ -74,7 +74,7 @@ function definePack(id: string, minecraft: string, mods: string[], overrides: Re
 		served[`https://packs.test/${id}/overrides.zip`] = () =>
 			new Response(new Uint8Array(zipBuffer(Object.fromEntries(Object.entries(overrides).map(([k, v]) => [`overrides/${k}`, v])))));
 		return packFromFileList({
-			name: 'Test Pack', version: id, minecraftVersion: minecraft, modloader: 'fabric', modloaderVersion: null,
+			name: 'Test Pack', version: `Test Pack ${id}.zip`, minecraftVersion: minecraft, modloader: 'fabric', modloaderVersion: null,
 			files: [
 				...mods.map((m) => ({ path: 'mods/', name: m, url: `https://packs.test/${id}/${m}`, sha1: sha1(`${m} from ${id}`) })),
 				{ path: './', name: 'overrides.zip', url: `https://packs.test/${id}/overrides.zip` }
@@ -161,14 +161,15 @@ describe('changing the pack version', () => {
 
 		// What the user had is kept, whole, in old-configs/<date>-<old version>/.
 		const [stamp] = await fs.readdir(path.join(instance.path, 'old-configs'));
-		expect(stamp).toMatch(/-v1$/);
+		// Named after the version people see (minus .zip), not the provider's id.
+		expect(stamp).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-Test_Pack_v1$/);
 		expect(await tree(path.join(instance.path, 'old-configs', stamp))).toEqual({
 			'config/pack.cfg': 'edited by me',
 			'scripts/old.zs': 'old script'
 		});
 		expect((await readProperties(instance.path)).values.motd).toBe('My server');
 		expect(install).toHaveBeenCalledTimes(1); // only the original install; same loader and Minecraft
-		expect(reload(instance.id)).toMatchObject({ packVersionId: 'v2', status: 'ready', statusMessage: null });
+		expect(reload(instance.id)).toMatchObject({ packVersionId: 'v2', packVersionName: 'Test Pack v2.zip', status: 'ready', statusMessage: null });
 	});
 
 	it('needs confirmation to change the Minecraft version, and flags mods that will break', async () => {

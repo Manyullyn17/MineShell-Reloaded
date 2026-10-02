@@ -349,7 +349,10 @@ export async function planPackChange(instance: ServerInstance, versionId: string
 
 function stampFor(label: string | null): string {
 	const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-	const version = (label ?? 'unknown').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 60);
+	const version = (label ?? 'unknown')
+		.replace(/\.(zip|mrpack)$/i, '')
+		.replace(/[^A-Za-z0-9._-]+/g, '_')
+		.slice(0, 60);
 	return `${date}-${version}`;
 }
 
@@ -396,7 +399,7 @@ export async function applyPackChange(
 		const root = instance.path;
 		const mods = modsDir(root);
 		const staging = path.join(root, '.mineshell', `pack-change-${Date.now()}`);
-		const oldConfigs = path.join(root, 'old-configs', stampFor(instance.packVersionId));
+		const oldConfigs = path.join(root, 'old-configs', stampFor(instance.packVersionName ?? instance.packVersionId));
 		const modsBefore = new Set(await fs.readdir(mods).catch(() => [] as string[]));
 		const configsBefore = new Set<string>();
 		for (const name of plan.configs) if (await exists(path.join(root, name))) configsBefore.add(name);
@@ -509,6 +512,7 @@ export async function applyPackChange(
 					modloaderVersion: loaderVersion,
 					launchArgs,
 					packVersionId: versionId,
+					packVersionName: pack.version,
 					updatedAt: Date.now()
 				})
 				.where(eq(serverInstances.id, instance.id))

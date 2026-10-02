@@ -25,6 +25,8 @@ export const serverInstances = sqliteTable('server_instances', {
 	packSource: text('pack_source'), // modrinth | curseforge | ftb | manual
 	packProjectId: text('pack_project_id'),
 	packVersionId: text('pack_version_id'),
+	/** The pack version's label, as people see it; pack_version_id is the provider's id. */
+	packVersionName: text('pack_version_name'),
 	packName: text('pack_name'),
 
 	/** Arguments after the JVM args, e.g. `-jar server.jar nogui` or Forge's `@args` form. */
