@@ -16,6 +16,7 @@ import {
 	type ProjectVersion
 } from './mods';
 import { applyOverrides, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
+import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
 import { resolveJava } from './java';
@@ -165,9 +166,12 @@ export type PackChangePlan = {
 	target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 	minecraftChange: boolean;
 	loaderChange: boolean;
-	mods: { add: string[]; remove: string[]; keep: number };
+	/** `update`: pack mods kept under the same file name whose content changed. */
+	mods: { add: string[]; update: string[]; remove: string[]; keep: number };
 	configs: string[];
 	manual: ManualModCheck[];
+	/** Reached into while applying; not sent to the client. On-disk names of `mods.update`. */
+	packUpdates?: string[];
 	/** Reached into while applying; not sent to the client. */
 	updates?: Map<string, { source: string; project: { id: string; slug: string; name: string; projectUrl: string | null; iconUrl: string | null }; version: ProjectVersion }>;
 };
@@ -243,6 +247,33 @@ async function checkManualMod(
 	}
 }
 
+/**
+ * Pack mods present under the same name in both versions but with different
+ * content - typically jars bundled in the overrides, which keep a fixed name
+ * across pack releases. Compared by the file list's hash, or byte for byte
+ * against the bundled copy. Returns on-disk file names (may be .disabled).
+ */
+export async function changedPackMods(root: string, pack: ParsedPack, packFiles: string[]): Promise<string[]> {
+	const changed: string[] = [];
+	for (const onDisk of packFiles) {
+		const name = baseName(onDisk);
+		const file = path.join(root, 'mods', onDisk);
+		const download = pack.downloads.find((d) => d.target === `mods/${name}`);
+		if (download?.hash) {
+			const actual = await hashFile(file, download.hash.algo === 'sha1' ? 'sha1' : 'sha512').catch(() => null);
+			if (actual && actual !== download.hash.value) changed.push(onDisk);
+			continue;
+		}
+		const entry = pack.overrideEntries.filter((e) => overrideRelative(e) === `mods/${name}`).pop();
+		const bundled = entry ? pack.zip?.readFile(entry) : null;
+		if (bundled) {
+			const current = await fs.readFile(file).catch(() => null);
+			if (current && !current.equals(bundled)) changed.push(onDisk);
+		}
+	}
+	return changed;
+}
+
 async function buildPlan(instance: ServerInstance, versionId: string, pack: ParsedPack): Promise<PackChangePlan> {
 	const target = targetLoaderFor(instance, pack);
 	const minecraftChange = pack.minecraftVersion !== instance.minecraftVersion;
@@ -257,6 +288,11 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 	const packRows = rows.filter((r) => r.fromPack);
 	const remove = packRows.filter((r) => !wanted.has(baseName(r.fileName))).map((r) => r.fileName);
 	const add = [...wanted].filter((n) => !present.has(n)).sort();
+	const packUpdates = await changedPackMods(
+		instance.path,
+		pack,
+		packRows.filter((r) => wanted.has(baseName(r.fileName))).map((r) => r.fileName)
+	);
 
 	// A Minecraft or loader-family change is when a user mod is likely to break.
 	const breaking = minecraftChange || target.loader !== instance.modloader;
@@ -287,10 +323,16 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 		},
 		minecraftChange,
 		loaderChange,
-		mods: { add, remove, keep: packRows.length - remove.length },
+		mods: {
+			add,
+			update: packUpdates.map(baseName).sort(),
+			remove,
+			keep: packRows.length - remove.length - packUpdates.length
+		},
 		configs: packTopLevel(pack),
 		manual: checks.map((c) => c.check),
-		updates
+		updates,
+		packUpdates
 	};
 }
 
@@ -299,6 +341,7 @@ export async function planPackChange(instance: ServerInstance, versionId: string
 	const pack = await preparePack(instance, versionId);
 	const plan = await buildPlan(instance, versionId, pack);
 	delete plan.updates;
+	delete plan.packUpdates;
 	return plan;
 }
 
@@ -384,8 +427,18 @@ export async function applyPackChange(
 				task.log(`Removed ${fileName}`);
 			}
 
-			// 3. New pack files: mods not already present, plus everything outside mods/.
-			const present = new Set([...modsBefore].map(baseName));
+			// 3. Pack mods kept under the same name but changed in content are
+			// staged (restorable) and fetched again; a disabled one stays disabled.
+			const reDisable: string[] = [];
+			for (const onDisk of plan.packUpdates ?? []) {
+				await fs.rename(path.join(mods, onDisk), path.join(staging, 'mods', onDisk));
+				stagedMods.push(onDisk);
+				if (onDisk.endsWith(DISABLED_SUFFIX)) reDisable.push(baseName(onDisk));
+				task.log(`Updating pack mod ${baseName(onDisk)}`);
+			}
+
+			// 4. New pack files: mods not already present, plus everything outside mods/.
+			const present = new Set([...modsBefore].filter((n) => !(plan.packUpdates ?? []).includes(n)).map(baseName));
 			const toDownload = pack.downloads.filter((d) => {
 				const dir = d.target ? path.posix.dirname(d.target) : 'mods';
 				if (PROTECTED.has(d.target.split('/')[0]) && dir !== 'mods') return false;
@@ -394,7 +447,7 @@ export async function applyPackChange(
 			task.setProgress(0, 'Downloading pack files');
 			({ failures: downloadFailures } = await downloadPackFiles({ ...pack, downloads: toDownload }, root, task));
 
-			// 4. Overrides, minus protected files and jars that are already there.
+			// 5. Overrides, minus protected files and jars that are already there.
 			const overrideEntries = pack.overrideEntries.filter((e) => {
 				const rel = overrideRelative(e);
 				const top = rel.split('/')[0];
@@ -404,8 +457,11 @@ export async function applyPackChange(
 			task.setProgress(null, 'Unpacking pack overrides');
 			const copied = await applyOverrides({ ...pack, overrideEntries }, root);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
+			for (const name of reDisable) {
+				await fs.rename(path.join(mods, name), path.join(mods, `${name}${DISABLED_SUFFIX}`)).catch(() => undefined);
+			}
 
-			// 5. User mods the user chose to update.
+			// 6. User mods the user chose to update.
 			for (const fileName of opts.updateMods) {
 				const update = plan.updates?.get(fileName);
 				if (!update) continue;
@@ -423,7 +479,7 @@ export async function applyPackChange(
 				if (fileName.endsWith(DISABLED_SUFFIX)) await setModEnabled(instance, installed, false);
 			}
 
-			// 6. The loader, when the pack's loader or Minecraft version moved.
+			// 7. The loader, when the pack's loader or Minecraft version moved.
 			let launchArgs = instance.launchArgs;
 			let loaderVersion = instance.modloaderVersion;
 			if (plan.loaderChange && javaPath) {

@@ -34,7 +34,7 @@
 		target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 		minecraftChange: boolean;
 		loaderChange: boolean;
-		mods: { add: string[]; remove: string[]; keep: number };
+		mods: { add: string[]; update: string[]; remove: string[]; keep: number };
 		configs: string[];
 		manual: ManualMod[];
 	};
@@ -174,8 +174,8 @@
 					</li>
 				{/if}
 				<li>
-					Pack mods: <strong>{plan.mods.add.length}</strong> added, <strong>{plan.mods.remove.length}</strong>
-					removed, {plan.mods.keep} unchanged
+					Pack mods: <strong>{plan.mods.add.length}</strong> added, <strong>{plan.mods.update.length}</strong>
+					updated, <strong>{plan.mods.remove.length}</strong> removed, {plan.mods.keep} unchanged
 				</li>
 				{#if plan.configs.length}
 					<li>
@@ -184,11 +184,12 @@
 				{/if}
 			</ul>
 
-			{#if plan.mods.add.length || plan.mods.remove.length}
+			{#if plan.mods.add.length || plan.mods.update.length || plan.mods.remove.length}
 				<details>
 					<summary>Pack mod changes</summary>
 					<ul class="files">
 						{#each plan.mods.add as f (f)}<li class="added">+ {f}</li>{/each}
+						{#each plan.mods.update as f (f)}<li>~ {f}</li>{/each}
 						{#each plan.mods.remove as f (f)}<li class="removed">− {f}</li>{/each}
 					</ul>
 				</details>
