@@ -20,6 +20,8 @@ import { resolveJava } from '$lib/server/java';
 import { cpus, hostname, networkInterfaces } from 'node:os';
 import { describeSchedule } from '$lib/server/scheduler';
 import { readJournal } from '$lib/server/journal';
+import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
+import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
 
 /**
@@ -36,10 +38,42 @@ function primaryLanAddress(): string {
 	return hostname();
 }
 
+/**
+ * The overview polls every few seconds; a crashed server's journal does not
+ * change between polls, so the diagnosis is reused until a new run appears.
+ */
+const diagnosisCache = new Map<string, { key: string; result: Diagnosis[] }>();
+
+async function diagnoseLastRun(instanceId: string, instancePath: string, journal: string): Promise<Diagnosis[]> {
+	const key = `${journal.length}:${journal.slice(-200)}`;
+	const hit = diagnosisCache.get(instanceId);
+	if (hit && hit.key === key) return hit.result;
+	const result = await diagnoseRun(journal, modsDir(instancePath));
+	diagnosisCache.set(instanceId, { key, result });
+	return result;
+}
+
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
 	const samples = bucketSamples(recentSamples(instance.id));
+	// Shown only when the last run ended badly, so a crash is not silent. A
+	// stop MineShell asked for reports the same systemd Result as a crash, so
+	// intent is checked rather than inferred from the unit state. Most loaders
+	// catch a startup crash, print it and exit with code 0, so a systemd
+	// failure alone misses them: a run that stopped on its own without ever
+	// reaching "Done (" counts as a crash too.
+	let lastRunLog: string | null = null;
+	let crashed = false;
+	if (!summary.running && summary.state.active !== 'activating' && !wasStopIntentional(instance.id)) {
+		// Big packs log thousands of lines per start; the whole last run is needed.
+		lastRunLog = lastRun(await readJournal(instance.id, 20000));
+		const startedRun = /^Started \S+\.service/.test(lastRunLog);
+		crashed =
+			summary.state.active === 'failed' ||
+			summary.state.result === 'exit-code' ||
+			(startedRun && !/\]: Done \(/.test(lastRunLog));
+	}
 	const players = summary.running ? await onlinePlayers(instance) : null;
 	// Which runtime actually gets used, so the overview can name it instead of
 	// only saying that matching happens.
@@ -93,13 +127,11 @@ export const load: PageServerLoad = async ({ params }) => {
 		cpuCores: cpus().length || 1,
 		cpu: samples.map((s) => ({ timestamp: s.timestamp, value: s.cpuPercent })),
 		memory: samples.map((s) => ({ timestamp: s.timestamp, value: s.memoryBytes })),
-		// Shown only when the last run ended badly, so a crash is not silent. A
-		// stop MineShell asked for reports the same systemd Result as a crash, so
-		// intent is checked rather than inferred from the unit state.
-		crashTail:
-			(summary.state.active === 'failed' || summary.state.result === 'exit-code') &&
-			!wasStopIntentional(instance.id)
-				? (await readJournal(instance.id, 40)).split('\n').slice(-40).join('\n')
+		crashTail: crashed && lastRunLog ? lastRunLog.split('\n').slice(-40).join('\n') : null,
+		// Streamed: indexing a big pack's mods takes a moment the first time.
+		diagnosis:
+			crashed && lastRunLog
+				? diagnoseLastRun(instance.id, instance.path, lastRunLog).catch(() => [] as Diagnosis[])
 				: null
 	};
 };
@@ -119,6 +151,28 @@ export const actions: Actions = {
 							? await restart(instance)
 							: { ok: false, message: `Unknown action "${verb}".` };
 		return result.ok ? result : fail(400, result);
+	},
+
+	/** One-click fix from a crash diagnosis: disable the culprit or re-enable a dependency. */
+	modFix: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const fileName = String(form.get('fileName') ?? '');
+		const enable = form.get('enable') === 'true';
+		if (!fileName || fileName.includes('/') || fileName.includes('..')) {
+			return fail(400, { ok: false, message: 'No mod given.' });
+		}
+		if ((await summarise(instance)).running) {
+			return fail(400, { ok: false, message: 'Stop the server first.' });
+		}
+		try {
+			await setModEnabled(instance, fileName, enable);
+		} catch {
+			return fail(400, { ok: false, message: `${fileName} is no longer in the mods folder.` });
+		}
+		diagnosisCache.delete(instance.id);
+		const name = fileName.replace(/\.jar(\.disabled)?$/i, '');
+		return { ok: true, message: `${enable ? 'Enabled' : 'Disabled'} ${name}. Start the server to try again.` };
 	},
 
 	eula: async ({ params }) => {

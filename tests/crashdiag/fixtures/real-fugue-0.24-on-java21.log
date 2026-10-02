@@ -1,0 +1,76 @@
+2026-10-01T13:12:12.806770097Z main WARN Disabling terminal, you're running in an unsupported environment.
+[15:12:12] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[15:12:12] [main/INFO] [FML.TWEAK]: Initializing Mixins...
+[15:12:12] [main/INFO] [mixin]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=jar:file:/tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/libraries/com/cleanroommc/sponge-mixin/0.20.12+mixin.0.8.7/sponge-mixin-0.20.12+mixin.0.8.7.jar!/org/spongepowered/asm/mixin/MixinEnvironment.class Service=LaunchWrapper Env=UNKNOWN
+[15:12:12] [main/INFO] [FML.TWEAK]: Initializing MixinExtras...
+[15:12:12] [main/INFO] [Foundation]: Using primary tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[15:12:12] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker
+[15:12:12] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLServerTweaker@52de51b6
+[15:12:12] [main/INFO] [FML.TWEAK]: Jar location: file:/tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/cleanroom-0.4.4-alpha.jar
+[15:12:12] [main/INFO] [FML]: Forge Mod Loader version 14.23.5.2864 for Minecraft 1.12.2 loading
+[15:12:12] [main/INFO] [FML]: Cleanroom version 0.4.4-alpha
+[15:12:12] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 21.0.12.1, running on Linux:amd64:6.8.0-139-generic, installed at /usr/lib/jvm/java-21-openjdk-amd64
+[15:12:13] [main/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/./mods for mods
+[15:12:13] [main/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/cr-test/./mods/1.12.2 for mods
+[15:12:13] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in +Fugue-0.24.4.jar.
+[15:12:13] [main/ERROR] [FML]: Coremod FugueLoadingPlugin: Unable to class load the plugin com.cleanroommc.fugue.common.FugueLoadingPlugin
+java.lang.ClassNotFoundException: com.cleanroommc.fugue.common.FugueLoadingPlugin
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:264) ~[foundation-0.18.5.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:273) ~[foundation-0.18.5.jar:?]
+	at java.base/java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.base/java.lang.Class.forName(Class.java:536) ~[?:?]
+	at java.base/java.lang.Class.forName(Class.java:515) ~[?:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreMod(CoreModManager.java:576) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.discoverCoreMods(CoreModManager.java:498) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.handleLaunch(CoreModManager.java:272) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupHome(FMLLaunchHandler.java:114) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupServer(FMLLaunchHandler.java:90) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.configureForServerLaunch(FMLLaunchHandler.java:51) ~[cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.common.launcher.FMLServerTweaker.injectIntoClassLoader(FMLServerTweaker.java:60) ~[cleanroom-0.4.4-alpha.jar:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:107) ~[foundation-0.18.5.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:42) ~[foundation-0.18.5.jar:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.4.4-alpha.jar:?]
+Caused by: java.lang.UnsupportedClassVersionError: com/cleanroommc/fugue/common/FugueLoadingPlugin has been compiled by a more recent version of the Java Runtime (class file version 69.0), this version of the Java Runtime only recognizes class file versions up to 65.0
+	at java.base/java.lang.ClassLoader.defineClass1(Native Method) ~[?:?]
+	at java.base/java.lang.ClassLoader.defineClass(ClassLoader.java:1027) ~[?:?]
+	at java.base/java.security.SecureClassLoader.defineClass(SecureClassLoader.java:150) ~[?:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:229) ~[foundation-0.18.5.jar:?]
+	... 17 more
+[15:12:13] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in UniversalTweaks-1.12.2-1.21.0.jar.
+[15:12:13] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.mixin.EnvironmentStateTweaker@503d56b5
+[15:12:13] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[15:12:13] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.launch.MixinTweaker
+[15:12:13] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[15:12:13] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@6e0ff644
+[15:12:13] [main/INFO] [Foundation]: Calling tweak UniversalTweaksCore
+[15:12:13] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@6e0ff644
+[15:12:13] [main/INFO] [Foundation]: Calling tweak FMLCorePlugin
+[15:12:13] [main/INFO] [mixin]: Initialised Mixin FML Remapper Adapter with net.minecraftforge.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper@3a22bad6
+[15:12:13] [main/INFO] [FML]: FML appears to be missing any signature data. This is expected, don't worry.
+[15:12:13] [main/INFO] [Foundation]: Calling tweak FMLForgePlugin
+[15:12:13] [main/INFO] [Foundation]: Calling tweak ScalarLoadingPlugin
+[15:12:13] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.launch.MixinTweaker@70cccd8f
+[15:12:13] [main/FATAL] [Foundation]: Unable to launch
+org.spongepowered.asm.launch.MixinInitialisationError: Error initialising mixin config fugue.mixin.json
+	at org.spongepowered.asm.mixin.transformer.Config.create(Config.java:169) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.Mixins.createConfiguration(Mixins.java:121) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.Mixins.addConfigurations(Mixins.java:88) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.Mixins.addConfigurations(Mixins.java:76) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.launch.MixinTweaker.acceptOptions(MixinTweaker.java:61) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:106) ~[foundation-0.18.5.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:42) ~[foundation-0.18.5.jar:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.4.4-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.4.4-alpha.jar:?]
+Caused by: java.lang.IllegalArgumentException: The requested compatibility level JAVA_25 could not be set. Level is not supported by the active JRE or ASM version (Java 21.0, ASM 9.9.1 (ASM10_EXPERIMENTAL))
+	at org.spongepowered.asm.mixin.MixinEnvironment.setCompatibilityLevel(MixinEnvironment.java:1868) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.initCompatibilityLevel(MixinConfig.java:619) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.postInit(MixinConfig.java:564) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.onLoad(MixinConfig.java:482) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.create(MixinConfig.java:1412) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.Config.create(Config.java:164) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	... 10 more

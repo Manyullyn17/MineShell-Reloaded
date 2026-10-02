@@ -1,0 +1,15 @@
+[
+ {
+  "fileName": "mstest-fabric-needsdep.jar",
+  "enabled": true,
+  "ids": [
+   "mstest_needsdep"
+  ],
+  "names": [
+   "MineShell Test NeedsDep"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ }
+]

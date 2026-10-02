@@ -1,0 +1,1 @@
+package mstest.consumer; public class Main implements net.fabricmc.api.ModInitializer, mstest.provider.ClientApi { public void onInitialize() {} }

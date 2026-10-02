@@ -1,0 +1,17 @@
+[
+ {
+  "fileName": "mstest-forge-clientcode.jar",
+  "enabled": true,
+  "ids": [
+   "mstestcc"
+  ],
+  "names": [
+   "MineShell Test ClientCode"
+  ],
+  "clientOnly": false,
+  "classes": [
+   "mstest.forge.ClientCode"
+  ],
+  "mixinConfigs": []
+ }
+]

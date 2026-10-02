@@ -1,0 +1,16 @@
+[
+ {
+  "fileName": "mstest-forge-needsdep.jar",
+  "enabled": true,
+  "ids": [
+   "mstestdep",
+   "mstest_missing"
+  ],
+  "names": [
+   "MineShell Test NeedsDep"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ }
+]

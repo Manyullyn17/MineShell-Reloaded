@@ -1,0 +1,42 @@
+[22:36:25] [INFO] [FabricLoader/GameProvider]: Loading Minecraft 1.16.5 with Fabric Loader 0.12.12
+[22:36:25] [main/INFO]: Loading Minecraft 1.16.5 with Fabric Loader 0.12.12
+[22:36:25] [main/INFO]: Loading 4 mods:
+	- fabricloader 0.12.12
+	- java 8
+	- minecraft 1.16.5
+	- mstest_clientcode 1.0
+[22:36:25] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.4 Source=file:/tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/fabric-old2/libraries/net/fabricmc/sponge-mixin/0.10.7+mixin.0.8.4/sponge-mixin-0.10.7+mixin.0.8.4.jar Service=Knot/Fabric Env=SERVER
+[22:36:27] [main/FATAL]: Failed to start the minecraft server
+java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'mstest_clientcode'!
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.lambda$invoke0$0(EntrypointUtils.java:51) ~[fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.util.ExceptionUtil.gatherExceptions(ExceptionUtil.java:33) ~[fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:49) ~[fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke(EntrypointUtils.java:35) ~[fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.game.minecraft.Hooks.startServer(Hooks.java:62) ~[fabric-loader-0.12.12.jar:?]
+	at net.minecraft.server.Main.main(Main.java:92) [server-intermediary.jar:?]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_504]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_504]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_504]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_504]
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:608) [fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:77) [fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotServer.main(KnotServer.java:23) [fabric-loader-0.12.12.jar:?]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_504]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_504]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_504]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_504]
+	at net.fabricmc.loader.impl.launch.server.FabricServerLauncher.main(FabricServerLauncher.java:66) [fabric-loader-0.12.12.jar:?]
+	at net.fabricmc.installer.ServerLauncher.main(ServerLauncher.java:69) [server.jar:1.1.2]
+Caused by: java.lang.NoClassDefFoundError: net/minecraft/class_310
+	at mstest.ClientCode.onInitialize(ClientCode.java:1) ~[mstest-fabric-clientcode.jar:?]
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:47) ~[fabric-loader-0.12.12.jar:?]
+	... 16 more
+Caused by: java.lang.ClassNotFoundException: net.minecraft.class_310
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:387) ~[?:1.8.0_504]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:418) ~[?:1.8.0_504]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:351) ~[?:1.8.0_504]
+	at net.fabricmc.loader.impl.launch.knot.KnotClassLoader.loadClass(KnotClassLoader.java:158) ~[fabric-loader-0.12.12.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:351) ~[?:1.8.0_504]
+	at mstest.ClientCode.onInitialize(ClientCode.java:1) ~[mstest-fabric-clientcode.jar:?]
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:47) ~[fabric-loader-0.12.12.jar:?]
+	... 16 more

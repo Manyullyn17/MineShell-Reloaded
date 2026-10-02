@@ -1,0 +1,30 @@
+[
+ {
+  "fileName": "mstest-fabric-clientapi.jar",
+  "enabled": true,
+  "ids": [
+   "mstest_clientapi"
+  ],
+  "names": [
+   "MineShell Test ClientApi"
+  ],
+  "clientOnly": true,
+  "classes": [
+   "mstest.provider.ClientApi"
+  ],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "mstest-fabric-consumer.jar",
+  "enabled": true,
+  "ids": [
+   "mstest_consumer"
+  ],
+  "names": [
+   "MineShell Test Consumer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ }
+]

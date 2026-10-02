@@ -1,0 +1,17 @@
+[
+ {
+  "fileName": "mstest-legacy-clientcode.jar",
+  "enabled": true,
+  "ids": [
+   "mstest_clientcode"
+  ],
+  "names": [
+   "MineShell Test ClientCode"
+  ],
+  "clientOnly": false,
+  "classes": [
+   "mstest.legacy.ClientCode"
+  ],
+  "mixinConfigs": []
+ }
+]

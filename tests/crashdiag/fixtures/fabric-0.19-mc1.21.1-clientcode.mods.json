@@ -1,0 +1,15 @@
+[
+ {
+  "fileName": "mstest-fabric-clientcode.jar",
+  "enabled": true,
+  "ids": [
+   "mstest_clientcode"
+  ],
+  "names": [
+   "MineShell Test ClientCode"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ }
+]

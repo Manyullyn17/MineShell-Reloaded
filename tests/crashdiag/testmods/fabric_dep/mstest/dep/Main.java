@@ -1,0 +1,1 @@
+package mstest.dep; public class Main implements net.fabricmc.api.ModInitializer { public void onInitialize() {} }

@@ -1,0 +1,1 @@
+package mstest.provider; public interface ClientApi { }

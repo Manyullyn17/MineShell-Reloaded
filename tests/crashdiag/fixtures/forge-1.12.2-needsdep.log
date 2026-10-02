@@ -1,0 +1,43 @@
+2026-10-02 22:36:41,363 main WARN Disabling terminal, you're running in an unsupported environment.
+[22:36:41] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Using primary tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[22:36:41] [main/INFO] [FML]: Forge Mod Loader version 14.23.5.2860 for Minecraft 1.12.2 loading
+[22:36:41] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 1.8.0_504, running on Linux:amd64:6.8.0-139-generic, installed at /usr/lib/jvm/java-8-openjdk-amd64/jre
+[22:36:41] [main/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/forge-test/./mods for mods
+[22:36:41] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[22:36:41] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.relauncher.CoreModManager$FMLPluginWrapper
+[22:36:42] [main/INFO] [FML]: Found valid fingerprint for Minecraft Forge. Certificate fingerprint e3c3d50c7c986df74c645c0ac54639741c90a557
+[22:36:42] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.relauncher.CoreModManager$FMLPluginWrapper
+[22:36:42] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[22:36:42] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.TerminalTweaker
+[22:36:42] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.TerminalTweaker
+[22:36:42] [main/INFO] [LaunchWrapper]: Launching wrapped minecraft {net.minecraft.server.MinecraftServer}
+[22:36:43] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.12.2
+[22:36:43] [Server thread/INFO] [FML]: MinecraftForge v14.23.5.2860 Initialized
+[22:36:43] [Server thread/INFO] [FML]: Starts to replace vanilla recipe ingredients with ore ingredients.
+[22:36:43] [Server thread/INFO] [FML]: Invalid recipe found with multiple oredict ingredients in the same ingredient...
+[22:36:43] [Server thread/INFO] [FML]: Replaced 1227 ore ingredients
+[22:36:43] [Server thread/INFO] [FML]: Searching /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/forge-test/./mods for mods
+[22:36:43] [Server thread/INFO] [FML]: Forge Mod Loader has identified 5 mods to load
+[22:36:43] [Server thread/WARN] [FML]: Missing English translation for FML: assets/fml/lang/en_us.lang
+[22:36:43] [Server thread/WARN] [FML]: Missing English translation for mstest_needsdep: assets/mstest_needsdep/lang/en_us.lang
+[22:36:43] [Server thread/FATAL] [FML]: net.minecraftforge.fml.common.MissingModsException: Mod mstest_needsdep (MineShell Test NeedsDep) requires [mstest_missing]
+[22:36:43] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception
+net.minecraftforge.fml.common.MissingModsException: Mod mstest_needsdep (MineShell Test NeedsDep) requires [mstest_missing]
+	at net.minecraftforge.fml.common.Loader.sortModList(Loader.java:266) ~[Loader.class:?]
+	at net.minecraftforge.fml.common.Loader.loadMods(Loader.java:572) ~[Loader.class:?]
+	at net.minecraftforge.fml.server.FMLServerHandler.beginServerLoading(FMLServerHandler.java:98) ~[FMLServerHandler.class:?]
+	at net.minecraftforge.fml.common.FMLCommonHandler.onServerStart(FMLCommonHandler.java:333) ~[FMLCommonHandler.class:?]
+	at net.minecraft.server.dedicated.DedicatedServer.func_71197_b(DedicatedServer.java:125) ~[nz.class:?]
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:486) [MinecraftServer.class:?]
+	at java.lang.Thread.run(Thread.java:750) [?:1.8.0_504]
+[22:36:43] [Server thread/ERROR] [minecraft/MinecraftServer]: This crash report has been saved to: /tmp/claude-1000/-home-manyullyn-mineshell-revived/8af24372-02ab-4a12-bc17-3d98232d81c5/scratchpad/e2e/data/instances/forge-test/./crash-reports/crash-2026-10-02_22.36.43-server.txt
+[22:36:43] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[22:36:43] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[22:36:43] [Server thread/INFO] [FML]: The state engine was in incorrect state CONSTRUCTING and forced into state SERVER_STOPPED. Errors may have been discarded.
+[22:36:43] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[22:36:43] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Saving worlds

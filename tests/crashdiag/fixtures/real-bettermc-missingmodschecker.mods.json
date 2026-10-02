@@ -1,0 +1,3884 @@
+[
+ {
+  "fileName": "AdvancedLootInfo-fabric-1.20.1-1.7.0.jar",
+  "enabled": true,
+  "ids": [
+   "ali"
+  ],
+  "names": [
+   "AdvancedLootInfo"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "AutochefsDelight-1.20.1-Fabric-1.0.6.jar",
+  "enabled": true,
+  "ids": [
+   "autochefsdelight"
+  ],
+  "names": [
+   "Autochef's Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BOMD-1.7.5-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "bosses_of_mass_destruction"
+  ],
+  "names": [
+   "Bosses of Mass Destruction (Beta)"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BadOptimizations-2.4.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "badoptimizations",
+   "minecraft"
+  ],
+  "names": [
+   "BadOptimizations"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BarteringStation-v8.0.0-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "barteringstation"
+  ],
+  "names": [
+   "Bartering Station"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BetterAdvancements-Fabric-1.20.1-0.4.2.25.jar",
+  "enabled": true,
+  "ids": [
+   "betteradvancements"
+  ],
+  "names": [
+   "Better Advancements"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BetterCompatibilityChecker-fabric-4.0.8+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "bcc"
+  ],
+  "names": [
+   "BetterCompatibilityChecker"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "BetterTridents-v8.0.1-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "bettertridents"
+  ],
+  "names": [
+   "Better Tridents"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Bookshelf-Fabric-1.20.1-20.2.13.jar",
+  "enabled": true,
+  "ids": [
+   "bookshelf"
+  ],
+  "names": [
+   "Bookshelf"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Bountiful-6.0.4+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "bountiful"
+  ],
+  "names": [
+   "Bountiful"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ClimateRivers-v20.1.0-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "climaterivers"
+  ],
+  "names": [
+   "Climate Rivers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Clumps-fabric-1.20.1-12.0.0.4.jar",
+  "enabled": true,
+  "ids": [
+   "clumps"
+  ],
+  "names": [
+   "Clumps"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ConfiguredDefaults-v8.0.4-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "configureddefaults"
+  ],
+  "names": [
+   "Configured Defaults"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Corgilib-Fabric-1.20.1-4.0.3.4.jar",
+  "enabled": true,
+  "ids": [
+   "corgilib"
+  ],
+  "names": [
+   "CorgiLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Cull Less Leaves-1.4.2+1.21-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "cull-less-leaves"
+  ],
+  "names": [
+   "Cull Less Leaves"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "CutThrough-v8.0.2-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "cutthrough"
+  ],
+  "names": [
+   "Cut Through"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Debugify-1.20.1+2.0.jar",
+  "enabled": true,
+  "ids": [
+   "debugify"
+  ],
+  "names": [
+   "Debugify"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "DiagonalFences-v8.1.5-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "diagonalfences"
+  ],
+  "names": [
+   "Diagonal Fences"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "DungeonsArise-1.20.x-2.1.58-fabric-release.jar",
+  "enabled": true,
+  "ids": [
+   "dungeons_arise"
+  ],
+  "names": [
+   "When Dungeons Arise"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "EasyAnvils-v8.0.2-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "easyanvils"
+  ],
+  "names": [
+   "Easy Anvils"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "EasyMagic-v8.0.1-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "easymagic"
+  ],
+  "names": [
+   "Easy Magic"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "EndersDelight-1.20.1-1.0.2.refabricated.jar",
+  "enabled": true,
+  "ids": [
+   "endersdelight"
+  ],
+  "names": [
+   "Ender's Delight Refabricated"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "EpheroLib-1.20.1-FABRIC-1.2.0.jar",
+  "enabled": true,
+  "ids": [
+   "epherolib"
+  ],
+  "names": [
+   "EpheroLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "EuphoriaPatcher-1.7.8-r5.6.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "euphoria_patcher",
+   "neoforge",
+   "minecraft"
+  ],
+  "names": [
+   "Euphoria Patcher"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Explorify v1.6.4 f15-88.mod.jar",
+  "enabled": true,
+  "ids": [
+   "explorify",
+   "minecraft",
+   "cristellib"
+  ],
+  "names": [
+   "Explorify"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "FarmersDelight-1.20.1-2.4.1+refabricated.jar",
+  "enabled": true,
+  "ids": [
+   "farmersdelight"
+  ],
+  "names": [
+   "Farmer's Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "FarmersStructures-1.0.0-1.20_fabric.jar",
+  "enabled": true,
+  "ids": [
+   "farmers_structures"
+  ],
+  "names": [
+   "FarmersStructures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "FastItemFrames-v20.1.5-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "fastitemframes"
+  ],
+  "names": [
+   "Fast Item Frames"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "FauxCustomEntityData-fabric-1.20.1-6.0.1.jar",
+  "enabled": true,
+  "ids": [
+   "faux-custom-entity-data"
+  ],
+  "names": [
+   "Faux-Custom-Entity-Data"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ForgeConfigAPIPort-v8.0.3-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "forgeconfigapiport"
+  ],
+  "names": [
+   "Forge Config API Port"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ForgeConfigScreens-v8.0.2-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "forgeconfigscreens"
+  ],
+  "names": [
+   "Forge Config Screens"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Geophilic v3.4.6.mod.jar",
+  "enabled": true,
+  "ids": [
+   "geophilic",
+   "minecraft"
+  ],
+  "names": [
+   "Geophilic"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Hearths v1.0.5.mod.jar",
+  "enabled": true,
+  "ids": [
+   "hearths",
+   "minecraft"
+  ],
+  "names": [
+   "Hearths"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Iceberg-1.20.1-fabric-1.1.25.jar",
+  "enabled": true,
+  "ids": [
+   "iceberg"
+  ],
+  "names": [
+   "Iceberg"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "IllagerInvasion-v8.0.7-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "illagerinvasion"
+  ],
+  "names": [
+   "Illager Invasion"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Jade-1.20-Fabric-11.13.1.jar",
+  "enabled": true,
+  "ids": [
+   "jade"
+  ],
+  "names": [
+   "Jade"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "JadeAddons-1.20.1-Fabric-5.5.1.jar",
+  "enabled": true,
+  "ids": [
+   "jadeaddons"
+  ],
+  "names": [
+   "Jade Addons"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Kambrik-6.1.1+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "kambrik"
+  ],
+  "names": [
+   "Kambrik"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Kiwi-1.20.1-Fabric-11.10.2.jar",
+  "enabled": true,
+  "ids": [
+   "kiwi"
+  ],
+  "names": [
+   "Kiwi Library"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "LeavesBeGone-v8.0.0-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "leavesbegone"
+  ],
+  "names": [
+   "Leaves Be Gone"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Log-Begone-Fabric-1.20.1-1.0.8.jar",
+  "enabled": true,
+  "ids": [
+   "logbegone"
+  ],
+  "names": [
+   "Log Begone"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MRU-1.0.4+1.20.1+fabric.jar",
+  "enabled": true,
+  "ids": [
+   "mru",
+   "${loader}",
+   "minecraft"
+  ],
+  "names": [
+   "Mineblock's Repeated Utilities"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MagnumTorch-v8.0.2-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "magnumtorch"
+  ],
+  "names": [
+   "Magnum Torch"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MapDistanceFix-1.0.13+mc1.19.3-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "map-distance-fix"
+  ],
+  "names": [
+   "Map Distance Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MoogsMissingVillages-1.20-2.0.0.jar",
+  "enabled": true,
+  "ids": [
+   "mmv"
+  ],
+  "names": [
+   "MoogsMissingVillages"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MoogsNetherStructures-1.20-2.0.3.jar",
+  "enabled": true,
+  "ids": [
+   "mns",
+   "moogs_structures"
+  ],
+  "names": [
+   "MoogsNetherStructures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MoogsVoyagerStructures-1.20-5.0.3.jar",
+  "enabled": true,
+  "ids": [
+   "mvs",
+   "moogs_structures"
+  ],
+  "names": [
+   "Moog's Voyager Structures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "MyNethersDelight-1.20.1-1.0.4+1.7.6.refabricated.jar",
+  "enabled": true,
+  "ids": [
+   "mynethersdelight"
+  ],
+  "names": [
+   "My Nether's Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "NaturesCompass-1.20.1-2.2.3-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "naturescompass"
+  ],
+  "names": [
+   "Nature's Compass"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Neruina-2.3.1-beta.1-fabric+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "neruina"
+  ],
+  "names": [
+   "Neruina"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "NetherChested-v8.0.4-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "netherchested"
+  ],
+  "names": [
+   "Nether Chested"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "NoChatReports-FABRIC-1.20.1-v2.2.2.jar",
+  "enabled": true,
+  "ids": [
+   "nochatreports"
+  ],
+  "names": [
+   "No Chat Reports"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Oh-The-Biomes-Weve-Gone-Fabric-1.6.6.jar",
+  "enabled": true,
+  "ids": [
+   "biomeswevegone"
+  ],
+  "names": [
+   "Oh The Biomes We've Gone"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Oh-The-Trees-Youll-Grow-fabric-1.20.1-1.5.0.jar",
+  "enabled": true,
+  "ids": [
+   "ohthetreesyoullgrow"
+  ],
+  "names": [
+   "Oh The Trees You'll Grow"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Patchouli-1.20.1-84.1-FABRIC.jar",
+  "enabled": true,
+  "ids": [
+   "patchouli"
+  ],
+  "names": [
+   "Patchouli"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Paxi-1.20-Fabric-4.0.jar",
+  "enabled": true,
+  "ids": [
+   "paxi"
+  ],
+  "names": [
+   "Paxi"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "PhilipsRuins1.20.1-5.7-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "philipsruins"
+  ],
+  "names": [
+   "Philip`s Ruins"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "PickUpNotifier-v8.0.0-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "pickupnotifier"
+  ],
+  "names": [
+   "Pick Up Notifier"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Ping-Wheel-1.12.1-fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "pingwheel"
+  ],
+  "names": [
+   "Ping Wheel"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Platform-fabric-1.20.1-1.2.11.3.jar",
+  "enabled": true,
+  "ids": [
+   "platform"
+  ],
+  "names": [
+   "Platform"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "PuzzlesLib-v8.1.33-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "puzzleslib"
+  ],
+  "names": [
+   "Puzzles Lib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Quest Kill Task-0.2.0+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "questkilltask"
+  ],
+  "names": [
+   "Quest Kill Task"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "RoughlyEnoughItems-12.1.785-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "roughlyenoughitems"
+  ],
+  "names": [
+   "Roughly Enough Items"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "SkeletonAIFix-v20.1.1-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "skeletonaifix"
+  ],
+  "names": [
+   "Skeleton AI Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "SnowRealMagic-1.20.1-Fabric-10.7.0.jar",
+  "enabled": true,
+  "ids": [
+   "snowrealmagic"
+  ],
+  "names": [
+   "Snow! Real Magic!"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "SnowUnderTrees-2.5.4+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "snowundertrees"
+  ],
+  "names": [
+   "Snow Under Trees"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Stfu-2.8.1b-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "stfu"
+  ],
+  "names": [
+   "Stfu"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Stoneworks-v8.0.0-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "stoneworks"
+  ],
+  "names": [
+   "Stoneworks"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Stony Cliffs for Lithostitched v1.1.2.jar",
+  "enabled": true,
+  "ids": [
+   "stonycliffs",
+   "lithostitched",
+   "minecraft"
+  ],
+  "names": [
+   "Stony Cliffs Are Cool (Lithostitched Edition)"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Structory_1.20.x_v1.3.5.jar",
+  "enabled": true,
+  "ids": [
+   "structory",
+   "forge",
+   "neoforge",
+   "minecraft"
+  ],
+  "names": [
+   "Structory"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Structory_Towers_1.20.x_v1.0.7.jar",
+  "enabled": true,
+  "ids": [
+   "structory_towers",
+   "forge",
+   "neoforge",
+   "minecraft"
+  ],
+  "names": [
+   "Structory: Towers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "SubtleEffects-fabric-1.20.1-1.13.2.jar",
+  "enabled": true,
+  "ids": [
+   "subtle_effects"
+  ],
+  "names": [
+   "Subtle Effects"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ToolStats-Fabric-1.20.1-16.0.9.jar",
+  "enabled": true,
+  "ids": [
+   "toolstats"
+  ],
+  "names": [
+   "ToolStats"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "Towns-and-Towers-1.12-Fabric+Forge.jar",
+  "enabled": true,
+  "ids": [
+   "t_and_t",
+   "forge",
+   "minecraft",
+   "cristellib"
+  ],
+  "names": [
+   "Towns and Towers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "TradingPost-v8.0.2-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "tradingpost"
+  ],
+  "names": [
+   "Trading Post"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "VillagersPlus_3.1_(FABRIC)_for_1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "villagersplus"
+  ],
+  "names": [
+   "Villagers Plus"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "VisualWorkbench-v8.0.1-1.20.1-Fabric.jar",
+  "enabled": true,
+  "ids": [
+   "visualworkbench"
+  ],
+  "names": [
+   "Visual Workbench"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsApi-1.20-Fabric-4.0.6.jar",
+  "enabled": true,
+  "ids": [
+   "yungsapi"
+  ],
+  "names": [
+   "YUNG's API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterDungeons-1.20-Fabric-4.0.4.jar",
+  "enabled": true,
+  "ids": [
+   "betterdungeons"
+  ],
+  "names": [
+   "YUNG's Better Dungeons"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterEndIsland-1.20-Fabric-2.0.6.jar",
+  "enabled": true,
+  "ids": [
+   "betterendisland"
+  ],
+  "names": [
+   "YUNG's Better End Island"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterJungleTemples-1.20-Fabric-2.0.5.jar",
+  "enabled": true,
+  "ids": [
+   "betterjungletemples"
+  ],
+  "names": [
+   "YUNG's Better Jungle Temples"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterMineshafts-1.20-Fabric-4.0.4.jar",
+  "enabled": true,
+  "ids": [
+   "bettermineshafts"
+  ],
+  "names": [
+   "YUNG's Better Mineshafts"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterNetherFortresses-1.20-Fabric-2.0.6.jar",
+  "enabled": true,
+  "ids": [
+   "betterfortresses"
+  ],
+  "names": [
+   "YUNG's Better Nether Fortresses"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterOceanMonuments-1.20-Fabric-3.0.4.jar",
+  "enabled": true,
+  "ids": [
+   "betteroceanmonuments"
+  ],
+  "names": [
+   "YUNG's Better Ocean Monuments"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterStrongholds-1.20-Fabric-4.0.3.jar",
+  "enabled": true,
+  "ids": [
+   "betterstrongholds"
+  ],
+  "names": [
+   "YUNG's Better Strongholds"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsBetterWitchHuts-1.20-Fabric-3.0.3.jar",
+  "enabled": true,
+  "ids": [
+   "betterwitchhuts"
+  ],
+  "names": [
+   "YUNG's Better Witch Huts"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "YungsMenuTweaks-1.20.1-Fabric-1.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "yungsmenutweaks"
+  ],
+  "names": [
+   "YUNG's Menu Tweaks"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "[1.20.1-Fabric] Hybrid Aquatic 1.5.4.jar",
+  "enabled": true,
+  "ids": [
+   "hybrid-aquatic"
+  ],
+  "names": [
+   "Hybrid Aquatic"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "abridged-2.0.0-fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "abridged"
+  ],
+  "names": [
+   "Abridged"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "accessories-fabric-1.0.0-beta.48+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "accessories"
+  ],
+  "names": [
+   "Accessories"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "accessories_tclayer-3.8.1-beta.14+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "tclayer"
+  ],
+  "names": [
+   "Accessories Trinkets Compat Layer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "accessorify-2.4.0-beta.5+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "accessorify"
+  ],
+  "names": [
+   "Accessorify"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "adorabuild-structures-2.8.0-fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "adorabuild_structures"
+  ],
+  "names": [
+   "AdoraBuild: Structures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "advancednetherite-fabric-2.1.3-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "advancednetherite"
+  ],
+  "names": [
+   "Advanced Netherite"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "adventurez-1.4.20.jar",
+  "enabled": true,
+  "ids": [
+   "adventurez"
+  ],
+  "names": [
+   "AdventureZ"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "aether-1.20.1-1.5.2-beta.9-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "aether",
+   "forge",
+   "curios",
+   "minecraft"
+  ],
+  "names": [
+   "The Aether"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "almanac-1.20.x-fabric-1.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "almanac"
+  ],
+  "names": [
+   "Almanac"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "alternate-current-mc1.20-1.9.0.jar",
+  "enabled": true,
+  "ids": [
+   "alternate-current"
+  ],
+  "names": [
+   "Alternate Current"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "amendments-1.20-2.2.3-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "amendments"
+  ],
+  "names": [
+   "Amendments"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "animal_feeding_trough-1.1.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "animal_feeding_trough"
+  ],
+  "names": [
+   "Animal Feeding Trough"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "another_furniture-fabric-1.20.1-3.0.5.jar",
+  "enabled": true,
+  "ids": [
+   "another_furniture"
+  ],
+  "names": [
+   "Another Furniture"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "architectury-9.2.14-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "architectury"
+  ],
+  "names": [
+   "Architectury"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ash_api-fabric-3.0.2+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "ash_api"
+  ],
+  "names": [
+   "Ash API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "athena-fabric-1.20.1-3.1.2.jar",
+  "enabled": true,
+  "ids": [
+   "athena"
+  ],
+  "names": [
+   "Athena"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "autoslabs-1.1.3.jar",
+  "enabled": true,
+  "ids": [
+   "autoslabs"
+  ],
+  "names": [
+   "AutoSlabs"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "bclib-3.0.14.jar",
+  "enabled": true,
+  "ids": [
+   "bclib"
+  ],
+  "names": [
+   "BCLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "better-end-4.0.11.jar",
+  "enabled": true,
+  "ids": [
+   "betterend"
+  ],
+  "names": [],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "better-nether-9.0.10.jar",
+  "enabled": true,
+  "ids": [
+   "betternether"
+  ],
+  "names": [
+   "Better Nether"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "better-trim-tooltips-1.0.1.jar",
+  "enabled": true,
+  "ids": [
+   "better-trim-tooltips"
+  ],
+  "names": [
+   "Better Trim Tooltips"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "betterchunkloading-fabric-1.20.1-5.5.jar",
+  "enabled": true,
+  "ids": [
+   "betterchunkloading"
+  ],
+  "names": [
+   "Better chunk loading mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "betterend-crashed-ships-1.0.0.jar",
+  "enabled": true,
+  "ids": [
+   "betterend-crashed-ships"
+  ],
+  "names": [
+   "BetterEnd Crashed Ships"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "betterstats-3.12.6+fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "betterstats"
+  ],
+  "names": [
+   "Better Statistics Screen"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "biolith-fabric-1.0.1-alpha.1.jar",
+  "enabled": true,
+  "ids": [
+   "biolith"
+  ],
+  "names": [
+   "Biolith"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "biomemusic-fabric-1.20.1-3.5.jar",
+  "enabled": true,
+  "ids": [
+   "biomemusic",
+   "forge",
+   "minecraft"
+  ],
+  "names": [
+   "Biome Music Mod",
+   "biomemusic mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "blended-compat-1.1.2.jar",
+  "enabled": true,
+  "ids": [
+   "blended_compat",
+   "neoforge",
+   "minecraft"
+  ],
+  "names": [
+   "Blended Compat"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "blossom.jar",
+  "enabled": true,
+  "ids": [
+   "mr_blossom_blade"
+  ],
+  "names": [
+   "Blossom Blade"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "bygonenether-1.20-1.3.2.jar",
+  "enabled": true,
+  "ids": [
+   "bygonenether"
+  ],
+  "names": [
+   "Bygone Nether"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cardinal-components-api-5.2.3.jar",
+  "enabled": true,
+  "ids": [
+   "cardinal-components"
+  ],
+  "names": [
+   "Cardinal Components API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "carryon-fabric-1.20.1-2.1.2.7.jar",
+  "enabled": true,
+  "ids": [
+   "carryon"
+  ],
+  "names": [
+   "Carry On"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "certain_questing_additions-fabric-1.1.3+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "certain_questing_additions"
+  ],
+  "names": [
+   "Certain Questing Additions"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cerulean-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "cerulean",
+   "minecraft"
+  ],
+  "names": [
+   "Cerulean"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "charm-fabric-1.20.1-forked-6.0.25.jar",
+  "enabled": true,
+  "ids": [
+   "charm"
+  ],
+  "names": [
+   "Charm Forked"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "charmofundying-fabric-6.5.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "charmofundying"
+  ],
+  "names": [
+   "Charm of Undying"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "chefs-delight-1.0.4-fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "chefsdelight"
+  ],
+  "names": [
+   "Chef's Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "chipped-fabric-1.20.1-3.0.7.jar",
+  "enabled": true,
+  "ids": [
+   "chipped"
+  ],
+  "names": [
+   "Chipped"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "chunkactivitytracker-fabric-1.0.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "chunkactivitytracker",
+   "minecraft"
+  ],
+  "names": [
+   "Chunk Activity Tracker"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "chunksending-fabric-1.20.1-2.8.jar",
+  "enabled": true,
+  "ids": [
+   "chunksending"
+  ],
+  "names": [
+   "Chunksending Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "clientcrafting-fabric-1.20.1-1.8.jar",
+  "enabled": true,
+  "ids": [
+   "clientcrafting"
+  ],
+  "names": [
+   "clientcrafting Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "clientsort-fabric-2.1.7+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "clientsort"
+  ],
+  "names": [
+   "ClientSort"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cloth-config-11.1.136-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "cloth-config"
+  ],
+  "names": [
+   "Cloth Config v11"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "collective-1.20.1-8.13.jar",
+  "enabled": true,
+  "ids": [
+   "collective",
+   "minecraft"
+  ],
+  "names": [
+   "Collective"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "colorwheel-fabric-1.2.1+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "colorwheel"
+  ],
+  "names": [
+   "Colorwheel"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "comforts-fabric-6.4.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "comforts"
+  ],
+  "names": [
+   "Comforts"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "connectivity-fabric-1.20.1-7.6.jar",
+  "enabled": true,
+  "ids": [
+   "connectivity"
+  ],
+  "names": [
+   "Connectivity Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "coroutil-fabric-1.20.1-1.3.7.jar",
+  "enabled": true,
+  "ids": [
+   "coroutil"
+  ],
+  "names": [
+   "CoroUtil"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "crashexploitfixer-fabric-2.0.0+1.20.4.jar",
+  "enabled": true,
+  "ids": [
+   "crashexploitfixer"
+  ],
+  "names": [
+   "CrashExploitFixer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "crawl-0.12.0.jar",
+  "enabled": true,
+  "ids": [
+   "crawl"
+  ],
+  "names": [
+   "Crawl"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cristellib-1.1.5-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "cristellib"
+  ],
+  "names": [
+   "Cristel Lib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cultural-delights-fabric-1.0.5+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "culturaldelights"
+  ],
+  "names": [
+   "Cultural Delights Fabric"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "cupboard-fabric-1.20.1-2.7.jar",
+  "enabled": true,
+  "ids": [
+   "cupboard"
+  ],
+  "names": [
+   "cupboard"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "dawn-5.0.0.jar",
+  "enabled": true,
+  "ids": [
+   "dawn"
+  ],
+  "names": [
+   "Dawn API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "decorative_blocks-fabric-1.20.1-4.1.3.jar",
+  "enabled": true,
+  "ids": [
+   "decorative_blocks"
+  ],
+  "names": [
+   "Decorative Blocks"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "deeperdarker-fabric-1.20-1.3.3.jar",
+  "enabled": true,
+  "ids": [
+   "deeperdarker"
+  ],
+  "names": [
+   "Deeper and Darker"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "despawntweaks-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "despawntweaks",
+   "minecraft"
+  ],
+  "names": [
+   "Despawn Tweaks"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "distraction_free_recipes-fabric-1.2.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "distraction_free_recipes",
+   "txnilib",
+   "minecraft"
+  ],
+  "names": [
+   "Distraction Free Recipes (EMI)"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "does_it_tick-fabric-1.1.4-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "does_it_tick",
+   "minecraft"
+  ],
+  "names": [
+   "Does It Tick?"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "dragonloot-1.1.4.jar",
+  "enabled": true,
+  "ids": [
+   "dragonloot"
+  ],
+  "names": [
+   "DragonLoot"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "drippyloadingscreen_fabric_3.1.0_MC_1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "drippyloadingscreen"
+  ],
+  "names": [
+   "Drippy Loading Screen"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "dynamictrim-1.4.1-fabric+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "dynamictrim"
+  ],
+  "names": [
+   "DynamicTrim"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "earlybedtime-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "earlybedtime",
+   "minecraft"
+  ],
+  "names": [
+   "Early Bedtime"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "easydisenchanting-fabric-1.0.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "easydisenchanting",
+   "minecraft"
+  ],
+  "names": [
+   "Easy Disenchanting"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "eden-ring-reforked-20.1.20+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "edenring"
+  ],
+  "names": [
+   "Eden Ring Reforked"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "elytraslot-fabric-6.4.4+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "elytraslot"
+  ],
+  "names": [
+   "Elytra Slot"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "entityculling-fabric-1.9.5-mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "entityculling"
+  ],
+  "names": [
+   "EntityCulling"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "everycomp-1.20-2.9.12-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "everycomp"
+  ],
+  "names": [
+   "Every Compat"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "expandeddelight-0.3.2.jar",
+  "enabled": true,
+  "ids": [
+   "expandeddelight"
+  ],
+  "names": [
+   "Expanded Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "explorations-fabric-1.20.1-1.6.1.jar",
+  "enabled": true,
+  "ids": [
+   "explorations"
+  ],
+  "names": [
+   "Explorations"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fabric-api-0.92.7+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "fabric-api"
+  ],
+  "names": [
+   "Fabric API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fabric-language-kotlin-1.13.8+kotlin.2.3.0.jar",
+  "enabled": true,
+  "ids": [
+   "fabric-language-kotlin"
+  ],
+  "names": [
+   "Fabric Language Kotlin"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fabric-seasons-2.4.2-BETA+1.20.jar",
+  "enabled": true,
+  "ids": [
+   "seasons"
+  ],
+  "names": [
+   "Fabric Seasons"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fabric-seasons-delight-1.3.9-compat-1.0.jar",
+  "enabled": true,
+  "ids": [
+   "seasonsdelightcompat"
+  ],
+  "names": [
+   "Fabric Seasons: Delight Compat"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fabric-seasons-extras-1.3.2-BETA+1.20.jar",
+  "enabled": true,
+  "ids": [
+   "seasonsextras"
+  ],
+  "names": [
+   "Fabric Seasons: Extras"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fancymenu_fabric_3.8.1_MC_1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "fancymenu"
+  ],
+  "names": [
+   "FancyMenu"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "farmersknives-3.2.jar",
+  "enabled": true,
+  "ids": [
+   "farmersknives"
+  ],
+  "names": [
+   "Farmer's Knives"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "farsight-fabric-1.20.1-4.5.jar",
+  "enabled": true,
+  "ids": [
+   "farsight"
+  ],
+  "names": [
+   "Farsight Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fastasyncworldsave-fabric-1.20.1-2.6.jar",
+  "enabled": true,
+  "ids": [
+   "fastasyncworldsave"
+  ],
+  "names": [
+   "fastasyncworldsave Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fasterrandom-5.1.0.jar",
+  "enabled": true,
+  "ids": [
+   "faster-random"
+  ],
+  "names": [
+   "Faster Random"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fastpaintings-1.20-1.2.7-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "fastpaintings"
+  ],
+  "names": [
+   "Fast Paintings"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ferritecore-6.0.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "ferritecore"
+  ],
+  "names": [
+   "FerriteCore"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "foolproof-fabric-1.0.4-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "foolproof",
+   "minecraft"
+  ],
+  "names": [
+   "Foolproof"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "formations-1.0.4-fabric-mc1.20.2.jar",
+  "enabled": true,
+  "ids": [
+   "formations"
+  ],
+  "names": [
+   "Formations"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "formationsnether-1.0.5.jar",
+  "enabled": true,
+  "ids": [
+   "formationsnether",
+   "minecraft",
+   "formations"
+  ],
+  "names": [
+   "Formations Nether"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "formationsoverworld-1.0.5-mc1.20.jar",
+  "enabled": true,
+  "ids": [
+   "formationsoverworld",
+   "minecraft",
+   "formations"
+  ],
+  "names": [
+   "Formations Overworld"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "friendsandfoes-fabric-mc1.20.1-3.0.9.jar",
+  "enabled": true,
+  "ids": [
+   "friendsandfoes"
+  ],
+  "names": [
+   "Friends&Foes"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "frostiful-1.0.11.jar",
+  "enabled": true,
+  "ids": [
+   "frostiful"
+  ],
+  "names": [
+   "Frostiful"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "ftbquestsfreezefix-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "ftbquestsfreezefix",
+   "minecraft"
+  ],
+  "names": [
+   "FTB Quests Freeze Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fullstackwatchdog-1.0.1+1.19.2-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "fullstackwatchdog"
+  ],
+  "names": [
+   "FullStack Watchdog"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "fzzy_config-0.7.5+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "fzzy_config"
+  ],
+  "names": [
+   "Fzzy Config"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "geckolib-fabric-1.20.1-4.8.2.jar",
+  "enabled": true,
+  "ids": [
+   "geckolib"
+  ],
+  "names": [
+   "GeckoLib 4"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "gpumemleakfix-fabric-1.20.1-1.8.jar",
+  "enabled": true,
+  "ids": [
+   "gpumemleakfix"
+  ],
+  "names": [
+   "Gpu memory leak fix mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "graves-3.0.3+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "universal-graves"
+  ],
+  "names": [
+   "Universal Graves"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "guardvillagers-2.0.9-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "guardvillagers"
+  ],
+  "names": [
+   "GuardVillagers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "handcrafted-fabric-1.20.1-3.0.6.jar",
+  "enabled": true,
+  "ids": [
+   "handcrafted"
+  ],
+  "names": [
+   "Handcrafted"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "hearth_and_home-fabric-1.20.1-2.0.3.jar",
+  "enabled": true,
+  "ids": [
+   "hearth_and_home"
+  ],
+  "names": [
+   "Hearth & Home"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "immersivearmorhud-fabric-1.0.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "immersivearmorhud",
+   "minecraft"
+  ],
+  "names": [
+   "Immersive Armor HUD"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "immersivelanterns-fabric-1.0.6-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "immersivelanterns",
+   "minecraft",
+   "txnilib",
+   "accessories",
+   "curios",
+   "sodiumdynamiclights"
+  ],
+  "names": [
+   "Immersive Lanterns"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "immersivemessages-fabric-1.0.18-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "immersivemessages",
+   "minecraft",
+   "txnilib"
+  ],
+  "names": [
+   "Immersive Messages API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "immersivetips-fabric-1.0.1-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "immersivetips",
+   "minecraft"
+  ],
+  "names": [
+   "Immersive Tips"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "improved-village-placement-1.1.2.jar",
+  "enabled": true,
+  "ids": [
+   "improved_village_placement",
+   "neoforge",
+   "minecraft",
+   "lithostitched"
+  ],
+  "names": [
+   "Improved Village Placement"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "indium-1.0.36+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "indium"
+  ],
+  "names": [
+   "Indium"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "inmis-2.7.2-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "inmis"
+  ],
+  "names": [
+   "Inmis"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "inmisaddon-1.0.4.jar",
+  "enabled": true,
+  "ids": [
+   "inmisaddon"
+  ],
+  "names": [
+   "InmisAddon"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "iris-1.7.6+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "iris"
+  ],
+  "names": [
+   "Iris"
+  ],
+  "clientOnly": true,
+  "classes": [
+   "org.apache.commons.collections4.TrieUtils",
+   "org.apache.commons.collections4.OrderedIterator",
+   "org.apache.commons.collections4.MapIterator",
+   "org.apache.commons.collections4.OrderedMapIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$Reference",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$TrieIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$RangeEntrySet$EntryIterator",
+   "org.apache.commons.collections4.trie.PatriciaTrie",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$KeySet$KeyIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$Values$ValueIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$TrieMapIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$Values",
+   "org.apache.commons.collections4.trie.UnmodifiableTrie",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$EntrySet",
+   "org.apache.commons.collections4.trie.AbstractBitwiseTrie",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$PrefixRangeEntrySet$SingletonIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$EntrySet$EntryIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$RangeMap",
+   "org.apache.commons.collections4.trie.KeyAnalyzer",
+   "org.apache.commons.collections4.trie.AbstractBitwiseTrie$BasicEntry",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$TrieEntry",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$RangeEntryMap",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$PrefixRangeEntrySet$EntryIterator",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$PrefixRangeMap",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$RangeEntrySet",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$PrefixRangeEntrySet",
+   "org.apache.commons.collections4.trie.analyzer.StringKeyAnalyzer",
+   "org.apache.commons.collections4.trie.AbstractPatriciaTrie$KeySet",
+   "org.apache.commons.collections4.OrderedMap",
+   "org.apache.commons.collections4.Trie",
+   "org.apache.commons.collections4.Put",
+   "org.apache.commons.collections4.Get",
+   "org.apache.commons.collections4.IterableSortedMap",
+   "org.apache.commons.collections4.Unmodifiable",
+   "org.apache.commons.collections4.IterableGet",
+   "org.apache.commons.collections4.IterableMap",
+   "org.apache.commons.collections4.iterators.UnmodifiableOrderedMapIterator"
+  ],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "jamlib-fabric-1.3.5+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "jamlib"
+  ],
+  "names": [
+   "JamLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "justzoom_fabric_2.1.0_MC_1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "justzoom"
+  ],
+  "names": [
+   "Just Zoom"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "keybind_fix-1.0.0.jar",
+  "enabled": true,
+  "ids": [
+   "keybind_fix"
+  ],
+  "names": [
+   "Keybind Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "konkrete_fabric_1.8.1_MC_1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "konkrete"
+  ],
+  "names": [
+   "Konkrete"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "krypton-0.2.3.jar",
+  "enabled": true,
+  "ids": [
+   "krypton"
+  ],
+  "names": [
+   "Krypton"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "lithium-fabric-mc1.20.1-0.11.4.jar",
+  "enabled": true,
+  "ids": [
+   "lithium"
+  ],
+  "names": [
+   "Lithium"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "lithostitched-fabric-1.20.1-1.4.11.jar",
+  "enabled": true,
+  "ids": [
+   "lithostitched"
+  ],
+  "names": [
+   "Lithostitched"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "lmft-1.1.1+1.21.9-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "lmft"
+  ],
+  "names": [
+   "Load My F***ing Tags"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "loadingprotection-1.0.2-fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "loadingprotection"
+  ],
+  "names": [
+   "Loading Protection"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "lootintegration_wda-1.7.jar",
+  "enabled": true,
+  "ids": [
+   "lootintegration_wda",
+   "lootintegrations"
+  ],
+  "names": [
+   "lootintegration_wda Mod",
+   "lootintegration_wda mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "lootintegrations-fabric-1.20.1-4.7.jar",
+  "enabled": true,
+  "ids": [
+   "lootintegrations",
+   "forge",
+   "minecraft"
+  ],
+  "names": [
+   "Loot integration Mod",
+   "Lootintegrations mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "luna_minecraft-fabric-5.3.1.jar",
+  "enabled": true,
+  "ids": [
+   "luna_minecraft"
+  ],
+  "names": [
+   "luna"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "mediumcore-fabric-1.0.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "mediumcore"
+  ],
+  "names": [
+   "mediumcore"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "melody_fabric_1.0.4_MC_1.20.1-1.20.4.jar",
+  "enabled": true,
+  "ids": [
+   "melody"
+  ],
+  "names": [
+   "Melody"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "memorysettings-fabric-1.20.1-5.9.jar",
+  "enabled": true,
+  "ids": [
+   "memorysettings"
+  ],
+  "names": [
+   "Memorysettings Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "mes-1.4.6-1.20-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "mes"
+  ],
+  "names": [
+   "Moog's End Structures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "midnightlib-fabric-1.9.2+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "midnightlib"
+  ],
+  "names": [
+   "MidnightLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "miningspeedtooltips-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "miningspeedtooltips",
+   "minecraft"
+  ],
+  "names": [
+   "Mining Speed Tooltips"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "misctweaks-1.2.9+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "misctweaks"
+  ],
+  "names": [
+   "MiscTweaks"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "missingmodschecker.jar",
+  "enabled": true,
+  "ids": [
+   "missingmodschecker",
+   "minecraft"
+  ],
+  "names": [
+   "Missing Mods Checker"
+  ],
+  "clientOnly": false,
+  "classes": [
+   "toni.missingmodschecker.Bootstrap",
+   "toni.missingmodschecker.MissingModsChecker",
+   "toni.missingmodschecker.MissingModsWindow"
+  ],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "mixintrace-1.1.1+1.17.jar",
+  "enabled": true,
+  "ids": [
+   "mixintrace"
+  ],
+  "names": [
+   "MixinTrace"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "modernfix-fabric-5.24.4+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "modernfix"
+  ],
+  "names": [
+   "ModernFix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "modpack-update-checker-1.20.1-fabric-0.15.6.jar",
+  "enabled": true,
+  "ids": [
+   "modpack-update-checker"
+  ],
+  "names": [
+   "Modpack Update Checker"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "moogs_structure_lib-1.1.0-1.20-1.20.4-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "moogs_structures"
+  ],
+  "names": [
+   "Moog's Structure Lib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "moonlight-1.20-2.16.24-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "moonlight"
+  ],
+  "names": [
+   "Moonlight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "mythic_charms-1.3.3.jar",
+  "enabled": true,
+  "ids": [
+   "mythic_charms"
+  ],
+  "names": [
+   "Mythic Charms"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "netherportalfix-fabric-1.20-13.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "netherportalfix"
+  ],
+  "names": [
+   "NetherPortalFix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "notenoughanimations-fabric-1.11.1-mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "notenoughanimations"
+  ],
+  "names": [
+   "NotEnoughAnimations"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "oceansdelight-fdrf-fabric-1.0.2-1.20.jar",
+  "enabled": true,
+  "ids": [
+   "oceansdelight"
+  ],
+  "names": [
+   "Ocean's Delight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "open-parties-and-claims-fabric-1.20.1-0.25.8.jar",
+  "enabled": true,
+  "ids": [
+   "openpartiesandclaims"
+  ],
+  "names": [
+   "Open Parties and Claims"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "owo-lib-0.11.2+1.20.jar",
+  "enabled": true,
+  "ids": [
+   "owo"
+  ],
+  "names": [
+   "oωo"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "packanalytics-fabric-1.0.4-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "packanalytics",
+   "minecraft"
+  ],
+  "names": [
+   "Pack Analytics"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "packetfixer-3.3.1-1.18-1.20.4-merged.jar",
+  "enabled": true,
+  "ids": [
+   "packetfixer",
+   "forge",
+   "neoforge",
+   "minecraft"
+  ],
+  "names": [
+   "Packet Fixer",
+   "PacketFixer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "passengersportalfix-fabric-0.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "passengersportalfix"
+  ],
+  "names": [
+   "Passengers Portal Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "polymer-bundled-0.5.20+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "polymer-bundled"
+  ],
+  "names": [
+   "Polymer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "polymorph-fabric-0.49.10+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "polymorph"
+  ],
+  "names": [
+   "Polymorph"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "promenade-4.1.1.jar",
+  "enabled": true,
+  "ids": [
+   "promenade"
+  ],
+  "names": [
+   "Promenade"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "puffish_biome_dither-1.0.0-1.19.2-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "puffish_biome_dither"
+  ],
+  "names": [
+   "Pufferfish's Biome Dither"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "quartz-elevator-2.2.7+1.20.4.jar",
+  "enabled": true,
+  "ids": [
+   "quartzelv"
+  ],
+  "names": [
+   "Quartz Elevator"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "reacharound+1.20-1.3.1.jar",
+  "enabled": true,
+  "ids": [
+   "reacharound"
+  ],
+  "names": [
+   "Reacharound"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "recipeessentials-fabric-1.20.1-4.1.jar",
+  "enabled": true,
+  "ids": [
+   "recipeessentials"
+  ],
+  "names": [
+   "recipeessentials Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "redirected-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "redirected",
+   "minecraft"
+  ],
+  "names": [
+   "Redirected"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "reintegrated_chipped-1.0.0.jar",
+  "enabled": true,
+  "ids": [
+   "reintegrated_chipped",
+   "chipped"
+  ],
+  "names": [
+   "Reintegrated Chipped"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "repurposed_structures-7.1.19+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "repurposed_structures"
+  ],
+  "names": [
+   "Repurposed Structures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "resourcefulconfig-fabric-1.20.1-2.1.3.jar",
+  "enabled": true,
+  "ids": [
+   "resourcefulconfig"
+  ],
+  "names": [
+   "Resourcefulconfig"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "resourcefullib-fabric-1.20.1-2.1.29.jar",
+  "enabled": true,
+  "ids": [
+   "resourcefullib"
+  ],
+  "names": [
+   "Resourceful Lib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "rightclickharvest-fabric-4.6.1+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "rightclickharvest"
+  ],
+  "names": [
+   "Right Click Harvest"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sawmill-1.20-1.4.10-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "sawmill"
+  ],
+  "names": [
+   "Universal Sawmill"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "simple_snowy_fix-fabric-1.19-1.21-2.1.5.jar",
+  "enabled": true,
+  "ids": [
+   "simple_snowy_fix"
+  ],
+  "names": [
+   "Simple Snowy Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "skinlayers3d-fabric-1.10.1-mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "skinlayers3d"
+  ],
+  "names": [
+   "3d-Skin-Layers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "smarterfarmers-1.20-2.1.2-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "smarterfarmers"
+  ],
+  "names": [
+   "Smarter Farmers"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "smoothchunk-fabric-1.20.1-4.1.jar",
+  "enabled": true,
+  "ids": [
+   "smoothchunk",
+   "forge",
+   "minecraft"
+  ],
+  "names": [
+   "Smooth chunk save Mod",
+   "Smoothchunk mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "snowyspirit-1.20-3.0.10-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "snowyspirit"
+  ],
+  "names": [
+   "Snowy Spirit"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sodiumdynamiclights-fabric-1.0.10-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "sodiumdynamiclights",
+   "minecraft"
+  ],
+  "names": [
+   "Sodium Dynamic Lights"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sodiumextras-fabric-1.0.7-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "sodiumextras",
+   "minecraft"
+  ],
+  "names": [
+   "Sodium Extras"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sodiumoptionsapi-fabric-1.0.10-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "sodiumoptionsapi",
+   "minecraft",
+   "reeses_sodium_options"
+  ],
+  "names": [
+   "Sodium Options API"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sodiumoptionsmodcompat-fabric-1.0.0-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "sodiumoptionsmodcompat",
+   "minecraft",
+   "sodiumoptionsapi"
+  ],
+  "names": [
+   "Sodium Options Mod Compat"
+  ],
+  "clientOnly": true,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sound-physics-remastered-fabric-1.20.1-1.5.1.jar",
+  "enabled": true,
+  "ids": [
+   "sound_physics_remastered"
+  ],
+  "names": [
+   "Sound Physics Remastered"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "spark-1.10.53-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "spark"
+  ],
+  "names": [
+   "spark"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "sparsestructures-fabric-1.20.1-3.0.jar",
+  "enabled": true,
+  "ids": [
+   "sparsestructures"
+  ],
+  "names": [
+   "SparseStructures"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "spawn-1.0.3-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "spawn"
+  ],
+  "names": [
+   "Spawn"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "spawnersplus-4.3.3-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "spawners_plus"
+  ],
+  "names": [],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "starlight-1.1.2+fabric.dbc156f.jar",
+  "enabled": true,
+  "ids": [
+   "starlight"
+  ],
+  "names": [
+   "Starlight"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "structure_layout_optimizer-fabric-1.0.11.jar",
+  "enabled": true,
+  "ids": [
+   "structure_layout_optimizer"
+  ],
+  "names": [
+   "Structure Layout Optimizer"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "structureessentials-fabric-1.20.1-4.8.jar",
+  "enabled": true,
+  "ids": [
+   "structureessentials"
+  ],
+  "names": [
+   "Structure Essentials Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "supplementaries-1.20-3.1.41-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "supplementaries"
+  ],
+  "names": [
+   "Supplementaries"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "suppsquared-1.20-1.1.29.jar",
+  "enabled": true,
+  "ids": [
+   "suppsquared"
+  ],
+  "names": [
+   "Supplementaries Squared"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "talkbubbles-1.0.8.jar",
+  "enabled": true,
+  "ids": [
+   "talkbubbles"
+  ],
+  "names": [
+   "Talk Bubbles"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "tcdcommons-3.12.3.3+fabric-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "tcdcommons"
+  ],
+  "names": [
+   "TCD Commons API"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "the_bumblezone-7.9.8+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "the_bumblezone"
+  ],
+  "names": [
+   "The Bumblezone - Fabric"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "thermoo-2.3.3.jar",
+  "enabled": true,
+  "ids": [
+   "thermoo"
+  ],
+  "names": [
+   "Thermoo"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "thermoo-patches-1.1.jar",
+  "enabled": true,
+  "ids": [
+   "thermoo-patches"
+  ],
+  "names": [
+   "Thermoo Patches"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "toms_storage_fabric-1.20-1.7.1.jar",
+  "enabled": true,
+  "ids": [
+   "toms_storage"
+  ],
+  "names": [
+   "Tom's Simple Storage Mod"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "toms_trading_network-fabric-1.20-0.3.0.jar",
+  "enabled": true,
+  "ids": [
+   "toms_trading_network"
+  ],
+  "names": [
+   "Tom's Trading Network"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "toofast-fabric-1.20-1.2.0.jar",
+  "enabled": true,
+  "ids": [
+   "toofast"
+  ],
+  "names": [
+   "TooFast"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "transparent-fabric-8.0.1+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "transparent"
+  ],
+  "names": [
+   "Transparent"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "twigs-3.1.0-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "twigs"
+  ],
+  "names": [
+   "Twigs"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "txnilib-fabric-1.0.24-1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "txnilib",
+   "minecraft"
+  ],
+  "names": [
+   "TxniLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "underlay-0.9.9-fabric-mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "underlay"
+  ],
+  "names": [
+   "Underlay"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "underwater-swim-fix-1.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "underwater-swim-fix"
+  ],
+  "names": [
+   "Underwater Swim Fix"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "universal_ores-1.5.2.jar",
+  "enabled": true,
+  "ids": [
+   "universal_ores"
+  ],
+  "names": [
+   "Universal Ores"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "vanillabackport-fabric-1.20.1-1.1.4.3.jar",
+  "enabled": true,
+  "ids": [
+   "vanillabackport"
+  ],
+  "names": [
+   "VanillaBackport"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "variantcraftingtables-6.4.jar",
+  "enabled": true,
+  "ids": [
+   "variantcraftingtables"
+  ],
+  "names": [
+   "Variant Crafting Tables"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "veinmining-fabric-1.5.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "veinmining"
+  ],
+  "names": [
+   "Vein Mining"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "villagernames-1.20.1-8.2.jar",
+  "enabled": true,
+  "ids": [
+   "villagernames",
+   "collective",
+   "minecraft"
+  ],
+  "names": [
+   "Villager Names"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "villagesandpillages-fabric-mc1.20.1-1.0.2.jar",
+  "enabled": true,
+  "ids": [
+   "villagesandpillages"
+  ],
+  "names": [
+   "Villages & Pillages"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "voidtotem-fabric-1.20-3.0.1.jar",
+  "enabled": true,
+  "ids": [
+   "voidtotem"
+  ],
+  "names": [
+   "Void Totem"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "voidz-1.0.11.jar",
+  "enabled": true,
+  "ids": [
+   "voidz"
+  ],
+  "names": [
+   "VoidZ"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "watut-fabric-1.20.1-1.2.3.jar",
+  "enabled": true,
+  "ids": [
+   "watut"
+  ],
+  "names": [
+   "What Are They Up To"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "winterly-0.9.3+1.20.jar",
+  "enabled": true,
+  "ids": [
+   "winterly"
+  ],
+  "names": [
+   "Winterly"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "wraith-waystones-3.3.3+mc1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "fwaystones"
+  ],
+  "names": [
+   "Fabric Waystones"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "xaerominimap-fabric-1.20.1-25.3.5.jar",
+  "enabled": true,
+  "ids": [
+   "xaerominimap"
+  ],
+  "names": [
+   "Xaero's Minimap"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "xaeroworldmap-fabric-1.20.1-1.40.6.jar",
+  "enabled": true,
+  "ids": [
+   "xaeroworldmap"
+  ],
+  "names": [
+   "Xaero's World Map"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "xp_storage-1.5.7+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "xp_storage"
+  ],
+  "names": [
+   "XP Storage"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "xpstorage_trinkets-1.0+1.20.1.jar",
+  "enabled": true,
+  "ids": [
+   "xp_storage_trinkets"
+  ],
+  "names": [
+   "XP Storage - Trinkets"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ },
+ {
+  "fileName": "yet_another_config_lib_v3-3.6.6+1.20.1-fabric.jar",
+  "enabled": true,
+  "ids": [
+   "yet_another_config_lib_v3",
+   "forge",
+   "minecraft",
+   "neoforge"
+  ],
+  "names": [
+   "YetAnotherConfigLib"
+  ],
+  "clientOnly": false,
+  "classes": [],
+  "mixinConfigs": []
+ }
+]

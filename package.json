@@ -16,7 +16,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "setup": "node scripts/setup.mjs",
     "doctor": "node scripts/doctor.mjs",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "test:crashdiag": "node --experimental-strip-types --no-warnings tests/crashdiag/run.mjs"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

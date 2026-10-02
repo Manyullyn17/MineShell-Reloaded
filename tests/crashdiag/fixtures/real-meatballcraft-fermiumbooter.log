@@ -1,0 +1,1085 @@
+Started minecraft@meatballcraft-cleanroom.service - Minecraft server (meatballcraft-cleanroom) managed by MineShell.
+OpenJDK 64-Bit Server VM warning: Ignoring option ZGenerational; support was removed in 24.0
+WARNING: A restricted method in java.lang.foreign.MemorySegment has been called
+WARNING: java.lang.foreign.MemorySegment::reinterpret has been called by org.jline.terminal.impl.ffm.FfmTerminalProvider in an unnamed module (file:<instance>/libraries/org/jline/jline/4.1.3/jline-4.1.3.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+2026-10-01T15:10:30.968956895Z main WARN Disabling terminal, you're running in an unsupported environment.
+[17:10:31] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[17:10:31] [main/INFO] [Foundation]: Using primary tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[17:10:31] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLServerTweaker@53f6fd09
+[17:10:31] [main/INFO] [FML.TWEAK]: Jar location: file:<instance>/cleanroom-0.6.3-alpha.jar
+[17:10:31] [main/INFO] [FML]: Forge Mod Loader version 14.23.5.2864 for Minecraft 1.12.2 loading
+[17:10:31] [main/INFO] [FML]: Cleanroom version 0.6.3-alpha
+[17:10:31] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 25.0.4.1, running on Linux:amd64:6.8.0-139-generic, installed at /usr/lib/jvm/java-25-openjdk-amd64
+[17:10:31] [main/INFO] [Cleanroom]: Initializing CleanMix...
+[17:10:31] [main/INFO] [CleanMix]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=jar:file:<instance>/libraries/com/cleanroommc/cleanmix/0.5.0/cleanmix-0.5.0.jar!/org/spongepowered/asm/mixin/MixinEnvironment.class Service=CleanMix Env=SERVER
+[17:10:31] [main/INFO] [Cleanroom]: Discovering mods
+[17:10:31] [main/INFO] [FML]: Searching <instance>/./mods for mods
+[17:10:31] [main/INFO] [FML]: Searching <instance>/./mods/1.12.2 for mods
+[17:10:32] [main/INFO] [Cleanroom]: Finished discovering mods. Found 372 discovered mod ids in 893 ms.
+[17:10:32] [main/INFO] [Cleanroom]: Initializing MixinExtras...
+[17:10:32] [main/ERROR] [FML]: Coremod RedCorePlugin: Unable to class load the plugin dev.redstudio.redcore.RedCorePlugin
+java.lang.ClassNotFoundException: dev.redstudio.redcore.RedCorePlugin
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:262) ~[foundation-0.19.8.jar:?]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:557) ~[?:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:273) ~[foundation-0.19.8.jar:?]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.base/java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.base/java.lang.Class.forName(Class.java:547) ~[?:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreMod(CoreModManager.java:302) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreModFromDiscoveredJar(CoreModManager.java:406) ~[cleanroom-0.6.3-alpha.jar:?]
+	at com.cleanroommc.discovery.CleanroomModDiscoverer.discoverCoreMod(CleanroomModDiscoverer.java:405) ~[cleanroom-0.6.3-alpha.jar:?]
+	at com.cleanroommc.discovery.CleanroomModDiscoverer.discoverCoreMods(CleanroomModDiscoverer.java:157) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.handleLaunch(CoreModManager.java:248) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupHome(FMLLaunchHandler.java:126) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupServer(FMLLaunchHandler.java:98) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.configureForServerLaunch(FMLLaunchHandler.java:54) ~[cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.common.launcher.FMLServerTweaker.injectIntoClassLoader(FMLServerTweaker.java:60) ~[cleanroom-0.6.3-alpha.jar:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:107) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.6.3-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.6.3-alpha.jar:?]
+Caused by: java.lang.ClassNotFoundException: dev.redstudio.redcore.RedCorePlugin
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:226) ~[foundation-0.19.8.jar:?]
+	... 20 more
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from `FermiumBooter-1.3.1.jar
+[17:10:32] [main/INFO] [Astral Core]: [AstralCore] Initialized.
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from bewitchment-1.12.2-0.0.22.65.jar
+[17:10:32] [main/INFO] [Battle Towers Fixes]: BTFixesCore initializing...
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker codechicken.asm.internal.Tweaker from ChickenASM-1.12-1.0.2.7.jar
+[17:10:32] [main/INFO] [LoliASM]: Lolis are on the server-side.
+[17:10:32] [main/INFO] [LoliASM]: Lolis are preparing and loading in mixins since Rongmario's too lazy to write pure ASM at times despite the mod being called 'LoliASM'
+[17:10:32] [main/WARN] [LoliASM]: Replacing CA Certs with an updated one...
+[17:10:32] [main/INFO] [LoliASM]: Initializing StacktraceDeobfuscator...
+[17:10:32] [main/INFO] [LoliASM]: Initialized StacktraceDeobfuscator.
+[17:10:32] [main/INFO] [LoliASM]: Installing DeobfuscatingRewritePolicy...
+[17:10:32] [main/INFO] [LoliASM]: Installed DeobfuscatingRewritePolicy.
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from LootTweaker-0.5.1+MC1.12.2-DLS0.jar
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from NoiseThreader-1.1.0.jar
+[17:10:32] [main/INFO] [Persistency]: Loading Persistency CoreMod
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from Sledgehammer-1.12.2-2.0.26-thin.jar
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from startuptimer-1.1.0.jar
+[17:10:32] [main/INFO] [stellar_core]: [StellarEnvironment] Processor count: 12
+[17:10:32] [main/INFO] [stellar_core]: [StellarEnvironment] Parallel execution is enabled.
+[17:10:32] [main/INFO] [Cleanroom]: Cascading tweaker org.spongepowered.asm.launch.MixinTweaker from DaomephstaLootShared-0.0.2.jar
+[17:10:32] [main/INFO] [CleanMix]: Compatibility level set to JAVA_8
+[17:10:32] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker
+[17:10:32] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[17:10:32] [main/INFO] [Sledgehammer]: Successfully loaded configuration file.
+[17:10:32] [main/INFO] [Sledgehammer]: Successfully saved configuration file.
+[17:10:32] [main/INFO] [FermiumBooter]: FermiumBooter beginning forced mixin config handling.
+[17:10:32] [main/INFO] [FermiumBooter]: FermiumBooter config missing, assuming first launch.
+[17:10:32] [main/INFO] [FermiumBooter]: FermiumBooter finished forced mixin config handling, enqueued 0 mixin configs, removed 0 mixin configs.
+[17:10:32] [main/WARN] [Cleanroom]: `FermiumBooter-1.3.1.jar declares both a MixinTweaker TweakClass and FMLCorePlugin. Forge skips the coremod in this case and fermiumbooter.FermiumPlugin was loaded by Cleanroom.
+[17:10:32] [main/WARN] [Cleanroom]: Added `FermiumBooter-1.3.1.jar back to reparseable collection, ready to be identified as a mod.
+[17:10:32] [main/WARN] [Cleanroom]: bewitchment-1.12.2-0.0.22.65.jar declares both a MixinTweaker TweakClass and FMLCorePlugin. Forge skips the coremod in this case and com.bewitchment.core.BewitchmentFMLLoadingPlugin was loaded by Cleanroom.
+[17:10:32] [main/WARN] [Cleanroom]: Added bewitchment-1.12.2-0.0.22.65.jar back to reparseable collection, ready to be identified as a mod.
+[17:10:32] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.vanilla.json" for early mixin enqueue, adding.
+[17:10:32] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.otg.json" for late mixin enqueue, adding.
+[17:10:32] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.bettercaves.json" for late mixin enqueue, adding.
+[17:10:32] [main/WARN] [Cleanroom]: NoiseThreader-1.1.0.jar declares both a MixinTweaker TweakClass and FMLCorePlugin. Forge skips the coremod in this case and noisethreader.NoiseThreaderPlugin was loaded by Cleanroom.
+[17:10:32] [main/WARN] [Cleanroom]: Added NoiseThreader-1.1.0.jar back to reparseable collection, ready to be identified as a mod.
+[17:10:32] [main/WARN] [Cleanroom]: Sledgehammer-1.12.2-2.0.26-thin.jar declares both a MixinTweaker TweakClass and FMLCorePlugin. Forge skips the coremod in this case and io.github.lxgaming.sledgehammer.launch.SledgehammerLoadingPlugin was loaded by Cleanroom.
+[17:10:32] [main/WARN] [Cleanroom]: Added Sledgehammer-1.12.2-2.0.26-thin.jar back to reparseable collection, ready to be identified as a mod.
+[17:10:32] [main/WARN] [Cleanroom]: startuptimer-1.1.0.jar declares both a MixinTweaker TweakClass and FMLCorePlugin. Forge skips the coremod in this case and org.embeddedt.startuptimer.core.LoadingPlugin was loaded by Cleanroom.
+[17:10:32] [main/WARN] [Cleanroom]: Added startuptimer-1.1.0.jar back to reparseable collection, ready to be identified as a mod.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader mod.acgaming.btfixes.core.BTFixesLoadingPlugin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [btfixes.vanilla.mixins.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader io.github.kurrycat2004.enchlib.core.EnchLibEarly for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.enchlib.early.optimization.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.enchlib.early.enchlevel.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader ua.myxazaur.lemonskin.asm.LemonSkinPlugin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.lemonskin.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.recipebook_fix.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader zone.rong.loliasm.core.LoliLoadingPlugin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.devenv.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.vfix_bugfixes.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.internal.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.vanities.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.registries.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.stripitemstack.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.lockcode.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.recipes.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.misc_fluidregistry.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.forgefixes.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.capability.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.efficienthashing.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.priorities.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.crashes.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.fix_mc129057.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader snownee.minieffects.mixin.MiniEffectsEarlyMixin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [minieffects.mixins.minecraft.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader com.cleanroommc.modularui.core.ModularUICore for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixin.modularui.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader io.github.kurrycat2004.peteams.core.PETeamsCore for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader org.dimdev.jeid.core.JEIDLoadingPlugin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.jeid.core.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader mod.emt.thaumictweaker.core.EarlyMixinsTT for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.thaumictweakercore.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader mod.acgaming.universaltweaks.core.UTLoadingPlugin for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.difficulty.multiplayer.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.buttons.snooper.server.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.ai.saddledwandering.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.despawning.horse.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.world.chunksaving.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.items.itementities.server.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.blocks.leafdecay.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.items.bottle.cauldron.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.spawning.husk.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.maxhealth.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.falling.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.misc.crafteditemstatistics.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.spawning.stray.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.comparatortiming.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.hopper.boundingbox.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.ai.rails.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.entityradiuscheck.lesscollisions.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.burning.mobs.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.world.tileentities.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.deathtime.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.tracker.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.pathfinding.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.ai.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.misc.enchantmentlevel.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.minecart.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.skeletonaim.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.prefixcheck.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.misc.particlespawning.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.misc.durabilitycap.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.suffocation.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.items.rarity.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.misc.packetsize.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.blocks.sapling.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.sleeping.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.dragonkill.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.items.eating.soupbowl.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.dyeblending.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.craftingcache.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.desync.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.attackradius.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.entitylists.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.itemframevoid.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.miningglitch.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.hopper.tile.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.blocks.lenientpaths.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.villagerharvest.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.difficulty.singleplayer.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.timeouts.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.world.village.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/mixins.vanilla.mod.accessors.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.sleeping.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.entities.taming.horse.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.ladderflying.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.anvil.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.world.stronghold.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.entityradiuscheck.reducesearchsize.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.dimensionchange.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.destroypacket.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.horsefalling.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.incurablepotions.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.world.witchhut.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.boundingbox.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.mount.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.blockfire.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.saturation.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.falling.dupe.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.boat.breaking.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.misc.commands.seed.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.world.portal.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.boat.offset.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.ocelot.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.blocks.piston.tile.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.blocks.endportal.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.untippedarrowparticles.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.blocks.bedobstruction.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/bugfixes/mixins.entities.entityid.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins/tweaks/mixins.performance.advancements.triggers.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader org.embeddedt.vintagefix.core.VintageFixCore for its mixins.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.vintagefix.init.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Adding [mixins.vintagefix.json] mixin configuration.
+[17:10:32] [main/INFO] [CleanMix]: Loading early loader youyihj.zenutils.impl.core.ZenUtilsPlugin for its mixins.
+[17:10:33] [main/WARN] [CleanMix]: Reference map '' for mixins.vintagefix.init.json could not be read. If this is a development environment you can ignore this message
+[17:10:33] [main/INFO] [VintageFix Mixin Loader]: Found 97 mixins
+[17:10:33] [main/INFO] [VintageFix Mixin Loader]: Successfully saved config file
+[17:10:33] [main/WARN] [VintageFix Mixin Loader]: Not applying mixin 'org.embeddedt.vintagefix.mixin.version_protest.MinecraftMixin' as 'mixin.version_protest' is disabled in config
+[17:10:33] [main/WARN] [VintageFix Mixin Loader]: Not applying mixin 'org.embeddedt.vintagefix.mixin.version_protest.FMLCommonHandlerMixin' as 'mixin.version_protest' is disabled in config
+[17:10:33] [main/INFO] [CleanMix]: Adding [mixins.zenutils.vanilla.json] mixin configuration.
+[17:10:33] [main/INFO] [CleanMix]: Loading early loader org.embeddedt.startuptimer.core.LoadingPlugin for its mixins.
+[17:10:33] [main/INFO] [CleanMix]: Adding [mixins.startuptimer.json] mixin configuration.
+[17:10:33] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.launch.MixinTweaker
+[17:10:33] [main/INFO] [Foundation]: Loading tweak name com.cleanroommc.fugue.common.LateBootstrapTweaker
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/INFO] [Foundation]: Loading tweak name codechicken.asm.internal.Tweaker
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[17:10:33] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[17:10:33] [main/INFO] [Foundation]: Calling tweak io.github.lxgaming.sledgehammer.launch.SledgehammerTweaker@5f971e3d
+[17:10:33] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@2a33abcd
+[17:10:33] [main/INFO] [Foundation]: Calling tweak BTFixesCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak UniversalTweaksCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Sledgehammer
+[17:10:33] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@2a33abcd
+[17:10:33] [main/INFO] [Foundation]: Calling tweak PatcherFMLPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak ZenUtilsPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.mixin.EnvironmentStateTweaker@706b2ff0
+[17:10:33] [main/INFO] [Foundation]: Calling tweak FMLCorePlugin
+[17:10:33] [main/INFO] [FML]: FML appears to be missing any signature data. This is expected, don't worry.
+[17:10:33] [main/INFO] [Foundation]: Calling tweak FMLForgePlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Fugue
+[17:10:33] [main/INFO] [Foundation]: Calling tweak AdvancedRocketryPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak AE2ExtendedCraftingTable-Core
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Aqua Acrobatics Transformer
+[17:10:33] [main/INFO] [Aqua Acrobatics Transformer]: Running in obf, thanks for playing with the mod!
+[17:10:33] [main/INFO] [Foundation]: Calling tweak CoreMod
+[17:10:33] [main/INFO] [Aroma1997Core]: Finished data injection.
+[17:10:33] [main/INFO] [Aroma1997Core]: Finished data injection.
+[17:10:33] [main/INFO] [Foundation]: Calling tweak BringMeTheRings plugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak DeepBloodEvolutionCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak EMCGadgetsCorePlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak EC Core Plugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak EnchLibEarly
+[17:10:33] [main/INFO] [Foundation]: Calling tweak FluidCraftCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Forgelin-Continuous
+[17:10:33] [main/INFO] [Foundation]: Calling tweak HCASM
+[17:10:33] [main/INFO] [Foundation]: Calling tweak IvToolkit
+[17:10:33] [main/INFO] [Foundation]: Calling tweak LemonSkinPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak LoliASM
+[17:10:33] [main/INFO] [Foundation]: Calling tweak MiniEffectsEarlyMixin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak MMCEEarlyMixinLoader
+[17:10:33] [main/INFO] [Foundation]: Calling tweak NAE2-Core
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Persistency
+[17:10:33] [main/INFO] [Foundation]: Calling tweak PETeamsCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak RandomTweaker CoreMod Boot
+[17:10:33] [main/INFO] [Foundation]: Calling tweak JustEnoughIDs Extension Plugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak ScalarLoadingPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak StellarCoreEarlyMixinLoader
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_advancements.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_bakedmodel.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_bakedquad.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockfaceuv.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockpart.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockstateimpl.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_chunktecache.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_chunktemap.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_chunktequeue.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_classmultimap.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_entitytracker.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_entitytracker_y_range.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_itemstack_cap.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_longnbtkiller.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_modelblock.json is disabled by config or mod is not loaded.
+[17:10:33] [main/WARN] [stellar_core]: ************************************************************************************************************
+[17:10:33] [main/WARN] [stellar_core]: *
+[17:10:33] [main/WARN] [stellar_core]: * CensoredASM option `optimizeNBTTagCompoundBackingMap` or `nbtBackingMapStringCanonicalization` is enabled.
+[17:10:33] [main/WARN] [stellar_core]: * This is not compatible with StellarCore's `NBTTagCompoundMapImprovements`.
+[17:10:33] [main/WARN] [stellar_core]: *
+[17:10:33] [main/WARN] [stellar_core]: * StellarCore now will automatic disable `NBTTagCompoundMapImprovements`.
+[17:10:33] [main/WARN] [stellar_core]: *
+[17:10:33] [main/WARN] [stellar_core]: ************************************************************************************************************
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_nbtmaplist.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_nbtpool.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_nethandlerplayserver.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_nnlist.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_noglerror.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_property.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_phys.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_randomtick.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_renderglobal.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_resourcelocation.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_resourcelocation_async.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_resourcepack.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_world.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_world_load.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_world_pos_judgement.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_worldclient.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_worldserver.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_statemapperbase.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_stitcher.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_texture_load.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_asmdatatable.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_asmmodparser.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_bakedquad.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_bakedquad_vertexdata.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_capability.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_chunkmanager.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_modelloader.json to mixin configuration.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_registry.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_hudcaching.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ebwizardry_early.json is disabled by config or mod is not loaded.
+[17:10:33] [main/INFO] [Foundation]: Calling tweak TARCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak ThaumicTweakerCore
+[17:10:33] [main/INFO] [Foundation]: Calling tweak TweakedExcavationPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak UniDictCoreMod
+[17:10:33] [main/INFO] [Foundation]: Calling tweak VintageFix
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.esotericsoftware.kryo.unsafe.UnsafeUtil (jar:file:<instance>/./mods/vintagefix-0.7.0.jar!/com/esotericsoftware/kryo/unsafe/UnsafeUtil.class)
+WARNING: Please consider reporting this to the maintainers of class com.esotericsoftware.kryo.unsafe.UnsafeUtil
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+[17:10:33] [main/INFO] [VintageFix]: Loading JarDiscovererCache
+[17:10:33] [main/INFO] [Foundation]: Calling tweak TheBetweenlandsLoadingPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak BewitchmentFMLLoadingPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak NoiseThreaderPlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak Startup Timer
+[17:10:33] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.launch.MixinTweaker@3fdb50e6
+[17:10:33] [main/INFO] [Foundation]: Calling tweak com.cleanroommc.fugue.common.LateBootstrapTweaker@2a8e3e0c
+[17:10:33] [main/INFO] [Foundation]: Calling tweak codechicken.asm.internal.Tweaker@524ffe86
+[17:10:33] [main/INFO] [STDOUT]: [codechicken.asm.internal.Tweaker:injectIntoClassLoader:30]: false
+[17:10:33] [main/INFO] [Foundation]: Calling tweak OpenModsCorePlugin
+[17:10:33] [main/INFO] [Foundation]: Calling tweak FermiumBooter
+[17:10:33] [main/INFO] [FermiumJarScanner]: FermiumJarScanner beginning jar searching.
+[17:10:33] [main/INFO] [FML]: Searching <instance>/./mods for mods
+[17:10:33] [main/INFO] [FML]: Searching <instance>/./mods/1.12.2 for mods
+[17:10:36] [main/INFO] [FermiumJarScanner]: FermiumJarScanner finished jar searching, found 392 ModIDs.
+[17:10:36] [main/INFO] [FermiumJarScanner]: FermiumMixinConfig beginning MixinConfig parsing.
+[17:10:36] [main/INFO] [FermiumJarScanner]: FermiumMixinConfig finished MixinConfig parsing, parsed 0 config options with 0 warnings
+[17:10:36] [main/INFO] [FermiumBooter]: FermiumBooter adding "mixins.noisethreader.vanilla.json" for early mixin application.
+[17:10:36] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLDeobfTweaker@5ab380fb
+[17:10:36] [main/INFO] [Astral Core]: [AstralTransformer] Loading patches...
+[17:10:36] [main/INFO] [Astral Core]: [AstralTransformer] Initialized! Loaded 14 class patches!
+[17:10:36] [main/INFO] [Forgelin-Continuous Transformer]: Begin register to-be-transformed classes
+[17:10:36] [main/INFO] [Forgelin-Continuous Transformer]: Skipping registration...
+[17:10:36] [main/INFO] [Forgelin-Continuous Transformer]: Registration for transformation is completed
+[17:10:36] [main/INFO] [LoliASM]: The lolis are now preparing to bytecode manipulate your game.
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.util.ResourceLocation to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.util.registry.RegistrySimple to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.nbt.NBTTagString to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraftforge.fml.common.discovery.ModCandidate to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraftforge.fml.common.discovery.ASMDataTable$ASMData to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.item.crafting.FurnaceRecipes to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class hellfirepvp.astralsorcery.common.enchantment.amulet.PlayerAmuletHandler to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class mezz.jei.suffixtree.Edge to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class betterwithmods.event.BlastingOilEvent to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class betterwithmods.common.items.ItemMaterial to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class lach_01298.qmd.render.entity.BeamRenderer to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.dries007.tfc.objects.entity.EntityFallingBlockTFC to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.client.renderer.EntityRenderer to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.client.renderer.EntityRenderer to the transformation queue
+[17:10:36] [main/INFO] [LoliASM]: Adding class net.minecraft.nbt.NBTTagCompound to the transformation queue
+[17:10:36] [main/INFO] [RoughlyEnoughIDs]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[17:10:36] [main/INFO] [RoughlyEnoughIDs]: Adding class net.minecraft.potion.PotionEffect to the transformation queue
+[17:10:36] [main/INFO] [RoughlyEnoughIDs]: Adding class net.minecraft.world.gen.ChunkProviderServer to the transformation queue
+[17:10:36] [main/INFO] [RoughlyEnoughIDs]: Adding class pregenerator.impl.processor.generator.ChunkHelper to the transformation queue
+[17:10:36] [main/INFO] [RoughlyEnoughIDs]: Adding class zmaster587.advancedRocketry.util.BiomeHandler to the transformation queue
+[17:10:36] [main/INFO] [MixinExtras|Service]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.4).
+[17:10:36] [main/INFO] [Foundation]: Calling tweak AE2ELCore
+[17:10:36] [main/INFO] [Foundation]: Calling tweak LazyAE2PatchPlugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak TransformerLoader
+[17:10:36] [main/INFO] [Foundation]: Calling tweak LoadingPlugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak ReachFixPlugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak IELoadingPlugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak llibrary
+[17:10:36] [main/INFO] [Foundation]: Calling tweak iceandfire
+[17:10:36] [main/INFO] [Foundation]: Calling tweak AstralCore
+[17:10:36] [main/INFO] [Foundation]: Calling tweak Thaumic Augmentation Core Plugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak MoreSoundConfigCore
+[17:10:36] [main/INFO] [Foundation]: Calling tweak AE2 Overclocked Core
+[17:10:36] [main/INFO] [Foundation]: Calling tweak AppleCore
+[17:10:36] [main/INFO] [Foundation]: Calling tweak Thaumcraft Fix Core Plugin
+[17:10:36] [main/INFO] [thaumcraftfixcore]: Using MixinBooter for late Mixin loading
+[17:10:36] [main/INFO] [thaumcraftfixcore]: Thaumcraft Fix coremod initialized
+[17:10:36] [main/INFO] [Foundation]: Calling tweak Fixeroo
+[17:10:36] [main/INFO] [Foundation]: Calling tweak FluidDrawersCoreMod
+[17:10:36] [main/INFO] [Foundation]: Calling tweak ModularUI-Core
+[17:10:36] [main/INFO] [Foundation]: Calling tweak EntryPoint
+[17:10:36] [main/INFO] [Foundation]: Calling tweak CTMCorePlugin
+[17:10:36] [main/INFO] [Foundation]: Calling tweak EnderCorePlugin
+[17:10:36] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.world.World (amu)...
+[17:10:36] [main/INFO] [Hammer Core [ASM]]:   -Patching World
+[17:10:36] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'k', replaced nx.e()V with HC call.
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.world.World
+[17:10:37] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.world.World (amu)...
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:   -Patching World
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'k', replaced nx.e()V with HC call.
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.world.World
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.world.WorldServer
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.world.WorldServer
+[17:10:37] [main/INFO] [Foundation]: Launching wrapped minecraft net.minecraft.server.MinecraftServer
+[17:10:37] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[17:10:37] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[17:10:37] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[17:10:37] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.Block
+[17:10:37] [main/INFO] [STDOUT]: [team.chisel.ctm.client.asm.CTMTransformer:preTransform:230]: Transforming Class [net.minecraft.block.Block], Method [getExtendedState]
+[17:10:37] [main/INFO] [STDOUT]: [team.chisel.ctm.client.asm.CTMTransformer:finishTransform:242]: Transforming net.minecraft.block.Block Finished.
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.Block
+[17:10:37] [main/INFO] [STDOUT]: [team.chisel.ctm.client.asm.CTMTransformer:preTransform:230]: Transforming Class [net.minecraft.block.Block], Method [getExtendedState]
+[17:10:37] [main/INFO] [STDOUT]: [team.chisel.ctm.client.asm.CTMTransformer:finishTransform:242]: Transforming net.minecraft.block.Block Finished.
+[17:10:37] [main/INFO] [EC Core Plugin]: Minecraft <Enchantment.class> patched!
+[17:10:37] [main/INFO] [EC Core Plugin]: Minecraft <Enchantment.class> patched!
+[17:10:37] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.entity.item.EntityItem (acl)...
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:   -Patching EntityItem
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'attackEntityFrom': added event call.
+[17:10:37] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.entity.item.EntityItem (acl)...
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:   -Patching EntityItem
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'attackEntityFrom': added event call.
+[17:10:37] [main/INFO] [Fixeroo]: Transforming net.minecraft.entity.item.EntityXPOrb
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.state.BlockStateContainer$StateImplementation
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.state.BlockStateContainer$StateImplementation
+[17:10:37] [main/WARN] [CleanMix]: Method overwrite conflict for hashCode in mixins.stellar_core_minecraft_blockstateimpl.json:MixinStateImplementation from mod stellarcore, previously written by org.embeddedt.vintagefix.mixin.blockstates.FastMapStateHolderMixin. Skipping method.
+[17:10:37] [main/INFO] [VintageFix - class definer]: Using Java 9+ class definer
+[17:10:37] [main/ERROR] [EC Core Plugin]: Minecraft <ItemStack.class> patch FAILED!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming aip : net.minecraft.item.ItemStack with 2 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIP as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIPEVENT as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:53]: Patched ItemStack Count getter!
+[17:10:37] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:81]: Patched ItemStack Count setter!
+[17:10:37] [main/ERROR] [EC Core Plugin]: Minecraft <ItemStack.class> patch FAILED!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming aip : net.minecraft.item.ItemStack with 2 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIP as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIPEVENT as it can't be applied for side SERVER
+[17:10:37] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:53]: Patched ItemStack Count getter!
+[17:10:37] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:81]: Patched ItemStack Count setter!
+[17:10:37] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.entity.EntityLivingBase (vp)...
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:   -Patching EntityLivingBase
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'onItemUseFinish': added event call.
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.EntityLivingBase
+[17:10:37] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.entity.EntityLivingBase (vp)...
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:   -Patching EntityLivingBase
+[17:10:37] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'onItemUseFinish': added event call.
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[17:10:37] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.EntityLivingBase
+[17:10:37] [main/INFO] [Fixeroo]: Transforming net.minecraft.entity.player.EntityPlayer
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.player.EntityPlayer
+[17:10:37] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.player.EntityPlayer finished, added func_184613_cA() overriding EntityLivingBase
+[17:10:37] [main/INFO] [Fixeroo]: Transforming net.minecraft.entity.player.EntityPlayer
+[17:10:37] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.player.EntityPlayer
+[17:10:37] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.player.EntityPlayer finished, added func_184613_cA() overriding EntityLivingBase
+[17:10:38] [main/INFO] [Fixeroo]: Transforming net.minecraft.tileentity.TileEntity
+[17:10:38] [main/INFO] [Fixeroo]: Transforming net.minecraft.tileentity.TileEntity
+[17:10:38] [main/INFO] [LoliASM]: Replacing ClassHierarchyManager::superclasses with a dummy map.
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.BlockFire
+[17:10:38] [main/INFO] [Fixeroo]: Transforming net.minecraft.block.BlockPumpkin
+[17:10:38] [main/INFO] [OpenComputers]: Successfully patched net/minecraft/entity/EntityLiving.recreateLeash.
+[17:10:38] [main/INFO] [OpenComputers]: Successfully patched net/minecraft/entity/EntityLiving.recreateLeash.
+[17:10:38] [main/WARN] [CleanMix]: mixins/mixins.vanilla.mod.accessors.json:UTRangedAttributeAccessor from mod universaltweaks->@Accessor[FIELD_SETTER]::setMinimumValue(D)V for final field net.minecraft.entity.ai.attributes.RangedAttribute::field_111120_a was not marked with @Mutable. CleanMix has rectified this,though it should be fixed from the mixin author's side
+[17:10:38] [main/WARN] [CleanMix]: mixins/mixins.vanilla.mod.accessors.json:UTRangedAttributeAccessor from mod universaltweaks->@Accessor[FIELD_SETTER]::setMaximumValue(D)V for final field net.minecraft.entity.ai.attributes.RangedAttribute::field_111118_b was not marked with @Mutable. CleanMix has rectified this,though it should be fixed from the mixin author's side
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.item.ItemSlab
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.item.ItemSpade
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.item.ItemSpade
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.entity.item.EntityItemFrame], Method [func_184230_a]
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.item.EntityItemFrame Finished.
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.entity.item.EntityItemFrame], Method [func_184230_a]
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.item.EntityItemFrame Finished.
+[17:10:38] [main/ERROR] [EC Core Plugin]: Minecraft <ItemEnchantedBook.class> patch FAILED!
+[17:10:38] [main/ERROR] [EC Core Plugin]: Minecraft <ItemEnchantedBook.class> patch FAILED!
+[17:10:38] [main/INFO] [Astral Core]: [AstralTransformer] Transforming wg : net.minecraft.entity.ai.attributes.AbstractAttributeMap with 1 patches!
+[17:10:38] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHADDPLAYERATTRIBUTE
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.entity.ai.EntityAICreeperSwell], Method [func_75246_d]
+[17:10:38] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.ai.EntityAICreeperSwell Finished.
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.monster.EntityEnderman$AITakeBlock
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.ai.EntityAIEatGrass
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.passive.EntityRabbit$AIRaidFarm
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.ai.EntityAIHarvestFarmland
+[17:10:38] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.ai.EntityAIHarvestFarmland
+[17:10:38] [main/INFO] [EC Core Plugin]: Minecraft <ListEnchantedBookForEmeralds.class> patched!
+[17:10:39] [main/INFO] [stellar_core]: [StellarCore-NBTTagPrimitivePool] PrimitiveType NBTTagPrimitivePool initialized, took 11ms.
+[17:10:39] [main/INFO] [LoliASM]: Improving FurnaceRecipes. Lookups are now a lot faster.
+[17:10:39] [main/INFO] [LoliASM]: Improving FurnaceRecipes. Lookups are now a lot faster.
+[17:10:39] [main/INFO] [ASMUtil]: Transforming class net/minecraft/server/management/PlayerInteractionManager
+[17:10:39] [main/INFO] [ASMUtil]: Transforming method net/minecraft/server/management/PlayerInteractionManager.func_73076_a(Lnet/minecraft/world/GameType;)V
+[17:10:39] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.world.chunk.storage.ExtendedBlockStorage], Method [func_76663_a]
+[17:10:39] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.world.chunk.storage.ExtendedBlockStorage Finished.
+[17:10:39] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.inventory.ContainerFurnace], Method [func_82846_b]
+[17:10:39] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.inventory.ContainerFurnace Finished.
+[17:10:39] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.profiler.Profiler (rl)...
+[17:10:39] [main/INFO] [Hammer Core [ASM]]:   -Patched startSection!
+[17:10:39] [main/INFO] [Hammer Core [ASM]]:   -Patched endSection!
+[17:10:39] [main/INFO] [Hammer Core [ASM]]:   -Patched endStartSection!
+[17:10:39] [main/INFO] [EC Core Plugin]: Minecraft <CommandEnchant.class> patched!
+[17:10:39] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.12.2
+[17:10:39] [Server thread/INFO] [FML]: Cleanroom v0.6.3-alpha Initialized
+[17:10:39] [Server thread/INFO] [FML]: Starts to replace vanilla recipe ingredients with ore ingredients.
+[17:10:39] [Server thread/INFO] [UniDictCoreMod]: Successfully transformed 'net.minecraftforge.oredict.OreIngredient'.
+[17:10:39] [Server thread/INFO] [FML]: Invalid recipe found with multiple oredict ingredients in the same ingredient...
+[17:10:39] [Server thread/INFO] [FML]: Replaced 1227 ore ingredients
+[17:10:39] [Server thread/INFO] [Kirino Core]: Initializing Kirino-Engine's Mod Container.
+[17:10:39] [Server thread/INFO] [Kirino Core]: Initializing Kirino-ECS's Mod Container.
+[17:10:39] [Server thread/INFO] [Kirino Core]: Initializing Kirino-GL's Mod Container.
+[17:10:40] [Server thread/WARN] [FML]: Mod aroma1997core is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.0.0.2
+[17:10:40] [Server thread/WARN] [FML]: Mod aromabackup is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.1.1.4
+[17:10:40] [Server thread/WARN] [FML]: Mod aromabackuprecovery is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.1.1.4
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod beebetteratbees it is client side only.
+[17:10:40] [Server thread/WARN] [FML]: Mod betterbuilderswands is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 0.13.2
+[17:10:40] [Server thread/WARN] [FML]: Mod betterp2p is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.12.2-1.3.3
+[17:10:40] [Server thread/INFO] [FML]: Mod careerbees is missing the required element 'name'. Substituting careerbees
+[17:10:40] [Server thread/WARN] [FML]: Mod codechickenlib is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 3.2.3.358
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod controlling it is client side only.
+[17:10:40] [Server thread/WARN] [FML]: Mod cosmeticarmorreworked is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.12.2-v5a
+[17:10:40] [Server thread/WARN] [FML]: Mod craftingtweaks is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 9.0.1
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod ctgui it is client side only.
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod ctm it is client side only.
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod customfov it is client side only.
+[17:10:40] [Server thread/WARN] [FML]: Mod cyclicmagic is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.20.12
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod defaultoptions it is client side only.
+[17:10:40] [Server thread/WARN] [FML]: Mod draconicalchemy is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 0.2
+[17:10:40] [Server thread/INFO] [FML]: Disabling mod dynamistics it is client side only.
+[17:10:40] [Server thread/WARN] [FML]: Mod enderstorage is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.4.6.137
+[17:10:41] [Server thread/WARN] [FML]: Mod microblockcbe is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.6.2.83
+[17:10:41] [Server thread/WARN] [FML]: Mod forgemultipartcbe is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.6.2.83
+[17:10:41] [Server thread/WARN] [FML]: Mod minecraftmultipartcbe is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.6.2.83
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod fpsreducer it is client side only.
+[17:10:41] [Server thread/WARN] [FML]: Mod holoinventory is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.1.1.151
+[17:10:41] [Server thread/WARN] [FML]: Mod ironchest is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.12.2-7.0.67.844
+[17:10:41] [Server thread/WARN] [FML]: Mod itemblacklist is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.4.3
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod jeiintegration it is client side only.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod jeivillagers it is client side only.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod justenoughpetroleum it is client side only.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod jeresources it is client side only.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod lootcapacitortooltips it is client side only.
+[17:10:41] [Server thread/WARN] [FML]: Mod magicbees is missing the required element 'version' and no fallback can be found. Substituting '1.0'.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod minieffects it is client side only.
+[17:10:41] [Server thread/WARN] [FML]: Mod moartinkers is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 0.6.0
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod modnametooltip it is client side only.
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod moreoverlays it is client side only.
+[17:10:41] [Server thread/WARN] [FML]: Mod mrtjpcore is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.1.4.43
+[17:10:41] [Server thread/INFO] [FML]: Disabling mod overpoweredarmorbar it is client side only.
+[17:10:41] [Server thread/WARN] [FML]: Mod patchouli is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.0-23.6
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-core is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/INFO] [FML]: Mod projectred-compat is missing the required element 'name'. Substituting projectred-compat
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-compat is missing the required element 'version' and no fallback can be found. Substituting '1.0'.
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-fabrication is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-integration is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-transmission is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-illumination is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-expansion is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-relocation is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-transportation is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod projectred-exploration is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 4.9.4.120
+[17:10:41] [Server thread/WARN] [FML]: Mod reachfix is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.1.3
+[17:10:42] [Server thread/WARN] [FML]: Mod simplyjetpacks is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.12.2-2.2.20.0
+[17:10:42] [Server thread/INFO] [FML]: Disabling mod startuptimer it is client side only.
+[17:10:42] [Server thread/WARN] [FML]: Mod tardis is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 0.1.4A
+[17:10:42] [Server thread/WARN] [FML]: Mod tcinventoryscan is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 2.0.10
+[17:10:42] [Server thread/INFO] [FML]: Disabling mod thaumicjei it is client side only.
+[17:10:42] [Server thread/INFO] [FML]: Disabling mod tipthescales it is client side only.
+[17:10:42] [Server thread/INFO] [FML]: Disabling mod torohealthmod it is client side only.
+[17:10:42] [Server thread/WARN] [FML]: Mod unknownlibs is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.1.2
+[17:10:42] [Server thread/WARN] [FML]: Mod xu2patcher is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.0.3-pr_6
+[17:10:42] [Server thread/WARN] [FML]: Mod rf-capability-adapter is missing the required element 'version' and a version.properties file could not be found. Falling back to metadata version 1.1.3
+[17:10:42] [Server thread/INFO] [FML]: Disabling mod moresoundconfig it is client side only.
+[17:10:42] [Server thread/INFO] [FML]: Forge Mod Loader has identified 376 mods to load
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.turtle (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.turtle.event (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.filesystem (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.lua (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.network.wired (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.network (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.peripheral (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.media (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.redstone (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/INFO] [FML]: Found mod(s) [opencomputers] containing declared API package dan200.computercraft.api.permissions (owned by ComputerCraft) without associated API reference
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for cleanmix: assets/cleanmix/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mixinbooter: assets/mixinbooter/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for configanytime: assets/configanytime/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for kirino_engine: assets/kirino_engine/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for kirino_ecs: assets/kirino_ecs/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for kirino_gl: assets/kirino_gl/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for FML: assets/fml/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for redcore: assets/redcore/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for fermiumbooter: assets/fermiumbooter/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for actuallybaubles: assets/actuallybaubles/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for aireducer: assets/aireducer/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for ocgendustry: assets/ocgendustry/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for armoreablemobs: assets/armoreablemobs/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for betterbedrockgen: assets/betterbedrockgen/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for bloodagricraft: assets/bloodagricraft/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for bmtr: assets/bmtr/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for btfixes: assets/btfixes/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcraftbuilders: assets/buildcraftbuilders/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcraftcore: assets/buildcraftcore/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcraftenergy: assets/buildcraftenergy/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcraftfactory: assets/buildcraftfactory/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcraftsilicon: assets/buildcraftsilicon/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for buildcrafttransport: assets/buildcrafttransport/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for cctweaked: assets/cctweaked/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for chameleon: assets/chameleon/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for citnbt: assets/citnbt/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for clearwater: assets/clearwater/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for codechickenlib: assets/codechickenlib/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for cofhcore: assets/cofhcore/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for contenttweaker: assets/contenttweaker/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for crafttweakerjei: assets/crafttweakerjei/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for crafttweakerutils: assets/crafttweakerutils/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for ctintegration: assets/ctintegration/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for emcgadgets: assets/emcgadgets/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiobase: assets/enderiobase/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioconduitsappliedenergistics: assets/enderioconduitsappliedenergistics/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioconduitsopencomputers: assets/enderioconduitsopencomputers/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioconduitsrefinedstorage: assets/enderioconduitsrefinedstorage/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioconduits: assets/enderioconduits/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiointegrationforestry: assets/enderiointegrationforestry/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiointegrationtic: assets/enderiointegrationtic/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiointegrationticlate: assets/enderiointegrationticlate/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioinvpanel: assets/enderioinvpanel/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiomachines: assets/enderiomachines/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderiopowertools: assets/enderiopowertools/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for enderioendergy: assets/enderioendergy/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for endertweaker: assets/endertweaker/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for expequiv: assets/expequiv/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for xporbclump: assets/xporbclump/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for forgelin_continuous: assets/forgelin_continuous/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for forgelin: assets/forgelin/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for microblockcbe: assets/microblockcbe/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for forgemultipartcbe: assets/forgemultipartcbe/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for minecraftmultipartcbe: assets/minecraftmultipartcbe/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for gendustryjei: assets/gendustryjei/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for gunpowderlib: assets/gunpowderlib/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for holoinventory: assets/holoinventory/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for incontrol: assets/incontrol/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for infinitylib: assets/infinitylib/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for initialinventory: assets/initialinventory/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for integratedtunnelscompat: assets/integratedtunnelscompat/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for lazyae2patch: assets/lazyae2patch/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for lttweaker: assets/lttweaker/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mantle: assets/mantle/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mcjtylib_ng: assets/mcjtylib_ng/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mobstages: assets/mobstages/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for concheckrmd: assets/concheckrmd/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for modtweaker: assets/modtweaker/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for morpheus: assets/morpheus/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mrtjpcore: assets/mrtjpcore/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for mtlib: assets/mtlib/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for multifarmcrops: assets/multifarmcrops/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for nbtperipheral: assets/nbtperipheral/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for noisethreader: assets/noisethreader/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for ocxnetdriver: assets/ocxnetdriver/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for ae2fcsort: assets/ae2fcsort/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for pillar: assets/pillar/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for placebo: assets/placebo/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for plethora-core: assets/plethora-core/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-core: assets/projectred-core/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-compat: assets/projectred-compat/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-fabrication: assets/projectred-fabrication/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-integration: assets/projectred-integration/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-transmission: assets/projectred-transmission/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-illumination: assets/projectred-illumination/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-expansion: assets/projectred-expansion/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-relocation: assets/projectred-relocation/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-transportation: assets/projectred-transportation/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for projectred-exploration: assets/projectred-exploration/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for reachfix: assets/reachfix/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for redstoneflux: assets/redstoneflux/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for reim: assets/reim/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for restrictplayerinterfaces: assets/restrictplayerinterfaces/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for spark: assets/spark/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for teslacorelib_registries: assets/teslacorelib_registries/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for togetherforever: assets/togetherforever/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for unidict: assets/unidict/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for unknownlibs: assets/unknownlibs/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for unlimitedchiselworks: assets/unlimitedchiselworks/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for universalmodifiers: assets/universalmodifiers/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for vintagefix: assets/vintagefix/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for xu2patcher: assets/xu2patcher/lang/en_us.lang
+[17:10:42] [Server thread/WARN] [FML]: Missing English translation for techreborn_compat: assets/techreborn_compat/lang/en_us.lang
+[17:10:42] [Server thread/INFO] [Persistency]: Initializing Persistency Hooks.
+[17:10:42] [Server thread/INFO] [Persistency]: Querying last minecraft load to see if most things are identical...
+[17:10:42] [Server thread/INFO] [Persistency]: Mod list isn't the same as last launch. Refreshing cache.
+[17:10:42] [Server thread/INFO] [Persistency]: Creating temp Mod list cache.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file akka-actor_2.11-2.3.3.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file beebetteratbees-1.12.2-2.0.3.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file config-1.2.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file Controlling-3.0.12.4.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file CTM-MC1.12.2-1.0.2.31.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file customfov-1.12.2-1.0.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file DefaultOptions_1.12.2-9.2.8.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file dynamistics-1.0.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file FpsReducer-mc1.12.2-1.20.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file jeiintegration_1.12.2-1.6.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file jeivillagers-1.12-1.0.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file JustEnoughPetroleum-0.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file JustEnoughResources-1.12.2-0.9.2.60.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file lootcapacitortooltips-1.3.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file minieffects-2.3.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file modnametooltip_1.12.2-1.10.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file moreoverlays-1.15.1-mc1.12.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file overloadedarmorbar-1.0.4g.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file overrides.zip in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file persistency-1.2.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-actors-2.11.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-actors-migration_2.11-1.1.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-compiler-2.11.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-continuations-library_2.11-1.0.2_mc.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-continuations-plugin_2.11.1-1.0.2_mc.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-library-2.11.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-parser-combinators_2.11-1.0.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-reflect-2.11.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-swing_2.11-1.0.1.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file scala-xml_2.11-1.0.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file startuptimer-1.1.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file ThaumicJEI-1.12.2-1.7.0.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file TipTheScales-1.12.2-1.0.4.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file torohealth-1.12.2-11.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file AutoSave-1.12.2-1.0.11.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file AutoConfig-1.12.2-1.0.2.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file mcjtytools-0.0.21.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [FML]: FML has found a non-mod file moresoundconfig-1.0.4.jar in your mods directory. It will now be injected into your classpath.
+[17:10:42] [Server thread/INFO] [CleanMix]: Loading annotated late loader [com.fuzs.aquaacrobatics.core.ModCompatMixinHandler] for its mixins.
+[17:10:42] [Server thread/INFO] [Aqua Acrobatics Transformer]: Aqua Acrobatics is loading mod compatibility mixins
+[17:10:42] [Server thread/WARN] [Aqua Acrobatics Transformer]: You have JourneyMap 1.12.2-5.7.1p3 installed. Only 1.12.2-5.5.4 and 1.12.2-5.7.1 are patched for water color compatibility.
+[17:10:42] [Server thread/INFO] [CleanMix]: Loading late loader [thelm.packagingprovider.mixin.PackagingProviderMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.cleanroommc.draconicalchemy.mixin.DraconicAlchemyMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com._0xc4de.ae2exttable.AE2ExtendedCraftingTableCore] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.ae2powertools.mixin.InterfaceTerminalMixinPlugin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [ink.ikx.rt.impl.internal.core.MixinInit] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.verdantartifice.thaumicwonders.core.ModMixins] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [mod.emt.thaumictweaker.core.ModMixinsTT] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [co.neeve.nae2.NAE2MixinPlugin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [xyz.shardion.badaccess.core.BadAccessEntrypoint] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.xinyihl.betterbuilderswandsfix.LateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.kurrycat2004.peteams.core.LateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [github.kasuminova.stellarcore.mixin.StellarCoreLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [zone.rong.loliasm.core.LoliLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.srdjanv.tweakedexcavation.core.TweakedExcavationPlugin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.cleanroommc.fugue.common.FugueLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [thelm.packagedfluidcrafting.mixin.PackagedFluidCraftingMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [thecodex6824.thaumcraftfix.mixin.MixinBooterLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.kurrycat2004.enchlib.core.EnchLibLate] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [org.dimdev.jeid.core.JEIDMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [mod.acgaming.universaltweaks.core.UTMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [org.embeddedt.vintagefix.core.LateMixins] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [snownee.minieffects.mixin.MiniEffectsLateMixin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.kurrycat2004.opeq.core.LateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.lxgaming.sledgehammer.mixin.loader.LateLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [net.teamfruit.lazyae2patch.mixins.LazyAE2PatchMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [youyihj.zenutils.impl.core.MixinInit] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.teamdimensional.integratedderivative.mixins.LateMixin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [mod.acgaming.btfixes.core.BTFixesMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [thaumicenergistics.mixin.core.LateMixins] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.cleanroommc.modularui.core.LateMixins] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [github.alecsio.mmceaddons.common.mixin.MMCEALateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.cells.mixin.CellsMixinPlugin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [github.kasuminova.mmce.mixin.MMCELateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [github.kasuminova.ae2ctl.mixin.AE2CTLLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [me.emvoh.ae2bettermagnetcard.MixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [io.github.srdjanv.tweakedlib.core.TweakedLibPlugin] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Loading late loader [com.circulation.ae2wut.mixin.WUTLateMixinLoader] for its mixins.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.vintagefix.late.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2wut.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2wut.ae2fc.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2wut.baubles.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2wut.ae2fcbaubles.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2wut.ae2exttable.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [packagedfluidcrafting.mixins.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bewitchment.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderstorage.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.divinerpg.armorset.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.breakcreativemill.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderio.cyclebutton.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderio.redstoneconduit.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.itemstages.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bloodmagic.ritual.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.forestry.extratrees.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.potionlogging.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.divinerpg.aquamarine.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.agricraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.incontrol.handler_crash.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.erebus.cabbage.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.moartinkers.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extreme_reactors.reactor_crash.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.industrialforegoing.dupes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.abyssalcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.aetherlegacy.eventdrops.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.immersiveengineering.toolevent.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.testdummy.copyarmor.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderio.chorus.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.dupes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bloodmagic.boundtool.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.cbmultipart.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.mutabledrops.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.forestry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.aoa3.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.xnet.controller_crashes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.biomesoplenty.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.erebus.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.astralsorcery.neromanticprime.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.codechickenlib.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.radarexception.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderio.impulsehopper.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.incontrol.rule.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.cofhcore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.mrtjpcore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.astralsorcery.tool.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.industrialforegoing.blackholetank.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.actuallyadditions.dupes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.dankstorage.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.thermalexpansion.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.immersiveengineering.toolhand.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.divinerpg.hand.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.astralsorcery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.industrialforegoing.rangeaddon.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bloodmagic.dupes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.erebus.quakehammer.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.compactmachines.spawns.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bibliocraft.handler.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.mobstages.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.rftools.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.divinerpg.nightmarebed.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.deepdarkstats.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.thermalexpansion.dupes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.actuallyadditions.relayupgrade.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.rftoolsdimensions.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.extrautilities.unstableingot.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.enderio.soulbinderjei.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.cyclic.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.roost.contenttweaker.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bloodmagic.fluidrouting.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.techreborn.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bloodmagic.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.woot.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mods/mixins.bewitchment.leaves.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mods.projectex.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mods.ftblib.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_immersiveengineering.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_astralsorcery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.capability_astralsorcery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_ebwizardry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_xu2.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.searchtree_mod.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_railcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_disable_broken_particles.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.modfixes_crafttweaker.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.capability_aoa3.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.advancedrocketry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.abyssalcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.biomesoplenty.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.bookshelf.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.compactmachines3.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.cyclopscore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.extrautils2.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.hammercore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.journeymap.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.naturescompass.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.thaumcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.thebetweenlands.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.jeid.twilightforest.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/aura.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/block.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/client.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/entities.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/event.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/focus.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/golem.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/inventory.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/item.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/network.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/render.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/tile.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin/util.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.thaumicwonders.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2powertools.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.thaumictweaker.thaumicaugmentation.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.thaumictweaker.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2bettermagnetcard.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mixins.integratedderivative.integrateddynamics.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mixins.integratedderivative.integratedtunnels.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins/mixins.integratedderivative.forestry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmce_jei_hacky.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmce_ae2.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmce_nae2.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixin.modularui.jei.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.pmt.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.void.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.void.condenser.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.beam_former.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.jei.craft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.jei.cellview.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.ifacep2p.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.ifacep2p.ae2fc.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.upgrades.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.upgrades.hac.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.upgrades.autocomplete.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.reconchamber.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.nae2.dense.coprocessor.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2exttable.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [extrautilities2.badaccess.mixin.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [modularrouters.badaccess.mixin.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [plethora.badaccess.mixin.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [randomthings.badaccess.mixin.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [actuallyadditions.badaccess.mixin.json] mixin configuration.
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'badaccess.refmap.json' for extrautilities2.badaccess.mixin.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'badaccess.refmap.json' for modularrouters.badaccess.mixin.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'badaccess.refmap.json' for plethora.badaccess.mixin.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'badaccess.refmap.json' for randomthings.badaccess.mixin.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'badaccess.refmap.json' for actuallyadditions.badaccess.mixin.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.cells.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.cells.jei.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.enchlib.ae2uel.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.randomtweaker.mods.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.opeq.projecte.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [Aqua Acrobatics Transformer]: Aqua Acrobatics is loading mod compatibility mixins
+[17:10:43] [Server thread/WARN] [Aqua Acrobatics Transformer]: You have JourneyMap 1.12.2-5.7.1p3 installed. Only 1.12.2-5.5.4 and 1.12.2-5.7.1 are patched for water color compatibility.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [META-INF/mixins.aquaacrobatics.thaumcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [minieffects.mixins.enderutilities.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [minieffects.mixins.jei.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.zenutils.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.tweakedlib.top.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [packagingprovider.mixins.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.betterbuilderswandsfix.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.draconicalchemy.json] mixin configuration.
+[17:10:43] [Server thread/WARN] [CleanMix]: Reference map 'mixins.randomtweaker.refmap.json' for mixins.randomtweaker.mods.json could not be read. If this is a development environment you can ignore this message
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.abyssalcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.actuallyadditions.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.armorunder.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.astralsorcery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.bdsandm.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.betterquesting.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.bewitchment.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.bibliocraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.biomesoplenty.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.careerbees.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.carryon.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.champions.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.chesttransporter.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.conarm.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.danknull.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.embers.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.enderstorage.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.fluxnetworks.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.hwell.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.immersiveengineering.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.industrialforegoing.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.integrateddynamicscompat.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.jetif.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.journeymap.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.kubejs.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.logisticspipes.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.matteroverdrive.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.mob_grinding_utils.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.morph.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.mowziesmobs.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.naturesaura.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.pneumaticcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.primitivecrafting.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.primitivemobs.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.projectred-integration.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.projectred-transportation.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.pyrotech.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.qmd.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.quark.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.randomthings.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.realfilingcabinet.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.ruins.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.storagenetwork.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.tconevo.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.tconstruct.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.thaumicwonders.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.tombmanygraves.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.topography.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.sledgehammer.vaultopic.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_advancedrocketry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_ae.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_armourers_workshop.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_astralsorcery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_avaritia.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_avaritiaddons.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_betterchat.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_biomesoplenty.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_bloodmagic.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_botania.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_cfm.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_chisel.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_cofhcore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ctm.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_cucumber.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_customloadingscreen.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_customstartinggear.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_deepmoblearing.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_draconicevolution.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_draconicevolution_chunk.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_ebwizardry.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_endercore.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_enderio.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_enderioconduits.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_enderioconduits_energy.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_enderutilities.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_extrabotany.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_fluxnetworks.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_ftblib.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ftbquests.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_guguutils.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ic2.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ic2_energynet.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_igi.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_immersiveengineering.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_jei.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_threng.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_legendarytooltips.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_libnine.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_mek_top.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_mekanism.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_mets.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_modularrouters.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_nco.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_psi.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_rgb_chat.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_resourceloader.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_scalingguis.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_specialmobs.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_sync.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_sync_techguns.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_tconevo.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_tconstruct.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_techguns.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_theoneprobe.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_thermaldynamics.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_thermalexpansion.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_touhou_little_maid.json is disabled by config or mod is not loaded.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.stellar_core_vintagefix.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmcea_iceandfire.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmcea_modularmachinery.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.mmcea_nuclearcraft.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [btfixes.mixins.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.lazyae2patch.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.thaumicenergistics.late.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.tweakedexcavation.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [CleanMix]: Adding [mixins.ae2ctl.json] mixin configuration.
+[17:10:43] [Server thread/INFO] [Thaumic Energistics Mixin Loader]: Found 1 mixins
+[17:10:43] [Server thread/WARN] [Thaumic Energistics Mixin Loader]: Added missing entry 'mixin.ae2' to config file
+[17:10:43] [Server thread/INFO] [Thaumic Energistics Mixin Loader]: Successfully saved config file
+[17:10:43] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception
+java.lang.RuntimeException: java.lang.NoSuchMethodException: org.spongepowered.asm.mixin.transformer.MixinProcessor.selectConfigs(org.spongepowered.asm.mixin.MixinEnvironment)
+	at net.minecraftforge.fml.common.Loader.handler$zza000$fermiumboote$beforeConstructingMods(Loader.java:1168) ~[Loader.class:?]
+	at net.minecraftforge.fml.common.Loader.loadMods(Loader.java:541) ~[Loader.class:?]
+	at net.minecraftforge.fml.server.FMLServerHandler.beginServerLoading(FMLServerHandler.java:114) ~[FMLServerHandler.class:?]
+	at net.minecraftforge.fml.common.FMLCommonHandler.onServerStart(FMLCommonHandler.java:344) ~[FMLCommonHandler.class:?]
+	at net.minecraft.server.dedicated.DedicatedServer.init(DedicatedServer.java:136) ~[nz.class:?]
+	at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:512) [MinecraftServer.class:?]
+	at java.lang.Thread.run(Thread.java:1474) [?:?]
+Caused by: java.lang.NoSuchMethodException: org.spongepowered.asm.mixin.transformer.MixinProcessor.selectConfigs(org.spongepowered.asm.mixin.MixinEnvironment)
+	at java.lang.Class.getDeclaredMethod(Class.java:2422) ~[?:?]
+	at net.minecraftforge.fml.common.Loader.handler$zza000$fermiumboote$beforeConstructingMods(Loader.java:1139) ~[Loader.class:?]
+	... 6 more
+[17:10:43] [Server thread/ERROR] [minecraft/MinecraftServer]: This crash report has been saved to: <instance>/./crash-reports/crash-2026-10-01_17.10.43-server.txt
+[17:10:43] [Server thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[17:10:43] [Server thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+[17:10:43] [Server thread/INFO] [FML]: The state engine was in incorrect state CONSTRUCTING and forced into state SERVER_STOPPED. Errors may have been discarded.
+[17:10:43] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Stopping server
+[17:10:43] [Server Shutdown Thread/INFO] [minecraft/MinecraftServer]: Saving worlds
+minecraft@meatballcraft-cleanroom.service: Consumed 32.427s CPU time, 3.3G memory peak, 0B memory swap peak.

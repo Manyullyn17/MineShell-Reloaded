@@ -1,0 +1,592 @@
+Started minecraft@better-mc-fabric-bmc2.service - Minecraft server (better-mc-fabric-bmc2) managed by MineShell.
+Downloading Minecraft server
+Installing Fabric Loader 0.19.3(1.20.1) on the server
+Downloading required files
+Downloading library org.ow2.asm:asm:9.10.1
+Downloading library org.ow2.asm:asm-analysis:9.10.1
+Downloading library org.ow2.asm:asm-commons:9.10.1
+Downloading library org.ow2.asm:asm-tree:9.10.1
+Downloading library org.ow2.asm:asm-util:9.10.1
+Downloading library net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7
+Downloading library net.fabricmc:intermediary:1.20.1
+Downloading library net.fabricmc:fabric-loader:0.19.3
+Generating server launch JAR
+Unpacking 1.20.1/server-1.20.1.jar (versions:1.20.1) to versions/1.20.1/server-1.20.1.jar
+Unpacking com/github/oshi/oshi-core/6.2.2/oshi-core-6.2.2.jar (libraries:com.github.oshi:oshi-core:6.2.2) to libraries/com/github/oshi/oshi-core/6.2.2/oshi-core-6.2.2.jar
+Unpacking com/google/code/gson/gson/2.10/gson-2.10.jar (libraries:com.google.code.gson:gson:2.10) to libraries/com/google/code/gson/gson/2.10/gson-2.10.jar
+Unpacking com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar (libraries:com.google.guava:failureaccess:1.0.1) to libraries/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar
+Unpacking com/google/guava/guava/31.1-jre/guava-31.1-jre.jar (libraries:com.google.guava:guava:31.1-jre) to libraries/com/google/guava/guava/31.1-jre/guava-31.1-jre.jar
+Unpacking com/mojang/authlib/4.0.43/authlib-4.0.43.jar (libraries:com.mojang:authlib:4.0.43) to libraries/com/mojang/authlib/4.0.43/authlib-4.0.43.jar
+Unpacking com/mojang/brigadier/1.1.8/brigadier-1.1.8.jar (libraries:com.mojang:brigadier:1.1.8) to libraries/com/mojang/brigadier/1.1.8/brigadier-1.1.8.jar
+Unpacking com/mojang/datafixerupper/6.0.8/datafixerupper-6.0.8.jar (libraries:com.mojang:datafixerupper:6.0.8) to libraries/com/mojang/datafixerupper/6.0.8/datafixerupper-6.0.8.jar
+Unpacking com/mojang/logging/1.1.1/logging-1.1.1.jar (libraries:com.mojang:logging:1.1.1) to libraries/com/mojang/logging/1.1.1/logging-1.1.1.jar
+Unpacking commons-io/commons-io/2.11.0/commons-io-2.11.0.jar (libraries:commons-io:commons-io:2.11.0) to libraries/commons-io/commons-io/2.11.0/commons-io-2.11.0.jar
+Unpacking io/netty/netty-buffer/4.1.82.Final/netty-buffer-4.1.82.Final.jar (libraries:io.netty:netty-buffer:4.1.82.Final) to libraries/io/netty/netty-buffer/4.1.82.Final/netty-buffer-4.1.82.Final.jar
+Unpacking io/netty/netty-codec/4.1.82.Final/netty-codec-4.1.82.Final.jar (libraries:io.netty:netty-codec:4.1.82.Final) to libraries/io/netty/netty-codec/4.1.82.Final/netty-codec-4.1.82.Final.jar
+Unpacking io/netty/netty-common/4.1.82.Final/netty-common-4.1.82.Final.jar (libraries:io.netty:netty-common:4.1.82.Final) to libraries/io/netty/netty-common/4.1.82.Final/netty-common-4.1.82.Final.jar
+Unpacking io/netty/netty-handler/4.1.82.Final/netty-handler-4.1.82.Final.jar (libraries:io.netty:netty-handler:4.1.82.Final) to libraries/io/netty/netty-handler/4.1.82.Final/netty-handler-4.1.82.Final.jar
+Unpacking io/netty/netty-resolver/4.1.82.Final/netty-resolver-4.1.82.Final.jar (libraries:io.netty:netty-resolver:4.1.82.Final) to libraries/io/netty/netty-resolver/4.1.82.Final/netty-resolver-4.1.82.Final.jar
+Unpacking io/netty/netty-transport/4.1.82.Final/netty-transport-4.1.82.Final.jar (libraries:io.netty:netty-transport:4.1.82.Final) to libraries/io/netty/netty-transport/4.1.82.Final/netty-transport-4.1.82.Final.jar
+Unpacking io/netty/netty-transport-classes-epoll/4.1.82.Final/netty-transport-classes-epoll-4.1.82.Final.jar (libraries:io.netty:netty-transport-classes-epoll:4.1.82.Final) to libraries/io/netty/netty-transport-classes-epoll/4.1.82.Final/netty-transport-classes-epoll-4.1.82.Final.jar
+Unpacking io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-x86_64.jar (libraries:io.netty:netty-transport-native-epoll:4.1.82.Final:linux-x86_64) to libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-x86_64.jar
+Unpacking io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-aarch_64.jar (libraries:io.netty:netty-transport-native-epoll:4.1.82.Final:linux-aarch_64) to libraries/io/netty/netty-transport-native-epoll/4.1.82.Final/netty-transport-native-epoll-4.1.82.Final-linux-aarch_64.jar
+Unpacking io/netty/netty-transport-native-unix-common/4.1.82.Final/netty-transport-native-unix-common-4.1.82.Final.jar (libraries:io.netty:netty-transport-native-unix-common:4.1.82.Final) to libraries/io/netty/netty-transport-native-unix-common/4.1.82.Final/netty-transport-native-unix-common-4.1.82.Final.jar
+Unpacking it/unimi/dsi/fastutil/8.5.9/fastutil-8.5.9.jar (libraries:it.unimi.dsi:fastutil:8.5.9) to libraries/it/unimi/dsi/fastutil/8.5.9/fastutil-8.5.9.jar
+Unpacking net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar (libraries:net.java.dev.jna:jna:5.12.1) to libraries/net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar
+Unpacking net/java/dev/jna/jna-platform/5.12.1/jna-platform-5.12.1.jar (libraries:net.java.dev.jna:jna-platform:5.12.1) to libraries/net/java/dev/jna/jna-platform/5.12.1/jna-platform-5.12.1.jar
+Unpacking net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar (libraries:net.sf.jopt-simple:jopt-simple:5.0.4) to libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar
+Unpacking org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar (libraries:org.apache.commons:commons-lang3:3.12.0) to libraries/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
+Unpacking org/apache/logging/log4j/log4j-api/2.19.0/log4j-api-2.19.0.jar (libraries:org.apache.logging.log4j:log4j-api:2.19.0) to libraries/org/apache/logging/log4j/log4j-api/2.19.0/log4j-api-2.19.0.jar
+Unpacking org/apache/logging/log4j/log4j-core/2.19.0/log4j-core-2.19.0.jar (libraries:org.apache.logging.log4j:log4j-core:2.19.0) to libraries/org/apache/logging/log4j/log4j-core/2.19.0/log4j-core-2.19.0.jar
+Unpacking org/apache/logging/log4j/log4j-slf4j2-impl/2.19.0/log4j-slf4j2-impl-2.19.0.jar (libraries:org.apache.logging.log4j:log4j-slf4j2-impl:2.19.0) to libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.19.0/log4j-slf4j2-impl-2.19.0.jar
+Unpacking org/joml/joml/1.10.5/joml-1.10.5.jar (libraries:org.joml:joml:1.10.5) to libraries/org/joml/joml/1.10.5/joml-1.10.5.jar
+Unpacking org/slf4j/slf4j-api/2.0.1/slf4j-api-2.0.1.jar (libraries:org.slf4j:slf4j-api:2.0.1) to libraries/org/slf4j/slf4j-api/2.0.1/slf4j-api-2.0.1.jar
+Starting net.fabricmc.loader.impl.game.minecraft.BundlerClassPathCapture
+[17:35:59] [main/INFO]: Loading Minecraft 1.20.1 with Fabric Loader 0.19.3
+[17:35:59] [main/INFO]: Fabric is preparing JARs on first launch, this may take a few seconds...
+[17:35:59] [ForkJoinPool-1-worker-9/WARN]: The mod "tcdcommons" contains invalid entries in its mod json:
+- Unsupported root entry "" at line 27 column 4
+- Unsupported root entry "" at line 27 column 198
+- Unsupported root entry "" at line 29 column 4
+- Unsupported root entry "" at line 29 column 24
+[17:35:59] [ForkJoinPool-1-worker-10/WARN]: Mod charm uses the version forked-6.0.25 which isn't compatible with Loader's extended semantic version format (Could not parse version number component 'forked'!), SemVer is recommended for reliably evaluating dependencies and prioritizing newer version
+[17:35:59] [ForkJoinPool-1-worker-4/WARN]: The mod "dungeons_arise" contains invalid entries in its mod json:
+- Unsupported root entry "credits" at line 12 column 12
+[17:35:59] [ForkJoinPool-1-worker-1/WARN]: Mod stfu uses the version 2.8.1b which isn't compatible with Loader's extended semantic version format (Could not parse version number component '1b'!), SemVer is recommended for reliably evaluating dependencies and prioritizing newer version
+[17:35:59] [ForkJoinPool-1-worker-4/WARN]: Mod com_github_rtyley_animated-gif-lib-for-java uses the version animated-gif-lib-1.7 which isn't compatible with Loader's extended semantic version format (Could not parse version number component 'animated'!), SemVer is recommended for reliably evaluating dependencies and prioritizing newer version
+[17:35:59] [ForkJoinPool-1-worker-1/WARN]: The mod "luna_minecraft" contains invalid entries in its mod json:
+- Unsupported root entry "credits" at line 10 column 12
+[17:35:59] [ForkJoinPool-1-worker-1/WARN]: Mod oceansdelight uses the version fdrf-fabric-1.0.2-1.20 which isn't compatible with Loader's extended semantic version format (Could not parse version number component 'fdrf'!), SemVer is recommended for reliably evaluating dependencies and prioritizing newer version
+[17:35:59] [ForkJoinPool-1-worker-6/WARN]: The mod "betterstats" contains invalid entries in its mod json:
+- Unsupported root entry "" at line 26 column 4
+- Unsupported root entry "" at line 26 column 92
+- Unsupported root entry "" at line 28 column 4
+- Unsupported root entry "" at line 28 column 24
+[17:35:59] [main/INFO]: Dependencies overridden for certain_questing_additions, kleeslabs, netherportalfix, climaterivers, biomeswevegone
+[17:35:59] [main/WARN]: Warnings were found!
+ - Mod 'Accessorify' (accessorify) 2.4.0-beta.5 recommends any version of lambdynlights, which is missing!
+	 - You should install any version of lambdynlights for the optimal experience.
+ - Mod 'Colorwheel' (colorwheel) 1.2.1+mc1.20.1 recommends version 1.0.0 or later of flywheel, which is missing!
+	 - You should install version 1.0.0 or later of flywheel for the optimal experience.
+ - Mod 'Debugify' (debugify) 1.20.1+2.0 recommends any 3.x version of yet-another-config-lib, which is missing!
+	 - You should install any 3.x version of yet-another-config-lib for the optimal experience.
+[17:35:59] [main/INFO]: Loading 453 mods:
+	- abridged 2.0.0
+	- accessories 1.0.0-beta.48+1.20.1
+	   |-- io_wispforest_endec 0.1.8
+	   |-- io_wispforest_endec_gson 0.1.5
+	   \-- io_wispforest_endec_netty 0.1.4
+	- accessorify 2.4.0-beta.5
+	   \-- com_moulberry_mixinconstraints 1.1.0
+	- adorabuild_structures 2.8.0
+	- advancednetherite 2.1.3-1.20.1
+	- adventurez 1.4.20
+	- aether 1.5.2-beta.6
+	   |-- cumulus_menus 1.20.1-1.0.2-fabric
+	   |-- mm_shedaniel 2.4.1
+	   |-- nitrogen_internals 1.20.1-1.0.15-fabric
+	   |-- porting_lib_asm 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_base 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_accessors 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_attributes 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_common 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_config 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_core 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_entity 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_extensions 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_fluids 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_gui_utils 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_lazy_registration 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_mixin_extensions 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_tool_actions 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_transfer 2.3.9-beta.52+1.20.1
+	   |    |-- porting_lib_utility 2.3.9-beta.52+1.20.1
+	   |    \-- reach-entity-attributes 2.4.0
+	   |-- porting_lib_blocks 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_brewing 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_client_events 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_data 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_items 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_level_events 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_loot 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_model_generators 2.3.9-beta.51+1.20.1
+	   |    \-- porting_lib_model_materials 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_model_loader 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_models 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_networking 2.3.9-beta.51+1.20.1
+	   |-- porting_lib_recipe_book_categories 2.3.9-beta.51+1.20.1
+	   \-- porting_lib_tags 3.0
+	- ali 1.7.0
+	- almanac 1.0.2
+	- alternate-current 1.9.0
+	- amendments 1.20-2.2.3
+	- animal_feeding_trough 1.1.0+1.20.1
+	- another_furniture 1.20.1-3.0.5
+	- architectury 9.2.14
+	- ash_api 3.0.2+1.20.1
+	- athena 3.1.2
+	- autochefsdelight 1.0.6+fabric
+	- autoslabs 1.1.3
+	   |-- advanced_runtime_resource_pack 0.8.0
+	   \-- statement 4.2.8+1.14.4-1.20.1
+	        |-- kanos_config 0.4.1+1.14.4-1.19.4
+	        \-- statement_vanilla_compatibility 1.0.1+1.16.5-1.17
+	- barteringstation 8.0.0
+	- bcc 4.0.8
+	- bclib 3.0.14
+	   \-- wunderlib 1.1.5
+	- better-trim-tooltips 1.0.1
+	- betteradvancements 0.4.2.25
+	- betterchunkloading 1.20.1-5.5
+	- betterdungeons 1.20-Fabric-4.0.4
+	   \-- org_reflections_reflections 0.10.2
+	- betterend 4.0.11
+	- betterend-crashed-ships 1.0.0
+	- betterendisland 1.20-Fabric-2.0.6
+	- betterfortresses 1.20-Fabric-2.0.6
+	- betterjungletemples 1.20-Fabric-2.0.5
+	- bettermineshafts 1.20-Fabric-4.0.4
+	- betternether 9.0.10
+	- betteroceanmonuments 1.20-Fabric-3.0.4
+	- betterstats 3.12.6+fabric-1.20.1
+	- betterstrongholds 1.20-Fabric-4.0.3
+	- bettertridents 8.0.1
+	- betterwitchhuts 1.20-Fabric-3.0.3
+	- biolith 1.0.1-alpha.1
+	- biomemusic 1.20.1-3.5
+	- biomeswevegone 1.6.6
+	- blended_compat 1.1.2
+	- bookshelf 20.2.13
+	- bosses_of_mass_destruction 1.7.5-1.20.1
+	   |-- maelstrom_library 1.6.1-1.20
+	   \-- multipart_entities 1.5-1.20
+	- bountiful 6.0.4+1.20.1
+	- bygonenether 1.3.2
+	- cardinal-components 5.2.3
+	   |-- cardinal-components-base 5.2.3
+	   |-- cardinal-components-block 5.2.3
+	   |-- cardinal-components-chunk 5.2.3
+	   |-- cardinal-components-entity 5.2.3
+	   |-- cardinal-components-item 5.2.3
+	   |-- cardinal-components-level 5.2.3
+	   |-- cardinal-components-scoreboard 5.2.3
+	   \-- cardinal-components-world 5.2.3
+	- carryon 2.1.2.7
+	- certain_questing_additions 1.1.3
+	- cerulean 1.0.0
+	- charm forked-6.0.25
+	   |-- charmony 6.15.1
+	   \-- com_moandjiezana_toml_toml4j 0.7.2
+	- charmofundying 6.5.0+1.20.1
+	- chefsdelight 1.0.4-fabric-1.20.1
+	   \-- structurized-reborn 1.20.1-01
+	- chipped 3.0.7
+	- chunkactivitytracker 1.0.1
+	- chunksending 1.20.1-2.8
+	- clientcrafting 1.20.1-1.8
+	- clientsort 2.1.7+1.20.1
+	- climaterivers 20.1.0
+	- cloth-config 11.1.136
+	   \-- cloth-basic-math 0.6.1
+	- clumps 12.0.0.4
+	- collective 8.13
+	- colorwheel 1.2.1+mc1.20.1
+	- comforts 6.4.0+1.20.1
+	- configureddefaults 8.0.4
+	- connectivity 1.20.1-7.6
+	- corgilib 4.0.3.4
+	   |-- com_electronwill_night-config_core 3.8.2
+	   \-- com_electronwill_night-config_toml 3.8.2
+	- coroutil 1.20.1-1.3.7
+	- crashexploitfixer 2.0.0
+	- crawl 0.12.0
+	   \-- mm 2.3
+	- cristellib 1.1.5
+	   \-- blue_endless_jankson 1.2.3
+	- cull-less-leaves 1.4.2+1.21-fabric
+	- culturaldelights 1.0.5+1.20.1
+	   |-- mm 2.3
+	   \-- terraform-wood-api-v1 7.0.1
+	- cupboard 1.20.1-2.7
+	- cutthrough 8.0.2
+	- dawn 5.0.0
+	   |-- terraform-shapes-api-v1 7.0.1
+	   \-- terraform-wood-api-v1 7.0.1
+	- debugify 1.20.1+2.0
+	- decorative_blocks 4.1.3
+	- deeperdarker 1.3.3
+	   \-- customportalapi 0.0.1-beta64-1.20
+	- despawntweaks 1.0.0
+	- diagonalfences 8.1.5
+	   \-- diagonalblocks 8.0.6
+	- does_it_tick 1.1.4
+	- dragonloot 1.1.4
+	- drippyloadingscreen 3.1.0
+	- dungeons_arise 2.1.58
+	- dynamictrim 1.4.1
+	- earlybedtime 1.0.0
+	- easyanvils 8.0.2
+	- easydisenchanting 1.0.1
+	- easymagic 8.0.1
+	- edenring 20.1.20
+	- elytraslot 6.4.4+1.20.1
+	   \-- mixinsquared 0.1.2-beta.6
+	- endersdelight 1.20.1-1.0.2.refabricated
+	- entityculling 1.9.5
+	   |-- transition 1.0.11
+	   \-- trender 1.0.10
+	- epherolib 1.2.0
+	- everycomp 1.20-2.9.12
+	- expandeddelight 0.3.2
+	   |-- mm 2.3
+	   \-- omega-config 1.4.0+1.20.1
+	- explorations 1.20.1-1.6.1
+	- explorify 1.6.4
+	- fabric-api 0.92.7+1.20.1
+	   |-- fabric-api-base 0.4.32+1802ada577
+	   |-- fabric-api-lookup-api-v1 1.6.37+1802ada577
+	   |-- fabric-biome-api-v1 13.0.15+93aa238b77
+	   |-- fabric-block-api-v1 1.0.12+1802ada577
+	   |-- fabric-block-view-api-v2 1.0.3+924f046a77
+	   |-- fabric-blockrenderlayer-v1 1.1.42+1802ada577
+	   |-- fabric-client-tags-api-v1 1.1.3+1802ada577
+	   |-- fabric-command-api-v1 1.2.35+f71b366f77
+	   |-- fabric-command-api-v2 2.2.14+1802ada577
+	   |-- fabric-commands-v0 0.2.52+df3654b377
+	   |-- fabric-containers-v0 0.1.67+df3654b377
+	   |-- fabric-content-registries-v0 4.0.13+1802ada577
+	   |-- fabric-convention-tags-v1 1.5.6+1802ada577
+	   |-- fabric-crash-report-info-v1 0.2.20+1802ada577
+	   |-- fabric-data-attachment-api-v1 1.0.2+de0fd6d177
+	   |-- fabric-data-generation-api-v1 12.3.7+1802ada577
+	   |-- fabric-dimensions-v1 2.1.55+1802ada577
+	   |-- fabric-entity-events-v1 1.6.1+1c78457f77
+	   |-- fabric-events-interaction-v0 0.6.5+13a40c6677
+	   |-- fabric-events-lifecycle-v0 0.2.64+df3654b377
+	   |-- fabric-game-rule-api-v1 1.0.41+1802ada577
+	   |-- fabric-item-api-v1 2.1.29+1802ada577
+	   |-- fabric-item-group-api-v1 4.0.14+1802ada577
+	   |-- fabric-key-binding-api-v1 1.0.38+1802ada577
+	   |-- fabric-keybindings-v0 0.2.36+df3654b377
+	   |-- fabric-lifecycle-events-v1 2.2.23+1802ada577
+	   |-- fabric-loot-api-v2 1.2.3+1802ada577
+	   |-- fabric-loot-tables-v1 1.1.47+9e7660c677
+	   |-- fabric-message-api-v1 5.1.10+1802ada577
+	   |-- fabric-mining-level-api-v1 2.1.52+1802ada577
+	   |-- fabric-model-loading-api-v1 1.0.4+1802ada577
+	   |-- fabric-models-v0 0.4.3+9386d8a777
+	   |-- fabric-networking-api-v1 1.3.14+a158aa0477
+	   |-- fabric-networking-v0 0.3.54+df3654b377
+	   |-- fabric-object-builder-api-v1 11.1.5+e35120df77
+	   |-- fabric-particles-v1 1.1.3+1802ada577
+	   |-- fabric-recipe-api-v1 1.0.24+1802ada577
+	   |-- fabric-registry-sync-v0 2.3.6+1802ada577
+	   |-- fabric-renderer-api-v1 3.2.2+1802ada577
+	   |-- fabric-renderer-indigo 1.5.3+85287f9f77
+	   |-- fabric-renderer-registries-v1 3.2.47+df3654b377
+	   |-- fabric-rendering-data-attachment-v1 0.3.39+92a0d36777
+	   |-- fabric-rendering-fluids-v1 3.0.29+1802ada577
+	   |-- fabric-rendering-v0 1.1.50+df3654b377
+	   |-- fabric-rendering-v1 3.0.9+1802ada577
+	   |-- fabric-resource-conditions-api-v1 2.3.9+1802ada577
+	   |-- fabric-resource-loader-v0 0.11.12+fb82e9d777
+	   |-- fabric-screen-api-v1 2.0.9+1802ada577
+	   |-- fabric-screen-handler-api-v1 1.3.33+1802ada577
+	   |-- fabric-sound-api-v1 1.0.14+1802ada577
+	   |-- fabric-transfer-api-v1 3.3.6+8dd72ea377
+	   \-- fabric-transitive-access-wideners-v1 4.3.2+1802ada577
+	- fabric-language-kotlin 1.13.8+kotlin.2.3.0
+	   |-- org_jetbrains_kotlin_kotlin-reflect 2.3.0
+	   |-- org_jetbrains_kotlin_kotlin-stdlib 2.3.0
+	   |-- org_jetbrains_kotlin_kotlin-stdlib-jdk7 2.3.0
+	   |-- org_jetbrains_kotlin_kotlin-stdlib-jdk8 2.3.0
+	   |-- org_jetbrains_kotlinx_atomicfu-jvm 0.29.0
+	   |-- org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm 1.10.2
+	   |-- org_jetbrains_kotlinx_kotlinx-coroutines-jdk8 1.10.2
+	   |-- org_jetbrains_kotlinx_kotlinx-datetime-jvm 0.7.1
+	   |-- org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm 0.8.2
+	   |-- org_jetbrains_kotlinx_kotlinx-io-core-jvm 0.8.2
+	   |-- org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm 1.9.0
+	   |-- org_jetbrains_kotlinx_kotlinx-serialization-core-jvm 1.9.0
+	   \-- org_jetbrains_kotlinx_kotlinx-serialization-json-jvm 1.9.0
+	- fabricloader 0.19.3
+	   \-- mixinextras 0.5.4
+	- fancymenu 3.8.1
+	   |-- com_github_keksuccino_japng 0.5.3
+	   \-- com_github_rtyley_animated-gif-lib-for-java animated-gif-lib-1.7
+	- farmers_structures 1.0.0
+	- farmersdelight 1.20.1-2.4.1+refabricated
+	   \-- mm 2.3
+	- farmersknives 3.2
+	- farsight 1.20.1-4.5
+	   \-- org_jctools_jctools-core 4.0.1
+	- fastasyncworldsave 1.20.1-2.6
+	- faster-random 5.1.0
+	- fastitemframes 20.1.5
+	- fastpaintings 1.20-1.2.7
+	- faux-custom-entity-data 6.0.1
+	- ferritecore 6.0.1
+	- foolproof 1.0.4
+	   \-- conditional-mixin 0.6.4
+	- forgeconfigapiport 8.0.3
+	- forgeconfigscreens 8.0.2
+	- formations 1.0.4
+	- formationsnether 1.0.5
+	- formationsoverworld 1.0.5
+	- friendsandfoes 3.0.9
+	   \-- reach-entity-attributes 2.4.0
+	- frostiful 1.0.11
+	   \-- mm 2.3
+	- ftbquestsfreezefix 1.0.0
+	- fullstackwatchdog 1.0.1+1.19.2-fabric
+	- fwaystones 3.3.3+mc1.20.1
+	- fzzy_config 0.7.5+1.20.1
+	   |-- fabric-permissions-api-v0 0.3.1
+	   \-- net_peanuuutz_tomlkt_tomlkt-jvm 0.3.7
+	- geckolib 4.8.2
+	   \-- com_eliotlash_mclib_mclib 20
+	- geophilic 3.4.6
+	- gpumemleakfix 1.20.1-1.8
+	- guardvillagers 2.0.9-1.20.1
+	- handcrafted 3.0.6
+	- hearth_and_home 1.20.1-2.0.3
+	- hearths 1.0.5
+	- hybrid-aquatic 1.5.4
+	   \-- reach-entity-attributes 2.4.0
+	- iceberg 1.1.25
+	- illagerinvasion 8.0.7
+	   \-- extensibleenums 7.0.1
+	- immersivearmorhud 1.0.1
+	- immersivelanterns 1.0.4
+	- immersivemessages 1.0.18
+	   \-- mm 2.3
+	- improved_village_placement 1.1.2
+	- inmis 2.7.2-1.20.1
+	- inmisaddon 1.0.4
+	- jade 11.13.1+fabric
+	- jadeaddons 5.5.1+fabric
+	- jamlib 1.3.5+1.20.1
+	- java 17
+	- justzoom 2.1.0
+	- kambrik 6.1.1+1.20.1
+	- keybind_fix 1.0.0
+	- kiwi 11.10.2+fabric
+	- konkrete 1.8.1
+	- krypton 0.2.3
+	   \-- com_velocitypowered_velocity-native 3.2.0-SNAPSHOT
+	- leavesbegone 8.0.0
+	- lithium 0.11.4
+	- lithostitched 1.4.11
+	- lmft 1.1.1+1.21.9
+	- loadingprotection 1.0.2-1.20.1
+	- logbegone 1.0.8
+	- lootintegration_wda 1
+	- lootintegrations 1.20.1-4.7
+	- luna_minecraft 5.3.1
+	   \-- folk_sisby_kaleido-config 0.3.1+1.3.1
+	- magnumtorch 8.0.2
+	- map-distance-fix 1.0.13+mc1.19.3-1.20.1
+	- mediumcore 1.0.0
+	- melody 1.0.3
+	- memorysettings 1.20.1-5.9
+	- mes 1.4.6-1.20-fabric
+	- midnightlib 1.9.2
+	- minecraft 1.20.1
+	- miningspeedtooltips 1.0.0
+	- misctweaks 1.2.9
+	   \-- mixson 1.4.0.4
+	- missingmodschecker 1.0.1
+	   \-- conditional-mixin 0.6.4
+	- mixintrace 1.1.1+1.17
+	- mmv 2.0.0
+	- mns 2.0.3
+	- modernfix 5.24.4+mc1.20.1
+	- modpack-update-checker 0.15.6
+	   \-- mpuc_lavendermd 0.1.2
+	- moogs_structures 1.1.0-1.20-1.20.4
+	- moonlight 1.20-2.16.24
+	- mr_blossom_blade 1.2
+	- mru 1.0.4+1.20.1+fabric
+	- mvs 5.0.3
+	- mynethersdelight 1.20.1-1.0.4+1.7.6.refabricated
+	- mythic_charms 1.3.3
+	- naturescompass 1.20.1-2.2.3-fabric
+	- neruina 2.3.1-beta.1
+	   |-- com_fasterxml_jackson_core_jackson-annotations 2.17.0
+	   |-- com_fasterxml_jackson_core_jackson-core 2.17.0
+	   |-- com_fasterxml_jackson_core_jackson-databind 2.17.0
+	   |-- org_apache_httpcomponents_client5_httpclient5 5.3.1
+	   |-- org_apache_httpcomponents_core5_httpcore5 5.3.1
+	   |-- org_apache_maven_maven-artifact 3.8.1
+	   \-- org_kohsuke_github-api 1.318
+	- netherchested 8.0.4
+	   \-- puzzlesapi 8.1.7
+	- netherportalfix 13.0.2
+	- nochatreports 1.20.1-v2.2.2
+	   |-- fabric-rendering-v1 3.0.6+b3afc78b82
+	   \-- fabric-screen-api-v1 2.0.6+b3afc78b82
+	- notenoughanimations 1.11.1
+	   |-- transition 1.0.11
+	   \-- trender 1.0.10
+	- oceansdelight fdrf-fabric-1.0.2-1.20
+	- ohthetreesyoullgrow 1.5.0
+	- openpartiesandclaims 0.25.8
+	- owo 0.11.2+1.20
+	- packanalytics 1.0.4
+	   \-- conditional-mixin 0.6.4
+	- packetfixer 3.3.1
+	- passengersportalfix 0.0.2
+	- patchouli 1.20.1-84.1-FABRIC
+	   \-- fiber 0.23.0-2
+	- paxi 1.20-Fabric-4.0
+	- philipsruins 5.7
+	- pickupnotifier 8.0.0
+	- pingwheel 1.12.1
+	- platform 1.2.11.3
+	- polymer-bundled 0.5.20+1.20.1
+	   |-- polymer-autohost 0.5.20+1.20.1
+	   |-- polymer-blocks 0.5.20+1.20.1
+	   |-- polymer-common 0.5.20+1.20.1
+	   |    \-- packet_tweaker 0.4.0+1.19.4
+	   |-- polymer-core 0.5.20+1.20.1
+	   |    |-- polymer-networking 0.5.20+1.20.1
+	   |    |    \-- polymer-common 0.5.20+1.20.1
+	   |    |         \-- packet_tweaker 0.4.0+1.19.4
+	   |    \-- polymer-registry-sync-manipulator 0.5.20+1.20.1
+	   |-- polymer-resource-pack 0.5.20+1.20.1
+	   |    \-- polymer-common 0.5.20+1.20.1
+	   |         \-- packet_tweaker 0.4.0+1.19.4
+	   \-- polymer-virtual-entity 0.5.20+1.20.1
+	        \-- polymer-common 0.5.20+1.20.1
+	             \-- packet_tweaker 0.4.0+1.19.4
+	- polymorph 0.49.10+1.20.1
+	   \-- spectrelib 0.13.17+1.20.1
+	- promenade 4.1.1
+	- puffish_biome_dither 1.0.0
+	- puzzleslib 8.1.33
+	   \-- puzzlesaccessapi 20.1.1
+	- quartzelv 2.2.7+1.20.4
+	- questkilltask 0.2.0+1.20.1
+	- reacharound 1.3.1
+	- recipeessentials 1.20.1-4.1
+	- redirected 1.0.0
+	- reintegrated_chipped 1.0.0
+	- repurposed_structures 7.1.19+1.20.1-fabric
+	- resourcefulconfig 2.1.3
+	- resourcefullib 2.1.29
+	   |-- com_teamresourceful_bytecodecs 1.0.2
+	   \-- com_teamresourceful_yabn 1.0.3
+	- rightclickharvest 4.6.1+1.20.1
+	- roughlyenoughitems 12.1.785
+	   \-- error_notifier 1.0.9
+	- sawmill 1.20-1.4.10
+	- seasons 2.4.2-BETA+1.20
+	- seasonsdelightcompat 1.0-1.3.9
+	- seasonsextras 1.3.2-BETA+1.20
+	- simple_snowy_fix 2.1.5
+	- skeletonaifix 20.1.1
+	- skinlayers3d 1.10.1
+	   |-- transition 1.0.11
+	   \-- trender 1.0.10
+	- smarterfarmers 1.20-2.1.2
+	- smoothchunk 1.20.1-4.1
+	- snowrealmagic 10.7.0
+	- snowundertrees 2.5.4+1.20.1
+	- snowyspirit 1.20-3.0.10
+	- sound_physics_remastered 1.20.1-1.5.1
+	- spark 1.10.53
+	- sparsestructures 3.0
+	- spawn 1.0.3-fabric
+	- spawners_plus 4.3.3-1.20.1
+	- starlight 1.1.2+fabric.dbc156f
+	- stoneworks 8.0.0
+	- stonycliffs 1.1.2
+	- structory 1.3.5
+	- structory_towers 1.0.7
+	- structure_layout_optimizer 1.0.11
+	- structureessentials 1.20.1-4.8
+	- subtle_effects 1.13.2
+	- supplementaries 1.20-3.1.41
+	- suppsquared 1.20-1.1.29
+	- t_and_t 1.12
+	- talkbubbles 1.0.8
+	- tcdcommons 3.12.3.3+fabric-1.20.1
+	- tclayer 3.8.1+beta.14
+	- the_bumblezone 7.9.8+1.20.1-fabric
+	   \-- noindium 1.1.0+1.20
+	- thermoo 2.3.3
+	- thermoo-patches 1.1
+	- toms_storage 1.7.1
+	- toms_trading_network 0.3.0
+	- toofast 1.2.0
+	- toolstats 16.0.9
+	- tradingpost 8.0.2
+	- transparent 8.0.1+1.20.1
+	- twigs 3.1.0
+	- txnilib 1.0.24
+	- underlay 0.9.9
+	- underwater-swim-fix 1.0.2
+	- universal-graves 3.0.3+1.20.1
+	   |-- common-protection-api 1.0.0
+	   |-- placeholder-api 2.1.3+1.20.1
+	   |-- predicate-api 0.2.1+1.20.1
+	   |-- server_translations_api 2.0.0+1.20
+	   |    \-- packet_tweaker 0.4.0+1.19.4
+	   \-- sgui 1.2.2+1.20
+	- universal_ores 1.5.2
+	- vanillabackport 1.1.4.3
+	- variantcraftingtables 6.4
+	- veinmining 1.5.0+1.20.1
+	- villagernames 8.2
+	- villagersplus 3.1
+	- villagesandpillages 1.0.2
+	- visualworkbench 8.0.1
+	- voidtotem 3.0.1
+	- voidz 1.0.11
+	- watut 1.20.1-1.2.3
+	- winterly 0.9.3+1.20
+	- xaerominimap 25.3.5
+	- xaeroworldmap 1.40.6
+	   \-- xaerolib 1.0.46
+	- xp_storage 1.5.7+1.20.1
+	- xp_storage_trinkets 1.0+1.20.1
+	- yet_another_config_lib_v3 3.6.6+1.20.1-fabric
+	   |-- com_twelvemonkeys_common_common-image 3.12.0
+	   |-- com_twelvemonkeys_common_common-io 3.12.0
+	   |-- com_twelvemonkeys_common_common-lang 3.12.0
+	   |-- com_twelvemonkeys_imageio_imageio-core 3.12.0
+	   |-- com_twelvemonkeys_imageio_imageio-metadata 3.12.0
+	   |-- com_twelvemonkeys_imageio_imageio-webp 3.12.0
+	   |-- org_quiltmc_parsers_gson 0.2.1
+	   \-- org_quiltmc_parsers_json 0.2.1
+	- yungsapi 1.20-Fabric-4.0.6
+	   \-- org_javassist_javassist 3.29.2-GA
+	- yungsmenutweaks 1.20.1-Fabric-1.0.2
+[17:35:59] [main/INFO]: Applying default files...
+[17:35:59] [main/ERROR]: Error thrown while opening! Exiting
+java.awt.HeadlessException:
+No X11 DISPLAY variable was set,
+or no headful library support was found,
+but this program performed an operation which requires it.
+	at java.awt.GraphicsEnvironment.checkHeadless(GraphicsEnvironment.java:164) ~[?:?]
+	at java.awt.Window.<init>(Window.java:553) ~[?:?]
+	at java.awt.Frame.<init>(Frame.java:428) ~[?:?]
+	at javax.swing.JFrame.<init>(JFrame.java:224) ~[?:?]
+	at toni.missingmodschecker.MissingModsWindow.<init>(MissingModsWindow.java:55) ~[missingmodschecker.jar:?]
+	at toni.missingmodschecker.MissingModsWindow.open(MissingModsWindow.java:38) ~[missingmodschecker.jar:?]
+	at toni.missingmodschecker.MissingModsChecker.launch(MissingModsChecker.java:62) ~[missingmodschecker.jar:?]
+	at toni.missingmodschecker.Bootstrap.<clinit>(Bootstrap.java:17) ~[missingmodschecker.jar:?]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:469) ~[?:?]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.setupLanguageAdapters(FabricLoaderImpl.java:497) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.finishModLoading(FabricLoaderImpl.java:377) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.freeze(FabricLoaderImpl.java:117) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:143) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:66) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotServer.main(KnotServer.java:23) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.loader.impl.launch.server.FabricServerLauncher.main(FabricServerLauncher.java:69) ~[fabric-loader-0.19.3.jar:?]
+	at net.fabricmc.installer.ServerLauncher.main(ServerLauncher.java:69) ~[server.jar:1.1.2]
+minecraft@better-mc-fabric-bmc2.service: Main process exited, code=exited, status=1/FAILURE
+minecraft@better-mc-fabric-bmc2.service: Failed with result 'exit-code'.
+minecraft@better-mc-fabric-bmc2.service: Consumed 19.583s CPU time, 1.5G memory peak, 0B memory swap peak.
+minecraft@better-mc-fabric-bmc2.service: Scheduled restart job, restart counter is at 1.

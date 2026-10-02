@@ -1,0 +1,19 @@
+Starting net.fabricmc.loader.impl.game.minecraft.BundlerClassPathCapture
+[22:36:30] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.19.5
+[22:36:30] [main/WARN]: Mod resolution failed
+[22:36:30] [main/INFO]: Immediate reason: [HARD_DEP_NO_CANDIDATE mstest_needsdep 1.0 {depends mstest_missing @ [*]}, ROOT_FORCELOAD_SINGLE mstest_needsdep 1.0]
+[22:36:30] [main/INFO]: Reason: [HARD_DEP mstest_needsdep 1.0 {depends mstest_missing @ [*]}]
+[22:36:30] [main/INFO]: Fix: add [add:mstest_missing 1 ([(-∞,∞)])], remove [], replace []
+[22:36:30] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Install mstest_missing, any version.
+More details:
+	 - Mod 'MineShell Test NeedsDep' (mstest_needsdep) 1.0 requires any version of mstest_missing, which is missing!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51) ~[fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:202) ~[fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:142) ~[fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:66) [fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotServer.main(KnotServer.java:23) [fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.loader.impl.launch.server.FabricServerLauncher.main(FabricServerLauncher.java:69) [fabric-loader-0.19.5.jar:?]
+	at net.fabricmc.installer.ServerLauncher.main(ServerLauncher.java:69) [server.jar:1.1.2]

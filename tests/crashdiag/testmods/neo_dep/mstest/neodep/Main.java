@@ -1,0 +1,1 @@
+package mstest.neodep; @net.neoforged.fml.common.Mod("mstestdep") public class Main { public Main() {} }

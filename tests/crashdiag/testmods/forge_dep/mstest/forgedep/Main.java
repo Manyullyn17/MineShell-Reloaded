@@ -1,0 +1,1 @@
+package mstest.forgedep; @net.minecraftforge.fml.common.Mod("mstestdep") public class Main { public Main() {} }

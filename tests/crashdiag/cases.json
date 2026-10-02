@@ -1,0 +1,152 @@
+[
+	{
+		"name": "cleanroom-0.4.4-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "cleanroom-0.4.4-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "cleanroom-0.5.17-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "cleanroom-0.5.17-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "fabric-0.12-mc1.16.5-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "fabric-0.12-mc1.16.5-clientonlydep",
+		"kind": "client-only-dependency",
+		"culprit": "Consumer",
+		"related": "ClientApi"
+	},
+	{
+		"name": "fabric-0.12-mc1.16.5-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "fabric-0.19-mc1.21.1-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "fabric-0.19-mc1.21.1-clientonlydep",
+		"kind": "client-only-dependency",
+		"culprit": "Consumer",
+		"related": "ClientApi"
+	},
+	{
+		"name": "fabric-0.19-mc1.21.1-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "forge-1.12.2-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "forge-1.12.2-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "forge-1.16.5-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "forge-1.16.5-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "forge-1.20.1-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "forge-1.20.1-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "neoforge-1.21.1-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "neoforge-1.21.1-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "quilt-0.20-mc1.20.1-clientcode",
+		"kind": "client-code",
+		"culprit": "ClientCode"
+	},
+	{
+		"name": "quilt-0.20-mc1.20.1-clientonlydep",
+		"kind": "client-only-dependency",
+		"culprit": "Consumer",
+		"related": "ClientApi"
+	},
+	{
+		"name": "quilt-0.20-mc1.20.1-needsdep",
+		"kind": "missing-dependency",
+		"culprit": "NeedsDep"
+	},
+	{
+		"name": "real-bettermc-missingmodschecker",
+		"kind": "headless",
+		"culprit": "missing ?mods ?checker"
+	},
+	{
+		"name": "real-cleanroom-0.6.13-on-java21",
+		"kind": "java-version",
+		"culprit": "^$"
+	},
+	{
+		"name": "real-fugue-0.24-on-java21",
+		"kind": "java-version",
+		"culprit": "Fugue"
+	},
+	{
+		"name": "real-meatballcraft-alfheim",
+		"kind": "mixin-failure",
+		"culprit": "Alfheim"
+	},
+	{
+		"name": "real-meatballcraft-cellterminal",
+		"kind": "version-mismatch",
+		"culprit": "Cell Terminal",
+		"related": "Wireless|ae2wut"
+	},
+	{
+		"name": "real-meatballcraft-fermiumbooter",
+		"kind": "incompatible-method",
+		"culprit": "Fermium"
+	},
+	{
+		"name": "real-meatballcraft-loliasm-wrongforge",
+		"kind": "incompatible-method",
+		"culprit": "Loli"
+	},
+	{
+		"name": "real-vanillaperfected-simpledatapacks",
+		"kind": "client-only-dependency",
+		"culprit": "Simple Datapacks",
+		"related": "Mod Menu"
+	}
+]

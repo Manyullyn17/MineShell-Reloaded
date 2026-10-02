@@ -1,0 +1,1 @@
+package mstest; public class ClientCode implements net.fabricmc.api.ModInitializer { public void onInitialize() { Object o = net.minecraft.class_310.class; System.out.println(o); } }

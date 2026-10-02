@@ -1,0 +1,89 @@
+Started minecraft@meatballcraft-cleanroom.service - Minecraft server (meatballcraft-cleanroom) managed by MineShell.
+[15:32:27] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[15:32:27] [main/INFO] [LaunchWrapper]: Using primary tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[15:32:27] [main/INFO] [LaunchWrapper]: Calling tweak class net.minecraftforge.fml.common.launcher.FMLServerTweaker
+2026-10-01 15:32:27,313 main WARN Disabling terminal, you're running in an unsupported environment.
+[15:32:27] [main/INFO] [FML]: Forge Mod Loader version 14.21.1.2387 for Minecraft 1.12 loading
+[15:32:27] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 1.8.0_504, running on Linux:amd64:6.8.0-139-generic, installed at /usr/lib/jvm/java-8-openjdk-amd64/jre
+[15:32:27] [main/WARN] [FML]: The coremod com.cleanroommc.configanytime.ConfigAnytimePlugin does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from !mixinbooter-10.7.jar
+[15:32:27] [main/ERROR] [FML]: Coremod dev.redstudio.redcore.RedCorePlugin: Unable to class load the plugin java.lang.ClassNotFoundException: dev.redstudio.redcore.RedCorePlugin
+[15:32:27] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from _MixinBootstrap-1.1.0.jar
+[15:32:27] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from `FermiumBooter-1.3.1.jar
+[15:32:27] [main/ERROR] [FML]: The coremod zmaster587.advancedRocketry.asm.AdvancedRocketryPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod appeng.core.AE2ELCore is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com._0xc4de.ae2exttable.AE2ExtendedCraftingTableCore is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com.openai.ae2overclocked.core.OverclockedLoadingPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod dev.redstudio.alfheim.asm.AlfheimPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod squeek.applecore.AppleCore is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com.fuzs.aquaacrobatics.core.AquaAcrobaticsCore is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/WARN] [FML]: The coremod aroma1997.core.coremod.CoreMod does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/WARN] [FML]: The coremod hellfirepvp.astralsorcery.core.AstralCore does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/INFO] [Astral Core]: [AstralCore] Initialized.
+[15:32:27] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from bewitchment-1.12.2-0.0.22.65.jar
+[15:32:27] [main/ERROR] [FML]: The coremod zabi.minecraft.bmtr.core.BMTRPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/INFO] [Battle Towers Fixes]: BTFixesCore initializing...
+[15:32:27] [main/ERROR] [FML]: The coremod mod.acgaming.btfixes.core.BTFixesLoadingPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/WARN] [FML]: The coremod team.chisel.ctm.client.asm.CTMCorePlugin does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/ERROR] [FML]: The coremod com.glodblock.github.dmeblood.coremod.DBECoreMod is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/WARN] [FML]: The coremod net.teamfruit.emcgadgets.asm.EMCGadgetsCorePlugin does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/ERROR] [FML]: The coremod austeretony.enchcontrol.common.core.ECCorePlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/WARN] [FML]: The coremod io.github.kurrycat2004.enchlib.core.EnchLibEarly does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/ERROR] [FML]: Found invalid ContainsDeps declaration EnderCore-1.12.2-0.5.78-core.jar in <instance>/mods/EnderCore-1.12.2-0.5.78.jar
+[15:32:27] [main/ERROR] [FML]: Found invalid ContainsDeps declaration AutoSave-1.12.2-1.0.11.jar in <instance>/mods/EnderIO-1.12.2-5.3.72.jar
+[15:32:27] [main/ERROR] [FML]: Found invalid ContainsDeps declaration AutoConfig-1.12.2-1.0.2.jar in <instance>/mods/EnderIO-1.12.2-5.3.72.jar
+[15:32:27] [main/ERROR] [FML]: The coremod surreal.fixeroo.core.FixerooPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com.glodblock.github.coremod.FCCoreMod is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/WARN] [FML]: The coremod xyz.phanta.fluiddrawers.coremod.FluidDrawersCoreMod does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/ERROR] [FML]: The coremod io.github.chaosunity.forgelin.preloader.ForgelinPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com.zeitheron.hammercore.asm.HCASM is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod com.github.alexthe666.iceandfire.asm.IceAndFirePlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: Found invalid ContainsDeps declaration mcjtytools-1.12-0.0.21.jar in <instance>/mods/incontrol-1.12-3.9.18.jar
+[15:32:27] [main/WARN] [FML]: The coremod ivorius.ivtoolkit.IvToolkitLoadingPlugin does not have a MCVersion annotation, it may cause issues with this version of Minecraft
+[15:32:27] [main/ERROR] [FML]: The coremod net.teamfruit.lazyae2patch.asm.LazyAE2PatchPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: The coremod ua.myxazaur.lemonskin.asm.LemonSkinPlugin is requesting minecraft version 1.12.2 and minecraft is 1.12. It will be ignored.
+[15:32:27] [main/ERROR] [FML]: An error occurred trying to configure the minecraft home at <instance>/. for Forge Mod Loader
+java.lang.NoSuchMethodError: net.minecraftforge.fml.relauncher.FMLLaunchHandler.isDeobfuscatedEnvironment()Z
+	at zone.rong.loliasm.core.LoliLoadingPlugin.<clinit>(LoliLoadingPlugin.java:36) ~[loliasm-5.33.jar:?]
+	at java.lang.Class.forName0(Native Method) ~[?:1.8.0_504]
+	at java.lang.Class.forName(Class.java:348) ~[?:1.8.0_504]
+	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreMod(CoreModManager.java:557) ~[forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.discoverCoreMods(CoreModManager.java:425) ~[forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.handleLaunch(CoreModManager.java:255) ~[forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupHome(FMLLaunchHandler.java:100) [forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupServer(FMLLaunchHandler.java:85) [forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.configureForServerLaunch(FMLLaunchHandler.java:47) [forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.common.launcher.FMLServerTweaker.injectIntoClassLoader(FMLServerTweaker.java:62) [forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraft.launchwrapper.Launch.launch(Launch.java:115) [launchwrapper-1.12.jar:?]
+	at net.minecraft.launchwrapper.Launch.main(Launch.java:28) [launchwrapper-1.12.jar:?]
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[?:1.8.0_504]
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[?:1.8.0_504]
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[?:1.8.0_504]
+	at java.lang.reflect.Method.invoke(Method.java:498) ~[?:1.8.0_504]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:62) [forge-1.12-14.21.1.2387-universal.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:31) [forge-1.12-14.21.1.2387-universal.jar:?]
+A problem occurred running the Server launcher.[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: java.lang.reflect.InvocationTargetException
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at java.lang.reflect.Method.invoke(Method.java:498)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:62)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:main:31]: 	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:31)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: Caused by: java.lang.NoSuchMethodError: net.minecraftforge.fml.relauncher.FMLLaunchHandler.isDeobfuscatedEnvironment()Z
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at zone.rong.loliasm.core.LoliLoadingPlugin.<clinit>(LoliLoadingPlugin.java:36)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at java.lang.Class.forName0(Native Method)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at java.lang.Class.forName(Class.java:348)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreMod(CoreModManager.java:557)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.CoreModManager.discoverCoreMods(CoreModManager.java:425)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.CoreModManager.handleLaunch(CoreModManager.java:255)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupHome(FMLLaunchHandler.java:100)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupServer(FMLLaunchHandler.java:85)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.configureForServerLaunch(FMLLaunchHandler.java:47)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraftforge.fml.common.launcher.FMLServerTweaker.injectIntoClassLoader(FMLServerTweaker.java:62)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraft.launchwrapper.Launch.launch(Launch.java:115)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	at net.minecraft.launchwrapper.Launch.main(Launch.java:28)
+[15:32:27] [main/INFO] [STDERR]: [net.minecraftforge.fml.relauncher.ServerLaunchWrapper:run:67]: 	... 6 more
+minecraft@meatballcraft-cleanroom.service: Main process exited, code=exited, status=1/FAILURE
+minecraft@meatballcraft-cleanroom.service: Failed with result 'exit-code'.
+minecraft@meatballcraft-cleanroom.service: Consumed 2.994s CPU time, 86.5M memory peak, 0B memory swap peak.
+minecraft@meatballcraft-cleanroom.service: Scheduled restart job, restart counter is at 1.

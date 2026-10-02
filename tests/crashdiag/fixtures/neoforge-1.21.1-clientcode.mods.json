@@ -1,0 +1,17 @@
+[
+ {
+  "fileName": "mstest-neo-clientcode.jar",
+  "enabled": true,
+  "ids": [
+   "mstestcc"
+  ],
+  "names": [
+   "MineShell Test ClientCode"
+  ],
+  "clientOnly": false,
+  "classes": [
+   "mstest.neo.ClientCode"
+  ],
+  "mixinConfigs": []
+ }
+]
