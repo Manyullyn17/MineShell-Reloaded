@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canUseCleanroom, cleanroomJavaMajor } from './cleanroom';
+import { canUseCleanroom, cleanroomJavaMajor, recommendedForForgePacks, usesCleanMix } from './cleanroom';
 
 describe('cleanroomJavaMajor', () => {
 	// Measured from the class-file version of every release jar: the split is
@@ -28,5 +28,20 @@ describe('canUseCleanroom', () => {
 		expect(canUseCleanroom('forge', '1.16.5')).toBe(false);
 		expect(canUseCleanroom('neoforge', '1.12.2')).toBe(false);
 		expect(canUseCleanroom('fabric', '1.12.2')).toBe(false);
+	});
+});
+
+describe('CleanMix (Cleanroom 0.6+)', () => {
+	it('is used from 0.6.0 on, and by "latest"', () => {
+		expect(usesCleanMix('0.5.17-alpha')).toBe(false);
+		expect(usesCleanMix('0.4.4-alpha')).toBe(false);
+		expect(usesCleanMix('0.6.0-alpha')).toBe(true);
+		expect(usesCleanMix('0.6.13-alpha')).toBe(true);
+		expect(usesCleanMix(null)).toBe(true);
+	});
+
+	it('recommends the newest version before it for Forge packs', () => {
+		expect(recommendedForForgePacks(['0.6.13-alpha', '0.6.0-alpha', '0.5.17-alpha', '0.5.9-alpha'])).toBe('0.5.17-alpha');
+		expect(recommendedForForgePacks(['0.6.13-alpha'])).toBeNull();
 	});
 });

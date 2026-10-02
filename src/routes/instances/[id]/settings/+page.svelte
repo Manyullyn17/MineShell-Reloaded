@@ -3,7 +3,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
-	import { CLEANROOM_GUIDE_URL } from '$lib/shared/cleanroom';
+	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
 
@@ -159,6 +159,9 @@
 				{:else}
 					<input id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion} />
 					<p class="hint">The version list was unreachable, so type the exact version.</p>
+				{/if}
+				{#if data.settings.modloader === 'cleanroom' && sv.modloaderVersion !== data.settings.modloaderVersion && usesCleanMix(sv.modloaderVersion || null)}
+					<p class="hint warn-text">{CLEANMIX_WARNING}</p>
 				{/if}
 				{#if data.running}
 					<p class="hint">Stop the server to change the loader version.</p>
@@ -566,6 +569,10 @@
 </section>
 
 <style>
+	.warn-text {
+		color: var(--warning);
+	}
+
 	.report {
 		margin-bottom: var(--space-3);
 	}

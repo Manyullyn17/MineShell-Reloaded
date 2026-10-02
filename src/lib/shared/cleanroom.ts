@@ -27,3 +27,23 @@ export function cleanroomJavaMajor(loaderVersion: string | null | undefined): nu
 
 /** Cleanroom's own list of what to remove or replace when moving a pack over. */
 export const CLEANROOM_GUIDE_URL = 'https://cleanroommc.com/wiki/end-user-guide/preparing-your-modpack';
+
+/**
+ * Cleanroom 0.6.0 replaced the standard Mixin library with its own fork,
+ * CleanMix. Mods that reach into Mixin internals (FermiumBooter) or rely on
+ * exact patch targets (Alfheim) fail on it, which is most older Forge packs.
+ * No version means "latest", which is on CleanMix.
+ */
+export function usesCleanMix(loaderVersion: string | null | undefined): boolean {
+	if (!loaderVersion) return true;
+	const [major = 0, minor = 0] = numericParts(loaderVersion);
+	return major > 0 || minor >= 6;
+}
+
+export const CLEANMIX_WARNING =
+	'Cleanroom 0.6 and newer replace the Mixin library with CleanMix. Mods that hook into Mixin internals (e.g. FermiumBooter) or patch exact game code (e.g. Alfheim) can fail on it; existing Forge packs usually run better on 0.5.x.';
+
+/** The newest pre-CleanMix version from a newest-first list, for Forge packs. */
+export function recommendedForForgePacks(versions: string[]): string | null {
+	return versions.find((v) => !usesCleanMix(v)) ?? null;
+}

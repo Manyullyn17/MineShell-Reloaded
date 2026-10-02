@@ -4,7 +4,7 @@
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import { fitToViewport } from '$lib/shared/fitToViewport';
-	import { canUseCleanroom } from '$lib/shared/cleanroom';
+	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
 
@@ -562,6 +562,9 @@
 					{#if loaderVersionError}
 						<p class="hint">{loaderVersionError}</p>
 					{/if}
+					{#if modloader === 'cleanroom' && !loadingLoaderVersions && usesCleanMix(modloaderVersion || null)}
+						<p class="hint warn-text">{CLEANMIX_WARNING}</p>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -587,6 +590,10 @@
 {/if}
 
 <style>
+	.warn-text {
+		color: var(--warning);
+	}
+
 	.page-head {
 		margin-bottom: var(--space-5);
 	}
