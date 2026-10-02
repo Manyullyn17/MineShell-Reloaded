@@ -1,6 +1,6 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { LOADER_LIST, listReleaseVersions, type ModloaderId } from '$lib/server/modloaders';
+import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '$lib/server/modloaders';
 import {
 	createFromArchive,
 	createFromLoader,
@@ -20,7 +20,8 @@ export const load: PageServerLoad = async () => {
 			id: l.id,
 			label: l.label,
 			blurb: l.blurb,
-			supportsMods: l.supportsMods
+			supportsMods: l.supportsMods,
+			onlyGameVersions: l.onlyGameVersions ?? null
 		})),
 		minecraftVersions: minecraftVersions.slice(0, 60),
 		javaRuntimes: listJavaRuntimes().map((j) => ({
@@ -42,6 +43,15 @@ function memoryFrom(form: FormData) {
 	};
 }
 
+/** The CleanroomOption fields; createFromPack ignores them for anything but Forge 1.12.2. */
+function cleanroomFrom(form: FormData): { modloader?: ModloaderId; modloaderVersion?: string | null } {
+	if (form.get('useCleanroom') !== 'on') return {};
+	return {
+		modloader: 'cleanroom',
+		modloaderVersion: String(form.get('cleanroomVersion') ?? '').trim() || null
+	};
+}
+
 export const actions: Actions = {
 	/** Bare mod loader, no pack. */
 	loader: async ({ request }) => {
@@ -54,6 +64,14 @@ export const actions: Actions = {
 		if (!name) return fail(400, { ok: false, message: 'Give the server a name.' });
 		if (!minecraftVersion) {
 			return fail(400, { ok: false, message: 'Pick a Minecraft version.' });
+		}
+		const loader = LOADERS[modloader];
+		if (!loader) return fail(400, { ok: false, message: `Unknown mod loader "${modloader}".` });
+		if (loader.onlyGameVersions && !loader.onlyGameVersions.includes(minecraftVersion)) {
+			return fail(400, {
+				ok: false,
+				message: `${loader.label} only runs on Minecraft ${loader.onlyGameVersions.join(', ')}.`
+			});
 		}
 
 		try {
@@ -86,7 +104,10 @@ export const actions: Actions = {
 		const name = String(form.get('name') ?? '').trim();
 		try {
 			const buffer = Buffer.from(await file.arrayBuffer());
-			const { instance } = await createFromArchive(name, buffer, memoryFrom(form));
+			const { instance } = await createFromArchive(name, buffer, {
+				...memoryFrom(form),
+				...cleanroomFrom(form)
+			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
@@ -115,7 +136,7 @@ export const actions: Actions = {
 				name || projectName,
 				pack,
 				{ source, projectId, versionId },
-				memoryFrom(form)
+				{ ...memoryFrom(form), ...cleanroomFrom(form) }
 			);
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {

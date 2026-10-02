@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { javaRuntimes } from './db/schema';
 import { run } from './systemd';
+import { cleanroomJavaMajor } from '$lib/shared/cleanroom';
 
 /**
  * Two jobs: work out which Java a given Minecraft version needs, and find the
@@ -36,8 +37,17 @@ export function compareVersions(a: string, b: string): number {
 	return 0;
 }
 
-/** The Java major version Mojang requires for a given Minecraft version. */
-export function requiredJavaMajor(minecraftVersion: string): number {
+/**
+ * The Java major version a server needs: Mojang's requirement for the Minecraft
+ * version, except for loaders that replace the runtime story outright.
+ */
+export function requiredJavaMajor(
+	minecraftVersion: string,
+	modloader?: string,
+	modloaderVersion?: string | null
+): number {
+	// Cleanroom is 1.12.2 rebuilt for modern Java; Mojang's 1.12.2 -> 8 rule does not apply.
+	if (modloader === 'cleanroom') return cleanroomJavaMajor(modloaderVersion);
 	const clean = minecraftVersion.trim();
 	for (const rule of JAVA_RULES) {
 		if (compareVersions(clean, rule.minInclusive) >= 0) return rule.java;
@@ -50,14 +60,19 @@ export function requiredJavaMajor(minecraftVersion: string): number {
  * and below breaks on Java 17+, and 1.12-era packs want 8 specifically. Callers
  * get a preferred major plus the range that is safe to substitute.
  */
-export function acceptableJavaMajors(minecraftVersion: string, modloader: string): number[] {
-	const required = requiredJavaMajor(minecraftVersion);
+export function acceptableJavaMajors(
+	minecraftVersion: string,
+	modloader: string,
+	modloaderVersion?: string | null
+): number[] {
+	const required = requiredJavaMajor(minecraftVersion, modloader, modloaderVersion);
 	if (required === 8) {
 		// Legacy Forge is the strict case; Fabric on 1.16 tolerates 11 and 17.
 		return modloader === 'forge' ? [8] : [8, 11, 17];
 	}
 	if (required === 16) return [16, 17];
 	if (required === 17) return [17, 18, 19, 20, 21];
+	if (required === 25) return [25, 26, 27];
 	return [21, 22, 23, 24, 25];
 }
 
@@ -216,16 +231,17 @@ export function resolveJava(opts: {
 	explicitPath?: string | null;
 	minecraftVersion: string;
 	modloader: string;
+	modloaderVersion?: string | null;
 }): JavaResolution {
-	const requiredMajor = requiredJavaMajor(opts.minecraftVersion);
-	const acceptable = acceptableJavaMajors(opts.minecraftVersion, opts.modloader);
+	const requiredMajor = requiredJavaMajor(opts.minecraftVersion, opts.modloader, opts.modloaderVersion);
+	const acceptable = acceptableJavaMajors(opts.minecraftVersion, opts.modloader, opts.modloaderVersion);
 	const installed = listJavaRuntimes();
 
 	if (opts.explicitPath) {
 		const known = installed.find((j) => j.path === opts.explicitPath);
 		const warning =
 			known && !acceptable.includes(known.majorVersion)
-				? `This instance is pinned to Java ${known.majorVersion}, but Minecraft ${opts.minecraftVersion} expects Java ${requiredMajor}.`
+				? `This instance is pinned to Java ${known.majorVersion}, but ${opts.modloader === 'cleanroom' ? 'Cleanroom' : `Minecraft ${opts.minecraftVersion}`} expects Java ${requiredMajor}.`
 				: null;
 		return {
 			path: opts.explicitPath,

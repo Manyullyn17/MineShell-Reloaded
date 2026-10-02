@@ -2,7 +2,9 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
+	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import { fitToViewport } from '$lib/shared/fitToViewport';
+	import { canUseCleanroom } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
 
@@ -35,6 +37,15 @@
 		if (!versionTouched && !minecraftVersion) minecraftVersion = first;
 	});
 	let modloader = $state('fabric');
+	// Loaders tied to specific Minecraft versions (Cleanroom is 1.12.2 only)
+	// narrow the picker, and selecting one snaps the version onto its list.
+	let gameVersionChoices = $derived(
+		data.loaders.find((l) => l.id === modloader)?.onlyGameVersions ?? data.minecraftVersions
+	);
+	$effect(() => {
+		const choices = gameVersionChoices;
+		if (choices.length && !choices.includes(minecraftVersion)) minecraftVersion = choices[0];
+	});
 	let loaderVersions = $state<string[]>([]);
 	let modloaderVersion = $state('');
 	let loaderVersionError = $state('');
@@ -182,6 +193,12 @@
 	};
 	let packVersions = $state<PackVersion[]>([]);
 	let versionId = $state('');
+	// Cleanroom is offered only for Forge 1.12.2 pack versions.
+	let cleanroomEligible = $derived.by(() => {
+		const v = packVersions.find((p) => p.id === versionId);
+		return !!v && v.gameVersions.some((mc) => v.loaders.some((l) => canUseCleanroom(l, mc)));
+	});
+	let javaMajors = $derived(data.javaRuntimes.map((j) => j.majorVersion));
 	let loadingVersions = $state(false);
 
 	async function search() {
@@ -411,6 +428,10 @@
 							</select>
 						</div>
 
+						{#if cleanroomEligible}
+							<CleanroomOption {javaMajors} idPrefix="pack-cleanroom" />
+						{/if}
+
 						{@render memoryFields()}
 
 						<button class="button-primary" type="submit" disabled={submitting || !versionId}>
@@ -459,6 +480,12 @@
 			<input id="upload-name" name="name" bind:value={name} placeholder="Taken from the pack if left blank" />
 		</div>
 
+		<CleanroomOption
+			{javaMajors}
+			idPrefix="upload-cleanroom"
+			label="If this is a Forge 1.12.2 pack, run it on Cleanroom instead"
+		/>
+
 		{@render memoryFields()}
 
 		<button class="button-primary" type="submit" disabled={submitting}>
@@ -492,7 +519,7 @@
 		<div class="grid-2">
 			<div class="field">
 				<label for="minecraftVersion">Minecraft version</label>
-				{#if data.minecraftVersions.length}
+				{#if gameVersionChoices.length}
 					<select
 						id="minecraftVersion"
 						name="minecraftVersion"
@@ -500,7 +527,7 @@
 						onchange={() => (versionTouched = true)}
 						required
 					>
-						{#each data.minecraftVersions as version (version)}
+						{#each gameVersionChoices as version (version)}
 							<option value={version}>{version}</option>
 						{/each}
 					</select>

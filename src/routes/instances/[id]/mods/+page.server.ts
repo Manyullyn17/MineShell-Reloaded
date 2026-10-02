@@ -33,16 +33,19 @@ export const load: PageServerLoad = async ({ params }) => {
 	const summary = await summarise(instance);
 	const mods = await listInstanceMods(instance);
 	const loader = getLoader(instance.modloader);
+	const catalogLoader = loader.catalogLoader ?? loader.id;
 
 	return {
 		mods,
 		running: summary.running,
 		supportsMods: loader.supportsMods,
 		modloader: instance.modloader,
+		/** What mod catalogs call this loader; Cleanroom mods are listed as Forge. */
+		catalogLoader,
 		minecraftVersion: instance.minecraftVersion,
 		/** Loaders whose mods usually work here too, used to widen the search. */
 		compatibleLoaders: [
-			instance.modloader,
+			catalogLoader,
 			...(LOADER_FALLBACKS[instance.modloader as ModloaderId] ?? [])
 		],
 		counts: {

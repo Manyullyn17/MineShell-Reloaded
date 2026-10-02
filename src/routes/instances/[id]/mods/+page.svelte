@@ -144,7 +144,7 @@
 			source: 'modrinth',
 			id: hit.id,
 			mc: data.minecraftVersion,
-			loader: data.modloader
+			loader: data.catalogLoader
 		});
 		try {
 			const res = await fetch(`/api/mods/versions?${params}`);
@@ -174,7 +174,7 @@
 			id: project,
 			versionId: version,
 			mc: data.minecraftVersion,
-			loader: data.modloader,
+			loader: data.catalogLoader,
 			instance: data.instance.id
 		});
 		fetch(`/api/mods/dependencies?${params}`)
@@ -392,7 +392,7 @@
 													<span class="small muted">Already in this instance.</span>
 												{:else if !dep.installable}
 													<span class="small warn-text">
-														No build for {data.modloader}
+														No build for {data.catalogLoader}
 														{data.minecraftVersion}. Install it by hand if the mod needs it.
 													</span>
 												{/if}

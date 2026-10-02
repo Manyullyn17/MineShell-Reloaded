@@ -139,6 +139,35 @@ export function stripMemoryFlags(flags: string): string {
 		.trim();
 }
 
+/**
+ * Flags that only exist on Java 8 and make newer JVMs refuse to start
+ * ("Unrecognized VM option"). Old Forge packs tend to carry them, and they
+ * have to go when such an instance moves to a modern-Java loader.
+ */
+const JAVA8_ONLY_FLAGS = [
+	/^-XX:[+-]UseConcMarkSweepGC$/,
+	/^-XX:[+-]?CMS\S*$/,
+	/^-XX:[+-]UseParNewGC$/,
+	/^-XX:[+-]AggressiveOpts$/,
+	/^-XX:[+-]UseFastAccessorMethods$/,
+	/^-XX:[+-]UseCompressedStrings$/,
+	/^-XX:[+-]UseSplitVerifier$/,
+	/^-XX:(Max)?PermSize=\S+$/
+];
+
+export function stripJava8OnlyFlags(flags: string): { flags: string; removed: string[] } {
+	const removed: string[] = [];
+	const kept = flags
+		.split(/\s+/)
+		.filter(Boolean)
+		.filter((flag) => {
+			const legacy = JAVA8_ONLY_FLAGS.some((re) => re.test(flag));
+			if (legacy) removed.push(flag);
+			return !legacy;
+		});
+	return { flags: kept.join(' '), removed };
+}
+
 export function saveCustomPreset(name: string, flags: string): JvmPreset {
 	const trimmed = name.trim();
     if (!trimmed) throw new Error('A preset needs a name.');

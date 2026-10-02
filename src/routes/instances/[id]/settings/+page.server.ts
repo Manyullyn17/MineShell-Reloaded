@@ -3,7 +3,20 @@ import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { serverInstances } from '$lib/server/db/schema';
-import { requireInstance, rconPassword, syncPortsToProperties, syncUnit } from '$lib/server/instances';
+import {
+	InstanceError,
+	changeLoaderVersion,
+	migrateToCleanroom,
+	readForgeBackup,
+	requireInstance,
+	revertToForge,
+	rconPassword,
+	summarise,
+	syncPortsToProperties,
+	syncUnit
+} from '$lib/server/instances';
+import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
+import { canUseCleanroom } from '$lib/shared/cleanroom';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
 import { portConflict } from '$lib/server/ports';
 import { rescheduleInstance } from '$lib/server/scheduler';
@@ -20,10 +33,15 @@ import {
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
+	const cleanroomRelevant =
+		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
+	const backup = cleanroomRelevant ? await readForgeBackup(instance) : null;
+	const running = (await summarise(instance)).running;
 	const java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion
 	});
 
 	// Version pickers, so these are not free-text fields where a typo silently
@@ -65,9 +83,19 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		rconPassword: rconPassword(instance),
 		javaRuntimes: listJavaRuntimes(),
-		requiredJava: requiredJavaMajor(instance.minecraftVersion),
+		requiredJava: requiredJavaMajor(instance.minecraftVersion, instance.modloader, instance.modloaderVersion),
 		javaResolution: java,
-		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label }))
+		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label })),
+		running,
+		cleanroom: cleanroomRelevant
+			? {
+					onCleanroom: instance.modloader === 'cleanroom',
+					backupCreatedAt: backup?.createdAt ?? null,
+					running
+				}
+			: null,
+		// Streamed: scanning means opening every mod jar.
+		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null
 	};
 };
 
@@ -90,26 +118,38 @@ export const actions: Actions = {
 		const minecraftVersion = String(
 			form.get('minecraftVersion') ?? instance.minecraftVersion
 		).trim();
-		const modloaderVersion = String(form.get('modloaderVersion') ?? '').trim() || null;
 
 		db.update(serverInstances)
-			.set({ name, minecraftVersion, modloaderVersion, updatedAt: Date.now() })
+			.set({ name, minecraftVersion, updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 
-		// These fields only relabel the instance. Nothing here reinstalls the
-		// loader or swaps the server jar, so saying so plainly beats letting the
-		// UI imply an upgrade happened.
-		const versionChanged =
-			minecraftVersion !== instance.minecraftVersion ||
-			modloaderVersion !== instance.modloaderVersion;
-
+		// The Minecraft version only relabels the instance - nothing here swaps
+		// the server jar - so say so plainly. The loader version has its own
+		// action below that really reinstalls.
 		return {
 			ok: true,
-			message: versionChanged
-				? 'Saved. Note this only updates the recorded version - the installed server files are unchanged. Reinstalling to a different version is not supported yet.'
-				: 'Saved.'
+			message:
+				minecraftVersion !== instance.minecraftVersion
+					? 'Saved. Note this only updates the recorded Minecraft version - the installed server files are unchanged.'
+					: 'Saved.'
 		};
+	},
+
+	loaderVersion: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const version = String(form.get('modloaderVersion') ?? '').trim() || null;
+		if (version && version === instance.modloaderVersion) {
+			return fail(400, { ok: false, message: `${version} is already installed.` });
+		}
+		try {
+			await changeLoaderVersion(instance, version);
+			return { ok: true, message: 'Reinstalling the loader. Follow it in Tasks; the server stays stopped until it finishes.' };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	runtime: async ({ request, params }) => {
@@ -252,6 +292,50 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Console preferences saved.' };
+	},
+
+	migrateCleanroom: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const version = String(form.get('cleanroomVersion') ?? '').trim() || null;
+		try {
+			await migrateToCleanroom(instance, version);
+			return { ok: true, message: 'Migration started. Follow it in Tasks; the server stays stopped until it finishes.' };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	revertForge: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		try {
+			await revertToForge(instance);
+			return { ok: true, message: 'Reverting to Forge. Follow it in Tasks.' };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	/** Re-run the automatic part of the migration, e.g. after adding mods to a Cleanroom server. */
+	cleanroomFixes: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		if (instance.modloader !== 'cleanroom') {
+			return fail(400, { ok: false, message: 'This server is not running Cleanroom.' });
+		}
+		if ((await summarise(instance)).running) {
+			return fail(400, { ok: false, message: 'Stop the server first.' });
+		}
+		const result = await applyCleanroomModFixes(instance);
+		const done = [
+			result.disabled.length && `disabled ${result.disabled.length} mod(s)`,
+			result.added.length && `added ${result.added.join(', ')}`
+		].filter(Boolean);
+		return {
+			ok: result.failures.length === 0,
+			message: [done.length ? `Done: ${done.join('; ')}.` : 'Nothing needed changing.', ...result.failures].join(' ')
+		};
 	},
 
 	rescanJava: async ({ params }) => {

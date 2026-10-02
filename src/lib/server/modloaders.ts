@@ -3,6 +3,7 @@ import path from 'node:path';
 import { downloadFile, fetchJson, fetchText } from './download';
 import { run } from './systemd';
 import type { TaskHandle } from './tasks';
+import { CLEANROOM_MINECRAFT } from '$lib/shared/cleanroom';
 
 /**
  * Every loader answers the same two questions: what versions exist, and how do I
@@ -14,7 +15,7 @@ import type { TaskHandle } from './tasks';
  * form instead of `-jar something.jar`.
  */
 
-export type ModloaderId = 'vanilla' | 'fabric' | 'quilt' | 'forge' | 'neoforge';
+export type ModloaderId = 'vanilla' | 'fabric' | 'quilt' | 'forge' | 'neoforge' | 'cleanroom';
 
 export type InstallContext = {
 	dir: string;
@@ -35,6 +36,17 @@ export type Modloader = {
 	/** Shown in the UI under the loader picker. */
 	blurb: string;
 	supportsMods: boolean;
+	/**
+	 * Set when the loader only exists for a fixed set of Minecraft versions, so
+	 * the new-server form can offer just those instead of Mojang's whole list.
+	 */
+	onlyGameVersions?: string[];
+	/**
+	 * The loader name mod catalogs publish this loader's mods under, when it
+	 * differs from `id`. Neither Modrinth nor CurseForge has a Cleanroom tag;
+	 * Cleanroom mods are ordinary 1.12.2 Forge mods there.
+	 */
+	catalogLoader?: ModloaderId;
 	listGameVersions: () => Promise<string[]>;
 	listLoaderVersions: (minecraftVersion: string) => Promise<string[]>;
 	install: (ctx: InstallContext) => Promise<InstallResult>;
@@ -353,12 +365,72 @@ const neoforge: Modloader = {
 	}
 };
 
+// -------------------------------------------------------------- cleanroom ---
+
+const CLEANROOM_MAVEN = 'https://repo.cleanroommc.com/releases/com/cleanroommc/cleanroom';
+
+async function cleanroomVersions(): Promise<{ versions: string[]; release: string | null }> {
+	const xml = await fetchText(`${CLEANROOM_MAVEN}/maven-metadata.xml`);
+	return {
+		versions: [...xml.matchAll(/<version>([^<]+)<\/version>/g)].map((m) => m[1]).reverse(),
+		release: xml.match(/<release>([^<]+)<\/release>/)?.[1] ?? null
+	};
+}
+
+/**
+ * The Cleanroom installer is a Forge-installer fork and, like pre-1.17 Forge,
+ * leaves a runnable cleanroom-<version>.jar in the server root.
+ */
+async function resolveCleanroomLaunch(dir: string, version: string): Promise<string> {
+	const entries = await fs.readdir(dir);
+	const exact = `cleanroom-${version}.jar`;
+	const jar = entries.includes(exact)
+		? exact
+		: entries.find((f) => /^cleanroom-.*\.jar$/.test(f) && !/installer|universal|sources/.test(f));
+	if (!jar) {
+		throw new Error(
+			'The Cleanroom installer finished but produced no cleanroom jar. Check the task log.'
+		);
+	}
+	return `-jar ${jar} nogui`;
+}
+
+const cleanroom: Modloader = {
+	id: 'cleanroom',
+	label: 'Cleanroom',
+	blurb: 'Forge 1.12.2 rebuilt for modern Java (25; 21 before 0.5). Loads 1.12.2 Forge mods; add Fugue and Scalar Legacy for most packs.',
+	supportsMods: true,
+	onlyGameVersions: [CLEANROOM_MINECRAFT],
+	catalogLoader: 'forge',
+	listGameVersions: async () => [CLEANROOM_MINECRAFT],
+	listLoaderVersions: async (mc) =>
+		mc === CLEANROOM_MINECRAFT ? (await cleanroomVersions()).versions : [],
+	install: async (ctx) => {
+		if (ctx.minecraftVersion !== CLEANROOM_MINECRAFT) {
+			throw new Error(`Cleanroom only exists for Minecraft ${CLEANROOM_MINECRAFT}.`);
+		}
+		let loaderVersion = ctx.loaderVersion;
+		if (!loaderVersion) {
+			const { versions, release } = await cleanroomVersions();
+			loaderVersion = release ?? versions[0];
+		}
+		if (!loaderVersion) throw new Error('Could not resolve the latest Cleanroom version.');
+		await runInstallerJar(
+			ctx,
+			`${CLEANROOM_MAVEN}/${loaderVersion}/cleanroom-${loaderVersion}-installer.jar`,
+			`cleanroom-${loaderVersion}-installer.jar`
+		);
+		return { launchArgs: await resolveCleanroomLaunch(ctx.dir, loaderVersion), loaderVersion };
+	}
+};
+
 export const LOADERS: Record<ModloaderId, Modloader> = {
 	vanilla,
 	fabric,
 	quilt,
 	forge,
-	neoforge
+	neoforge,
+	cleanroom
 };
 
 export const LOADER_LIST = Object.values(LOADERS);

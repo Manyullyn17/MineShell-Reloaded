@@ -5,7 +5,7 @@ import { db } from './db';
 import { auditLog, serverInstances, type ServerInstance } from './db/schema';
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
-import { BUILT_IN_PRESETS, composeJvmArgs, getPreset } from './jvm-presets';
+import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
 import { allocatePortPair, portIsFree } from './ports';
 import {
 	defaultProperties,
@@ -14,7 +14,7 @@ import {
 	readProperties,
 	writeProperties
 } from './properties';
-import { resolveJava, scanJavaRuntimes } from './java';
+import { listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
 import {
 	restartUnit,
 	startUnit,
@@ -30,7 +30,9 @@ import { rconExec, parsePlayerList } from './rcon';
 import { getTask, startTask } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
 import { applyOverrides, downloadPackFiles, loadOverridesArchive, parsePack, type ParsedPack } from './packs';
-import { syncMods } from './mods';
+import { deleteMod, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
+import { applyCleanroomModFixes } from './cleanroom';
+import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
 
 export class InstanceError extends Error {}
@@ -99,7 +101,8 @@ export async function syncUnit(instance: ServerInstance): Promise<{ warning: str
 	const java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion
 	});
 
 	await writeUnitEnv(instance.id, {
@@ -194,7 +197,7 @@ async function insertInstanceRow(
 	return requireInstance(id);
 }
 
-function setStatus(id: string, status: string, message: string | null) {
+export function setStatus(id: string, status: string, message: string | null) {
 	db.update(serverInstances)
 		.set({ status, statusMessage: message, updatedAt: Date.now() })
 		.where(eq(serverInstances.id, id))
@@ -205,7 +208,8 @@ async function resolveJavaForInstall(instance: ServerInstance): Promise<string> 
 	let java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion
 	});
 	if (!java.path) {
 		// First run on a fresh box often has an empty java table.
@@ -213,7 +217,8 @@ async function resolveJavaForInstall(instance: ServerInstance): Promise<string> 
 		java = resolveJava({
 			explicitPath: instance.javaPath,
 			minecraftVersion: instance.minecraftVersion,
-			modloader: instance.modloader
+			modloader: instance.modloader,
+			modloaderVersion: instance.modloaderVersion
 		});
 	}
 	if (!java.path) {
@@ -252,6 +257,12 @@ export function createFromLoader(input: CreateInstanceInput): Promise<{ instance
 					.where(eq(serverInstances.id, instance.id))
 					.run();
 
+				if (input.modloader === 'cleanroom') {
+					task.log(
+						'Most Forge mods also need Fugue and Scalar Legacy on Cleanroom; "Apply required fixes" in the instance settings adds both.'
+					);
+				}
+
 				await syncUnit(requireInstance(instance.id));
 				setStatus(instance.id, 'ready', null);
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
@@ -281,19 +292,22 @@ export async function createFromArchive(
 }
 
 /** Shared provisioning task for any pack shape, archive or file list. */
-function provisionFromPack(instance: ServerInstance, pack: ParsedPack): string {
+function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: string[] = []): string {
 	return startTask(
 		{ label: `Install ${pack.name}`, instanceId: instance.id },
 		async (task) => {
+			for (const note of notes) task.log(note);
 			task.setProgress(null, 'Resolving Java');
 			const javaPath = await resolveJavaForInstall(instance);
 
-			task.setProgress(null, `Installing ${pack.modloader}`);
-			const loader = getLoader(pack.modloader);
+			// The instance row, not the pack, decides the loader: a Forge 1.12.2
+			// pack can be installed onto Cleanroom instead.
+			task.setProgress(null, `Installing ${instance.modloader}`);
+			const loader = getLoader(instance.modloader);
 			const result = await loader.install({
 				dir: instance.path,
 				minecraftVersion: instance.minecraftVersion,
-				loaderVersion: pack.modloaderVersion,
+				loaderVersion: instance.modloaderVersion,
 				javaPath,
 				task
 			});
@@ -364,15 +378,21 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack): string {
 				);
 			}
 
+			const problems = [...notes];
+			if (failures.length) {
+				problems.push(
+					`${failures.length} mod${failures.length === 1 ? '' : 's'} could not be downloaded. Check the task log and add them by hand.`
+				);
+			}
+			if (instance.modloader === 'cleanroom' && pack.modloader === 'forge') {
+				task.setProgress(null, 'Preparing mods for Cleanroom');
+				const fixes = await applyCleanroomModFixes(requireInstance(instance.id), task);
+				problems.push(...fixes.failures);
+			}
+
 			await syncUnit(requireInstance(instance.id));
 
-			setStatus(
-				instance.id,
-				'ready',
-				failures.length
-					? `${failures.length} mod${failures.length === 1 ? '' : 's'} could not be downloaded. Check the task log and add them by hand.`
-					: null
-			);
+			setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
 			audit('instance.pack_imported', { instanceId: instance.id, detail: pack.name });
 			task.setProgress(100, 'Ready');
 		}
@@ -386,11 +406,26 @@ export async function createFromPack(
 	meta: { source: string; projectId?: string | null; versionId?: string | null },
 	overrides: Partial<CreateInstanceInput> = {}
 ): Promise<{ instance: ServerInstance; taskId: string }> {
+	const minecraftVersion = overrides.minecraftVersion ?? pack.minecraftVersion;
+	// Cleanroom can be asked for before the pack is known (uploads), so the
+	// request is dropped for anything that is not Forge 1.12.2 - with a note
+	// in the task log and status, not silently. A swapped loader never
+	// inherits the pack's Forge version number.
+	const swapToCleanroom =
+		overrides.modloader === 'cleanroom' && canUseCleanroom(pack.modloader, minecraftVersion);
+	const notes =
+		overrides.modloader === 'cleanroom' && !swapToCleanroom
+			? [
+					`Cleanroom was requested, but this pack is ${pack.modloader} for Minecraft ${minecraftVersion}, so it was installed as-is.`
+				]
+			: [];
 	const instance = await insertInstanceRow({
 		name: name.trim() || pack.name,
-		minecraftVersion: overrides.minecraftVersion ?? pack.minecraftVersion,
-		modloader: overrides.modloader ?? pack.modloader,
-		modloaderVersion: overrides.modloaderVersion ?? pack.modloaderVersion,
+		minecraftVersion,
+		modloader: swapToCleanroom ? 'cleanroom' : pack.modloader,
+		modloaderVersion: swapToCleanroom
+			? (overrides.modloaderVersion ?? null)
+			: pack.modloaderVersion,
 		memoryMinMb: overrides.memoryMinMb,
 		memoryMaxMb: overrides.memoryMaxMb,
 		javaPath: overrides.javaPath,
@@ -400,7 +435,7 @@ export async function createFromPack(
 		packVersionId: meta.versionId ?? pack.version
 	});
 
-	const taskId = provisionFromPack(instance, pack);
+	const taskId = provisionFromPack(instance, pack, notes);
 	watchTaskFailure(taskId, instance.id);
 	return { instance, taskId };
 }
@@ -417,6 +452,397 @@ function watchTaskFailure(taskId: string, instanceId: string) {
 		}
 	}, 1000);
 	check.unref?.();
+}
+
+// ------------------------------------------------------ cleanroom migration ---
+
+/**
+ * Migrating keeps everything needed to go back: the Forge jar, libraries and
+ * vanilla jar are moved (not deleted) into this folder, and the manifest
+ * records every setting and mod the migration touched.
+ */
+const FORGE_BACKUP = path.join('.mineshell', 'forge-backup');
+
+export type ForgeBackup = {
+	createdAt: number;
+	modloaderVersion: string | null;
+	launchArgs: string;
+	jvmArgs: string;
+	javaPath: string | null;
+	/** Entries moved out of the instance root, relative to it. */
+	files: string[];
+	/** Mod filenames disabled by the migration, without the .disabled suffix. */
+	disabledMods: string[];
+	/** Mod filenames the migration downloaded. */
+	addedMods: string[];
+};
+
+function backupDir(instance: ServerInstance): string {
+	return path.join(instance.path, FORGE_BACKUP);
+}
+
+export async function readForgeBackup(instance: ServerInstance): Promise<ForgeBackup | null> {
+	try {
+		return JSON.parse(
+			await fs.readFile(path.join(backupDir(instance), 'manifest.json'), 'utf8')
+		) as ForgeBackup;
+	} catch {
+		return null;
+	}
+}
+
+async function writeForgeBackup(instance: ServerInstance, backup: ForgeBackup): Promise<void> {
+	await fs.writeFile(
+		path.join(backupDir(instance), 'manifest.json'),
+		JSON.stringify(backup, null, 2),
+		'utf8'
+	);
+}
+
+/** Root entries a Forge 1.12.2 server install owns; everything else is world, config or mods. */
+function isForgeInstallEntry(name: string): boolean {
+	return name === 'libraries' || /^forge-.*\.jar$/.test(name) || /^minecraft_server\..*\.jar$/.test(name);
+}
+
+function isCleanroomInstallEntry(name: string): boolean {
+	return name === 'libraries' || /^cleanroom-.*\.jar$/.test(name) || /^minecraft_server\..*\.jar$/.test(name);
+}
+
+/**
+ * Delete the entries in `dir` that match `test`, except those in `keep`. A
+ * rollback passes the originals it never got round to moving as `keep`, so a
+ * failure halfway through moving files aside cannot delete the ones still in
+ * place.
+ */
+export async function removeEntries(
+	dir: string,
+	test: (name: string) => boolean,
+	keep: Set<string> = new Set()
+): Promise<void> {
+	for (const name of await fs.readdir(dir)) {
+		if (test(name) && !keep.has(name)) await fs.rm(path.join(dir, name), { recursive: true, force: true });
+	}
+}
+
+/** Entries in `dir` matching `test`, for working out what a rollback must leave alone. */
+export async function listEntries(dir: string, test: (name: string) => boolean): Promise<string[]> {
+	return (await fs.readdir(dir)).filter(test);
+}
+
+export async function requireStopped(instance: ServerInstance): Promise<void> {
+	const state = await unitState(instance.id);
+	if (state.active !== 'inactive' && state.active !== 'failed') {
+		throw new InstanceError('Stop the server first.');
+	}
+	if (instance.status === 'provisioning') {
+		throw new InstanceError('This server is still being set up.');
+	}
+}
+
+/**
+ * Swap an installed Forge 1.12.2 instance onto Cleanroom. Checks that can fail
+ * up front (state, Java) run before anything on disk changes; a failure during
+ * the install itself puts the Forge files back before reporting it.
+ */
+export async function migrateToCleanroom(
+	instance: ServerInstance,
+	loaderVersion: string | null
+): Promise<string> {
+	if (!canUseCleanroom(instance.modloader, instance.minecraftVersion)) {
+		throw new InstanceError('Only Forge 1.12.2 servers can move to Cleanroom.');
+	}
+	await requireStopped(instance);
+	if (await readForgeBackup(instance)) {
+		throw new InstanceError(
+			`A Forge backup already exists in ${FORGE_BACKUP}. Move or delete it before migrating again.`
+		);
+	}
+
+	// An instance pinned to Java 8 (normal for Forge 1.12.2) cannot run
+	// Cleanroom; the pin is dropped for auto-matching and restored on revert.
+	const pinned = instance.javaPath
+		? listJavaRuntimes().find((j) => j.path === instance.javaPath)
+		: undefined;
+	const target = { ...instance, modloader: 'cleanroom', modloaderVersion: loaderVersion };
+	let java = resolveJava({ ...target, explicitPath: instance.javaPath });
+	const keepPin = !!java.path && !java.warning && instance.javaPath !== null;
+	if (!keepPin) java = resolveJava({ ...target, explicitPath: null });
+	if (!java.path) {
+		throw new InstanceError(java.warning ?? `Cleanroom needs Java ${java.requiredMajor}.`);
+	}
+	const javaPath = java.path;
+
+	setStatus(instance.id, 'provisioning', 'Migrating to Cleanroom');
+	const taskId = startTask(
+		{ label: `Migrate ${instance.name} to Cleanroom`, instanceId: instance.id },
+		async (task) => {
+			const backup: ForgeBackup = {
+				createdAt: Date.now(),
+				modloaderVersion: instance.modloaderVersion,
+				launchArgs: instance.launchArgs,
+				jvmArgs: instance.jvmArgs,
+				javaPath: instance.javaPath,
+				files: [],
+				disabledMods: [],
+				addedMods: []
+			};
+			const dir = backupDir(instance);
+			const forgeBefore = await listEntries(instance.path, isForgeInstallEntry);
+			try {
+				task.setProgress(null, 'Backing up Forge');
+				await fs.mkdir(dir, { recursive: true });
+				for (const name of forgeBefore) {
+					await fs.rename(path.join(instance.path, name), path.join(dir, name));
+					backup.files.push(name);
+				}
+				task.log(`Moved ${backup.files.join(', ') || 'nothing'} to ${FORGE_BACKUP}.`);
+				await writeForgeBackup(instance, backup);
+
+				task.setProgress(null, 'Installing Cleanroom');
+				const result = await getLoader('cleanroom').install({
+					dir: instance.path,
+					minecraftVersion: instance.minecraftVersion,
+					loaderVersion,
+					javaPath,
+					task
+				});
+
+				const legacy = stripJava8OnlyFlags(instance.jvmArgs);
+				if (legacy.removed.length) {
+					task.log(`Removed Java 8-only JVM flags: ${legacy.removed.join(' ')}`);
+				}
+				if (pinned && !keepPin) {
+					task.log(`Unpinned Java ${pinned.majorVersion}; Java ${java.majorVersion} is matched automatically now.`);
+				}
+
+				db.update(serverInstances)
+					.set({
+						modloader: 'cleanroom',
+						modloaderVersion: result.loaderVersion,
+						launchArgs: result.launchArgs,
+						jvmArgs: legacy.flags,
+						javaPath: keepPin ? instance.javaPath : null,
+						updatedAt: Date.now()
+					})
+					.where(eq(serverInstances.id, instance.id))
+					.run();
+			} catch (err) {
+				task.log('Install failed; putting the Forge files back.');
+				const untouched = new Set(forgeBefore.filter((n) => !backup.files.includes(n)));
+				await removeEntries(instance.path, isCleanroomInstallEntry, untouched);
+				for (const name of backup.files) {
+					await fs.rename(path.join(dir, name), path.join(instance.path, name));
+				}
+				await fs.rm(dir, { recursive: true, force: true });
+				setStatus(
+					instance.id,
+					'ready',
+					`Cleanroom migration failed and was rolled back: ${err instanceof Error ? err.message : 'unknown error'}`
+				);
+				throw err;
+			}
+
+			// Past this point the server runs Cleanroom; mod problems are
+			// reported, not rolled back, and the unit is synced regardless.
+			let problems: string[] = [];
+			try {
+				task.setProgress(null, 'Preparing mods for Cleanroom');
+				const fixes = await applyCleanroomModFixes(requireInstance(instance.id), task);
+				backup.disabledMods = fixes.disabled;
+				backup.addedMods = fixes.added;
+				await writeForgeBackup(instance, backup);
+				problems = fixes.failures;
+			} catch (err) {
+				problems = [
+					`Cleanroom is installed, but preparing the mods failed: ${err instanceof Error ? err.message : 'unknown error'}. Check the task log.`
+				];
+				task.log(problems[0]);
+			} finally {
+				await syncUnit(requireInstance(instance.id));
+			}
+			setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
+			audit('instance.migrated_cleanroom', { instanceId: instance.id, detail: loaderVersion ?? 'latest' });
+			task.setProgress(100, 'Ready');
+		}
+	);
+	return taskId;
+}
+
+/** Undo migrateToCleanroom from its backup. */
+export async function revertToForge(instance: ServerInstance): Promise<string> {
+	if (instance.modloader !== 'cleanroom') {
+		throw new InstanceError('This server is not running Cleanroom.');
+	}
+	await requireStopped(instance);
+	const backup = await readForgeBackup(instance);
+	if (!backup) {
+		throw new InstanceError('There is no Forge backup for this server to go back to.');
+	}
+
+	setStatus(instance.id, 'provisioning', 'Reverting to Forge');
+	const taskId = startTask(
+		{ label: `Revert ${instance.name} to Forge`, instanceId: instance.id },
+		async (task) => {
+			const dir = backupDir(instance);
+			task.setProgress(null, 'Restoring Forge');
+			await removeEntries(instance.path, isCleanroomInstallEntry);
+			for (const name of backup.files) {
+				await fs.rename(path.join(dir, name), path.join(instance.path, name));
+			}
+
+			task.setProgress(null, 'Restoring mods');
+			const modDir = path.join(instance.path, 'mods');
+			const present = new Set(await fs.readdir(modDir).catch(() => [] as string[]));
+			for (const name of backup.disabledMods) {
+				if (present.has(`${name}${DISABLED_SUFFIX}`)) {
+					await setModEnabled(instance, `${name}${DISABLED_SUFFIX}`, true);
+					task.log(`Re-enabled ${name}`);
+				}
+			}
+			for (const name of backup.addedMods) {
+				if (present.has(name)) {
+					await deleteMod(instance, name);
+					task.log(`Removed ${name}`);
+				}
+			}
+
+			db.update(serverInstances)
+				.set({
+					modloader: 'forge',
+					modloaderVersion: backup.modloaderVersion,
+					launchArgs: backup.launchArgs,
+					jvmArgs: backup.jvmArgs,
+					javaPath: backup.javaPath,
+					updatedAt: Date.now()
+				})
+				.where(eq(serverInstances.id, instance.id))
+				.run();
+			await fs.rm(dir, { recursive: true, force: true });
+
+			await syncUnit(requireInstance(instance.id));
+			setStatus(instance.id, 'ready', null);
+			audit('instance.reverted_forge', { instanceId: instance.id });
+			task.setProgress(100, 'Ready');
+		}
+	);
+	// Unlike migration there is no further fallback here, so a failure is left
+	// visible on the instance for a manual look.
+	watchTaskFailure(taskId, instance.id);
+	return taskId;
+}
+
+// ---------------------------------------------------- loader version change ---
+
+/**
+ * Root entries a loader install creates, for every loader MineShell installs:
+ * the libraries tree, the loader/launcher/vanilla jars and modern Forge's run
+ * scripts. Worlds, configs, mods and anything else are never matched.
+ */
+export function isLoaderInstallEntry(name: string): boolean {
+	return (
+		['libraries', '.fabric', 'run.sh', 'run.bat', 'user_jvm_args.txt'].includes(name) ||
+		/^(server|quilt-server-launch|fabric-server-launch|minecraft_server\..*|(forge|neoforge|cleanroom)-.*)\.jar$/.test(name)
+	);
+}
+
+/**
+ * Reinstall the instance's loader at another version, in place. The current
+ * install is moved aside first and only deleted once the new one has
+ * installed; a failed install puts it back. Previously the version field
+ * only relabelled the instance.
+ */
+export async function changeLoaderVersion(
+	instance: ServerInstance,
+	loaderVersion: string | null
+): Promise<string> {
+	const loader = getLoader(instance.modloader);
+	if (instance.modloader === 'vanilla') {
+		throw new InstanceError('Vanilla has no loader version to change.');
+	}
+	await requireStopped(instance);
+
+	// A different loader version can need a different Java (Cleanroom 0.4 runs
+	// on 21, 0.5+ on 25), so resolve for the target before touching anything.
+	const java = resolveJava({ ...instance, modloaderVersion: loaderVersion });
+	if (!java.path || (instance.javaPath && java.warning)) {
+		throw new InstanceError(
+			java.warning ??
+				`${loader.label} ${loaderVersion ?? '(latest)'} needs Java ${java.requiredMajor}, which was not found.`
+		);
+	}
+	const javaPath = java.path;
+	const from = instance.modloaderVersion ?? 'unknown';
+
+	setStatus(instance.id, 'provisioning', `Installing ${loader.label} ${loaderVersion ?? '(latest)'}`);
+	const taskId = startTask(
+		{ label: `Change ${instance.name} to ${loader.label} ${loaderVersion ?? '(latest)'}`, instanceId: instance.id },
+		async (task) => {
+			const aside = path.join(instance.path, '.mineshell', `loader-previous-${Date.now()}`);
+			const moved: string[] = [];
+			const before = await listEntries(instance.path, isLoaderInstallEntry);
+			try {
+				task.setProgress(null, `Moving ${loader.label} ${from} aside`);
+				await fs.mkdir(aside, { recursive: true });
+				for (const name of before) {
+					await fs.rename(path.join(instance.path, name), path.join(aside, name));
+					moved.push(name);
+				}
+
+				task.setProgress(null, `Installing ${loader.label} ${loaderVersion ?? '(latest)'}`);
+				const result = await loader.install({
+					dir: instance.path,
+					minecraftVersion: instance.minecraftVersion,
+					loaderVersion,
+					javaPath,
+					task
+				});
+
+				db.update(serverInstances)
+					.set({
+						modloaderVersion: result.loaderVersion,
+						launchArgs: result.launchArgs,
+						updatedAt: Date.now()
+					})
+					.where(eq(serverInstances.id, instance.id))
+					.run();
+				await fs.rm(aside, { recursive: true, force: true });
+				task.log(`Switched ${loader.label} ${from} -> ${result.loaderVersion ?? 'latest'}.`);
+
+				if (
+					instance.modloader === 'cleanroom' &&
+					cleanroomJavaMajor(instance.modloaderVersion) !== cleanroomJavaMajor(result.loaderVersion)
+				) {
+					task.log(
+						`Cleanroom moved from Java ${cleanroomJavaMajor(instance.modloaderVersion)} to Java ${cleanroomJavaMajor(result.loaderVersion)}. Fugue builds are tied to one or the other; swap Fugue to a matching version if the server fails to start.`
+					);
+				}
+			} catch (err) {
+				task.log(`Install failed; restoring ${loader.label} ${from}.`);
+				// Whatever the failed install left behind goes, then the old files return.
+				const untouched = new Set(before.filter((n) => !moved.includes(n)));
+				await removeEntries(instance.path, isLoaderInstallEntry, untouched);
+				for (const name of moved) {
+					await fs.rename(path.join(aside, name), path.join(instance.path, name));
+				}
+				await fs.rm(aside, { recursive: true, force: true });
+				setStatus(
+					instance.id,
+					'ready',
+					`Changing the loader version failed and ${loader.label} ${from} was restored: ${err instanceof Error ? err.message : 'unknown error'}`
+				);
+				throw err;
+			}
+
+			await syncUnit(requireInstance(instance.id));
+			setStatus(instance.id, 'ready', null);
+			audit('instance.loader_version_changed', {
+				instanceId: instance.id,
+				detail: `${from} -> ${loaderVersion ?? 'latest'}`
+			});
+			task.setProgress(100, 'Ready');
+		}
+	);
+	return taskId;
 }
 
 // ---------------------------------------------------------------- lifecycle ---
@@ -603,7 +1029,8 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 	const java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion
 	});
 	const running = state.active === 'active';
 	return {

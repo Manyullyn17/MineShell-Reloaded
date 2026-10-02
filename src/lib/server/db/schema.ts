@@ -17,7 +17,7 @@ export const serverInstances = sqliteTable('server_instances', {
 	path: text('path').notNull(),
 
 	minecraftVersion: text('minecraft_version').notNull(),
-	/** vanilla | fabric | forge | neoforge | quilt */
+	/** vanilla | fabric | forge | neoforge | quilt | cleanroom */
 	modloader: text('modloader').notNull().default('vanilla'),
 	modloaderVersion: text('modloader_version'),
 

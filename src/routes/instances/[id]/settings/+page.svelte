@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
+	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
+	import { CLEANROOM_GUIDE_URL } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
 
@@ -90,7 +92,7 @@
 			<p>
 				The folder name and systemd unit are fixed at creation
 				(<code class="mono">{data.instance.id}</code>), so renaming here only changes the display
-				name. The version fields record what is installed - changing them does not reinstall
+				name. The Minecraft version records what is installed - changing it does not reinstall
 				anything.
 			</p>
 		</div>
@@ -118,33 +120,163 @@
 				{/if}
 				<p class="hint">Used to choose a Java runtime and to filter mod searches.</p>
 			</div>
-			<div class="field">
-				<label for="modloaderVersion">{data.instance.modloaderLabel} version</label>
-				{#if data.loaderVersions.length}
-					<select id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion}>
-						<option value="">Not recorded</option>
-						{#if sv.modloaderVersion && !data.loaderVersions.includes(sv.modloaderVersion)}
-							<option value={sv.modloaderVersion}>{sv.modloaderVersion} (installed)</option>
-						{/if}
-						{#each data.loaderVersions.slice(0, 60) as version (version)}
-							<option value={version}>{version}</option>
-						{/each}
-					</select>
-				{:else}
-					<input id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion} />
-				{/if}
-			</div>
 		</div>
 		<button class="button-primary" type="submit">Save</button>
 	</form>
 </section>
+
+{#if data.settings.modloader !== 'vanilla'}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>{data.instance.modloaderLabel} version</h2>
+				<p>
+					Installed: <strong>{data.settings.modloaderVersion ?? 'not recorded'}</strong>. Changing it
+					reinstalls the loader in place; the world, configs and mods are left alone, and the current
+					install is put back if the new one fails.
+				</p>
+			</div>
+		</div>
+		<form method="POST" action="?/loaderVersion" use:enhance={keepValues}>
+			<div class="field">
+				<label for="modloaderVersion">Version to install</label>
+				{#if data.loaderVersions.length}
+					<select id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion}>
+						{#if sv.modloaderVersion && !data.loaderVersions.includes(sv.modloaderVersion)}
+							<option value={sv.modloaderVersion}>{sv.modloaderVersion} (installed)</option>
+						{/if}
+						{#each data.loaderVersions.slice(0, 60) as version (version)}
+							<option value={version}>
+								{version}{version === data.settings.modloaderVersion ? ' (installed)' : ''}
+							</option>
+						{/each}
+					</select>
+				{:else}
+					<input id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion} />
+					<p class="hint">The version list was unreachable, so type the exact version.</p>
+				{/if}
+				{#if data.running}
+					<p class="hint">Stop the server to change the loader version.</p>
+				{/if}
+			</div>
+			<button
+				type="submit"
+				disabled={data.running || !sv.modloaderVersion || sv.modloaderVersion === data.settings.modloaderVersion}
+			>
+				Install this version
+			</button>
+		</form>
+	</section>
+{/if}
+
+{#if data.cleanroom}
+	{@const cr = data.cleanroom}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Cleanroom</h2>
+				{#if cr.onCleanroom}
+					<p>
+						This server runs Cleanroom, a Forge 1.12.2 fork for modern Java.
+						{#if cr.backupCreatedAt}
+							The Forge install it replaced was kept on
+							{new Date(cr.backupCreatedAt).toLocaleDateString()} and can be restored.
+						{/if}
+					</p>
+				{:else}
+					<p>
+						Cleanroom is a Forge 1.12.2 fork for modern Java that loads the same mods, usually faster.
+						Migrating moves the Forge files into <code>.mineshell/forge-backup</code>, so you can
+						switch back here.
+					</p>
+				{/if}
+			</div>
+		</div>
+
+		{#await data.cleanroomReport}
+			<p class="muted small">Checking mods against Cleanroom's guide.</p>
+		{:then report}
+			{#if report}
+				{@const missing = report.required.filter((r) => !r.present)}
+				{#if report.disable.length || missing.length}
+					<div class="report">
+						<h3>{cr.onCleanroom ? 'Still needs fixing' : 'Migrating will'}</h3>
+						<ul>
+							{#each missing as mod (mod.label)}
+								<li>Add <strong>{mod.label}</strong> <span class="muted">- {mod.reason}</span></li>
+							{/each}
+							{#each report.disable as item (item.fileName)}
+								<li>
+									Disable <strong>{item.label}</strong> <code>{item.fileName}</code>
+									<span class="muted">- {item.reason}{item.replacement ? ` Use ${item.replacement} instead.` : ''}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{:else if cr.onCleanroom}
+					<p class="muted small">Required mods are present and nothing on the guide's must-remove list is enabled.</p>
+				{/if}
+				{#if report.advise.length}
+					<details class="report">
+						<summary>
+							{report.advise.length} more mod{report.advise.length === 1 ? '' : 's'} the guide suggests replacing (not changed automatically)
+						</summary>
+						<ul>
+							{#each report.advise as item (item.fileName)}
+								<li>
+									<strong>{item.label}</strong> <code>{item.fileName}</code>
+									{#if item.replacement}&rarr; {item.replacement}{/if}
+									<span class="muted">- {item.reason}</span>
+								</li>
+							{/each}
+						</ul>
+						<p class="hint">
+							Some of these swap content mods, which can affect existing worlds. See
+							<a href={CLEANROOM_GUIDE_URL} target="_blank" rel="noreferrer">Cleanroom's guide</a>.
+						</p>
+					</details>
+				{/if}
+			{/if}
+		{:catch}
+			<p class="muted small">Could not read the mods folder.</p>
+		{/await}
+
+		{#if cr.running}
+			<p class="hint">Stop the server to {cr.onCleanroom ? 'change' : 'migrate'} it.</p>
+		{/if}
+
+		{#if cr.onCleanroom}
+			<div class="actions">
+				<form method="POST" action="?/cleanroomFixes" use:enhance>
+					<button type="submit" disabled={cr.running}>Apply required fixes</button>
+				</form>
+				{#if cr.backupCreatedAt}
+					<form
+						method="POST"
+						action="?/revertForge"
+						use:enhance={({ cancel }) => {
+							if (!confirm('Put the Forge install back? Mods the migration disabled are re-enabled and Fugue/Scalar Legacy are removed.')) cancel();
+						}}
+					>
+						<button type="submit" disabled={cr.running}>Revert to Forge</button>
+					</form>
+				{/if}
+			</div>
+		{:else}
+			<form method="POST" action="?/migrateCleanroom" use:enhance>
+				<CleanroomOption javaMajors={data.javaRuntimes.map((j) => j.majorVersion)} toggle={false} idPrefix="migrate-cleanroom" />
+				<button class="button-primary" type="submit" disabled={cr.running}>Migrate to Cleanroom</button>
+			</form>
+		{/if}
+	</section>
+{/if}
 
 <section class="panel">
 	<div class="panel-head">
 		<div>
 			<h2>Runtime</h2>
 			<p>
-				Minecraft {s.minecraftVersion} expects Java {data.requiredJava}. MineShell picks a matching
+				{data.instance.modloaderLabel} on Minecraft {s.minecraftVersion} expects Java {data.requiredJava}. MineShell picks a matching
 				runtime unless you pin one.
 			</p>
 		</div>
@@ -429,6 +561,31 @@
 </section>
 
 <style>
+	.report {
+		margin-bottom: var(--space-3);
+	}
+
+	.report h3 {
+		font-size: 0.95rem;
+		margin-bottom: var(--space-2);
+	}
+
+	.report ul {
+		margin: 0 0 var(--space-2);
+		padding-left: 1.2rem;
+		font-size: 0.88rem;
+	}
+
+	.report li {
+		margin-bottom: var(--space-1);
+	}
+
+	.actions {
+		display: flex;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
 	.label-text {
 		display: block;
 		font-size: 0.85rem;

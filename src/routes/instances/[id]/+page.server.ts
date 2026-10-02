@@ -46,7 +46,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	const java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion
 	});
 
 	return {
