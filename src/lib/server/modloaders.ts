@@ -56,6 +56,12 @@ function log(ctx: InstallContext, message: string) {
 	ctx.task?.log(message);
 }
 
+/** True when a dotted version is older than major.minor (0.11.7 before [0, 12]). */
+function versionBefore(version: string, [major, minor]: [number, number]): boolean {
+	const [a = 0, b = 0] = version.split(/[.+-]/).map((n) => parseInt(n, 10) || 0);
+	return a < major || (a === major && b < minor);
+}
+
 // ---------------------------------------------------------------- vanilla ---
 
 type MojangManifest = {
@@ -156,6 +162,40 @@ const fabric: Modloader = {
 			`${FABRIC_META}/versions/installer`
 		);
 		const installerVersion = installers.find((i) => i.stable)?.version ?? installers[0]?.version;
+
+		// Fabric's server-jar endpoint refuses loaders before 0.12 ("0.12 or
+		// higher is required for unattended server installs"); those go through
+		// the full installer in server mode instead.
+		if (versionBefore(loaderVersion, [0, 12])) {
+			const installer = path.join(ctx.dir, '.mineshell', 'fabric-installer.jar');
+			log(ctx, `Downloading Fabric installer ${installerVersion}`);
+			await downloadFile(
+				`https://maven.fabricmc.net/net/fabricmc/fabric-installer/${installerVersion}/fabric-installer-${installerVersion}.jar`,
+				installer
+			);
+			log(ctx, `Running the Fabric installer for loader ${loaderVersion}`);
+			const res = await run(
+				[
+					ctx.javaPath,
+					'-jar',
+					installer,
+					'server',
+					'-mcversion',
+					ctx.minecraftVersion,
+					'-loader',
+					loaderVersion,
+					'-downloadMinecraft',
+					'-dir',
+					ctx.dir
+				],
+				{ cwd: ctx.dir, timeoutMs: 15 * 60_000 }
+			);
+			await fs.rm(installer, { force: true });
+			if (res.code !== 0) {
+				throw new Error(`Fabric installer failed: ${(res.stderr || res.stdout).trim().slice(-600)}`);
+			}
+			return { launchArgs: '-jar fabric-server-launch.jar nogui', loaderVersion };
+		}
 
 		// Fabric serves a ready-made server launcher jar, so no installer run needed.
 		const url = `${FABRIC_META}/versions/loader/${encodeURIComponent(ctx.minecraftVersion)}/${loaderVersion}/${installerVersion}/server/jar`;
