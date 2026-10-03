@@ -15,7 +15,10 @@ function unit() {
 const systemctlStops = () => spawnCalls.filter((c) => c.args[0] === '--user' && c.args[1] === 'stop');
 
 describe('stopping over RCON', () => {
-	beforeEach(() => vi.useFakeTimers());
+	// Only the clock the stop logic waits on: the fake processes answer through
+	// setImmediate, so faking that too hung start() whenever it got as far as
+	// systemd - on CI, where nothing else holds the port.
+	beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] }));
 	afterEach(() => vi.useRealTimers());
 
 	it('lets a slow save finish instead of stopping the unit after a fixed delay', async () => {
@@ -37,7 +40,8 @@ describe('stopping over RCON', () => {
 	});
 
 	it('forgets the pending stop when the server is started again', async () => {
-		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'eula.txt': 'eula=true' });
+		// Port 0 is always free: start() goes all the way to systemd, as on a machine with no server running.
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', serverPort: 0, rconPort: 0 }, { 'eula.txt': 'eula=true' });
 		unit();
 		awaitStop(instance.id, Date.now() + 1000);
 		await start(instance).catch(() => undefined);
