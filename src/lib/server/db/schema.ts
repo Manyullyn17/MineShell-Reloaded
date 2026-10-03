@@ -63,6 +63,10 @@ export const serverInstances = sqliteTable('server_instances', {
 	crashRestartLimit: integer('crash_restart_limit').notNull().default(5),
 	crashRestartWindowSec: integer('crash_restart_window_sec').notNull().default(600),
 
+	/** systemd resource limits (limits.conf drop-in); null = none. CPU in percent of one core. */
+	limitMemoryMb: integer('limit_memory_mb'),
+	limitCpuPercent: integer('limit_cpu_percent'),
+
 	/** Console view preferences, per instance, unenforced by design. */
 	consoleBacklogLines: integer('console_backlog_lines').notNull().default(300),
 	consoleBufferLines: integer('console_buffer_lines').notNull().default(2000),

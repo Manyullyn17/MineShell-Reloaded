@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
@@ -84,8 +85,11 @@ export const load: PageServerLoad = async ({ params }) => {
 			crashRestartLimit: instance.crashRestartLimit,
 			crashRestartWindowSec: instance.crashRestartWindowSec,
 			consoleBacklogLines: instance.consoleBacklogLines,
-			consoleBufferLines: instance.consoleBufferLines
+			consoleBufferLines: instance.consoleBufferLines,
+			limitMemoryMb: instance.limitMemoryMb,
+			limitCpuPercent: instance.limitCpuPercent
 		},
+		cpuCores: cpus().length || 1,
 		rconPassword: rconPassword(instance),
 		javaRuntimes: listJavaRuntimes(),
 		requiredJava: requiredJavaMajor(instance.minecraftVersion, instance.modloader, instance.modloaderVersion),
@@ -114,6 +118,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		snapshotPrompt: await snapshotPrompt(instance.path)
 	};
 };
+
+/**
+ * Java needs memory beyond its heap (metaspace, threads, native buffers), and
+ * systemd kills the server at MemoryMax, so a limit has to leave this much.
+ */
+const LIMIT_HEADROOM_MB = 512;
 
 /**
  * A refusal the person can act on: shown on the form instead of as an error
@@ -230,6 +240,12 @@ export const actions: Actions = {
 		if (minMb > maxMb) {
 			return fail(400, { ok: false, message: 'Starting memory cannot exceed the maximum.' });
 		}
+		if (instance.limitMemoryMb && maxMb + LIMIT_HEADROOM_MB > instance.limitMemoryMb) {
+			return fail(400, {
+				ok: false,
+				message: `The memory limit below is ${instance.limitMemoryMb} MB; raise it first, or Java would be killed past it.`
+			});
+		}
 
 		// Applying a preset replaces the flag body; otherwise the textarea wins.
 		// Either way the memory flags are rebuilt from the memory fields, so the
@@ -271,6 +287,34 @@ export const actions: Actions = {
 					? `Applied the ${preset.name} preset. Restart the server to use it.`
 					: 'Saved. Restart the server to apply the new runtime settings.')
 		};
+	},
+
+	limits: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const optional = (key: string) => {
+			const raw = String(form.get(key) ?? '').trim();
+			return raw ? Number(raw) : null;
+		};
+		const memoryMb = optional('limitMemoryMb');
+		const cpuPercent = optional('limitCpuPercent');
+		const heap = instance.memoryMaxMb ?? 0;
+		if (memoryMb !== null && (!Number.isInteger(memoryMb) || memoryMb < heap + LIMIT_HEADROOM_MB)) {
+			return fail(400, {
+				ok: false,
+				message: `The memory limit has to leave Java room above its ${heap} MB heap: at least ${heap + LIMIT_HEADROOM_MB} MB, or blank for none.`
+			});
+		}
+		const maxCpu = (cpus().length || 1) * 100;
+		if (cpuPercent !== null && (!Number.isInteger(cpuPercent) || cpuPercent < 10 || cpuPercent > maxCpu)) {
+			return fail(400, { ok: false, message: `The CPU limit is between 10 and ${maxCpu} percent, or blank for none.` });
+		}
+		db.update(serverInstances)
+			.set({ limitMemoryMb: memoryMb, limitCpuPercent: cpuPercent, updatedAt: Date.now() })
+			.where(eq(serverInstances.id, instance.id))
+			.run();
+		await syncUnit(requireInstance(instance.id));
+		return { ok: true, message: memoryMb || cpuPercent ? 'Limits saved. Restart the server to apply them.' : 'Limits removed. Restart the server to apply.' };
 	},
 
 	savePreset: async ({ request, params }) => {

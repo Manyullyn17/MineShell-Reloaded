@@ -6,6 +6,7 @@ import {
 	renderTemplateUnit,
 	scopedCommand,
 	unitState,
+	writeResourceLimits,
 	writeRestartPolicy,
 	writeUnitEnv
 } from './systemd';
@@ -94,6 +95,28 @@ describe('unit files', () => {
 
 		await writeRestartPolicy('epsilon', false, 3, 600);
 		expect(await fs.readFile(path.join(systemdUnitDir(), `${unitName('epsilon')}.d`, 'restart.conf'), 'utf8')).toContain('Restart=no');
+	});
+
+	it('writes memory and CPU caps as a drop-in, and removes it when both are cleared', async () => {
+		fakeProcesses(() => ({}));
+		await fs.mkdir(systemdUnitDir(), { recursive: true });
+		await fs.writeFile(path.join(systemdUnitDir(), TEMPLATE_UNIT), renderTemplateUnit());
+		const file = path.join(systemdUnitDir(), `${unitName('theta')}.d`, 'limits.conf');
+		await writeResourceLimits('theta', { memoryMb: 6144, cpuPercent: 200 });
+		const body = await fs.readFile(file, 'utf8');
+		expect(body).toContain('MemoryMax=6144M');
+		expect(body).toContain('CPUQuota=200%');
+
+		await writeResourceLimits('theta', { memoryMb: null, cpuPercent: 150 });
+		expect(await fs.readFile(file, 'utf8')).not.toContain('MemoryMax');
+
+		spawnCalls.length = 0;
+		await writeResourceLimits('theta', { memoryMb: null, cpuPercent: 150 });
+		// Unchanged: no reload.
+		expect(spawnCalls).toEqual([]);
+
+		await writeResourceLimits('theta', { memoryMb: null, cpuPercent: null });
+		await expect(fs.access(file)).rejects.toThrow();
 	});
 
 	it('writes the environment file the template unit reads', async () => {

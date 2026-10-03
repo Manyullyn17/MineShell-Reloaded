@@ -21,6 +21,7 @@ import {
 	startUnit,
 	stopUnit,
 	unitState,
+	writeResourceLimits,
 	writeRestartPolicy,
 	writeUnitEnv,
 	removeUnitArtifacts,
@@ -137,6 +138,7 @@ export async function syncUnit(instance: ServerInstance): Promise<{ warning: str
 		instance.crashRestartLimit,
 		instance.crashRestartWindowSec
 	);
+	await writeResourceLimits(instance.id, { memoryMb: instance.limitMemoryMb, cpuPercent: instance.limitCpuPercent });
 
 	return { warning: java.warning };
 }

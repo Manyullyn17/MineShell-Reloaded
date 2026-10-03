@@ -225,6 +225,36 @@ export async function writeRestartPolicy(
 	await systemctl('daemon-reload');
 }
 
+export function renderLimitsDropIn(limits: { memoryMb: number | null; cpuPercent: number | null }): string | null {
+	const lines: string[] = [];
+	// Past MemoryMax the kernel kills the server, so this is a hard cap; the
+	// settings page keeps it above the Java heap.
+	if (limits.memoryMb) lines.push(`MemoryMax=${limits.memoryMb}M`);
+	if (limits.cpuPercent) lines.push(`CPUQuota=${limits.cpuPercent}%`);
+	return lines.length ? `# Managed by MineShell\n[Service]\n${lines.join('\n')}\n` : null;
+}
+
+/**
+ * Per-server memory and CPU caps as a limits.conf drop-in, removed when
+ * neither is set. User units can be capped where the user manager has the
+ * memory and cpu controllers delegated (the systemd default).
+ */
+export async function writeResourceLimits(id: string, limits: { memoryMb: number | null; cpuPercent: number | null }): Promise<void> {
+	if (!(await templateUnitInstalled())) return;
+	const dropInDir = path.join(systemdUnitDir(), `${unitName(id)}.d`);
+	const file = path.join(dropInDir, 'limits.conf');
+	const body = renderLimitsDropIn(limits);
+	const current = await fs.readFile(file, 'utf8').catch(() => null);
+	if (body === current) return;
+	if (body) {
+		await fs.mkdir(dropInDir, { recursive: true });
+		await fs.writeFile(file, body, 'utf8');
+	} else {
+		await fs.rm(file, { force: true });
+	}
+	await systemctl('daemon-reload');
+}
+
 export async function removeUnitArtifacts(id: string): Promise<void> {
 	await systemctl('disable', '--now', unitName(id)).catch(() => undefined);
 	await fs.rm(path.join(systemdUnitDir(), `${unitName(id)}.d`), {
