@@ -49,4 +49,16 @@ describe('indexMods', () => {
 		expect(byFile['neo.jar']).toMatchObject({ ids: ['neomod'], names: ['Neo Mod'], clientOnly: false });
 		expect(byFile['legacy.jar.disabled']).toMatchObject({ ids: ['oldmod'], enabled: false, mixinConfigs: ['mixins.oldmod.json'] });
 	});
+
+	it('takes mod ids from [[mods]] blocks only, not from dependency blocks', async () => {
+		// Every dependency block has a modId too; reading those made a jar
+		// "minecraft" or "forge" as far as crash attribution was concerned.
+		const dir = await tempDir();
+		await writeJar(dir, 'checker.jar', {
+			'META-INF/mods.toml':
+				'[[mods]]\nmodId="checker"\ndisplayName="Checker"\n[[dependencies."checker"]]\nmodId="minecraft"\nmandatory=true\n'
+		});
+		const [jar] = await indexMods(dir);
+		expect(jar).toMatchObject({ ids: ['checker'], names: ['Checker'] });
+	});
 });

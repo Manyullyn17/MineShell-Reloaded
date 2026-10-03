@@ -153,6 +153,11 @@ function tomlValues(text: string, key: string): string[] {
 	return [...text.matchAll(new RegExp(`^\\s*${key}\\s*=\\s*"([^"]+)"`, 'gm'))].map((m) => m[1]);
 }
 
+/** The `[[name]]` table-array blocks of a mods.toml whose header matches. */
+function tomlBlocks(text: string, header: RegExp): string[] {
+	return text.split(/^\s*\[\[/m).filter((b) => header.test(b));
+}
+
 async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'enabled'>> {
 	const info: Omit<ModJar, 'fileName' | 'enabled'> = {
 		ids: [],
@@ -191,8 +196,12 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 	for (const toml of ['META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
 		const text = await readText(zip, toml);
 		if (text) {
-			info.ids.push(...tomlValues(text, 'modId'));
-			info.names.push(...tomlValues(text, 'displayName'));
+			// Only [[mods]] blocks: dependency blocks have a modId too, and
+			// counting those made every jar look like "minecraft" or "forge".
+			for (const block of tomlBlocks(text, /^mods\]\]/)) {
+				info.ids.push(...tomlValues(block, 'modId'));
+				info.names.push(...tomlValues(block, 'displayName'));
+			}
 		}
 	}
 	const mcmod = await readText(zip, 'mcmod.info');
