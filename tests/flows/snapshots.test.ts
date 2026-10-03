@@ -14,7 +14,9 @@ const { listOperations } = await import('$lib/server/operations');
 const {
 	decideSnapshot,
 	listSnapshots,
+	pruneSnapshots,
 	saveSnapshotPolicy,
+	setSnapshotPinned,
 	DEFAULT_POLICY,
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
@@ -104,6 +106,23 @@ describe('world snapshots', () => {
 		});
 		// The world itself is untouched.
 		expect((await tree(instance.path))['world/level.dat']).toBe('my world');
+	});
+
+	it('keeps pinned snapshots, without them counting towards the limit', async () => {
+		const instance = await instanceWithWorld();
+		saveSnapshotPolicy({ keep: 10, askAboveMb: -1 });
+		for (let i = 0; i < 4; i++) await waitForTask(await snapshotNow(reload(instance.id)));
+		const [newest, , , oldest] = await listSnapshots(instance.path);
+		await setSnapshotPinned(instance.path, oldest.id, true);
+		await pruneSnapshots(instance.path, 2);
+		const left = await listSnapshots(instance.path);
+		// The two newest unpinned ones, plus the pinned oldest.
+		expect(left.map((s) => s.id)).toEqual([newest.id, left[1].id, oldest.id]);
+		expect(left.find((s) => s.id === oldest.id)?.pinned).toBe(true);
+
+		await setSnapshotPinned(instance.path, oldest.id, false);
+		await pruneSnapshots(instance.path, 2);
+		expect((await listSnapshots(instance.path)).map((s) => s.id)).not.toContain(oldest.id);
 	});
 
 	it('takes none unless asked', async () => {

@@ -52,6 +52,8 @@ export type Snapshot = {
 	modloader: string;
 	modloaderVersion: string | null;
 	packVersionName: string | null;
+	/** Kept until unpinned: never deleted to make room, and not counted towards the limit. */
+	pinned?: boolean;
 };
 
 // ---------------------------------------------------------------- policy ---
@@ -275,14 +277,23 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 	}
 }
 
-/** Keeps the newest `keep`, deleting the rest. */
+/** Keeps the newest `keep` unpinned snapshots, deleting older unpinned ones. Pinned ones always stay. */
 export async function pruneSnapshots(root: string, keep: number): Promise<string[]> {
 	const removed: string[] = [];
-	for (const old of (await listSnapshots(root)).slice(keep)) {
+	for (const old of (await listSnapshots(root)).filter((s) => !s.pinned).slice(keep)) {
 		await fs.rm(snapshotPath(root, old.id), { recursive: true, force: true });
 		removed.push(old.id);
 	}
 	return removed;
+}
+
+export async function setSnapshotPinned(root: string, id: string, pinned: boolean): Promise<void> {
+	const snapshot = await getSnapshot(root, id);
+	if (!snapshot) throw new Error('That snapshot no longer exists.');
+	const file = path.join(snapshotPath(root, id), MANIFEST);
+	const { id: _id, ...manifest } = snapshot;
+	await fs.writeFile(`${file}.tmp`, JSON.stringify({ ...manifest, pinned }, null, 2), 'utf8');
+	await fs.rename(`${file}.tmp`, file);
 }
 
 export async function deleteSnapshot(root: string, id: string): Promise<void> {

@@ -32,7 +32,7 @@
 	{:else}
 		<p class="hint">
 			The world ({formatBytes(prompt.worldBytes)}) is copied to a snapshot first, restorable from the World tab.
-			The newest {prompt.policy.keep} are kept.
+			The newest {prompt.policy.keep} are kept, plus any pinned.
 		</p>
 	{/if}
 {/if}

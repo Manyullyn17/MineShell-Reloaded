@@ -118,8 +118,8 @@
 			<h2>Snapshots</h2>
 			<p>
 				Taken before risky operations and on request; the newest {data.snapshotPrompt.policy.keep} are kept
-				(<a href="/settings">Settings</a>). Restoring keeps the current world as a snapshot first, unless you choose
-				otherwise.
+				(<a href="/settings">Settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
+				unless you choose otherwise.
 			</p>
 		</div>
 	</div>
@@ -146,6 +146,7 @@
 						</td>
 						<td>
 							{s.label}
+							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
 							<div class="faint small mono">{s.worlds.join(', ')}</div>
 						</td>
 						<td class="small nowrap" class:warn-text={differs(s)}>
@@ -155,6 +156,17 @@
 						<td class="mono small nowrap">{formatBytes(s.sizeBytes)}</td>
 						<td>
 							<div class="row-actions">
+								<form method="POST" action="?/pinSnapshot" use:enhance>
+									<input type="hidden" name="id" value={s.id} />
+									<input type="hidden" name="pinned" value={String(!s.pinned)} />
+									<button
+										type="submit"
+										class="button-quiet"
+										title={s.pinned ? 'Let it be deleted to make room again' : 'Keep it until unpinned; it does not count towards the limit'}
+									>
+										{s.pinned ? 'Unpin' : 'Pin'}
+									</button>
+								</form>
 								<a class="button" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>
 								<button
 									type="button"
@@ -302,7 +314,13 @@
 		display: flex;
 		gap: var(--space-2);
 		justify-content: flex-end;
-		flex-wrap: wrap;
+		align-items: center;
+	}
+
+	.row-actions form {
+		/* Pin and Unpin differ in width; a fixed slot keeps every row's buttons in line. */
+		min-width: 4.5rem;
+		text-align: right;
 	}
 
 	.confirm-row td {
