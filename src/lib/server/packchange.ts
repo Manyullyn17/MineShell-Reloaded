@@ -22,6 +22,7 @@ import { learnJavaRequirement, resolveJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
+import { datapackNames, isDatapackFile, packWorldFiles, packWorldName, serverWorldName } from './packworld';
 import {
 	beginOperation,
 	commitOperation,
@@ -56,7 +57,9 @@ import {
  *   resources/ ...) is moved to old-configs/<date>-<old version>/ first and
  *   then written fresh, so configs are never silently merged or lost.
  * - server.properties, the world, player lists and logs are never moved or
- *   overwritten, even when the pack ships its own copy.
+ *   overwritten, even when the pack ships its own copy. Inside the world,
+ *   only the pack's data packs are synced (packworld.ts); the world folder
+ *   is whatever level-name says, not just "world".
  * - Everything is reversible until the database is updated: a failure puts
  *   configs, mods and the loader back exactly as they were.
  */
@@ -130,12 +133,51 @@ export function targetModNames(pack: ParsedPack): Set<string> {
 	return names;
 }
 
-/** Top-level entries the target version writes, other than mods and protected files. */
-export function packTopLevel(pack: ParsedPack): string[] {
+/**
+ * Top-level entries the target version writes, other than mods, protected
+ * files and the world. `worldTops` are the top-level folders of the world
+ * (the pack's and the server's level-name, and "world"); treating one as a
+ * config folder used to move the whole world to old-configs.
+ */
+export function packTopLevel(pack: ParsedPack, worldTops: Set<string> = new Set(['world'])): string[] {
 	const tops = new Set<string>();
 	for (const e of pack.overrideEntries) tops.add(overrideRelative(e).split('/')[0]);
 	for (const d of pack.downloads) if (d.target.includes('/')) tops.add(d.target.split('/')[0]);
-	return [...tops].filter((t) => t && !PROTECTED.has(t) && !isLoaderInstallEntry(t)).sort();
+	return [...tops].filter((t) => t && !PROTECTED.has(t) && !worldTops.has(t) && !isLoaderInstallEntry(t)).sort();
+}
+
+/** The world folders' top-level names: never config folders, never replaced. */
+function worldTopsFor(...worlds: string[]): Set<string> {
+	return new Set(['world', ...worlds].map((w) => w.split('/')[0]));
+}
+
+/**
+ * Data packs the installed version shipped. Recorded since installs started
+ * keeping track; for an older install, read from the installed version
+ * itself (once per version, it can mean downloading its overrides). Null
+ * when that is not possible either.
+ */
+const previousDatapacksCache = new Map<string, string[] | null>();
+async function previousDatapacks(instance: ServerInstance): Promise<string[] | null> {
+	if (instance.packDatapacks) {
+		try {
+			return JSON.parse(instance.packDatapacks) as string[];
+		} catch {
+			/* fall through */
+		}
+	}
+	if (!instance.packSource || !instance.packProjectId || !instance.packVersionId) return null;
+	const key = `${instance.packSource}:${instance.packProjectId}:${instance.packVersionId}`;
+	if (!previousDatapacksCache.has(key)) {
+		const names = await resolveProviderPack(instance.packSource, instance.packProjectId, instance.packVersionId)
+			.then(async ({ pack }) => {
+				await loadOverridesArchive(pack);
+				return datapackNames(packWorldFiles(pack));
+			})
+			.catch(() => null);
+		previousDatapacksCache.set(key, names);
+	}
+	return previousDatapacksCache.get(key) ?? null;
 }
 
 export function targetLoaderFor(
@@ -178,6 +220,18 @@ export type PackChangePlan = {
 	/** `update`: pack mods kept under the same file name whose content changed. */
 	mods: { add: string[]; update: string[]; remove: string[]; keep: number };
 	configs: string[];
+	/** The world: only the pack's data packs change; other files the pack ships there are added where missing. */
+	world: {
+		/** The server's world folder (level-name). */
+		folder: string;
+		/** The folder the pack's own world files are under (its level-name). */
+		packFolder: string;
+		datapacks: { add: string[]; update: string[]; remove: string[] };
+		/** Not known which data packs the installed version shipped, so none are removed. */
+		previousUnknown: boolean;
+		/** Other world files (paths inside the world) that do not exist yet and will be written. */
+		newFiles: string[];
+	};
 	manual: ManualModCheck[];
 	/** Reached into while applying; not sent to the client. On-disk names of `mods.update`. */
 	packUpdates?: string[];
@@ -315,6 +369,18 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 	const updates: NonNullable<PackChangePlan['updates']> = new Map();
 	for (const c of checks) if (c.update) updates.set(c.check.fileName, c.update);
 
+	// The world: data packs by name, other files only where missing.
+	const worldFolder = await serverWorldName(instance.path);
+	const packFolder = packWorldName(pack);
+	const worldFiles = packWorldFiles(pack, packFolder);
+	const targetDatapacks = datapackNames(worldFiles);
+	const presentDatapacks = await fs.readdir(path.join(instance.path, worldFolder, 'datapacks')).catch(() => [] as string[]);
+	const previous = presentDatapacks.length ? await previousDatapacks(instance) : [];
+	const newFiles: string[] = [];
+	for (const f of worldFiles) {
+		if (!isDatapackFile(f.rel) && !(await exists(path.join(instance.path, worldFolder, f.rel)))) newFiles.push(f.rel);
+	}
+
 	return {
 		versionId,
 		sameVersion: versionId === instance.packVersionId,
@@ -338,7 +404,18 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 			remove,
 			keep: packRows.length - remove.length - packUpdates.length
 		},
-		configs: packTopLevel(pack),
+		configs: packTopLevel(pack, worldTopsFor(worldFolder, packFolder)),
+		world: {
+			folder: worldFolder,
+			packFolder,
+			datapacks: {
+				add: targetDatapacks.filter((n) => !presentDatapacks.includes(n)),
+				update: targetDatapacks.filter((n) => presentDatapacks.includes(n)),
+				remove: (previous ?? []).filter((n) => presentDatapacks.includes(n) && !targetDatapacks.includes(n)).sort()
+			},
+			previousUnknown: previous === null,
+			newFiles: newFiles.sort()
+		},
 		manual: checks.map((c) => c.check),
 		updates,
 		packUpdates
@@ -414,7 +491,12 @@ export async function applyPackChange(
 		modsBefore: await fs.readdir(mods).catch(() => [] as string[]),
 		configs: plan.configs,
 		configsBefore: [...configsBefore],
-		loaderBefore: null
+		loaderBefore: null,
+		world: {
+			datapacks: path.join(plan.world.folder, 'datapacks'),
+			datapacksBefore: await fs.readdir(path.join(root, plan.world.folder, 'datapacks')).catch(() => [] as string[]),
+			added: plan.world.newFiles.map((rel) => path.join(plan.world.folder, rel))
+		}
 	};
 	try {
 		beginOperation(instance.id, journal);
@@ -445,6 +527,20 @@ export async function applyPackChange(
 				task.log(`Moved ${movedConfigs.join(', ')} to ${path.relative(root, oldConfigs)}/.`);
 			}
 
+			// 1b. The world's data packs: the ones the new version dropped go to
+			// old-configs, the ones it ships again are staged (restorable) before
+			// being written fresh. The user's own are not touched.
+			const datapacks = path.join(root, journal.world!.datapacks);
+			for (const name of plan.world.datapacks.remove) {
+				await fs.mkdir(path.join(oldConfigs, journal.world!.datapacks), { recursive: true });
+				await fs.rename(path.join(datapacks, name), path.join(oldConfigs, journal.world!.datapacks, name));
+				task.log(`Moved data pack ${name} to ${path.relative(root, oldConfigs)}/.`);
+			}
+			for (const name of plan.world.datapacks.update) {
+				await fs.mkdir(path.join(staging, 'datapacks'), { recursive: true });
+				await fs.rename(path.join(datapacks, name), path.join(staging, 'datapacks', name));
+			}
+
 			// 2. Pack mods the new version no longer has.
 			for (const fileName of plan.mods.remove) {
 				await fs.rename(path.join(mods, fileName), path.join(staging, 'mods', fileName));
@@ -462,11 +558,27 @@ export async function applyPackChange(
 
 			// 4. New pack files: mods not already present, plus everything outside mods/.
 			const present = new Set([...modsBefore].filter((n) => !(plan.packUpdates ?? []).includes(n)).map(baseName));
-			const toDownload = pack.downloads.filter((d) => {
+			const worldTops = worldTopsFor(plan.world.folder, plan.world.packFolder);
+			const packWorldPrefix = `${plan.world.packFolder}/`;
+			const newWorldFiles = new Set(plan.world.newFiles);
+			// A world file is written to the server's world folder: data packs
+			// always, anything else only where nothing existed.
+			const worldTarget = (rel: string): string | null => {
+				const inWorld = rel.slice(packWorldPrefix.length);
+				return isDatapackFile(inWorld) || newWorldFiles.has(inWorld) ? path.posix.join(plan.world.folder, inWorld) : null;
+			};
+			const toDownload: typeof pack.downloads = [];
+			for (const d of pack.downloads) {
+				if (d.target.startsWith(packWorldPrefix)) {
+					const target = worldTarget(d.target);
+					if (target) toDownload.push({ ...d, target });
+					continue;
+				}
 				const dir = d.target ? path.posix.dirname(d.target) : 'mods';
-				if (PROTECTED.has(d.target.split('/')[0]) && dir !== 'mods') return false;
-				return dir !== 'mods' || !present.has(path.posix.basename(d.target));
-			});
+				const top = d.target.split('/')[0];
+				if ((PROTECTED.has(top) || worldTops.has(top)) && dir !== 'mods') continue;
+				if (dir !== 'mods' || !present.has(path.posix.basename(d.target))) toDownload.push(d);
+			}
 			task.setProgress(0, 'Downloading pack files');
 			({ failures: downloadFailures } = await downloadPackFiles({ ...pack, downloads: toDownload }, root, task));
 
@@ -474,11 +586,14 @@ export async function applyPackChange(
 			const overrideEntries = pack.overrideEntries.filter((e) => {
 				const rel = overrideRelative(e);
 				const top = rel.split('/')[0];
+				if (rel.startsWith(packWorldPrefix)) return true;
 				if (top === 'mods') return path.posix.dirname(rel) === 'mods' && !present.has(path.posix.basename(rel));
-				return !PROTECTED.has(top) && !isLoaderInstallEntry(top);
+				return !PROTECTED.has(top) && !worldTops.has(top) && !isLoaderInstallEntry(top);
 			});
 			task.setProgress(null, 'Unpacking pack overrides');
-			const copied = await applyOverrides({ ...pack, overrideEntries }, root);
+			const copied = await applyOverrides({ ...pack, overrideEntries }, root, (rel) =>
+				rel.startsWith(packWorldPrefix) ? worldTarget(rel) : rel
+			);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
 			for (const name of reDisable) {
 				await fs.rename(path.join(mods, name), path.join(mods, `${name}${DISABLED_SUFFIX}`)).catch(() => undefined);
@@ -531,7 +646,8 @@ export async function applyPackChange(
 				modloaderVersion: loaderVersion,
 				launchArgs,
 				packVersionId: versionId,
-				packVersionName: pack.version
+				packVersionName: pack.version,
+				packDatapacks: JSON.stringify([...plan.world.datapacks.add, ...plan.world.datapacks.update].sort())
 			});
 		} catch (err) {
 			task.log('The change failed; putting everything back.');
@@ -607,6 +723,24 @@ export async function restorePackChange(root: string, journal: PackChangeJournal
 	}
 	for (const name of await listed(path.join(staging, 'mods'))) {
 		await fs.rename(path.join(staging, 'mods', name), path.join(mods, name));
+	}
+	// World: data packs the change added go, staged and moved-aside ones
+	// return, and other world files it created go. Nothing else in the world
+	// was touched.
+	if (journal.world) {
+		const datapacks = path.join(root, journal.world.datapacks);
+		for (const name of await listed(datapacks)) {
+			if (!journal.world.datapacksBefore.includes(name)) await fs.rm(path.join(datapacks, name), { recursive: true, force: true });
+		}
+		for (const name of await listed(path.join(staging, 'datapacks'))) {
+			await fs.rm(path.join(datapacks, name), { recursive: true, force: true });
+			await fs.rename(path.join(staging, 'datapacks', name), path.join(datapacks, name));
+		}
+		for (const name of await listed(path.join(oldConfigs, journal.world.datapacks))) {
+			await fs.mkdir(datapacks, { recursive: true });
+			await fs.rename(path.join(oldConfigs, journal.world.datapacks, name), path.join(datapacks, name));
+		}
+		for (const rel of journal.world.added) await fs.rm(path.join(root, rel), { force: true });
 	}
 	// Configs: the fresh copies go, the moved originals return. An original
 	// that was never moved is still the real one and is left alone.

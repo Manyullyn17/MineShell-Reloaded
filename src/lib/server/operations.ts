@@ -49,6 +49,8 @@ export type Journal =
 			configsBefore: string[];
 			/** Set just before the loader step starts; null while it has not. */
 			loaderBefore: string[] | null;
+			/** The world: its datapacks/ folder and what was in it, and world files the change creates. */
+			world?: { datapacks: string; datapacksBefore: string[]; added: string[] };
 	  };
 
 export type OperationKind = Journal['kind'];

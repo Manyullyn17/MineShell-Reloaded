@@ -216,6 +216,19 @@ reverse proxy — is where this should land unless there is a specific reason ot
 Show a pack's mod list before installing it; "Install" vs "Install & Start"; a UI for
 choosing what to do with client-only mods (see `clientonly.ts` for what is detected today).
 
+### Data packs from the mod browser
+
+Modrinth projects that only publish a data pack `.zip` (no loader `.jar` build) show up in
+the mod browser but have no installable versions, because versions are listed for the
+server's loader. Install those into `<level-name>/datapacks/` instead, tracked like a mod.
+
+### Pack change preview: content in data-pack-loader folders
+
+Folders like `config/paxi/datapacks`, `config/openloader`, `global_packs/` or `kubejs/`
+are pack config folders, so a pack change moves them whole to `old-configs/` - including a
+data pack the user added there. Correct by the configs policy, but easy to miss for a data
+pack; the preview could point out non-pack files in those folders.
+
 ### Player data editor
 
 View and edit a player's inventory and NBT data from the players page.

@@ -41,6 +41,7 @@ import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX }
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
+import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import {
 	beginOperation,
 	commitOperation,
@@ -369,11 +370,23 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 				task
 			});
 
-			task.setProgress(0, 'Downloading mods');
-			const { failures } = await downloadPackFiles(pack, instance.path, task);
+			// The overrides first: they say where the pack's world files belong.
 			await loadOverridesArchive(pack, task);
+			// The server ends up with the pack's server.properties, so its world is
+			// the pack's level-name; files the pack ships under another world
+			// folder are moved onto it.
+			const packWorld = packWorldName(pack);
+			const serverWorld = packLevelName(pack) ?? 'world';
+			const toWorld = (rel: string) => mapWorldPath(rel, packWorld, serverWorld);
 
-			const copied = await applyOverrides(pack, instance.path);
+			task.setProgress(0, 'Downloading mods');
+			const { failures } = await downloadPackFiles(
+				{ ...pack, downloads: pack.downloads.map((d) => (d.target ? { ...d, target: toWorld(d.target) } : d)) },
+				instance.path,
+				task
+			);
+
+			const copied = await applyOverrides(pack, instance.path, toWorld);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
 
 			// A pack's own server.properties (if its overrides shipped one) fully
@@ -461,7 +474,12 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 
 			await syncUnit(requireInstance(instance.id));
 
-			commitOperation(instance.id, { status: 'ready', statusMessage: problems.length ? problems.join(' ') : null });
+			commitOperation(instance.id, {
+				status: 'ready',
+				statusMessage: problems.length ? problems.join(' ') : null,
+				// Which data packs are the pack's, for the next pack version change.
+				packDatapacks: JSON.stringify(datapackNames(packWorldFiles(pack)))
+			});
 			audit('instance.pack_imported', { instanceId: instance.id, detail: pack.name });
 			task.setProgress(100, 'Ready');
 		})

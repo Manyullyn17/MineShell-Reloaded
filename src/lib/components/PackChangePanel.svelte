@@ -36,6 +36,13 @@
 		loaderChange: boolean;
 		mods: { add: string[]; update: string[]; remove: string[]; keep: number };
 		configs: string[];
+		world: {
+			folder: string;
+			packFolder: string;
+			datapacks: { add: string[]; update: string[]; remove: string[] };
+			previousUnknown: boolean;
+			newFiles: string[];
+		};
 		manual: ManualMod[];
 	};
 
@@ -90,6 +97,9 @@
 	}
 
 	let blockingMods = $derived(plan?.manual.filter((m) => m.blocking) ?? []);
+	const datapackChanges = $derived(
+		!!plan && plan.world.datapacks.add.length + plan.world.datapacks.update.length + plan.world.datapacks.remove.length > 0
+	);
 	let canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
 
@@ -182,7 +192,39 @@
 						Moved to <code>old-configs/</code> and replaced: <code>{plan.configs.join(', ')}</code>
 					</li>
 				{/if}
+				{#if datapackChanges}
+					<li>
+						Data packs in <code>{plan.world.folder}/datapacks</code>: <strong>{plan.world.datapacks.add.length}</strong>
+						added, <strong>{plan.world.datapacks.update.length}</strong> updated,
+						<strong>{plan.world.datapacks.remove.length}</strong> moved to <code>old-configs/</code>. Data packs you
+						added yourself stay.
+					</li>
+				{/if}
+				{#if plan.world.newFiles.length}
+					<li>
+						New in the world folder (nothing existing is overwritten): <code>{plan.world.newFiles.join(', ')}</code>
+					</li>
+				{/if}
 			</ul>
+
+			{#if plan.world.previousUnknown && plan.world.datapacks.add.length + plan.world.datapacks.update.length}
+				<p class="notice warning small">
+					MineShell cannot tell which data packs the installed version put in <code>{plan.world.folder}/datapacks</code>,
+					so none are removed. If the new version renamed one, the old copy stays active next to it; check that folder
+					afterwards.
+				</p>
+			{/if}
+
+			{#if datapackChanges}
+				<details>
+					<summary>Data pack changes</summary>
+					<ul class="files">
+						{#each plan.world.datapacks.add as f (f)}<li class="added">+ {f}</li>{/each}
+						{#each plan.world.datapacks.update as f (f)}<li>~ {f}</li>{/each}
+						{#each plan.world.datapacks.remove as f (f)}<li class="removed">− {f}</li>{/each}
+					</ul>
+				</details>
+			{/if}
 
 			{#if plan.mods.add.length || plan.mods.update.length || plan.mods.remove.length}
 				<details>

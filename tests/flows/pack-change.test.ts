@@ -65,6 +65,8 @@ const { LOADERS } = await import('$lib/server/modloaders');
 const { packFromFileList } = await import('$lib/server/packs');
 const { recordInstanceMod, setModEnabled, upsertMod } = await import('$lib/server/mods');
 const { patchProperties, readProperties } = await import('$lib/server/properties');
+const { serverInstances } = await import('$lib/server/db/schema');
+const { eq } = await import('drizzle-orm');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
@@ -360,6 +362,136 @@ describe('changing the pack version', () => {
 			expect(reload(instance.id).status).toBe('provisioning');
 			expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(true);
 			db.delete(operations).run();
+		});
+	});
+
+	describe('the world and its data packs', () => {
+		// w1 -> w2: Terralith renamed (2.5 -> 2.6), shared.zip changed, a per-world
+		// config changed, and one new per-world config.
+		definePack('w1', '1.20.1', ['a.jar'], {
+			'config/pack.cfg': 'w1',
+			'world/datapacks/terralith-2.5.zip': 'terralith 2.5',
+			'world/datapacks/shared.zip': 'shared v1',
+			'world/serverconfig/tuning.toml': 'pack default v1'
+		});
+		definePack('w2', '1.20.1', ['a.jar'], {
+			'config/pack.cfg': 'w2',
+			'world/datapacks/terralith-2.6.zip': 'terralith 2.6',
+			'world/datapacks/shared.zip': 'shared v2',
+			'world/serverconfig/tuning.toml': 'pack default v2',
+			'world/serverconfig/new.toml': 'new in w2'
+		});
+
+		/** w1 installed, then played: a world, a data pack of the user's own, a tuned per-world config. */
+		async function playedWorld(world = 'world') {
+			const { instance, taskId } = await createFromPack('World', PACKS.w1(), { source: 'modrinth', projectId: 'p', versionId: 'w1' });
+			expect((await waitForTask(taskId)).state).toBe('done');
+			const dir = instance.path;
+			if (world !== 'world') {
+				await fs.rename(path.join(dir, 'world'), path.join(dir, world));
+				await patchProperties(dir, { 'level-name': world });
+			}
+			await fs.writeFile(path.join(dir, world, 'level.dat'), 'my world');
+			await fs.writeFile(path.join(dir, world, 'datapacks', 'mine.zip'), 'my own data pack');
+			await fs.writeFile(path.join(dir, world, 'serverconfig', 'tuning.toml'), 'tuned by me');
+			return reload(instance.id);
+		}
+
+		it('records which data packs a pack installs', async () => {
+			const instance = await playedWorld();
+			expect(JSON.parse(instance.packDatapacks!)).toEqual(['shared.zip', 'terralith-2.5.zip']);
+		});
+
+		it('never moves the world, and syncs only the pack’s data packs', async () => {
+			// Previously "world" counted as a pack config folder: the whole world went
+			// to old-configs and the pack's world folder replaced it.
+			const instance = await playedWorld();
+			const plan = await planPackChange(instance, 'w2');
+			expect(plan.configs).toEqual(['config']);
+			expect(plan.world).toMatchObject({
+				folder: 'world',
+				datapacks: { add: ['terralith-2.6.zip'], update: ['shared.zip'], remove: ['terralith-2.5.zip'] },
+				previousUnknown: false,
+				newFiles: ['serverconfig/new.toml']
+			});
+
+			const task = await waitForTask(await applyPackChange(instance, 'w2', { updateMods: [], confirmMinecraftChange: false }));
+			expect(task.state).toBe('done');
+			const files = await tree(instance.path);
+			expect(files).toMatchObject({
+				'world/level.dat': 'my world',
+				'world/datapacks/mine.zip': 'my own data pack',
+				'world/datapacks/shared.zip': 'shared v2',
+				'world/datapacks/terralith-2.6.zip': 'terralith 2.6',
+				// Per-world config the user tuned stays; the new one is added.
+				'world/serverconfig/tuning.toml': 'tuned by me',
+				'world/serverconfig/new.toml': 'new in w2'
+			});
+			expect(files['world/datapacks/terralith-2.5.zip']).toBeUndefined();
+			const kept = Object.keys(files).find((f) => f.startsWith('old-configs/') && f.endsWith('/world/datapacks/terralith-2.5.zip'));
+			expect(kept).toBeDefined();
+			expect(JSON.parse(reload(instance.id).packDatapacks!)).toEqual(['shared.zip', 'terralith-2.6.zip']);
+		});
+
+		it('puts the pack’s world files into the world the server actually uses', async () => {
+			const instance = await playedWorld('survival');
+			const plan = await planPackChange(instance, 'w2');
+			expect(plan.world.folder).toBe('survival');
+			expect(plan.configs).toEqual(['config']);
+			await waitForTask(await applyPackChange(instance, 'w2', { updateMods: [], confirmMinecraftChange: false }));
+
+			const files = await tree(instance.path);
+			expect(files).toMatchObject({
+				'survival/level.dat': 'my world',
+				'survival/datapacks/mine.zip': 'my own data pack',
+				'survival/datapacks/terralith-2.6.zip': 'terralith 2.6',
+				'survival/serverconfig/new.toml': 'new in w2'
+			});
+			expect(Object.keys(files).some((f) => f.startsWith('world/'))).toBe(false);
+		});
+
+		it('puts the world back wherever the change stops', async () => {
+			let stops = 0;
+			for (let n = 1; ; n++) {
+				const instance = await playedWorld();
+				const before = await tree(instance.path);
+				const outcome = await runAndDieAtMove(instance.path, n, () =>
+					applyPackChange(reload(instance.id), 'w2', { updateMods: [], confirmMinecraftChange: false })
+				);
+				if (outcome === 'finished') break;
+				stops++;
+				await restartMineShell();
+				expect(await tree(instance.path), `stopped at move ${n}`).toEqual(before);
+				expect(JSON.parse(reload(instance.id).packDatapacks!)).toEqual(['shared.zip', 'terralith-2.5.zip']);
+			}
+			expect(stops).toBeGreaterThanOrEqual(3);
+		});
+
+		it('works out an older install’s data packs from its version, or removes none', async () => {
+			// Installed before MineShell recorded them: the installed version is read instead.
+			const instance = await playedWorld();
+			db.update(serverInstances).set({ packDatapacks: null }).where(eq(serverInstances.id, instance.id)).run();
+			const plan = await planPackChange(reload(instance.id), 'w2');
+			expect(plan.world).toMatchObject({ previousUnknown: false, datapacks: { remove: ['terralith-2.5.zip'] } });
+
+			// And when that version cannot be read either, nothing is removed and the preview says so.
+			db.update(serverInstances).set({ packDatapacks: null, packVersionId: 'gone' }).where(eq(serverInstances.id, instance.id)).run();
+			const unknown = await planPackChange(reload(instance.id), 'w2');
+			expect(unknown.world).toMatchObject({ previousUnknown: true, datapacks: { remove: [] } });
+		});
+
+		it('installs a pack’s world files into the world its server.properties names', async () => {
+			// The pack sets level-name but kept its files under world/.
+			definePack('named', '1.20.1', ['a.jar'], {
+				'server.properties': 'level-name=adventure\nmotd=Named\n',
+				'world/datapacks/quests.zip': 'quests'
+			});
+			const { instance, taskId } = await createFromPack('Named', PACKS.named(), { source: 'modrinth', projectId: 'p', versionId: 'named' });
+			await waitForTask(taskId);
+			const files = await tree(instance.path);
+			expect(files['adventure/datapacks/quests.zip']).toBe('quests');
+			expect(Object.keys(files).some((f) => f.startsWith('world/'))).toBe(false);
+			expect(JSON.parse(reload(instance.id).packDatapacks!)).toEqual(['quests.zip']);
 		});
 	});
 });

@@ -188,7 +188,12 @@ export function parsePack(buffer: Buffer): ParsedPack {
 }
 
 /** Copy `overrides/` (and `server-overrides/`, which wins) into the instance. */
-export async function applyOverrides(pack: ParsedPack, instanceDir: string): Promise<number> {
+export async function applyOverrides(
+	pack: ParsedPack,
+	instanceDir: string,
+	/** Rewrites an entry's path inside the instance (the pack's world folder onto the server's); null skips it. */
+	map: (relative: string) => string | null = (relative) => relative
+): Promise<number> {
 	if (!pack.zip) return 0;
 	// server-overrides last so it takes precedence over the shared overrides.
 	const ordered = [...pack.overrideEntries].sort((a, b) => {
@@ -199,8 +204,8 @@ export async function applyOverrides(pack: ParsedPack, instanceDir: string): Pro
 
 	let count = 0;
 	for (const entryName of ordered) {
-		const relative = entryName.replace(/^(server-overrides|overrides)\//, '');
-		if (!relative || relative.includes('..')) continue;
+		const relative = map(entryName.replace(/^(server-overrides|overrides)\//, ''));
+		if (!relative || relative.split('/').includes('..')) continue;
 		const target = path.join(instanceDir, relative);
 		if (!path.resolve(target).startsWith(path.resolve(instanceDir) + path.sep)) continue;
 		const data = pack.zip.readFile(entryName);

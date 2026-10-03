@@ -28,6 +28,8 @@ export const serverInstances = sqliteTable('server_instances', {
 	/** The pack version's label, as people see it; pack_version_id is the provider's id. */
 	packVersionName: text('pack_version_name'),
 	packName: text('pack_name'),
+	/** JSON array: data packs the installed pack version put into the world (see packworld.ts). Null: unknown. */
+	packDatapacks: text('pack_datapacks'),
 
 	/** Arguments after the JVM args, e.g. `-jar server.jar nogui` or Forge's `@args` form. */
 	launchArgs: text('launch_args').notNull().default('-jar server.jar nogui'),
