@@ -5,6 +5,7 @@
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
 	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
+	import InfoTip from '$lib/components/InfoTip.svelte';
 	import { fitToViewport } from '$lib/shared/fitToViewport';
 	import { formatBytes } from '$lib/shared/format';
 
@@ -394,6 +395,16 @@
 			</p>
 		</div>
 		<div class="button-row">
+			{#if data.packName}
+				<span class="pack-toggle">
+					<input id="pack-mods" type="checkbox" bind:checked={packMods} />
+					<label for="pack-mods">Allow on this modpack</label>
+					<InfoTip
+						label="About changing a modpack's mods"
+						text={`This server runs ${data.packName}. A modpack is usually updated as a whole, from Modpack version in Instance settings. Updating or switching single mods is meant for custom setups, and a later pack version change replaces them again.`}
+					/>
+				</span>
+			{/if}
 			<button
 				type="button"
 				onclick={checkUpdates}
@@ -413,20 +424,6 @@
 			</button>
 		</div>
 	</div>
-
-	{#if data.packName}
-		<div class="notice info pack-mods">
-			<p>
-				This server runs <strong>{data.packName}</strong>. A modpack is usually updated as a whole, from the
-				Modpack version panel in Instance settings; changing single mods is meant for custom setups, and a
-				later pack version change replaces them again.
-			</p>
-			<div class="check">
-				<input id="pack-mods" type="checkbox" bind:checked={packMods} />
-				<label for="pack-mods">Change single mods of this pack anyway</label>
-			</div>
-		</div>
-	{/if}
 
 	{#if checkError}
 		<p class="hint warn-text">{checkError}</p>
@@ -880,8 +877,16 @@
 		color: var(--warning);
 	}
 
-	.pack-mods .check {
-		margin-top: var(--space-2);
+	.pack-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-size: 0.85rem;
+		color: var(--text-muted);
+	}
+
+	.pack-toggle label {
+		cursor: pointer;
 	}
 
 	.updates {
