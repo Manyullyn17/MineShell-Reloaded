@@ -84,7 +84,8 @@ matching), which is why some modules export small helpers such as `targetModName
 ## Flow tests
 
 `tests/flows/` runs whole operations - pack install, pack version change, loader version
-change, Cleanroom migration and revert, world snapshots and tools, server copies - on
+change, Cleanroom migration and revert, world snapshots and tools, server copies, mod
+updates - on
 throwaway instances. The orchestration is real
 (what gets moved aside, installed, restored, recorded in the database); only the outside world
 is faked: each loader's `install` (spied to write files or fail on cue), downloads (served by

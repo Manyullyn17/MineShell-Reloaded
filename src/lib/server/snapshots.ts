@@ -35,6 +35,7 @@ export type SnapshotReason =
 	| 'world-reset'
 	| 'world-replace'
 	| 'world-restore'
+	| 'mod-update'
 	| 'manual';
 
 export type Snapshot = {

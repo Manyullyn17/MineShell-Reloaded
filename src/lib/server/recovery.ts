@@ -14,6 +14,7 @@ import {
 import { restorePackChange } from './packchange';
 import { removePartialSnapshots } from './snapshots';
 import { restoreWorldChange } from './world';
+import { restoreModUpdate } from './modupdates';
 import { syncMods } from './mods';
 import { endOperation, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
 
@@ -45,7 +46,8 @@ const MESSAGES: Record<Journal['kind'], string> = {
 		'MineShell stopped while reverting to Forge. Run "Revert to Forge" again; it continues where it stopped.',
 	'pack-change': 'MineShell stopped while changing the pack version; the server was put back as it was.',
 	snapshot: 'MineShell stopped while snapshotting the world; the unfinished snapshot was removed.',
-	'world-change': 'MineShell stopped while changing the world; the previous world was put back.'
+	'world-change': 'MineShell stopped while changing the world; the previous world was put back.',
+	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.'
 };
 
 async function restore(instance: ServerInstance, journal: Journal): Promise<void> {
@@ -63,6 +65,9 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			break;
 		case 'world-change':
 			await restoreWorldChange(root, journal);
+			break;
+		case 'mod-update':
+			await restoreModUpdate(instance.id, root, journal);
 			break;
 		case 'create':
 		case 'cleanroom-revert':
@@ -103,7 +108,7 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	let removed = false;
 	for (const name of await fs.readdir(internal).catch(() => [] as string[])) {
 		if (
-			/^(pack-change|loader-previous|world-previous|world-incoming)-\d+$/.test(name) ||
+			/^(pack-change|loader-previous|world-previous|world-incoming|mod-update)-\d+$/.test(name) ||
 			/installer\.jar(\.log|\.part)?$/.test(name)
 		) {
 			await fs.rm(path.join(internal, name), { recursive: true, force: true });

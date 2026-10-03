@@ -1199,7 +1199,7 @@ export function cloneSkips(relative: string): boolean {
 	const rel = relative.split(path.sep).join('/');
 	return (
 		rel === '.mineshell/snapshots' ||
-		/^\.mineshell\/(pack-change|loader-previous|world-previous|world-incoming)-\d+$/.test(rel) ||
+		/^\.mineshell\/(pack-change|loader-previous|world-previous|world-incoming|mod-update)-\d+$/.test(rel) ||
 		/^\.mineshell\/[^/]*installer\.jar(\.log|\.part)?$/.test(rel)
 	);
 }

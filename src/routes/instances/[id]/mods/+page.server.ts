@@ -1,6 +1,9 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance, summarise } from '$lib/server/instances';
+import { InstanceError, requireInstance, summarise } from '$lib/server/instances';
+import { changeModVersions } from '$lib/server/modupdates';
+import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
+import type { ServerInstance } from '$lib/server/db/schema';
 import {
 	deleteMod,
 	getModProvider,
@@ -40,6 +43,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		mods,
 		running: summary.running,
+		busy: instance.status === 'provisioning',
+		/** Changing single mods of a modpack is opt-in on the page; the pack's version is the usual thing to change. */
+		packName: instance.packSource ? (instance.packName ?? 'a modpack') : null,
+		snapshotPrompt: await snapshotPrompt(instance.path),
 		supportsMods: loader.supportsMods,
 		modloader: instance.modloader,
 		/** What mod catalogs call this loader; Cleanroom mods are listed as Forge. */
@@ -59,7 +66,68 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 };
 
+/** A modpack's mods change only once the page's "change single mods" toggle is on. */
+function packGuard(instance: ServerInstance, form: FormData) {
+	if (instance.packSource && form.get('packMods') !== 'on') {
+		return fail(400, {
+			ok: false,
+			message: 'This server runs a modpack. Turn on changing single mods first, or change the pack version instead.'
+		});
+	}
+	return null;
+}
+
+function refused(err: unknown) {
+	if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return fail(400, { ok: false, message: err.message });
+	throw err;
+}
+
 export const actions: Actions = {
+	/** "Update mods": the reviewed list, each `change` field being "<fileName>\n<versionId>". */
+	updateMods: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const guard = packGuard(instance, form);
+		if (guard) return guard;
+		const changes = form
+			.getAll('change')
+			.map(String)
+			.map((v) => v.split('\n'))
+			.filter((p) => p.length === 2 && p[0] && p[1])
+			.map(([fileName, versionId]) => ({ fileName, versionId }));
+		if (!changes.length) return fail(400, { ok: false, message: 'Tick at least one mod to update.' });
+		try {
+			await changeModVersions(instance, changes, {
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				label: `Updating ${changes.length} mod${changes.length === 1 ? '' : 's'}`
+			});
+			return { ok: true, message: 'Updating mods. Follow it in Tasks; the server stays stopped until it finishes.' };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	/** One mod to a version of the person's choosing, older ones included. */
+	changeVersion: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const guard = packGuard(instance, form);
+		if (guard) return guard;
+		const fileName = String(form.get('fileName') ?? '');
+		const versionId = String(form.get('versionId') ?? '');
+		const label = String(form.get('label') ?? '').slice(0, 120) || fileName;
+		if (!fileName || !versionId) return fail(400, { ok: false, message: 'Pick a version.' });
+		try {
+			await changeModVersions(instance, [{ fileName, versionId }], {
+				snapshot: form.get('snapshot') === 'on',
+				label: `Switching ${label}`
+			});
+			return { ok: true, message: `Switching ${label}. Follow it in Tasks.` };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
 	toggle: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();

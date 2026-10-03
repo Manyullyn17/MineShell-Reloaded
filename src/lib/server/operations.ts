@@ -39,6 +39,15 @@ export type Journal =
 	  }
 	/** Retry-safe on its own; recovery only flags it for another run. */
 	| { kind: 'cleanroom-revert' }
+	| {
+			/** Mods moved to other versions (modupdates.ts). */
+			kind: 'mod-update';
+			/** Folder the replaced jars move into. */
+			staging: string;
+			modsBefore: string[];
+			/** The server's instance_mods rows before, written back on rollback. */
+			rowsBefore: Record<string, unknown>[];
+	  }
 	/** A snapshot taken on request; a copy cut short is a `.partial` folder that recovery deletes. */
 	| { kind: 'snapshot' }
 	| {

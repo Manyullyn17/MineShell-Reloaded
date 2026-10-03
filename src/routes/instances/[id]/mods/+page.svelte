@@ -4,6 +4,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
+	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
 	import { fitToViewport } from '$lib/shared/fitToViewport';
 	import { formatBytes } from '$lib/shared/format';
 
@@ -15,6 +16,78 @@
 	// A pack's first sync looks up every jar on CurseForge, which takes half a
 	// minute on a big pack; without this the button looked like it did nothing.
 	let syncing = $state(false);
+
+	// ---- updates and version changes
+	// A modpack's mods are usually changed through the pack's version; changing
+	// single ones is opt-in each visit, and the server checks the same flag.
+	let packMods = $state(false);
+	const changesLocked = $derived(!!data.packName && !packMods);
+	const canChange = (mod: { source: string; missing: boolean }) =>
+		(mod.source === 'modrinth' || mod.source === 'curseforge') && !mod.missing;
+
+	type UpdateCheck = {
+		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; enabled: boolean; fromPack: boolean }[];
+		upToDate: number;
+		skipped: { fileName: string; name: string; reason: string }[];
+	};
+	let updateCheck = $state<UpdateCheck | null>(null);
+	let checking = $state(false);
+	let checkError = $state('');
+	let chosenUpdates = $state<Record<string, boolean>>({});
+	const chosenCount = $derived(Object.values(chosenUpdates).filter(Boolean).length);
+
+	async function checkUpdates() {
+		checking = true;
+		checkError = '';
+		updateCheck = null;
+		try {
+			const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/mod-updates`);
+			const body = await res.json();
+			if (!res.ok) throw new Error(body.message ?? 'Checking for updates failed.');
+			updateCheck = body;
+			chosenUpdates = Object.fromEntries(body.updates.map((u: { fileName: string }) => [u.fileName, true]));
+		} catch (err) {
+			checkError = err instanceof Error ? err.message : 'Checking for updates failed.';
+		} finally {
+			checking = false;
+		}
+	}
+
+	type VersionChoice = { id: string; versionNumber: string; channel: string; datePublished: string | null; installed: boolean };
+	let versionFor = $state<string | null>(null);
+	let versionList = $state<VersionChoice[]>([]);
+	let versionPick = $state('');
+	let versionsLoading = $state(false);
+	let versionError = $state('');
+
+	async function openVersions(fileName: string) {
+		if (versionFor === fileName) {
+			versionFor = null;
+			return;
+		}
+		versionFor = fileName;
+		versionList = [];
+		versionError = '';
+		versionsLoading = true;
+		try {
+			const params = new URLSearchParams({ fileName });
+			const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/mod-versions?${params}`);
+			const body = await res.json();
+			if (!res.ok) throw new Error(body.message ?? 'Looking up versions failed.');
+			versionList = body.versions;
+			versionPick = body.versions.find((v: VersionChoice) => !v.installed)?.id ?? '';
+			if (!versionList.length) versionError = 'No version of this mod runs on this server.';
+		} catch (err) {
+			versionError = err instanceof Error ? err.message : 'Looking up versions failed.';
+		} finally {
+			versionsLoading = false;
+		}
+	}
+
+	function versionLabel(v: VersionChoice) {
+		const date = v.datePublished ? new Date(v.datePublished).toLocaleDateString() : '';
+		return `${v.versionNumber}${v.channel !== 'release' ? ` (${v.channel})` : ''}${date ? ` - ${date}` : ''}${v.installed ? ' (installed)' : ''}`;
+	}
 	const syncEnhance: SubmitFunction = () => {
 		syncing = true;
 		return async ({ update }) => {
@@ -291,6 +364,14 @@
 		</div>
 		<div class="button-row">
 			<button
+				type="button"
+				onclick={checkUpdates}
+				disabled={changesLocked || checking || data.running || data.busy}
+				title={data.running ? 'Stop the server to update its mods' : undefined}
+			>
+				{checking ? 'Checking for updates' : 'Update mods'}
+			</button>
+			<button
 				class="button-primary"
 				onclick={() => {
 					showBrowser = !showBrowser;
@@ -301,6 +382,85 @@
 			</button>
 		</div>
 	</div>
+
+	{#if data.packName}
+		<div class="notice info pack-mods">
+			<p>
+				This server runs <strong>{data.packName}</strong>. A modpack is usually updated as a whole, from the
+				Modpack version panel in Instance settings; changing single mods is meant for custom setups, and a
+				later pack version change replaces them again.
+			</p>
+			<div class="check">
+				<input id="pack-mods" type="checkbox" bind:checked={packMods} />
+				<label for="pack-mods">Change single mods of this pack anyway</label>
+			</div>
+		</div>
+	{/if}
+
+	{#if checkError}
+		<p class="hint warn-text">{checkError}</p>
+	{/if}
+
+	{#if updateCheck}
+		<div class="updates">
+			{#if updateCheck.updates.length === 0}
+				<p>
+					Everything that can be checked is up to date ({updateCheck.upToDate} mod{updateCheck.upToDate === 1 ? '' : 's'}).
+				</p>
+			{:else}
+				<form
+					method="POST"
+					action="?/updateMods"
+					use:enhance={() => async ({ result, update }) => {
+						await update({ reset: false });
+						if (result.type === 'success') updateCheck = null;
+					}}
+				>
+					{#if packMods}<input type="hidden" name="packMods" value="on" />{/if}
+					<h3>{updateCheck.updates.length} update{updateCheck.updates.length === 1 ? '' : 's'} available</h3>
+					<ul class="update-list">
+						{#each updateCheck.updates as u (u.fileName)}
+							<li class="check">
+								<input
+									id="upd-{u.fileName}"
+									type="checkbox"
+									name="change"
+									value={`${u.fileName}\n${u.targetVersionId}`}
+									bind:checked={chosenUpdates[u.fileName]}
+								/>
+								<label for="upd-{u.fileName}">
+									<strong>{u.name}</strong>
+									<span class="mono small">{u.currentVersion ?? '?'} → {u.targetVersion}</span>
+									{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
+									{#if !u.enabled}<span class="tag">disabled, stays disabled</span>{/if}
+								</label>
+							</li>
+						{/each}
+					</ul>
+					<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="update-mods" />
+					<div class="button-row">
+						<button class="button-primary" type="submit" disabled={!chosenCount || data.running}>
+							Update {chosenCount} mod{chosenCount === 1 ? '' : 's'}
+						</button>
+						<button class="button-quiet" type="button" onclick={() => (updateCheck = null)}>Close</button>
+					</div>
+				</form>
+			{/if}
+			{#if updateCheck.skipped.length}
+				<details>
+					<summary class="small">{updateCheck.skipped.length} not checked</summary>
+					<ul class="small">
+						{#each updateCheck.skipped as s (s.fileName)}
+							<li>{s.name} <span class="muted">- {s.reason}</span></li>
+						{/each}
+					</ul>
+				</details>
+			{/if}
+			{#if updateCheck.updates.length === 0}
+				<button class="button-quiet" type="button" onclick={() => (updateCheck = null)}>Close</button>
+			{/if}
+		</div>
+	{/if}
 
 	{#if showBrowser}
 		<div class="browser browse-layout">
@@ -582,6 +742,16 @@
 											<button type="submit">{mod.enabled ? 'Disable' : 'Enable'}</button>
 										</form>
 									{/if}
+									{#if canChange(mod)}
+										<button
+											type="button"
+											disabled={changesLocked || data.running || data.busy}
+											title={data.running ? 'Stop the server to change mod versions' : undefined}
+											onclick={() => openVersions(mod.fileName)}
+										>
+											Version
+										</button>
+									{/if}
 									<button
 										type="button"
 										class="button-danger"
@@ -593,6 +763,54 @@
 							{/if}
 						</td>
 					</tr>
+					{#if versionFor === mod.fileName}
+						<tr class="version-row">
+							<td colspan="5">
+								{#if versionsLoading}
+									<p class="muted small">Looking up versions of {mod.name}.</p>
+								{:else if versionError}
+									<p class="hint warn-text">{versionError}</p>
+								{:else}
+									<form
+										method="POST"
+										action="?/changeVersion"
+										use:enhance={() => async ({ result, update }) => {
+											await update({ reset: false });
+											if (result.type === 'success') versionFor = null;
+										}}
+									>
+										<input type="hidden" name="fileName" value={mod.fileName} />
+										<input type="hidden" name="label" value={mod.name} />
+										{#if packMods}<input type="hidden" name="packMods" value="on" />{/if}
+										<div class="field">
+											<label for="ver-{mod.fileName}">Switch {mod.name} to</label>
+											<select id="ver-{mod.fileName}" name="versionId" bind:value={versionPick}>
+												{#each versionList as v (v.id)}
+													<option value={v.id}>{versionLabel(v)}</option>
+												{/each}
+											</select>
+										</div>
+										<div class="check">
+											<input id="ver-snap-{mod.fileName}" type="checkbox" name="snapshot" />
+											<label for="ver-snap-{mod.fileName}">
+												Snapshot the world first ({formatBytes(data.snapshotPrompt.worldBytes)})
+											</label>
+										</div>
+										<div class="button-row">
+											<button
+												class="button-primary"
+												type="submit"
+												disabled={!versionPick || versionList.find((v) => v.id === versionPick)?.installed}
+											>
+												Switch version
+											</button>
+											<button class="button-quiet" type="button" onclick={() => (versionFor = null)}>Cancel</button>
+										</div>
+									</form>
+								{/if}
+							</td>
+						</tr>
+					{/if}
 				{/each}
 			</tbody>
 		</table>
@@ -600,6 +818,48 @@
 </section>
 
 <style>
+	.warn-text {
+		color: var(--warning);
+	}
+
+	.pack-mods .check {
+		margin-top: var(--space-2);
+	}
+
+	.updates {
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		padding: var(--space-3) var(--space-4);
+		margin-bottom: var(--space-4);
+		background: var(--bg-sunken);
+	}
+
+	.updates h3 {
+		margin-top: 0;
+	}
+
+	.update-list {
+		list-style: none;
+		padding: 0;
+		max-height: 24rem;
+		overflow-y: auto;
+	}
+
+	.update-list label {
+		display: flex;
+		gap: var(--space-2);
+		align-items: baseline;
+		flex-wrap: wrap;
+	}
+
+	.version-row td {
+		background: var(--bg-sunken);
+	}
+
+	.version-row select {
+		width: min(36rem, 100%);
+	}
+
 	.browser {
 		border: 1px solid var(--line);
 		border-radius: var(--radius);

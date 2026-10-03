@@ -316,6 +316,36 @@ export async function versionsFromHashes(
 }
 
 /**
+ * The newest version compatible with `filter` for each file, by its sha512,
+ * 100 files per request (the version_files/update endpoint). Files with no
+ * compatible version are absent. Modrinth picks the newest regardless of
+ * channel, so a beta can come back where a release exists.
+ */
+export async function latestVersionsFromHashes(
+	hashes: string[],
+	filter: { loaders: string[]; gameVersions: string[] }
+): Promise<Map<string, ProjectVersion>> {
+	const found = new Map<string, ProjectVersion>();
+	const CHUNK = 100;
+	for (let i = 0; i < hashes.length; i += CHUNK) {
+		const response = await fetchJson<Record<string, MrVersion>>(`${API}/version_files/update`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				hashes: hashes.slice(i, i + CHUNK),
+				algorithm: 'sha512',
+				loaders: filter.loaders,
+				game_versions: filter.gameVersions
+			})
+		});
+		for (const [hash, version] of Object.entries(response ?? {})) {
+			if (version) found.set(hash, toVersion(version));
+		}
+	}
+	return found;
+}
+
+/**
  * Fetches several projects at once, for naming a batch of identified files.
  * Client-only projects are kept, flagged `clientOnly`: they were meant to be
  * dropped (left as manual), but `environment` is a list and the old string

@@ -58,8 +58,8 @@ independent and can be done in any order.
 
 ## Near term
 
-Agreed order: mod updating, then the rest of this list roughly as written. (World
-snapshots, world tools, server copies and Java downloads are built.)
+Agreed order: the rest of this list roughly as written. (World snapshots, world tools,
+server copies, Java downloads and mod updating are built.)
 
 ### Smaller operational features
 
@@ -79,28 +79,16 @@ because its full-origin comparison breaks TLS-terminating proxies, and `guard.ts
 host-only check instead. If SvelteKit removes the option, its own check comes back on;
 move to the supported configuration before that happens.
 
-### Mod updating
+### Mod updating: what is left
 
-Currently mods can be installed, enabled, disabled and deleted, but not updated. The
-original TUI design worked this out in detail and that design still holds:
+Built: "Update mods" (check, review, update; world snapshot per the policy) and switching
+one mod to any compatible version, older ones included (world snapshot opt-in), journalled
+as `mod-update`. On a modpack server both are greyed out until a toggle is turned on.
+Not built from the original design:
 
-- Three update modes: pack-only, everything, or per-mod selection.
-- Deduplicate by project id, skip files already at the right version by hash.
-- Downgrade handling when an installed mod is newer than the pack specifies: ask (default),
-  keep, or force down.
-- Disabled-mod behaviour: update but leave disabled (default), skip entirely, or update and
-  re-enable.
-- Mods removed from an updated pack are deleted only if tagged as coming from the pack.
-  User-added mods are never removed automatically.
-
-The safety workflow is the part worth implementing carefully: snapshot the mods folder and
-its metadata, write a marker file once the snapshot is complete, update mods one at a time
-writing metadata after each, remove the marker on success. On next launch, a marker that
-still exists means the last update was interrupted, so restore the snapshot. Either the
-update fully succeeded or the folder is untouched.
-
-The schema already supports this — `instance_mods` carries `version`, `hash`, `locked` and
-a from-pack flag — so no migration is needed to start.
+- New required dependencies of an updated version are not installed or reported.
+- Downgrade/disabled-mod options: disabled mods are updated and stay disabled; nothing asks.
+- Manual jars are not looked up; Sync identifies them as Modrinth/CurseForge first.
 
 ### Notifications
 
