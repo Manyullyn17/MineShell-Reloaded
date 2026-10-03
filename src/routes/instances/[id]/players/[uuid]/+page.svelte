@@ -109,6 +109,15 @@
 	});
 	const matchCount = $derived(query ? countMatches(data.view.tree, query) : 0);
 
+	// The same for the open item's own data, in the item editor.
+	let itemSearch = $state('');
+	let itemQuery = $state('');
+	$effect(() => {
+		const text = itemSearch.trim().toLowerCase();
+		const timer = setTimeout(() => (itemQuery = text), 150);
+		return () => clearTimeout(timer);
+	});
+
 	// ---- effects
 	let effectEdits = $state<Record<string, { level: number; seconds: number }>>({});
 	$effect(() => {
@@ -192,11 +201,13 @@
 
 	function pick(loc: Loc, nested = false) {
 		stack = nested ? [...stack, loc] : [loc];
+		itemSearch = '';
 		fillItemForm();
 	}
 
 	function back(to: number) {
 		stack = stack.slice(0, to + 1);
+		itemSearch = '';
 		fillItemForm();
 	}
 
@@ -567,8 +578,15 @@
 						{@const tree = subtree(selectedItem.path)!}
 						<details class="item-data" open={selectedItem.containers.length === 0}>
 							<summary class="small">All item data</summary>
+							<div class="tree-search">
+								<input type="search" placeholder="Search keys and values" bind:value={itemSearch} aria-label="Search the item’s data" />
+								{#if itemQuery}
+									{@const found = countMatches(tree, itemQuery)}
+									<span class="small muted">{found} match{found === 1 ? '' : 'es'}</span>
+								{/if}
+							</div>
 							<ul class="tree">
-								<NbtNode name={short(selectedItem.id)} tag={tree} path={selectedItem.path} {locked} {fieldAction} open onEdit={(edit) => save([edit])} />
+								<NbtNode name={short(selectedItem.id)} tag={tree} path={selectedItem.path} {locked} {fieldAction} query={itemQuery} open onEdit={(edit) => save([edit])} />
 							</ul>
 						</details>
 					{/if}
