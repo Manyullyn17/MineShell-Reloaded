@@ -129,6 +129,9 @@ export async function recoverInterruptedOperations(): Promise<RecoveryOutcome[]>
 		console.warn(`[mineshell] ${instance.id}: ${outcome.message}`);
 	}
 
+	// A recovery that failed keeps its journal, and its originals are still in
+	// the folders cleanup would otherwise delete.
+	const unrecovered = new Set(listOperations().map((op) => op.instanceId));
 	for (const instance of listInstances()) {
 		if (ours.has(instance.id)) continue;
 		if (!busy.has(instance.id) && instance.status === 'provisioning') {
@@ -138,7 +141,7 @@ export async function recoverInterruptedOperations(): Promise<RecoveryOutcome[]>
 			await syncUnit(instance).catch(() => undefined);
 			outcomes.push({ instanceId: instance.id, kind: 'finish', message });
 		}
-		if (await removeLeftovers(instance).catch(() => false)) {
+		if (!unrecovered.has(instance.id) && (await removeLeftovers(instance).catch(() => false))) {
 			outcomes.push({ instanceId: instance.id, kind: 'cleanup', message: 'Removed folders left by an interrupted operation.' });
 		}
 	}

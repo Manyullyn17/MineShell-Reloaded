@@ -18,6 +18,8 @@ const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitFo
 	'../helpers/instances'
 );
 const { hangForever, restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
+const { db } = await import('$lib/server/db');
+const { operations } = await import('$lib/server/db/schema');
 
 const FABRIC_FILES = {
 	'server.jar': 'fabric launcher 0.15',
@@ -114,6 +116,28 @@ describe('recovery after MineShell stops mid-operation', () => {
 			}
 			// libraries, .fabric and server.jar each move aside.
 			expect(stops).toBe(3);
+		});
+
+		it('keeps the moved-aside originals when putting them back fails, and retries next start', async () => {
+			const instance = await fabricInstance();
+			const before = await tree(instance.path);
+			fakeInstall('fabric');
+			expect(await runAndDieAtMove(instance.path, 3, () => changeLoaderVersion(instance, '0.16.5'))).toBe('died');
+
+			// The first restart cannot move anything back (an I/O error, say).
+			vi.mocked(fs.rename).mockRestore();
+			vi.spyOn(fs, 'rename').mockRejectedValue(new Error('EIO'));
+			db.update(operations).set({ process: 'previous-process' }).run();
+			await recoverInterruptedOperations();
+			expect(reload(instance.id).status).toBe('failed');
+			// Cleanup used to run anyway and delete the folder holding the originals.
+			const aside = (await fs.readdir(path.join(instance.path, '.mineshell'))).filter((n) => n.startsWith('loader-previous-'));
+			expect(aside).toHaveLength(1);
+			expect(await fs.readdir(path.join(instance.path, '.mineshell', aside[0]))).not.toEqual([]);
+
+			await restartMineShell();
+			expect(await tree(instance.path)).toEqual(before);
+			expect(reload(instance.id).status).toBe('ready');
 		});
 
 		it('drops a half-finished install and puts the previous version back', async () => {
