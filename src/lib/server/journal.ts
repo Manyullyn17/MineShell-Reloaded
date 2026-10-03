@@ -20,17 +20,17 @@ const tails = new Map<string, Tail>();
 const RING_SIZE = 500;
 const IDLE_GRACE_MS = 60_000;
 
-function journalArgs(id: string, backlog: number): string[] {
+function journalArgs(id: string, backlog: number, since: number): string[] {
 	const unit = unitName(id);
-	const common = ['-n', String(backlog), '-f', '-o', 'cat', '--no-pager'];
+	const common = ['-n', String(backlog), '-f', '-o', 'cat', sinceArg(since), '--no-pager'];
 	if (SYSTEMD_SCOPE === 'user') {
 		return ['journalctl', `--user-unit=${unit}`, ...common];
 	}
 	return [...PRIVILEGE_PREFIX, 'journalctl', '-u', unit, ...common];
 }
 
-function startTail(id: string, backlog: number): Tail {
-	const argv = journalArgs(id, backlog);
+function startTail(id: string, backlog: number, since: number): Tail {
+	const argv = journalArgs(id, backlog, since);
 	const [cmd, ...args] = argv;
 	const child = spawn(cmd, args, { env: process.env });
 
@@ -78,10 +78,11 @@ export type ConsoleSubscription = {
 export function subscribeConsole(
 	id: string,
 	backlogLines: number,
+	since: number,
 	onLine: (line: string, ts: number) => void
 ): ConsoleSubscription {
 	let tail = tails.get(id);
-	if (!tail) tail = startTail(id, Math.max(backlogLines, RING_SIZE));
+	if (!tail) tail = startTail(id, Math.max(backlogLines, RING_SIZE), since);
 	if (tail.idleTimer) {
 		clearTimeout(tail.idleTimer);
 		tail.idleTimer = null;
@@ -111,22 +112,87 @@ export function subscribeConsole(
 	};
 }
 
-/** One-shot read, used by the crash-log viewer. */
-export async function readJournal(id: string, lines: number): Promise<string> {
-	const unit = unitName(id);
-	const base =
+function journalctl(args: string[]): Promise<string> {
+	const argv =
 		SYSTEMD_SCOPE === 'user'
-			? ['journalctl', `--user-unit=${unit}`]
-			: [...PRIVILEGE_PREFIX, 'journalctl', '-u', unit];
-	const argv = [...base, '-n', String(lines), '-o', 'cat', '--no-pager'];
-	const [cmd, ...args] = argv;
+			? ['journalctl', '--user', ...args, '--no-pager']
+			: [...PRIVILEGE_PREFIX, 'journalctl', ...args, '--no-pager'];
+	const [cmd, ...rest] = argv;
 	return new Promise((resolve) => {
-		const child = spawn(cmd, args, { env: process.env });
+		const child = spawn(cmd, rest, { env: process.env });
 		let out = '';
 		child.stdout.on('data', (d) => (out += d.toString()));
 		child.on('error', () => resolve(''));
 		child.on('close', () => resolve(out));
 	});
+}
+
+function unitMatch(id: string): string[] {
+	return SYSTEMD_SCOPE === 'user' ? [`--user-unit=${unitName(id)}`] : ['-u', unitName(id)];
+}
+
+/**
+ * The journal outlives the instance: a server deleted and recreated under the
+ * same name has the same unit, so reads start at the instance's creation.
+ */
+function sinceArg(since: number): string {
+	return `--since=@${Math.floor(since / 1000)}`;
+}
+
+/** One-shot read of the newest lines. */
+export async function readJournal(id: string, lines: number, since = 0): Promise<string> {
+	return journalctl([...unitMatch(id), '-n', String(lines), '-o', 'cat', sinceArg(since)]);
+}
+
+/** Big packs log thousands of lines per start; the whole last run is needed. */
+const LAST_RUN_LINES = 20000;
+
+const lastRuns = new Map<string, { cursor: string; text: string }>();
+
+/**
+ * The unit's last run, for crash detection on the overview, which polls.
+ * `journalctl -u` walks matches slowly: 20000 lines take seconds, so reading
+ * them on every poll made the overview of a stopped big pack hang. The newest
+ * entry costs milliseconds; while its cursor is unchanged the run is the one
+ * read before. Otherwise only that run is read, by its invocation id - the
+ * service's own lines carry `_SYSTEMD_INVOCATION_ID`, the service manager's
+ * ("Started ...", "Consumed ...") `USER_INVOCATION_ID` or `INVOCATION_ID`.
+ */
+export async function readLastRun(id: string, since = 0): Promise<string> {
+	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(since)])).trim();
+	if (!newest) {
+		lastRuns.delete(id);
+		return '';
+	}
+	let entry: Record<string, unknown> = {};
+	try {
+		entry = JSON.parse(newest.split('\n')[0]);
+	} catch {
+		/* unreadable entry: read by line count below */
+	}
+	const cursor = typeof entry.__CURSOR === 'string' ? entry.__CURSOR : null;
+	const hit = lastRuns.get(id);
+	if (cursor && hit?.cursor === cursor) return hit.text;
+
+	const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
+		(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
+	);
+	const text = invocation
+		? await journalctl([
+				`_SYSTEMD_INVOCATION_ID=${invocation}`,
+				'+',
+				`USER_INVOCATION_ID=${invocation}`,
+				'+',
+				`INVOCATION_ID=${invocation}`,
+				'-n',
+				String(LAST_RUN_LINES),
+				'-o',
+				'cat',
+				sinceArg(since)
+			])
+		: await readJournal(id, LAST_RUN_LINES, since);
+	if (cursor) lastRuns.set(id, { cursor, text });
+	return text;
 }
 
 export function stopAllTails(): void {

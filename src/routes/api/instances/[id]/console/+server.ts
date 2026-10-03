@@ -32,8 +32,11 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 				}
 			};
 
-			subscription = subscribeConsole(instance.id, instance.consoleBacklogLines, (line) =>
-				send('line', line)
+			subscription = subscribeConsole(
+				instance.id,
+				instance.consoleBacklogLines,
+				instance.createdAt,
+				(line) => send('line', line)
 			);
 
 			for (const line of subscription.backlog) send('line', line);

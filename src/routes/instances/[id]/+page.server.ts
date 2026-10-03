@@ -19,7 +19,7 @@ import { bucketSamples, recentSamples } from '$lib/server/monitor';
 import { resolveJava } from '$lib/server/java';
 import { cpus, hostname, networkInterfaces } from 'node:os';
 import { describeSchedule } from '$lib/server/scheduler';
-import { readJournal } from '$lib/server/journal';
+import { readLastRun } from '$lib/server/journal';
 import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
 import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
@@ -66,8 +66,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	let lastRunLog: string | null = null;
 	let crashed = false;
 	if (!summary.running && summary.state.active !== 'activating' && !wasStopIntentional(instance.id)) {
-		// Big packs log thousands of lines per start; the whole last run is needed.
-		lastRunLog = lastRun(await readJournal(instance.id, 20000));
+		lastRunLog = lastRun(await readLastRun(instance.id, instance.createdAt));
 		const startedRun = /^Started \S+\.service/.test(lastRunLog);
 		crashed =
 			summary.state.active === 'failed' ||
