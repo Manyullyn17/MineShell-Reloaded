@@ -1027,6 +1027,8 @@ export async function eulaIsAccepted(instance: ServerInstance): Promise<boolean>
 }
 
 export async function start(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
+	// A stop still waiting for the old run to exit must not stop this one.
+	cancelPendingStop(instance.id);
 	if (!(await eulaIsAccepted(instance))) {
 		return { ok: false, message: 'Accept the Minecraft EULA before starting this server.' };
 	}
@@ -1094,18 +1096,60 @@ export function clearStopIntent(id: string): void {
 	intentionalStops.delete(id);
 }
 
+/**
+ * How long a server told to stop over RCON gets to save and exit by itself
+ * before systemd stops it (SIGTERM, which also saves). A big pack's save can
+ * take minutes; Force stop is there for one that is stuck.
+ */
+export const GRACEFUL_STOP_MS = 5 * 60_000;
+const STOP_POLL_MS = 3000;
+
+/** Servers told to stop over RCON whose exit is being waited for. */
+const pendingStops = new Map<string, NodeJS.Timeout>();
+
+function cancelPendingStop(id: string): void {
+	const timer = pendingStops.get(id);
+	if (timer) clearTimeout(timer);
+	pendingStops.delete(id);
+}
+
+/**
+ * Waits for the JVM to exit after an RCON stop; systemd then marks the unit
+ * stopped on its own. Only a server still running after GRACEFUL_STOP_MS is
+ * stopped through systemd. This used to call systemctl stop after a fixed
+ * 20 s, which on a big pack landed in the middle of its save.
+ */
+export function awaitStop(id: string, deadline: number): void {
+	const check = async () => {
+		pendingStops.delete(id);
+		const state = await unitState(id, { fresh: true }).catch(() => null);
+		if (!state || state.active === 'inactive' || state.active === 'failed') return;
+		if (Date.now() >= deadline) {
+			audit('instance.stop', { instanceId: id, detail: 'systemd after the RCON stop timed out', actor: 'system' });
+			await stopUnit(id).catch(() => undefined);
+			return;
+		}
+		const timer = setTimeout(() => void check(), STOP_POLL_MS);
+		timer.unref?.();
+		pendingStops.set(id, timer);
+	};
+	const timer = setTimeout(() => void check(), STOP_POLL_MS);
+	timer.unref?.();
+	pendingStops.set(id, timer);
+}
+
 export async function stop(
 	instance: ServerInstance,
 	opts: { graceful?: boolean } = {}
 ): Promise<{ ok: boolean; message: string }> {
 	intentionalStops.set(instance.id, Date.now());
+	cancelPendingStop(instance.id);
 	const password = rconPassword(instance);
 	if (opts.graceful !== false && password) {
 		try {
 			await rconExec({ port: instance.rconPort, password }, ['save-all', 'stop']);
 			audit('instance.stop', { instanceId: instance.id, detail: 'rcon' });
-			// systemd still needs to reap the unit once the JVM exits.
-			setTimeout(() => void stopUnit(instance.id), 20_000);
+			awaitStop(instance.id, Date.now() + GRACEFUL_STOP_MS);
 			return { ok: true, message: 'Saving and shutting down.' };
 		} catch {
 			/* fall through to SIGTERM */
@@ -1120,6 +1164,8 @@ export async function stop(
 }
 
 export async function restart(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
+	// A stop still waiting for the old run to exit must not stop this one.
+	cancelPendingStop(instance.id);
 	if (!(await eulaIsAccepted(instance))) {
 		return { ok: false, message: 'Accept the Minecraft EULA before starting this server.' };
 	}

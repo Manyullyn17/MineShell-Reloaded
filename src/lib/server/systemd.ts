@@ -122,6 +122,9 @@ ExecStart=/bin/sh -c 'exec "$MS_JAVA" $MS_JVM_ARGS $MS_LAUNCH_ARGS'
 KillSignal=SIGTERM
 KillMode=mixed
 TimeoutStopSec=180
+# The JVM exits 143 (128 + SIGTERM) when stopped that way, after saving. Only a
+# stop asked for sends SIGTERM, so 143 is never a crash.
+SuccessExitStatus=143
 
 Restart=\${MS_RESTART_POLICY}
 RestartSec=15
@@ -157,13 +160,30 @@ Restart=${policy}
 `;
 }
 
+/** The template as installed: the Restart= placeholder filled, so it is valid without a drop-in. */
+function installedTemplateContents(): string {
+	return renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure');
+}
+
+/**
+ * At startup: an installed template from an older MineShell is rewritten,
+ * so changes to it (SuccessExitStatus=143) reach existing setups without
+ * pressing Install again. Only a file MineShell wrote is touched.
+ */
+export async function refreshTemplateUnit(): Promise<boolean> {
+	const file = path.join(systemdUnitDir(), TEMPLATE_UNIT);
+	const current = await fs.readFile(file, 'utf8').catch(() => null);
+	if (!current || !current.startsWith('# Managed by MineShell') || current === installedTemplateContents()) return false;
+	await fs.writeFile(file, installedTemplateContents(), 'utf8');
+	await systemctl('daemon-reload');
+	return true;
+}
+
 export async function installTemplateUnit(): Promise<{ ok: boolean; message: string }> {
 	const dir = systemdUnitDir();
 	try {
 		await fs.mkdir(dir, { recursive: true });
-		// The template itself has no Restart= line; the placeholder above is
-		// replaced so the file is valid even without a drop-in.
-		const contents = renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure');
+		const contents = installedTemplateContents();
 		await fs.writeFile(path.join(dir, TEMPLATE_UNIT), contents, 'utf8');
 		const reload = await systemctl('daemon-reload');
 		if (reload.code !== 0) {

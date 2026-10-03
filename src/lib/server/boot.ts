@@ -5,6 +5,7 @@ import { listInstances } from './instances';
 import { stopAllTails } from './journal';
 import { recoverInterruptedOperations } from './recovery';
 import { removePartialJava } from './javadownload';
+import { refreshTemplateUnit } from './systemd';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
@@ -23,6 +24,10 @@ export function boot(): void {
 	void recoverInterruptedOperations().catch((err) =>
 		console.error('[mineshell] recovering interrupted operations failed:', err)
 	);
+
+	void refreshTemplateUnit()
+		.then((refreshed) => refreshed && console.log('[mineshell] updated the systemd template unit'))
+		.catch((err) => console.warn('[mineshell] refreshing the template unit failed:', err instanceof Error ? err.message : err));
 
 	startMonitor();
 	startScheduler();

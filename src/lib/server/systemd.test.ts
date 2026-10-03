@@ -3,6 +3,7 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	invalidateUnitState,
+	refreshTemplateUnit,
 	renderTemplateUnit,
 	scopedCommand,
 	unitState,
@@ -125,6 +126,26 @@ describe('unit files', () => {
 		expect(env).toContain('MS_JAVA=/usr/bin/java');
 		expect(env).toContain('MS_JVM_ARGS=-Xmx2G');
 		expect(env).toContain('MS_LAUNCH_ARGS=-jar server.jar nogui');
+	});
+
+	it('counts the exit code of a SIGTERM stop as a clean exit', () => {
+		// The JVM exits 128 + 15 after saving; without this every stop was logged as a failure.
+		expect(renderTemplateUnit()).toMatch(/^SuccessExitStatus=143$/m);
+	});
+
+	it('brings an installed template from an older MineShell up to date, and leaves one it did not write', async () => {
+		fakeProcesses(() => ({}));
+		const file = path.join(systemdUnitDir(), TEMPLATE_UNIT);
+		await fs.mkdir(systemdUnitDir(), { recursive: true });
+		await fs.writeFile(file, '# Managed by MineShell.\n[Service]\nKillSignal=SIGTERM\n');
+		expect(await refreshTemplateUnit()).toBe(true);
+		expect(await fs.readFile(file, 'utf8')).toContain('SuccessExitStatus=143');
+		expect(spawnCalls.map((c) => c.args.join(' '))).toContain('--user daemon-reload');
+		expect(await refreshTemplateUnit()).toBe(false);
+
+		await fs.writeFile(file, '# my own unit\n[Service]\n');
+		expect(await refreshTemplateUnit()).toBe(false);
+		expect(await fs.readFile(file, 'utf8')).toBe('# my own unit\n[Service]\n');
 	});
 
 	it('launches through the env file from the instance folder', () => {
