@@ -61,8 +61,8 @@ independent and can be done in any order.
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,
 server copies, Java downloads, mod updating, the smaller operational features -
 countdown stops, TPS, scheduled commands, resource limits, stuck-start warning, log
-history, server icon - and the modpack install refinements (mod list with client-only
-choices before installing, "Install & start") are built.)
+history, server icon - the modpack install refinements (mod list with client-only
+choices before installing, "Install & start") and the player data editor are built.)
 
 Not covered by the install form's mod list: uploaded packs (installed straight from the
 upload; the client-only check still runs afterwards), and client-only mods only the jar
@@ -131,10 +131,6 @@ Folders like `config/paxi/datapacks`, `config/openloader`, `global_packs/` or `k
 are pack config folders, so a pack change moves them whole to `old-configs/` - including a
 data pack the user added there. Correct by the configs policy, but easy to miss for a data
 pack; the preview could point out non-pack files in those folders.
-
-### Player data editor
-
-View and edit a player's inventory and NBT data from the players page.
 
 ### Multi-instance port management
 

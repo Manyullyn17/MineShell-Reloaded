@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
+	import { formatRelative } from '$lib/shared/format';
 
 	let { data, form } = $props();
 
@@ -14,6 +15,7 @@
 	let newName = $state('');
 
 	const entries = $derived(data.lists[current]);
+	const onlineNames = $derived(new Set((data.online?.names ?? []).map((n) => n.toLowerCase())));
 	const activeTab = $derived(tabs.find((t) => t.id === current)!);
 </script>
 
@@ -118,6 +120,41 @@
 	{/if}
 </section>
 
+<section class="panel">
+	<h2>Player data</h2>
+	<p class="muted small">
+		Inventory, stats and everything else the server saved about each player who has joined. Players can be edited
+		while they are offline.
+	</p>
+	{#if data.playerFiles.length === 0}
+		<div class="empty"><p>No player has joined this server yet.</p></div>
+	{:else}
+		<table>
+			<thead>
+				<tr>
+					<th>Player</th>
+					<th>UUID</th>
+					<th>Last saved</th>
+					<th><span class="visually-hidden">Actions</span></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.playerFiles as file (file.uuid)}
+					<tr>
+						<td>
+							{file.name ?? 'Unknown name'}
+							{#if file.name && onlineNames.has(file.name.toLowerCase())}<span class="tag accent">online</span>{/if}
+						</td>
+						<td class="mono small">{file.uuid}</td>
+						<td class="small muted">{formatRelative(file.modifiedAt)}</td>
+						<td class="right"><a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/players/{file.uuid}">Open</a></td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+</section>
+
 <style>
 	.tabs {
 		display: flex;
@@ -179,7 +216,8 @@
 		text-align: right;
 	}
 
-	td button {
+	td button,
+	td .button {
 		font-size: 0.82rem;
 		padding: 0.2rem 0.5rem;
 	}

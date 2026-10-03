@@ -10,12 +10,13 @@ import {
 	type ListName
 } from '$lib/server/players';
 import { onlinePlayers } from '$lib/server/instances';
+import { listPlayerData } from '$lib/server/playerdata';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const lists = await loadPlayerLists(instance);
 	const online = lists.serverRunning ? await onlinePlayers(instance) : null;
-	return { lists, online };
+	return { lists, online, playerFiles: await listPlayerData(instance) };
 };
 
 function listFrom(form: FormData): ListName {

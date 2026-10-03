@@ -44,7 +44,7 @@
 
 <nav class="tabs" aria-label="Server sections">
 	{#each tabs as tab (tab.slug)}
-		<a href={tab.slug ? `${base}/${tab.slug}` : base} aria-current={current === tab.slug ? 'page' : undefined}>
+		<a href={tab.slug ? `${base}/${tab.slug}` : base} aria-current={current === tab.slug || (tab.slug && current.startsWith(`${tab.slug}/`)) ? 'page' : undefined}>
 			{tab.label}
 		</a>
 	{/each}
