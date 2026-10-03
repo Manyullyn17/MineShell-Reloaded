@@ -4,7 +4,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import NbtNode from '$lib/components/NbtNode.svelte';
 	import { formatDateTime } from '$lib/shared/format';
-	import type { Path, TreeTag } from '$lib/shared/nbt';
+	import { countMatches, type Path, type TreeTag } from '$lib/shared/nbt';
 
 	let { data } = $props();
 
@@ -98,6 +98,16 @@
 		event.preventDefault();
 		if (mapping && (await post('addField', { label: mapping.label, kind: mapping.kind, path: JSON.stringify(mapping.path) }))) mapping = null;
 	}
+
+	// ---- searching the raw tree (a short pause after typing, so big files stay quick)
+	let search = $state('');
+	let query = $state('');
+	$effect(() => {
+		const text = search.trim().toLowerCase();
+		const timer = setTimeout(() => (query = text), 150);
+		return () => clearTimeout(timer);
+	});
+	const matchCount = $derived(query ? countMatches(data.view.tree, query) : 0);
 
 	// ---- effects
 	let effectEdits = $state<Record<string, { level: number; seconds: number }>>({});
@@ -597,9 +607,13 @@
 			{/if}
 		</form>
 	{/if}
+	<div class="tree-search">
+		<input type="search" placeholder="Search keys and values" bind:value={search} aria-label="Search the data" />
+		{#if query}<span class="small muted">{matchCount} match{matchCount === 1 ? '' : 'es'}</span>{/if}
+	</div>
 	<ul class="tree">
 		{#each data.view.tree.type === 'compound' ? data.view.tree.value : [] as [key, value], i (`${key}:${i}`)}
-			<NbtNode name={key} tag={value} path={[key]} {locked} {fieldAction} onEdit={(edit) => save([edit])} />
+			<NbtNode name={key} tag={value} path={[key]} {locked} {fieldAction} {query} onEdit={(edit) => save([edit])} />
 		{/each}
 	</ul>
 </section>
@@ -1018,6 +1032,18 @@
 	.tree {
 		margin: 0;
 		padding: 0;
+	}
+
+	.tree-search {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
+	}
+
+	.tree-search input {
+		max-width: 22rem;
+		margin: 0;
 	}
 
 	.remap-notice {

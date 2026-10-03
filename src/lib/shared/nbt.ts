@@ -69,3 +69,28 @@ export function treeToSnbt(tag: TreeTag, indent = 0, depth = 0): string {
 			return `{${join(tag.value.map(([k, v]) => `${BARE_KEY.test(k) ? k : quoteSnbt(k)}:${indent ? ' ' : ''}${treeToSnbt(v, indent, depth + 1)}`))}}`;
 	}
 }
+
+/** The text a value searches as: strings as they are, numbers and arrays as shown. */
+function valueText(tag: TreeTag): string {
+	if (tag.type === 'compound' || tag.type === 'list') return '';
+	return Array.isArray(tag.value) ? tag.value.join(', ') : String(tag.value);
+}
+
+/** The entry itself matches `query` (lower-case): its key, or its value. A list entry's name is its position, which never matches. */
+export function selfMatches(name: string | null, tag: TreeTag, query: string): boolean {
+	return (name !== null && name.toLowerCase().includes(query)) || valueText(tag).toLowerCase().includes(query);
+}
+
+/** Something inside matches (not the entry itself). */
+export function childMatches(tag: TreeTag, query: string): boolean {
+	if (tag.type === 'compound') return tag.value.some(([k, v]) => selfMatches(k, v, query) || childMatches(v, query));
+	if (tag.type === 'list') return tag.value.some((v) => selfMatches(null, v, query) || childMatches(v, query));
+	return false;
+}
+
+/** How many entries match, anywhere in the tree. */
+export function countMatches(tag: TreeTag, query: string): number {
+	const entries: [string | null, TreeTag][] = tag.type === 'compound' ? tag.value : tag.type === 'list' ? tag.value.map((v) => [null, v]) : [];
+	return entries.reduce((n, [k, v]) => n + (selfMatches(k, v, query) ? 1 : 0) + countMatches(v, query), 0);
+}
+

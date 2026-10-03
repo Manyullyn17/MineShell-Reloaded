@@ -1,6 +1,6 @@
 <script lang="ts">
 	import NbtNode from './NbtNode.svelte';
-	import { treeToSnbt, type Path, type TreeTag } from '$lib/shared/nbt';
+	import { childMatches, selfMatches, treeToSnbt, type Path, type TreeTag } from '$lib/shared/nbt';
 
 	/**
 	 * One entry of an NBT tree: a value that can be edited or removed in place,
@@ -15,6 +15,8 @@
 		onEdit,
 		inList = false,
 		fieldAction = null,
+		query = '',
+		mark = '',
 		open: startOpen = false
 	}: {
 		name: string;
@@ -26,11 +28,26 @@
 		inList?: boolean;
 		/** A button on each value: "add as field", or "use for <field>" while remapping one. */
 		fieldAction?: { label: string; run: (path: Path, tag: TreeTag, name: string) => void } | null;
+		/** Lower-case search text: only entries that match, or hold a match, are shown. */
+		query?: string;
+		/** Highlighted without filtering: inside a compound shown whole because its key matched. */
+		mark?: string;
 		open?: boolean;
 	} = $props();
 
+	const hit = $derived(!!query && selfMatches(inList ? null : String(name), tag, query));
+	const inside = $derived(!!query && childMatches(tag, query));
+	// A compound or list found by its own key shows whole, so it can be opened and read.
+	const childQuery = $derived(hit ? '' : query);
+	const term = $derived(query || mark);
+	const marked = $derived(!!term && selfMatches(inList ? null : String(name), tag, term));
+
 	// svelte-ignore state_referenced_locally
 	let open = $state(startOpen);
+	// Searching opens the way to every match; clearing the search folds it back.
+	$effect(() => {
+		open = query ? inside : startOpen;
+	});
 	let editing = $state<false | 'value' | 'snbt' | 'name'>(false);
 	let draft = $state('');
 	let draftType = $state('');
@@ -88,6 +105,7 @@
 	}
 </script>
 
+{#if !query || hit || inside}
 <li>
 	<div class="row">
 		{#if container}
@@ -95,7 +113,7 @@
 		{:else}
 			<span class="toggle"></span>
 		{/if}
-		<span class="name mono">{name}</span>
+		<span class="name mono" class:hit={marked && !inList && String(name).toLowerCase().includes(term)}>{name}</span>
 		<span class="type">{tag.type === 'list' ? `list of ${tag.itemType === 'end' ? 'nothing yet' : tag.itemType}` : tag.type}</span>
 		{#if editing}
 			<form
@@ -122,7 +140,7 @@
 				</span>
 			</form>
 		{:else}
-			<span class="value mono" class:muted={container}>{shown}</span>
+			<span class="value mono" class:muted={container} class:hit={marked && !container && shown.toLowerCase().includes(term)}>{shown}</span>
 			{#if fieldAction && !container && tag.type !== 'list'}
 				<button type="button" class="button-quiet field-action" onclick={() => fieldAction.run(path, tag, name)}>{fieldAction.label}</button>
 			{/if}
@@ -171,6 +189,8 @@
 					tag={value}
 					path={[...path, tag.type === 'list' ? i : key]}
 					inList={tag.type === 'list'}
+					query={childQuery}
+					mark={term}
 					{fieldAction}
 					{locked}
 					{onEdit}
@@ -179,6 +199,7 @@
 		</ul>
 	{/if}
 </li>
+{/if}
 
 <style>
 	li {
@@ -214,6 +235,12 @@
 
 	.name {
 		color: var(--text);
+	}
+
+	.hit {
+		background: color-mix(in srgb, var(--accent) 28%, transparent);
+		border-radius: 3px;
+		padding: 0 2px;
 	}
 
 	.type {
