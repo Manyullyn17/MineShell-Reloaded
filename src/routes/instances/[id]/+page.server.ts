@@ -5,7 +5,9 @@ import { serverInstances } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import {
 	acceptEula,
+	cloneInstance,
 	deleteInstance,
+	InstanceError,
 	instanceDiskUsage,
 	onlinePlayers,
 	requireInstance,
@@ -211,6 +213,19 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Notes saved.' };
+	},
+
+	clone: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const name = String((await request.formData()).get('name') ?? '').trim().slice(0, 80);
+		let copy;
+		try {
+			({ instance: copy } = await cloneInstance(instance, name));
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		redirect(303, `/instances/${copy.id}`);
 	},
 
 	delete: async ({ request, params }) => {

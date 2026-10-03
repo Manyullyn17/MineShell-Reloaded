@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { auditLog, serverInstances, type ServerInstance } from './db/schema';
+import { auditLog, instanceMods, serverInstances, type ServerInstance } from './db/schema';
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
@@ -639,6 +640,7 @@ export async function restoreAside(
 }
 
 export async function requireStopped(instance: ServerInstance): Promise<void> {
+	if (beingCopied.has(instance.id)) throw new InstanceError('This server is being copied; wait for the copy to finish.');
 	const state = await unitState(instance.id);
 	if (state.active !== 'inactive' && state.active !== 'failed') {
 		throw new InstanceError('Stop the server first.');
@@ -990,6 +992,9 @@ export async function start(instance: ServerInstance): Promise<{ ok: boolean; me
 	if (instance.status === 'provisioning') {
 		return { ok: false, message: 'This instance is still being set up.' };
 	}
+	if (beingCopied.has(instance.id)) {
+		return { ok: false, message: 'This server is being copied; start it once the copy has finished.' };
+	}
 	// Ports are only checked against what MineShell itself has assigned at
 	// creation time. Anything can claim the port afterwards - another
 	// service, a manually-started server - and systemd reports the start as
@@ -1138,6 +1143,104 @@ export type InstanceSummary = {
 	javaWarning: string | null;
 	eulaAccepted: boolean;
 };
+
+// -------------------------------------------------------------------- clone ---
+
+/**
+ * Servers whose folder a clone is copying. Kept in memory only: a clone
+ * that MineShell's stopping cuts short stops copying too.
+ */
+const beingCopied = new Set<string>();
+
+/**
+ * What a clone leaves out of `.mineshell/`: the source's world snapshots
+ * (the clone starts its own history) and whatever an operation left behind.
+ * The Forge backup of a Cleanroom server is kept, so the copy can revert.
+ */
+export function cloneSkips(relative: string): boolean {
+	const rel = relative.split(path.sep).join('/');
+	return (
+		rel === '.mineshell/snapshots' ||
+		/^\.mineshell\/(pack-change|loader-previous|world-previous|world-incoming)-\d+$/.test(rel) ||
+		/^\.mineshell\/[^/]*installer\.jar(\.log|\.part)?$/.test(rel)
+	);
+}
+
+/**
+ * Copy a stopped server - folder, settings and mod records - under a new
+ * name with its own ports and RCON password, to try a pack update or a
+ * migration on the copy first. Journalled like a first install: a copy cut
+ * short is marked failed, to be deleted.
+ */
+export async function cloneInstance(
+	source: ServerInstance,
+	name: string
+): Promise<{ instance: ServerInstance; taskId: string }> {
+	if (!name.trim()) throw new InstanceError('Give the copy a name.');
+	await requireStopped(source);
+
+	// The id names the folder too; a deleted server's kept files must not be adopted.
+	const taken = async (candidate: string) =>
+		!!getInstance(candidate) || (await fs.access(instanceDir(candidate)).then(() => true, () => false));
+	const base = slugify(name);
+	let id = base;
+	for (let n = 2; await taken(id); n++) id = `${base}-${n}`;
+	const dir = instanceDir(id);
+	const { serverPort, rconPort } = await allocatePortPair();
+	const password = randomPassword();
+	const now = Date.now();
+	db.insert(serverInstances)
+		.values({
+			...source,
+			id,
+			name: name.trim(),
+			path: dir,
+			serverPort,
+			rconPort,
+			rconPasswordEnc: encryptSecret(password),
+			pinned: false,
+			restartNextAt: null,
+			status: 'provisioning',
+			statusMessage: `Copying ${source.name}`,
+			createdAt: now,
+			updatedAt: now
+		})
+		.run();
+	beginOperation(id, { kind: 'create' });
+	beingCopied.add(source.id);
+
+	const taskId = startTask(
+		{ label: `Copy ${source.name} to ${name.trim()}`, instanceId: id },
+		(task) =>
+			endJournalOnFailure(id, async () => {
+				task.setProgress(null, 'Copying files');
+				await fs.cp(source.path, dir, {
+					recursive: true,
+					errorOnExist: true,
+					force: false,
+					preserveTimestamps: true,
+					mode: fsConstants.COPYFILE_FICLONE,
+					filter: (from) => !cloneSkips(path.relative(source.path, from))
+				});
+				beingCopied.delete(source.id);
+
+				task.setProgress(null, 'Setting up the copy');
+				const copy = requireInstance(id);
+				await syncPortsToProperties(copy);
+				const rows = db.select().from(instanceMods).where(eq(instanceMods.instanceId, source.id)).all();
+				for (const { id: _rowId, ...row } of rows) {
+					db.insert(instanceMods).values({ ...row, instanceId: id }).run();
+				}
+				await syncUnit(copy);
+				commitOperation(id, { status: 'ready', statusMessage: null });
+				audit('instance.cloned', { instanceId: id, detail: source.id });
+				task.log(`Copied ${source.name}; the copy listens on port ${serverPort} (RCON ${rconPort}).`);
+				task.setProgress(100, 'Ready');
+			}).finally(() => beingCopied.delete(source.id))
+	);
+	watchTaskFailure(taskId, id);
+	return { instance: requireInstance(id), taskId };
+}
 
 export async function summarise(instance: ServerInstance): Promise<InstanceSummary> {
 	const state = await unitState(instance.id);

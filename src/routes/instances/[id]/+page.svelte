@@ -9,6 +9,7 @@
 
 	let confirmName = $state('');
 	let showDelete = $state(false);
+	let showClone = $state(false);
 
 	$effect(() => {
 		const timer = setInterval(() => void invalidateAll(), 5000);
@@ -284,6 +285,38 @@
 		</form>
 	</section>
 </div>
+
+<section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>Copy this server</h2>
+			<p>
+				A separate server with the same files, mods and settings, on its own ports, to try a pack update or a
+				migration on first. World snapshots are not copied.
+			</p>
+		</div>
+		{#if !showClone}
+			<button onclick={() => (showClone = true)}>Copy server</button>
+		{/if}
+	</div>
+	{#if showClone}
+		<form method="POST" action="?/clone" use:enhance>
+			<div class="field">
+				<label for="clone-name">Name of the copy</label>
+				<input id="clone-name" name="name" value="{data.instance.name} (copy)" maxlength="80" required />
+			</div>
+			{#if data.instance.status === 'provisioning' || data.running}
+				<p class="hint">Stop the server to copy it; a running server's world is still being written.</p>
+			{/if}
+			<div class="button-row">
+				<button class="button-primary" type="submit" disabled={data.running || data.instance.status === 'provisioning'}>
+					Copy
+				</button>
+				<button class="button-quiet" type="button" onclick={() => (showClone = false)}>Cancel</button>
+			</div>
+		</form>
+	{/if}
+</section>
 
 <section class="panel danger">
 	<div class="panel-head">
