@@ -8,12 +8,14 @@ import {
 	destroySession,
 	loginThrottled,
 	passwordIsSet,
-	recordFailedLogin
+	recordFailedLogin,
+	sessionCookieOptions
 } from '$lib/server/auth';
+import { sameOriginPath } from '$lib/shared/links';
 
 export const load: PageServerLoad = async ({ url }) => {
 	if (!passwordIsSet()) redirect(303, '/setup');
-	return { next: url.searchParams.get('next') ?? '/' };
+	return { next: sameOriginPath(url.searchParams.get('next'), url.origin) };
 };
 
 export const actions: Actions = {
@@ -33,16 +35,10 @@ export const actions: Actions = {
 
 		clearLoginAttempts(ip);
 		const session = createSession(request.headers.get('user-agent'));
-		cookies.set(SESSION_COOKIE, session.id, {
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: url.protocol === 'https:',
-			maxAge: 60 * 60 * 24 * 30
-		});
+		cookies.set(SESSION_COOKIE, session.id, sessionCookieOptions(request, url));
 
-		const next = String(form.get('next') ?? '/');
-		redirect(303, next.startsWith('/') ? next : '/');
+		// Only ever back into MineShell: "//evil.example" also starts with "/".
+		redirect(303, sameOriginPath(String(form.get('next') ?? '/'), url.origin));
 	},
 
 	logout: async ({ cookies }) => {

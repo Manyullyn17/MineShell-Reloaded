@@ -30,3 +30,19 @@ export function fixLink(href: string, base: string | null): string | null {
 	}
 	return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? url.href : null;
 }
+
+/**
+ * Where to send someone after login: `next` if it stays on this site, else
+ * "/". Checking startsWith('/') is not enough - "//evil.example" and
+ * "/\evil.example" are both read by browsers as another site.
+ */
+export function sameOriginPath(next: string | null | undefined, origin: string): string {
+	if (!next) return '/';
+	try {
+		const url = new URL(next, origin);
+		if (url.origin !== new URL(origin).origin) return '/';
+		return `${url.pathname}${url.search}${url.hash}`;
+	} catch {
+		return '/';
+	}
+}
