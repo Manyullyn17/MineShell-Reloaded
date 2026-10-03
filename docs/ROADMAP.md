@@ -29,6 +29,11 @@ snapshotted before an update so a failed update can be rolled back. That operate
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
+Status: still a maybe. The narrower case - a world snapshot before MineShell's own risky
+operations - is planned separately (see "World snapshot before risky operations" under
+Near term), because there the server is already stopped and the consistency problem above
+does not arise.
+
 ---
 
 ## Dependency order
@@ -53,6 +58,60 @@ independent and can be done in any order.
 ---
 
 ## Near term
+
+### Recovery from operations interrupted by MineShell itself
+
+Pack version changes, loader switches and Cleanroom migrations roll back on failure, but
+only in-process. If MineShell dies mid-operation (crash, restart, power loss), nothing
+restores the server on the next start; leftovers stay in `.mineshell/pack-change-*`,
+`loader-previous-*` or `forge-backup/`. Fix: write a marker describing the operation
+before it starts, delete it on success or completed rollback, and on startup restore any
+operation whose marker is still there. The world snapshot below should reuse the same
+marker/restore mechanism.
+
+### World snapshot before risky operations
+
+Before a pack version change, loader switch or Cleanroom migration (the operations whose
+Minecraft-version warning already says they can corrupt a world), copy the world folder(s)
+aside. How many snapshots each server keeps is a global setting, default 3 (they are full
+copies, so 5 gets expensive on a big modded world; 3 still covers a couple of operations in
+a row); older ones are deleted after a new one succeeds. The server is already stopped for these,
+so the copy is consistent without any save-off/save-on dance.
+
+A large world makes the copy slow and disk-hungry, so above a size threshold the operation
+asks first: snapshot, or continue without one. The threshold is a global setting (MB);
+`-1` turns the question off, with a short note next to the field saying so. With the
+question off, the snapshot is always taken: the setting only removes the prompt, not the
+safety net.
+
+### World tools
+
+Download a world as a zip, replace it with an uploaded one, reset it (optionally with a new
+seed). The Files page only handles single files today. A world tab is the natural home,
+and it is where the older "world controls" note pointed too.
+
+### Clone a server
+
+Copy a server (folder plus DB row, fresh ports and RCON password) to try a pack update or a
+Cleanroom migration on the copy first.
+
+### Smaller operational features
+
+- Stop/restart with an in-game countdown, like scheduled restarts already do.
+- TPS/MSPT readout over RCON (`forge tps`, or spark when installed) next to CPU and RAM.
+- Scheduled commands beyond restarts (announcements, `save-all`).
+- Per-server resource limits via systemd (`MemoryMax`, `CPUQuota`).
+- "Stuck starting" warning when `Done (` never appears within N minutes (crash diagnosis
+  covers crashes, not hangs).
+- Browse older crash reports and logs; diagnosis only reads the last run.
+- Upload a server icon (`server-icon.png`).
+
+### Housekeeping: `csrf.checkOrigin` is deprecated
+
+Every check run warns that `kit.csrf.checkOrigin` will be removed. MineShell disables it
+because its full-origin comparison breaks TLS-terminating proxies, and `guard.ts` does a
+host-only check instead. If SvelteKit removes the option, its own check comes back on;
+move to the supported configuration before that happens.
 
 ### Mod updating
 
@@ -158,6 +217,15 @@ The auth question the notes left open is now settled: password plus session cook
 default. That was the blocker for designing remote access, so it can proceed whenever it
 is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
 reverse proxy — is where this should land unless there is a specific reason otherwise.
+
+### Modpack install flow refinements
+
+Show a pack's mod list before installing it; "Install" vs "Install & Start"; a UI for
+choosing what to do with client-only mods (see `clientonly.ts` for what is detected today).
+
+### Player data editor
+
+View and edit a player's inventory and NBT data from the players page.
 
 ### Multi-instance port management
 
