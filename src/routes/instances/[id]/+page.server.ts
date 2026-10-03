@@ -25,6 +25,7 @@ import { readLastRun } from '$lib/server/journal';
 import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
 import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
+import { cancelCountdown, getCountdown, startCountdown } from '$lib/server/countdown';
 
 /**
  * First non-internal IPv4 address found across interfaces. Falls back to the
@@ -122,6 +123,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			host: primaryLanAddress()
 		},
 		players,
+		countdown: getCountdown(instance.id),
 		diskBytes: await instanceDiskUsage(instance),
 		// CPU is measured across all cores, so the chart needs the core count to
 		// show a meaningful ceiling instead of an unexplained 400%.
@@ -140,7 +142,15 @@ export const load: PageServerLoad = async ({ params }) => {
 export const actions: Actions = {
 	power: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
-		const verb = String((await request.formData()).get('verb') ?? '');
+		const form = await request.formData();
+		const verb = String(form.get('verb') ?? '');
+		const delay = Number(form.get('delay') ?? 0);
+		if ((verb === 'stop' || verb === 'restart') && Number.isInteger(delay) && delay > 0 && delay <= 3600) {
+			const result = await startCountdown(instance, verb, delay);
+			return result.ok ? result : fail(400, result);
+		}
+		// Acting by hand replaces any countdown still running.
+		cancelCountdown(instance.id);
 		const result =
 			verb === 'start'
 				? await start(instance)
@@ -152,6 +162,12 @@ export const actions: Actions = {
 							? await restart(instance)
 							: { ok: false, message: `Unknown action "${verb}".` };
 		return result.ok ? result : fail(400, result);
+	},
+
+	cancelCountdown: async ({ params }) => {
+		return cancelCountdown(params.id)
+			? { ok: true, message: 'Countdown cancelled; players were told.' }
+			: fail(400, { ok: false, message: 'No countdown is running.' });
 	},
 
 	/** One-click fix from a crash diagnosis: disable the culprit or re-enable a dependency. */

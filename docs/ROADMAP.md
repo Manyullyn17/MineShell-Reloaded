@@ -72,13 +72,6 @@ server copies, Java downloads and mod updating are built.)
 - Browse older crash reports and logs; diagnosis only reads the last run.
 - Upload a server icon (`server-icon.png`).
 
-### Housekeeping: `csrf.checkOrigin` is deprecated
-
-Every check run warns that `kit.csrf.checkOrigin` will be removed. MineShell disables it
-because its full-origin comparison breaks TLS-terminating proxies, and `guard.ts` does a
-host-only check instead. If SvelteKit removes the option, its own check comes back on;
-move to the supported configuration before that happens.
-
 ### Mod updating: what is left
 
 Built: "Update mods" (check, review, update; world snapshot per the policy) and switching

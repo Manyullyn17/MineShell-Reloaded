@@ -10,6 +10,19 @@
 	let confirmName = $state('');
 	let showDelete = $state(false);
 	let showClone = $state(false);
+	// The players are warned before a delayed stop or restart; "now" is the default.
+	let delay = $state('0');
+	const clock = (ms: number) => {
+		const seconds = Math.max(0, Math.round(ms / 1000));
+		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+	};
+	// Ticks the countdown between polls.
+	let now = $state(Date.now());
+	$effect(() => {
+		if (!data.countdown) return;
+		const tick = setInterval(() => (now = Date.now()), 1000);
+		return () => clearInterval(tick);
+	});
 
 	$effect(() => {
 		const timer = setInterval(() => void invalidateAll(), 5000);
@@ -75,6 +88,13 @@
 			{#if data.running}
 				<button class="button-primary" name="verb" value="stop">Save and stop</button>
 				<button name="verb" value="restart">Restart</button>
+				<select name="delay" aria-label="When to stop or restart" bind:value={delay}>
+					<option value="0">now</option>
+					<option value="60">in 1 minute</option>
+					<option value="300">in 5 minutes</option>
+					<option value="600">in 10 minutes</option>
+					<option value="900">in 15 minutes</option>
+				</select>
 				<button class="button-danger" name="verb" value="kill">Force stop</button>
 			{:else}
 				<button
@@ -89,6 +109,15 @@
 			<a class="button" href="/instances/{data.instance.id}/console">Open console</a>
 		</div>
 	</form>
+	{#if data.countdown}
+		<form method="POST" action="?/cancelCountdown" use:enhance class="countdown">
+			<span>
+				{data.countdown.verb === 'stop' ? 'Stopping' : 'Restarting'} in
+				<strong class="mono">{clock(data.countdown.at - now)}</strong>
+			</span>
+			<button class="button-quiet" type="submit">Cancel</button>
+		</form>
+	{/if}
 	<form method="POST" action="?/pin" use:enhance>
 		<button class="button-quiet">
 			{data.instance.pinned ? 'Unpin from server list' : 'Pin to top of server list'}
@@ -363,6 +392,12 @@
 </section>
 
 <style>
+	.countdown {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
 	.controls {
 		display: flex;
 		align-items: center;
