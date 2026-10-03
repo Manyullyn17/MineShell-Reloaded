@@ -13,7 +13,8 @@ import type { FilterGroup, ProjectVersion, SearchHit, SearchQuery } from './type
  * full install-time source too would mean downloading that zip, parsing its
  * manifest (the same parser `lib/server/packs/index.ts` already uses for
  * uploaded CurseForge zips), and resolving each project/file id pair
- * individually - a real follow-up, tracked in docs/ROADMAP.md, not done here.
+ * individually. Installing from a pack's server pack instead was looked at and
+ * rejected (docs/ROADMAP.md, "Considered and rejected").
  *
  * Endpoint shapes below are per CurseForge's published API docs
  * (https://docs.curseforge.com/), not live-verified against a real key in
