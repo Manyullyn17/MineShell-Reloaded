@@ -59,18 +59,9 @@ independent and can be done in any order.
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,
-server copies, Java downloads and mod updating are built.)
-
-### Smaller operational features
-
-- Stop/restart with an in-game countdown, like scheduled restarts already do.
-- TPS/MSPT readout over RCON (`forge tps`, or spark when installed) next to CPU and RAM.
-- Scheduled commands beyond restarts (announcements, `save-all`).
-- Per-server resource limits via systemd (`MemoryMax`, `CPUQuota`).
-- "Stuck starting" warning when `Done (` never appears within N minutes (crash diagnosis
-  covers crashes, not hangs).
-- Browse older crash reports and logs; diagnosis only reads the last run.
-- Upload a server icon (`server-icon.png`).
+server copies, Java downloads, mod updating and the smaller operational features -
+countdown stops, TPS, scheduled commands, resource limits, stuck-start warning, log
+history, server icon - are built.)
 
 ### Mod updating: what is left
 
