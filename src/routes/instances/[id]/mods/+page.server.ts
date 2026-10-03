@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, requireInstance, summarise } from '$lib/server/instances';
-import { changeModVersions } from '$lib/server/modupdates';
+import { changeModVersions, syncInstanceMods } from '$lib/server/modupdates';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
 import type { ServerInstance } from '$lib/server/db/schema';
 import {
@@ -12,13 +12,10 @@ import {
 	modsDir,
 	setModEnabled,
 	setModLocked,
-	syncMods,
 	trackManualJar
 } from '$lib/server/mods';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '$lib/server/modloaders';
 import { saveUpload } from '$lib/server/files';
-import { curseforgeOrigins } from '$lib/server/packs';
-import { resolveProviderPack } from '$lib/server/packs/resolve';
 import { db } from '$lib/server/db';
 import { serverInstances } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -257,34 +254,8 @@ export const actions: Actions = {
 
 	sync: async ({ params }) => {
 		const instance = requireInstance(params.id);
-		// A CurseForge pack's file list says which project each of its jars is,
-		// which also corrects pack mods an older install tracked as Modrinth or
-		// manual. One request; without it, sync falls back to hashes alone.
-		let origins: Map<string, { projectId: string; fileId: string }> | undefined;
-		if (instance.packSource === 'curseforge' && instance.packProjectId && instance.packVersionId) {
-			origins = await resolveProviderPack('curseforge', instance.packProjectId, instance.packVersionId)
-				.then(({ pack }) => curseforgeOrigins(pack))
-				.catch(() => undefined);
-		}
-		const { removedStale, resolved, curseforge, trackedAsManual } = await syncMods(instance, {
-			fromPack: false,
-			curseforge: origins
-		});
-		if (resolved || curseforge || trackedAsManual || removedStale) touchInstance(instance.id);
-
-		const parts: string[] = [];
-		if (curseforge) parts.push(`tracked ${curseforge} mod${curseforge === 1 ? '' : 's'} as CurseForge`);
-		if (resolved) parts.push(`identified ${resolved} mod${resolved === 1 ? '' : 's'}`);
-		if (trackedAsManual)
-			parts.push(
-				`tracked ${trackedAsManual} unrecognised file${trackedAsManual === 1 ? '' : 's'} as manual`
-			);
-		if (removedStale)
-			parts.push(`cleared ${removedStale} stale record${removedStale === 1 ? '' : 's'}`);
-
-		return {
-			ok: true,
-			message: parts.length ? `Synced: ${parts.join(', ')}.` : 'Everything already matches the records.'
-		};
+		const summary = await syncInstanceMods(instance);
+		if (summary) touchInstance(instance.id);
+		return { ok: true, message: summary ? `Synced: ${summary}.` : 'Everything already matches the records.' };
 	}
 };

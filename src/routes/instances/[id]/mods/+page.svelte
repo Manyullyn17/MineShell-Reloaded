@@ -29,6 +29,12 @@
 		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; enabled: boolean; fromPack: boolean }[];
 		upToDate: number;
 		skipped: { fileName: string; name: string; reason: string }[];
+		dependencies: DependencyPlan;
+		synced: string | null;
+	};
+	type DependencyPlan = {
+		install: { projectId: string; name: string; versionNumber: string; neededBy: string[] }[];
+		unresolved: { name: string; neededBy: string[]; reason: string }[];
 	};
 	let updateCheck = $state<UpdateCheck | null>(null);
 	let checking = $state(false);
@@ -83,6 +89,31 @@
 			versionsLoading = false;
 		}
 	}
+
+	// What the picked version would bring in; looked up whenever the pick changes.
+	let versionDeps = $state<DependencyPlan | null>(null);
+	let versionDepsLoading = $state(false);
+	$effect(() => {
+		const fileName = versionFor;
+		const versionId = versionPick;
+		versionDeps = null;
+		if (!fileName || !versionId || versionList.find((v) => v.id === versionId)?.installed) return;
+		let cancelled = false;
+		versionDepsLoading = true;
+		const params = new URLSearchParams({ fileName, versionId });
+		fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/mod-versions?${params}`)
+			.then((r) => (r.ok ? r.json() : null))
+			.then((body) => {
+				if (!cancelled) versionDeps = body?.dependencies ?? null;
+			})
+			.catch(() => undefined)
+			.finally(() => {
+				if (!cancelled) versionDepsLoading = false;
+			});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	function versionLabel(v: VersionChoice) {
 		const date = v.datePublished ? new Date(v.datePublished).toLocaleDateString() : '';
@@ -401,8 +432,29 @@
 		<p class="hint warn-text">{checkError}</p>
 	{/if}
 
+	{#snippet dependencyList(plan: DependencyPlan)}
+		{#if plan.install.length}
+			<p class="small">Also installs what the new versions need:</p>
+			<ul class="small deps">
+				{#each plan.install as d (d.projectId)}
+					<li><strong>{d.name}</strong> <span class="mono">{d.versionNumber}</span> <span class="muted">- for {d.neededBy.join(', ')}</span></li>
+				{/each}
+			</ul>
+		{/if}
+		{#if plan.unresolved.length}
+			<ul class="small deps warn-text">
+				{#each plan.unresolved as d (d.name)}
+					<li>{d.name}, needed by {d.neededBy.join(', ')}, cannot be installed: {d.reason}.</li>
+				{/each}
+			</ul>
+		{/if}
+	{/snippet}
+
 	{#if updateCheck}
 		<div class="updates">
+			{#if updateCheck.synced}
+				<p class="hint">Untracked jars were synced first: {updateCheck.synced}.</p>
+			{/if}
 			{#if updateCheck.updates.length === 0}
 				<p>
 					Everything that can be checked is up to date ({updateCheck.upToDate} mod{updateCheck.upToDate === 1 ? '' : 's'}).
@@ -437,6 +489,7 @@
 							</li>
 						{/each}
 					</ul>
+					{@render dependencyList(updateCheck.dependencies)}
 					<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="update-mods" />
 					<div class="button-row">
 						<button class="button-primary" type="submit" disabled={!chosenCount || data.running}>
@@ -790,6 +843,11 @@
 												{/each}
 											</select>
 										</div>
+										{#if versionDepsLoading}
+											<p class="muted small">Checking what this version needs.</p>
+										{:else if versionDeps}
+											{@render dependencyList(versionDeps)}
+										{/if}
 										<div class="check">
 											<input id="ver-snap-{mod.fileName}" type="checkbox" name="snapshot" />
 											<label for="ver-snap-{mod.fileName}">
@@ -854,6 +912,10 @@
 
 	.version-row td {
 		background: var(--bg-sunken);
+	}
+
+	.deps {
+		margin: var(--space-1) 0 var(--space-3);
 	}
 
 	.version-row select {

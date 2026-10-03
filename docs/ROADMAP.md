@@ -86,9 +86,9 @@ one mod to any compatible version, older ones included (world snapshot opt-in), 
 as `mod-update`. On a modpack server both are greyed out until a toggle is turned on.
 Not built from the original design:
 
-- New required dependencies of an updated version are not installed or reported.
 - Downgrade/disabled-mod options: disabled mods are updated and stay disabled; nothing asks.
-- Manual jars are not looked up; Sync identifies them as Modrinth/CurseForge first.
+- Required dependencies are installed, but nothing checks `incompatible` ones or removes a
+  dependency the new version no longer needs.
 
 ### Notifications
 
