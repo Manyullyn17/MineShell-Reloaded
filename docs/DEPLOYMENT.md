@@ -128,6 +128,10 @@ RestartSec=10
 WantedBy=default.target
 ```
 
+`/usr/bin/node` has to be Node.js 22 or newer, which a distribution's own package often is
+not (Ubuntu 24.04 ships 18). With Node from NodeSource it is; with nvm, put the full path
+`which node` prints into `ExecStart` instead. `npm run doctor` reports the version it ran with.
+
 ```sh
 systemctl --user daemon-reload
 systemctl --user enable --now mineshell
