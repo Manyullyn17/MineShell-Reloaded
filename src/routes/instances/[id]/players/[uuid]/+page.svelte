@@ -85,7 +85,12 @@
 					}
 				: {
 						label: 'Field',
-						run: (path: Path, tag: TreeTag, name: string) => (mapping = { path, label: name, kind: kindFor(tag) })
+						run: (path: Path, tag: TreeTag, name: string) => {
+							mapping = { path, label: name, kind: kindFor(tag) };
+							// Picked inside the item editor: the form is on the page under it.
+							stack = [];
+							requestAnimationFrame(() => document.querySelector('.map-form')?.scrollIntoView({ block: 'center' }));
+						}
 					}
 	);
 
@@ -121,6 +126,13 @@
 	/** The slots opened, outermost first: a backpack, then a slot inside it. */
 	let stack = $state<Loc[]>([]);
 	const current = $derived(stack.at(-1) ?? null);
+	// The item editor is a modal over the page, open while a slot is.
+	let dialog = $state<HTMLDialogElement | null>(null);
+	$effect(() => {
+		if (!dialog) return;
+		if (stack.length && !dialog.open) dialog.showModal();
+		if (!stack.length && dialog.open) dialog.close();
+	});
 
 	function allContainers(): Container[] {
 		const out: Container[] = [];
@@ -233,10 +245,19 @@
 	}
 
 	/** The name part of an id (the full id is in the slot's tooltip). */
+	const LEGACY_NAMES = $derived(data.view.legacyEnchantments);
 	const short = (id: string) => (id.split(':').pop() ?? id).replace(/_/g, ' ');
 	const SLOT_LABELS: Record<number, string> = { 103: 'Head', 102: 'Chest', 101: 'Legs', 100: 'Feet', [-106]: 'Offhand' };
 	const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 	const FORMAT_LABEL = { legacy: 'Minecraft 1.12 and older', flat: 'Minecraft 1.13 to 1.20.4', components: 'Minecraft 1.20.5 and newer' };
+	let containerFilter = $state<Record<string, string>>({});
+	/**
+	 * Real inventories (fixed slots, not too many) start open; open-ended
+	 * item lists - ProjectE's knowledge holds every item ever learned - start
+	 * closed. Inside an item, anything small opens.
+	 */
+	const startsOpen = (c: Container, nested: boolean) => c.items.length <= 54 && (c.size === null ? nested : c.size <= 54);
+
 	/** A container without slots (a bundle) shows its items plus one empty place to add to. */
 	const containerSlots = (c: Container) => (c.size === null ? range(0, c.items.length) : range(0, c.size - 1));
 </script>
@@ -265,12 +286,27 @@
 {/snippet}
 
 {#snippet containerGrid(c: Container, nested: boolean)}
-	<div class="container">
-		<p class="small muted container-label">{c.label}{c.size === null ? ' (in order, no fixed slots)' : ''}</p>
-		<div class="grid">
-			{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}{/each}
+	{@const key = JSON.stringify(c.path)}
+	{@const filter = (containerFilter[key] ?? '').trim().toLowerCase()}
+	<details class="container" open={startsOpen(c, nested)}>
+		<summary class="small">
+			<span class="container-label">{c.label}</span>
+			<span class="faint">
+				· {c.items.length} item{c.items.length === 1 ? '' : 's'}{c.size === null ? ', no fixed slots' : ` in ${c.size} slots`}
+			</span>
+		</summary>
+		{#if c.items.length > 54}
+			<input class="container-filter" type="search" placeholder="Filter by name or id" bind:value={containerFilter[key]} />
+		{/if}
+		<div class="grid wide">
+			{#each containerSlots(c) as slot (slot)}
+				{@const item = itemAt({ kind: 'container', list: c.path, slot })}
+				{#if !filter || (item && `${item.id} ${item.name ?? ''}`.toLowerCase().includes(filter))}
+					{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}
+				{/if}
+			{/each}
 		</div>
-	</div>
+	</details>
 {/snippet}
 
 {#snippet input(f: Field)}
@@ -433,8 +469,14 @@
 			{/if}
 		</div>
 
-		{#if current}
+	</div>
+</section>
+
+<dialog class="item-dialog" bind:this={dialog} onclose={() => (stack = [])} onclick={(e) => e.target === dialog && (stack = [])}>
+	{#if current}
+		{#key result}<Flash form={result} />{/key}
 			<form class="item-editor" onsubmit={saveItem}>
+				<button type="button" class="dialog-close button-quiet" aria-label="Close" onclick={() => (stack = [])}>×</button>
 				<nav class="crumbs small">
 					{#each stack as loc, i (i)}
 						{#if i > 0}<span class="faint sep">›</span>{/if}
@@ -447,11 +489,11 @@
 				</nav>
 
 				<div class="item-main">
+				<div class="field">
+					<label for="item-id">Item id</label>
+					<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+				</div>
 				<div class="item-row">
-					<div class="field grow">
-						<label for="item-id">Item id</label>
-						<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
-					</div>
 					<div class="field narrow">
 						<label for="item-count">Count</label>
 						<input id="item-count" type="number" min="1" max={data.view.format === 'components' ? 99 : 127} bind:value={itemCount} disabled={locked} />
@@ -488,6 +530,7 @@
 							<div class="enchant">
 								<input class="mono" bind:value={e.id} placeholder={legacy ? '16 (sharpness)' : 'minecraft:sharpness'} aria-label="Enchantment" disabled={locked} />
 								<input type="number" min="1" max="255" bind:value={e.level} aria-label="Level" disabled={locked} />
+								{#if legacy && LEGACY_NAMES[Number(e.id)]}<span class="small faint enchant-name">{LEGACY_NAMES[Number(e.id)]}</span>{/if}
 								<button type="button" class="button-quiet button-danger" aria-label="Remove enchantment" disabled={locked} onclick={() => itemEnchants.splice(i, 1)}>×</button>
 							</div>
 						{/each}
@@ -512,7 +555,7 @@
 					{/each}
 					{#if subtree(selectedItem.path)}
 						{@const tree = subtree(selectedItem.path)!}
-						<details class="item-data">
+						<details class="item-data" open={selectedItem.containers.length === 0}>
 							<summary class="small">All item data</summary>
 							<ul class="tree">
 								<NbtNode name={short(selectedItem.id)} tag={tree} path={selectedItem.path} {locked} {fieldAction} open onEdit={(edit) => save([edit])} />
@@ -522,9 +565,8 @@
 					</div>
 				{/if}
 			</form>
-		{/if}
-	</div>
-</section>
+	{/if}
+</dialog>
 
 <section class="panel" class:remapping={!!remapping}>
 	<h2>All data</h2>
@@ -759,8 +801,39 @@
 		margin-top: var(--space-1);
 	}
 
+	.container {
+		margin-top: var(--space-2);
+	}
+
+	.container summary {
+		cursor: pointer;
+		margin-bottom: var(--space-2);
+	}
+
 	.container-label {
-		margin: var(--space-2) 0 var(--space-1);
+		color: var(--text-muted);
+	}
+
+	.container-filter {
+		max-width: 18rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	/* Containers other than the inventory: wide cells across the width, so names fit. */
+	.grid.wide {
+		grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+	}
+
+	.grid.wide .slot {
+		width: auto;
+		height: 3rem;
+		padding: 2px 6px;
+	}
+
+	.grid.wide .item-name {
+		font-size: 0.74rem;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 	}
 
 	.slot {
@@ -830,13 +903,26 @@
 		color: var(--accent);
 	}
 
-	/* Below the grids: an item's own contents grid is as wide as the inventory's. */
+	.item-dialog {
+		width: min(70rem, calc(100vw - 2rem));
+		max-height: calc(100vh - 3rem);
+		padding: var(--space-5);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius);
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: 0 10px 40px rgb(0 0 0 / 0.45);
+	}
+
+	.item-dialog::backdrop {
+		background: rgb(0 0 0 / 0.5);
+	}
+
 	.item-editor {
+		position: relative;
 		display: grid;
-		grid-template-columns: minmax(18rem, 30rem) minmax(0, 1fr);
+		grid-template-columns: minmax(18rem, 28rem) minmax(0, 1fr);
 		column-gap: var(--space-5);
-		border-top: 1px solid var(--line);
-		padding-top: var(--space-4);
 	}
 
 	.crumbs {
@@ -849,12 +935,27 @@
 		}
 	}
 
-	.item-side :global(.container-label) {
+	.item-side > .container:first-child {
 		margin-top: 0;
 	}
 
 	.crumbs {
 		margin-bottom: var(--space-3);
+		padding-right: 2rem;
+	}
+
+	.dialog-close {
+		position: absolute;
+		top: -0.5rem;
+		right: -0.5rem;
+		font-size: 1.2rem;
+		line-height: 1;
+		padding: 0.2rem 0.55rem;
+	}
+
+	.enchant-name {
+		align-self: center;
+		white-space: nowrap;
 	}
 
 	.sep {
@@ -880,10 +981,6 @@
 
 	.item-row .field {
 		margin: 0;
-	}
-
-	.grow {
-		flex: 1 1 12rem;
 	}
 
 	.narrow {

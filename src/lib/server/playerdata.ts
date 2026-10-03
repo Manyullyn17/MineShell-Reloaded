@@ -9,6 +9,7 @@ import {
 	checkItem,
 	describeItem,
 	findContainers,
+	LEGACY_ENCHANTMENTS,
 	PlayerDataError,
 	setContainerItem,
 	styleOf,
@@ -175,6 +176,8 @@ export type PlayerView = {
 	items: ItemView[];
 	/** Other item lists in the file: Curios, Trinkets and other mod slots. */
 	containers: ContainerView[];
+	/** 1.12's enchantment numbers and their names, for the item editor; empty for newer files. */
+	legacyEnchantments: Record<number, string>;
 	tree: TreeTag;
 };
 
@@ -235,6 +238,7 @@ export function playerView(file: NbtFile): PlayerView {
 		effects: playerEffects(root, dataVersion),
 		items,
 		containers: findContainers(root, [], style, '', 0, new Set(['Inventory', 'EnderItems', 'equipment'])),
+		legacyEnchantments: style.format === 'legacy' ? LEGACY_ENCHANTMENTS : {},
 		tree: toTree(root)
 	};
 }
