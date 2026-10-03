@@ -58,7 +58,7 @@ const { createFromPack } = await import('$lib/server/instances');
 const { planPackChange, applyPackChange } = await import('$lib/server/packchange');
 const { LOADERS } = await import('$lib/server/modloaders');
 const { packFromFileList } = await import('$lib/server/packs');
-const { recordInstanceMod, upsertMod } = await import('$lib/server/mods');
+const { recordInstanceMod, setModEnabled, upsertMod } = await import('$lib/server/mods');
 const { patchProperties, readProperties } = await import('$lib/server/properties');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
@@ -271,5 +271,30 @@ describe('changing the pack version', () => {
 		const row = reload(instance.id);
 		expect(row).toMatchObject({ packVersionId: 'v2', status: 'ready' });
 		expect(row.statusMessage).toMatch(/Re-tracking mods failed: mod index broke/);
+	});
+
+	it('disables client-only mods the new version adds, not ones the user turned back on', async () => {
+		const clientJar = (id: string) => zipBuffer({ 'fabric.mod.json': JSON.stringify({ id, environment: 'client' }) });
+		for (const [id, files] of [['c1', ['old-client.jar']], ['c2', ['old-client.jar', 'new-client.jar']]] as const) {
+			PACKS[id] = () => {
+				for (const f of files) served[`https://packs.test/${id}/${f}`] = () => new Response(new Uint8Array(clientJar(f)));
+				return packFromFileList({
+					name: 'Test Pack', version: id, minecraftVersion: '1.20.1', modloader: 'fabric', modloaderVersion: null,
+					files: files.map((f) => ({ path: 'mods/', name: f, url: `https://packs.test/${id}/${f}` }))
+				});
+			};
+		}
+		const { instance, taskId } = await createFromPack('Client Mods', PACKS.c1(), { source: 'modrinth', projectId: 'p', versionId: 'c1' });
+		await waitForTask(taskId);
+		expect(Object.keys(await tree(instance.path))).toContain('mods/old-client.jar.disabled');
+		// The server needs it after all.
+		await setModEnabled(reload(instance.id), 'old-client.jar.disabled', true);
+
+		await planPackChange(reload(instance.id), 'c2');
+		const task = await waitForTask(await applyPackChange(reload(instance.id), 'c2', { updateMods: [], confirmMinecraftChange: false }));
+		expect(task.state).toBe('done');
+		const files = Object.keys(await tree(instance.path));
+		expect(files).toEqual(expect.arrayContaining(['mods/old-client.jar', 'mods/new-client.jar.disabled']));
+		expect(reload(instance.id).statusMessage).toMatch(/Disabled 1 client-only mod \(new-client\)/);
 	});
 });

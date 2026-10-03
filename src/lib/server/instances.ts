@@ -37,7 +37,8 @@ import {
 	parsePack,
 	type ParsedPack
 } from './packs';
-import { deleteMod, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
+import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
+import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
@@ -400,6 +401,16 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 				problems.push(
 					`${failures.length} mod${failures.length === 1 ? '' : 's'} could not be downloaded. Check the task log and add them by hand.`
 				);
+			}
+			task.setProgress(null, 'Checking for client-only mods');
+			try {
+				const installed = (await listInstanceMods(requireInstance(instance.id))).map((m) => m.fileName);
+				const clientOnly = await disableClientOnlyMods(requireInstance(instance.id), installed, task);
+				const line = describeClientOnlyResult(clientOnly);
+				if (line) problems.push(line);
+			} catch (err) {
+				// A check that could not run must not undo a working install.
+				task.log(`Checking for client-only mods failed: ${err instanceof Error ? err.message : 'unknown error'}.`);
 			}
 			if (instance.modloader === 'cleanroom' && pack.modloader === 'forge') {
 				task.setProgress(null, 'Preparing mods for Cleanroom');

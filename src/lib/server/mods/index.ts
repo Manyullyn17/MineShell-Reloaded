@@ -82,6 +82,8 @@ export type ModRow = {
 	locked: boolean;
 	projectUrl: string | null;
 	iconUrl: string | null;
+	/** Known not to belong on a dedicated server. */
+	clientOnly: boolean;
 	/** True when the jar is on disk but MineShell has no record of installing it. */
 	untracked: boolean;
 	/** True when the DB row has no matching file. */
@@ -110,6 +112,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			source: modsTable.source,
 			projectUrl: modsTable.projectUrl,
 			iconUrl: modsTable.iconUrl,
+			clientOnly: instanceMods.clientOnly,
 			version: instanceMods.version,
 			versionId: instanceMods.versionId,
 			filePath: instanceMods.filePath,
@@ -150,6 +153,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			locked: record?.locked ?? false,
 			projectUrl: record?.projectUrl ?? null,
 			iconUrl: record?.iconUrl ?? null,
+			clientOnly: record?.clientOnly ?? false,
 			untracked: !record,
 			missing: false
 		});
@@ -176,6 +180,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			locked: record.locked,
 			projectUrl: record.projectUrl,
 			iconUrl: record.iconUrl,
+			clientOnly: record.clientOnly,
 			untracked: false,
 			missing: true
 		});
@@ -307,7 +312,8 @@ export async function syncMods(
 				filePath: path.join('mods', fileName),
 				hash,
 				hashAlgo: 'sha512',
-				fromPack: opts.fromPack ?? true
+				fromPack: opts.fromPack ?? true,
+				clientOnly: project.clientOnly
 			});
 			resolved += 1;
 		} else {
@@ -451,9 +457,11 @@ export function recordInstanceMod(input: {
 	hash: string | null;
 	hashAlgo: string | null;
 	fromPack: boolean;
+	/** Left as recorded when undefined: not every lookup knows. */
+	clientOnly?: boolean;
 }): void {
 	db.insert(instanceMods)
-		.values({ ...input, enabled: true, locked: false, installedAt: Date.now() })
+		.values({ ...input, clientOnly: input.clientOnly ?? false, enabled: true, locked: false, installedAt: Date.now() })
 		.onConflictDoUpdate({
 			target: [instanceMods.instanceId, instanceMods.filePath],
 			set: {
@@ -462,7 +470,8 @@ export function recordInstanceMod(input: {
 				versionId: input.versionId,
 				hash: input.hash,
 				hashAlgo: input.hashAlgo,
-				installedAt: Date.now()
+				installedAt: Date.now(),
+				...(input.clientOnly !== undefined ? { clientOnly: input.clientOnly } : {})
 			}
 		})
 		.run();
@@ -498,9 +507,18 @@ export async function installModVersion(
 		filePath: path.join('mods', file.filename),
 		hash: file.hash?.value ?? (await hashFile(destination)),
 		hashAlgo: file.hash?.algo ?? 'sha512',
-		fromPack: opts.fromPack ?? false
+		fromPack: opts.fromPack ?? false,
+		clientOnly: version.clientOnly
 	});
 	return file.filename;
+}
+
+/** Flags a tracked jar as client-only (no-op for an untracked jar). */
+export function markClientOnly(instance: ServerInstance, fileName: string): void {
+	db.update(instanceMods)
+		.set({ clientOnly: true })
+		.where(and(eq(instanceMods.instanceId, instance.id), eq(instanceMods.filePath, path.join('mods', fileName))))
+		.run();
 }
 
 /** Register a hand-uploaded jar (or an unidentifiable pack jar) so it stops showing as untracked. */

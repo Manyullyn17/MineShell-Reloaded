@@ -46,6 +46,7 @@
 		id: string;
 		versionNumber: string;
 		channel: string;
+		clientOnly: boolean;
 		dependencies: { type: string; name: string | null }[];
 	};
 	let versions = $state<Version[]>([]);
@@ -392,7 +393,9 @@
 										{:else}
 											{#each versions as v (v.id)}
 												<option value={v.id}>
-													{v.versionNumber}{v.channel !== 'release' ? ` (${v.channel})` : ''}
+													{v.versionNumber}{v.channel !== 'release' ? ` (${v.channel})` : ''}{v.clientOnly
+														? ' (client only)'
+														: ''}
 												</option>
 											{/each}
 										{/if}
@@ -403,6 +406,13 @@
 									<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
 								</div>
 							</div>
+
+							{#if versions.find((v) => v.id === versionId)?.clientOnly}
+								<p class="notice warning small">
+									This build is marked client-only: it does nothing on a server, and some crash one.
+									Install it only if a server mod needs it.
+								</p>
+							{/if}
 
 							{#if loadingDeps}
 								<p class="muted small">Checking dependencies.</p>
@@ -517,6 +527,12 @@
 									<span>{mod.name}</span>
 								{/if}
 								{#if mod.fromPack}<span class="tag">pack</span>{/if}
+								{#if mod.clientOnly}
+									<span
+										class="tag warn"
+										title="Known to do nothing on a dedicated server, or to crash it. MineShell disables these when a pack installs them; re-enable it only if another mod needs it."
+									>client only</span>
+								{/if}
 								{#if mod.untracked}<span class="tag warn">untracked</span>{/if}
 								{#if mod.missing}<span class="tag bad">file missing</span>{/if}
 								{#if mod.locked}<span class="tag">locked</span>{/if}

@@ -249,4 +249,28 @@ describe('installing a pack', () => {
 			versionId: '4001'
 		});
 	});
+
+	it('disables client-only mods a pack brings and says so', async () => {
+		fakeInstall('fabric');
+		const base = `https://files.test/${++packs}`;
+		serve(`${base}/content.jar`, zipBuffer({ 'fabric.mod.json': '{"id":"content"}' }));
+		serve(`${base}/shaders.jar`, zipBuffer({ 'fabric.mod.json': '{"id":"shaders","environment":"client"}' }));
+		const withClientMod = packFromFileList({
+			name: 'Client Mod Pack',
+			version: '1.0',
+			minecraftVersion: '1.20.1',
+			modloader: 'fabric',
+			modloaderVersion: null,
+			files: [
+				{ path: 'mods/', name: 'content.jar', url: `${base}/content.jar` },
+				{ path: 'mods/', name: 'shaders.jar', url: `${base}/shaders.jar` }
+			]
+		});
+		const { instance, taskId } = await createFromPack('Client Mods', withClientMod, { source: 'curseforge' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+
+		const files = Object.keys(await tree(instance.path));
+		expect(files).toEqual(expect.arrayContaining(['mods/content.jar', 'mods/shaders.jar.disabled']));
+		expect(reload(instance.id).statusMessage).toMatch(/Disabled 1 client-only mod \(shaders\)/);
+	});
 });

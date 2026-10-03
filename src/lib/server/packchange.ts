@@ -15,6 +15,7 @@ import {
 	type ModRow,
 	type ProjectVersion
 } from './mods';
+import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
@@ -555,6 +556,11 @@ export async function applyPackChange(
 		try {
 			task.setProgress(null, 'Identifying mods');
 			await syncMods(requireInstance(instance.id), { fromPack: true, curseforge: curseforgeOrigins(pack) });
+			// Only what this version added: a pack mod someone re-enabled stays on.
+			task.setProgress(null, 'Checking for client-only mods');
+			const clientOnly = await disableClientOnlyMods(requireInstance(instance.id), plan.mods.add, task);
+			const line = describeClientOnlyResult(clientOnly);
+			if (line) problems.push(line);
 			if (plan.target.loader === 'cleanroom') {
 				const fixes = await applyCleanroomModFixes(requireInstance(instance.id), task);
 				problems.push(...fixes.failures);

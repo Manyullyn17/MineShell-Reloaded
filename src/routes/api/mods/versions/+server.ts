@@ -22,6 +22,7 @@ export const GET: RequestHandler = async ({ url }) => {
 				versionNumber: v.versionNumber,
 				channel: v.channel,
 				datePublished: v.datePublished,
+				clientOnly: v.clientOnly ?? false,
 				dependencies: v.dependencies.filter((d) => d.type === 'required' || d.type === 'optional')
 			}))
 		});

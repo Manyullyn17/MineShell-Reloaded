@@ -120,6 +120,8 @@ export const instanceMods = sqliteTable(
 		fromPack: integer('from_pack', { mode: 'boolean' }).notNull().default(false),
 		/** Never touched by bulk update runs. */
 		locked: integer('locked', { mode: 'boolean' }).notNull().default(false),
+		/** This jar is known not to belong on a dedicated server; see clientonly.ts. */
+		clientOnly: integer('client_only', { mode: 'boolean' }).notNull().default(false),
 		flags: text('flags'), // JSON array
 		installedAt: integer('installed_at').notNull()
 	},

@@ -483,7 +483,8 @@ function modFileToVersion(projectId: string, file: ModFile): ProjectVersion {
 			versionId: null,
 			type: d.required ? 'required' : 'optional',
 			name: null
-		}))
+		})),
+		clientOnly: file.clientonly === true
 	};
 }
 

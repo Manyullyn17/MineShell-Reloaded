@@ -112,10 +112,10 @@ Two things make this worth doing eventually rather than immediately:
 
 - It would let installs prefer a modpack's dedicated **Server Pack** file
   (`isServerPack`/`serverPackFileId` on the CurseForge file object) over the default
-  client file, which is the real fix for the "client-only mods slipping into server
-  installs" issue flagged elsewhere in this doc/CLAUDE.md - CurseForge's manifest format
-  has no client/server field, but a proper Server Pack zip is curated by the pack author
-  to exclude client-only mods already.
+  client file. Client-only mods slipping into server installs are now caught after the
+  fact (`clientonly.ts` disables what Modrinth or the jar itself says is client-only), but
+  that only knows what Modrinth knows; a proper Server Pack zip is curated by the pack
+  author to exclude client-only mods in the first place.
 - It also means `overrides/` support (server.properties tweaks, config files bundled in
   the pack) for CurseForge packs picked through the browser, which today only the Upload
   flow gets.

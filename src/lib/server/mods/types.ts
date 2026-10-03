@@ -20,6 +20,8 @@ export type SearchHit = {
 	/** Loaders the project declares support for, lower-cased. */
 	loaders: string[];
 	gameVersions: string[];
+	/** Known to do nothing on a dedicated server, where the source says. */
+	clientOnly?: boolean;
 };
 
 export type VersionFile = {
@@ -70,6 +72,8 @@ export type ProjectVersion = {
 	 * pack install use the build it was made for instead of "latest".
 	 */
 	loaderVersions?: Record<string, string>;
+	/** The source flags this build as client-only (CurseForge does per file). */
+	clientOnly?: boolean;
 };
 
 export type SearchQuery = {

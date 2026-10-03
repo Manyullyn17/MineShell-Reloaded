@@ -113,6 +113,8 @@ export type ModJar = {
 	names: string[];
 	/** Declared client-only (Fabric/Quilt `environment: client`); the loader skips it on a server. */
 	clientOnly: boolean;
+	/** Mod ids it declares as required, lower-cased (Minecraft and loaders included). */
+	requires: string[];
 	/** Class names (dotted) in the jar and in any jars nested inside it. */
 	classes: Set<string>;
 	/** Mixin config files shipped at the jar root. */
@@ -158,11 +160,22 @@ function tomlBlocks(text: string, header: RegExp): string[] {
 	return text.split(/^\s*\[\[/m).filter((b) => header.test(b));
 }
 
+/**
+ * Required dependencies from a mods.toml: each `[[dependencies.<mod>]]` block
+ * with `mandatory=true` (Forge) or `type="required"` (NeoForge).
+ */
+function tomlRequired(text: string): string[] {
+	return tomlBlocks(text, /^dependencies\./)
+		.filter((b) => /^\s*mandatory\s*=\s*true/m.test(b) || /^\s*type\s*=\s*"required"/m.test(b))
+		.flatMap((b) => tomlValues(b, 'modId'));
+}
+
 async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'enabled'>> {
 	const info: Omit<ModJar, 'fileName' | 'enabled'> = {
 		ids: [],
 		names: [],
 		clientOnly: false,
+		requires: [],
 		classes: new Set(),
 		mixinConfigs: []
 	};
@@ -177,6 +190,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.id) info.ids.push(String(meta.id));
 			if (meta.name) info.names.push(String(meta.name));
 			if (meta.environment === 'client') info.clientOnly = true;
+			if (meta.depends && typeof meta.depends === 'object') info.requires.push(...Object.keys(meta.depends));
 		} catch {
 			info.ids.push(...[...fabric.matchAll(/"id"\s*:\s*"([^"]+)"/g)].slice(0, 1).map((m) => m[1]));
 			if (/"environment"\s*:\s*"client"/.test(fabric)) info.clientOnly = true;
@@ -189,6 +203,10 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.quilt_loader?.id) info.ids.push(String(meta.quilt_loader.id));
 			if (meta.quilt_loader?.metadata?.name) info.names.push(String(meta.quilt_loader.metadata.name));
 			if (meta.minecraft?.environment === 'client') info.clientOnly = true;
+			for (const dep of meta.quilt_loader?.depends ?? []) {
+				const id = typeof dep === 'string' ? dep : dep?.optional ? null : dep?.id;
+				if (id) info.requires.push(String(id).replace(/^.*:/, ''));
+			}
 		} catch {
 			/* malformed */
 		}
@@ -202,15 +220,20 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 				info.ids.push(...tomlValues(block, 'modId'));
 				info.names.push(...tomlValues(block, 'displayName'));
 			}
+			info.requires.push(...tomlRequired(text));
 		}
 	}
 	const mcmod = await readText(zip, 'mcmod.info');
 	if (mcmod) {
 		info.ids.push(...[...mcmod.matchAll(/"modid"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.names.push(...[...mcmod.matchAll(/"name"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
+		for (const list of mcmod.matchAll(/"requiredMods"\s*:\s*\[([^\]]*)\]/g)) {
+			info.requires.push(...[...list[1].matchAll(/"([^"@]+)/g)].map((m) => m[1]));
+		}
 	}
 	info.ids = [...new Set(info.ids.map((s) => s.toLowerCase()))];
 	info.names = [...new Set(info.names)];
+	info.requires = [...new Set(info.requires.map((s) => s.toLowerCase()))];
 	return info;
 }
 

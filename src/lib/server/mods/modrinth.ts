@@ -43,6 +43,8 @@ type MrProject = {
 	loaders: string[];
 	game_versions: string[];
 	team: string;
+	/** A list, e.g. ["client_only"], despite the singular name. */
+	environment?: string[] | string;
 };
 
 type MrVersion = {
@@ -88,8 +90,14 @@ function toHit(project: MrProject | MrSearchResponse['hits'][number]): SearchHit
 		// lumped into `categories` there, while a full project fetch carries a
 		// real `loaders` array. Two different shapes for the same fact.
 		loaders: isSearch ? [] : project.loaders.map((l) => l.toLowerCase()),
-		gameVersions: isSearch ? project.versions : project.game_versions
+		gameVersions: isSearch ? project.versions : project.game_versions,
+		...(isSearch ? {} : { clientOnly: isClientOnly(project.environment) })
 	};
+}
+
+/** Modrinth's verdict that a project does nothing on a dedicated server. */
+export function isClientOnly(environment: string[] | string | undefined): boolean {
+	return ([] as string[]).concat(environment ?? []).includes('client_only');
 }
 
 function toVersion(version: MrVersion): ProjectVersion {
@@ -309,8 +317,10 @@ export async function versionsFromHashes(
 
 /**
  * Fetches several projects at once, for naming a batch of identified files.
- * Client-only projects are dropped, same reasoning as the search filter -
- * naming a mod is not the same as saying it belongs on a dedicated server.
+ * Client-only projects are kept, flagged `clientOnly`: they were meant to be
+ * dropped (left as manual), but `environment` is a list and the old string
+ * comparison never matched - and a client-only jar on a server is exactly
+ * what needs a name and a flag.
  */
 export async function projectsByIds(ids: string[]): Promise<Map<string, SearchHit>> {
 	const out = new Map<string, SearchHit>();
@@ -318,14 +328,10 @@ export async function projectsByIds(ids: string[]): Promise<Map<string, SearchHi
 	if (unique.length === 0) return out;
 
 	try {
-		type MrProjectWithEnv = MrProject & { environment?: string };
-		const projects = await fetchJson<MrProjectWithEnv[]>(
+		const projects = await fetchJson<MrProject[]>(
 			`${API}/projects?ids=${encodeURIComponent(JSON.stringify(unique))}`
 		);
-		for (const project of projects ?? []) {
-			if (project.environment && EXCLUDED_ENVIRONMENTS.includes(project.environment)) continue;
-			out.set(project.id, toHit(project));
-		}
+		for (const project of projects ?? []) out.set(project.id, toHit(project));
 	} catch {
 		// Fall back to leaving them unnamed; the caller tracks them as manual.
 	}
