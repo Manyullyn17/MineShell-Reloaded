@@ -85,6 +85,10 @@
 	// blank/default before the effect above re-syncs everything to the
 	// actual saved values a moment later. Keeping every other default
 	// behaviour, just not that part.
+	let commandMode = $state<'interval' | 'daily'>('interval');
+	const formatTime = (at: number) =>
+		new Date(at).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
 	function keepValues() {
 		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
 			await update({ reset: false });
@@ -538,6 +542,85 @@
 </section>
 
 <section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>Scheduled commands</h2>
+			<p>
+				Console commands run on a schedule, e.g. <code>say Vote for the server!</code> every hour or
+				<code>save-all</code> at night. They run only while the server is running; a stopped server's
+				commands wait for their next slot.
+			</p>
+		</div>
+	</div>
+	{#if data.scheduledCommands.length}
+		<table class="commands">
+			<thead>
+				<tr><th>Command</th><th>When</th><th>Next</th><th>Last run</th><th><span class="visually-hidden">Actions</span></th></tr>
+			</thead>
+			<tbody>
+				{#each data.scheduledCommands as c (c.id)}
+					<tr class:paused={!c.enabled}>
+						<td class="mono small wrap">{c.command}</td>
+						<td class="small nowrap">
+							{c.everyMinutes
+								? c.everyMinutes % 60 === 0
+									? `every ${c.everyMinutes / 60} h`
+									: `every ${c.everyMinutes} min`
+								: `daily at ${c.dailyTime}`}
+						</td>
+						<td class="small nowrap">{c.enabled && c.nextAt ? formatTime(c.nextAt) : 'paused'}</td>
+						<td class="small">
+							{#if c.lastRunAt}
+								{formatTime(c.lastRunAt)}
+								<div class="faint mono wrap" class:warn-text={c.lastResult?.startsWith('Failed')}>{c.lastResult}</div>
+							{:else}
+								<span class="faint">never</span>
+							{/if}
+						</td>
+						<td class="right nowrap">
+							<form method="POST" action="?/toggleCommand" use:enhance class="inline">
+								<input type="hidden" name="id" value={c.id} />
+								<input type="hidden" name="enabled" value={String(!c.enabled)} />
+								<button class="button-quiet" type="submit">{c.enabled ? 'Pause' : 'Resume'}</button>
+							</form>
+							<form method="POST" action="?/removeCommand" use:enhance class="inline">
+								<input type="hidden" name="id" value={c.id} />
+								<button class="button-quiet" type="submit">Remove</button>
+							</form>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+	<form method="POST" action="?/addCommand" use:enhance class="add-command">
+		<div class="field grow">
+			<label for="sched-command">Command</label>
+			<input id="sched-command" name="command" class="mono" placeholder="say Remember to vote!" required />
+		</div>
+		<div class="field">
+			<label for="sched-mode">When</label>
+			<select id="sched-mode" name="mode" bind:value={commandMode}>
+				<option value="interval">Every</option>
+				<option value="daily">Daily at</option>
+			</select>
+		</div>
+		{#if commandMode === 'daily'}
+			<div class="field">
+				<label for="sched-time">Time</label>
+				<input id="sched-time" name="dailyTime" type="time" value="04:00" required />
+			</div>
+		{:else}
+			<div class="field">
+				<label for="sched-minutes">Minutes</label>
+				<input id="sched-minutes" name="everyMinutes" type="number" min="1" value="60" required />
+			</div>
+		{/if}
+		<button type="submit">Add</button>
+	</form>
+</section>
+
+<section class="panel">
 	<h2>Console</h2>
 	<form method="POST" action="?/console" use:enhance={keepValues}>
 		<ConsoleFields bind:values={sv} />
@@ -546,6 +629,29 @@
 </section>
 
 <style>
+	.commands {
+		margin-bottom: var(--space-3);
+	}
+
+	.commands .paused td {
+		opacity: 0.6;
+	}
+
+	.commands form.inline {
+		display: inline;
+	}
+
+	.add-command {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		align-items: flex-end;
+	}
+
+	.add-command .grow {
+		flex: 1 1 16rem;
+	}
+
 	.warn-text {
 		color: var(--warning);
 	}

@@ -55,6 +55,7 @@ import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
 import { snapshotStep } from './snapshots';
 import { installJava, type JavaVendor } from './javadownload';
+import { copyScheduledCommands } from './scheduledcommands';
 
 export class InstanceError extends Error {}
 
@@ -1271,6 +1272,7 @@ export async function cloneInstance(
 				for (const { id: _rowId, ...row } of rows) {
 					db.insert(instanceMods).values({ ...row, instanceId: id }).run();
 				}
+				copyScheduledCommands(source.id, id);
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

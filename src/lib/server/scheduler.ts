@@ -4,6 +4,7 @@ import { serverInstances, type ServerInstance } from './db/schema';
 import { audit, listInstances, onlinePlayers, rconPassword, restart } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
+import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -141,6 +142,7 @@ async function checkAll(): Promise<void> {
 			console.error(`[mineshell] scheduler error for ${instance.id}:`, err);
 		}
 	}
+	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 }
 
 export function startScheduler(): void {
@@ -154,6 +156,7 @@ export function startScheduler(): void {
 			}
 		}
 	}
+	rollForwardMissed();
 	timer = setInterval(() => void checkAll(), CHECK_INTERVAL_MS);
 	timer.unref?.();
 }

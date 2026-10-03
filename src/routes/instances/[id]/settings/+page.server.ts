@@ -22,6 +22,13 @@ import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
 import { applyPackChange } from '$lib/server/packchange';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
 import { isJavaVendor } from '$lib/server/javadownload';
+import {
+	addScheduledCommand,
+	cleanCommand,
+	listScheduledCommands,
+	removeScheduledCommand,
+	setScheduledCommandEnabled
+} from '$lib/server/scheduledcommands';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
 import { portConflict } from '$lib/server/ports';
@@ -115,7 +122,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			: null,
 		// Streamed: scanning means opening every mod jar.
 		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null,
-		snapshotPrompt: await snapshotPrompt(instance.path)
+		snapshotPrompt: await snapshotPrompt(instance.path),
+		scheduledCommands: listScheduledCommands(instance.id)
 	};
 };
 
@@ -366,6 +374,37 @@ export const actions: Actions = {
 
 		await syncPortsToProperties(requireInstance(instance.id));
 		return { ok: true, message: 'Saved and written to server.properties. Restart to apply.' };
+	},
+
+	addCommand: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const command = cleanCommand(String(form.get('command') ?? ''));
+		if (!command) return fail(400, { ok: false, message: 'Enter the command to run.' });
+		if (command.length > 500) return fail(400, { ok: false, message: 'That command is too long.' });
+		if (form.get('mode') === 'daily') {
+			const time = String(form.get('dailyTime') ?? '');
+			if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return fail(400, { ok: false, message: 'Pick a time of day.' });
+			addScheduledCommand(instance.id, command, { dailyTime: time });
+		} else {
+			const minutes = Number(form.get('everyMinutes'));
+			if (!Number.isInteger(minutes) || minutes < 1 || minutes > 7 * 24 * 60) {
+				return fail(400, { ok: false, message: 'Run it every 1 minute to 7 days.' });
+			}
+			addScheduledCommand(instance.id, command, { everyMinutes: minutes });
+		}
+		return { ok: true, message: `Scheduled "${command}". It runs while the server is running.` };
+	},
+
+	removeCommand: async ({ request, params }) => {
+		removeScheduledCommand(params.id, Number((await request.formData()).get('id')));
+		return { ok: true, message: 'Scheduled command removed.' };
+	},
+
+	toggleCommand: async ({ request, params }) => {
+		const form = await request.formData();
+		setScheduledCommandEnabled(params.id, Number(form.get('id')), form.get('enabled') === 'true');
+		return { ok: true, message: form.get('enabled') === 'true' ? 'Scheduled command on.' : 'Scheduled command paused.' };
 	},
 
 	restarts: async ({ request, params }) => {

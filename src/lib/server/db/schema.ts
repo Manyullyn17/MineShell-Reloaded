@@ -171,6 +171,31 @@ export const settings = sqliteTable('settings', {
 	value: text('value').notNull()
 });
 
+/** Console commands on a schedule (lib/server/scheduledcommands.ts). */
+export const scheduledCommands = sqliteTable(
+	'scheduled_commands',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		command: text('command').notNull(),
+		/** Exactly one of everyMinutes / dailyTime (HH:MM, server-local) is set. */
+		everyMinutes: integer('every_minutes'),
+		dailyTime: text('daily_time'),
+		enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+		nextAt: integer('next_at'),
+		lastRunAt: integer('last_run_at'),
+		lastResult: text('last_result'),
+		createdAt: integer('created_at').notNull()
+	},
+	(t) => ({
+		byInstance: index('scheduled_commands_instance_idx').on(t.instanceId)
+	})
+);
+
+export type ScheduledCommand = typeof scheduledCommands.$inferSelect;
+
 /**
  * Operations in progress, one per instance at most; see lib/server/operations.ts.
  * Deleted in the same transaction that commits the operation's result.
