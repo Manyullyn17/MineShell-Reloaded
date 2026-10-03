@@ -131,6 +131,21 @@ describe('applyEdits', () => {
 		expect(() => applyEdits(file, [{ op: 'set', path: ['Ench', 0, 'lvl'], value: '1', type: 'int' }])).not.toThrow();
 	});
 
+	it('sets a list of plain values from one entry per line, in the list’s own type', () => {
+		const file = player(3955, ['Tags', list(s('old'))], ['Levels', list({ type: 'short', value: 1 })], ['Empty', list()], ['Deep', list(c(['x', b(1)]))]);
+		applyEdits(file, [
+			{ op: 'setList', path: ['Tags'], values: ['vip', '', 'builder'] },
+			{ op: 'setList', path: ['Levels'], values: ['4', ' 9 '] },
+			{ op: 'setList', path: ['Empty'], values: ['first'] }
+		]);
+		const root = reread(file).root;
+		expect(root.value[1][1]).toEqual(list(s('vip'), s('builder')));
+		expect(root.value[2][1]).toEqual(list({ type: 'short', value: 4 }, { type: 'short', value: 9 }));
+		expect(root.value[3][1]).toEqual(list(s('first')));
+		expect(() => applyEdits(file, [{ op: 'setList', path: ['Levels'], values: ['99999'] }])).toThrow(PlayerDataError);
+		expect(() => applyEdits(file, [{ op: 'setList', path: ['Deep'], values: ['x'] }])).toThrow(/plain values/);
+	});
+
 	it('writes items in the file’s own format', () => {
 		const legacy = player(1343, ['Inventory', list()]);
 		applyEdits(legacy, [{ op: 'item', section: 'main', slot: 4, id: 'minecraft:wool', count: 3, damage: 14 }]);

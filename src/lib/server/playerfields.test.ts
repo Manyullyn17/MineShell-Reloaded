@@ -68,6 +68,22 @@ describe('effects', () => {
 });
 
 describe('customFieldViews', () => {
+	it('shows a list of plain values as one entry per line, but not a list of compounds', () => {
+		const root = snbt('{Tags:["vip","builder"],Unlocked:[3,7],Research:[{key:"WARP"}],Nothing:[]}');
+		const views = customFieldViews(root, [
+			{ id: 1, label: 'Tags', path: ['Tags'], kind: 'list' },
+			{ id: 2, label: 'Unlocked', path: ['Unlocked'], kind: 'list' },
+			{ id: 3, label: 'Research', path: ['Research'], kind: 'list' },
+			{ id: 4, label: 'Nothing yet', path: ['Nothing'], kind: 'list' }
+		]);
+		expect(views.map((v) => [v.label, v.field?.value ?? null, v.problem])).toEqual([
+			['Tags', 'vip\nbuilder', null],
+			['Unlocked', '3\n7', null],
+			['Research', null, 'There is a list of compound there now, which a list field cannot show.'],
+			['Nothing yet', '', null]
+		]);
+	});
+
 	it('resolves each mapped field, and says why one no longer fits', () => {
 		const root = snbt('{ManaData:{mana:120f,unlocked:1b},Tags:["a"]}');
 		const views = customFieldViews(root, [
@@ -80,7 +96,7 @@ describe('customFieldViews', () => {
 			['Mana', '120', null],
 			['Unlocked', true, null],
 			['Gone', null, 'This player’s data has nothing there.'],
-			['Wrong kind', null, 'There is a list there now, which a number field cannot show.']
+			['Wrong kind', null, 'There is a list of string there now, which a number field cannot show.']
 		]);
 	});
 });

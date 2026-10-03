@@ -12,7 +12,8 @@ import type { Path, TagType } from '$lib/shared/nbt';
  * where a value moved between versions, each place is tried in turn.
  */
 
-export type FieldKind = 'number' | 'checkbox' | 'select' | 'text';
+/** `list`: a list of plain values (text, numbers), one entry per line. */
+export type FieldKind = 'number' | 'checkbox' | 'select' | 'text' | 'list';
 
 export type FieldView = {
 	key: string;
@@ -93,10 +94,16 @@ export function tagAt(root: Tag, path: Path): Tag | undefined {
 }
 
 const NUMERIC = new Set<TagType>(['byte', 'short', 'int', 'long', 'float', 'double']);
+/** What a list field can hold: plain values ('end' is a list with nothing in it yet). */
+export const LIST_ITEMS = new Set<TagType>([...NUMERIC, 'string', 'end']);
 
 /** A primitive's value for an input, or null for a tag no input can edit. */
 function inputValue(tag: Tag, kind: FieldKind): string | boolean | null {
 	if (kind === 'checkbox') return NUMERIC.has(tag.type) ? num(tag) !== 0 : null;
+	if (kind === 'list') {
+		if (tag.type !== 'list' || !LIST_ITEMS.has(tag.itemType)) return null;
+		return tag.value.map((v) => inputValue(v, 'text')).join('\n');
+	}
 	if (tag.type === 'float') return String(shortestFloat(tag.value));
 	if (tag.type === 'long') return String(tag.value);
 	if (tag.type === 'byteArray' || tag.type === 'intArray' || tag.type === 'longArray') return tag.value.join(', ');
@@ -113,7 +120,9 @@ function fieldFor(root: Compound, def: FieldDef): FieldView | null {
 		const kind = def.key === 'dimension' && tag.type !== 'string' ? 'select' : (def.kind ?? (tag.type === 'string' ? 'text' : 'number'));
 		const value = inputValue(tag, kind);
 		if (value === null) return null;
-		return { key: def.key, label: def.label, group: def.group, kind, path, type: tag.type, value, options, hint: def.hint };
+		// The dimension's hint names text ids, which only the 1.16+ text box takes.
+		const hint = def.key === 'dimension' && kind === 'select' ? undefined : def.hint;
+		return { key: def.key, label: def.label, group: def.group, kind, path, type: tag.type, value, options, hint };
 	}
 	return null;
 }
@@ -241,8 +250,8 @@ export function addEffect(root: Compound, dataVersion: number | null, effect: { 
 
 // ---------------------------------------------------------- mapped fields ---
 
-export type CustomKind = 'number' | 'checkbox' | 'text';
-const KINDS: CustomKind[] = ['number', 'checkbox', 'text'];
+export type CustomKind = 'number' | 'checkbox' | 'text' | 'list';
+const KINDS: CustomKind[] = ['number', 'checkbox', 'text', 'list'];
 
 export type CustomField = { id: number; label: string; path: Path; kind: CustomKind };
 
@@ -312,7 +321,8 @@ export function customFieldViews(root: Compound, fields: CustomField[]): CustomF
 		if (!tag) return { ...f, field: null, problem: 'This player’s data has nothing there.' };
 		const value = inputValue(tag, f.kind);
 		if (value === null || (f.kind === 'number' && !NUMERIC.has(tag.type))) {
-			return { ...f, field: null, problem: `There is a ${tag.type} there now, which a ${f.kind} field cannot show.` };
+			const what = tag.type === 'list' ? `a list of ${tag.itemType}` : `a ${tag.type}`;
+			return { ...f, field: null, problem: `There is ${what} there now, which a ${f.kind} field cannot show.` };
 		}
 		return {
 			...f,

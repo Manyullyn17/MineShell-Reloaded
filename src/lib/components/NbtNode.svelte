@@ -69,6 +69,8 @@
 				: String(tag.value)
 	);
 
+	/** Lists a field can show: plain values, or nothing yet. */
+	const PLAIN = ['byte', 'short', 'int', 'long', 'float', 'double', 'string', 'end'];
 	const PRIMITIVES = ['string', 'byte', 'short', 'int', 'long', 'float', 'double', 'byteArray', 'intArray', 'longArray'];
 	const ADDABLE = ['snbt', ...PRIMITIVES, 'compound', 'list'];
 	const listType = $derived(tag.type === 'list' && tag.value.length ? tag.itemType : null);
@@ -141,7 +143,7 @@
 			</form>
 		{:else}
 			<span class="value mono" class:muted={container} class:hit={marked && !container && shown.toLowerCase().includes(term)}>{shown}</span>
-			{#if fieldAction && !container && tag.type !== 'list'}
+			{#if fieldAction && (!container || (tag.type === 'list' && PLAIN.includes(tag.itemType)))}
 				<button type="button" class="button-quiet field-action" onclick={() => fieldAction.run(path, tag, name)}>{fieldAction.label}</button>
 			{/if}
 			{#if !locked}

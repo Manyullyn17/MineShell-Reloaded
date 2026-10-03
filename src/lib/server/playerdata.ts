@@ -23,7 +23,7 @@ import {
 	type Section,
 	type Style
 } from './playeritems';
-import { addEffect, playerEffects, playerFields, type EffectsView, type FieldView } from './playerfields';
+import { addEffect, LIST_ITEMS, playerEffects, playerFields, type EffectsView, type FieldView } from './playerfields';
 import type { Path, TreeTag } from '$lib/shared/nbt';
 
 export type { Path, TreeTag };
@@ -263,7 +263,9 @@ export type Edit =
 	| { op: 'containerRemove'; list: Path; slot: number }
 	/** Name, lore, enchantments, unbreakable, durability of the item at `item`. */
 	| { op: 'itemFields'; item: Path; fields: Partial<Omit<ItemFields, 'stored'>> }
-	| { op: 'addEffect'; id: string; level: number; seconds: number };
+	| { op: 'addEffect'; id: string; level: number; seconds: number }
+	/** A list of plain values, all entries at once (a list field). */
+	| { op: 'setList'; path: Path; values: string[] };
 
 const SECTIONS: Section[] = ['main', 'armor', 'offhand', 'ender'];
 const isPath = (p: unknown): p is Path =>
@@ -303,6 +305,9 @@ export function parseEdits(raw: unknown): Edit[] {
 			case 'containerRemove':
 				if (!isPath(e.list) || !Number.isInteger(e.slot)) throw bad();
 				return { op: 'containerRemove', list: e.list, slot: e.slot };
+			case 'setList':
+				if (!isPath(e.path) || !Array.isArray(e.values) || !e.values.every((v: unknown) => typeof v === 'string')) throw bad();
+				return { op: 'setList', path: e.path, values: e.values };
 			case 'addEffect':
 				if (typeof e.id !== 'string' || typeof e.level !== 'number' || typeof e.seconds !== 'number') throw bad();
 				return { op: 'addEffect', id: e.id, level: e.level, seconds: e.seconds };
@@ -583,6 +588,16 @@ export function applyEdits(file: NbtFile, edits: Edit[]): void {
 			case 'addEffect':
 				addEffect(root, dataVersion, edit);
 				break;
+			case 'setList': {
+				const { tag } = locate(root, edit.path);
+				if (tag.type !== 'list' || !LIST_ITEMS.has(tag.itemType)) throw new PlayerDataError('That is not a list of plain values any more. Reload the page.');
+				// An empty list has no type yet: text, then.
+				const type = tag.itemType === 'end' ? 'string' : tag.itemType;
+				const values = edit.values.filter((v) => v.trim() !== '');
+				tag.value = values.map((v) => parseValue(type, type === 'string' ? v : v.trim()));
+				tag.itemType = tag.value.length ? type : 'end';
+				break;
+			}
 			case 'itemFields': {
 				const { tag } = locate(root, edit.item);
 				if (tag.type !== 'compound' || !child(tag, 'id')) throw new PlayerDataError('That item is no longer there. Reload the page and try again.');

@@ -61,7 +61,11 @@
 		event.preventDefault();
 		if (changed.length === 0) return;
 		await save(
-			changed.map((f) => ({ op: 'set', path: f.path, value: f.kind === 'checkbox' ? (values[f.key] ? '1' : '0') : String(values[f.key]) }))
+			changed.map((f) =>
+				f.kind === 'list'
+					? { op: 'setList', path: f.path, values: String(values[f.key]).split('\n') }
+					: { op: 'set', path: f.path, value: f.kind === 'checkbox' ? (values[f.key] ? '1' : '0') : String(values[f.key]) }
+			)
 		);
 	}
 
@@ -69,7 +73,8 @@
 	let mapping = $state<{ path: Path; label: string; kind: string } | null>(null);
 	let remapping = $state<CustomField | null>(null);
 
-	const kindFor = (tag: TreeTag) => (tag.type === 'string' ? 'text' : tag.type === 'byte' ? 'checkbox' : 'number');
+	const kindFor = (tag: TreeTag) =>
+		tag.type === 'list' ? 'list' : tag.type === 'string' ? 'text' : tag.type === 'byte' ? 'checkbox' : 'number';
 	const fieldAction = $derived(
 		locked
 			? null
@@ -78,8 +83,9 @@
 						label: `Use for “${remapping.label}”`,
 						run: async (path: Path, tag: TreeTag) => {
 							const field = remapping!;
-							// A text value cannot sit in a number field; anything else keeps the field's kind.
-							const kind = field.kind !== 'text' && tag.type === 'string' ? 'text' : field.kind;
+							// A list needs a list field, a value a value field; otherwise the field keeps its kind.
+							const kind =
+								tag.type === 'list' ? 'list' : field.kind === 'list' ? kindFor(tag) : field.kind !== 'text' && tag.type === 'string' ? 'text' : field.kind;
 							if (await post('remapField', { id: String(field.id), path: JSON.stringify(path), kind })) remapping = null;
 						}
 					}
@@ -336,7 +342,16 @@
 			<label class="check"><input type="checkbox" bind:checked={values[f.key] as boolean} disabled={locked} /> {f.label}</label>
 		{:else}
 			<label for="f-{f.key}">{f.label}</label>
-			{#if f.kind === 'select'}
+			{#if f.kind === 'list'}
+				<textarea
+					id="f-{f.key}"
+					class="mono"
+					rows={Math.min(8, String(values[f.key] ?? '').split('\n').length + 1)}
+					bind:value={values[f.key]}
+					disabled={locked}
+				></textarea>
+				<p class="hint">One entry per line.</p>
+			{:else if f.kind === 'select'}
 				<select id="f-{f.key}" bind:value={values[f.key]} disabled={locked}>
 					{#each f.options ?? [] as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
 				</select>
@@ -614,9 +629,13 @@
 			<span class="small">New field for <code>{mapping.path.join(' › ')}</code></span>
 			<input bind:value={mapping.label} aria-label="Field name" required />
 			<select bind:value={mapping.kind} aria-label="Shown as">
-				<option value="number">Number</option>
-				<option value="checkbox">Checkbox</option>
-				<option value="text">Text</option>
+				{#if mapping.kind === 'list'}
+					<option value="list">List, one entry per line</option>
+				{:else}
+					<option value="number">Number</option>
+					<option value="checkbox">Checkbox</option>
+					<option value="text">Text</option>
+				{/if}
 			</select>
 			<button class="button-primary" type="submit" disabled={busy}>Add field</button>
 			<button type="button" onclick={() => (mapping = null)}>Cancel</button>
@@ -682,6 +701,15 @@
 	.fields .field {
 		margin: 0;
 		width: 9.5rem;
+	}
+
+	.fields .field:has(textarea) {
+		width: 16rem;
+	}
+
+	.fields textarea {
+		width: 100%;
+		margin: 0;
 	}
 
 	.fields .field.check {
