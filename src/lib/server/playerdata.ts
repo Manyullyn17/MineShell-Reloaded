@@ -12,6 +12,8 @@ import {
 	LEGACY_ENCHANTMENTS,
 	PlayerDataError,
 	setContainerItem,
+	setCount,
+	setKeyedItem,
 	styleOf,
 	writeFields,
 	type ContainerView,
@@ -492,8 +494,7 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 	const item: Compound = existing ?? { type: 'compound', value: [] };
 	if (!existing && !('equipment' in home && home.equipment)) setChild(item, 'Slot', { type: 'byte', value: edit.slot });
 	setChild(item, 'id', { type: 'string', value: id });
-	if (format === 'components') setChild(item, 'count', { type: 'int', value: edit.count });
-	else setChild(item, 'Count', { type: 'byte', value: edit.count });
+	setCount(item, format === 'components' ? 'count' : 'Count', format === 'components' ? 'int' : 'byte', edit.count);
 	if (format === 'legacy') {
 		const damage = edit.damage ?? num(child(item, 'Damage')) ?? 0;
 		setChild(item, 'Damage', { type: 'short', value: integer(String(damage), 'short') });
@@ -573,8 +574,10 @@ export function applyEdits(file: NbtFile, edits: Edit[]): void {
 			case 'containerItem':
 			case 'containerRemove': {
 				const { tag, parent } = locate(root, edit.list);
-				if (tag.type !== 'list') throw new PlayerDataError('That container is no longer there. Reload the page and try again.');
-				setContainerItem(tag, parent, edit.list, edit.slot, edit.op === 'containerItem' ? edit : null, style);
+				const item = edit.op === 'containerItem' ? edit : null;
+				if (tag.type === 'list') setContainerItem(tag, parent, edit.list, edit.slot, item, style);
+				else if (tag.type === 'compound') setKeyedItem(tag, edit.slot, item, style);
+				else throw new PlayerDataError('That container is no longer there. Reload the page and try again.');
 				break;
 			}
 			case 'addEffect':

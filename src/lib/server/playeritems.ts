@@ -266,11 +266,23 @@ const SIZES: [RegExp, number][] = [
 	[/furnace$|smoker$/, 3]
 ];
 
+/** Keys an item compound has; enchantment ({id, lvl}) or attribute ({id, base}) entries have others. */
+const ITEM_KEYS = new Set(['id', 'Count', 'count', 'Slot', 'slot', 'Damage', 'tag', 'components', 'ForgeCaps']);
+
 function itemLike(tag: Tag): boolean {
 	if (tag.type !== 'compound') return false;
 	const inner = child(tag, 'item');
 	const item = inner?.type === 'compound' ? inner : tag;
-	return child(item, 'id')?.type === 'string';
+	if (child(item, 'id')?.type !== 'string') return false;
+	// A count says item; without one (1.20.5+ leaves out a count of 1), only item keys may be there.
+	return num(child(item, 'Count') ?? child(item, 'count')) !== null || item.value.every(([k]) => ITEM_KEYS.has(k));
+}
+
+/** `Slot12` or `12`: a compound keyed by slot (Thermal's satchel: `Inventory: {Slot50: {...}}`). */
+const SLOT_KEY = /^(slot)?_?(\d+)$/i;
+
+function keyedItems(tag: Tag): tag is Compound {
+	return tag.type === 'compound' && tag.value.length > 0 && tag.value.every(([k, v]) => SLOT_KEY.test(k) && itemLike(v));
 }
 
 /** The entries' own shape, or (empty list) what that kind of list uses. */
@@ -328,13 +340,16 @@ export function findContainers(tag: Compound, at: Path, style: Style, itemId: st
 				const p = [...path, key];
 				if (value.type === 'list' && isItemList(value, node, key)) {
 					found.push(container(value, node, p, key, level));
-				} else {
+				} else if (keyedItems(value)) {
+					found.push(keyedContainer(value, node, p, key, level));
+				} else if (!itemLike(value)) {
+					// An item's own contents belong to that item, shown when it is opened.
 					walk(value, p, level + 1);
 				}
 			}
 		} else if (node.type === 'list' && node.itemType === 'compound') {
 			// Lists of compounds that are not item lists can still hold some (a list of pages, each with Items).
-			node.value.forEach((v, i) => walk(v, [...path, i], level + 1));
+			node.value.forEach((v, i) => !itemLike(v) && walk(v, [...path, i], level + 1));
 		}
 	};
 	const isItemList = (list: Extract<Tag, { type: 'list' }>, parent: Compound, key: string) =>
@@ -356,6 +371,17 @@ export function findContainers(tag: Compound, at: Path, style: Style, itemId: st
 			label: containerLabel(key, path.slice(at.length), level),
 			size: shape.slotKey ? containerSize(itemId, items.map((i) => i.slot), child(parent, 'Size')) : null,
 			items
+		};
+	};
+	const keyedContainer = (items: Compound, parent: Compound, path: Path, key: string, level: number): ContainerView => {
+		const views = items.value
+			.map(([k, v]) => describeItem(v, 'container', Number(k.match(SLOT_KEY)![2]), [...path, k], style, depth + 1))
+			.filter((v): v is ItemView => !!v);
+		return {
+			path,
+			label: containerLabel(key, path.slice(at.length), level),
+			size: containerSize(itemId, views.map((v) => v.slot), child(parent, 'Size') ?? child(items, 'Size')),
+			items: views
 		};
 	};
 	walk(tag, at, 0);
@@ -393,6 +419,39 @@ export function describeItem(item: Tag, section: Section, slot: number, at: Path
 }
 
 // --------------------------------------------------------- container edits ---
+
+/** Set the count, keeping the type of one already there (stack-size mods write Count as an int). */
+export function setCount(item: Compound, key: 'Count' | 'count', type: 'byte' | 'int', count: number): void {
+	const existing = child(item, 'Count') ?? child(item, 'count');
+	const name = existing ? (child(item, 'Count') ? 'Count' : 'count') : key;
+	const kind = existing && (existing.type === 'byte' || existing.type === 'short' || existing.type === 'int') ? existing.type : type;
+	setChild(item, name, { type: kind, value: count });
+}
+
+/** An item into a slot-keyed compound (`{Slot50: {...}}`), copying the keys and count style already there. */
+export function setKeyedItem(items: Compound, slot: number, item: { id: string; count: number; damage?: number | null } | null, style: Style): void {
+	if (!Number.isInteger(slot) || slot < 0) throw new PlayerDataError('No such slot.');
+	const found = items.value.find(([k]) => Number(k.match(SLOT_KEY)?.[2]) === slot);
+	if (!item) {
+		if (!found) throw new PlayerDataError('That slot is already empty.');
+		removeChild(items, found[0]);
+		return;
+	}
+	const id = checkItem(item.id, item.count, style);
+	const sample = items.value[0]?.[1] as Compound | undefined;
+	const prefix = items.value[0]?.[0].match(/^(\D*)\d+$/)?.[1] ?? 'Slot';
+	const target: Compound = found && found[1].type === 'compound' ? found[1] : { type: 'compound', value: [] };
+	setChild(target, 'id', { type: 'string', value: id });
+	const sampleCount = sample ? (child(sample, 'Count') ?? child(sample, 'count')) : undefined;
+	setCount(
+		target,
+		sample && child(sample, 'count') ? 'count' : style.format === 'components' ? 'count' : 'Count',
+		sampleCount?.type === 'int' || (!sampleCount && style.format === 'components') ? 'int' : 'byte',
+		item.count
+	);
+	if (style.format === 'legacy') setChild(target, 'Damage', { type: 'short', value: item.damage ?? num(child(target, 'Damage')) ?? 0 });
+	if (!found) items.value.push([`${prefix}${slot}`, target]);
+}
 
 const ITEM_ID = /^[a-z0-9_.-]+:[a-zA-Z0-9_./-]+$/;
 
@@ -434,7 +493,7 @@ export function setContainerItem(
 		setChild(entry, 'item', target);
 	}
 	setChild(target, 'id', { type: 'string', value: id });
-	setChild(target, shape.countKey, { type: shape.countType, value: item.count });
+	setCount(target, shape.countKey, shape.countType, item.count);
 	if (style.format === 'legacy') setChild(target, 'Damage', { type: 'short', value: item.damage ?? num(child(target, 'Damage')) ?? 0 });
 	if (index < 0) {
 		list.itemType = 'compound';

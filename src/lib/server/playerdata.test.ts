@@ -157,6 +157,13 @@ describe('applyEdits', () => {
 		expect(view.items[0]).toMatchObject({ id: 'minecraft:netherite_sword', hasData: true });
 	});
 
+	it('keeps the type an item’s count already has (stack-size mods write an int)', () => {
+		const file = player(1343, ['Inventory', list(c(['Slot', b(0)], ['id', s('minecraft:dirt')], ['Count', i(5)], ['Damage', { type: 'short', value: 0 }]))]);
+		applyEdits(file, [{ op: 'item', section: 'main', slot: 0, id: 'minecraft:dirt', count: 64 }]);
+		const item = (reread(file).root.value[1][1] as Extract<Tag, { type: 'list' }>).value[0] as Compound;
+		expect(item.value.find(([k]) => k === 'Count')![1]).toEqual(i(64));
+	});
+
 	it('removes items and refuses bad ids, counts and slots', () => {
 		const file = player(3955, ['Inventory', list(c(['Slot', b(5)], ['id', s('minecraft:dirt')], ['count', i(1)]))]);
 		applyEdits(file, [{ op: 'removeItem', section: 'main', slot: 5 }]);

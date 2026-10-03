@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Compound, Tag } from './nbt';
 import { parseSnbt } from './snbt';
-import { describeItem, findContainers, readFields, setContainerItem, styleOf, writeFields, PlayerDataError } from './playeritems';
+import { describeItem, findContainers, readFields, setContainerItem, setKeyedItem, styleOf, writeFields, PlayerDataError } from './playeritems';
 
 const snbt = (text: string) => parseSnbt(text) as Compound;
 const LEGACY = styleOf(1343);
@@ -84,6 +84,34 @@ describe('containers', () => {
 		// A Forge item handler: {Items:[{Slot,id,Count}], Size} - empty counts too, its Size says so.
 		const backpack = describeItem(snbt('{id:"travelersbackpack:standard",Count:1b,tag:{Inventory:{Items:[],Size:45}}}'), 'main', 3, ['y'], FLAT)!;
 		expect(backpack.containers).toMatchObject([{ label: 'Inventory', size: 45, items: [] }]);
+	});
+
+	it('reads a slot-keyed compound (Thermal’s satchel) as one container, not the lists inside its items', () => {
+		const satchel = describeItem(
+			snbt('{id:"thermalexpansion:satchel",Count:1,Damage:4s,tag:{Inventory:{Slot50:{id:"projecte:philosophers_stone",Count:1,Damage:0s},Slot21:{id:"enderio:item_dark_steel_pickaxe",Count:1,Damage:0s,tag:{inventory:[{id:"minecraft:air",Count:2}]}}},Filter:[{id:"minecraft:stone",Count:1b,Damage:0s,Slot:0b}]}}'),
+			'main', 16, ['Inventory', 16], LEGACY
+		)!;
+		expect(satchel.containers.map((c) => [c.label, c.size, c.items.map((i) => [i.slot, i.id])])).toEqual([
+			['Inventory', 54, [[50, 'projecte:philosophers_stone'], [21, 'enderio:item_dark_steel_pickaxe']]],
+			['Filter', 9, [[0, 'minecraft:stone']]]
+		]);
+		// The pickaxe's own list is the pickaxe's, shown when it is opened.
+		expect(satchel.containers[0].items[1].containers.map((c) => c.label)).toEqual(['inventory']);
+	});
+
+	it('does not take enchantment or attribute lists for item lists', () => {
+		const sword = describeItem(snbt('{id:"minecraft:diamond_sword",Count:1b,tag:{Enchantments:[{id:"minecraft:sharpness",lvl:5s}]}}'), 'main', 0, ['x'], FLAT)!;
+		expect(sword.containers).toEqual([]);
+		expect(findContainers(snbt('{attributes:[{id:"minecraft:max_health",base:20d}]}'), [], COMPONENTS, '', 0)).toEqual([]);
+	});
+
+	it('adds to a slot-keyed compound in the style of what is there, keeping an int Count', () => {
+		const items = snbt('{Slot2:{id:"minecraft:dirt",Count:5,Damage:0s}}');
+		setKeyedItem(items, 7, { id: 'minecraft:stone', count: 3 }, LEGACY);
+		setKeyedItem(items, 2, { id: 'minecraft:dirt', count: 64 }, LEGACY);
+		expect(items).toEqual(snbt('{Slot2:{id:"minecraft:dirt",Count:64,Damage:0s},Slot7:{id:"minecraft:stone",Count:3,Damage:0s}}'));
+		setKeyedItem(items, 7, null, LEGACY);
+		expect(items.value.map(([k]) => k)).toEqual(['Slot2']);
 	});
 
 	it('finds mod slots in the player file, skipping what the page already shows', () => {
