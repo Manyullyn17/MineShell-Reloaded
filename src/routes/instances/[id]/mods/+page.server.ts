@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { requireInstance, summarise } from '$lib/server/instances';
 import {
 	deleteMod,
-	getProvider,
+	getModProvider,
 	installModVersion,
 	listInstanceMods,
 	modsDir,
@@ -117,10 +117,11 @@ export const actions: Actions = {
 		}
 
 		try {
-			const provider = getProvider(source);
+			const provider = getModProvider(source);
+			const context = { minecraftVersion: instance.minecraftVersion };
 			const [project, version] = await Promise.all([
 				provider.getProject(projectId),
-				provider.getVersion(projectId, versionId)
+				provider.getVersion(projectId, versionId, context)
 			]);
 
 			const installed = [
@@ -147,7 +148,7 @@ export const actions: Actions = {
 				try {
 					const [depProject, depVersion] = await Promise.all([
 						provider.getProject(depProjectId),
-						provider.getVersion(depProjectId, depVersionId)
+						provider.getVersion(depProjectId, depVersionId, context)
 					]);
 					installed.push(
 						await installModVersion(

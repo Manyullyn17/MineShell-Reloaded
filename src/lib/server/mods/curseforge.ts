@@ -1,4 +1,4 @@
-import { curseforgeProvider as mirrorProvider } from './modpacksch';
+import { curseforgeProvider as mirrorProvider, curseforgeModProvider as mirrorModProvider } from './modpacksch';
 import * as official from './curseforge-official';
 import { CurseforgeAuthError } from './curseforge-official';
 import { curseforgeKeyConfigured, curseforgeKeyValid, markCurseforgeKeyInvalid } from '../curseforge';
@@ -99,5 +99,30 @@ export const curseforgeProvider: ModProvider = {
 			() => official.filterGroups(kind),
 			() => mirrorProvider.filterGroups!(kind)
 		);
+	}
+};
+
+/**
+ * Single mods. Files always come from the mirror: the official API's
+ * downloadUrl is null for every project that opted out of third-party
+ * downloads, and its file list ignores the loader. With a working key the
+ * official search (real paging and filters) and changelogs are used, with
+ * the numeric id as slug so both paths store the same mod the same way.
+ */
+export const curseforgeModProvider: ModProvider = {
+	...mirrorModProvider,
+
+	async search(query: SearchQuery): Promise<SearchHit[]> {
+		return withFallback(
+			curseforgeKeyValid(),
+			async () => (await official.search({ ...query, kind: 'mod' })).map((hit) => ({ ...hit, slug: hit.id })),
+			() => mirrorModProvider.search(query)
+		);
+	},
+
+	async getVersion(projectId, versionId, context): Promise<ProjectVersion> {
+		const version = await mirrorModProvider.getVersion(projectId, versionId, context);
+		if (!curseforgeKeyValid()) return version;
+		return { ...version, changelog: await official.fetchChangelog(projectId, versionId) };
 	}
 };

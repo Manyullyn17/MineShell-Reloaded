@@ -160,7 +160,9 @@ start, stop, restart, reset-failed — clears the entry.
 
 `ModProvider` is one interface with three implementations: Modrinth (its own API),
 CurseForge and FTB (both through `api.modpacks.ch`). Adding a source means implementing
-search, project, versions and version, and adding it to the registry.
+search, project, versions and version, and adding it to the registry. Packs and single
+mods have separate registries (`getProvider` / `getModProvider`): Modrinth serves both
+from one API, but CurseForge mods come from different mirror endpoints than its packs.
 
 Pack import detects the format from what is inside the archive: `modrinth.index.json`
 means an mrpack, `manifest.json` means CurseForge. Both resolve to the same internal

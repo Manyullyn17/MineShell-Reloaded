@@ -6,12 +6,12 @@ import { instanceMods, mods as modsTable, type ServerInstance } from '../db/sche
 import { downloadFile, hashFile } from '../download';
 import { modrinthProvider, projectsByIds, versionsFromHashes } from './modrinth';
 import { ftbProvider } from './modpacksch';
-import { curseforgeProvider } from './curseforge';
+import { curseforgeModProvider, curseforgeProvider } from './curseforge';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeJoin } from '../files';
 
 export * from './types';
-export { modrinthProvider, curseforgeProvider, ftbProvider };
+export { modrinthProvider, curseforgeProvider, curseforgeModProvider, ftbProvider };
 
 export const PROVIDERS: Record<string, ModProvider> = {
 	modrinth: modrinthProvider,
@@ -21,6 +21,21 @@ export const PROVIDERS: Record<string, ModProvider> = {
 
 export function getProvider(id: string): ModProvider {
 	const provider = PROVIDERS[id];
+	if (!provider) throw new Error(`Unknown mod source "${id}".`);
+	return provider;
+}
+
+/**
+ * Sources for single mods. Modrinth serves packs and mods from one API;
+ * CurseForge mods come from different mirror endpoints than its packs.
+ */
+export const MOD_PROVIDERS: Record<string, ModProvider> = {
+	modrinth: modrinthProvider,
+	curseforge: curseforgeModProvider
+};
+
+export function getModProvider(id: string): ModProvider {
+	const provider = MOD_PROVIDERS[id];
 	if (!provider) throw new Error(`Unknown mod source "${id}".`);
 	return provider;
 }

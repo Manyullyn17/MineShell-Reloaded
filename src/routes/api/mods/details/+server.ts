@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getProvider } from '$lib/server/mods';
+import { getModProvider, getProvider } from '$lib/server/mods';
 
 /**
  * Full description and changelog for one project/version.
@@ -20,10 +20,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const source = url.searchParams.get('source') ?? 'modrinth';
 	const projectId = url.searchParams.get('id');
 	const versionId = url.searchParams.get('versionId');
+	const kind = url.searchParams.get('kind') === 'modpack' ? 'modpack' : 'mod';
 	if (!projectId) error(400, 'A project id is required.');
 
 	try {
-		const provider = getProvider(source);
+		const provider = kind === 'mod' ? getModProvider(source) : getProvider(source);
 		const project = await provider.getProject(projectId);
 
 		const description = (await provider.description?.(projectId)) ?? null;
@@ -32,9 +33,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		// Every provider's getVersion() already carries the changelog (a
 		// second, changelog-only request for the version this app already
 		// needs for gameVersions/loaders would be redundant).
+		// A version the source cannot look up by id alone (an older CurseForge
+		// mod file) just shows no changelog rather than failing the description.
 		if (versionId) {
-			const version = await provider.getVersion(projectId, versionId);
-			changelog = version.changelog?.trim() || null;
+			const version = await provider.getVersion(projectId, versionId).catch(() => null);
+			changelog = version?.changelog?.trim() || null;
 		}
 
 		return json({

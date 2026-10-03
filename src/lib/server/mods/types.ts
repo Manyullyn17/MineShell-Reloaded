@@ -108,7 +108,12 @@ export interface ModProvider {
 		id: string,
 		filter?: { minecraftVersion?: string; loader?: string }
 	): Promise<ProjectVersion[]>;
-	getVersion(projectId: string, versionId: string): Promise<ProjectVersion>;
+	/**
+	 * `context` helps a provider that cannot look a version up by id alone:
+	 * the CurseForge mirror only lists a mod's newest files, so an older one
+	 * is found by paging through that Minecraft version's files.
+	 */
+	getVersion(projectId: string, versionId: string, context?: { minecraftVersion?: string }): Promise<ProjectVersion>;
 	/** The project's full description, only fetched when a user asks to read it. */
 	description?(id: string): Promise<string | null>;
 	/**

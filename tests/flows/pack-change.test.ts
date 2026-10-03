@@ -48,7 +48,7 @@ vi.mock('$lib/server/mods', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/server/mods')>();
 	return {
 		...actual,
-		getProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getProvider(id)),
+		getModProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getModProvider(id)),
 		syncMods: (...args: Parameters<typeof actual.syncMods>) =>
 			syncControl.fail ? Promise.reject(new Error('mod index broke')) : actual.syncMods(...args)
 	};

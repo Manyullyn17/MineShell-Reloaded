@@ -51,6 +51,7 @@
 	}
 	let {
 		source,
+		kind = 'mod',
 		projectId,
 		versionId = null,
 		versionLabel = '',
@@ -58,6 +59,8 @@
 		onClose
 	}: {
 		source: string;
+		/** CurseForge mods and packs are looked up through different endpoints. */
+		kind?: 'mod' | 'modpack';
 		projectId: string;
 		versionId?: string | null;
 		versionLabel?: string;
@@ -89,7 +92,7 @@
 	});
 
 	$effect(() => {
-		const params = new URLSearchParams({ source, id: projectId });
+		const params = new URLSearchParams({ source, kind, id: projectId });
 		if (versionId) params.set('versionId', versionId);
 
 		let cancelled = false;

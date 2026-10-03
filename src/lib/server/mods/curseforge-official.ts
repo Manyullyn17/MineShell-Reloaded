@@ -159,7 +159,7 @@ function classIdFor(kind: 'mod' | 'modpack' | undefined): number {
 	return kind === 'mod' ? CLASS_ID.mod : CLASS_ID.modpack;
 }
 
-async function fetchChangelog(modId: string, fileId: string): Promise<string | null> {
+export async function fetchChangelog(modId: string, fileId: string): Promise<string | null> {
 	try {
 		const res = await cfFetch<{ data: string }>(`/mods/${modId}/files/${fileId}/changelog`);
 		return res.data?.trim() || null;

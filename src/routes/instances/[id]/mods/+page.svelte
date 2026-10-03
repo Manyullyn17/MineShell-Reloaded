@@ -24,6 +24,11 @@
 	);
 
 	// ---- mod browser
+	const sources = [
+		{ id: 'modrinth', label: 'Modrinth' },
+		{ id: 'curseforge', label: 'CurseForge' }
+	];
+	let source = $state('modrinth');
 	let term = $state('');
 	let searching = $state(false);
 	let searchError = $state('');
@@ -98,27 +103,57 @@
 		}
 	});
 
+	// Results, the picked mod and categories belong to one source; the loader
+	// selection means the same thing on both and is kept. Searching is left
+	// to the user, as on first opening the browser.
+	// svelte-ignore state_referenced_locally
+	let lastSource = source;
 	$effect(() => {
+		const current = source;
+		if (current !== lastSource) {
+			lastSource = current;
+			hits = [];
+			selected = null;
+			versions = [];
+			versionId = '';
+			searchError = '';
+			filterSelections = { loaders: filterSelections.loaders ?? [] };
+		}
+	});
+
+	$effect(() => {
+		const currentSource = source;
 		loadingFilters = true;
-		fetch('/api/mods/filters?source=modrinth&kind=mod')
+		let cancelled = false;
+		fetch(`/api/mods/filters?source=${currentSource}&kind=mod`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error('lookup failed'))))
 			.then((body) => {
-				filterGroups = body.groups ?? [];
+				if (!cancelled) filterGroups = body.groups ?? [];
 			})
 			.catch(() => {
-				filterGroups = [];
+				if (!cancelled) filterGroups = [];
 			})
 			.finally(() => {
-				loadingFilters = false;
+				if (!cancelled) loadingFilters = false;
 			});
+		return () => {
+			cancelled = true;
+		};
 	});
+
+	// CurseForge browsing takes one loader and one category per request.
+	const filterLimitNote = $derived(
+		source === 'curseforge'
+			? 'Browsing without a search term only applies the first checked loader and category. Searching by name applies every one.'
+			: ''
+	);
 
 	async function search() {
 		searching = true;
 		searchError = '';
 		selected = null;
 		try {
-			const params = new URLSearchParams({ source: 'modrinth', term, mc: data.minecraftVersion });
+			const params = new URLSearchParams({ source, term, mc: data.minecraftVersion });
 			for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
 			for (const category of filterSelections.categories ?? []) {
 				params.append('category', category);
@@ -141,7 +176,7 @@
 		versionId = '';
 		loadingVersions = true;
 		const params = new URLSearchParams({
-			source: 'modrinth',
+			source,
 			id: hit.id,
 			mc: data.minecraftVersion,
 			loader: data.catalogLoader
@@ -163,6 +198,7 @@
 	$effect(() => {
 		const project = selected?.id;
 		const version = versionId;
+		const currentSource = source;
 		dependencies = [];
 		chosenDeps = {};
 		if (!project || !version) return;
@@ -170,7 +206,7 @@
 		let cancelled = false;
 		loadingDeps = true;
 		const params = new URLSearchParams({
-			source: 'modrinth',
+			source: currentSource,
 			id: project,
 			versionId: version,
 			mc: data.minecraftVersion,
@@ -258,12 +294,21 @@
 				groups={filterGroups}
 				bind:selected={filterSelections}
 				loading={loadingFilters}
+				limitNote={filterLimitNote}
 			/>
 
 			<div class="browse-main">
 			<div class="search-row">
+				<div class="field source">
+					<label for="mod-source">Source</label>
+					<select id="mod-source" bind:value={source}>
+						{#each sources as s (s.id)}
+							<option value={s.id}>{s.label}</option>
+						{/each}
+					</select>
+				</div>
 				<div class="field grow">
-					<label for="mod-term">Search Modrinth</label>
+					<label for="mod-term">Search</label>
 					<input
 						id="mod-term"
 						type="search"
@@ -271,12 +316,14 @@
 						placeholder="sodium, journeymap, create"
 						onkeydown={(e) => e.key === 'Enter' && search()}
 					/>
-					<p class="hint">Minecraft {data.minecraftVersion}, filtered by the sidebar.</p>
 				</div>
 				<button class="button-primary find" onclick={search} disabled={searching}>
 					{searching ? 'Searching' : 'Search'}
 				</button>
 			</div>
+			<p class="hint search-hint">
+				Minecraft {data.minecraftVersion}, filtered by the sidebar. Leave the search blank to browse popular mods.
+			</p>
 
 			{#if searchError}<p class="notice warning">{searchError}</p>{/if}
 
@@ -324,7 +371,7 @@
 								};
 							}}
 						>
-							<input type="hidden" name="source" value="modrinth" />
+							<input type="hidden" name="source" value={source} />
 							<input type="hidden" name="projectId" value={selected.id} />
 							<p class="selected-name"><strong>{selected.name}</strong></p>
 
@@ -412,7 +459,7 @@
 
 			{#if showDetails && selected}
 				<DetailsDialog
-					source="modrinth"
+					{source}
 					projectId={selected.id}
 					{versionId}
 					versionLabel={versions.find((v) => v.id === versionId)?.versionNumber ?? ''}
@@ -436,7 +483,7 @@
 		<div class="empty">
 			<p>
 				{data.mods.length === 0
-					? 'No mods installed. Search Modrinth above, or upload a jar.'
+					? 'No mods installed. Add some from Modrinth or CurseForge above, or upload a jar.'
 					: 'Nothing matches that filter.'}
 			</p>
 		</div>
@@ -550,9 +597,20 @@
 		flex-wrap: wrap;
 	}
 
+	.search-row .field {
+		margin-bottom: 0;
+	}
+
+	.source {
+		width: 11rem;
+	}
+
 	.grow {
 		flex: 1 1 16rem;
-		margin-bottom: 0;
+	}
+
+	.search-hint {
+		margin: var(--space-2) 0 0;
 	}
 
 	.find {

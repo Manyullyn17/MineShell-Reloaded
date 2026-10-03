@@ -399,7 +399,192 @@ function makeCurseforgeProvider(): ModProvider {
 	};
 }
 
+// ---------------------------------------------------- curseforge mods ---
+
+/**
+ * Single CurseForge mods live under /public/mod/{id}, not the pack endpoints:
+ * there every file carries its download URL, sha1, size and dependencies
+ * (the pack endpoint lists a mod's versions with none of that). Both only
+ * hold the newest 50 files, so a mod for an older Minecraft version is read
+ * from /public/mod/{id}/versions/{mc}[/{loader}][/{page}], paged newest
+ * first. The term search covers Modrinth too: numeric ids are CurseForge,
+ * strings Modrinth.
+ */
+
+type ModFile = {
+	id: number;
+	/** The jar's file name. */
+	name: string;
+	/** Display label ("4.16.6.1033 for Forge 1.12.2"); older files repeat the file name. */
+	version?: string;
+	type?: string;
+	updated?: number;
+	url: string;
+	sha1?: string;
+	size?: number;
+	clientonly?: boolean;
+	targets?: Target[];
+	dependencies?: { id: number; required: boolean }[];
+};
+
+type ModDetail = Omit<PackDetail, 'versions'> & {
+	versions?: ModFile[];
+	links?: { link: string; type: string }[];
+	tags?: Tag[];
+};
+
+type ModFilePage = { versions?: ModFile[]; page?: number; pages?: number };
+
+/** Pages walked to find one file of an older Minecraft version; a big mod has a handful. */
+const MAX_FILE_PAGES = 20;
+
+function modDetail(id: string): Promise<ModDetail> {
+	return cached(`mirror:mod:${id}`, CACHE_TTL.DEFAULT, () =>
+		fetchJson<ModDetail>(`${API}/public/mod/${encodeURIComponent(id)}`)
+	);
+}
+
+function modFilePage(id: string, minecraftVersion: string, loader?: string, page = 1): Promise<ModFilePage> {
+	const segments = [id, 'versions', minecraftVersion, loader, page > 1 ? String(page) : undefined]
+		.filter((s): s is string => Boolean(s))
+		.map(encodeURIComponent);
+	return cached(`mirror:mod-files:${segments.join('/')}`, CACHE_TTL.DEFAULT, () =>
+		fetchJson<ModFilePage>(`${API}/public/mod/${segments.join('/')}`)
+	);
+}
+
+function modFileToVersion(projectId: string, file: ModFile): ProjectVersion {
+	const label = file.version && file.version !== String(file.id) ? file.version : file.name;
+	return {
+		id: String(file.id),
+		projectId,
+		name: label,
+		versionNumber: label,
+		channel: file.type ?? 'release',
+		datePublished: file.updated ? new Date(file.updated * 1000).toISOString() : null,
+		gameVersions: targetsToGameVersions(file.targets),
+		loaders: targetsToLoaders(file.targets),
+		changelog: null,
+		files: [
+			{
+				filename: file.name,
+				url: file.url,
+				primary: true,
+				size: file.size ?? null,
+				hash: file.sha1 ? { algo: 'sha1', value: file.sha1 } : null
+			}
+		],
+		dependencies: (file.dependencies ?? []).map((d) => ({
+			projectId: String(d.id),
+			versionId: null,
+			type: d.required ? 'required' : 'optional',
+			name: null
+		}))
+	};
+}
+
+function modDetailToHit(mod: ModDetail, files: ModFile[] = mod.versions ?? []): SearchHit {
+	return {
+		source: 'curseforge',
+		id: String(mod.id),
+		// Every follow-up call takes the numeric id, and it is what gets stored
+		// as a CurseForge mod's slug (see the mods table).
+		slug: String(mod.id),
+		name: mod.name,
+		author: mod.authors?.[0]?.name ?? null,
+		summary: mod.synopsis?.trim() || null,
+		iconUrl: artUrl(mod),
+		downloads: mod.installs ?? null,
+		// The project page is type "curseforge" here, "website" on the pack endpoint.
+		projectUrl: mod.links?.find((l) => l.type === 'curseforge' || l.type === 'website')?.link ?? null,
+		loaders: [...new Set(files.flatMap((f) => targetsToLoaders(f.targets)))],
+		gameVersions: [...new Set(files.flatMap((f) => targetsToGameVersions(f.targets)))]
+	};
+}
+
+/**
+ * One term-search result, or null when it does not fit the query. The
+ * project's own file list is only the newest 50 files, so a Minecraft
+ * version filter checks that version's files instead.
+ */
+async function modSearchHit(id: string, query: SearchQuery): Promise<SearchHit | null> {
+	const mod = await modDetail(id);
+	if (query.categories?.length && !mod.tags?.some((t) => query.categories!.includes(String(t.id)))) return null;
+
+	const minecraftVersion = query.minecraftVersions?.[0] ?? query.minecraftVersion;
+	const files = minecraftVersion ? ((await modFilePage(id, minecraftVersion)).versions ?? []) : (mod.versions ?? []);
+	if (minecraftVersion && files.length === 0) return null;
+
+	const loaders = query.loaders?.filter((l) => l !== 'vanilla') ?? [];
+	// Files with no loader tag (common on old 1.12 mods) fit any loader.
+	const fits = files.some((f) => {
+		const tagged = targetsToLoaders(f.targets);
+		return loaders.length === 0 || tagged.length === 0 || tagged.some((l) => loaders.includes(l));
+	});
+	return fits ? modDetailToHit(mod, files) : null;
+}
+
+function makeCurseforgeModProvider(): ModProvider {
+	const packs = makeCurseforgeProvider();
+	return {
+		id: 'curseforge',
+		label: 'CurseForge',
+		available: () => true,
+
+		async search(query) {
+			if (!query.term) return packs.search({ ...query, kind: 'mod' });
+			const limit = query.limit ?? 20;
+			const ids = await fetchJson<{ mods?: (number | string)[] }>(
+				`${API}/public/mod/search/${limit}?term=${encodeURIComponent(query.term)}`
+			);
+			const settled = await Promise.allSettled(
+				(ids.mods ?? []).filter((id) => typeof id === 'number').map((id) => modSearchHit(String(id), query))
+			);
+			return settled
+				.filter((r): r is PromiseFulfilledResult<SearchHit | null> => r.status === 'fulfilled')
+				.map((r) => r.value)
+				.filter((hit): hit is SearchHit => hit !== null);
+		},
+
+		async getProject(id) {
+			return modDetailToHit(await modDetail(id));
+		},
+
+		async listVersions(id, filter): Promise<ProjectVersion[]> {
+			const files = filter?.minecraftVersion
+				? ((await modFilePage(id, filter.minecraftVersion, filter.loader)).versions ?? [])
+				: ((await modDetail(id)).versions ?? []).filter(
+						(f) => !filter?.loader || targetsToLoaders(f.targets).includes(filter.loader)
+					);
+			return files.map((f) => modFileToVersion(id, f));
+		},
+
+		async getVersion(projectId, versionId, context): Promise<ProjectVersion> {
+			const wanted = Number(versionId);
+			let file = (await modDetail(projectId)).versions?.find((f) => f.id === wanted);
+			const minecraftVersion = context?.minecraftVersion;
+			for (let page = 1; !file && minecraftVersion && page <= MAX_FILE_PAGES; page++) {
+				const result = await modFilePage(projectId, minecraftVersion, undefined, page);
+				file = result.versions?.find((f) => f.id === wanted);
+				if (page >= (result.pages ?? 1)) break;
+			}
+			if (!file) {
+				throw new Error(`CurseForge file ${versionId} of project ${projectId} is not on the modpacks.ch mirror.`);
+			}
+			return modFileToVersion(projectId, file);
+		},
+
+		async description(id): Promise<string | null> {
+			const mod = await modDetail(id);
+			return mod.description?.trim() || mod.synopsis?.trim() || null;
+		},
+
+		filterGroups: () => packs.filterGroups!('mod')
+	};
+}
+
 export const curseforgeProvider = makeCurseforgeProvider();
+export const curseforgeModProvider = makeCurseforgeModProvider();
 export const ftbProvider = makeFtbProvider();
 
 /** The pack's full description, which search results only carry truncated. */

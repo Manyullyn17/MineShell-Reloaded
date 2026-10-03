@@ -1,11 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getProvider } from '$lib/server/mods';
+import { getModProvider } from '$lib/server/mods';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const source = url.searchParams.get('source') ?? 'modrinth';
 	try {
-		const provider = getProvider(source);
+		const provider = getModProvider(source);
 		const hits = await provider.search({
 			term: url.searchParams.get('term') ?? '',
 			minecraftVersion: url.searchParams.get('mc') || undefined,

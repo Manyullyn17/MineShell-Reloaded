@@ -6,7 +6,7 @@ import { serverInstances, type ServerInstance } from './db/schema';
 import {
 	bestVersion,
 	DISABLED_SUFFIX,
-	getProvider,
+	getModProvider,
 	installModVersion,
 	listInstanceMods,
 	modsDir,
@@ -202,7 +202,7 @@ async function checkManualMod(
 	}
 	const catalogLoader = getLoader(target.loader).catalogLoader ?? target.loader;
 	try {
-		const provider = getProvider(row.source);
+		const provider = getModProvider(row.source);
 		const [project, versions] = await Promise.all([
 			provider.getProject(row.slug),
 			provider.listVersions(row.slug, { minecraftVersion: target.minecraft, loader: catalogLoader })

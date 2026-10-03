@@ -448,6 +448,7 @@
 	{#if showDetails && selected}
 		<DetailsDialog
 			{source}
+			kind="modpack"
 			projectId={selected.id}
 			{versionId}
 			versionLabel={packVersions.find((v) => v.id === versionId)?.versionNumber ?? ''}

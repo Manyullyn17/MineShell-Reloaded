@@ -37,12 +37,4 @@ describe('modpacks.ch CurseForge mirror', () => {
 		const v = versions.find((x) => x.id === VERSION)!;
 		expect(v.gameVersions).toEqual(expect.arrayContaining(['1.12', '1.12.2']));
 	});
-
-	it('lists mod versions by file name', async () => {
-		// Scalar Legacy: the mirror names mod versions after their jar, which is
-		// what the CDN fallback for required Cleanroom mods relies on.
-		const versions = await mirror.listVersions('1235372', { minecraftVersion: '1.12.2' });
-		expect(versions.length).toBeGreaterThan(0);
-		expect(versions.every((v) => v.name.endsWith('.jar'))).toBe(true);
-	});
 });

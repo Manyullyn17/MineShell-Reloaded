@@ -5,10 +5,9 @@ import type { ServerInstance } from './db/schema';
 import type { TaskHandle } from './tasks';
 import {
 	bestVersion,
-	curseforgeProvider,
 	DISABLED_SUFFIX,
+	getModProvider,
 	installModVersion,
-	modrinthProvider,
 	modsDir,
 	setModEnabled,
 	type ProjectVersion,
@@ -273,12 +272,6 @@ export async function cleanroomReport(instancePath: string): Promise<CleanroomRe
 
 // --------------------------------------------------------------- applying ---
 
-/** CurseForge's CDN serves files by id + name without an API key. */
-function curseforgeCdnUrl(fileId: string, fileName: string): string {
-	const id = Number(fileId);
-	return `https://mediafilez.forgecdn.net/files/${Math.floor(id / 1000)}/${id % 1000}/${encodeURIComponent(fileName)}`;
-}
-
 /**
  * The newest suitable build of a required mod for the Cleanroom generation in
  * use: builds from `java25From` on need Java 25, which a Java 21 Cleanroom
@@ -295,31 +288,14 @@ export function pickVersionForJava(
 }
 
 async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
-	const provider = mod.source === 'modrinth' ? modrinthProvider : curseforgeProvider;
+	const provider = getModProvider(mod.source);
 	const [project, all] = await Promise.all([
 		provider.getProject(mod.projectId),
 		provider.listVersions(mod.projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
 	]);
 	const java = cleanroomJavaMajor(instance.modloaderVersion);
-	let version = pickVersionForJava(all, mod.java25From, java);
+	const version = pickVersionForJava(all, mod.java25From, java);
 	if (!version) throw new Error(`no ${CLEANROOM_MINECRAFT} build for Java ${java} found`);
-
-	// The modpacks.ch mirror lists CurseForge mod versions (named by filename)
-	// but has no file detail for mods; fall back to the CDN.
-	if (version.files.length === 0 && mod.source === 'curseforge') {
-		version = {
-			...version,
-			files: [
-				{
-					filename: version.name,
-					url: curseforgeCdnUrl(version.id, version.name),
-					primary: true,
-					hash: null,
-					size: null
-				}
-			]
-		};
-	}
 
 	return installModVersion(
 		instance,

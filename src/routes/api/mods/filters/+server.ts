@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getProvider } from '$lib/server/mods';
+import { getModProvider, getProvider } from '$lib/server/mods';
 
 /** The filter groups a browse sidebar should render for one source and kind. */
 export const GET: RequestHandler = async ({ url }) => {
@@ -8,7 +8,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	const kind = url.searchParams.get('kind') === 'modpack' ? 'modpack' : 'mod';
 
 	try {
-		const provider = getProvider(source);
+		const provider = kind === 'mod' ? getModProvider(source) : getProvider(source);
 		const groups = (await provider.filterGroups?.(kind)) ?? [];
 		return json({ groups });
 	} catch (err) {

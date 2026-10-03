@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { bestVersion, getProvider, listInstanceMods } from '$lib/server/mods';
+import { bestVersion, getModProvider, listInstanceMods } from '$lib/server/mods';
 import { getInstance } from '$lib/server/instances';
 
 /**
@@ -35,8 +35,8 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	try {
-		const provider = getProvider(source);
-		const version = await provider.getVersion(projectId, versionId);
+		const provider = getModProvider(source);
+		const version = await provider.getVersion(projectId, versionId, { minecraftVersion: mc });
 
 		const relevant = version.dependencies.filter(
 			(d) => (d.type === 'required' || d.type === 'optional') && d.projectId
