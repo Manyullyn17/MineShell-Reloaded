@@ -20,6 +20,7 @@ const cleanroom = await import('$lib/server/cleanroom');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
+const { spawnCalls } = await import('../helpers/process');
 
 /** Files the fake pack host serves, by URL. */
 const served: Record<string, () => Response> = {
@@ -272,5 +273,51 @@ describe('installing a pack', () => {
 		const files = Object.keys(await tree(instance.path));
 		expect(files).toEqual(expect.arrayContaining(['mods/content.jar', 'mods/shaders.jar.disabled']));
 		expect(reload(instance.id).statusMessage).toMatch(/Disabled 1 client-only mod \(shaders\)/);
+	});
+
+	it('installs the form’s choices: unticked mods disabled, a ticked client-only one kept, a ticked pack-disabled one enabled', async () => {
+		fakeInstall('fabric');
+		const base = `https://files.test/${++packs}`;
+		serve(`${base}/content.jar`, zipBuffer({ 'fabric.mod.json': '{"id":"content"}' }));
+		serve(`${base}/extra.jar`, zipBuffer({ 'fabric.mod.json': '{"id":"extra"}' }));
+		serve(`${base}/shaders.jar`, zipBuffer({ 'fabric.mod.json': '{"id":"shaders","environment":"client"}' }));
+		// Shipped disabled by the pack (Thread does that to Fabric API).
+		serve(`${base}/api.jar.disabled`, zipBuffer({ 'fabric.mod.json': '{"id":"api"}' }));
+		const chosen = packFromFileList({
+			name: 'Chosen',
+			version: '1.0',
+			minecraftVersion: '1.20.1',
+			modloader: 'fabric',
+			modloaderVersion: null,
+			files: ['content.jar', 'extra.jar', 'shaders.jar', 'api.jar.disabled'].map((name) => ({ path: 'mods/', name, url: `${base}/${name}` }))
+		});
+		const { instance, taskId } = await createFromPack(
+			'Chosen',
+			chosen,
+			{ source: 'curseforge' },
+			{ disableMods: ['mods/extra.jar'], keepMods: ['mods/shaders.jar'], enableMods: ['mods/api.jar.disabled'] }
+		);
+		expect((await waitForTask(taskId)).state).toBe('done');
+
+		expect(Object.keys(await tree(instance.path))).toEqual(
+			expect.arrayContaining(['mods/content.jar', 'mods/extra.jar.disabled', 'mods/shaders.jar', 'mods/api.jar'])
+		);
+		expect(reload(instance.id).statusMessage).toBeNull();
+	});
+
+	it('starts the server once installed when asked, accepting the EULA', async () => {
+		fakeInstall('fabric');
+		const { instance, taskId } = await createFromPack('Started', pack(), { source: 'curseforge' }, { startWhenReady: true });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect((await tree(instance.path))['eula.txt']).toMatch(/^eula=true$/m);
+		expect(spawnCalls.some((c) => c.args.includes('start') && c.args.some((a) => a.includes(instance.id)))).toBe(true);
+	});
+
+	it('does not start a pack that is missing mods', async () => {
+		fakeInstall('fabric');
+		const { instance, taskId } = await createFromPack('Not Started', pack({ missing: true }), { source: 'curseforge' }, { startWhenReady: true });
+		expect((await waitForTask(taskId)).log.join('\n')).toMatch(/Not starting the server: some mods could not be downloaded/);
+		expect(Object.keys(await tree(instance.path))).not.toContain('eula.txt');
+		expect(spawnCalls.some((c) => c.args.includes('start') && c.args.some((a) => a.includes(instance.id)))).toBe(false);
 	});
 });

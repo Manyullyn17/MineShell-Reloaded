@@ -290,7 +290,8 @@ async function fetchLoaderTags(): Promise<string[]> {
  * "identify a 120-mod pack" from 120 round trips into one.
  */
 export async function versionsFromHashes(
-	hashes: string[]
+	hashes: string[],
+	algorithm: 'sha512' | 'sha1' = 'sha512'
 ): Promise<Map<string, ProjectVersion>> {
 	const found = new Map<string, ProjectVersion>();
 	if (hashes.length === 0) return found;
@@ -303,7 +304,7 @@ export async function versionsFromHashes(
 			const response = await fetchJson<Record<string, MrVersion>>(`${API}/version_files`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ hashes: slice, algorithm: 'sha512' })
+				body: JSON.stringify({ hashes: slice, algorithm })
 			});
 			for (const [hash, version] of Object.entries(response ?? {})) {
 				if (version) found.set(hash, toVersion(version));

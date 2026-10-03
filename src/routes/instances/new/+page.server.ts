@@ -7,7 +7,7 @@ import {
 	createFromLoader,
 	createFromPack
 } from '$lib/server/instances';
-import { resolveProviderPack } from '$lib/server/packs/resolve';
+import { takeProviderPack } from '$lib/server/packs/preview';
 import { listJavaRuntimes } from '$lib/server/java';
 import { isJavaVendor } from '$lib/server/javadownload';
 import { defaultMaxMb, getInstanceDefaults } from '$lib/server/instance-defaults';
@@ -59,6 +59,21 @@ function memoryFrom(form: FormData) {
 	};
 }
 
+/** The split button's "& start" item. */
+function startFrom(form: FormData) {
+	return form.get('start') === 'on' ? { startWhenReady: true } : {};
+}
+
+/** The install form's mod list: a JSON array of mods/<file> paths, anything else ignored. */
+function targetsFrom(form: FormData, field: string): string[] {
+	try {
+		const value = JSON.parse(String(form.get(field) ?? '[]'));
+		return Array.isArray(value) ? value.filter((t): t is string => typeof t === 'string' && /^mods\/[^/]+$/.test(t)) : [];
+	} catch {
+		return [];
+	}
+}
+
 /** The CleanroomOption fields; createFromPack ignores them for anything but Forge 1.12.2. */
 function cleanroomFrom(form: FormData): { modloader?: ModloaderId; modloaderVersion?: string | null } {
 	if (form.get('useCleanroom') !== 'on') return {};
@@ -98,7 +113,8 @@ export const actions: Actions = {
 				modloaderVersion,
 				javaPath: String(form.get('javaPath') ?? '') || null,
 				...memoryFrom(form),
-				...downloadJavaFrom(form)
+				...downloadJavaFrom(form),
+				...startFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -124,7 +140,8 @@ export const actions: Actions = {
 			const { instance } = await createFromArchive(name, buffer, {
 				...memoryFrom(form),
 				...cleanroomFrom(form),
-				...downloadJavaFrom(form)
+				...downloadJavaFrom(form),
+				...startFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -149,12 +166,20 @@ export const actions: Actions = {
 		}
 
 		try {
-			const { pack, projectName } = await resolveProviderPack(source, projectId, versionId);
+			const { pack, projectName } = await takeProviderPack(source, projectId, versionId);
 			const { instance } = await createFromPack(
 				name || projectName,
 				pack,
 				{ source, projectId, versionId },
-				{ ...memoryFrom(form), ...cleanroomFrom(form), ...downloadJavaFrom(form) }
+				{
+					...memoryFrom(form),
+					...cleanroomFrom(form),
+					...downloadJavaFrom(form),
+					...startFrom(form),
+					disableMods: targetsFrom(form, 'disableMods'),
+					keepMods: targetsFrom(form, 'keepMods'),
+					enableMods: targetsFrom(form, 'enableMods')
+				}
 			);
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {

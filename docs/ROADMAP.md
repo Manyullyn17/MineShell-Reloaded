@@ -59,9 +59,14 @@ independent and can be done in any order.
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,
-server copies, Java downloads, mod updating and the smaller operational features -
+server copies, Java downloads, mod updating, the smaller operational features -
 countdown stops, TPS, scheduled commands, resource limits, stuck-start warning, log
-history, server icon - are built.)
+history, server icon - and the modpack install refinements (mod list with client-only
+choices before installing, "Install & start") are built.)
+
+Not covered by the install form's mod list: uploaded packs (installed straight from the
+upload; the client-only check still runs afterwards), and client-only mods only the jar
+declares (known once downloaded; the same check catches them).
 
 ### Mod updating: what is left
 
@@ -113,11 +118,6 @@ The auth question the notes left open is now settled: password plus session cook
 default. That was the blocker for designing remote access, so it can proceed whenever it
 is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
 reverse proxy — is where this should land unless there is a specific reason otherwise.
-
-### Modpack install flow refinements
-
-Show a pack's mod list before installing it; "Install" vs "Install & Start"; a UI for
-choosing what to do with client-only mods (see `clientonly.ts` for what is detected today).
 
 ### Data packs from the mod browser
 

@@ -5,6 +5,8 @@
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
+	import PackModList from '$lib/components/PackModList.svelte';
+	import SplitButton from '$lib/components/SplitButton.svelte';
 	import { fitToViewport } from '$lib/shared/fitToViewport';
 	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '$lib/shared/cleanroom';
 
@@ -212,6 +214,39 @@
 	});
 	let javaMajors = $derived(data.javaRuntimes.map((j) => j.majorVersion));
 	let loadingVersions = $state(false);
+
+	// The picked version's mod list, for the install form.
+	type Preview = { mods: { target: string; fileName: string; name: string; clientOnly: string | null; packDisabled: boolean; neededBy: string[] }[]; otherFiles: number };
+	let preview = $state<Preview | null>(null);
+	let previewLoading = $state(false);
+	let previewError = $state('');
+	$effect(() => {
+		const id = selected?.id;
+		const version = versionId;
+		const from = source;
+		preview = null;
+		previewError = '';
+		previewLoading = false;
+		if (!id || !version) return;
+
+		let cancelled = false;
+		previewLoading = true;
+		const params = new URLSearchParams({ source: from, id, versionId: version });
+		fetch(`/api/packs/preview?${params}`)
+			.then(async (r) => (r.ok ? r.json() : Promise.reject(new Error((await r.json().catch(() => null))?.message ?? 'lookup failed'))))
+			.then((body) => {
+				if (!cancelled) preview = body.preview;
+			})
+			.catch((err) => {
+				if (!cancelled) previewError = err instanceof Error ? err.message : 'lookup failed';
+			})
+			.finally(() => {
+				if (!cancelled) previewLoading = false;
+			});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	async function search() {
 		searching = true;
@@ -440,6 +475,8 @@
 							</select>
 						</div>
 
+						<PackModList {preview} loading={previewLoading} error={previewError} />
+
 						{#if cleanroomEligible}
 							<CleanroomOption {javaMajors} idPrefix="pack-cleanroom" />
 						{/if}
@@ -447,9 +484,14 @@
 						{@render memoryFields()}
 
 						<JavaPrompt {form} action="install" />
-						<button class="button-primary" type="submit" disabled={submitting || !versionId}>
-							{submitting ? 'Starting install' : 'Install pack'}
-						</button>
+						<SplitButton
+							label="Install pack"
+							busyLabel="Starting install"
+							busy={submitting}
+							disabled={!versionId}
+							altLabel="Install & start"
+							altNote="Starts it once installed, accepting the Minecraft EULA"
+						/>
 					</form>
 				{/if}
 			</div>
@@ -503,9 +545,13 @@
 		{@render memoryFields()}
 
 		<JavaPrompt {form} action="upload" />
-		<button class="button-primary" type="submit" disabled={submitting}>
-			{submitting ? 'Uploading' : 'Install pack'}
-		</button>
+		<SplitButton
+			label="Install pack"
+			busyLabel="Uploading"
+			busy={submitting}
+			altLabel="Install & start"
+			altNote="Starts it once installed, accepting the Minecraft EULA"
+		/>
 	</form>
 {/if}
 
@@ -599,9 +645,13 @@
 		{/if}
 
 		<JavaPrompt {form} action="loader" />
-		<button class="button-primary" type="submit" disabled={submitting}>
-			{submitting ? 'Creating' : 'Create server'}
-		</button>
+		<SplitButton
+			label="Create server"
+			busyLabel="Creating"
+			busy={submitting}
+			altLabel="Create & start"
+			altNote="Starts it once installed, accepting the Minecraft EULA"
+		/>
 	</form>
 {/if}
 

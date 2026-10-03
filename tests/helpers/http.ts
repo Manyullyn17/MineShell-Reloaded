@@ -31,7 +31,7 @@ function keyFor(method: string, url: string, body: unknown): string {
 
 export function useRecordedHttp(
 	name: string,
-	opts: { extra?: Record<string, () => Response | Promise<Response>> } = {}
+	opts: { extra?: Record<string, (init?: RequestInit) => Response | Promise<Response>> } = {}
 ): void {
 	const file = path.join(FIXTURES, `${name}.json`);
 	const recording = process.env.RECORD_HTTP === '1';
@@ -48,7 +48,7 @@ export function useRecordedHttp(
 		const method = (init?.method ?? 'GET').toUpperCase();
 		fetchCalls.push({ method, url });
 		const extra = opts.extra?.[url];
-		if (extra) return extra();
+		if (extra) return extra(init);
 		const key = keyFor(method, url, init?.body);
 
 		if (recording) {

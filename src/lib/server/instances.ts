@@ -157,6 +157,14 @@ export type CreateInstanceInput = {
 	notes?: string | null;
 	/** Download this vendor's runtime first when the needed Java is not installed. */
 	downloadJava?: JavaVendor;
+	/** Start the server once it is installed, accepting the EULA. */
+	startWhenReady?: boolean;
+	/** Pack mods (mods/<file>) to install disabled. */
+	disableMods?: string[];
+	/** Client-only pack mods to leave enabled anyway. */
+	keepMods?: string[];
+	/** Mods the pack ships disabled (mods/<file>.disabled) to enable. */
+	enableMods?: string[];
 };
 
 function jvmArgsFor(presetId: string, minMb: number, maxMb: number): string {
@@ -365,6 +373,7 @@ export async function createFromLoader(input: CreateInstanceInput): Promise<{ in
 				await syncUnit(requireInstance(instance.id));
 				commitOperation(instance.id, { status: 'ready', statusMessage: null });
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
+				if (input.startWhenReady) await startWhenInstalled(instance.id, task);
 				task.setProgress(100, 'Ready');
 			})
 		);
@@ -391,7 +400,13 @@ export async function createFromArchive(
 }
 
 /** Shared provisioning task for any pack shape, archive or file list. */
-function provisionFromPack(instance: ServerInstance, pack: ParsedPack, java: JavaPlan, notes: string[] = []): string {
+function provisionFromPack(
+	instance: ServerInstance,
+	pack: ParsedPack,
+	java: JavaPlan,
+	notes: string[] = [],
+	choices: Pick<CreateInstanceInput, 'startWhenReady' | 'disableMods' | 'keepMods' | 'enableMods'> = {}
+): string {
 	return startTask(
 		{ label: `Install ${pack.name}`, instanceId: instance.id },
 		(task) => endJournalOnFailure(instance.id, async () => {
@@ -497,9 +512,34 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, java: Jav
 					`${failures.length} mod${failures.length === 1 ? '' : 's'} could not be downloaded. Check the task log and add them by hand.`
 				);
 			}
+			// Mods ticked on the install form that the pack ships disabled.
+			for (const target of choices.enableMods ?? []) {
+				const fileName = path.posix.basename(target);
+				try {
+					await setModEnabled(requireInstance(instance.id), fileName, true);
+					task.log(`Enabled ${fileName.replace(/\.disabled$/, '')}, which the pack ships disabled, as chosen.`);
+				} catch (err) {
+					task.log(`Could not enable ${fileName}: ${err instanceof Error ? err.message : 'unknown error'}.`);
+				}
+			}
+			// Mods unticked on the install form; client-only ones are left to the check below.
+			for (const target of choices.disableMods ?? []) {
+				const fileName = path.posix.basename(target);
+				try {
+					await setModEnabled(requireInstance(instance.id), fileName, false);
+					task.log(`Installed ${fileName} disabled, as chosen.`);
+				} catch (err) {
+					task.log(`Could not disable ${fileName}: ${err instanceof Error ? err.message : 'unknown error'}.`);
+				}
+			}
+
 			task.setProgress(null, 'Checking for client-only mods');
 			try {
-				const installed = (await listInstanceMods(requireInstance(instance.id))).map((m) => m.fileName);
+				// Client-only mods the install form kept are left alone.
+				const keep = new Set((choices.keepMods ?? []).map((t) => path.posix.basename(t).replace(/\.disabled$/, '')));
+				const installed = (await listInstanceMods(requireInstance(instance.id)))
+					.map((m) => m.fileName)
+					.filter((f) => !keep.has(f));
 				const clientOnly = await disableClientOnlyMods(requireInstance(instance.id), installed, task);
 				const line = describeClientOnlyResult(clientOnly);
 				if (line) problems.push(line);
@@ -522,6 +562,11 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, java: Jav
 				packDatapacks: JSON.stringify(datapackNames(packWorldFiles(pack)))
 			});
 			audit('instance.pack_imported', { instanceId: instance.id, detail: pack.name });
+			if (choices.startWhenReady) {
+				// A pack missing mods would only crash on start.
+				if (failures.length) task.log('Not starting the server: some mods could not be downloaded.');
+				else await startWhenInstalled(instance.id, task);
+			}
 			task.setProgress(100, 'Ready');
 		})
 	);
@@ -568,9 +613,23 @@ export async function createFromPack(
 		packVersionName: pack.version
 	});
 
-	const taskId = provisionFromPack(instance, pack, java, notes);
+	const taskId = provisionFromPack(instance, pack, java, notes, {
+		startWhenReady: overrides.startWhenReady,
+		disableMods: overrides.disableMods,
+		keepMods: overrides.keepMods,
+		enableMods: overrides.enableMods
+	});
 	watchTaskFailure(taskId, instance.id);
 	return { instance, taskId };
+}
+
+/** "Install & start": the person asked for the server to run, which accepts the EULA. */
+async function startWhenInstalled(instanceId: string, task: TaskHandle): Promise<void> {
+	task.setProgress(null, 'Starting');
+	const instance = requireInstance(instanceId);
+	if (!(await eulaIsAccepted(instance))) await acceptEula(instance);
+	const result = await start(requireInstance(instanceId));
+	task.log(result.ok ? 'Started the server.' : `Not starting the server: ${result.message}`);
 }
 
 function watchTaskFailure(taskId: string, instanceId: string) {
