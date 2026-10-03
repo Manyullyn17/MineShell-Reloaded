@@ -132,6 +132,18 @@ are pack config folders, so a pack change moves them whole to `old-configs/` - i
 data pack the user added there. Correct by the configs policy, but easy to miss for a data
 pack; the preview could point out non-pack files in those folders.
 
+### Item icons in the player editor
+
+Slots show item names, not pictures. Minecraft's textures are Mojang's, so MineShell cannot
+ship them; they can come from the user's own machine instead. Mod jars in `mods/` carry their
+textures (`assets/<mod>/textures/item/...`); vanilla ones are in the *client* jar, which
+MineShell would download from Mojang for the server's version and keep locally (map renderers
+like BlueMap do the same and ask the user to accept the EULA first). The work is mapping an item
+id to a picture: flat items are one texture via their item model (`models/item/<id>.json`, or
+`items/<id>.json` from 1.21.4), block items are 3D models needing a small isometric render,
+and leather, potions or grass need tinting. Something decent for most items is reachable;
+perfect for every model is not.
+
 ### Multi-instance port management
 
 Ports are allocated automatically and conflicts are detected, but there is no view showing

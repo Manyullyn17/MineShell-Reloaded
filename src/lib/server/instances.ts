@@ -56,6 +56,7 @@ import { directorySize } from './files';
 import { snapshotStep } from './snapshots';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
+import { copyCustomFields } from './playerfields';
 
 export class InstanceError extends Error {}
 
@@ -1378,6 +1379,7 @@ export async function cloneInstance(
 					db.insert(instanceMods).values({ ...row, instanceId: id }).run();
 				}
 				copyScheduledCommands(source.id, id);
+				copyCustomFields(source.id, id);
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

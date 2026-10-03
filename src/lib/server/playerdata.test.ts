@@ -36,7 +36,8 @@ describe('playerView', () => {
 			['armor', 103, 'minecraft:diamond_helmet', 1, 0, 'Lucky Hat', true],
 			['offhand', -106, 'minecraft:shield', 1, 0, null, false]
 		]);
-		expect(view.stats.dimension).toBe('-1');
+		// Before 1.16 the dimension is a number, picked from a list.
+		expect(view.fields.find((f) => f.key === 'dimension')).toMatchObject({ kind: 'select', value: '-1', path: ['Dimension'] });
 	});
 
 	it('reads 1.21.5+ equipment and component counts', () => {
@@ -109,6 +110,25 @@ describe('applyEdits', () => {
 		expect(root.value.map(([k]) => k)).toEqual(['DataVersion', 'Tags', 'Custom']);
 		expect(root.value[1][1]).toEqual({ type: 'list', itemType: 'string', value: [s('vip')] });
 		expect(() => applyEdits(file, [{ op: 'add', path: ['Tags'], type: 'int', value: '1' }])).toThrow(/holds string/);
+	});
+
+	it('takes whole structures as SNBT, renames entries and changes a value’s type', () => {
+		const file = player(3955, ['Tags', list()], ['count', b(1)], ['Odd', list(i(1))]);
+		applyEdits(file, [
+			{ op: 'add', path: [], name: 'Ench', type: 'snbt', value: '[{id:"minecraft:sharpness",lvl:5s}]' },
+			{ op: 'add', path: ['Tags'], type: 'snbt', value: '"vip"' },
+			{ op: 'rename', path: ['count'], name: 'Count' },
+			{ op: 'set', path: ['Count'], value: '64', type: 'int' },
+			{ op: 'replace', path: ['Odd'], snbt: '{x:1b}' }
+		]);
+		const root = reread(file).root;
+		expect(root.value.map(([k]) => k)).toEqual(['DataVersion', 'Tags', 'Count', 'Odd', 'Ench']);
+		expect(root.value[2][1]).toEqual(i(64));
+		expect(root.value[3][1]).toEqual(c(['x', b(1)]));
+		expect(root.value[4][1]).toEqual(list(c(['id', s('minecraft:sharpness')], ['lvl', { type: 'short', value: 5 }])));
+		expect(() => applyEdits(file, [{ op: 'add', path: [], name: 'Bad', type: 'snbt', value: '{a:' }])).toThrow(/not valid/);
+		expect(() => applyEdits(file, [{ op: 'rename', path: ['Count'], name: 'Odd' }])).toThrow(/already/);
+		expect(() => applyEdits(file, [{ op: 'set', path: ['Ench', 0, 'lvl'], value: '1', type: 'int' }])).not.toThrow();
 	});
 
 	it('writes items in the file’s own format', () => {

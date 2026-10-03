@@ -1,6 +1,6 @@
 <script lang="ts">
 	import NbtNode from './NbtNode.svelte';
-	import type { Path, TreeTag } from '$lib/server/playerdata';
+	import { treeToSnbt, type Path, type TreeTag } from '$lib/shared/nbt';
 
 	/**
 	 * One entry of an NBT tree: a value that can be edited or removed in place,
@@ -13,6 +13,8 @@
 		path,
 		locked,
 		onEdit,
+		inList = false,
+		fieldAction = null,
 		open: startOpen = false
 	}: {
 		name: string;
@@ -20,13 +22,18 @@
 		path: Path;
 		locked: boolean;
 		onEdit: (edit: Record<string, unknown>) => Promise<boolean>;
+		/** An entry of a list: no name to change, and its type is the list's. */
+		inList?: boolean;
+		/** A button on each value: "add as field", or "use for <field>" while remapping one. */
+		fieldAction?: { label: string; run: (path: Path, tag: TreeTag, name: string) => void } | null;
 		open?: boolean;
 	} = $props();
 
 	// svelte-ignore state_referenced_locally
 	let open = $state(startOpen);
-	let editing = $state(false);
+	let editing = $state<false | 'value' | 'snbt' | 'name'>(false);
 	let draft = $state('');
+	let draftType = $state('');
 	let adding = $state(false);
 	let newName = $state('');
 	let newType = $state('string');
@@ -45,16 +52,24 @@
 				: String(tag.value)
 	);
 
-	const ADDABLE = ['string', 'byte', 'short', 'int', 'long', 'float', 'double', 'compound', 'list', 'byteArray', 'intArray', 'longArray'];
+	const PRIMITIVES = ['string', 'byte', 'short', 'int', 'long', 'float', 'double', 'byteArray', 'intArray', 'longArray'];
+	const ADDABLE = ['snbt', ...PRIMITIVES, 'compound', 'list'];
 	const listType = $derived(tag.type === 'list' && tag.value.length ? tag.itemType : null);
 
-	function startEdit() {
-		draft = isArray ? (tag.value as unknown[]).join(', ') : String(tag.value);
-		editing = true;
+	function startEdit(mode: 'value' | 'snbt' | 'name') {
+		draft = mode === 'snbt' ? treeToSnbt(tag, 2) : mode === 'name' ? name : isArray ? (tag.value as unknown[]).join(', ') : String(tag.value);
+		draftType = tag.type;
+		editing = mode;
 	}
 
 	async function saveEdit() {
-		if (await onEdit({ op: 'set', path, value: draft })) editing = false;
+		const edit =
+			editing === 'snbt'
+				? { op: 'replace', path, snbt: draft }
+				: editing === 'name'
+					? { op: 'rename', path, name: draft }
+					: { op: 'set', path, value: draft, ...(draftType !== tag.type ? { type: draftType } : {}) };
+		if (await onEdit(edit)) editing = false;
 	}
 
 	async function remove() {
@@ -62,7 +77,7 @@
 	}
 
 	async function add() {
-		const type = listType ?? newType;
+		const type = newType === 'snbt' ? 'snbt' : (listType ?? newType);
 		const ok = await onEdit({ op: 'add', path, name: newName, type, value: newValue });
 		if (ok) {
 			adding = false;
@@ -85,21 +100,38 @@
 		{#if editing}
 			<form
 				class="edit"
+				class:block={editing === 'snbt'}
 				onsubmit={(e) => {
 					e.preventDefault();
 					void saveEdit();
 				}}
 			>
-				<input class="mono" bind:value={draft} aria-label="New value" />
-				<button type="submit" class="button-primary">Save</button>
-				<button type="button" onclick={() => (editing = false)}>Cancel</button>
+				{#if editing === 'snbt'}
+					<textarea class="mono" rows={Math.min(16, draft.split('\n').length + 1)} bind:value={draft} aria-label="SNBT"></textarea>
+				{:else}
+					<input class="mono" bind:value={draft} aria-label={editing === 'name' ? 'New name' : 'New value'} />
+					{#if editing === 'value' && !inList}
+						<select bind:value={draftType} aria-label="Type">
+							{#each PRIMITIVES as t (t)}<option value={t}>{t}</option>{/each}
+						</select>
+					{/if}
+				{/if}
+				<span class="form-buttons">
+					<button type="submit" class="button-primary">Save</button>
+					<button type="button" onclick={() => (editing = false)}>Cancel</button>
+				</span>
 			</form>
 		{:else}
 			<span class="value mono" class:muted={container}>{shown}</span>
+			{#if fieldAction && !container && tag.type !== 'list'}
+				<button type="button" class="button-quiet field-action" onclick={() => fieldAction.run(path, tag, name)}>{fieldAction.label}</button>
+			{/if}
 			{#if !locked}
 				<span class="actions">
-					{#if !container}<button type="button" class="button-quiet" onclick={startEdit}>Edit</button>{/if}
+					{#if !container}<button type="button" class="button-quiet" onclick={() => startEdit('value')}>Edit</button>{/if}
 					{#if container}<button type="button" class="button-quiet" onclick={() => ((adding = !adding), (open = true))}>Add</button>{/if}
+					{#if path.length}<button type="button" class="button-quiet" onclick={() => startEdit('snbt')}>SNBT</button>{/if}
+					{#if path.length && !inList}<button type="button" class="button-quiet" onclick={() => startEdit('name')}>Rename</button>{/if}
 					{#if path.length}<button type="button" class="button-quiet button-danger" onclick={remove}>Remove</button>{/if}
 				</span>
 			{/if}
@@ -120,14 +152,12 @@
 						{#if tag.type === 'compound'}
 							<input class="mono" placeholder="name" bind:value={newName} aria-label="Name" required />
 						{/if}
-						{#if listType}
-							<span class="type">{listType}</span>
-						{:else}
-							<select bind:value={newType} aria-label="Type">
-								{#each ADDABLE as t (t)}<option value={t}>{t}</option>{/each}
-							</select>
-						{/if}
-						{#if !['compound', 'list'].includes(listType ?? newType)}
+						<select bind:value={newType} aria-label="Type">
+							{#each listType ? ['snbt', listType] : ADDABLE as t (t)}<option value={t}>{t === 'snbt' ? 'SNBT (paste)' : t}</option>{/each}
+						</select>
+						{#if newType === 'snbt'}
+							<textarea class="mono" rows="3" placeholder={'{id:"minecraft:sharpness",lvl:5s}'} bind:value={newValue} aria-label="SNBT"></textarea>
+						{:else if !['compound', 'list'].includes(newType)}
 							<input class="mono" placeholder="value" bind:value={newValue} aria-label="Value" />
 						{/if}
 						<button type="submit" class="button-primary">Add</button>
@@ -140,6 +170,8 @@
 					name={key}
 					tag={value}
 					path={[...path, tag.type === 'list' ? i : key]}
+					inList={tag.type === 'list'}
+					{fieldAction}
 					{locked}
 					{onEdit}
 				/>
@@ -213,6 +245,18 @@
 		visibility: visible;
 	}
 
+	.field-action {
+		font-size: 0.72rem;
+		padding: 0.05rem 0.4rem;
+		visibility: hidden;
+	}
+
+	.row:hover .field-action,
+	.field-action:focus-visible,
+	:global(.remapping) .field-action {
+		visibility: visible;
+	}
+
 	.actions button,
 	form button {
 		font-size: 0.75rem;
@@ -233,8 +277,26 @@
 		margin: 0;
 	}
 
-	.edit input {
+	.edit input,
+	textarea {
 		flex: 1 1 auto;
+	}
+
+	form.block {
+		flex-direction: column;
+		align-items: stretch;
+		padding: var(--space-1) 0;
+	}
+
+	textarea {
+		font-size: 0.8rem;
+		margin: 0;
+		min-width: 18rem;
+	}
+
+	.form-buttons {
+		display: flex;
+		gap: var(--space-1);
 	}
 
 	.add input[placeholder='name'] {

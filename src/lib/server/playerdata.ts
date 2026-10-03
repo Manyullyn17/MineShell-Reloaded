@@ -2,8 +2,28 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
-import { child, num, parseNbt, removeChild, setChild, str, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
+import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
 import { serverWorldName } from './packworld';
+import { parseSnbt, SnbtError } from './snbt';
+import {
+	checkItem,
+	describeItem,
+	findContainers,
+	PlayerDataError,
+	setContainerItem,
+	styleOf,
+	writeFields,
+	type ContainerView,
+	type Format,
+	type ItemFields,
+	type ItemView,
+	type Section,
+	type Style
+} from './playeritems';
+import { addEffect, playerEffects, playerFields, type EffectsView, type FieldView } from './playerfields';
+import type { Path, TreeTag } from '$lib/shared/nbt';
+
+export type { Path, TreeTag };
 import { rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
@@ -25,15 +45,11 @@ import { unitState } from './systemd';
  * (at most one per editing session, the newest 10 per player).
  */
 
-export class PlayerDataError extends Error {}
+export { PlayerDataError, shortestFloat };
+export type { ContainerView, Format, ItemFields, ItemView, Section };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const FLATTENING = 1519;
-const COMPONENTS = 3837;
 const EQUIPMENT = 4325;
-
-export type Path = (string | number)[];
-export type Section = 'main' | 'armor' | 'offhand' | 'ender' | 'other';
 
 /** Inventory slot numbers for armor and offhand, as the pre-1.21.5 Inventory list has them. */
 export const ARMOR_SLOTS = { 103: 'head', 102: 'chest', 101: 'legs', 100: 'feet' } as const;
@@ -129,24 +145,6 @@ export async function readPlayerData(
 
 // ------------------------------------------------------------------- view ---
 
-/** A JSON-safe tag for the browser: longs as strings, non-finite floats as strings. */
-export type TreeTag =
-	| { type: 'byte' | 'short' | 'int' | 'float' | 'double'; value: number | string }
-	| { type: 'long' | 'string'; value: string }
-	| { type: 'byteArray' | 'intArray'; value: number[] }
-	| { type: 'longArray'; value: string[] }
-	| { type: 'list'; itemType: TagType; value: TreeTag[] }
-	| { type: 'compound'; value: [string, TreeTag][] };
-
-/** The shortest decimal that is the same 32-bit float: 0.1, not 0.10000000149011612. */
-export function shortestFloat(value: number): number {
-	for (let digits = 1; digits <= 9; digits++) {
-		const candidate = Number(value.toPrecision(digits));
-		if (Math.fround(candidate) === value) return candidate;
-	}
-	return value;
-}
-
 export function toTree(tag: Tag): TreeTag {
 	switch (tag.type) {
 		case 'long':
@@ -166,83 +164,26 @@ export function toTree(tag: Tag): TreeTag {
 	}
 }
 
-export type ItemView = {
-	section: Section;
-	slot: number;
-	id: string;
-	count: number;
-	/** Pre-1.13 metadata/durability. */
-	damage: number | null;
-	/** A custom name, as plain text. */
-	name: string | null;
-	/** Enchantments, names, NBT or components beyond id and count. */
-	hasData: boolean;
-	/** Where the item's compound is in the tree. */
-	path: Path;
-};
-
-export type Format = 'legacy' | 'flat' | 'components';
-
 export type PlayerView = {
 	dataVersion: number | null;
 	format: Format;
 	/** Armor and offhand in `equipment` (1.21.5+) rather than in `Inventory`. */
 	equipment: boolean;
-	stats: {
-		health: number | null;
-		food: number | null;
-		saturation: number | null;
-		xpLevel: number | null;
-		xpProgress: number | null;
-		gameMode: number | null;
-		dimension: string | null;
-		pos: number[] | null;
-	};
+	/** Built-in fields the file has values for (stats, abilities, spawn, attributes). */
+	fields: FieldView[];
+	effects: EffectsView;
 	items: ItemView[];
+	/** Other item lists in the file: Curios, Trinkets and other mod slots. */
+	containers: ContainerView[];
 	tree: TreeTag;
 };
 
 export function formatOf(dataVersion: number | null): Format {
-	if (dataVersion === null || dataVersion < FLATTENING) return 'legacy';
-	return dataVersion < COMPONENTS ? 'flat' : 'components';
+	return styleOf(dataVersion).format;
 }
 
 function usesEquipment(root: Compound, dataVersion: number | null): boolean {
 	return child(root, 'equipment')?.type === 'compound' || (dataVersion ?? 0) >= EQUIPMENT;
-}
-
-/** Text of a custom name: a JSON text component (1.13+), an NBT text component (1.21.5+) or plain (1.12). */
-function nameText(tag: Tag | undefined): string | null {
-	if (!tag) return null;
-	if (tag.type === 'compound') return str(child(tag, 'text'));
-	if (tag.type !== 'string') return null;
-	try {
-		const parsed = JSON.parse(tag.value);
-		if (typeof parsed === 'string') return parsed;
-		if (parsed && typeof parsed.text === 'string') return parsed.text + (Array.isArray(parsed.extra) ? parsed.extra.map((e: { text?: string } | string) => (typeof e === 'string' ? e : (e.text ?? ''))).join('') : '');
-	} catch {
-		/* plain text */
-	}
-	return tag.value;
-}
-
-function itemView(item: Tag, section: Section, slot: number, at: Path, format: Format): ItemView | null {
-	if (item.type !== 'compound') return null;
-	const idTag = child(item, 'id');
-	const id = idTag?.type === 'string' ? idTag.value : idTag ? String(num(idTag)) : '';
-	const count = format === 'components' ? (num(child(item, 'count')) ?? 1) : (num(child(item, 'Count')) ?? 1);
-	const data = format === 'components' ? child(item, 'components') : child(item, 'tag');
-	const name = format === 'components' ? nameText(child(child(item, 'components'), 'minecraft:custom_name')) : nameText(child(child(child(item, 'tag'), 'display'), 'Name'));
-	return {
-		section,
-		slot,
-		id,
-		count,
-		damage: format === 'legacy' ? num(child(item, 'Damage')) : null,
-		name,
-		hasData: data?.type === 'compound' ? data.value.length > 0 : !!data,
-		path: at
-	};
 }
 
 function sectionOf(slot: number): Section {
@@ -251,15 +192,11 @@ function sectionOf(slot: number): Section {
 	return slot === OFFHAND_SLOT ? 'offhand' : 'other';
 }
 
-function floatValue(tag: Tag | undefined): number | null {
-	const value = num(tag);
-	return value !== null && tag?.type === 'float' ? shortestFloat(value) : value;
-}
-
 export function playerView(file: NbtFile): PlayerView {
 	const root = file.root;
 	const dataVersion = num(child(root, 'DataVersion'));
-	const format = formatOf(dataVersion);
+	const style = styleOf(dataVersion);
+	const format = style.format;
 	const equipment = usesEquipment(root, dataVersion);
 	const items: ItemView[] = [];
 
@@ -268,7 +205,7 @@ export function playerView(file: NbtFile): PlayerView {
 		inventory.value.forEach((item, i) => {
 			const slot = num(child(item, 'Slot'));
 			if (slot === null) return;
-			const view = itemView(item, sectionOf(slot), slot, ['Inventory', i], format);
+			const view = describeItem(item, sectionOf(slot), slot, ['Inventory', i], style);
 			if (view) items.push(view);
 		});
 	}
@@ -276,7 +213,7 @@ export function playerView(file: NbtFile): PlayerView {
 	if (ender?.type === 'list') {
 		ender.value.forEach((item, i) => {
 			const slot = num(child(item, 'Slot'));
-			const view = slot === null ? null : itemView(item, 'ender', slot, ['EnderItems', i], format);
+			const view = slot === null ? null : describeItem(item, 'ender', slot, ['EnderItems', i], style);
 			if (view) items.push(view);
 		});
 	}
@@ -285,29 +222,19 @@ export function playerView(file: NbtFile): PlayerView {
 		for (const [key, item] of worn.value) {
 			const slot = key === 'offhand' ? OFFHAND_SLOT : Number(Object.entries(ARMOR_SLOTS).find(([, k]) => k === key)?.[0] ?? NaN);
 			if (Number.isNaN(slot)) continue;
-			const view = itemView(item, slot === OFFHAND_SLOT ? 'offhand' : 'armor', slot, ['equipment', key], format);
+			const view = describeItem(item, slot === OFFHAND_SLOT ? 'offhand' : 'armor', slot, ['equipment', key], style);
 			if (view) items.push(view);
 		}
 	}
 
-	const pos = child(root, 'Pos');
-	const dimension = child(root, 'Dimension');
 	return {
 		dataVersion,
 		format,
 		equipment,
-		stats: {
-			health: floatValue(child(root, 'Health')),
-			food: num(child(root, 'foodLevel')),
-			saturation: floatValue(child(root, 'foodSaturationLevel')),
-			xpLevel: num(child(root, 'XpLevel')),
-			xpProgress: floatValue(child(root, 'XpP')),
-			gameMode: num(child(root, 'playerGameType')),
-			// A string since 1.16, a number (-1, 0, 1) before.
-			dimension: dimension?.type === 'string' ? dimension.value : dimension ? String(num(dimension)) : null,
-			pos: pos?.type === 'list' ? pos.value.map((p) => num(p) ?? 0) : null
-		},
+		fields: playerFields(root),
+		effects: playerEffects(root, dataVersion),
 		items,
+		containers: findContainers(root, [], style, '', 0, new Set(['Inventory', 'EnderItems', 'equipment'])),
 		tree: toTree(root)
 	};
 }
@@ -315,11 +242,22 @@ export function playerView(file: NbtFile): PlayerView {
 // ------------------------------------------------------------------ edits ---
 
 export type Edit =
-	| { op: 'set'; path: Path; value: string }
+	/** A new value; with `type`, also a new type (a value in a compound only). */
+	| { op: 'set'; path: Path; value: string; type?: TagType }
 	| { op: 'remove'; path: Path }
-	| { op: 'add'; path: Path; name?: string; type: TagType; value?: string }
+	/** `type: 'snbt'` takes a whole structure as text. */
+	| { op: 'add'; path: Path; name?: string; type: TagType | 'snbt'; value?: string }
+	/** Replace any entry, compounds and lists included, with SNBT. */
+	| { op: 'replace'; path: Path; snbt: string }
+	| { op: 'rename'; path: Path; name: string }
 	| { op: 'item'; section: Section; slot: number; id: string; count: number; damage?: number | null }
-	| { op: 'removeItem'; section: Section; slot: number };
+	| { op: 'removeItem'; section: Section; slot: number }
+	/** An item in a container (shulker box, bundle, backpack): `list` is the list holding it. */
+	| { op: 'containerItem'; list: Path; slot: number; id: string; count: number; damage?: number | null }
+	| { op: 'containerRemove'; list: Path; slot: number }
+	/** Name, lore, enchantments, unbreakable, durability of the item at `item`. */
+	| { op: 'itemFields'; item: Path; fields: Partial<Omit<ItemFields, 'stored'>> }
+	| { op: 'addEffect'; id: string; level: number; seconds: number };
 
 const SECTIONS: Section[] = ['main', 'armor', 'offhand', 'ender'];
 const isPath = (p: unknown): p is Path =>
@@ -333,13 +271,19 @@ export function parseEdits(raw: unknown): Edit[] {
 		if (!e || typeof e !== 'object') throw bad();
 		switch (e.op) {
 			case 'set':
-				if (!isPath(e.path) || typeof e.value !== 'string') throw bad();
-				return { op: 'set', path: e.path, value: e.value };
+				if (!isPath(e.path) || typeof e.value !== 'string' || (e.type !== undefined && !TAG_TYPES.has(e.type))) throw bad();
+				return { op: 'set', path: e.path, value: e.value, ...(e.type ? { type: e.type } : {}) };
+			case 'replace':
+				if (!isPath(e.path) || typeof e.snbt !== 'string') throw bad();
+				return { op: 'replace', path: e.path, snbt: e.snbt };
+			case 'rename':
+				if (!isPath(e.path) || typeof e.name !== 'string') throw bad();
+				return { op: 'rename', path: e.path, name: e.name };
 			case 'remove':
 				if (!isPath(e.path)) throw bad();
 				return { op: 'remove', path: e.path };
 			case 'add':
-				if (!isPath(e.path) || !TAG_TYPES.has(e.type)) throw bad();
+				if (!isPath(e.path) || !(TAG_TYPES.has(e.type) || e.type === 'snbt')) throw bad();
 				return { op: 'add', path: e.path, type: e.type, name: String(e.name ?? ''), value: String(e.value ?? '') };
 			case 'item':
 				if (!SECTIONS.includes(e.section) || !Number.isInteger(e.slot) || typeof e.id !== 'string' || typeof e.count !== 'number') throw bad();
@@ -347,10 +291,48 @@ export function parseEdits(raw: unknown): Edit[] {
 			case 'removeItem':
 				if (!SECTIONS.includes(e.section) || !Number.isInteger(e.slot)) throw bad();
 				return { op: 'removeItem', section: e.section, slot: e.slot };
+			case 'containerItem':
+				if (!isPath(e.list) || !Number.isInteger(e.slot) || typeof e.id !== 'string' || typeof e.count !== 'number') throw bad();
+				return { op: 'containerItem', list: e.list, slot: e.slot, id: e.id, count: e.count, damage: typeof e.damage === 'number' ? e.damage : null };
+			case 'containerRemove':
+				if (!isPath(e.list) || !Number.isInteger(e.slot)) throw bad();
+				return { op: 'containerRemove', list: e.list, slot: e.slot };
+			case 'addEffect':
+				if (typeof e.id !== 'string' || typeof e.level !== 'number' || typeof e.seconds !== 'number') throw bad();
+				return { op: 'addEffect', id: e.id, level: e.level, seconds: e.seconds };
+			case 'itemFields':
+				if (!isPath(e.item) || !e.fields || typeof e.fields !== 'object') throw bad();
+				return { op: 'itemFields', item: e.item, fields: itemFieldsFrom(e.fields, bad) };
 			default:
 				throw bad();
 		}
 	});
+}
+
+function itemFieldsFrom(raw: Record<string, unknown>, bad: () => Error): Partial<Omit<ItemFields, 'stored'>> {
+	const out: Partial<Omit<ItemFields, 'stored'>> = {};
+	if ('name' in raw) {
+		if (raw.name !== null && typeof raw.name !== 'string') throw bad();
+		out.name = raw.name as string | null;
+	}
+	if ('lore' in raw) {
+		if (!Array.isArray(raw.lore) || !raw.lore.every((l) => typeof l === 'string')) throw bad();
+		out.lore = raw.lore as string[];
+	}
+	if ('enchantments' in raw) {
+		const list = raw.enchantments;
+		if (!Array.isArray(list) || !list.every((e) => e && typeof e.id === 'string' && typeof e.level === 'number')) throw bad();
+		out.enchantments = list.map((e) => ({ id: e.id.trim(), level: e.level }));
+	}
+	if ('unbreakable' in raw) {
+		if (typeof raw.unbreakable !== 'boolean') throw bad();
+		out.unbreakable = raw.unbreakable;
+	}
+	if ('damage' in raw) {
+		if (raw.damage !== null && typeof raw.damage !== 'number') throw bad();
+		out.damage = raw.damage as number | null;
+	}
+	return out;
 }
 
 const TAG_TYPES = new Set<TagType>(['byte', 'short', 'int', 'long', 'float', 'double', 'string', 'byteArray', 'intArray', 'longArray', 'list', 'compound']);
@@ -415,7 +397,10 @@ export function parseValue(type: TagType, raw = ''): Tag {
 }
 
 /** The tag at `at`, plus how to replace or remove it in its parent. */
-function locate(root: Compound, at: Path): { tag: Tag; replace: (t: Tag) => void; remove: () => void } {
+function locate(
+	root: Compound,
+	at: Path
+): { tag: Tag; parent: Tag; key: string | number; replace: (t: Tag) => void; remove: () => void } {
 	if (at.length === 0) throw new PlayerDataError('The root cannot be changed.');
 	let parent: Tag = root;
 	for (let i = 0; i < at.length - 1; i++) parent = step(parent, at[i]);
@@ -424,6 +409,8 @@ function locate(root: Compound, at: Path): { tag: Tag; replace: (t: Tag) => void
 	const p = parent;
 	return {
 		tag,
+		parent: p,
+		key,
 		replace: (t) => (p.type === 'compound' ? setChild(p, String(key), t) : ((p as Extract<Tag, { type: 'list' }>).value[key as number] = t)),
 		remove: () => (p.type === 'compound' ? removeChild(p, String(key)) : (p as Extract<Tag, { type: 'list' }>).value.splice(key as number, 1))
 	};
@@ -437,8 +424,6 @@ function step(tag: Tag, key: string | number): Tag {
 	if (tag.type === 'list' && typeof key === 'number' && key >= 0 && key < tag.value.length) return tag.value[key];
 	throw new PlayerDataError('That entry is no longer there. Reload the page and try again.');
 }
-
-const ITEM_ID = /^[a-z0-9_.-]+:[a-zA-Z0-9_./-]+$/;
 
 /** Where an item for (section, slot) lives: a list and the slot number in it, or an equipment key. */
 function itemHome(root: Compound, section: Section, slot: number, equipment: boolean) {
@@ -465,7 +450,8 @@ function listOf(root: Compound, name: string): Extract<Tag, { type: 'list' }> {
 	return list;
 }
 
-function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeItem' }>, format: Format, equipment: boolean): void {
+function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeItem' }>, style: Style, equipment: boolean): void {
+	const format = style.format;
 	const home = itemHome(root, edit.section, edit.slot, equipment);
 	let existing: Compound | undefined;
 	let dropExisting: () => void = () => undefined;
@@ -496,12 +482,7 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 		return;
 	}
 
-	const id = edit.id.trim();
-	if (!ITEM_ID.test(id)) throw new PlayerDataError(`"${edit.id}" is not an item id (like minecraft:diamond).`);
-	const maxCount = format === 'components' ? 99 : 127;
-	if (!Number.isInteger(edit.count) || edit.count < 1 || edit.count > maxCount) {
-		throw new PlayerDataError(`The count must be between 1 and ${maxCount}.`);
-	}
+	const id = checkItem(edit.id, edit.count, style);
 
 	// Changing an item keeps everything else on it (enchantments, names, NBT).
 	const item: Compound = existing ?? { type: 'compound', value: [] };
@@ -516,17 +497,47 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 	place(item);
 }
 
+function snbtValue(text: string): Tag {
+	try {
+		return parseSnbt(text);
+	} catch (err) {
+		throw new PlayerDataError(err instanceof SnbtError ? `That SNBT is not valid: ${err.message}.` : 'That SNBT is not valid.');
+	}
+}
+
 export function applyEdits(file: NbtFile, edits: Edit[]): void {
 	const root = file.root;
 	const dataVersion = num(child(root, 'DataVersion'));
-	const format = formatOf(dataVersion);
+	const style = styleOf(dataVersion);
 	const equipment = usesEquipment(root, dataVersion);
 	for (const edit of edits) {
 		switch (edit.op) {
 			case 'set': {
-				const { tag, replace } = locate(root, edit.path);
+				const { tag, parent, replace } = locate(root, edit.path);
 				if (tag.type === 'list' || tag.type === 'compound') throw new PlayerDataError('Lists and compounds are edited entry by entry.');
-				replace(parseValue(tag.type, edit.value));
+				const type = edit.type ?? tag.type;
+				if (type !== tag.type && parent.type === 'list') throw new PlayerDataError('Every entry of a list has the same type.');
+				replace(parseValue(type, edit.value));
+				break;
+			}
+			case 'replace': {
+				const { tag, parent, replace } = locate(root, edit.path);
+				const value = snbtValue(edit.snbt);
+				if (parent.type === 'list' && value.type !== tag.type) {
+					if (parent.value.length > 1) throw new PlayerDataError(`This list holds ${parent.itemType} entries.`);
+					parent.itemType = value.type;
+				}
+				replace(value);
+				break;
+			}
+			case 'rename': {
+				const { parent, key } = locate(root, edit.path);
+				const name = edit.name.trim();
+				if (parent.type !== 'compound') throw new PlayerDataError('Only entries of a compound have names.');
+				if (!name) throw new PlayerDataError('Give the entry a name.');
+				if (name !== key && child(parent, name)) throw new PlayerDataError(`There already is an entry called "${name}".`);
+				const at = parent.value.findIndex(([n]) => n === key);
+				parent.value[at] = [name, parent.value[at][1]];
 				break;
 			}
 			case 'remove':
@@ -534,17 +545,17 @@ export function applyEdits(file: NbtFile, edits: Edit[]): void {
 				break;
 			case 'add': {
 				const parent = edit.path.length ? locate(root, edit.path).tag : root;
-				const value = parseValue(edit.type, edit.value);
+				const value = edit.type === 'snbt' ? snbtValue(edit.value ?? '') : parseValue(edit.type, edit.value);
 				if (parent.type === 'compound') {
 					const name = (edit.name ?? '').trim();
 					if (!name) throw new PlayerDataError('Give the new entry a name.');
 					if (child(parent, name)) throw new PlayerDataError(`There already is an entry called "${name}".`);
 					parent.value.push([name, value]);
 				} else if (parent.type === 'list') {
-					if (parent.value.length && parent.itemType !== edit.type) {
+					if (parent.value.length && parent.itemType !== value.type) {
 						throw new PlayerDataError(`This list holds ${parent.itemType} entries.`);
 					}
-					parent.itemType = edit.type;
+					parent.itemType = value.type;
 					parent.value.push(value);
 				} else {
 					throw new PlayerDataError('Entries can only be added to lists and compounds.');
@@ -553,8 +564,24 @@ export function applyEdits(file: NbtFile, edits: Edit[]): void {
 			}
 			case 'item':
 			case 'removeItem':
-				applyItem(root, edit, format, equipment);
+				applyItem(root, edit, style, equipment);
 				break;
+			case 'containerItem':
+			case 'containerRemove': {
+				const { tag, parent } = locate(root, edit.list);
+				if (tag.type !== 'list') throw new PlayerDataError('That container is no longer there. Reload the page and try again.');
+				setContainerItem(tag, parent, edit.list, edit.slot, edit.op === 'containerItem' ? edit : null, style);
+				break;
+			}
+			case 'addEffect':
+				addEffect(root, dataVersion, edit);
+				break;
+			case 'itemFields': {
+				const { tag } = locate(root, edit.item);
+				if (tag.type !== 'compound' || !child(tag, 'id')) throw new PlayerDataError('That item is no longer there. Reload the page and try again.');
+				writeFields(tag, edit.fields, style);
+				break;
+			}
 		}
 	}
 	// A typo must fail here, not leave a file the server cannot read.

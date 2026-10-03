@@ -4,16 +4,22 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import NbtNode from '$lib/components/NbtNode.svelte';
 	import { formatDateTime } from '$lib/shared/format';
+	import type { Path, TreeTag } from '$lib/shared/nbt';
 
 	let { data } = $props();
 
 	type Item = (typeof data.view.items)[number];
-	type Section = Item['section'];
+	type Container = Item['containers'][number];
+	type Field = (typeof data.view.fields)[number];
+	type CustomField = (typeof data.customFields)[number];
+	/** A slot: one of the player's own, or one inside a container (by the container's list). */
+	type Loc = { kind: 'slot'; section: Item['section']; slot: number } | { kind: 'container'; list: Path; slot: number };
 
 	let result = $state<{ ok: boolean; message: string } | null>(null);
 	let busy = $state(false);
 	const locked = $derived(!!data.locked);
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}/players`);
+	const samePath = (a: Path, b: Path) => JSON.stringify(a) === JSON.stringify(b);
 
 	/** Post one action and reload the page's data; true when it was saved. */
 	async function post(action: string, fields: Record<string, string>): Promise<boolean> {
@@ -42,105 +48,254 @@
 
 	const save = (edits: Record<string, unknown>[]) => post('edit', { edits: JSON.stringify(edits) });
 
-	// ---- stats
-	const GAME_MODES = ['Survival', 'Creative', 'Adventure', 'Spectator'];
-	type StatField = { key: string; label: string; path: (string | number)[]; value: number | null; step: string };
-	const statFields = $derived<StatField[]>(
-		[
-			{ key: 'health', label: 'Health', path: ['Health'], value: data.view.stats.health, step: '0.5' },
-			{ key: 'food', label: 'Food', path: ['foodLevel'], value: data.view.stats.food, step: '1' },
-			{ key: 'saturation', label: 'Saturation', path: ['foodSaturationLevel'], value: data.view.stats.saturation, step: 'any' },
-			{ key: 'xp', label: 'XP level', path: ['XpLevel'], value: data.view.stats.xpLevel, step: '1' },
-			...(data.view.stats.pos ?? []).map((v, i) => ({ key: `pos${i}`, label: 'XYZ'[i], path: ['Pos', i], value: v, step: 'any' }))
-		].filter((f) => f.value !== null)
-	);
-	// Number inputs bind numbers; edits carry text.
-	let stats = $state<Record<string, string | number>>({});
-	let gameMode = $state('');
+	// ---- fields (built-in and mapped), saved together
+	const builtIn = $derived(data.view.fields);
+	const mapped = $derived(data.customFields.filter((c) => c.field).map((c) => c.field!) as Field[]);
+	let values = $state<Record<string, string | boolean | number>>({});
 	$effect(() => {
-		stats = Object.fromEntries(statFields.map((f) => [f.key, String(Number(f.value!.toFixed(4)))]));
-		gameMode = data.view.stats.gameMode === null ? '' : String(data.view.stats.gameMode);
+		values = Object.fromEntries([...builtIn, ...mapped].map((f) => [f.key, f.value]));
 	});
+	const changed = $derived([...builtIn, ...mapped].filter((f) => String(values[f.key]) !== String(f.value)));
 
-	async function saveStats(event: SubmitEvent) {
+	async function saveFields(event: SubmitEvent) {
 		event.preventDefault();
-		const edits: Record<string, unknown>[] = statFields
-			.filter((f) => Number(stats[f.key]) !== Number(f.value!.toFixed(4)))
-			.map((f) => ({ op: 'set', path: f.path, value: String(stats[f.key]) }));
-		if (data.view.stats.gameMode !== null && gameMode !== String(data.view.stats.gameMode)) {
-			edits.push({ op: 'set', path: ['playerGameType'], value: gameMode });
-		}
-		if (edits.length === 0) {
-			result = { ok: true, message: 'Nothing changed.' };
-			return;
-		}
-		await save(edits);
+		if (changed.length === 0) return;
+		await save(
+			changed.map((f) => ({ op: 'set', path: f.path, value: f.kind === 'checkbox' ? (values[f.key] ? '1' : '0') : String(values[f.key]) }))
+		);
 	}
 
-	// ---- inventory
-	let tab = $state<'inventory' | 'ender'>('inventory');
-	let selected = $state<{ section: Section; slot: number } | null>(null);
-	let itemId = $state('');
-	let itemCount = $state('1');
-	let itemDamage = $state('0');
+	// ---- mapped fields: add from the tree, remap in place
+	let mapping = $state<{ path: Path; label: string; kind: string } | null>(null);
+	let remapping = $state<CustomField | null>(null);
 
-	const itemAt = (section: Section, slot: number) => data.view.items.find((i) => i.section === section && i.slot === slot) ?? null;
-	const selectedItem = $derived(selected ? itemAt(selected.section, selected.slot) : null);
-	const otherItems = $derived(data.view.items.filter((i) => i.section === 'other'));
+	const kindFor = (tag: TreeTag) => (tag.type === 'string' ? 'text' : tag.type === 'byte' ? 'checkbox' : 'number');
+	const fieldAction = $derived(
+		locked
+			? null
+			: remapping
+				? {
+						label: `Use for “${remapping.label}”`,
+						run: async (path: Path, tag: TreeTag) => {
+							const field = remapping!;
+							// A text value cannot sit in a number field; anything else keeps the field's kind.
+							const kind = field.kind !== 'text' && tag.type === 'string' ? 'text' : field.kind;
+							if (await post('remapField', { id: String(field.id), path: JSON.stringify(path), kind })) remapping = null;
+						}
+					}
+				: {
+						label: 'Field',
+						run: (path: Path, tag: TreeTag, name: string) => (mapping = { path, label: name, kind: kindFor(tag) })
+					}
+	);
 
-	function pick(section: Section, slot: number) {
-		selected = { section, slot };
-		const item = itemAt(section, slot);
-		itemId = item?.id ?? '';
-		itemCount = String(item?.count ?? 1);
-		itemDamage = String(item?.damage ?? 0);
+	async function addMapped(event: SubmitEvent) {
+		event.preventDefault();
+		if (mapping && (await post('addField', { label: mapping.label, kind: mapping.kind, path: JSON.stringify(mapping.path) }))) mapping = null;
 	}
 
-	async function saveItem(event: SubmitEvent) {
-		event.preventDefault();
-		if (!selected) return;
+	// ---- effects
+	let effectEdits = $state<Record<string, { level: number; seconds: number }>>({});
+	$effect(() => {
+		effectEdits = Object.fromEntries(data.view.effects.effects.map((e) => [JSON.stringify(e.path), { level: e.level, seconds: e.seconds }]));
+	});
+	let newEffect = $state({ id: '', level: 1, seconds: 60 });
+
+	async function saveEffect(effect: (typeof data.view.effects.effects)[number]) {
+		const edit = effectEdits[JSON.stringify(effect.path)];
 		await save([
-			{
-				op: 'item',
-				section: selected.section,
-				slot: selected.slot,
-				id: itemId,
-				count: Number(itemCount),
-				...(data.view.format === 'legacy' ? { damage: Number(itemDamage) } : {})
-			}
+			{ op: 'set', path: effect.levelPath, value: String(Number(edit.level) - 1) },
+			{ op: 'set', path: effect.durationPath, value: String(Number(edit.seconds) < 0 ? -1 : Number(edit.seconds) * 20) }
 		]);
 	}
 
-	async function removeItem() {
-		if (selected && (await save([{ op: 'removeItem', section: selected.section, slot: selected.slot }]))) selected = null;
+	async function addNewEffect(event: SubmitEvent) {
+		event.preventDefault();
+		if (await save([{ op: 'addEffect', id: newEffect.id, level: Number(newEffect.level), seconds: Number(newEffect.seconds) }])) {
+			newEffect = { id: '', level: 1, seconds: 60 };
+		}
 	}
 
-	const short = (id: string) => id.replace(/^minecraft:/, '').replace(/_/g, ' ');
+	// ---- inventory and containers
+	let tab = $state<'inventory' | 'ender'>('inventory');
+	/** The slots opened, outermost first: a backpack, then a slot inside it. */
+	let stack = $state<Loc[]>([]);
+	const current = $derived(stack.at(-1) ?? null);
+
+	function allContainers(): Container[] {
+		const out: Container[] = [];
+		const visit = (cs: Container[]) => {
+			for (const c of cs) {
+				out.push(c);
+				for (const i of c.items) visit(i.containers);
+			}
+		};
+		visit(data.view.containers);
+		for (const i of data.view.items) visit(i.containers);
+		return out;
+	}
+
+	function itemAt(loc: Loc): Item | null {
+		if (loc.kind === 'slot') return data.view.items.find((i) => i.section === loc.section && i.slot === loc.slot) ?? null;
+		return allContainers().find((c) => samePath(c.path, loc.list))?.items.find((i) => i.slot === loc.slot) ?? null;
+	}
+
+	function sameLoc(a: Loc | null, b: Loc): boolean {
+		if (!a || a.kind !== b.kind || a.slot !== b.slot) return false;
+		return a.kind === 'slot' ? a.section === (b as typeof a).section : samePath(a.list, (b as typeof a).list);
+	}
+
+	const selectedItem = $derived(current ? itemAt(current) : null);
+
+	let itemId = $state('');
+	let itemCount = $state<string | number>('1');
+	let itemDamage = $state<string | number>('0');
+	let itemName = $state('');
+	let itemLore = $state('');
+	let itemUnbreakable = $state(false);
+	let itemDurability = $state<string | number>('0');
+	let itemEnchants = $state<{ id: string; level: number }[]>([]);
+
+	function fillItemForm() {
+		const item = current ? itemAt(current) : null;
+		itemId = item?.id ?? '';
+		itemCount = item?.count ?? 1;
+		itemDamage = item?.damage ?? 0;
+		itemName = item?.fields.name ?? '';
+		itemLore = item?.fields.lore.join('\n') ?? '';
+		itemUnbreakable = item?.fields.unbreakable ?? false;
+		itemDurability = item?.fields.damage ?? 0;
+		itemEnchants = (item?.fields.enchantments ?? []).map((e) => ({ ...e }));
+	}
+
+	function pick(loc: Loc, nested = false) {
+		stack = nested ? [...stack, loc] : [loc];
+		fillItemForm();
+	}
+
+	function back(to: number) {
+		stack = stack.slice(0, to + 1);
+		fillItemForm();
+	}
+
+	const legacy = $derived(data.view.format === 'legacy');
+
+	async function saveItem(event: SubmitEvent) {
+		event.preventDefault();
+		if (!current) return;
+		const place =
+			current.kind === 'slot'
+				? { op: 'item', section: current.section, slot: current.slot }
+				: { op: 'containerItem', list: current.list, slot: current.slot };
+		const edits: Record<string, unknown>[] = [{ ...place, id: itemId, count: Number(itemCount), ...(legacy ? { damage: Number(itemDamage) } : {}) }];
+		const item = selectedItem;
+		if (item) {
+			// Only what changed, so an untouched field keeps its exact text and formatting.
+			const fields: Record<string, unknown> = {};
+			if (itemName !== (item.fields.name ?? '')) fields.name = itemName || null;
+			const lore = itemLore === '' ? [] : itemLore.split('\n');
+			if (lore.join('\n') !== item.fields.lore.join('\n')) fields.lore = lore;
+			if (itemUnbreakable !== item.fields.unbreakable) fields.unbreakable = itemUnbreakable;
+			if (!legacy && Number(itemDurability) !== (item.fields.damage ?? 0)) fields.damage = Number(itemDurability);
+			const enchants = itemEnchants.filter((e) => e.id.trim()).map((e) => ({ id: e.id.trim(), level: Number(e.level) }));
+			if (JSON.stringify(enchants) !== JSON.stringify(item.fields.enchantments)) fields.enchantments = enchants;
+			if (Object.keys(fields).length) edits.push({ op: 'itemFields', item: item.path, fields });
+		}
+		if (await save(edits)) fillItemForm();
+	}
+
+	async function removeItem() {
+		if (!current) return;
+		const edit =
+			current.kind === 'slot'
+				? { op: 'removeItem', section: current.section, slot: current.slot }
+				: { op: 'containerRemove', list: current.list, slot: current.slot };
+		if (await save([edit])) {
+			stack = stack.slice(0, -1);
+			fillItemForm();
+		}
+	}
+
+	function subtree(path: Path): TreeTag | null {
+		let tag: TreeTag | undefined = data.view.tree;
+		for (const key of path) {
+			if (tag?.type === 'compound') tag = tag.value.find(([k]) => k === key)?.[1];
+			else if (tag?.type === 'list' && typeof key === 'number') tag = tag.value[key];
+			else return null;
+		}
+		return tag ?? null;
+	}
+
+	function locLabel(loc: Loc): string {
+		if (loc.kind === 'container') return `slot ${loc.slot}`;
+		if (loc.section === 'ender') return `Ender chest slot ${loc.slot}`;
+		return SLOT_LABELS[loc.slot] ?? `${loc.slot < 9 ? 'Hotbar' : 'Inventory'} slot ${loc.slot}`;
+	}
+
+	/** The name part of an id (the full id is in the slot's tooltip). */
+	const short = (id: string) => (id.split(':').pop() ?? id).replace(/_/g, ' ');
 	const SLOT_LABELS: Record<number, string> = { 103: 'Head', 102: 'Chest', 101: 'Legs', 100: 'Feet', [-106]: 'Offhand' };
-	const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+	const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 	const FORMAT_LABEL = { legacy: 'Minecraft 1.12 and older', flat: 'Minecraft 1.13 to 1.20.4', components: 'Minecraft 1.20.5 and newer' };
+	/** A container without slots (a bundle) shows its items plus one empty place to add to. */
+	const containerSlots = (c: Container) => (c.size === null ? range(0, c.items.length) : range(0, c.size - 1));
 </script>
 
 <svelte:head><title>{data.name ?? data.uuid} - Players - MineShell</title></svelte:head>
 
-{#snippet cell(section: Section, slot: number, label: string | null = null)}
-	{@const item = itemAt(section, slot)}
+{#snippet cell(loc: Loc, label: string | null = null, nested = false)}
+	{@const item = itemAt(loc)}
 	<button
 		type="button"
 		class="slot"
 		class:filled={!!item}
-		aria-pressed={selected?.section === section && selected.slot === slot}
+		aria-pressed={sameLoc(current, loc)}
 		title={item ? `${item.id}${item.name ? ` "${item.name}"` : ''}${item.count > 1 ? ` x${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
-		onclick={() => pick(section, slot)}
+		onclick={() => pick(loc, nested)}
 	>
 		{#if item}
 			<span class="item-name">{item.name ?? short(item.id)}</span>
 			{#if item.count > 1}<span class="count">{item.count}</span>{/if}
-			{#if item.hasData}<span class="data-dot" aria-label="has extra data"></span>{/if}
+			{#if item.containers.length}<span class="holds" aria-label="holds items">▣</span>
+			{:else if item.hasData}<span class="data-dot" aria-label="has extra data"></span>{/if}
 		{:else if label}
 			<span class="slot-label">{label}</span>
 		{/if}
 	</button>
+{/snippet}
+
+{#snippet containerGrid(c: Container, nested: boolean)}
+	<div class="container">
+		<p class="small muted container-label">{c.label}{c.size === null ? ' (in order, no fixed slots)' : ''}</p>
+		<div class="grid">
+			{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}{/each}
+		</div>
+	</div>
+{/snippet}
+
+{#snippet input(f: Field)}
+	<div class="field" class:check={f.kind === 'checkbox'}>
+		{#if f.kind === 'checkbox'}
+			<label class="check"><input type="checkbox" bind:checked={values[f.key] as boolean} disabled={locked} /> {f.label}</label>
+		{:else}
+			<label for="f-{f.key}">{f.label}</label>
+			{#if f.kind === 'select'}
+				<select id="f-{f.key}" bind:value={values[f.key]} disabled={locked}>
+					{#each f.options ?? [] as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+				</select>
+			{:else}
+				<input
+					id="f-{f.key}"
+					class:mono={f.kind === 'text'}
+					type={f.kind === 'number' && !/Array$/.test(f.type) ? 'number' : 'text'}
+					step="any"
+					bind:value={values[f.key]}
+					disabled={locked}
+				/>
+			{/if}
+		{/if}
+		{#if f.hint}<p class="hint">{f.hint}</p>{/if}
+	</div>
 {/snippet}
 
 <p class="back"><a href={base}>← Players</a></p>
@@ -156,118 +311,260 @@
 {#if data.locked}
 	<div class="notice warning"><p>{data.locked}</p></div>
 {/if}
-<Flash form={result} />
+<!-- Keyed: the same message twice in a row would otherwise stay dismissed. -->
+{#key result}<Flash form={result} />{/key}
+
+<form class="panel" onsubmit={saveFields}>
+	<h2>Player</h2>
+	<div class="fields">
+		{#each builtIn.filter((f) => f.group === 'basic') as f (f.key)}{@render input(f)}{/each}
+	</div>
+
+	{#if data.customFields.length}
+		<h3>Your fields</h3>
+		<p class="small muted">Mapped from the data below; the same fields show for every player of this server.</p>
+		<div class="fields">
+			{#each data.customFields as c (c.id)}
+				<div class="custom" class:missing={!c.field}>
+					{#if c.field}
+						{@render input(c.field as Field)}
+					{:else}
+						<span class="label-text">{c.label}</span>
+						<p class="small">{c.problem}</p>
+						<p class="mono small faint">{c.path.join(' › ')}</p>
+					{/if}
+					<span class="custom-actions">
+						<button type="button" class="button-quiet" disabled={locked} onclick={() => (remapping = c)}>Remap</button>
+						<button type="button" class="button-quiet button-danger" disabled={busy} onclick={() => post('removeField', { id: String(c.id) })}>Remove</button>
+					</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
+
+	{#if builtIn.some((f) => f.group !== 'basic')}
+		<details class="advanced">
+			<summary>Advanced</summary>
+			<div class="fields">
+				{#each builtIn.filter((f) => f.group === 'advanced') as f (f.key)}{@render input(f)}{/each}
+			</div>
+			{#if builtIn.some((f) => f.group === 'attributes')}
+				<h3>Attributes (base values)</h3>
+				<div class="fields">
+					{#each builtIn.filter((f) => f.group === 'attributes') as f (f.key)}{@render input(f)}{/each}
+				</div>
+			{/if}
+		</details>
+	{/if}
+
+	<div class="save-row">
+		<button class="button-primary" type="submit" disabled={locked || busy || changed.length === 0}>
+			Save{changed.length ? ` ${changed.length} change${changed.length === 1 ? '' : 's'}` : ''}
+		</button>
+		<p class="small faint">Any value in the data below can become a field here: hover it and pick “Field”.</p>
+	</div>
+</form>
 
 <section class="panel">
-	<h2>Stats</h2>
-	<form class="stats" onsubmit={saveStats}>
-		{#each statFields as f (f.key)}
-			<div class="field">
-				<label for="stat-{f.key}">{f.label}</label>
-				<input id="stat-{f.key}" type="number" step={f.step} bind:value={stats[f.key]} disabled={locked} />
-			</div>
-		{/each}
-		{#if data.view.stats.gameMode !== null}
-			<div class="field">
-				<label for="stat-mode">Game mode</label>
-				<select id="stat-mode" bind:value={gameMode} disabled={locked}>
-					{#each GAME_MODES as mode, i (mode)}<option value={String(i)}>{mode}</option>{/each}
-				</select>
-			</div>
-		{/if}
-		{#if data.view.stats.dimension !== null}
-			<div class="field">
-				<span class="label-text">Dimension</span>
-				<span class="mono small dimension">{data.view.stats.dimension}</span>
-			</div>
-		{/if}
-		<button class="button-primary" type="submit" disabled={locked || busy}>Save stats</button>
+	<h2>Effects</h2>
+	{#if data.view.effects.effects.length === 0}
+		<p class="small muted">No active effects.</p>
+	{:else}
+		<table class="effects">
+			<thead><tr><th>Effect</th><th>Level</th><th>Seconds left</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+			<tbody>
+				{#each data.view.effects.effects as e (JSON.stringify(e.path))}
+					{@const edit = effectEdits[JSON.stringify(e.path)]}
+					<tr>
+						<td class="mono small">{e.id}</td>
+						<td>{#if edit}<input type="number" min="1" max="128" bind:value={edit.level} aria-label="Level" disabled={locked} />{/if}</td>
+						<td>{#if edit}<input type="number" min="-1" bind:value={edit.seconds} aria-label="Seconds left" disabled={locked} />{/if}</td>
+						<td class="right">
+							<button type="button" disabled={locked || busy || (edit?.level === e.level && edit?.seconds === e.seconds)} onclick={() => saveEffect(e)}>Save</button>
+							<button type="button" class="button-danger" disabled={locked || busy} onclick={() => save([{ op: 'remove', path: e.path }])}>Remove</button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+	<form class="add-effect" onsubmit={addNewEffect}>
+		<div class="field">
+			<label for="effect-id">Add an effect</label>
+			<input id="effect-id" class="mono" bind:value={newEffect.id} placeholder={data.view.effects.numericIds ? 'minecraft:speed or 1' : 'minecraft:speed'} required disabled={locked} />
+		</div>
+		<div class="field small-field">
+			<label for="effect-level">Level</label>
+			<input id="effect-level" type="number" min="1" max="128" bind:value={newEffect.level} disabled={locked} />
+		</div>
+		<div class="field small-field">
+			<label for="effect-seconds">Seconds</label>
+			<input id="effect-seconds" type="number" min="-1" bind:value={newEffect.seconds} disabled={locked} />
+		</div>
+		<button type="submit" disabled={locked || busy}>Add</button>
 	</form>
+	<p class="hint">-1 seconds lasts forever.</p>
 </section>
 
 <section class="panel">
 	<div class="inv-head">
 		<div class="switcher" role="tablist">
-			<button role="tab" aria-selected={tab === 'inventory'} onclick={() => ((tab = 'inventory'), (selected = null))}>Inventory</button>
-			<button role="tab" aria-selected={tab === 'ender'} onclick={() => ((tab = 'ender'), (selected = null))}>Ender chest</button>
+			<button role="tab" aria-selected={tab === 'inventory'} onclick={() => ((tab = 'inventory'), (stack = []))}>Inventory</button>
+			<button role="tab" aria-selected={tab === 'ender'} onclick={() => ((tab = 'ender'), (stack = []))}>Ender chest</button>
 		</div>
-		<p class="small faint">Pick a slot to change, add or remove its item.</p>
+		<p class="small faint">Pick a slot to edit, add or remove its item. ▣ marks an item that holds items.</p>
 	</div>
 
 	<div class="inv-layout">
 		<div class="grids">
 			{#if tab === 'inventory'}
 				<div class="equip">
-					{#each [103, 102, 101, 100] as slot (slot)}{@render cell('armor', slot, SLOT_LABELS[slot])}{/each}
+					{#each [103, 102, 101, 100] as slot (slot)}{@render cell({ kind: 'slot', section: 'armor', slot }, SLOT_LABELS[slot])}{/each}
 					<span class="gap"></span>
-					{@render cell('offhand', -106, 'Offhand')}
+					{@render cell({ kind: 'slot', section: 'offhand', slot: -106 }, 'Offhand')}
 				</div>
-				<div class="grid">{#each range(9, 35) as slot (slot)}{@render cell('main', slot)}{/each}</div>
-				<div class="grid hotbar">{#each range(0, 8) as slot (slot)}{@render cell('main', slot)}{/each}</div>
-				{#if otherItems.length}
-					<p class="small muted">
-						Also in other slots (mods): {otherItems.map((i) => `${short(i.id)} x${i.count} (slot ${i.slot})`).join(', ')}. Edit
-						those in the data below.
-					</p>
-				{/if}
+				<div class="grid">{#each range(9, 35) as slot (slot)}{@render cell({ kind: 'slot', section: 'main', slot })}{/each}</div>
+				<div class="grid hotbar">{#each range(0, 8) as slot (slot)}{@render cell({ kind: 'slot', section: 'main', slot })}{/each}</div>
+				{#each data.view.containers as c (JSON.stringify(c.path))}
+					{@render containerGrid(c, false)}
+				{/each}
 			{:else}
-				<div class="grid">{#each range(0, 26) as slot (slot)}{@render cell('ender', slot)}{/each}</div>
+				<div class="grid">{#each range(0, 26) as slot (slot)}{@render cell({ kind: 'slot', section: 'ender', slot })}{/each}</div>
 			{/if}
 		</div>
 
-		{#if selected}
+		{#if current}
 			<form class="item-editor" onsubmit={saveItem}>
-				<h3>{selected.section === 'ender' ? 'Ender chest' : (SLOT_LABELS[selected.slot] ?? (selected.slot < 9 ? 'Hotbar' : 'Inventory'))} slot {selected.slot}</h3>
-				<div class="field">
-					<label for="item-id">Item id</label>
-					<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+				<nav class="crumbs small">
+					{#each stack as loc, i (i)}
+						{#if i > 0}<span class="faint sep">›</span>{/if}
+						{#if i < stack.length - 1}
+							<button type="button" class="link" onclick={() => back(i)}>{itemAt(loc) ? short(itemAt(loc)!.id) : locLabel(loc)}</button>
+						{:else}
+							<strong>{locLabel(loc)}</strong>
+						{/if}
+					{/each}
+				</nav>
+
+				<div class="item-main">
+				<div class="item-row">
+					<div class="field grow">
+						<label for="item-id">Item id</label>
+						<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+					</div>
+					<div class="field narrow">
+						<label for="item-count">Count</label>
+						<input id="item-count" type="number" min="1" max={data.view.format === 'components' ? 99 : 127} bind:value={itemCount} disabled={locked} />
+					</div>
+					{#if legacy}
+						<div class="field narrow">
+							<label for="item-damage">Damage</label>
+							<input id="item-damage" type="number" bind:value={itemDamage} disabled={locked} />
+						</div>
+					{/if}
 				</div>
-				<div class="field">
-					<label for="item-count">Count</label>
-					<input id="item-count" type="number" min="1" max={data.view.format === 'components' ? 99 : 127} bind:value={itemCount} disabled={locked} />
-				</div>
-				{#if data.view.format === 'legacy'}
+
+				{#if selectedItem}
 					<div class="field">
-						<label for="item-damage">Damage / metadata</label>
-						<input id="item-damage" type="number" bind:value={itemDamage} disabled={locked} />
+						<label for="item-name">Name</label>
+						<input id="item-name" bind:value={itemName} placeholder="No custom name" disabled={locked} />
+					</div>
+					<div class="field">
+						<label for="item-lore">Lore (one line per line)</label>
+						<textarea id="item-lore" rows="2" bind:value={itemLore} disabled={locked}></textarea>
+					</div>
+					<div class="item-row">
+						<label class="check"><input type="checkbox" bind:checked={itemUnbreakable} disabled={locked} /> Unbreakable</label>
+						{#if !legacy}
+							<div class="field narrow">
+								<label for="item-durability">Durability used</label>
+								<input id="item-durability" type="number" min="0" bind:value={itemDurability} disabled={locked} />
+							</div>
+						{/if}
+					</div>
+					<div class="field">
+						<span class="label-text">{selectedItem.fields.stored ? 'Stored enchantments' : 'Enchantments'}</span>
+						{#each itemEnchants as e, i (i)}
+							<div class="enchant">
+								<input class="mono" bind:value={e.id} placeholder={legacy ? '16 (sharpness)' : 'minecraft:sharpness'} aria-label="Enchantment" disabled={locked} />
+								<input type="number" min="1" max="255" bind:value={e.level} aria-label="Level" disabled={locked} />
+								<button type="button" class="button-quiet button-danger" aria-label="Remove enchantment" disabled={locked} onclick={() => itemEnchants.splice(i, 1)}>×</button>
+							</div>
+						{/each}
+						<button type="button" class="button-quiet" disabled={locked} onclick={() => itemEnchants.push({ id: '', level: 1 })}>Add enchantment</button>
+						{#if legacy}<p class="hint">1.12 numbers enchantments: 0 protection, 16 sharpness, 32 efficiency, 34 unbreaking, 70 mending.</p>{/if}
 					</div>
 				{/if}
-				{#if selectedItem?.hasData}
-					<p class="hint">
-						This item has more data (enchantments, a name, mod data). It is kept when the id or count changes; edit it under
-						<code>{selectedItem.path.join(' › ')}</code> below.
-					</p>
-				{/if}
+
 				<div class="buttons">
 					<button class="button-primary" type="submit" disabled={locked || busy}>{selectedItem ? 'Save item' : 'Add item'}</button>
 					{#if selectedItem}
 						<button class="button-danger" type="button" disabled={locked || busy} onclick={removeItem}>Remove</button>
 					{/if}
-					<button type="button" onclick={() => (selected = null)}>Close</button>
+					<button type="button" onclick={() => (stack = [])}>Close</button>
 				</div>
+				</div>
+
+				{#if selectedItem}
+					<div class="item-side">
+					{#each selectedItem.containers as c (JSON.stringify(c.path))}
+						{@render containerGrid(c, true)}
+					{/each}
+					{#if subtree(selectedItem.path)}
+						{@const tree = subtree(selectedItem.path)!}
+						<details class="item-data">
+							<summary class="small">All item data</summary>
+							<ul class="tree">
+								<NbtNode name={short(selectedItem.id)} tag={tree} path={selectedItem.path} {locked} {fieldAction} open onEdit={(edit) => save([edit])} />
+							</ul>
+						</details>
+					{/if}
+					</div>
+				{/if}
 			</form>
 		{/if}
 	</div>
 </section>
 
-<section class="panel">
+<section class="panel" class:remapping={!!remapping}>
 	<h2>All data</h2>
-	<p class="small muted">
-		Everything in the player's file, including what mods store there. Hover an entry to edit, add or remove; each
-		change is saved on its own.
-	</p>
+	{#if remapping}
+		<div class="notice info remap-notice">
+			<p>Pick the value “{remapping.label}” should show: hover it and choose “Use for “{remapping.label}””.</p>
+			<button type="button" onclick={() => (remapping = null)}>Cancel</button>
+		</div>
+	{:else}
+		<p class="small muted">
+			Everything in the player's file, including what mods store there. Hover an entry to edit, rename, add to or remove
+			it, edit it as SNBT, or show it as a field above. Each change is saved on its own.
+		</p>
+	{/if}
+	{#if mapping}
+		<form class="map-form" onsubmit={addMapped}>
+			<span class="small">New field for <code>{mapping.path.join(' › ')}</code></span>
+			<input bind:value={mapping.label} aria-label="Field name" required />
+			<select bind:value={mapping.kind} aria-label="Shown as">
+				<option value="number">Number</option>
+				<option value="checkbox">Checkbox</option>
+				<option value="text">Text</option>
+			</select>
+			<button class="button-primary" type="submit" disabled={busy}>Add field</button>
+			<button type="button" onclick={() => (mapping = null)}>Cancel</button>
+			{#if mapping.path.some((k) => typeof k === 'number')}
+				<p class="hint">This goes through a list position, which can point at another entry once that list changes.</p>
+			{/if}
+		</form>
+	{/if}
 	<ul class="tree">
 		{#each data.view.tree.type === 'compound' ? data.view.tree.value : [] as [key, value], i (`${key}:${i}`)}
-			<NbtNode name={key} tag={value} path={[key]} {locked} onEdit={(edit) => save([edit])} />
+			<NbtNode name={key} tag={value} path={[key]} {locked} {fieldAction} onEdit={(edit) => save([edit])} />
 		{/each}
 	</ul>
 </section>
 
 <section class="panel">
 	<h2>Backups</h2>
-	<p class="small muted">
-		MineShell keeps the file as it was before each editing session (the newest 10).
-	</p>
+	<p class="small muted">MineShell keeps the file as it was before each editing session (the newest 10).</p>
 	{#if data.backups.length === 0}
 		<p class="small muted">None yet: the first change makes one.</p>
 	{:else}
@@ -296,28 +593,124 @@
 		margin: 0;
 	}
 
-	.stats {
+	h3 {
+		font-size: 0.95rem;
+		margin: var(--space-4) 0 var(--space-1);
+	}
+
+	.fields {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: flex-end;
+		align-items: flex-start;
 		gap: var(--space-3);
 	}
 
-	.stats .field {
+	.fields .field {
 		margin: 0;
-		width: 8rem;
+		width: 9.5rem;
+	}
+
+	.fields .field.check {
+		align-self: center;
+	}
+
+	.fields .hint {
+		margin-top: 0.15rem;
+	}
+
+	.check {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		color: var(--text);
+		font-size: 0.88rem;
+		margin: 0;
+	}
+
+	.custom {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.custom.missing {
+		width: 12rem;
+		opacity: 0.7;
+		border: 1px dashed var(--line-strong);
+		border-radius: var(--radius);
+		padding: var(--space-2);
+	}
+
+	.custom.missing p {
+		margin: 0;
+	}
+
+	.custom-actions {
+		display: flex;
+		gap: var(--space-1);
+	}
+
+	.custom-actions button {
+		font-size: 0.72rem;
+		padding: 0.05rem 0.4rem;
+	}
+
+	.advanced {
+		margin-top: var(--space-4);
+	}
+
+	.advanced summary {
+		cursor: pointer;
+		margin-bottom: var(--space-3);
+	}
+
+	.save-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		margin-top: var(--space-4);
+	}
+
+	.save-row p {
+		margin: 0;
 	}
 
 	.label-text {
 		display: block;
 		font-size: 0.85rem;
 		color: var(--text-muted);
-		margin-bottom: var(--space-2);
+		margin-bottom: var(--space-1);
 	}
 
-	.dimension {
-		display: block;
-		padding: 0.42rem 0;
+	.effects input {
+		width: 6rem;
+		margin: 0;
+	}
+
+	.effects td button {
+		font-size: 0.78rem;
+		padding: 0.2rem 0.5rem;
+	}
+
+	.right {
+		text-align: right;
+	}
+
+	.add-effect {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		margin-top: var(--space-3);
+	}
+
+	.add-effect .field {
+		margin: 0;
+	}
+
+	.small-field {
+		width: 6rem;
 	}
 
 	.inv-head {
@@ -345,9 +738,8 @@
 
 	.inv-layout {
 		display: flex;
-		gap: var(--space-5);
-		align-items: flex-start;
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 
 	.grids {
@@ -363,12 +755,12 @@
 		gap: 3px;
 	}
 
-	.equip .gap {
-		grid-column: span 1;
-	}
-
 	.hotbar {
 		margin-top: var(--space-1);
+	}
+
+	.container-label {
+		margin: var(--space-2) 0 var(--space-1);
 	}
 
 	.slot {
@@ -430,16 +822,86 @@
 		background: var(--accent);
 	}
 
-	.item-editor {
-		flex: 1 1 16rem;
-		max-width: 24rem;
-		border-left: 1px solid var(--line);
-		padding-left: var(--space-4);
+	.holds {
+		position: absolute;
+		top: 0;
+		right: 3px;
+		font-size: 0.65rem;
+		color: var(--accent);
 	}
 
-	.item-editor h3 {
-		margin: 0 0 var(--space-3);
-		font-size: 0.95rem;
+	/* Below the grids: an item's own contents grid is as wide as the inventory's. */
+	.item-editor {
+		display: grid;
+		grid-template-columns: minmax(18rem, 30rem) minmax(0, 1fr);
+		column-gap: var(--space-5);
+		border-top: 1px solid var(--line);
+		padding-top: var(--space-4);
+	}
+
+	.crumbs {
+		grid-column: 1 / -1;
+	}
+
+	@media (max-width: 1100px) {
+		.item-editor {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	.item-side :global(.container-label) {
+		margin-top: 0;
+	}
+
+	.crumbs {
+		margin-bottom: var(--space-3);
+	}
+
+	.sep {
+		margin: 0 0.35rem;
+	}
+
+	.link {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: var(--accent);
+		font-weight: normal;
+		font-size: inherit;
+	}
+
+	.item-row {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		margin-bottom: var(--space-3);
+	}
+
+	.item-row .field {
+		margin: 0;
+	}
+
+	.grow {
+		flex: 1 1 12rem;
+	}
+
+	.narrow {
+		width: 7rem;
+	}
+
+	.enchant {
+		display: flex;
+		gap: var(--space-1);
+		margin-bottom: var(--space-1);
+	}
+
+	.enchant input {
+		margin: 0;
+	}
+
+	.enchant input[type='number'] {
+		width: 5rem;
 	}
 
 	.buttons {
@@ -448,9 +910,50 @@
 		flex-wrap: wrap;
 	}
 
+	.item-data {
+		margin-top: var(--space-4);
+	}
+
+	.item-data summary {
+		cursor: pointer;
+	}
+
 	.tree {
 		margin: 0;
 		padding: 0;
+	}
+
+	.remap-notice {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.remap-notice p {
+		margin: 0;
+	}
+
+	.map-form {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+		padding: var(--space-2) var(--space-3);
+		margin-bottom: var(--space-3);
+		border: 1px solid var(--accent);
+		border-radius: var(--radius);
+	}
+
+	.map-form input,
+	.map-form select {
+		margin: 0;
+		width: auto;
+	}
+
+	.map-form .hint {
+		flex-basis: 100%;
+		margin: 0;
 	}
 
 	.backups {

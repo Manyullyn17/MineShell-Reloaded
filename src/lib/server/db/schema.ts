@@ -242,3 +242,24 @@ export type NewServerInstance = typeof serverInstances.$inferInsert;
 export type Mod = typeof mods.$inferSelect;
 export type InstanceMod = typeof instanceMods.$inferSelect;
 export type JavaRuntime = typeof javaRuntimes.$inferSelect;
+
+/** Fields mapped onto a path in player NBT, per server (see playerfields.ts). */
+export const playerFields = sqliteTable(
+	'player_fields',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		label: text('label').notNull(),
+		/** JSON array of compound keys and list indices. */
+		path: text('path').notNull(),
+		/** number | checkbox | text */
+		kind: text('kind').notNull(),
+		createdAt: integer('created_at').notNull()
+	},
+	(t) => ({
+		byInstance: index('player_fields_instance_idx').on(t.instanceId)
+	})
+);
+

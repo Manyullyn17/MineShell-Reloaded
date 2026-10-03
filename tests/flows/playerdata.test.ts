@@ -13,6 +13,7 @@ vi.mock('$lib/server/rcon', async (importOriginal) => ({
 
 const { listPlayerData, listBackups, readPlayerData, restorePlayerBackup, savePlayerData, playerView } = await import('$lib/server/playerdata');
 const { writeNbt } = await import('$lib/server/nbt');
+const { addCustomField, copyCustomFields, listCustomFields, remapCustomField, removeCustomField } = await import('$lib/server/playerfields');
 const { encryptSecret } = await import('$lib/server/crypto');
 const { invalidateUnitState } = await import('$lib/server/systemd');
 const { createInstance, systemdStopped } = await import('../helpers/instances');
@@ -46,7 +47,7 @@ function running() {
 }
 
 const xpOf = async (instance: Awaited<ReturnType<typeof server>>, uuid: string) =>
-	playerView((await readPlayerData(instance, uuid)).file).stats.xpLevel;
+	Number(playerView((await readPlayerData(instance, uuid)).file).fields.find((f) => f.key === 'xpLevel')?.value);
 
 describe('player data', () => {
 	beforeEach(() => {
@@ -134,5 +135,27 @@ describe('player data', () => {
 		const instance = await server();
 		await expect(readPlayerData(instance, '../../server.properties')).rejects.toThrow(/not a player id/);
 		await expect(restorePlayerBackup(instance, ALEX, 'x', '../x.dat')).rejects.toThrow(/No such backup/);
+	});
+
+	it('keeps mapped fields per server: add, remap in place, remove, copy to a clone', async () => {
+		const instance = await server();
+		const other = await server();
+		addCustomField(instance.id, { label: 'Mana', path: ['ManaData', 'mana'], kind: 'number' });
+		addCustomField(instance.id, { label: 'Level', path: ['XpLevel'], kind: 'number' });
+		expect(listCustomFields(other.id)).toEqual([]);
+		const [mana, level] = listCustomFields(instance.id);
+		expect(mana).toMatchObject({ label: 'Mana', path: ['ManaData', 'mana'], kind: 'number' });
+
+		remapCustomField(instance.id, mana.id, ['Mana', 'current']);
+		expect(listCustomFields(instance.id)[0]).toMatchObject({ id: mana.id, label: 'Mana', path: ['Mana', 'current'] });
+		removeCustomField(instance.id, level.id);
+		expect(listCustomFields(instance.id).map((f) => f.label)).toEqual(['Mana']);
+
+		copyCustomFields(instance.id, other.id);
+		expect(listCustomFields(other.id)).toMatchObject([{ label: 'Mana', path: ['Mana', 'current'] }]);
+
+		expect(() => addCustomField(instance.id, { label: ' ', path: ['x'], kind: 'number' })).toThrow(/name/);
+		expect(() => addCustomField(instance.id, { label: 'x', path: [], kind: 'number' })).toThrow(/not a place/);
+		expect(() => addCustomField(instance.id, { label: 'x', path: ['x'], kind: 'slider' })).toThrow(/how the field/);
 	});
 });

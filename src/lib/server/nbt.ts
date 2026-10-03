@@ -1,4 +1,5 @@
 import zlib from 'node:zlib';
+import type { TagType } from '$lib/shared/nbt';
 
 /**
  * Minecraft's NBT: big-endian, named tags, strings in Java's modified UTF-8.
@@ -8,20 +9,7 @@ import zlib from 'node:zlib';
  * stay bigint.
  */
 
-export type TagType =
-	| 'end'
-	| 'byte'
-	| 'short'
-	| 'int'
-	| 'long'
-	| 'float'
-	| 'double'
-	| 'byteArray'
-	| 'string'
-	| 'list'
-	| 'compound'
-	| 'intArray'
-	| 'longArray';
+export type { TagType };
 
 export type Tag =
 	| { type: 'byte' | 'short' | 'int' | 'float' | 'double'; value: number }
@@ -343,4 +331,13 @@ export function num(tag: Tag | undefined): number | null {
 
 export function str(tag: Tag | undefined): string | null {
 	return tag?.type === 'string' ? tag.value : null;
+}
+
+/** The shortest decimal that is the same 32-bit float: 0.1, not 0.10000000149011612. */
+export function shortestFloat(value: number): number {
+	for (let digits = 1; digits <= 9; digits++) {
+		const candidate = Number(value.toPrecision(digits));
+		if (Math.fround(candidate) === value) return candidate;
+	}
+	return value;
 }

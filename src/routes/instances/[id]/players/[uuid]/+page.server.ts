@@ -11,6 +11,7 @@ import {
 	restorePlayerBackup,
 	savePlayerData
 } from '$lib/server/playerdata';
+import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '$lib/server/playerfields';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
@@ -28,6 +29,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		name: data.name,
 		version: data.version,
 		view: playerView(data.file),
+		customFields: customFieldViews(data.file.root, listCustomFields(instance.id)),
 		backups: await listBackups(instance, uuid),
 		// Why it cannot be edited right now, if it cannot.
 		locked:
@@ -38,6 +40,14 @@ export const load: PageServerLoad = async ({ params }) => {
 					: null
 	};
 };
+
+function pathFrom(form: FormData): unknown {
+	try {
+		return JSON.parse(String(form.get('path') ?? 'null'));
+	} catch {
+		return null;
+	}
+}
 
 function refused(err: unknown) {
 	if (err instanceof PlayerDataError) return fail(400, { ok: false, message: err.message });
@@ -60,6 +70,34 @@ export const actions: Actions = {
 		} catch (err) {
 			return refused(err);
 		}
+	},
+
+	addField: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			addCustomField(instance.id, { label: String(form.get('label') ?? ''), path: pathFrom(form), kind: String(form.get('kind') ?? '') });
+			return { ok: true, message: 'Field added. It shows for every player of this server.' };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	remapField: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			remapCustomField(instance.id, Number(form.get('id')), pathFrom(form), String(form.get('kind') ?? '') || undefined);
+			return { ok: true, message: 'Field moved to the new place.' };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	removeField: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		removeCustomField(instance.id, Number((await request.formData()).get('id')));
+		return { ok: true, message: 'Field removed.' };
 	},
 
 	restore: async ({ request, params }) => {
