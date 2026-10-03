@@ -9,6 +9,7 @@
 		{ slug: 'console', label: 'Console' },
 		{ slug: 'properties', label: 'Server settings' },
 		{ slug: 'mods', label: 'Mods' },
+		{ slug: 'world', label: 'World' },
 		{ slug: 'players', label: 'Players' },
 		{ slug: 'files', label: 'Files' },
 		{ slug: 'settings', label: 'Instance settings' }

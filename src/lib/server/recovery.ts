@@ -13,6 +13,7 @@ import {
 } from './instances';
 import { restorePackChange } from './packchange';
 import { removePartialSnapshots } from './snapshots';
+import { restoreWorldChange } from './world';
 import { syncMods } from './mods';
 import { endOperation, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
 
@@ -42,7 +43,9 @@ const MESSAGES: Record<Journal['kind'], string> = {
 	'cleanroom-migration': 'MineShell stopped while moving this server to Cleanroom; it was put back on Forge.',
 	'cleanroom-revert':
 		'MineShell stopped while reverting to Forge. Run "Revert to Forge" again; it continues where it stopped.',
-	'pack-change': 'MineShell stopped while changing the pack version; the server was put back as it was.'
+	'pack-change': 'MineShell stopped while changing the pack version; the server was put back as it was.',
+	snapshot: 'MineShell stopped while snapshotting the world; the unfinished snapshot was removed.',
+	'world-change': 'MineShell stopped while changing the world; the previous world was put back.'
 };
 
 async function restore(instance: ServerInstance, journal: Journal): Promise<void> {
@@ -58,9 +61,14 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			await restorePackChange(root, journal);
 			await syncMods(instance).catch(() => undefined);
 			break;
+		case 'world-change':
+			await restoreWorldChange(root, journal);
+			break;
 		case 'create':
 		case 'cleanroom-revert':
-			// Nothing to restore: an incomplete install, and a revert that is safe to rerun.
+		case 'snapshot':
+			// Nothing to restore: an incomplete install, a revert that is safe
+			// to rerun, a snapshot whose partial copy is removed below.
 			break;
 	}
 }
@@ -95,7 +103,7 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	let removed = false;
 	for (const name of await fs.readdir(internal).catch(() => [] as string[])) {
 		if (
-			/^(pack-change|loader-previous)-\d+$/.test(name) ||
+			/^(pack-change|loader-previous|world-previous|world-incoming)-\d+$/.test(name) ||
 			/installer\.jar(\.log|\.part)?$/.test(name)
 		) {
 			await fs.rm(path.join(internal, name), { recursive: true, force: true });

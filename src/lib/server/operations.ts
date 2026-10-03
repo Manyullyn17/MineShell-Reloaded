@@ -39,6 +39,25 @@ export type Journal =
 	  }
 	/** Retry-safe on its own; recovery only flags it for another run. */
 	| { kind: 'cleanroom-revert' }
+	/** A snapshot taken on request; a copy cut short is a `.partial` folder that recovery deletes. */
+	| { kind: 'snapshot' }
+	| {
+			/** Reset, replace or restore the world (world.ts). */
+			kind: 'world-change';
+			action: 'reset' | 'replace' | 'restore';
+			/** Where the current world folders move: a snapshot being assembled, or a folder deleted afterwards. */
+			aside: string;
+			/** The snapshot `aside` is renamed to once complete, when one was wanted. */
+			keepAs: string | null;
+			/** World folders that existed, all moved aside. */
+			worlds: string[];
+			/** World folders the change puts in place. */
+			placing: string[];
+			/** Folder the incoming world is assembled in first. */
+			incoming: string | null;
+			/** server.properties values the change sets, as they were before. */
+			propertiesBefore: Record<string, string> | null;
+	  }
 	| {
 			kind: 'pack-change';
 			staging: string;

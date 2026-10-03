@@ -1,11 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import yauzl from 'yauzl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-/** World snapshots before risky operations (snapshots.ts). */
+/**
+ * World snapshots before risky operations (snapshots.ts) and the world tools
+ * built on the same moves (world.ts): reset, replace, restore.
+ */
 
 const { changeLoaderVersion } = await import('$lib/server/instances');
 const { LOADERS } = await import('$lib/server/modloaders');
+const { listOperations } = await import('$lib/server/operations');
 const {
 	decideSnapshot,
 	listSnapshots,
@@ -14,8 +19,14 @@ const {
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
 } = await import('$lib/server/snapshots');
+const { replaceWorld, resetWorld, restoreSnapshot, snapshotNow, zipWorlds, worldRootIn, entryTarget } = await import(
+	'$lib/server/world'
+);
+const { readProperties } = await import('$lib/server/properties');
+const { TMP_DIR } = await import('$lib/server/config');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
+const { zipBuffer } = await import('../helpers/fs');
 
 const FILES = {
 	'server.jar': 'fabric launcher 0.15',
@@ -42,6 +53,24 @@ async function snapshotTree(root: string, id: string) {
 	const all = await tree(path.join(root, SNAPSHOTS_DIR, id), /^$/);
 	delete all['manifest.json'];
 	return all;
+}
+
+async function zipNames(buffer: Buffer): Promise<string[]> {
+	return new Promise((resolve, reject) =>
+		yauzl.fromBuffer(buffer, (err, zip) => {
+			if (err) return reject(err);
+			const names: string[] = [];
+			zip.on('entry', (e: yauzl.Entry) => names.push(e.fileName));
+			zip.on('end', () => resolve(names.sort()));
+		})
+	);
+}
+
+async function upload(files: Record<string, string>): Promise<string> {
+	await fs.mkdir(TMP_DIR, { recursive: true });
+	const file = path.join(TMP_DIR, `upload-${Math.random().toString(36).slice(2)}.zip`);
+	await fs.writeFile(file, zipBuffer(files));
+	return file;
 }
 
 describe('world snapshots', () => {
@@ -109,6 +138,15 @@ describe('world snapshots', () => {
 		expect(reload(instance.id)).toMatchObject({ status: 'ready', modloaderVersion: '0.15.0' });
 	});
 
+	it('is taken by hand too', async () => {
+		const instance = await instanceWithWorld();
+		expect((await waitForTask(await snapshotNow(instance))).state).toBe('done');
+		const [snapshot] = await listSnapshots(instance.path);
+		expect(snapshot).toMatchObject({ reason: 'manual', worlds: ['world', 'world_nether'] });
+		expect(reload(instance.id)).toMatchObject({ status: 'ready', statusMessage: null });
+		expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(false);
+	});
+
 	describe('whether to ask', () => {
 		it('always snapshots below the threshold, whatever the form says', async () => {
 			const instance = await instanceWithWorld();
@@ -134,5 +172,126 @@ describe('world snapshots', () => {
 			const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' }, { 'server.jar': 'x' });
 			expect(await decideSnapshot(instance.path, null)).toBe(false);
 		});
+	});
+});
+
+describe('world tools', () => {
+	beforeEach(() => {
+		systemdStopped();
+		saveSnapshotPolicy(DEFAULT_POLICY);
+	});
+	afterEach(() => vi.restoreAllMocks());
+
+	it('resets the world into a snapshot, with a new seed', async () => {
+		const instance = await instanceWithWorld();
+		await waitForTask(await resetWorld(instance, { snapshot: true, seed: { mode: 'set', seed: '42' } }));
+		const files = await tree(instance.path);
+		expect(Object.keys(files).filter((f) => f.startsWith('world'))).toEqual([]);
+		expect((await readProperties(instance.path)).values['level-seed']).toBe('42');
+		const [snapshot] = await listSnapshots(instance.path);
+		expect(snapshot.reason).toBe('world-reset');
+		expect(await snapshotTree(instance.path, snapshot.id)).toMatchObject({ 'world/level.dat': 'my world' });
+	});
+
+	it('deletes the old world when no snapshot is wanted', async () => {
+		const instance = await instanceWithWorld();
+		await waitForTask(await resetWorld(instance, { snapshot: false, seed: { mode: 'keep' } }));
+		expect(await listSnapshots(instance.path)).toEqual([]);
+		expect(await fs.readdir(path.join(instance.path, '.mineshell'))).toEqual([]);
+		expect((await readProperties(instance.path)).values['level-seed']).toBe('1234');
+	});
+
+	it('restores a snapshot, keeping the world it replaces', async () => {
+		const instance = await instanceWithWorld();
+		await waitForTask(await snapshotNow(instance));
+		const [first] = await listSnapshots(instance.path);
+		await fs.writeFile(path.join(instance.path, 'world/level.dat'), 'played on');
+		await fs.rm(path.join(instance.path, 'world_nether'), { recursive: true });
+
+		await waitForTask(await restoreSnapshot(reload(instance.id), first.id, { snapshot: true }));
+		const files = await tree(instance.path);
+		expect(files['world/level.dat']).toBe('my world');
+		expect(files['world_nether/DIM-1/region/r.0.0.mca']).toBe('nether chunks');
+		const snapshots = await listSnapshots(instance.path);
+		expect(snapshots.map((s) => s.reason)).toEqual(['world-restore', 'manual']);
+		expect(await snapshotTree(instance.path, snapshots[0].id)).toEqual({
+			'world/level.dat': 'played on',
+			'world/region/r.0.0.mca': 'chunks'
+		});
+		// The restored snapshot is still whole.
+		expect(await snapshotTree(instance.path, first.id)).toMatchObject({ 'world/level.dat': 'my world' });
+	});
+
+	it('replaces the world with one zipped inside a folder', async () => {
+		const instance = await instanceWithWorld();
+		const file = await upload({
+			'My World/level.dat': 'uploaded',
+			'My World/region/r.1.1.mca': 'uploaded chunks',
+			'My World/session.lock': 'lock',
+			'My World/../../escape.txt': 'nope'
+		});
+		await waitForTask(await replaceWorld(instance, file, { snapshot: false }));
+		const files = await tree(instance.path);
+		expect(files['world/level.dat']).toBe('uploaded');
+		expect(files['world/region/r.1.1.mca']).toBe('uploaded chunks');
+		expect(files['world/session.lock']).toBeUndefined();
+		expect(Object.keys(files).some((f) => f.includes('escape'))).toBe(false);
+		// The old nether went with the old world, and the upload is cleaned up.
+		expect(files['world_nether/DIM-1/region/r.0.0.mca']).toBeUndefined();
+		await expect(fs.access(file)).rejects.toThrow();
+	});
+
+	it('refuses a zip without a world before touching anything', async () => {
+		const instance = await instanceWithWorld();
+		const before = await tree(instance.path);
+		const file = await upload({ 'readme.txt': 'not a world' });
+		await expect(replaceWorld(instance, file, { snapshot: true })).rejects.toThrow(/no level.dat/);
+		expect(await tree(instance.path)).toEqual(before);
+		expect(reload(instance.id).status).toBe('ready');
+	});
+
+	it('puts the world back wherever MineShell stopped during a change', async () => {
+		let stops = 0;
+		for (let n = 1; ; n++) {
+			const instance = await instanceWithWorld();
+			const before = await tree(instance.path);
+			const file = await upload({ 'level.dat': 'uploaded', 'region/r.0.0.mca': 'new' });
+			const outcome = await runAndDieAtMove(instance.path, n, () => replaceWorld(instance, file, { snapshot: true }));
+			if (outcome === 'finished') break;
+			stops++;
+			const [outcomeOf] = (await restartMineShell()).filter((o) => o.instanceId === instance.id);
+			expect(await tree(instance.path), `stopped at move ${n}`).toEqual(before);
+			expect(outcomeOf.message).toMatch(/previous world was put back/);
+			expect(await listSnapshots(instance.path)).toEqual([]);
+			expect(await fs.readdir(path.join(instance.path, '.mineshell'))).toEqual(
+				(await fs.readdir(path.join(instance.path, '.mineshell'))).filter((n) => n === 'snapshots')
+			);
+			vi.restoreAllMocks();
+			systemdStopped();
+		}
+		// Two folders aside, one into place, the snapshot finishing.
+		expect(stops).toBe(4);
+	});
+
+	it('zips worlds with their folder names, without the session lock', async () => {
+		const instance = await instanceWithWorld();
+		await fs.writeFile(path.join(instance.path, 'world/session.lock'), 'lock');
+		const stream = await zipWorlds(instance.path, ['world', 'world_nether']);
+		const chunks: Buffer[] = [];
+		for await (const chunk of stream) chunks.push(chunk as Buffer);
+		expect(await zipNames(Buffer.concat(chunks))).toEqual([
+			'world/level.dat',
+			'world/region/r.0.0.mca',
+			'world_nether/DIM-1/region/r.0.0.mca'
+		]);
+	});
+
+	it('finds the world inside an upload', () => {
+		expect(worldRootIn(['level.dat', 'region/r.0.0.mca'])).toBe('');
+		expect(worldRootIn(['saves/A/level.dat', 'saves/A/DIM1/level.dat', 'B/level.dat'])).toBe('B/');
+		expect(worldRootIn(['readme.txt'])).toBeNull();
+		expect(entryTarget('B/region/x.mca', 'B/')).toBe('region/x.mca');
+		expect(entryTarget('B/../x', 'B/')).toBeNull();
+		expect(entryTarget('C/level.dat', 'B/')).toBeNull();
 	});
 });

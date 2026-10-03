@@ -22,7 +22,7 @@
 			<legend>World snapshot ({formatBytes(prompt.worldBytes)})</legend>
 			<div class="check">
 				<input id="{idPrefix}-snap-yes" type="radio" name="snapshot" value="yes" checked />
-				<label for="{idPrefix}-snap-yes">Copy the world first, so it can be restored from the World tab</label>
+				<label for="{idPrefix}-snap-yes">Snapshot the current world first</label>
 			</div>
 			<div class="check">
 				<input id="{idPrefix}-snap-no" type="radio" name="snapshot" value="no" />
@@ -31,8 +31,8 @@
 		</fieldset>
 	{:else}
 		<p class="hint">
-			The world ({formatBytes(prompt.worldBytes)}) is copied to a snapshot first; the newest {prompt.policy.keep}
-			are kept, on the World tab.
+			The world ({formatBytes(prompt.worldBytes)}) is copied to a snapshot first, restorable from the World tab.
+			The newest {prompt.policy.keep} are kept.
 		</p>
 	{/if}
 {/if}

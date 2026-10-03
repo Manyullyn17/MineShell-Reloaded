@@ -136,6 +136,10 @@ systemctl --user status mineshell
 
 Lingering (above) is what makes this survive logout.
 
+The `.env` needs `BODY_SIZE_LIMIT=Infinity` (in `.env.example`): the production server's
+default request limit of 512 KB refuses mod jar, modpack and world uploads. A body is only
+read once the request has passed the sign-in check.
+
 If MineShell is stopped, your Minecraft servers keep running — they are independent
 systemd units, not children of the panel. That is the point of the design.
 
