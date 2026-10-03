@@ -179,6 +179,21 @@ export const actions: Actions = {
 		return { ok: true, message: 'EULA accepted. You can start the server now.' };
 	},
 
+	/**
+	 * What an install or pack change reported (client-only mods disabled,
+	 * Cleanroom fixes that failed) stays on a ready server until read. Only
+	 * that: a failed setup's message is the reason it failed.
+	 */
+	dismissNotice: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		if (instance.status !== 'ready') return fail(400, { ok: false, message: 'Nothing to dismiss.' });
+		db.update(serverInstances)
+			.set({ statusMessage: null })
+			.where(eq(serverInstances.id, instance.id))
+			.run();
+		return { ok: true };
+	},
+
 	pin: async ({ params }) => {
 		const instance = requireInstance(params.id);
 		db.update(serverInstances)

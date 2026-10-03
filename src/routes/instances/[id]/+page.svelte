@@ -41,7 +41,12 @@
 		<p>The instance directory is still here, so you can retry parts of it from Files.</p>
 	</div>
 {:else if data.instance.statusMessage}
-	<div class="notice warning"><p>{data.instance.statusMessage}</p></div>
+	<div class="notice warning">
+		<p>{data.instance.statusMessage}</p>
+		<form method="POST" action="?/dismissNotice" use:enhance>
+			<button class="button-quiet" type="submit">Dismiss</button>
+		</form>
+	</div>
 {/if}
 
 {#if !data.eulaAccepted}
