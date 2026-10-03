@@ -338,6 +338,9 @@ async function runInstallerJar(ctx: InstallContext, url: string, name: string): 
 		throw new Error(`Installer failed: ${(res.stderr || res.stdout).trim().slice(-600)}`);
 	}
 	await fs.rm(installer, { force: true });
+	// The installer writes its log to the working directory (the server
+	// folder), not next to itself; the second one is just in case.
+	await fs.rm(path.join(ctx.dir, `${name}.log`), { force: true });
 	await fs.rm(`${installer}.log`, { force: true });
 }
 
