@@ -7,6 +7,49 @@
 
 	let showRaw = $state(false);
 
+	// ---- server icon: scaled to the 64x64 PNG Minecraft wants, here in the browser
+	const iconUrl = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/icon`);
+	// svelte-ignore state_referenced_locally
+	let hasIcon = $state(data.hasIcon);
+	let iconVersion = $state(0);
+	let iconError = $state('');
+
+	/** Centre-crop to a square and scale to 64x64, as a PNG. */
+	async function toIcon(file: File): Promise<Blob> {
+		const image = await createImageBitmap(file);
+		const side = Math.min(image.width, image.height);
+		const canvas = document.createElement('canvas');
+		canvas.width = 64;
+		canvas.height = 64;
+		const ctx = canvas.getContext('2d')!;
+		ctx.imageSmoothingQuality = 'high';
+		ctx.drawImage(image, (image.width - side) / 2, (image.height - side) / 2, side, side, 0, 0, 64, 64);
+		return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not convert the image.'))), 'image/png'));
+	}
+
+	async function pickIcon(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		iconError = '';
+		try {
+			const res = await fetch(iconUrl, { method: 'PUT', body: await toIcon(file) });
+			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Upload failed.');
+			hasIcon = true;
+			iconVersion++;
+		} catch (err) {
+			iconError = err instanceof Error ? err.message : 'Upload failed.';
+		}
+	}
+
+	async function removeIcon() {
+		iconError = '';
+		const res = await fetch(iconUrl, { method: 'DELETE' });
+		if (res.ok) hasIcon = false;
+		else iconError = 'Could not remove the icon.';
+	}
+
 	// Plain one-way value={...}/checked={...} bindings on <select> and
 	// checkboxes did not pick up a fresh save until switching tabs and back -
 	// confirmed here and on the instance settings page, both built the same
@@ -57,6 +100,29 @@
 		<p>The server is running. Changes are written now but only take effect after a restart.</p>
 	</div>
 {/if}
+
+<section class="panel icon-panel">
+	{#if hasIcon}
+		<img src="{iconUrl}?v={iconVersion}" alt="Server icon" width="64" height="64" />
+	{:else}
+		<div class="icon-placeholder" aria-hidden="true">?</div>
+	{/if}
+	<div>
+		<h2>Server icon</h2>
+		<p class="muted small">
+			Shown next to the server in players' server lists. Any image works; it is cropped to a square and scaled to
+			the 64x64 PNG Minecraft needs. Takes effect on the next start.
+		</p>
+		<div class="button-row">
+			<label class="button">
+				{hasIcon ? 'Replace' : 'Choose an image'}
+				<input type="file" accept="image/*" class="visually-hidden" onchange={pickIcon} />
+			</label>
+			{#if hasIcon}<button class="button-quiet" type="button" onclick={removeIcon}>Remove</button>{/if}
+		</div>
+		{#if iconError}<p class="hint warn-text">{iconError}</p>{/if}
+	</div>
+</section>
 
 <div class="switcher">
 	<button class:active={!showRaw} onclick={() => (showRaw = false)}>Guided</button>
@@ -129,6 +195,36 @@
 {/if}
 
 <style>
+	.icon-panel {
+		display: flex;
+		gap: var(--space-4);
+		align-items: flex-start;
+	}
+
+	.icon-panel img,
+	.icon-placeholder {
+		width: 64px;
+		height: 64px;
+		flex: none;
+		border-radius: var(--radius);
+		image-rendering: pixelated;
+	}
+
+	.icon-placeholder {
+		display: grid;
+		place-items: center;
+		border: 1px dashed var(--line-strong);
+		color: var(--text-muted);
+	}
+
+	.icon-panel h2 {
+		margin-top: 0;
+	}
+
+	.warn-text {
+		color: var(--warning);
+	}
+
 	.switcher {
 		display: inline-flex;
 		gap: 0;

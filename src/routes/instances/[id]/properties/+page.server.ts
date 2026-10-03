@@ -1,4 +1,6 @@
 import { fail } from '@sveltejs/kit';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance, summarise, syncPortsToProperties } from '$lib/server/instances';
 import {
@@ -36,6 +38,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		),
 		groups: [...PROPERTY_GROUPS],
 		running: summary.running,
+		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(() => true, () => false),
 		raw: serialiseProperties(parsed.values)
 	};
 };
