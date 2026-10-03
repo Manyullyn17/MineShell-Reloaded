@@ -16,7 +16,8 @@ const config = {
       // src/lib/server/guard.ts does the cross-site check instead, comparing
       // hosts only - so raw-IP, alternate-hostname and proxied access work,
       // and other sites (or other ports on the same machine) are refused.
-      checkOrigin: false
+      // '*' turns SvelteKit's own check off (checkOrigin: false is deprecated).
+      trustedOrigins: ['*']
     }
   }
 };
