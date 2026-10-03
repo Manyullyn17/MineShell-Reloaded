@@ -3,6 +3,7 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
+	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
 	import RestartFields from '$lib/components/RestartFields.svelte';
 	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
@@ -129,7 +130,7 @@
 </section>
 
 {#if data.pack}
-	<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} />
+	<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} />
 {/if}
 
 {#if data.settings.modloader !== 'vanilla'}
@@ -169,6 +170,7 @@
 					<p class="hint">Stop the server to change the loader version.</p>
 				{/if}
 			</div>
+			<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="loader" />
 			<button
 				type="submit"
 				disabled={data.running || !sv.modloaderVersion || sv.modloaderVersion === data.settings.modloaderVersion}
@@ -268,6 +270,7 @@
 							if (!confirm('Put the Forge install back? Mods the migration disabled are re-enabled and Fugue/Scalar Legacy are removed.')) cancel();
 						}}
 					>
+						<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="revert" />
 						<button type="submit" disabled={cr.running}>Revert to Forge</button>
 					</form>
 				{/if}
@@ -275,6 +278,7 @@
 		{:else}
 			<form method="POST" action="?/migrateCleanroom" use:enhance>
 				<CleanroomOption javaMajors={data.javaRuntimes.map((j) => j.majorVersion)} toggle={false} idPrefix="migrate-cleanroom" />
+				<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="migrate" />
 				<button class="button-primary" type="submit" disabled={cr.running}>Migrate to Cleanroom</button>
 			</form>
 		{/if}

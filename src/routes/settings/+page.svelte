@@ -7,6 +7,12 @@
 
 	let showUnit = $state(false);
 	let manualJava = $state('');
+	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
+	// svelte-ignore state_referenced_locally
+	let snap = $state({ ...data.snapshots });
+	$effect(() => {
+		snap = { ...data.snapshots };
+	});
 </script>
 
 <svelte:head><title>Settings - MineShell</title></svelte:head>
@@ -173,6 +179,33 @@
 		</div>
 		<a class="button" href="/settings/defaults">Edit defaults</a>
 	</div>
+</section>
+
+<section class="panel">
+	<h2>World snapshots</h2>
+	<p class="muted">
+		Before a pack version change or reinstall, a loader version change, a Cleanroom migration or revert, and
+		resetting, replacing or restoring a world, the world is copied to a snapshot you can restore from the server's
+		World tab. These are full copies, so big worlds cost time and disk space.
+	</p>
+	<form method="POST" action="?/snapshots" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="grid-2">
+			<div class="field">
+				<label for="snap-keep">Snapshots kept per server</label>
+				<input id="snap-keep" name="keep" type="number" min="1" max="50" required bind:value={snap.keep} />
+				<p class="hint">Older ones are deleted once a new one is complete.</p>
+			</div>
+			<div class="field">
+				<label for="snap-ask">Ask first for worlds above (MB)</label>
+				<input id="snap-ask" name="askAboveMb" type="number" min="-1" required bind:value={snap.askAboveMb} />
+				<p class="hint">
+					Bigger worlds ask whether to snapshot or continue without. <code>-1</code> turns the question off: the
+					snapshot is then always taken.
+				</p>
+			</div>
+		</div>
+		<button class="button-primary" type="submit">Save</button>
+	</form>
 </section>
 
 <section class="panel">

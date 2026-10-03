@@ -12,6 +12,7 @@ import {
 	syncUnit
 } from './instances';
 import { restorePackChange } from './packchange';
+import { removePartialSnapshots } from './snapshots';
 import { syncMods } from './mods';
 import { endOperation, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
 
@@ -93,11 +94,16 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	const internal = path.join(instance.path, '.mineshell');
 	let removed = false;
 	for (const name of await fs.readdir(internal).catch(() => [] as string[])) {
-		if (/^(pack-change|loader-previous)-\d+$/.test(name) || /installer\.jar(\.log|\.part)?$/.test(name)) {
+		if (
+			/^(pack-change|loader-previous)-\d+$/.test(name) ||
+			/installer\.jar(\.log|\.part)?$/.test(name)
+		) {
 			await fs.rm(path.join(internal, name), { recursive: true, force: true });
 			removed = true;
 		}
 	}
+	// A snapshot copy cut short.
+	if (await removePartialSnapshots(instance.path)) removed = true;
 	// A revert that committed has already moved every Forge file back; only
 	// the manifest is left. A real backup (on Cleanroom) is never touched.
 	if (instance.modloader !== 'cleanroom') {

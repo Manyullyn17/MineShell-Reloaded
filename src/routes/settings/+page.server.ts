@@ -21,6 +21,7 @@ import { db } from '$lib/server/db';
 import { auditLog, serverInstances } from '$lib/server/db/schema';
 import { desc } from 'drizzle-orm';
 import { syncUnit } from '$lib/server/instances';
+import { getSnapshotPolicy, saveSnapshotPolicy } from '$lib/server/snapshots';
 
 export const load: PageServerLoad = async () => {
 	const systemd = await probeSystemd();
@@ -37,11 +38,26 @@ export const load: PageServerLoad = async () => {
 		javaRuntimes: listJavaRuntimes(),
 		authEnabled: authEnabled(),
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
+		snapshots: getSnapshotPolicy(),
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all()
 	};
 };
 
 export const actions: Actions = {
+	snapshots: async ({ request }) => {
+		const form = await request.formData();
+		const keep = Number(form.get('keep'));
+		const askAboveMb = Number(form.get('askAboveMb'));
+		if (!Number.isInteger(keep) || keep < 1 || keep > 50) {
+			return fail(400, { ok: false, message: 'Keep between 1 and 50 snapshots per server.' });
+		}
+		if (!Number.isInteger(askAboveMb) || askAboveMb < -1) {
+			return fail(400, { ok: false, message: 'The size to ask above is a whole number of MB, or -1.' });
+		}
+		saveSnapshotPolicy({ keep, askAboveMb });
+		return { ok: true, message: 'Snapshot settings saved.' };
+	},
+
 	installUnit: async () => {
 		const result = await installTemplateUnit();
 		if (!result.ok) return fail(500, { ok: false, message: result.message });

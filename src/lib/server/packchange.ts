@@ -14,6 +14,7 @@ import {
 	type ProjectVersion
 } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
+import { snapshotStep } from './snapshots';
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
@@ -452,7 +453,7 @@ async function exists(p: string): Promise<boolean> {
 export async function applyPackChange(
 	instance: ServerInstance,
 	versionId: string,
-	opts: { updateMods: string[]; confirmMinecraftChange: boolean }
+	opts: { updateMods: string[]; confirmMinecraftChange: boolean; snapshot?: boolean }
 ): Promise<string> {
 	await requireStopped(instance);
 	const pack = await preparePack(instance, versionId);
@@ -514,6 +515,10 @@ export async function applyPackChange(
 		const problems: string[] = [];
 
 		try {
+			if (opts.snapshot) {
+				const what = plan.sameVersion ? `reinstalling ${label}` : `changing the pack to ${label}`;
+				await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);
+			}
 			await fs.mkdir(path.join(staging, 'mods'), { recursive: true });
 
 			// 1. Configs and other pack-shipped folders go to old-configs, whole.

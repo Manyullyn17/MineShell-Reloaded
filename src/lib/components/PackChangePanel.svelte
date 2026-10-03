@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import SnapshotChoice from './SnapshotChoice.svelte';
 
 	/**
 	 * Move an installed pack to another version (or reinstall the current one).
@@ -9,11 +10,13 @@
 	let {
 		instanceId,
 		pack,
-		running
+		running,
+		snapshotPrompt
 	}: {
 		instanceId: string;
 		pack: { source: string; projectId: string; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
+		snapshotPrompt: { worldBytes: number; ask: boolean; policy: { keep: number; askAboveMb: number } };
 	} = $props();
 
 	type PackVersion = { id: string; versionNumber: string; gameVersions: string[]; channel: string };
@@ -164,11 +167,11 @@
 					<p>
 						Changing the Minecraft version can corrupt or permanently break an existing world: chunks,
 						items and blocks from removed or changed mods can be lost, and there is no undo once the
-						server has loaded the world. Back up the world folder first.
+						server has loaded the world. Keep the snapshot below, or back up the world folder first.
 					</p>
 					<div class="check">
 						<input id="confirm-mc" name="confirmMinecraft" type="checkbox" bind:checked={confirmMinecraft} />
-						<label for="confirm-mc">I have a backup and understand the world may be damaged</label>
+						<label for="confirm-mc">I understand the world may be damaged</label>
 					</div>
 				</div>
 			{/if}
@@ -265,6 +268,7 @@
 				</ul>
 			{/if}
 
+			<SnapshotChoice prompt={snapshotPrompt} idPrefix="pack" />
 			{#if running}
 				<p class="hint">Stop the server to change the pack version.</p>
 			{/if}

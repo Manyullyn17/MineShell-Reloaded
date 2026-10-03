@@ -18,6 +18,7 @@ import {
 } from '$lib/server/instances';
 import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
 import { applyPackChange } from '$lib/server/packchange';
+import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
 import { portConflict } from '$lib/server/ports';
@@ -107,9 +108,16 @@ export const load: PageServerLoad = async ({ params }) => {
 				}
 			: null,
 		// Streamed: scanning means opening every mod jar.
-		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null
+		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null,
+		snapshotPrompt: await snapshotPrompt(instance.path)
 	};
 };
+
+/** A refusal the person can act on: shown on the form instead of as an error page. */
+function refused(err: unknown) {
+	if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return fail(400, { ok: false, message: err.message });
+	return null;
+}
 
 /** The instance's current values, which a missing or unusable field keeps. */
 function restartSettingsOf(instance: ServerInstance): RestartSettings {
@@ -166,15 +174,15 @@ export const actions: Actions = {
 		try {
 			await applyPackChange(instance, versionId, {
 				updateMods: form.getAll('updateMod').map(String),
-				confirmMinecraftChange: form.get('confirmMinecraft') === 'on'
+				confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
 			});
 			return {
 				ok: true,
 				message: 'Changing the pack version. Follow it in Tasks; the server stays stopped until it finishes.'
 			};
 		} catch (err) {
-			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
-			return fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
+			return refused(err) ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
 		}
 	},
 
@@ -186,10 +194,11 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: `${version} is already installed.` });
 		}
 		try {
-			await changeLoaderVersion(instance, version);
+			await changeLoaderVersion(instance, version, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
 			return { ok: true, message: 'Reinstalling the loader. Follow it in Tasks; the server stays stopped until it finishes.' };
 		} catch (err) {
-			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			const failure = refused(err);
+			if (failure) return failure;
 			throw err;
 		}
 	},
@@ -326,21 +335,24 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const version = String(form.get('cleanroomVersion') ?? '').trim() || null;
 		try {
-			await migrateToCleanroom(instance, version);
+			await migrateToCleanroom(instance, version, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
 			return { ok: true, message: 'Migration started. Follow it in Tasks; the server stays stopped until it finishes.' };
 		} catch (err) {
-			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			const failure = refused(err);
+			if (failure) return failure;
 			throw err;
 		}
 	},
 
-	revertForge: async ({ params }) => {
+	revertForge: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
+		const form = await request.formData();
 		try {
-			await revertToForge(instance);
+			await revertToForge(instance, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
 			return { ok: true, message: 'Reverting to Forge. Follow it in Tasks.' };
 		} catch (err) {
-			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			const failure = refused(err);
+			if (failure) return failure;
 			throw err;
 		}
 	},

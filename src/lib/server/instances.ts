@@ -51,6 +51,7 @@ import {
 } from './operations';
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
+import { snapshotStep } from './snapshots';
 
 export class InstanceError extends Error {}
 
@@ -654,7 +655,8 @@ export async function requireStopped(instance: ServerInstance): Promise<void> {
  */
 export async function migrateToCleanroom(
 	instance: ServerInstance,
-	loaderVersion: string | null
+	loaderVersion: string | null,
+	opts: { snapshot?: boolean } = {}
 ): Promise<string> {
 	if (!canUseCleanroom(instance.modloader, instance.minecraftVersion)) {
 		throw new InstanceError('Only Forge 1.12.2 servers can move to Cleanroom.');
@@ -698,6 +700,9 @@ export async function migrateToCleanroom(
 			};
 			const dir = backupDir(instance);
 			try {
+				if (opts.snapshot) {
+					await snapshotStep(instance, { reason: 'cleanroom-migration', label: `Before moving to Cleanroom ${loaderVersion ?? '(latest)'}` }, task);
+				}
 				task.setProgress(null, 'Backing up Forge');
 				await fs.mkdir(dir, { recursive: true });
 				for (const name of forgeBefore) {
@@ -770,7 +775,7 @@ export async function migrateToCleanroom(
 }
 
 /** Undo migrateToCleanroom from its backup. */
-export async function revertToForge(instance: ServerInstance): Promise<string> {
+export async function revertToForge(instance: ServerInstance, opts: { snapshot?: boolean } = {}): Promise<string> {
 	if (instance.modloader !== 'cleanroom') {
 		throw new InstanceError('This server is not running Cleanroom.');
 	}
@@ -787,6 +792,9 @@ export async function revertToForge(instance: ServerInstance): Promise<string> {
 		// Retry-safe, so a failure (or a restart) just leaves it to be run again.
 		(task) => endJournalOnFailure(instance.id, async () => {
 			const dir = backupDir(instance);
+			if (opts.snapshot) {
+				await snapshotStep(instance, { reason: 'cleanroom-revert', label: `Before reverting to Forge ${backup.modloaderVersion ?? ''}`.trim() }, task);
+			}
 			task.setProgress(null, 'Restoring Forge');
 			// A previous revert that failed part-way already moved some entries
 			// back; they are no longer in the backup and must not be deleted as
@@ -860,7 +868,8 @@ export function isLoaderInstallEntry(name: string): boolean {
  */
 export async function changeLoaderVersion(
 	instance: ServerInstance,
-	loaderVersion: string | null
+	loaderVersion: string | null,
+	opts: { snapshot?: boolean } = {}
 ): Promise<string> {
 	const loader = getLoader(instance.modloader);
 	if (instance.modloader === 'vanilla') {
@@ -891,6 +900,9 @@ export async function changeLoaderVersion(
 			const aside = path.join(instance.path, asideRel);
 			const moved: string[] = [];
 			try {
+				if (opts.snapshot) {
+					await snapshotStep(instance, { reason: 'loader-change', label: `Before changing ${loader.label} ${from} to ${loaderVersion ?? '(latest)'}` }, task);
+				}
 				task.setProgress(null, `Moving ${loader.label} ${from} aside`);
 				await fs.mkdir(aside, { recursive: true });
 				for (const name of before) {
