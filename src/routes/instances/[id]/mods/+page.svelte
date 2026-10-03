@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import Flash from '$lib/components/Flash.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
@@ -11,6 +12,16 @@
 	let filter = $state('');
 	let showBrowser = $state(false);
 	let pendingDelete = $state<string | null>(null);
+	// A pack's first sync looks up every jar on CurseForge, which takes half a
+	// minute on a big pack; without this the button looked like it did nothing.
+	let syncing = $state(false);
+	const syncEnhance: SubmitFunction = () => {
+		syncing = true;
+		return async ({ update }) => {
+			await update();
+			syncing = false;
+		};
+	};
 	let showDetails = $state(false);
 	let detailsTab = $state<'description' | 'changelog'>('description');
 
@@ -261,8 +272,10 @@
 				{data.counts.missing} record{data.counts.missing === 1 ? '' : 's'} with no matching file.
 			{/if}
 		</p>
-		<form method="POST" action="?/sync" use:enhance>
-			<button class="button-quiet" type="submit">Sync mods with database</button>
+		<form method="POST" action="?/sync" use:enhance={syncEnhance}>
+			<button class="button-quiet" type="submit" disabled={syncing}>
+				{syncing ? 'Syncing' : 'Sync mods with database'}
+			</button>
 		</form>
 	</div>
 {/if}
@@ -487,12 +500,13 @@
 			<input type="file" name="jars" accept=".jar" multiple aria-label="Upload jar files" />
 			<button type="submit">Upload jars</button>
 		</form>
-		<form method="POST" action="?/sync" use:enhance>
+		<form method="POST" action="?/sync" use:enhance={syncEnhance}>
 			<button
 				type="submit"
+				disabled={syncing}
 				title="Track jars MineShell did not install and re-identify where pack mods came from"
 			>
-				Sync
+				{syncing ? 'Syncing' : 'Sync'}
 			</button>
 		</form>
 	</div>
