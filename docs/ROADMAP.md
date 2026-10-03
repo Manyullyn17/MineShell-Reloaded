@@ -59,17 +59,10 @@ independent and can be done in any order.
 
 ## Near term
 
-### Recovery from operations interrupted by MineShell itself
-
-Pack version changes, loader switches and Cleanroom migrations roll back on failure, but
-only in-process. If MineShell dies mid-operation (crash, restart, power loss), nothing
-restores the server on the next start; leftovers stay in `.mineshell/pack-change-*`,
-`loader-previous-*` or `forge-backup/`. Fix: write a marker describing the operation
-before it starts, delete it on success or completed rollback, and on startup restore any
-operation whose marker is still there. The world snapshot below should reuse the same
-marker/restore mechanism.
-
 ### World snapshot before risky operations
+
+Build on the operations journal (`operations.ts`, `recovery.ts`): the snapshot is a step of
+the journalled operation, so a restart mid-copy is handled like any other interruption.
 
 Before a pack version change, loader switch or Cleanroom migration (the operations whose
 Minecraft-version warning already says they can corrupt a world), copy the world folder(s)

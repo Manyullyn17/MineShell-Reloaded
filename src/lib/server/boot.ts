@@ -3,16 +3,25 @@ import { startScheduler } from './scheduler';
 import { learnJavaRequirement, scanJavaRuntimes } from './java';
 import { listInstances } from './instances';
 import { stopAllTails } from './journal';
+import { recoverInterruptedOperations } from './recovery';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
- * calls this once. The guard matters in dev, where HMR re-evaluates modules.
+ * calls this once. The guard lives on globalThis: in dev, HMR re-evaluates
+ * modules, and a module-level flag would start the timers - and recovery -
+ * a second time in the same process.
  */
-let booted = false;
+const globals = globalThis as { __mineshellBooted?: boolean };
 
 export function boot(): void {
-	if (booted) return;
-	booted = true;
+	if (globals.__mineshellBooted) return;
+	globals.__mineshellBooted = true;
+
+	// Before anything else: servers a previous MineShell left mid-operation
+	// are put back (and stay marked busy, so unstartable, until then).
+	void recoverInterruptedOperations().catch((err) =>
+		console.error('[mineshell] recovering interrupted operations failed:', err)
+	);
 
 	startMonitor();
 	startScheduler();

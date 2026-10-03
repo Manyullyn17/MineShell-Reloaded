@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
-import { db } from './db';
-import { serverInstances, type ServerInstance } from './db/schema';
+import type { ServerInstance } from './db/schema';
 import {
 	bestVersion,
 	DISABLED_SUFFIX,
@@ -25,11 +23,21 @@ import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
 import {
+	beginOperation,
+	commitOperation,
+	endOperation,
+	OperationInProgressError,
+	updateOperation,
+	type Journal
+} from './operations';
+
+export type PackChangeJournal = Extract<Journal, { kind: 'pack-change' }>;
+import {
 	audit,
 	InstanceError,
 	isLoaderInstallEntry,
 	listEntries,
-	removeEntries,
+	restoreAside,
 	requireInstance,
 	requireStopped,
 	setStatus,
@@ -395,19 +403,31 @@ export async function applyPackChange(
 	}
 
 	const label = `${plan.target.name} ${plan.target.version ?? versionId}`;
+	const root = instance.path;
+	const mods = modsDir(root);
+	const configsBefore = new Set<string>();
+	for (const name of plan.configs) if (await exists(path.join(root, name))) configsBefore.add(name);
+	const journal: PackChangeJournal = {
+		kind: 'pack-change',
+		staging: path.join('.mineshell', `pack-change-${Date.now()}`),
+		oldConfigs: path.join('old-configs', stampFor(instance.packVersionName ?? instance.packVersionId)),
+		modsBefore: await fs.readdir(mods).catch(() => [] as string[]),
+		configs: plan.configs,
+		configsBefore: [...configsBefore],
+		loaderBefore: null
+	};
+	try {
+		beginOperation(instance.id, journal);
+	} catch (err) {
+		if (err instanceof OperationInProgressError) throw new InstanceError(err.message);
+		throw err;
+	}
 	setStatus(instance.id, 'provisioning', `Changing pack to ${label}`);
 	const taskId = startTask({ label: `Change ${instance.name} to ${label}`, instanceId: instance.id }, async (task) => {
-		const root = instance.path;
-		const mods = modsDir(root);
-		const staging = path.join(root, '.mineshell', `pack-change-${Date.now()}`);
-		const oldConfigs = path.join(root, 'old-configs', stampFor(instance.packVersionName ?? instance.packVersionId));
-		const modsBefore = new Set(await fs.readdir(mods).catch(() => [] as string[]));
-		const configsBefore = new Set<string>();
-		for (const name of plan.configs) if (await exists(path.join(root, name))) configsBefore.add(name);
+		const staging = path.join(root, journal.staging);
+		const oldConfigs = path.join(root, journal.oldConfigs);
+		const modsBefore = new Set(journal.modsBefore);
 		const movedConfigs: string[] = [];
-		const stagedMods: string[] = [];
-		let loaderBefore: string[] = [];
-		const movedLoader: string[] = [];
 		let downloadFailures: { file: string; error: string }[] = [];
 		const problems: string[] = [];
 
@@ -428,7 +448,6 @@ export async function applyPackChange(
 			// 2. Pack mods the new version no longer has.
 			for (const fileName of plan.mods.remove) {
 				await fs.rename(path.join(mods, fileName), path.join(staging, 'mods', fileName));
-				stagedMods.push(fileName);
 				task.log(`Removed ${fileName}`);
 			}
 
@@ -437,7 +456,6 @@ export async function applyPackChange(
 			const reDisable: string[] = [];
 			for (const onDisk of plan.packUpdates ?? []) {
 				await fs.rename(path.join(mods, onDisk), path.join(staging, 'mods', onDisk));
-				stagedMods.push(onDisk);
 				if (onDisk.endsWith(DISABLED_SUFFIX)) reDisable.push(baseName(onDisk));
 				task.log(`Updating pack mod ${baseName(onDisk)}`);
 			}
@@ -474,7 +492,6 @@ export async function applyPackChange(
 				// The old jar is staged first so a rollback can restore it even
 				// when the new file has the same name.
 				await fs.rename(path.join(mods, fileName), path.join(staging, 'mods', fileName));
-				stagedMods.push(fileName);
 				const installed = await installModVersion(
 					instance,
 					update.source as 'modrinth' | 'curseforge',
@@ -489,11 +506,13 @@ export async function applyPackChange(
 			let loaderVersion = instance.modloaderVersion;
 			if (plan.loaderChange && javaPath) {
 				task.setProgress(null, `Installing ${loader.label} ${plan.target.loaderVersion ?? '(latest)'}`);
+				// Journalled before anything moves, so a restart mid-move knows
+				// which loader files were the originals.
+				journal.loaderBefore = await listEntries(root, isLoaderInstallEntry);
+				updateOperation(instance.id, journal);
 				await fs.mkdir(path.join(staging, 'loader'), { recursive: true });
-				loaderBefore = await listEntries(root, isLoaderInstallEntry);
-				for (const name of loaderBefore) {
+				for (const name of journal.loaderBefore) {
 					await fs.rename(path.join(root, name), path.join(staging, 'loader', name));
-					movedLoader.push(name);
 				}
 				const result = await loader.install({
 					dir: root,
@@ -506,35 +525,19 @@ export async function applyPackChange(
 				loaderVersion = result.loaderVersion;
 			}
 
-			db.update(serverInstances)
-				.set({
-					minecraftVersion: plan.target.minecraft,
-					modloader: plan.target.loader,
-					modloaderVersion: loaderVersion,
-					launchArgs,
-					packVersionId: versionId,
-					packVersionName: pack.version,
-					updatedAt: Date.now()
-				})
-				.where(eq(serverInstances.id, instance.id))
-				.run();
+			commitOperation(instance.id, {
+				minecraftVersion: plan.target.minecraft,
+				modloader: plan.target.loader,
+				modloaderVersion: loaderVersion,
+				launchArgs,
+				packVersionId: versionId,
+				packVersionName: pack.version
+			});
 		} catch (err) {
 			task.log('The change failed; putting everything back.');
-			await rollback({
-				root,
-				mods,
-				staging,
-				oldConfigs,
-				modsBefore,
-				stagedMods,
-				configs: plan.configs,
-				configsBefore,
-				movedConfigs,
-				loaderBefore,
-				movedLoader
-			});
+			await restorePackChange(root, journal);
+			endOperation(instance.id);
 			await syncMods(requireInstance(instance.id)).catch(() => undefined);
-			await fs.rm(staging, { recursive: true, force: true });
 			setStatus(
 				instance.id,
 				'ready',
@@ -580,44 +583,42 @@ export async function applyPackChange(
 	return taskId;
 }
 
-async function rollback(s: {
-	root: string;
-	mods: string;
-	staging: string;
-	oldConfigs: string;
-	modsBefore: Set<string>;
-	stagedMods: string[];
-	configs: string[];
-	configsBefore: Set<string>;
-	movedConfigs: string[];
-	loaderBefore: string[];
-	movedLoader: string[];
-}): Promise<void> {
+/**
+ * Puts an instance back as it was before a pack change, from its journal.
+ * What was already moved is read from disk (every move is a rename into the
+ * staging or old-configs folder), so the same code serves a failure while
+ * MineShell runs and recovery after a restart.
+ */
+export async function restorePackChange(root: string, journal: PackChangeJournal): Promise<void> {
+	const mods = modsDir(root);
+	const staging = path.join(root, journal.staging);
+	const oldConfigs = path.join(root, journal.oldConfigs);
+	const listed = (dir: string) => fs.readdir(dir).catch(() => [] as string[]);
+
 	// Loader: drop whatever the new install left, bring the old one back.
 	// Originals that were never moved are left exactly where they are.
-	if (s.loaderBefore.length || s.movedLoader.length) {
-		const untouched = new Set(s.loaderBefore.filter((n) => !s.movedLoader.includes(n)));
-		await removeEntries(s.root, isLoaderInstallEntry, untouched);
-		for (const name of s.movedLoader) {
-			await fs.rename(path.join(s.staging, 'loader', name), path.join(s.root, name));
-		}
+	if (journal.loaderBefore) {
+		await restoreAside(root, path.join(staging, 'loader'), journal.loaderBefore, isLoaderInstallEntry);
 	}
 	// Mods: anything new goes, staged ones return.
-	for (const name of await fs.readdir(s.mods).catch(() => [] as string[])) {
-		if (!s.modsBefore.has(name)) await fs.rm(path.join(s.mods, name), { force: true });
+	const modsBefore = new Set(journal.modsBefore);
+	for (const name of await listed(mods)) {
+		if (!modsBefore.has(name)) await fs.rm(path.join(mods, name), { force: true });
 	}
-	for (const name of s.stagedMods) {
-		await fs.rename(path.join(s.staging, 'mods', name), path.join(s.mods, name));
+	for (const name of await listed(path.join(staging, 'mods'))) {
+		await fs.rename(path.join(staging, 'mods', name), path.join(mods, name));
 	}
 	// Configs: the fresh copies go, the moved originals return. An original
 	// that was never moved is still the real one and is left alone.
-	for (const name of s.configs) {
-		if (s.configsBefore.has(name) && !s.movedConfigs.includes(name)) continue;
-		await fs.rm(path.join(s.root, name), { recursive: true, force: true });
+	const moved = new Set((await listed(oldConfigs)).filter((n) => journal.configs.includes(n)));
+	for (const name of journal.configs) {
+		if (journal.configsBefore.includes(name) && !moved.has(name)) continue;
+		await fs.rm(path.join(root, name), { recursive: true, force: true });
 	}
-	for (const name of s.movedConfigs) {
-		await fs.rename(path.join(s.oldConfigs, name), path.join(s.root, name));
+	for (const name of moved) {
+		await fs.rename(path.join(oldConfigs, name), path.join(root, name));
 	}
-	await fs.rm(s.oldConfigs, { recursive: true, force: true });
-	await fs.rmdir(path.dirname(s.oldConfigs)).catch(() => undefined);
+	await fs.rm(oldConfigs, { recursive: true, force: true });
+	await fs.rmdir(path.dirname(oldConfigs)).catch(() => undefined);
+	await fs.rm(staging, { recursive: true, force: true });
 }

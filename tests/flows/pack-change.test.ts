@@ -56,6 +56,11 @@ vi.mock('$lib/server/mods', async (importOriginal) => {
 
 const { createFromPack } = await import('$lib/server/instances');
 const { planPackChange, applyPackChange } = await import('$lib/server/packchange');
+const { recoverInterruptedOperations } = await import('$lib/server/recovery');
+const { listOperations } = await import('$lib/server/operations');
+const { db } = await import('$lib/server/db');
+const { operations } = await import('$lib/server/db/schema');
+const { hangForever, restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { LOADERS } = await import('$lib/server/modloaders');
 const { packFromFileList } = await import('$lib/server/packs');
 const { recordInstanceMod, setModEnabled, upsertMod } = await import('$lib/server/mods');
@@ -296,5 +301,65 @@ describe('changing the pack version', () => {
 		const files = Object.keys(await tree(instance.path));
 		expect(files).toEqual(expect.arrayContaining(['mods/old-client.jar', 'mods/new-client.jar.disabled']));
 		expect(reload(instance.id).statusMessage).toMatch(/Disabled 1 client-only mod \(new-client\)/);
+	});
+
+	describe('when MineShell stops part-way', () => {
+		for (const [versionId, what] of [['v2', 'without a loader change'], ['v3', 'with a Minecraft and loader change']] as const) {
+			it(`puts everything back wherever it stopped, ${what}`, async () => {
+				let stops = 0;
+				for (let n = 1; ; n++) {
+					const instance = await installedAndUsed();
+					const before = { files: await tree(instance.path), row: reload(instance.id) };
+					const outcome = await runAndDieAtMove(instance.path, n, () =>
+						applyPackChange(reload(instance.id), versionId, { updateMods: ['chunky-1.0.jar'], confirmMinecraftChange: true })
+					);
+					if (outcome === 'finished') break;
+					stops++;
+
+					const [recovered] = (await restartMineShell()).filter((o) => o.instanceId === instance.id);
+					expect(recovered?.kind, `stopped at move ${n}`).toBe('pack-change');
+					expect(await tree(instance.path), `stopped at move ${n}`).toEqual(before.files);
+					expect(await fs.readdir(path.join(instance.path, '.mineshell'))).not.toContainEqual(expect.stringMatching(/^pack-change-/));
+					const after = reload(instance.id);
+					expect(after).toMatchObject({
+						minecraftVersion: before.row.minecraftVersion,
+						packVersionId: 'v1',
+						launchArgs: before.row.launchArgs,
+						status: 'ready'
+					});
+					expect(after.statusMessage).toMatch(/stopped while changing the pack version/);
+					expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(false);
+				}
+				// Configs, pack mods, the user's mod update (and the loader): each move was a place to stop.
+				expect(stops).toBeGreaterThanOrEqual(5);
+			});
+		}
+
+		it('puts everything back when it stops during the loader install', async () => {
+			const instance = await installedAndUsed();
+			const before = { files: await tree(instance.path), row: reload(instance.id) };
+			let started!: () => void;
+			const installing = new Promise<void>((resolve) => (started = resolve));
+			install.mockImplementation(async (ctx) => {
+				await fs.writeFile(path.join(ctx.dir, 'server.jar'), 'half-installed');
+				started();
+				return hangForever();
+			});
+			await applyPackChange(instance, 'v3', { updateMods: [], confirmMinecraftChange: true });
+			await installing;
+			await restartMineShell();
+			expect(await tree(instance.path)).toEqual(before.files);
+			expect(reload(instance.id)).toMatchObject({ minecraftVersion: '1.20.1', launchArgs: before.row.launchArgs, status: 'ready' });
+		});
+
+		it('leaves an operation this process is running alone', async () => {
+			const instance = await installedAndUsed();
+			install.mockImplementation(hangForever);
+			await applyPackChange(instance, 'v3', { updateMods: [], confirmMinecraftChange: true });
+			expect((await recoverInterruptedOperations()).filter((o) => o.instanceId === instance.id)).toEqual([]);
+			expect(reload(instance.id).status).toBe('provisioning');
+			expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(true);
+			db.delete(operations).run();
+		});
 	});
 });

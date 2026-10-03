@@ -186,6 +186,15 @@ Details worth keeping:
   left alone, so a mod someone re-enabled stays enabled.
 - `overrides/` and `server-overrides/` both get applied, with server-overrides winning.
 
+Operations that rework an instance's files - pack version change, loader version change,
+Cleanroom migration and revert, first install - are journalled in the `operations` table
+(`operations.ts`). The journal row records what was there before; every file move is a
+rename into the operation's own folder, so what already moved is read from disk; and the
+operation's result is written to `server_instances` in the same transaction that deletes
+the row. On startup, `recovery.ts` rolls back any operation a previous MineShell process
+left unfinished (the same restore code as a failure while running), marks interrupted
+first installs failed, and releases servers whose operation had committed.
+
 Mods are always downloaded fresh per instance. No shared cache, no symlinks. This is
 deliberate: modpacks sometimes ship a patched jar under the same version label as the
 upstream one, and a shared cache would serve the wrong file with no way to tell. Disk is

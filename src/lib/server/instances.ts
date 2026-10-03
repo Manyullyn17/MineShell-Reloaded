@@ -41,6 +41,13 @@ import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX }
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
+import {
+	beginOperation,
+	commitOperation,
+	endOperation,
+	OperationInProgressError,
+	type Journal
+} from './operations';
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
 
@@ -207,6 +214,9 @@ async function insertInstanceRow(
 			updatedAt: now
 		})
 		.run();
+	// Committed (and so dropped) with the final 'ready'; still there after a
+	// restart means the install never finished.
+	beginOperation(id, { kind: 'create' });
 
 	await writeProperties(
 		dir,
@@ -227,6 +237,27 @@ export function setStatus(id: string, status: string, message: string | null) {
 		.set({ status, statusMessage: message, updatedAt: Date.now() })
 		.where(eq(serverInstances.id, id))
 		.run();
+}
+
+/**
+ * Starts the journal for an operation, reporting one already in progress
+ * the way every other refusal is reported.
+ */
+function journal(instanceId: string, entry: Journal): void {
+	try {
+		beginOperation(instanceId, entry);
+	} catch (err) {
+		if (err instanceof OperationInProgressError) throw new InstanceError(err.message);
+		throw err;
+	}
+}
+
+/** A failed first install has nothing to restore; its journal just goes. */
+function endJournalOnFailure<T>(instanceId: string, run: () => Promise<T>): Promise<T> {
+	return run().catch((err) => {
+		endOperation(instanceId);
+		throw err;
+	});
 }
 
 async function resolveJavaForInstall(instance: ServerInstance): Promise<string> {
@@ -260,7 +291,7 @@ export function createFromLoader(input: CreateInstanceInput): Promise<{ instance
 	return insertInstanceRow(input).then((instance) => {
 		const taskId = startTask(
 			{ label: `Create ${instance.name}`, instanceId: instance.id },
-			async (task) => {
+			(task) => endJournalOnFailure(instance.id, async () => {
 				task.setProgress(null, 'Resolving Java');
 				const javaPath = await resolveJavaForInstall(instance);
 
@@ -290,10 +321,10 @@ export function createFromLoader(input: CreateInstanceInput): Promise<{ instance
 				}
 
 				await syncUnit(requireInstance(instance.id));
-				setStatus(instance.id, 'ready', null);
+				commitOperation(instance.id, { status: 'ready', statusMessage: null });
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
 				task.setProgress(100, 'Ready');
-			}
+			})
 		);
 		// The task marks the instance failed on error so the UI can offer a retry.
 		watchTaskFailure(taskId, instance.id);
@@ -321,7 +352,7 @@ export async function createFromArchive(
 function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: string[] = []): string {
 	return startTask(
 		{ label: `Install ${pack.name}`, instanceId: instance.id },
-		async (task) => {
+		(task) => endJournalOnFailure(instance.id, async () => {
 			for (const note of notes) task.log(note);
 			task.setProgress(null, 'Resolving Java');
 			const javaPath = await resolveJavaForInstall(instance);
@@ -430,10 +461,10 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 
 			await syncUnit(requireInstance(instance.id));
 
-			setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
+			commitOperation(instance.id, { status: 'ready', statusMessage: problems.length ? problems.join(' ') : null });
 			audit('instance.pack_imported', { instanceId: instance.id, detail: pack.name });
 			task.setProgress(100, 'Ready');
-		}
+		})
 	);
 }
 
@@ -543,7 +574,7 @@ function isForgeInstallEntry(name: string): boolean {
 	return name === 'libraries' || /^forge-.*\.jar$/.test(name) || /^minecraft_server\..*\.jar$/.test(name);
 }
 
-function isCleanroomInstallEntry(name: string): boolean {
+export function isCleanroomInstallEntry(name: string): boolean {
 	return name === 'libraries' || /^cleanroom-.*\.jar$/.test(name) || /^minecraft_server\..*\.jar$/.test(name);
 }
 
@@ -566,6 +597,26 @@ export async function removeEntries(
 /** Entries in `dir` matching `test`, for working out what a rollback must leave alone. */
 export async function listEntries(dir: string, test: (name: string) => boolean): Promise<string[]> {
 	return (await fs.readdir(dir)).filter(test);
+}
+
+/**
+ * Puts an install that was moved aside back: whatever the new install left
+ * (entries matching `test`) goes, except originals that were never moved,
+ * then the moved ones return and `aside` is removed. `moved` defaults to
+ * what is actually in `aside`, which is how recovery after a restart knows.
+ */
+export async function restoreAside(
+	root: string,
+	aside: string,
+	before: string[],
+	test: (name: string) => boolean,
+	moved?: string[]
+): Promise<void> {
+	const back =
+		moved ?? (await fs.readdir(aside).catch(() => [] as string[])).filter((n) => before.includes(n));
+	await removeEntries(root, test, new Set(before.filter((n) => !back.includes(n))));
+	for (const name of back) await fs.rename(path.join(aside, name), path.join(root, name));
+	await fs.rm(aside, { recursive: true, force: true });
 }
 
 export async function requireStopped(instance: ServerInstance): Promise<void> {
@@ -611,6 +662,8 @@ export async function migrateToCleanroom(
 	}
 	const javaPath = java.path;
 
+	const forgeBefore = await listEntries(instance.path, isForgeInstallEntry);
+	journal(instance.id, { kind: 'cleanroom-migration', backup: FORGE_BACKUP, before: forgeBefore });
 	setStatus(instance.id, 'provisioning', 'Migrating to Cleanroom');
 	const taskId = startTask(
 		{ label: `Migrate ${instance.name} to Cleanroom`, instanceId: instance.id },
@@ -626,7 +679,6 @@ export async function migrateToCleanroom(
 				addedMods: []
 			};
 			const dir = backupDir(instance);
-			const forgeBefore = await listEntries(instance.path, isForgeInstallEntry);
 			try {
 				task.setProgress(null, 'Backing up Forge');
 				await fs.mkdir(dir, { recursive: true });
@@ -654,25 +706,17 @@ export async function migrateToCleanroom(
 					task.log(`Unpinned Java ${pinned.majorVersion}; Java ${java.majorVersion} is matched automatically now.`);
 				}
 
-				db.update(serverInstances)
-					.set({
-						modloader: 'cleanroom',
-						modloaderVersion: result.loaderVersion,
-						launchArgs: result.launchArgs,
-						jvmArgs: legacy.flags,
-						javaPath: keepPin ? instance.javaPath : null,
-						updatedAt: Date.now()
-					})
-					.where(eq(serverInstances.id, instance.id))
-					.run();
+				commitOperation(instance.id, {
+					modloader: 'cleanroom',
+					modloaderVersion: result.loaderVersion,
+					launchArgs: result.launchArgs,
+					jvmArgs: legacy.flags,
+					javaPath: keepPin ? instance.javaPath : null
+				});
 			} catch (err) {
 				task.log('Install failed; putting the Forge files back.');
-				const untouched = new Set(forgeBefore.filter((n) => !backup.files.includes(n)));
-				await removeEntries(instance.path, isCleanroomInstallEntry, untouched);
-				for (const name of backup.files) {
-					await fs.rename(path.join(dir, name), path.join(instance.path, name));
-				}
-				await fs.rm(dir, { recursive: true, force: true });
+				await restoreAside(instance.path, dir, forgeBefore, isCleanroomInstallEntry, backup.files);
+				endOperation(instance.id);
 				setStatus(
 					instance.id,
 					'ready',
@@ -718,10 +762,12 @@ export async function revertToForge(instance: ServerInstance): Promise<string> {
 		throw new InstanceError('There is no Forge backup for this server to go back to.');
 	}
 
+	journal(instance.id, { kind: 'cleanroom-revert' });
 	setStatus(instance.id, 'provisioning', 'Reverting to Forge');
 	const taskId = startTask(
 		{ label: `Revert ${instance.name} to Forge`, instanceId: instance.id },
-		async (task) => {
+		// Retry-safe, so a failure (or a restart) just leaves it to be run again.
+		(task) => endJournalOnFailure(instance.id, async () => {
 			const dir = backupDir(instance);
 			task.setProgress(null, 'Restoring Forge');
 			// A previous revert that failed part-way already moved some entries
@@ -751,24 +797,20 @@ export async function revertToForge(instance: ServerInstance): Promise<string> {
 				}
 			}
 
-			db.update(serverInstances)
-				.set({
-					modloader: 'forge',
-					modloaderVersion: backup.modloaderVersion,
-					launchArgs: backup.launchArgs,
-					jvmArgs: backup.jvmArgs,
-					javaPath: backup.javaPath,
-					updatedAt: Date.now()
-				})
-				.where(eq(serverInstances.id, instance.id))
-				.run();
+			commitOperation(instance.id, {
+				modloader: 'forge',
+				modloaderVersion: backup.modloaderVersion,
+				launchArgs: backup.launchArgs,
+				jvmArgs: backup.jvmArgs,
+				javaPath: backup.javaPath
+			});
 			await fs.rm(dir, { recursive: true, force: true });
 
 			await syncUnit(requireInstance(instance.id));
 			setStatus(instance.id, 'ready', null);
 			audit('instance.reverted_forge', { instanceId: instance.id });
 			task.setProgress(100, 'Ready');
-		}
+		})
 	);
 	// Unlike migration there is no further fallback here, so a failure is left
 	// visible on the instance for a manual look.
@@ -820,14 +862,16 @@ export async function changeLoaderVersion(
 	}
 	const javaPath = java.path;
 	const from = instance.modloaderVersion ?? 'unknown';
+	const asideRel = path.join('.mineshell', `loader-previous-${Date.now()}`);
+	const before = await listEntries(instance.path, isLoaderInstallEntry);
+	journal(instance.id, { kind: 'loader-change', aside: asideRel, before });
 
 	setStatus(instance.id, 'provisioning', `Installing ${loader.label} ${loaderVersion ?? '(latest)'}`);
 	const taskId = startTask(
 		{ label: `Change ${instance.name} to ${loader.label} ${loaderVersion ?? '(latest)'}`, instanceId: instance.id },
 		async (task) => {
-			const aside = path.join(instance.path, '.mineshell', `loader-previous-${Date.now()}`);
+			const aside = path.join(instance.path, asideRel);
 			const moved: string[] = [];
-			const before = await listEntries(instance.path, isLoaderInstallEntry);
 			try {
 				task.setProgress(null, `Moving ${loader.label} ${from} aside`);
 				await fs.mkdir(aside, { recursive: true });
@@ -845,14 +889,10 @@ export async function changeLoaderVersion(
 					task
 				});
 
-				db.update(serverInstances)
-					.set({
-						modloaderVersion: result.loaderVersion,
-						launchArgs: result.launchArgs,
-						updatedAt: Date.now()
-					})
-					.where(eq(serverInstances.id, instance.id))
-					.run();
+				commitOperation(instance.id, {
+					modloaderVersion: result.loaderVersion,
+					launchArgs: result.launchArgs
+				});
 				await fs.rm(aside, { recursive: true, force: true });
 				task.log(`Switched ${loader.label} ${from} -> ${result.loaderVersion ?? 'latest'}.`);
 
@@ -867,12 +907,8 @@ export async function changeLoaderVersion(
 			} catch (err) {
 				task.log(`Install failed; restoring ${loader.label} ${from}.`);
 				// Whatever the failed install left behind goes, then the old files return.
-				const untouched = new Set(before.filter((n) => !moved.includes(n)));
-				await removeEntries(instance.path, isLoaderInstallEntry, untouched);
-				for (const name of moved) {
-					await fs.rename(path.join(aside, name), path.join(instance.path, name));
-				}
-				await fs.rm(aside, { recursive: true, force: true });
+				await restoreAside(instance.path, aside, before, isLoaderInstallEntry, moved);
+				endOperation(instance.id);
 				setStatus(
 					instance.id,
 					'ready',

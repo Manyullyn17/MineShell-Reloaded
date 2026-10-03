@@ -165,6 +165,22 @@ export const settings = sqliteTable('settings', {
 	value: text('value').notNull()
 });
 
+/**
+ * Operations in progress, one per instance at most; see lib/server/operations.ts.
+ * Deleted in the same transaction that commits the operation's result.
+ */
+export const operations = sqliteTable('operations', {
+	instanceId: text('instance_id')
+		.primaryKey()
+		.references(() => serverInstances.id, { onDelete: 'cascade' }),
+	kind: text('kind').notNull(),
+	/** JSON: what recovery needs to put the instance back (see Journal). */
+	journal: text('journal').notNull(),
+	/** Token of the MineShell process running it; recovery skips its own. */
+	process: text('process').notNull(),
+	startedAt: integer('started_at').notNull()
+});
+
 /** Login sessions. Only used when MINESHELL_AUTH is on. */
 export const sessions = sqliteTable('sessions', {
 	id: text('id').primaryKey(),
