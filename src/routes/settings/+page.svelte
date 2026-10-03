@@ -166,6 +166,16 @@
 {/if}
 
 <section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>New server defaults</h2>
+			<p>Memory, JVM preset, restart behaviour, console and game settings a new server starts with.</p>
+		</div>
+		<a class="button" href="/settings/defaults">Edit defaults</a>
+	</div>
+</section>
+
+<section class="panel">
 	<h2>Where things live</h2>
 	<dl class="paths">
 		<dt>Data</dt>

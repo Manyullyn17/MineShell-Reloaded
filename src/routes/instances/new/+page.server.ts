@@ -8,12 +8,12 @@ import {
 } from '$lib/server/instances';
 import { resolveProviderPack } from '$lib/server/packs/resolve';
 import { listJavaRuntimes } from '$lib/server/java';
-import { totalmem } from 'node:os';
+import { defaultMaxMb, getInstanceDefaults } from '$lib/server/instance-defaults';
 
 export const load: PageServerLoad = async () => {
 	// The metadata servers are third-party; a failure should not blank the form.
 	const minecraftVersions = await listReleaseVersions().catch(() => [] as string[]);
-	const totalMb = Math.floor(totalmem() / (1024 * 1024));
+	const defaults = getInstanceDefaults();
 
 	return {
 		loaders: LOADER_LIST.map((l) => ({
@@ -29,17 +29,19 @@ export const load: PageServerLoad = async () => {
 			majorVersion: j.majorVersion,
 			versionString: j.versionString
 		})),
-		// Leave headroom for the OS and MineShell itself.
-		suggestedMaxMb: Math.max(1024, Math.min(totalMb - 2048, 16384))
+		// Settings page defaults; the maximum is a RAM-based guess unless one is set.
+		suggestedMaxMb: defaultMaxMb(defaults),
+		defaultMinMb: defaults.memoryMinMb
 	};
 };
 
+/** What the form says; anything missing or unusable is left to the stored defaults. */
 function memoryFrom(form: FormData) {
-	const maxMb = Number(form.get('memoryMaxMb') ?? 4096);
-	const minMb = Number(form.get('memoryMinMb') ?? Math.min(1024, maxMb));
+	const maxMb = Number(form.get('memoryMaxMb'));
+	const minMb = Number(form.get('memoryMinMb'));
 	return {
-		memoryMaxMb: Number.isFinite(maxMb) && maxMb > 512 ? Math.round(maxMb) : 4096,
-		memoryMinMb: Number.isFinite(minMb) && minMb > 256 ? Math.round(minMb) : 1024
+		memoryMaxMb: form.get('memoryMaxMb') && Number.isFinite(maxMb) && maxMb > 512 ? Math.round(maxMb) : undefined,
+		memoryMinMb: form.get('memoryMinMb') && Number.isFinite(minMb) && minMb > 256 ? Math.round(minMb) : undefined
 	};
 }
 

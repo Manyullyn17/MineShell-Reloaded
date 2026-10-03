@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
+	import PropertyInput from '$lib/components/PropertyInput.svelte';
 
 	let { data, form } = $props();
 
@@ -84,47 +85,9 @@
 					{#each section.fields as field (field.key)}
 						<div class="field" class:wide={field.type === 'textarea'}>
 							{#if field.type === 'boolean'}
-								<input type="hidden" name={`present:${field.key}`} value="1" />
-								<div class="check">
-									<input
-										id={field.key}
-										name={field.key}
-										type="checkbox"
-										bind:checked={fieldChecks[field.key]}
-									/>
-									<label for={field.key}>{field.label}</label>
-								</div>
+								<PropertyInput {field} bind:checked={fieldChecks[field.key]} />
 							{:else}
-								<label for={field.key}>
-									{field.label}
-									{#if field.restartRequired}
-										<span class="tag">restart</span>
-									{/if}
-								</label>
-								{#if field.type === 'select'}
-									<select id={field.key} name={field.key} bind:value={fieldValues[field.key]}>
-										{#each field.options ?? [] as option (option.value)}
-											<option value={option.value}>{option.label}</option>
-										{/each}
-									</select>
-								{:else if field.type === 'textarea'}
-									<textarea id={field.key} name={field.key} rows="2" bind:value={fieldValues[field.key]}
-									></textarea>
-								{:else if field.type === 'number'}
-									<input
-										id={field.key}
-										name={field.key}
-										type="number"
-										min={field.min}
-										max={field.max}
-										bind:value={fieldValues[field.key]}
-									/>
-								{:else}
-									<input id={field.key} name={field.key} type="text" bind:value={fieldValues[field.key]} />
-								{/if}
-							{/if}
-							{#if field.help}
-								<p class="hint">{field.help}</p>
+								<PropertyInput {field} bind:value={fieldValues[field.key]} />
 							{/if}
 						</div>
 					{/each}
@@ -199,10 +162,6 @@
 
 	.fields .wide {
 		grid-column: 1 / -1;
-	}
-
-	label .tag {
-		margin-left: var(--space-2);
 	}
 
 	textarea.mono {

@@ -40,6 +40,7 @@ import {
 import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
+import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
 
@@ -142,11 +143,17 @@ export type CreateInstanceInput = {
 	notes?: string | null;
 };
 
-function jvmArgsFor(minMb: number, maxMb: number): string {
-	// The default preset, so a new instance starts from something that is still
+function jvmArgsFor(presetId: string, minMb: number, maxMb: number): string {
+	// A preset, so a new instance starts from something that is still
 	// reselectable later rather than a one-off string.
-	const preset = getPreset('aikar') ?? BUILT_IN_PRESETS[0];
+	const preset = getPreset(presetId) ?? getPreset('aikar') ?? BUILT_IN_PRESETS[0];
 	return composeJvmArgs(preset.flags, minMb, maxMb);
+}
+
+/** server.properties for a new server: built-in values, the stored defaults over them, then what MineShell assigns. */
+function newServerProperties(opts: Parameters<typeof defaultProperties>[0]): Record<string, string> {
+	const assigned = defaultProperties(opts);
+	return { ...assigned, ...getInstanceDefaults().properties };
 }
 
 async function insertInstanceRow(
@@ -165,8 +172,9 @@ async function insertInstanceRow(
 
 	const { serverPort, rconPort } = await allocatePortPair();
 	const password = randomPassword();
-	const minMb = input.memoryMinMb ?? 1024;
-	const maxMb = input.memoryMaxMb ?? 4096;
+	const defaults = getInstanceDefaults();
+	const maxMb = input.memoryMaxMb ?? defaultMaxMb(defaults);
+	const minMb = Math.min(input.memoryMinMb ?? defaults.memoryMinMb, maxMb);
 	const now = Date.now();
 
 	db.insert(serverInstances)
@@ -183,9 +191,11 @@ async function insertInstanceRow(
 			packVersionId: input.packVersionId ?? null,
 			packVersionName: input.packVersionName ?? null,
 			launchArgs: '-jar server.jar nogui',
-			jvmArgs: jvmArgsFor(minMb, maxMb),
+			jvmArgs: jvmArgsFor(defaults.jvmPreset, minMb, maxMb),
 			memoryMinMb: minMb,
 			memoryMaxMb: maxMb,
+			...defaults.restarts,
+			...defaults.console,
 			javaPath: input.javaPath ?? null,
 			serverPort,
 			rconPort,
@@ -200,7 +210,7 @@ async function insertInstanceRow(
 
 	await writeProperties(
 		dir,
-		defaultProperties({
+		newServerProperties({
 			port: serverPort,
 			rconPort,
 			rconPassword: password,
@@ -344,7 +354,7 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 			const password = rconPassword(instance);
 			await fillPropertyDefaults(
 				instance.path,
-				defaultProperties({
+				newServerProperties({
 					port: instance.serverPort,
 					rconPort: instance.rconPort,
 					rconPassword: password ?? '',

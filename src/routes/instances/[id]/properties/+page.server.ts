@@ -8,7 +8,8 @@ import {
 	writeProperties,
 	parseProperties,
 	serialiseProperties,
-	levelTypeOptionsFor
+	levelTypeOptionsFor,
+	propertiesFromForm
 } from '$lib/server/properties';
 import { db } from '$lib/server/db';
 import { serverInstances } from '$lib/server/db/schema';
@@ -44,20 +45,10 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const current = (await readProperties(instance.path)).values;
-		const next: Record<string, string> = { ...current };
-
-		for (const field of PROPERTY_SCHEMA) {
-			if (MANAGED_KEYS.has(field.key)) continue;
-			if (field.type === 'boolean') {
-				// Unchecked boxes are absent from the payload, so a hidden marker
-				// distinguishes "off" from "this field was not on the form".
-				if (form.has(`present:${field.key}`)) {
-					next[field.key] = form.get(field.key) === 'on' ? 'true' : 'false';
-				}
-				continue;
-			}
-			if (form.has(field.key)) next[field.key] = String(form.get(field.key) ?? '');
-		}
+		const next: Record<string, string> = {
+			...current,
+			...propertiesFromForm(form, PROPERTY_SCHEMA.filter((f) => !MANAGED_KEYS.has(f.key)))
+		};
 
 		for (const [key, value] of form.entries()) {
 			const match = key.match(/^extra:(.+)$/);

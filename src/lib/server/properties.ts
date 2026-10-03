@@ -113,6 +113,23 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 const SCHEMA_KEYS = new Set(PROPERTY_SCHEMA.map((f) => f.key));
 
 /**
+ * The guided form's values for `fields`. Unchecked boxes are absent from the
+ * payload, so each checkbox posts a `present:<key>` marker to tell "off" from
+ * "not on this form"; fields not on the form are left out of the result.
+ */
+export function propertiesFromForm(form: FormData, fields: PropertyField[]): Record<string, string> {
+	const values: Record<string, string> = {};
+	for (const field of fields) {
+		if (field.type === 'boolean') {
+			if (form.has(`present:${field.key}`)) values[field.key] = form.get(field.key) === 'on' ? 'true' : 'false';
+		} else if (form.has(field.key)) {
+			values[field.key] = String(form.get(field.key) ?? '');
+		}
+	}
+	return values;
+}
+
+/**
  * `level-type` changed format in 1.19: older versions want a bare keyword
  * (`DEFAULT`, `FLAT`, ...), 1.19+ wants a namespaced id (`minecraft:normal`,
  * ...). An unrecognised value doesn't crash the server - it just logs a

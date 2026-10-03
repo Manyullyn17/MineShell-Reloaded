@@ -2,7 +2,8 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { serverInstances } from '$lib/server/db/schema';
+import { serverInstances, type ServerInstance } from '$lib/server/db/schema';
+import { consoleFromForm, restartsFromForm, type RestartSettings } from '$lib/server/instance-defaults';
 import {
 	InstanceError,
 	changeLoaderVersion,
@@ -110,8 +111,18 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 };
 
-function bool(form: FormData, key: string): boolean {
-	return form.get(key) === 'on';
+/** The instance's current values, which a missing or unusable field keeps. */
+function restartSettingsOf(instance: ServerInstance): RestartSettings {
+	return {
+		restartSchedule: instance.restartSchedule,
+		restartIntervalHours: instance.restartIntervalHours ?? 6,
+		restartDailyTime: instance.restartDailyTime ?? '05:00',
+		restartWarnMinutes: instance.restartWarnMinutes,
+		restartSkipIfPlayers: instance.restartSkipIfPlayers,
+		autoRestartOnCrash: instance.autoRestartOnCrash,
+		crashRestartLimit: instance.crashRestartLimit,
+		crashRestartWindowSec: instance.crashRestartWindowSec
+	};
 }
 
 function int(form: FormData, key: string, fallback: number): number {
@@ -289,20 +300,9 @@ export const actions: Actions = {
 	restarts: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const schedule = String(form.get('restartSchedule') ?? 'none');
 
 		db.update(serverInstances)
-			.set({
-				restartSchedule: ['none', 'interval', 'daily'].includes(schedule) ? schedule : 'none',
-				restartIntervalHours: int(form, 'restartIntervalHours', 6),
-				restartDailyTime: String(form.get('restartDailyTime') ?? '05:00'),
-				restartWarnMinutes: int(form, 'restartWarnMinutes', 5),
-				restartSkipIfPlayers: bool(form, 'restartSkipIfPlayers'),
-				autoRestartOnCrash: bool(form, 'autoRestartOnCrash'),
-				crashRestartLimit: int(form, 'crashRestartLimit', 5),
-				crashRestartWindowSec: int(form, 'crashRestartWindowSec', 600),
-				updatedAt: Date.now()
-			})
+			.set({ ...restartsFromForm(form, restartSettingsOf(instance)), updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 
@@ -315,11 +315,7 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		db.update(serverInstances)
-			.set({
-				consoleBacklogLines: int(form, 'consoleBacklogLines', 300),
-				consoleBufferLines: int(form, 'consoleBufferLines', 2000),
-				updatedAt: Date.now()
-			})
+			.set({ ...consoleFromForm(form, instance), updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Console preferences saved.' };

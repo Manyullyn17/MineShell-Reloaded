@@ -25,7 +25,8 @@
 		const suggested = data.suggestedMaxMb;
 		if (!memoryTouched) memoryMaxMb = suggested;
 	});
-	let memoryMinMb = $state(1024);
+	// svelte-ignore state_referenced_locally
+	let memoryMinMb = $state(data.defaultMinMb);
 
 	// ---- loader-only mode
 	// Seeded once, kept in sync by the effect below - deliberate initial read.

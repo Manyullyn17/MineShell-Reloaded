@@ -3,6 +3,8 @@
 	import Flash from '$lib/components/Flash.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
+	import RestartFields from '$lib/components/RestartFields.svelte';
+	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
@@ -471,76 +473,7 @@
 <section class="panel">
 	<h2>Restarts</h2>
 	<form method="POST" action="?/restarts" use:enhance={keepValues}>
-		<fieldset>
-			<legend>After a crash</legend>
-			<div class="check field">
-				<input
-					id="autoRestartOnCrash"
-					name="autoRestartOnCrash"
-					type="checkbox"
-					bind:checked={sv.autoRestartOnCrash}
-				/>
-				<label for="autoRestartOnCrash">Bring the server back automatically if it exits badly</label>
-			</div>
-			<div class="grid-2">
-				<div class="field">
-					<label for="crashRestartLimit">Give up after</label>
-					<input id="crashRestartLimit" name="crashRestartLimit" type="number" min="1" max="50" bind:value={sv.crashRestartLimit} />
-					<p class="hint">Attempts before systemd stops trying.</p>
-				</div>
-				<div class="field">
-					<label for="crashRestartWindowSec">Counted over (seconds)</label>
-					<input id="crashRestartWindowSec" name="crashRestartWindowSec" type="number" min="60" max="86400" step="60" bind:value={sv.crashRestartWindowSec} />
-					<p class="hint">A crash loop trips the limit; occasional crashes reset it.</p>
-				</div>
-			</div>
-		</fieldset>
-
-		<fieldset>
-			<legend>On a schedule</legend>
-			<div class="field">
-				<label for="restartSchedule">Restart</label>
-				<select id="restartSchedule" name="restartSchedule" bind:value={sv.restartSchedule}>
-					<option value="none">Never</option>
-					<option value="interval">Every few hours</option>
-					<option value="daily">At a fixed time each day</option>
-				</select>
-			</div>
-
-			{#if sv.restartSchedule === 'interval'}
-				<div class="field">
-					<label for="restartIntervalHours">Hours between restarts</label>
-					<input id="restartIntervalHours" name="restartIntervalHours" type="number" min="1" max="168" bind:value={sv.restartIntervalHours} />
-				</div>
-			{/if}
-
-			{#if sv.restartSchedule === 'daily'}
-				<div class="field">
-					<label for="restartDailyTime">Time of day</label>
-					<input id="restartDailyTime" name="restartDailyTime" type="time" bind:value={sv.restartDailyTime} />
-					<p class="hint">In the server machine's local timezone.</p>
-				</div>
-			{/if}
-
-			{#if sv.restartSchedule !== 'none'}
-				<div class="field">
-					<label for="restartWarnMinutes">Warn players this many minutes ahead</label>
-					<input id="restartWarnMinutes" name="restartWarnMinutes" type="number" min="0" max="60" bind:value={sv.restartWarnMinutes} />
-					<p class="hint">Sends in-game messages at 15, 10, 5 and 1 minutes, within this window. 0 sends nothing.</p>
-				</div>
-				<div class="check field">
-					<input
-						id="restartSkipIfPlayers"
-						name="restartSkipIfPlayers"
-						type="checkbox"
-						bind:checked={sv.restartSkipIfPlayers}
-					/>
-					<label for="restartSkipIfPlayers">
-						Wait while players are online, up to an hour past the scheduled time
-					</label>
-				</div>
-			{/if}
-		</fieldset>
+		<RestartFields bind:values={sv} />
 
 		<button class="button-primary" type="submit">Save restart settings</button>
 	</form>
@@ -549,21 +482,7 @@
 <section class="panel">
 	<h2>Console</h2>
 	<form method="POST" action="?/console" use:enhance={keepValues}>
-		<div class="grid-2">
-			<div class="field">
-				<label for="consoleBacklogLines">History loaded on connect</label>
-				<input id="consoleBacklogLines" name="consoleBacklogLines" type="number" min="0" max="10000" bind:value={sv.consoleBacklogLines} />
-			</div>
-			<div class="field">
-				<label for="consoleBufferLines">Lines kept in the browser</label>
-				<input id="consoleBufferLines" name="consoleBufferLines" type="number" min="100" max="100000" bind:value={sv.consoleBufferLines} />
-				<p class="hint">
-					{sv.consoleBufferLines > 20000
-						? 'Above about 20,000 lines the console gets sluggish in most browsers.'
-						: 'Older lines drop off once this is reached.'}
-				</p>
-			</div>
-		</div>
+		<ConsoleFields bind:values={sv} />
 		<button class="button-primary" type="submit">Save console preferences</button>
 	</form>
 </section>
