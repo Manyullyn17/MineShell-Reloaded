@@ -12,7 +12,9 @@ import {
 	LEGACY_ENCHANTMENTS,
 	PlayerDataError,
 	setContainerItem,
+	countStyle,
 	setCount,
+	setDamage,
 	setKeyedItem,
 	styleOf,
 	writeFields,
@@ -467,6 +469,7 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 	let existing: Compound | undefined;
 	let dropExisting: () => void = () => undefined;
 	let place: (item: Compound) => void;
+	let neighbours: Tag[] = [];
 
 	if ('equipment' in home && home.equipment) {
 		let worn = child(root, 'equipment');
@@ -477,11 +480,13 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 		const holder = worn;
 		const found = child(holder, home.equipment);
 		existing = found?.type === 'compound' ? found : undefined;
+		neighbours = holder.value.map(([, v]) => v);
 		dropExisting = () => removeChild(holder, home.equipment);
 		place = (item) => setChild(holder, home.equipment, item);
 	} else {
 		const list = listOf(root, home.list!);
 		const at = list.value.findIndex((i) => num(child(i, 'Slot')) === home.slot);
+		neighbours = list.value;
 		existing = at >= 0 && list.value[at].type === 'compound' ? (list.value[at] as Compound) : undefined;
 		dropExisting = () => list.value.splice(at, 1);
 		place = (item) => (at >= 0 ? (list.value[at] = item) : list.value.push(item));
@@ -493,17 +498,22 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 		return;
 	}
 
-	const id = checkItem(edit.id, edit.count, style);
+	const id = checkItem(edit.id, edit.count);
 
 	// Changing an item keeps everything else on it (enchantments, names, NBT).
 	const item: Compound = existing ?? { type: 'compound', value: [] };
 	if (!existing && !('equipment' in home && home.equipment)) setChild(item, 'Slot', { type: 'byte', value: edit.slot });
 	setChild(item, 'id', { type: 'string', value: id });
-	setCount(item, format === 'components' ? 'count' : 'Count', format === 'components' ? 'int' : 'byte', edit.count);
-	if (format === 'legacy') {
-		const damage = edit.damage ?? num(child(item, 'Damage')) ?? 0;
-		setChild(item, 'Damage', { type: 'short', value: integer(String(damage), 'short') });
-	}
+	// A new item stores its count like the items around it.
+	const like = existing ? null : countStyle(neighbours);
+	setCount(
+		item,
+		like?.key ?? (format === 'components' ? 'count' : 'Count'),
+		like?.type ?? (format === 'components' ? 'int' : 'byte'),
+		edit.count,
+		style
+	);
+	setDamage(item, edit.damage, !existing, style);
 	place(item);
 }
 
@@ -515,6 +525,12 @@ function snbtValue(text: string): Tag {
 	}
 }
 
+/**
+ * Edits apply in order, each path meaning the file as the edits before it
+ * left it: removing entry 0 of a list twice removes its first two entries.
+ * The page sends removals one at a time, so positions never shift under a
+ * batch it sends.
+ */
 export function applyEdits(file: NbtFile, edits: Edit[]): void {
 	const root = file.root;
 	const dataVersion = num(child(root, 'DataVersion'));
@@ -658,8 +674,15 @@ async function requireOffline(instance: ServerInstance, uuid: string, name: stri
 	}
 }
 
-/** Write `bytes` as the player's file: checked against `version`, previous file backed up, replaced atomically. */
-async function replaceFile(instance: ServerInstance, uuid: string, version: string, bytes: Buffer, forceBackup: boolean): Promise<string> {
+/**
+ * Write `bytes` as the player's file: checked against `version`, previous
+ * file backed up, replaced atomically. Whether the player is online is
+ * asked once more right before the swap, with everything else done, so a
+ * join between the first check and the write leaves as small a window as
+ * the server allows (it can still join in the moment after; nothing can
+ * close that from outside the server).
+ */
+async function replaceFile(instance: ServerInstance, uuid: string, name: string | null, version: string, bytes: Buffer, forceBackup: boolean): Promise<string> {
 	const file = path.join(await playerDir(instance), `${uuid}.dat`);
 	const current = await fs.readFile(file);
 	if (versionOf(current) !== version) {
@@ -668,6 +691,12 @@ async function replaceFile(instance: ServerInstance, uuid: string, version: stri
 	await backUp(instance, uuid, current, forceBackup);
 	const tmp = `${file}.mineshell-tmp`;
 	await fs.writeFile(tmp, bytes);
+	try {
+		await requireOffline(instance, uuid, name);
+	} catch (err) {
+		await fs.rm(tmp, { force: true });
+		throw err;
+	}
 	await fs.rename(tmp, file);
 	return versionOf(bytes);
 }
@@ -676,9 +705,10 @@ async function replaceFile(instance: ServerInstance, uuid: string, version: stri
 export async function savePlayerData(instance: ServerInstance, uuid: string, version: string, edits: Edit[]): Promise<string> {
 	const id = checkUuid(uuid);
 	const { file, name } = await readPlayerData(instance, id);
+	// Asked first too, so an online player is refused before any work.
 	await requireOffline(instance, id, name);
 	applyEdits(file, edits);
-	return replaceFile(instance, id, version, writeNbt(file), false);
+	return replaceFile(instance, id, name, version, writeNbt(file), false);
 }
 
 /** Put a backup back (the current file is backed up first). */
@@ -689,5 +719,5 @@ export async function restorePlayerBackup(instance: ServerInstance, uuid: string
 	if (!bytes) throw new PlayerDataError('No such backup.');
 	const { name } = await readPlayerData(instance, id);
 	await requireOffline(instance, id, name);
-	return replaceFile(instance, id, version, bytes, true);
+	return replaceFile(instance, id, name, version, bytes, true);
 }

@@ -226,8 +226,10 @@
 			current.kind === 'slot'
 				? { op: 'item', section: current.section, slot: current.slot }
 				: { op: 'containerItem', list: current.list, slot: current.slot };
-		const edits: Record<string, unknown>[] = [{ ...place, id: itemId, count: Number(itemCount), ...(legacy ? { damage: Number(itemDamage) } : {}) }];
 		const item = selectedItem;
+		// Damage only when it changed (or the item is new), so an item without one is not given one.
+		const damageChanged = legacy && (!item || Number(itemDamage) !== (item.damage ?? 0));
+		const edits: Record<string, unknown>[] = [{ ...place, id: itemId, count: Number(itemCount), ...(damageChanged ? { damage: Number(itemDamage) } : {}) }];
 		if (item) {
 			// Only what changed, so an untouched field keeps its exact text and formatting.
 			const fields: Record<string, unknown> = {};
@@ -532,7 +534,7 @@
 				<div class="item-row">
 					<div class="field narrow">
 						<label for="item-count">Count</label>
-						<input id="item-count" type="number" min="1" max={data.view.format === 'components' ? 99 : 127} bind:value={itemCount} disabled={locked} />
+						<input id="item-count" type="number" min="1" bind:value={itemCount} disabled={locked} />
 					</div>
 					{#if legacy}
 						<div class="field narrow">

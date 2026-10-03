@@ -146,6 +146,61 @@ describe('applyEdits', () => {
 		expect(() => applyEdits(file, [{ op: 'setList', path: ['Deep'], values: ['x'] }])).toThrow(/plain values/);
 	});
 
+	it('changes one slot two containers deep and leaves every other byte of the file as it was', () => {
+		const file = reread(
+			player(
+				1343,
+				['Inventory', list(
+					c(['Slot', b(0)], ['id', s('travelersbackpack:standard')], ['Count', b(1)], ['tag', c(['Inventory', c(['Items', list(
+						c(['Slot', i(4)], ['id', s('minecraft:shulker_box')], ['Count', b(1)], ['tag', c(['BlockEntityTag', c(['Items', list(
+							c(['Slot', b(0)], ['id', s('minecraft:dirt')], ['Count', b(5)]),
+							c(['Slot', b(1)], ['id', s('minecraft:stone')], ['Count', b(9)], ['tag', c(['x', b(1)])])
+						)])])])
+					)], ['Size', i(27)])])]),
+					c(['Slot', b(1)], ['id', s('minecraft:torch')], ['Count', b(64)])
+				)],
+				['XpLevel', i(3)]
+			)
+		);
+		const before = zlib.gunzipSync(writeNbt(file));
+		const shulkerItems = ['Inventory', 0, 'tag', 'Inventory', 'Items', 0, 'tag', 'BlockEntityTag', 'Items'];
+		applyEdits(file, [{ op: 'containerItem', list: shulkerItems, slot: 1, id: 'minecraft:stone', count: 10 }]);
+		const after = zlib.gunzipSync(writeNbt(file));
+		// Same length, one byte different: the stone's Count, 9 -> 10.
+		expect(after.length).toBe(before.length);
+		const diff = [...after].flatMap((byte, at) => (byte === before[at] ? [] : [[before[at], byte]]));
+		expect(diff).toEqual([[9, 10]]);
+	});
+
+	it('applies edits in order: each path means the file as the edits before left it', () => {
+		const file = player(3955, ['Tags', list(s('a'), s('b'), s('c'))]);
+		applyEdits(file, [
+			{ op: 'remove', path: ['Tags', 0] },
+			{ op: 'remove', path: ['Tags', 0] }
+		]);
+		expect(reread(file).root.value[1][1]).toEqual(list(s('c')));
+	});
+
+	it('lets a stored count go as high as its type holds (stack-size mods write an int)', () => {
+		const file = player(
+			1343,
+			['Inventory', list(c(['Slot', b(0)], ['id', s('minecraft:dirt')], ['Count', i(5)], ['Damage', { type: 'short', value: 0 }]))]
+		);
+		applyEdits(file, [
+			{ op: 'item', section: 'main', slot: 0, id: 'minecraft:dirt', count: 4096 },
+			// A new item matches the int counts around it.
+			{ op: 'item', section: 'main', slot: 1, id: 'minecraft:stone', count: 1000 }
+		]);
+		const items = (reread(file).root.value[1][1] as Extract<Tag, { type: 'list' }>).value as Compound[];
+		expect(items.map((it) => it.value.find(([k]) => k === 'Count')![1])).toEqual([i(4096), i(1000)]);
+
+		// A byte count stays capped at what a byte holds, and 1.20.5+ at the game's 99.
+		const vanilla = player(1343, ['Inventory', list(c(['Slot', b(0)], ['id', s('minecraft:dirt')], ['Count', b(5)]))]);
+		expect(() => applyEdits(vanilla, [{ op: 'item', section: 'main', slot: 0, id: 'minecraft:dirt', count: 200 }])).toThrow(/between 1 and 127/);
+		const modern = player(3955, ['Inventory', list()]);
+		expect(() => applyEdits(modern, [{ op: 'item', section: 'main', slot: 0, id: 'minecraft:dirt', count: 100 }])).toThrow(/between 1 and 99/);
+	});
+
 	it('writes items in the file’s own format', () => {
 		const legacy = player(1343, ['Inventory', list()]);
 		applyEdits(legacy, [{ op: 'item', section: 'main', slot: 4, id: 'minecraft:wool', count: 3, damage: 14 }]);
@@ -191,12 +246,21 @@ describe('applyEdits', () => {
 });
 
 describe('nbt', () => {
-	it('round-trips modified UTF-8 (NUL, accents, characters beyond the BMP) and gzip', () => {
+	it('round-trips modified UTF-8 (NUL, accents, characters beyond the BMP)', () => {
 		const file = player(3955, ['Name', s('a\u0000é😀')]);
-		const bytes = writeNbt(file);
-		expect(zlib.gunzipSync(bytes).includes(Buffer.from([0xc0, 0x80]))).toBe(true);
+		expect(zlib.gunzipSync(writeNbt(file)).includes(Buffer.from([0xc0, 0x80]))).toBe(true);
 		expect(reread(file).root.value[1][1]).toEqual(s('a\u0000é😀'));
-		expect(writeNbt(parseNbt(bytes)).equals(bytes)).toBe(true);
+	});
+
+	it('writes back the same NBT from a gzip it did not make', () => {
+		// Java's GZIPOutputStream compresses differently from zlib (other level, OS byte 0),
+		// so the compressed bytes never match; the NBT inside has to.
+		const raw = zlib.gunzipSync(writeNbt(player(1343, ['Inventory', list(c(['Slot', b(0)], ['id', s('minecraft:stone')], ['Count', b(1)]))], ['Pos', list({ type: 'double', value: 0.1 })])));
+		const foreign = zlib.gzipSync(raw, { level: 1 });
+		foreign[9] = 0;
+		const back = writeNbt(parseNbt(foreign));
+		expect(back.equals(foreign)).toBe(false);
+		expect(zlib.gunzipSync(back).equals(raw)).toBe(true);
 	});
 });
 

@@ -2,12 +2,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const rcon = vi.hoisted(() => ({ answers: {} as Record<string, string>, down: false }));
+const rcon = vi.hoisted(() => ({ answers: {} as Record<string, string | (() => string)>, down: false }));
 vi.mock('$lib/server/rcon', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/server/rcon')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		if (rcon.down) throw new Error('connection refused');
-		return commands.map((c) => rcon.answers[c] ?? '');
+		return commands.map((c) => {
+			const answer = rcon.answers[c];
+			return typeof answer === 'function' ? answer() : (answer ?? '');
+		});
 	})
 }));
 
@@ -157,5 +160,19 @@ describe('player data', () => {
 		expect(() => addCustomField(instance.id, { label: ' ', path: ['x'], kind: 'number' })).toThrow(/name/);
 		expect(() => addCustomField(instance.id, { label: 'x', path: [], kind: 'number' })).toThrow(/not a place/);
 		expect(() => addCustomField(instance.id, { label: 'x', path: ['x'], kind: 'slider' })).toThrow(/how the field/);
+	});
+
+	it('asks again right before writing, and leaves the file alone if the player joined meanwhile', async () => {
+		const instance = await server();
+		running();
+		let asked = 0;
+		// Offline when the save starts, online by the time the file would be swapped.
+		rcon.answers['list uuids'] = () =>
+			++asked === 1 ? 'There are 0 of a max of 20 players online: ' : `There are 1 of a max of 20 players online: Alex (${ALEX})`;
+		const { version } = await readPlayerData(instance, ALEX);
+		await expect(savePlayerData(instance, ALEX, version, [{ op: 'set', path: ['XpLevel'], value: '40' }])).rejects.toThrow(/Alex is online/);
+		expect(asked).toBe(2);
+		expect(await xpOf(instance, ALEX)).toBe(3);
+		expect(await fs.readdir(path.join(instance.path, 'survival/playerdata'))).not.toContain(`${ALEX}.dat.mineshell-tmp`);
 	});
 });

@@ -420,11 +420,42 @@ export function describeItem(item: Tag, section: Section, slot: number, at: Path
 
 // --------------------------------------------------------- container edits ---
 
-/** Set the count, keeping the type of one already there (stack-size mods write Count as an int). */
-export function setCount(item: Compound, key: 'Count' | 'count', type: 'byte' | 'int', count: number): void {
+const COUNT_MAX = { byte: 127, short: 32767, int: 2147483647 } as const;
+
+/**
+ * 1.12's Damage (metadata): written when given, or as 0 on a new item; an
+ * existing item without one is left without one, so an edit changes only
+ * what was asked.
+ */
+export function setDamage(item: Compound, damage: number | null | undefined, isNew: boolean, style: Style): void {
+	if (style.format !== 'legacy' || (damage == null && !isNew)) return;
+	const value = damage ?? 0;
+	if (!Number.isInteger(value) || value < -32768 || value > 32767) throw new PlayerDataError('Damage must be a whole number from -32768 to 32767.');
+	setChild(item, 'Damage', { type: 'short', value });
+}
+
+/** How the counts next to this item are stored, for a new item to match (stack-size mods use an int Count). */
+export function countStyle(neighbours: Tag[]): { key: 'Count' | 'count'; type: 'byte' | 'short' | 'int' } | null {
+	for (const n of neighbours) {
+		const item = child(n, 'item')?.type === 'compound' ? child(n, 'item') : n;
+		const tag = child(item, 'Count') ?? child(item, 'count');
+		if (tag && (tag.type === 'byte' || tag.type === 'short' || tag.type === 'int')) return { key: child(item, 'Count') ? 'Count' : 'count', type: tag.type };
+	}
+	return null;
+}
+
+/**
+ * Set the count, keeping the type of one already there. The limit is what
+ * that type holds - so an int Count (a stack-size mod) takes more than 127 -
+ * except that 1.20.5+ items stop at 99 like the game, unless this item
+ * already holds more.
+ */
+export function setCount(item: Compound, key: 'Count' | 'count', type: 'byte' | 'short' | 'int', count: number, style: Style): void {
 	const existing = child(item, 'Count') ?? child(item, 'count');
 	const name = existing ? (child(item, 'Count') ? 'Count' : 'count') : key;
 	const kind = existing && (existing.type === 'byte' || existing.type === 'short' || existing.type === 'int') ? existing.type : type;
+	const max = style.format === 'components' && (num(existing) ?? 0) <= 99 ? 99 : COUNT_MAX[kind];
+	if (count > max) throw new PlayerDataError(`The count must be between 1 and ${max}.`);
 	setChild(item, name, { type: kind, value: count });
 }
 
@@ -437,7 +468,7 @@ export function setKeyedItem(items: Compound, slot: number, item: { id: string; 
 		removeChild(items, found[0]);
 		return;
 	}
-	const id = checkItem(item.id, item.count, style);
+	const id = checkItem(item.id, item.count);
 	const sample = items.value[0]?.[1] as Compound | undefined;
 	const prefix = items.value[0]?.[0].match(/^(\D*)\d+$/)?.[1] ?? 'Slot';
 	const target: Compound = found && found[1].type === 'compound' ? found[1] : { type: 'compound', value: [] };
@@ -447,19 +478,20 @@ export function setKeyedItem(items: Compound, slot: number, item: { id: string; 
 		target,
 		sample && child(sample, 'count') ? 'count' : style.format === 'components' ? 'count' : 'Count',
 		sampleCount?.type === 'int' || (!sampleCount && style.format === 'components') ? 'int' : 'byte',
-		item.count
+		item.count,
+		style
 	);
-	if (style.format === 'legacy') setChild(target, 'Damage', { type: 'short', value: item.damage ?? num(child(target, 'Damage')) ?? 0 });
+	setDamage(target, item.damage, !found, style);
 	if (!found) items.value.push([`${prefix}${slot}`, target]);
 }
 
 const ITEM_ID = /^[a-z0-9_.-]+:[a-zA-Z0-9_./-]+$/;
 
-export function checkItem(id: string, count: number, style: Style): string {
+/** The id, checked; the count's upper limit depends on how it is stored and is checked by setCount. */
+export function checkItem(id: string, count: number): string {
 	const clean = id.trim();
 	if (!ITEM_ID.test(clean)) throw new PlayerDataError(`"${id}" is not an item id (like minecraft:diamond).`);
-	const max = style.format === 'components' ? 99 : 127;
-	if (!Number.isInteger(count) || count < 1 || count > max) throw new PlayerDataError(`The count must be between 1 and ${max}.`);
+	if (!Number.isInteger(count) || count < 1) throw new PlayerDataError('The count must be a whole number of 1 or more.');
 	return clean;
 }
 
@@ -483,7 +515,7 @@ export function setContainerItem(
 		list.value.splice(index, 1);
 		return;
 	}
-	const id = checkItem(item.id, item.count, style);
+	const id = checkItem(item.id, item.count);
 	const entry: Compound = index >= 0 ? (list.value[index] as Compound) : { type: 'compound', value: [] };
 	if (index < 0 && shape.slotKey) setChild(entry, shape.slotKey, { type: shape.slotType, value: slot });
 	let target = entry;
@@ -493,8 +525,8 @@ export function setContainerItem(
 		setChild(entry, 'item', target);
 	}
 	setChild(target, 'id', { type: 'string', value: id });
-	setCount(target, shape.countKey, shape.countType, item.count);
-	if (style.format === 'legacy') setChild(target, 'Damage', { type: 'short', value: item.damage ?? num(child(target, 'Damage')) ?? 0 });
+	setCount(target, shape.countKey, shape.countType, item.count, style);
+	setDamage(target, item.damage, index < 0, style);
 	if (index < 0) {
 		list.itemType = 'compound';
 		list.value.push(entry);
