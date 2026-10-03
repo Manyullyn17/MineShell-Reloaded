@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { downloadFile, fetchJson } from '../download';
 import { getCurseforgeApiKey } from '../curseforge';
+import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import type { ModloaderId } from '../modloaders';
 import type { TaskHandle } from '../tasks';
 import { TMP_DIR } from '../config';
@@ -223,12 +224,14 @@ type CfFileInfo = {
 
 /**
  * CurseForge file ids need turning into URLs. The official API is used when a
- * key is present; otherwise the well-known edge URL is reconstructed, which
- * works for every project that has not opted out of third-party distribution.
+ * key is present; otherwise the modpacks.ch mirror, which knows every file but
+ * lists a project's older ones only per Minecraft version - hence the pack's
+ * version, to page through.
  */
 export async function resolveCurseforgeDownload(
 	projectId: number,
-	fileId: number
+	fileId: number,
+	minecraftVersion?: string
 ): Promise<{ url: string; filename: string; sha1: string | null }> {
 	const apiKey = getCurseforgeApiKey();
 	if (apiKey) {
@@ -242,34 +245,26 @@ export async function resolveCurseforgeDownload(
 		}
 		// Opted out of the API's download field, but the CDN path is derivable.
 		return {
-			url: cdnUrl(fileId, info.data.fileName),
+			url: curseforgeCdnUrl(fileId, info.data.fileName),
 			filename: info.data.fileName,
 			sha1
 		};
 	}
 
-	// No key: ask modpacks.ch, which mirrors the same metadata. There's no
-	// single-file lookup by (project, file) id in its public API - the real
-	// shape is a per-project record with every file's version embedded, so
-	// the file id is matched against that list instead.
-	const info = await fetchJson<{
-		versions?: { id: number; name: string; url: string; sha1?: string }[];
-	}>(`https://api.modpacks.ch/public/mod/${projectId}`).catch(
-		() => ({}) as { versions?: { id: number; name: string; url: string; sha1?: string }[] }
-	);
-
-	const file = info.versions?.find((v) => v.id === fileId);
-	if (file) {
-		return { url: file.url, filename: file.name, sha1: file.sha1 ?? null };
+	try {
+		const version = await mirrorMods.getVersion(String(projectId), String(fileId), { minecraftVersion });
+		const file = version.files[0];
+		return { url: file.url, filename: file.filename, sha1: file.hash?.value ?? null };
+	} catch {
+		throw new Error(
+			`Could not resolve CurseForge file ${fileId}. Add a CurseForge API key on the Settings page (or set CURSEFORGE_API_KEY) for reliable pack imports.`
+		);
 	}
-	throw new Error(
-		`Could not resolve CurseForge file ${fileId}. Add a CurseForge API key on the Settings page (or set CURSEFORGE_API_KEY) for reliable pack imports.`
-	);
 }
 
-function cdnUrl(fileId: number, fileName: string): string {
-	const id = String(fileId);
-	return `https://edge.forgecdn.net/files/${id.slice(0, 4)}/${Number(id.slice(4))}/${encodeURIComponent(fileName)}`;
+/** CurseForge's CDN serves every file at a path made from its id and name. */
+export function curseforgeCdnUrl(fileId: number, fileName: string): string {
+	return `https://edge.forgecdn.net/files/${Math.floor(fileId / 1000)}/${fileId % 1000}/${encodeURIComponent(fileName)}`;
 }
 
 export type PackInstallProgress = { done: number; total: number; current: string };
@@ -300,7 +295,8 @@ export async function downloadPackFiles(
 				if (item.curseforge && !urls.length) {
 					const resolved = await resolveCurseforgeDownload(
 						item.curseforge.projectId,
-						item.curseforge.fileId
+						item.curseforge.fileId,
+						pack.minecraftVersion
 					);
 					target = path.join('mods', resolved.filename);
 					urls = [resolved.url];

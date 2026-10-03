@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { applyOverrides, packFromFileList, parsePack } from './index';
+import { applyOverrides, curseforgeCdnUrl, packFromFileList, parsePack } from './index';
 import { ls, tempDir, zipBuffer } from '../../../../tests/helpers/fs';
 
 describe('packFromFileList (modpacks.ch file lists)', () => {
@@ -104,5 +104,13 @@ describe('applyOverrides', () => {
 		expect(await fs.readFile(path.join(dir, 'config/a.toml'), 'utf8')).toBe('server');
 		expect(await ls(path.dirname(dir))).not.toContain('escape.txt');
 		expect(await ls(dir)).toEqual(['config']);
+	});
+});
+
+describe('curseforgeCdnUrl', () => {
+	it('splits the file id into thousands and the rest', () => {
+		expect(curseforgeCdnUrl(7492878, 'sfm.jar')).toBe('https://edge.forgecdn.net/files/7492/878/sfm.jar');
+		// Six-digit ids: previously cut after four digits (files/2270/83).
+		expect(curseforgeCdnUrl(227083, 'Baubles 1.jar')).toBe('https://edge.forgecdn.net/files/227/83/Baubles%201.jar');
 	});
 });

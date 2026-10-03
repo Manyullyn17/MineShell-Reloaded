@@ -13,7 +13,7 @@ vi.mock('$lib/server/cleanroom', async (importOriginal) => {
 
 const { createFromPack } = await import('$lib/server/instances');
 const { LOADERS } = await import('$lib/server/modloaders');
-const { packFromFileList } = await import('$lib/server/packs');
+const { packFromFileList, parsePack } = await import('$lib/server/packs');
 const { listInstanceMods, syncMods } = await import('$lib/server/mods');
 const { readProperties } = await import('$lib/server/properties');
 const cleanroom = await import('$lib/server/cleanroom');
@@ -214,5 +214,39 @@ describe('installing a pack', () => {
 		const after = Object.fromEntries((await listInstanceMods(reload(instance.id))).map((m) => [m.fileName, m]));
 		expect(after['a.jar']).toMatchObject({ source: 'curseforge', slug: '300', name: 'Mod A Again', fromPack: true });
 		expect(after['b.jar']).toMatchObject({ source: 'manual' });
+	});
+
+	it('installs an uploaded CurseForge zip whose mods are older than the newest files', async () => {
+		// Without an API key, the mirror's project record only has the newest
+		// 50 files; older ones are found by paging the pack's Minecraft version.
+		fakeInstall('fabric');
+		mirrorProject(400, 'Old Mod', [{ id: 4999, name: 'old-mod-9.jar' }]);
+		served['https://api.modpacks.ch/public/mod/400/versions/1.20.1'] = () =>
+			Response.json({ versions: [mirrorFile({ id: 4500, name: 'old-mod-5.jar' })], page: 1, pages: 2 });
+		served['https://api.modpacks.ch/public/mod/400/versions/1.20.1/2'] = () =>
+			Response.json({ versions: [mirrorFile({ id: 4001, name: 'old-mod-1.jar' })], page: 2, pages: 2 });
+		serve('https://files.test/cf/old-mod-1.jar', 'old mod');
+
+		const upload = parsePack(
+			zipBuffer({
+				'manifest.json': JSON.stringify({
+					minecraft: { version: '1.20.1', modLoaders: [{ id: 'fabric-0.15.0', primary: true }] },
+					name: 'Uploaded',
+					version: '1',
+					files: [{ projectID: 400, fileID: 4001, required: true }],
+					overrides: 'overrides'
+				}),
+				'overrides/config/x.cfg': 'x'
+			})
+		);
+		const { instance, taskId } = await createFromPack('Uploaded', upload, { source: 'manual' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(await tree(instance.path)).toMatchObject({ 'mods/old-mod-1.jar': 'old mod', 'config/x.cfg': 'x' });
+		expect((await listInstanceMods(reload(instance.id)))[0]).toMatchObject({
+			source: 'curseforge',
+			slug: '400',
+			name: 'Old Mod',
+			versionId: '4001'
+		});
 	});
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { curseforgeModProvider as mods } from './modpacksch';
+import { resolveCurseforgeDownload } from '../packs';
 import { useRecordedHttp } from '../../../../tests/helpers/http';
 
 useRecordedHttp('curseforge-mods');
@@ -58,5 +59,12 @@ describe('CurseForge mods through the modpacks.ch mirror', () => {
 			slug: JEI,
 			projectUrl: 'https://www.curseforge.com/minecraft/mc-mods/jei'
 		});
+	});
+
+	it('resolves an old file of an uploaded pack without an API key', async () => {
+		// Previously only the newest 50 files were searched, so most mods of an
+		// older pack could not be resolved without a key.
+		const file = await resolveCurseforgeDownload(Number(JEI), Number(OLD_JEI), '1.12.2');
+		expect(file).toMatchObject({ filename: 'jei_1.12.2-4.15.0.268.jar', sha1: expect.any(String) });
 	});
 });
