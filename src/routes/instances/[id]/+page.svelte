@@ -201,6 +201,15 @@
 				<dt>Players</dt>
 				<dd class="mono">{data.players ? `${data.players.online}/${data.players.max}` : '-'}</dd>
 			</div>
+			{#if data.tick}
+				<div>
+					<dt>Tick rate</dt>
+					<dd class="mono" class:warn-text={data.tick.tps < 18}>
+						{data.tick.tps.toFixed(1)} TPS
+						<span class="faint small">{data.tick.mspt.toFixed(1)} ms/tick</span>
+					</dd>
+				</div>
+			{/if}
 			<div>
 				<dt>Disk used</dt>
 				<dd class="mono">{formatBytes(data.diskBytes)}</dd>

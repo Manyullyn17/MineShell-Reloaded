@@ -26,6 +26,7 @@ import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
 import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
 import { cancelCountdown, getCountdown, startCountdown } from '$lib/server/countdown';
+import { tickStats } from '$lib/server/tps';
 
 /**
  * First non-internal IPv4 address found across interfaces. Falls back to the
@@ -97,7 +98,10 @@ export const load: PageServerLoad = async ({ params }) => {
 			summary.state.result === 'exit-code' ||
 			(startedRun && !/\]: Done \(/.test(lastRunLog));
 	}
-	const players = summary.running ? await onlinePlayers(instance) : null;
+	// Both over RCON; side by side, so a slow answer is waited for once.
+	const [players, tick] = summary.running
+		? await Promise.all([onlinePlayers(instance), tickStats(instance)])
+		: [null, null];
 	const stuck = summary.running && (await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
 	// Which runtime actually gets used, so the overview can name it instead of
 	// only saying that matching happens.
@@ -146,6 +150,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		players,
 		countdown: getCountdown(instance.id),
+		tick,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		diskBytes: await instanceDiskUsage(instance),
 		// CPU is measured across all cores, so the chart needs the core count to
