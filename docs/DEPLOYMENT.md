@@ -180,10 +180,15 @@ location / {
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
     proxy_read_timeout 3600s;
 }
 ```
+
+Keep both `Host` and `X-Forwarded-Proto`: MineShell refuses form submissions whose browser
+`Origin` does not match the host the request was sent to (protection against other sites
+driving your panel), and marks the login cookie `Secure` when the browser used https.
 
 Never expose an RCON port. It is plaintext and only weakly authenticated. MineShell binds
 RCON for its own use; nothing outside the host needs it.

@@ -16,6 +16,22 @@ export const SESSION_COOKIE = 'mineshell_session';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_KEY = 'auth.password_hash';
 
+/**
+ * Session cookie settings. Secure when the browser used https - directly, or
+ * as reported by a TLS-terminating reverse proxy (X-Forwarded-Proto), where the
+ * app itself only sees http.
+ */
+export function sessionCookieOptions(request: Request, url: URL) {
+	const forwarded = request.headers.get('x-forwarded-proto')?.split(',')[0].trim().toLowerCase();
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax' as const,
+		secure: url.protocol === 'https:' || forwarded === 'https',
+		maxAge: SESSION_TTL_MS / 1000
+	};
+}
+
 export function authEnabled(): boolean {
 	return AUTH_ENABLED;
 }

@@ -11,9 +11,11 @@ const config = {
     // MINESHELL_DATA. tests/setup.ts double-checks and aborts otherwise.
     env: { dir: process.env.VITEST ? 'tests/env' : '.' },
     csrf: {
-      // MineShell is a LAN tool that is frequently reached by raw IP or an
-      // alternate hostname, which trips SvelteKit's strict origin check on
-      // form posts. Auth + same-site cookies are the real protection here.
+      // SvelteKit's own check compares the full origin, which breaks behind
+      // TLS-terminating proxies (the app sees http, the browser https).
+      // src/lib/server/guard.ts does the cross-site check instead, comparing
+      // hosts only - so raw-IP, alternate-hostname and proxied access work,
+      // and other sites (or other ports on the same machine) are refused.
       checkOrigin: false
     }
   }

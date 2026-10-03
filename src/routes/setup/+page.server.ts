@@ -1,6 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { SESSION_COOKIE, authEnabled, createSession, passwordIsSet, setPassword } from '$lib/server/auth';
+import {
+	SESSION_COOKIE,
+	authEnabled,
+	createSession,
+	passwordIsSet,
+	sessionCookieOptions,
+	setPassword
+} from '$lib/server/auth';
 import { DATA_DIR, SYSTEMD_SCOPE } from '$lib/server/config';
 import { probeSystemd, templateUnitInstalled } from '$lib/server/systemd';
 
@@ -32,13 +39,7 @@ export const actions: Actions = {
 		}
 
 		const session = createSession(request.headers.get('user-agent'));
-		cookies.set(SESSION_COOKIE, session.id, {
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: url.protocol === 'https:',
-			maxAge: 60 * 60 * 24 * 30
-		});
+		cookies.set(SESSION_COOKIE, session.id, sessionCookieOptions(request, url));
 		redirect(303, '/');
 	}
 };
