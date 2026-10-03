@@ -7,6 +7,7 @@ import { javaRuntimes, settings } from './db/schema';
 import { run } from './systemd';
 import { cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { minecraftJavaMajor } from './modloaders';
+import { DATA_DIR } from './config';
 
 /**
  * Two jobs: work out which Java a given Minecraft version needs, and find the
@@ -128,7 +129,9 @@ const SCAN_ROOTS = [
 	'/opt/hostedtoolcache/Java_Adoptium_jdk',
 	path.join(homedir(), '.sdkman', 'candidates', 'java'),
 	path.join(homedir(), '.jdks'),
-	path.join(homedir(), '.local', 'share', 'PrismLauncher', 'java')
+	path.join(homedir(), '.local', 'share', 'PrismLauncher', 'java'),
+	// Runtimes MineShell downloaded (javadownload.ts).
+	path.join(DATA_DIR, 'java')
 ];
 
 async function candidateBinaries(): Promise<string[]> {
@@ -308,7 +311,7 @@ export function resolveJava(opts: {
 			majorVersion: null,
 			requiredMajor,
 			origin: 'missing',
-			warning: `No Java ${requiredMajor} runtime found. Install one (for example \`sudo apt install openjdk-${requiredMajor}-jre-headless\`) and rescan, or pin a path in instance settings.`
+			warning: `No Java ${requiredMajor} runtime found. Download one in Settings, install one with your package manager and rescan, or pin a path in instance settings.`
 		};
 	}
 
@@ -322,16 +325,4 @@ export function resolveJava(opts: {
 				? null
 				: `Using Java ${chosen.majorVersion}; Minecraft ${opts.minecraftVersion} nominally wants Java ${requiredMajor}.`
 	};
-}
-
-/**
- * Placeholder for the Prism-style automatic JDK download via the Adoptium API.
- * Deliberately not wired up yet: MineShell warns and points at the package
- * manager instead. See docs/ROADMAP.md.
- *
- * Endpoint when this is built:
- * https://api.adoptium.net/v3/binary/latest/{major}/ga/linux/x64/jre/hotspot/normal/eclipse
- */
-export function adoptiumDownloadUrl(major: number, arch = 'x64'): string {
-	return `https://api.adoptium.net/v3/binary/latest/${major}/ga/linux/${arch}/jre/hotspot/normal/eclipse`;
 }

@@ -4,6 +4,7 @@
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
 	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
+	import JavaPrompt from '$lib/components/JavaPrompt.svelte';
 	import RestartFields from '$lib/components/RestartFields.svelte';
 	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
@@ -130,7 +131,7 @@
 </section>
 
 {#if data.pack}
-	<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} />
+	<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
 {/if}
 
 {#if data.settings.modloader !== 'vanilla'}
@@ -171,6 +172,7 @@
 				{/if}
 			</div>
 			<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="loader" />
+			<JavaPrompt {form} action="loaderVersion" />
 			<button
 				type="submit"
 				disabled={data.running || !sv.modloaderVersion || sv.modloaderVersion === data.settings.modloaderVersion}
@@ -279,6 +281,7 @@
 			<form method="POST" action="?/migrateCleanroom" use:enhance>
 				<CleanroomOption javaMajors={data.javaRuntimes.map((j) => j.majorVersion)} toggle={false} idPrefix="migrate-cleanroom" />
 				<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="migrate" />
+				<JavaPrompt {form} action="migrateCleanroom" />
 				<button class="button-primary" type="submit" disabled={cr.running}>Migrate to Cleanroom</button>
 			</form>
 		{/if}

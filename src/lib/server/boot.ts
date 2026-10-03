@@ -4,6 +4,7 @@ import { learnJavaRequirement, scanJavaRuntimes } from './java';
 import { listInstances } from './instances';
 import { stopAllTails } from './journal';
 import { recoverInterruptedOperations } from './recovery';
+import { removePartialJava } from './javadownload';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
@@ -26,10 +27,11 @@ export function boot(): void {
 	startMonitor();
 	startScheduler();
 
-	// Non-blocking: the first instance creation triggers a rescan anyway.
-	void scanJavaRuntimes().catch((err) =>
-		console.warn('[mineshell] Java scan failed:', err instanceof Error ? err.message : err)
-	);
+	// Non-blocking: the first instance creation triggers a rescan anyway. A
+	// Java download cut short leaves a .partial folder, removed first.
+	void removePartialJava()
+		.then(scanJavaRuntimes)
+		.catch((err) => console.warn('[mineshell] Java scan failed:', err instanceof Error ? err.message : err));
 
 	// Learn the Java each existing instance's Minecraft version needs, so
 	// versions newer than the built-in rules (26.x needs Java 25) resolve right.

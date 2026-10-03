@@ -2,12 +2,14 @@ import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '$lib/server/modloaders';
 import {
+	JavaMissingError,
 	createFromArchive,
 	createFromLoader,
 	createFromPack
 } from '$lib/server/instances';
 import { resolveProviderPack } from '$lib/server/packs/resolve';
 import { listJavaRuntimes } from '$lib/server/java';
+import { isJavaVendor } from '$lib/server/javadownload';
 import { defaultMaxMb, getInstanceDefaults } from '$lib/server/instance-defaults';
 
 export const load: PageServerLoad = async () => {
@@ -36,6 +38,18 @@ export const load: PageServerLoad = async () => {
 };
 
 /** What the form says; anything missing or unusable is left to the stored defaults. */
+function downloadJavaFrom(form: FormData) {
+	const vendor = form.get('downloadJava');
+	return isJavaVendor(vendor) ? { downloadJava: vendor } : {};
+}
+
+/** A missing Java comes back to the form it was submitted from, which offers to download it. */
+function javaMissing(err: unknown, action: string) {
+	return err instanceof JavaMissingError
+		? fail(400, { ok: false, message: err.message, javaMissing: { major: err.major, action } })
+		: null;
+}
+
 function memoryFrom(form: FormData) {
 	const maxMb = Number(form.get('memoryMaxMb'));
 	const minMb = Number(form.get('memoryMinMb'));
@@ -83,12 +97,13 @@ export const actions: Actions = {
 				modloader,
 				modloaderVersion,
 				javaPath: String(form.get('javaPath') ?? '') || null,
-				...memoryFrom(form)
+				...memoryFrom(form),
+				...downloadJavaFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
-			return fail(500, {
+			return javaMissing(err, 'loader') ?? fail(500, {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not create the server.'
 			});
@@ -108,12 +123,13 @@ export const actions: Actions = {
 			const buffer = Buffer.from(await file.arrayBuffer());
 			const { instance } = await createFromArchive(name, buffer, {
 				...memoryFrom(form),
-				...cleanroomFrom(form)
+				...cleanroomFrom(form),
+				...downloadJavaFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
-			return fail(400, {
+			return javaMissing(err, 'upload') ?? fail(400, {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not read that archive.'
 			});
@@ -138,12 +154,12 @@ export const actions: Actions = {
 				name || projectName,
 				pack,
 				{ source, projectId, versionId },
-				{ ...memoryFrom(form), ...cleanroomFrom(form) }
+				{ ...memoryFrom(form), ...cleanroomFrom(form), ...downloadJavaFrom(form) }
 			);
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
-			return fail(500, {
+			return javaMissing(err, 'install') ?? fail(500, {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not install that pack.'
 			});

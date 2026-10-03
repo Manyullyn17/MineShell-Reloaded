@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import SnapshotChoice from './SnapshotChoice.svelte';
+	import JavaPrompt from './JavaPrompt.svelte';
 
 	/**
 	 * Move an installed pack to another version (or reinstall the current one).
@@ -11,12 +12,15 @@
 		instanceId,
 		pack,
 		running,
-		snapshotPrompt
+		snapshotPrompt,
+		form
 	}: {
 		instanceId: string;
 		pack: { source: string; projectId: string; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
 		snapshotPrompt: { worldBytes: number; ask: boolean; policy: { keep: number; askAboveMb: number } };
+		/** The page's action result, for the missing-Java prompt. */
+		form: { javaMissing?: { major: number; action: string }; [key: string]: unknown } | null | undefined;
 	} = $props();
 
 	type PackVersion = { id: string; versionNumber: string; gameVersions: string[]; channel: string };
@@ -152,10 +156,11 @@
 			class="plan"
 			use:enhance={() => {
 				submitting = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					await update({ reset: false });
 					submitting = false;
-					plan = null;
+					// Kept on a refusal, so its answer (a Java download, a snapshot choice) can be given here.
+					if (result.type === 'success') plan = null;
 				};
 			}}
 		>
@@ -269,6 +274,7 @@
 			{/if}
 
 			<SnapshotChoice prompt={snapshotPrompt} idPrefix="pack" />
+			<JavaPrompt {form} action="changePack" />
 			{#if running}
 				<p class="hint">Stop the server to change the pack version.</p>
 			{/if}

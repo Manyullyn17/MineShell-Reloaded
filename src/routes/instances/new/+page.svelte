@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
+	import JavaPrompt from '$lib/components/JavaPrompt.svelte';
 	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
 	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
@@ -11,6 +13,15 @@
 	type Mode = 'browse' | 'upload' | 'loader';
 	let mode = $state<Mode>('browse');
 	let submitting = $state(false);
+	// Enhanced, so a refusal (a missing Java above all) keeps the picked pack,
+	// the chosen file and every field instead of reloading the page.
+	const submit = () => {
+		submitting = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			submitting = false;
+		};
+	};
 
 	// ---- shared fields
 	let name = $state('');
@@ -380,7 +391,7 @@
 						action="?/install"
 						class="install"
 						bind:this={installEl}
-						onsubmit={() => (submitting = true)}
+						use:enhance={submit}
 					>
 						<input type="hidden" name="source" value={source} />
 						<input type="hidden" name="projectId" value={selected.id} />
@@ -435,6 +446,7 @@
 
 						{@render memoryFields()}
 
+						<JavaPrompt {form} action="install" />
 						<button class="button-primary" type="submit" disabled={submitting || !versionId}>
 							{submitting ? 'Starting install' : 'Install pack'}
 						</button>
@@ -465,7 +477,7 @@
 		method="POST"
 		action="?/upload"
 		enctype="multipart/form-data"
-		onsubmit={() => (submitting = true)}
+		use:enhance={submit}
 	>
 		<p class="muted">
 			MineShell reads Modrinth <code>.mrpack</code> files and CurseForge server pack zips. Use this
@@ -490,6 +502,7 @@
 
 		{@render memoryFields()}
 
+		<JavaPrompt {form} action="upload" />
 		<button class="button-primary" type="submit" disabled={submitting}>
 			{submitting ? 'Uploading' : 'Install pack'}
 		</button>
@@ -497,7 +510,7 @@
 {/if}
 
 {#if mode === 'loader'}
-	<form class="panel" method="POST" action="?/loader" onsubmit={() => (submitting = true)}>
+	<form class="panel" method="POST" action="?/loader" use:enhance={submit}>
 		<div class="field">
 			<label for="loader-name">Server name</label>
 			<input id="loader-name" name="name" bind:value={name} required placeholder="Survival world" />
@@ -585,6 +598,7 @@
 			</div>
 		{/if}
 
+		<JavaPrompt {form} action="loader" />
 		<button class="button-primary" type="submit" disabled={submitting}>
 			{submitting ? 'Creating' : 'Create server'}
 		</button>

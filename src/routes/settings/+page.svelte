@@ -111,12 +111,29 @@
 					<tr>
 						<td class="mono">Java {java.majorVersion}</td>
 						<td class="mono small wrap">{java.path}</td>
-						<td class="small faint">{java.manual ? 'added by hand' : 'scanned'}</td>
+						<td class="small faint">
+							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
+							{#if java.vendor}<div class="small">{java.vendor}</div>{/if}
+						</td>
 						<td class="right">
-							<form method="POST" action="?/removeJava" use:enhance>
-								<input type="hidden" name="path" value={java.path} />
-								<button class="button-quiet">Forget</button>
-							</form>
+							{#if java.managed}
+								<!-- A rescan finds it again, so forgetting alone would not stick. -->
+								<form
+									method="POST"
+									action="?/deleteJava"
+									use:enhance={({ cancel }) => {
+										if (!confirm(`Delete Java ${java.majorVersion} from disk?`)) cancel();
+									}}
+								>
+									<input type="hidden" name="path" value={java.path} />
+									<button class="button-quiet">Delete</button>
+								</form>
+							{:else}
+								<form method="POST" action="?/removeJava" use:enhance>
+									<input type="hidden" name="path" value={java.path} />
+									<button class="button-quiet">Forget</button>
+								</form>
+							{/if}
 						</td>
 					</tr>
 				{/each}
@@ -132,9 +149,39 @@
 		<button type="submit">Add</button>
 	</form>
 
+	<h3 class="java-download">Download a runtime</h3>
+	{#if data.javaDownloads.missing.length}
+		<div class="notice warning">
+			<p>
+				No matching Java for:
+				{data.javaDownloads.missing.map((m) => `${m.name} (Java ${m.major})`).join(', ')}.
+			</p>
+		</div>
+	{/if}
+	<form method="POST" action="?/downloadJava" use:enhance class="inline-form">
+		<div class="field">
+			<label for="java-vendor">From</label>
+			<select id="java-vendor" name="vendor">
+				{#each data.javaDownloads.vendors as vendor (vendor.id)}
+					<option value={vendor.id}>{vendor.label}</option>
+				{/each}
+			</select>
+		</div>
+		<div class="field">
+			<label for="java-major">Version</label>
+			<select id="java-major" name="major">
+				{#each data.javaDownloads.majors as major (major)}
+					<option value={major} selected={major === (data.javaDownloads.missing[0]?.major ?? 21)}>
+						Java {major}{data.javaRuntimes.some((j) => j.majorVersion === major) ? ' (installed)' : ''}
+					</option>
+				{/each}
+			</select>
+		</div>
+		<button type="submit">Download</button>
+	</form>
 	<p class="muted small">
-		Automatic downloads from Adoptium are planned but not built yet, so missing runtimes need
-		installing through your package manager.
+		A JRE (the JDK where the vendor has no JRE for that version), checked against the vendor's SHA-256 and
+		kept in <code>{data.paths.data}/java</code>. Servers set to match Java automatically pick it up.
 	</p>
 </section>
 
@@ -293,6 +340,10 @@
 </section>
 
 <style>
+	.java-download {
+		margin-top: var(--space-5);
+	}
+
 	h1 {
 		margin-bottom: var(--space-5);
 	}

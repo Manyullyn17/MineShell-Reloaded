@@ -19,7 +19,7 @@ import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArch
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
-import { learnJavaRequirement, resolveJava } from './java';
+import { resolveJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
@@ -39,12 +39,16 @@ import {
 	InstanceError,
 	isLoaderInstallEntry,
 	listEntries,
+	obtainJava,
+	planJava,
 	restoreAside,
 	requireInstance,
 	requireStopped,
 	setStatus,
-	syncUnit
+	syncUnit,
+	type JavaPlan
 } from './instances';
+import type { JavaVendor } from './javadownload';
 
 /**
  * Moving an installed pack to another version of itself - up, down, or the
@@ -453,7 +457,7 @@ async function exists(p: string): Promise<boolean> {
 export async function applyPackChange(
 	instance: ServerInstance,
 	versionId: string,
-	opts: { updateMods: string[]; confirmMinecraftChange: boolean; snapshot?: boolean }
+	opts: { updateMods: string[]; confirmMinecraftChange: boolean; snapshot?: boolean; downloadJava?: JavaVendor }
 ): Promise<string> {
 	await requireStopped(instance);
 	const pack = await preparePack(instance, versionId);
@@ -465,19 +469,18 @@ export async function applyPackChange(
 		);
 	}
 	const loader = getLoader(plan.target.loader);
-	let javaPath: string | null = null;
+	const javaFor = {
+		minecraftVersion: plan.target.minecraft,
+		modloader: plan.target.loader,
+		modloaderVersion: plan.target.loaderVersion,
+		explicitPath: instance.javaPath
+	};
+	let javaPlan: JavaPlan | null = null;
 	if (plan.loaderChange) {
-		await learnJavaRequirement(plan.target.minecraft);
-		const java = resolveJava({
-			...instance,
-			minecraftVersion: plan.target.minecraft,
-			modloader: plan.target.loader,
-			modloaderVersion: plan.target.loaderVersion
-		});
-		if (!java.path || (instance.javaPath && java.warning)) {
-			throw new InstanceError(java.warning ?? `The new version needs Java ${java.requiredMajor}, which was not found.`);
-		}
-		javaPath = java.path;
+		javaPlan = await planJava(javaFor, opts.downloadJava);
+		// A pin to the wrong Java is the person's to change, not something to download around.
+		const pinnedWarning = instance.javaPath ? resolveJava(javaFor).warning : null;
+		if (pinnedWarning) throw new InstanceError(pinnedWarning);
 	}
 
 	const label = `${plan.target.name} ${plan.target.version ?? versionId}`;
@@ -515,6 +518,7 @@ export async function applyPackChange(
 		const problems: string[] = [];
 
 		try {
+			const javaPath = javaPlan ? await obtainJava(javaPlan, javaFor, task) : null;
 			if (opts.snapshot) {
 				const what = plan.sameVersion ? `reinstalling ${label}` : `changing the pack to ${label}`;
 				await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);

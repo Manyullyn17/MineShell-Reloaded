@@ -16,7 +16,8 @@ multi-tenant and does not try to be a hosting panel.
 - Linux with systemd
 - Node.js 20.11 or newer
 - A Java runtime — 21 for Minecraft 1.20.5 and newer, 17 for 1.18 to 1.20.4, 8 for old packs.
-  MineShell finds installed runtimes and matches one to each instance.
+  MineShell finds installed runtimes and matches one to each instance, and can download
+  Eclipse Temurin or Azul Zulu builds itself.
 - `journalctl` (part of systemd) for console output
 
 ## Install

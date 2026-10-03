@@ -46,8 +46,6 @@ mod updates ──────────► duplicate detection across platfor
      │
      └────────────────► hash-based mod cache
 
-Java auto-install ────► (nothing; standalone)
-
 notifications ────────► needs no new infrastructure, the event bus already exists
 
 remote access ────────► depends on the auth model, which is now settled
@@ -60,8 +58,8 @@ independent and can be done in any order.
 
 ## Near term
 
-Agreed order: Java auto-install, then mod updating, then the rest of this list roughly as
-written. (World snapshots, world tools and server copies are built.)
+Agreed order: mod updating, then the rest of this list roughly as written. (World
+snapshots, world tools, server copies and Java downloads are built.)
 
 ### Smaller operational features
 
@@ -103,15 +101,6 @@ update fully succeeded or the folder is untouched.
 
 The schema already supports this — `instance_mods` carries `version`, `hash`, `locked` and
 a from-pack flag — so no migration is needed to start.
-
-### Java auto-install
-
-Right now a missing Java runtime produces a warning telling you to install one. The target
-is Prism Launcher's behaviour: fetch the right JDK from the Adoptium API and unpack it into
-the data directory.
-
-`adoptiumDownloadUrl()` in `java.ts` is a deliberate stub marking where this goes. It is
-low risk and self-contained; the only real work is architecture detection and unpacking.
 
 ### Notifications
 

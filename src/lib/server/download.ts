@@ -31,7 +31,7 @@ export async function fetchText(url: string, init: RequestInit = {}): Promise<st
 
 export type DownloadOptions = {
 	/** Expected digest; the file is deleted and the call throws when it disagrees. */
-	hash?: { algo: 'sha1' | 'sha512' | 'md5'; value: string } | null;
+	hash?: { algo: 'sha1' | 'sha256' | 'sha512' | 'md5'; value: string } | null;
 	onProgress?: (received: number, total: number | null) => void;
 };
 

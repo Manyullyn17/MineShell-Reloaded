@@ -1,0 +1,310 @@
+{
+ "GET https://api.adoptium.net/v3/assets/latest/16/hotspot?architecture=x64&image_type=jdk&os=linux&vendor=eclipse": {
+  "status": 200,
+  "contentType": "application/json;charset=UTF-8",
+  "json": [
+   {
+    "binary": {
+     "architecture": "x64",
+     "download_count": 3216762,
+     "heap_size": "normal",
+     "image_type": "jdk",
+     "jvm_impl": "hotspot",
+     "os": "linux",
+     "package": {
+      "checksum": "323d6d7474a359a28eff7ddd0df8e65bd61554a8ed12ef42fd9365349e573c2c",
+      "checksum_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.sha256.txt",
+      "download_count": 3216762,
+      "link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
+      "metadata_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.json",
+      "name": "OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
+      "size": 205463525
+     },
+     "project": "jdk",
+     "scm_ref": "jdk-16.0.2+7_adopt",
+     "updated_at": "2021-07-30T17:08:32Z"
+    },
+    "release_link": "https://github.com/adoptium/temurin16-binaries/releases/tag/jdk-16.0.2%2B7",
+    "release_name": "jdk-16.0.2+7",
+    "vendor": "eclipse",
+    "version": {
+     "build": 7,
+     "major": 16,
+     "minor": 0,
+     "openjdk_version": "16.0.2+7",
+     "security": 2,
+     "semver": "16.0.2+7"
+    }
+   }
+  ]
+ },
+ "GET https://api.adoptium.net/v3/assets/latest/16/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse": {
+  "status": 200,
+  "contentType": "application/json;charset=UTF-8",
+  "json": []
+ },
+ "GET https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse": {
+  "status": 200,
+  "contentType": "application/json;charset=UTF-8",
+  "json": [
+   {
+    "binary": {
+     "architecture": "x64",
+     "download_count": 339165,
+     "heap_size": "normal",
+     "image_type": "jre",
+     "jvm_impl": "hotspot",
+     "os": "linux",
+     "package": {
+      "checksum": "2413149700df0f7d440500a84a8f764c535f21e5a5e87d38328b64eec2c5b500",
+      "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sha256.txt",
+      "download_count": 339165,
+      "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+      "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.json",
+      "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+      "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sig",
+      "size": 52059408
+     },
+     "project": "jdk",
+     "scm_ref": "jdk-21.0.12.1+1_adopt",
+     "updated_at": "2026-08-19T17:12:57Z"
+    },
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.12.1%2B1",
+    "release_name": "jdk-21.0.12.1+1",
+    "vendor": "eclipse",
+    "version": {
+     "build": 1,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.12.1+1-LTS",
+     "optional": "LTS",
+     "patch": 1,
+     "security": 12,
+     "semver": "21.0.12+101.0.LTS"
+    }
+   }
+  ]
+ },
+ "GET https://api.azul.com/metadata/v1/zulu/packages/?java_version=21&os=linux-glibc&arch=x64&archive_type=tar.gz&java_package_type=jre&javafx_bundled=false&crac_supported=false&latest=true&release_status=ga&availability_types=CA": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": [
+   {
+    "availability_type": "CA",
+    "distro_version": [
+     21,
+     52,
+     203,
+     0
+    ],
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+    "java_version": [
+     21,
+     0,
+     12,
+     1
+    ],
+    "latest": true,
+    "name": "zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+    "openjdk_build_number": 1,
+    "package_uuid": "f89c621b-7e5d-4147-b7f7-8dc832ad2413",
+    "product": "zulu"
+   },
+   {
+    "availability_type": "CA",
+    "distro_version": [
+     21,
+     50,
+     19,
+     0
+    ],
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu21.50.19-ca-jre21.0.11-linux_x64.tar.gz",
+    "java_version": [
+     21,
+     0,
+     11
+    ],
+    "latest": true,
+    "name": "zulu21.50.19-ca-jre21.0.11-linux_x64.tar.gz",
+    "openjdk_build_number": 10,
+    "package_uuid": "bf43d8a0-e562-470e-9ca1-cf8ea8bcbeae",
+    "product": "zulu"
+   }
+  ]
+ },
+ "GET https://api.azul.com/metadata/v1/zulu/packages/?java_version=8&os=linux-glibc&arch=x64&archive_type=tar.gz&java_package_type=jre&javafx_bundled=false&crac_supported=false&latest=true&release_status=ga&availability_types=CA": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": [
+   {
+    "availability_type": "CA",
+    "distro_version": [
+     8,
+     96,
+     0,
+     205
+    ],
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+    "java_version": [
+     8,
+     0,
+     504
+    ],
+    "latest": true,
+    "name": "zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+    "openjdk_build_number": 1,
+    "package_uuid": "59357c25-2fb2-4406-a453-9800f88cf50c",
+    "product": "zulu"
+   },
+   {
+    "availability_type": "CA",
+    "distro_version": [
+     8,
+     94,
+     0,
+     17
+    ],
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu8.94.0.17-ca-jre8.0.492-linux_x64.tar.gz",
+    "java_version": [
+     8,
+     0,
+     492
+    ],
+    "latest": true,
+    "name": "zulu8.94.0.17-ca-jre8.0.492-linux_x64.tar.gz",
+    "openjdk_build_number": 9,
+    "package_uuid": "6b05dcf9-a15e-4734-aed9-cc54223eb80e",
+    "product": "zulu"
+   }
+  ]
+ },
+ "GET https://api.azul.com/metadata/v1/zulu/packages/59357c25-2fb2-4406-a453-9800f88cf50c": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "abi": "any",
+   "arch": "x86",
+   "archive_type": "tar.gz",
+   "availability_type": "CA",
+   "build_date": "2026-08-07T21:11:30",
+   "certifications": [
+    "tck"
+   ],
+   "cpu_gen": [],
+   "crac_supported": false,
+   "crs_supported": false,
+   "distro_version": [
+    8,
+    96,
+    0,
+    205
+   ],
+   "download_url": "https://cdn.azul.com/zulu/bin/zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+   "hw_bitness": 64,
+   "java_package_features": [
+    "headfull"
+   ],
+   "java_package_type": "jre",
+   "java_version": [
+    8,
+    0,
+    504
+   ],
+   "javafx_bundled": false,
+   "last_modified": "2026-08-17T13:41:25",
+   "latest": true,
+   "lib_c_type": "glibc",
+   "md5_hash": "9eae624afc4100e6cc72198684df4ca5",
+   "name": "zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+   "openjdk_build_number": 1,
+   "os": "linux",
+   "package_uuid": "59357c25-2fb2-4406-a453-9800f88cf50c",
+   "product": "zulu",
+   "release_status": "ga",
+   "release_type": "PSU",
+   "sha256_hash": "f443c5f525d1fd6a1e51739f7ae589e8a8e142e8cdc5674375261f8889449db4",
+   "signatures": [
+    {
+     "details": {
+      "digest_algo": "8",
+      "key_id": "B1998361219BD9C9",
+      "sig_algo": "1",
+      "sig_version": "4",
+      "timestamp": "2026-08-14T07:14:25"
+     },
+     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmp+wFEACgkQsZmDYSGb2cmprQ/+In9czuhk5IU6+t/LIA1RporNZlYWKFom44h6Kgkw4mY+4oDfChnyH4rSqegzayK65i5Q1IXpzMcpbgE9CjrKHSY884u9nH3vEzPYR+ANlRlf31C5WaKLDI1b9zIK3NR43Ex4PE+5oO1M/SW0Riit1JCHH1z1W8z4aRTVhz0Xq2xOSFtJkuybqrj2DZ+vYJ6zqRM7IGSiySWZ1RneGd+/IenPsFx2TrWlCbS/tY0ILflB5dSWL3dB6FjW6OqanyYrCIJS2dRDueDinPl/D6wkpk2Tnz20wEAWPEcAF9+6aCmTAjyUs3UcQcCZqTJ9gqOTTbjGWYRBYLJ3mf9hJUVWZ3Wh72ALbfldOj1qRFhfUjAfsG66E8yGI3q2VwSmCYHuziQ+/Wwuhi6DViJ9hRnVXlVVIF6S53Book5IkBAomILGLzfGJlmwnXNIV1I+jmPUhKsw6m4P7dx0V5nlF1ONixOcuJxd0VPtzrpNGs5vKvpz63Z5aZTSK9pRVqvK1bXhZYUydoXTTUEfk+LfznacyeYzSYi+ecO1rfvaq0+A5+yNMncmZ+L/PBTpJu0ge9VHlaMQvhQOLT6+kqI251uLq+iU8XDWESJIJZXph99m7Nz/w/WyEpsvQnywCSXzFxIPWNwMx+8KSMIBX+V24TaUQ3kfvMQRhLeXzaCXlLMlL6M=",
+     "signature_index": 0,
+     "type": "openpgp",
+     "url": "https://api.azul.com/metadata/v1/zulu/packages/59357c25-2fb2-4406-a453-9800f88cf50c/signature-binary?signature-index=0"
+    }
+   ],
+   "size": 41950700,
+   "support_term": "lts"
+  }
+ },
+ "GET https://api.azul.com/metadata/v1/zulu/packages/f89c621b-7e5d-4147-b7f7-8dc832ad2413": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "abi": "any",
+   "arch": "x86",
+   "archive_type": "tar.gz",
+   "availability_type": "CA",
+   "build_date": "2026-08-03T21:40:48",
+   "certifications": [
+    "tck"
+   ],
+   "cpu_gen": [],
+   "crac_supported": false,
+   "crs_supported": false,
+   "distro_version": [
+    21,
+    52,
+    203,
+    0
+   ],
+   "download_url": "https://cdn.azul.com/zulu/bin/zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+   "hw_bitness": 64,
+   "java_package_features": [
+    "headfull"
+   ],
+   "java_package_type": "jre",
+   "java_version": [
+    21,
+    0,
+    12,
+    1
+   ],
+   "javafx_bundled": false,
+   "last_modified": "2026-08-17T13:41:25",
+   "latest": true,
+   "lib_c_type": "glibc",
+   "md5_hash": "a77552184d7cdde8c68e086d33431971",
+   "name": "zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+   "openjdk_build_number": 1,
+   "os": "linux",
+   "package_uuid": "f89c621b-7e5d-4147-b7f7-8dc832ad2413",
+   "product": "zulu",
+   "release_status": "ga",
+   "release_type": "PSU",
+   "sha256_hash": "170f31af477726931543e91a5c44dfef4b7117382800dfd962aaea9fbbca4e50",
+   "signatures": [
+    {
+     "details": {
+      "digest_algo": "8",
+      "key_id": "B1998361219BD9C9",
+      "sig_algo": "1",
+      "sig_version": "4",
+      "timestamp": "2026-08-14T06:37:07"
+     },
+     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmp+t5MACgkQsZmDYSGb2ckmMw//XABhSY7QPp6wfu2RfhTRu/3fFsuTevwsRvmLsDHWswJ+b4m8ITz+m6CBk6EH14A0DqrXCP25NdBINzxbShdaV1zs1FgKM3cd2nhkXGQwBJowcrosK4G7Z95jaKR2a33YHPO0e28gjkkAOH/1nElH1eGqSTYmD993NAZ4sho3XC0U4ZxHvnzm+X8od87BW1qRSQSU8mkDiX7whj5pNpZOKm2xaCjQ4ZMUlIXFWPuL6q6Wn1NOBcTDEWQw3m7OMITZh1FGLOsOw+mdQbE2aUt/u/RUKnxCcv+FVQLq9tF/3iAFlDADwGpXGEtoMjODgucUT7+9fLN3QRDRAFV3+9dgHnephg5NuzO7cAg2DDcBmBrx3ewFdfk7WK5QLz7Of8zfD/iDoq6iJ0d//MLjkBjhvMOg9Pue+1/boR314gS2rWSj95a2dJwiy23rBfvOkBylAZIC+G6s6S7K+ZIRl1Kpz92jgGGmLPDevSUWWheOmdOinoInj4ZsErbPs9mY+KGpmthg8vH+AKp+FYXCvz3lh8ZXud02eKBrT+olis3BLrOO70+VDkn98Y3KY34pQWwlhvM5xmJZo0KnQqWBjFGSQ1ROfIwrEIeIj1zKzClLYhSKxzQv0jJK3IUZBQD1+PUTZwPrhzKqyfjeOlHdo/N3ZFvPF1OrxupSiLNJUHbAYJ8=",
+     "signature_index": 0,
+     "type": "openpgp",
+     "url": "https://api.azul.com/metadata/v1/zulu/packages/f89c621b-7e5d-4147-b7f7-8dc832ad2413/signature-binary?signature-index=0"
+    }
+   ],
+   "size": 52435200,
+   "support_term": "lts"
+  }
+ }
+}

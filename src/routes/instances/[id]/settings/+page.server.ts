@@ -6,6 +6,7 @@ import { serverInstances, type ServerInstance } from '$lib/server/db/schema';
 import { consoleFromForm, restartsFromForm, type RestartSettings } from '$lib/server/instance-defaults';
 import {
 	InstanceError,
+	JavaMissingError,
 	changeLoaderVersion,
 	migrateToCleanroom,
 	readForgeBackup,
@@ -19,6 +20,7 @@ import {
 import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
 import { applyPackChange } from '$lib/server/packchange';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
+import { isJavaVendor } from '$lib/server/javadownload';
 import { canUseCleanroom } from '$lib/shared/cleanroom';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
 import { portConflict } from '$lib/server/ports';
@@ -113,10 +115,22 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 };
 
-/** A refusal the person can act on: shown on the form instead of as an error page. */
-function refused(err: unknown) {
+/**
+ * A refusal the person can act on: shown on the form instead of as an error
+ * page. A missing Java names the form (`action`), which then offers to
+ * download it and submit again.
+ */
+function refused(err: unknown, action?: string) {
+	if (err instanceof JavaMissingError && action) {
+		return fail(400, { ok: false, message: err.message, javaMissing: { major: err.major, action } });
+	}
 	if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return fail(400, { ok: false, message: err.message });
 	return null;
+}
+
+function downloadJavaFrom(form: FormData) {
+	const vendor = form.get('downloadJava');
+	return isJavaVendor(vendor) ? vendor : undefined;
 }
 
 /** The instance's current values, which a missing or unusable field keeps. */
@@ -175,14 +189,15 @@ export const actions: Actions = {
 			await applyPackChange(instance, versionId, {
 				updateMods: form.getAll('updateMod').map(String),
 				confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				downloadJava: downloadJavaFrom(form)
 			});
 			return {
 				ok: true,
 				message: 'Changing the pack version. Follow it in Tasks; the server stays stopped until it finishes.'
 			};
 		} catch (err) {
-			return refused(err) ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
+			return refused(err, 'changePack') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
 		}
 	},
 
@@ -194,10 +209,13 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: `${version} is already installed.` });
 		}
 		try {
-			await changeLoaderVersion(instance, version, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
+			await changeLoaderVersion(instance, version, {
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				downloadJava: downloadJavaFrom(form)
+			});
 			return { ok: true, message: 'Reinstalling the loader. Follow it in Tasks; the server stays stopped until it finishes.' };
 		} catch (err) {
-			const failure = refused(err);
+			const failure = refused(err, 'loaderVersion');
 			if (failure) return failure;
 			throw err;
 		}
@@ -335,10 +353,13 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const version = String(form.get('cleanroomVersion') ?? '').trim() || null;
 		try {
-			await migrateToCleanroom(instance, version, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
+			await migrateToCleanroom(instance, version, {
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				downloadJava: downloadJavaFrom(form)
+			});
 			return { ok: true, message: 'Migration started. Follow it in Tasks; the server stays stopped until it finishes.' };
 		} catch (err) {
-			const failure = refused(err);
+			const failure = refused(err, 'migrateCleanroom');
 			if (failure) return failure;
 			throw err;
 		}

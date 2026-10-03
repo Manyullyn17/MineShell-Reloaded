@@ -28,7 +28,7 @@ import {
 	type UnitState
 } from './systemd';
 import { rconExec, parsePlayerList } from './rcon';
-import { getTask, startTask } from './tasks';
+import { getTask, startTask, type TaskHandle } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
 import {
 	applyOverrides,
@@ -53,6 +53,7 @@ import {
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { directorySize } from './files';
 import { snapshotStep } from './snapshots';
+import { installJava, type JavaVendor } from './javadownload';
 
 export class InstanceError extends Error {}
 
@@ -151,6 +152,8 @@ export type CreateInstanceInput = {
 	memoryMaxMb?: number;
 	javaPath?: string | null;
 	notes?: string | null;
+	/** Download this vendor's runtime first when the needed Java is not installed. */
+	downloadJava?: JavaVendor;
 };
 
 function jvmArgsFor(presetId: string, minMb: number, maxMb: number): string {
@@ -263,40 +266,73 @@ function endJournalOnFailure<T>(instanceId: string, run: () => Promise<T>): Prom
 	});
 }
 
-async function resolveJavaForInstall(instance: ServerInstance): Promise<string> {
-	await learnJavaRequirement(instance.minecraftVersion);
-	let java = resolveJava({
-		explicitPath: instance.javaPath,
-		minecraftVersion: instance.minecraftVersion,
-		modloader: instance.modloader,
-		modloaderVersion: instance.modloaderVersion
-	});
+/** No runtime for the Java an operation needs; the form offers to download one. */
+export class JavaMissingError extends InstanceError {
+	constructor(
+		readonly major: number,
+		message: string
+	) {
+		super(message);
+	}
+}
+
+type JavaTarget = {
+	minecraftVersion: string;
+	modloader: string;
+	modloaderVersion: string | null;
+	explicitPath: string | null;
+};
+
+/** The Java an operation will use: installed already, or to be downloaded by its task. */
+export type JavaPlan = { path: string } | { download: JavaVendor; major: number };
+
+/**
+ * Settles Java before an operation starts anything, so a missing runtime is
+ * a question on the form instead of a failed install. With `download` the
+ * runtime is fetched as the task's first step (obtainJava).
+ */
+export async function planJava(target: JavaTarget, download?: JavaVendor): Promise<JavaPlan> {
+	await learnJavaRequirement(target.minecraftVersion);
+	let java = resolveJava(target);
 	if (!java.path) {
 		// First run on a fresh box often has an empty java table.
 		await scanJavaRuntimes();
-		java = resolveJava({
-			explicitPath: instance.javaPath,
-			minecraftVersion: instance.minecraftVersion,
-			modloader: instance.modloader,
-			modloaderVersion: instance.modloaderVersion
-		});
+		java = resolveJava(target);
 	}
-	if (!java.path) {
-		throw new InstanceError(
-			java.warning ?? `No Java ${java.requiredMajor} runtime is available on this machine.`
-		);
-	}
+	if (java.path) return { path: java.path };
+	if (download) return { download, major: java.requiredMajor };
+	throw new JavaMissingError(java.requiredMajor, java.warning ?? `No Java ${java.requiredMajor} runtime is available on this machine.`);
+}
+
+export async function obtainJava(plan: JavaPlan, target: JavaTarget, task: TaskHandle): Promise<string> {
+	if ('path' in plan) return plan.path;
+	await installJava(plan.download, plan.major, task);
+	const java = resolveJava(target);
+	if (!java.path) throw new InstanceError(`Java ${plan.major} was downloaded but does not match this server.`);
 	return java.path;
 }
 
+function javaTarget(instance: Pick<ServerInstance, 'minecraftVersion' | 'modloader' | 'modloaderVersion' | 'javaPath'>): JavaTarget {
+	return {
+		minecraftVersion: instance.minecraftVersion,
+		modloader: instance.modloader,
+		modloaderVersion: instance.modloaderVersion,
+		explicitPath: instance.javaPath
+	};
+}
+
 /** Create an instance with only a mod loader installed. */
-export function createFromLoader(input: CreateInstanceInput): Promise<{ instance: ServerInstance; taskId: string }> {
+export async function createFromLoader(input: CreateInstanceInput): Promise<{ instance: ServerInstance; taskId: string }> {
+	const java = await planJava(
+		javaTarget({ ...input, modloaderVersion: input.modloaderVersion ?? null, javaPath: input.javaPath ?? null }),
+		input.downloadJava
+	);
 	return insertInstanceRow(input).then((instance) => {
 		const taskId = startTask(
 			{ label: `Create ${instance.name}`, instanceId: instance.id },
 			(task) => endJournalOnFailure(instance.id, async () => {
 				task.setProgress(null, 'Resolving Java');
-				const javaPath = await resolveJavaForInstall(instance);
+				const javaPath = await obtainJava(java, javaTarget(instance), task);
 
 				task.setProgress(null, `Installing ${input.modloader}`);
 				const loader = getLoader(input.modloader);
@@ -352,13 +388,13 @@ export async function createFromArchive(
 }
 
 /** Shared provisioning task for any pack shape, archive or file list. */
-function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: string[] = []): string {
+function provisionFromPack(instance: ServerInstance, pack: ParsedPack, java: JavaPlan, notes: string[] = []): string {
 	return startTask(
 		{ label: `Install ${pack.name}`, instanceId: instance.id },
 		(task) => endJournalOnFailure(instance.id, async () => {
 			for (const note of notes) task.log(note);
 			task.setProgress(null, 'Resolving Java');
-			const javaPath = await resolveJavaForInstall(instance);
+			const javaPath = await obtainJava(java, javaTarget(instance), task);
 
 			// The instance row, not the pack, decides the loader: a Forge 1.12.2
 			// pack can be installed onto Cleanroom instead.
@@ -508,13 +544,17 @@ export async function createFromPack(
 					`Cleanroom was requested, but this pack is ${pack.modloader} for Minecraft ${minecraftVersion}, so it was installed as-is.`
 				]
 			: [];
+	const modloader = swapToCleanroom ? 'cleanroom' : pack.modloader;
+	const modloaderVersion = swapToCleanroom ? (overrides.modloaderVersion ?? null) : pack.modloaderVersion;
+	const java = await planJava(
+		{ minecraftVersion, modloader, modloaderVersion, explicitPath: overrides.javaPath ?? null },
+		overrides.downloadJava
+	);
 	const instance = await insertInstanceRow({
 		name: name.trim() || pack.name,
 		minecraftVersion,
-		modloader: swapToCleanroom ? 'cleanroom' : pack.modloader,
-		modloaderVersion: swapToCleanroom
-			? (overrides.modloaderVersion ?? null)
-			: pack.modloaderVersion,
+		modloader,
+		modloaderVersion,
 		memoryMinMb: overrides.memoryMinMb,
 		memoryMaxMb: overrides.memoryMaxMb,
 		javaPath: overrides.javaPath,
@@ -525,7 +565,7 @@ export async function createFromPack(
 		packVersionName: pack.version
 	});
 
-	const taskId = provisionFromPack(instance, pack, notes);
+	const taskId = provisionFromPack(instance, pack, java, notes);
 	watchTaskFailure(taskId, instance.id);
 	return { instance, taskId };
 }
@@ -658,7 +698,7 @@ export async function requireStopped(instance: ServerInstance): Promise<void> {
 export async function migrateToCleanroom(
 	instance: ServerInstance,
 	loaderVersion: string | null,
-	opts: { snapshot?: boolean } = {}
+	opts: { snapshot?: boolean; downloadJava?: JavaVendor } = {}
 ): Promise<string> {
 	if (!canUseCleanroom(instance.modloader, instance.minecraftVersion)) {
 		throw new InstanceError('Only Forge 1.12.2 servers can move to Cleanroom.');
@@ -679,10 +719,10 @@ export async function migrateToCleanroom(
 	let java = resolveJava({ ...target, explicitPath: instance.javaPath });
 	const keepPin = !!java.path && !java.warning && instance.javaPath !== null;
 	if (!keepPin) java = resolveJava({ ...target, explicitPath: null });
-	if (!java.path) {
-		throw new InstanceError(java.warning ?? `Cleanroom needs Java ${java.requiredMajor}.`);
-	}
-	const javaPath = java.path;
+	const javaTargetAfter = javaTarget({ ...target, javaPath: keepPin ? instance.javaPath : null });
+	const javaPlan: JavaPlan = java.path
+		? { path: java.path }
+		: await planJava(javaTargetAfter, opts.downloadJava);
 
 	const forgeBefore = await listEntries(instance.path, isForgeInstallEntry);
 	journal(instance.id, { kind: 'cleanroom-migration', backup: FORGE_BACKUP, before: forgeBefore });
@@ -705,6 +745,7 @@ export async function migrateToCleanroom(
 				if (opts.snapshot) {
 					await snapshotStep(instance, { reason: 'cleanroom-migration', label: `Before moving to Cleanroom ${loaderVersion ?? '(latest)'}` }, task);
 				}
+				const javaPath = await obtainJava(javaPlan, javaTargetAfter, task);
 				task.setProgress(null, 'Backing up Forge');
 				await fs.mkdir(dir, { recursive: true });
 				for (const name of forgeBefore) {
@@ -728,7 +769,7 @@ export async function migrateToCleanroom(
 					task.log(`Removed Java 8-only JVM flags: ${legacy.removed.join(' ')}`);
 				}
 				if (pinned && !keepPin) {
-					task.log(`Unpinned Java ${pinned.majorVersion}; Java ${java.majorVersion} is matched automatically now.`);
+					task.log(`Unpinned Java ${pinned.majorVersion}; Java ${java.requiredMajor} is matched automatically now.`);
 				}
 
 				commitOperation(instance.id, {
@@ -871,7 +912,7 @@ export function isLoaderInstallEntry(name: string): boolean {
 export async function changeLoaderVersion(
 	instance: ServerInstance,
 	loaderVersion: string | null,
-	opts: { snapshot?: boolean } = {}
+	opts: { snapshot?: boolean; downloadJava?: JavaVendor } = {}
 ): Promise<string> {
 	const loader = getLoader(instance.modloader);
 	if (instance.modloader === 'vanilla') {
@@ -881,15 +922,11 @@ export async function changeLoaderVersion(
 
 	// A different loader version can need a different Java (Cleanroom 0.4 runs
 	// on 21, 0.5+ on 25), so resolve for the target before touching anything.
-	await learnJavaRequirement(instance.minecraftVersion);
-	const java = resolveJava({ ...instance, modloaderVersion: loaderVersion });
-	if (!java.path || (instance.javaPath && java.warning)) {
-		throw new InstanceError(
-			java.warning ??
-				`${loader.label} ${loaderVersion ?? '(latest)'} needs Java ${java.requiredMajor}, which was not found.`
-		);
-	}
-	const javaPath = java.path;
+	const target = javaTarget({ ...instance, modloaderVersion: loaderVersion });
+	const javaPlan = await planJava(target, opts.downloadJava);
+	// A pin to the wrong Java is the person's to change, not something to download around.
+	const pinnedWarning = instance.javaPath ? resolveJava(target).warning : null;
+	if (pinnedWarning) throw new InstanceError(pinnedWarning);
 	const from = instance.modloaderVersion ?? 'unknown';
 	const asideRel = path.join('.mineshell', `loader-previous-${Date.now()}`);
 	const before = await listEntries(instance.path, isLoaderInstallEntry);
@@ -902,6 +939,7 @@ export async function changeLoaderVersion(
 			const aside = path.join(instance.path, asideRel);
 			const moved: string[] = [];
 			try {
+				const javaPath = await obtainJava(javaPlan, target, task);
 				if (opts.snapshot) {
 					await snapshotStep(instance, { reason: 'loader-change', label: `Before changing ${loader.label} ${from} to ${loaderVersion ?? '(latest)'}` }, task);
 				}

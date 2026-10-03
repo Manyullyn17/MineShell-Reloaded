@@ -227,8 +227,10 @@ the last output before it stopped. Almost always a mod incompatibility — check
 the mod named in the stack trace, and disable it from the Mods page.
 
 **"Java 21 expected, found 17."**
-Install the right JDK through your package manager, then Settings → Java runtimes → Scan
-again. If it is somewhere unusual, add it by path. Automatic downloads are not implemented.
+Download it in Settings → Java runtimes (Eclipse Temurin or Azul Zulu), or install it
+through your package manager and Scan again. If it is somewhere unusual, add it by path.
+Creating a server or changing its loader or pack offers the download when the Java it
+needs is missing.
 
 **Everything worked, then stopped after a reboot.**
 Lingering was never enabled, so your user services did not come back.
