@@ -19,8 +19,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # package.json declares node >=20.11; 22 is what development uses.
-        node: [20, 22]
+        # The maintained LTS lines; package.json declares node >=22 (20 reached
+        # end of life in April 2026). 22 is what development uses.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
 

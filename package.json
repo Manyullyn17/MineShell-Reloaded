@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Self-hosted web control panel for modded Minecraft servers, backed by systemd.",
   "engines": {
-    "node": ">=20.11"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "vite dev",
