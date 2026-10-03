@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readLastRun, runFinishedStarting } from './journal';
+import { listRuns, readLastRun, runFinishedStarting } from './journal';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const INVOCATION = '05cab01dbf7f460a8c7facc67e5cd7d5';
@@ -65,5 +65,32 @@ describe('runFinishedStarting', () => {
 			args.includes('json') ? { stdout: JSON.stringify({ __CURSOR: 's=9', _SYSTEMD_INVOCATION_ID: INVOCATION }) + '\n' } : {}
 		);
 		expect(await runFinishedStarting('pack-e')).toBe(false);
+	});
+});
+
+describe('listRuns', () => {
+	it('groups the service manager lines into runs, newest first', async () => {
+		// The journal's timestamps are microseconds; `at` is milliseconds.
+		const line = (inv: string, at: number, message: string) => JSON.stringify({ USER_INVOCATION_ID: inv, __REALTIME_TIMESTAMP: String(at * 1000), MESSAGE: message });
+		const a = 'a'.repeat(32);
+		const b = 'b'.repeat(32);
+		fakeProcesses((_cmd, args) => {
+			if (args.includes('-g'))
+				return {
+					stdout: [
+						line(a, 1000, 'Started minecraft@x.service - Minecraft server.'),
+						line(a, 1006, 'minecraft@x.service: Main process exited, code=exited, status=1/FAILURE'),
+						line(a, 1006, "minecraft@x.service: Failed with result 'exit-code'."),
+						line(b, 2000, 'Started minecraft@x.service - Minecraft server.'),
+						line(b, 2300, 'minecraft@x.service: Consumed 4min CPU time.')
+					].join('\n')
+				};
+			if (args.includes('json')) return { stdout: JSON.stringify({ __CURSOR: 's=1', USER_INVOCATION_ID: b }) + '\n' };
+			return {};
+		});
+		expect(await listRuns('runs-a')).toEqual([
+			{ invocation: b, startedAt: 2000, endedAt: 2300, exit: null, failure: null },
+			{ invocation: a, startedAt: 1000, endedAt: 1006, exit: 'code=exited, status=1/FAILURE', failure: 'exit-code' }
+		]);
 	});
 });

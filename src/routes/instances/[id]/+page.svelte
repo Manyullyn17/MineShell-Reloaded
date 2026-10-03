@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import Flash from '$lib/components/Flash.svelte';
 	import Sparkline from '$lib/components/Sparkline.svelte';
+	import CrashDiagnosis from '$lib/components/CrashDiagnosis.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative } from '$lib/shared/format';
 
 	let { data, form } = $props();
@@ -143,47 +144,12 @@
 				<h2>Last output before it stopped</h2>
 				<p>The server exited unexpectedly. These are the final journal lines.</p>
 			</div>
-			<a class="button button-quiet" href="/instances/{data.instance.id}/console">Full console</a>
+			<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>
 		</div>
 		{#await data.diagnosis}
 			<p class="muted small">Working out what went wrong.</p>
 		{:then diagnosis}
-			{#if diagnosis?.length}
-				{@const fatal = diagnosis.filter((d) => d.fatal)}
-				{@const other = diagnosis.filter((d) => !d.fatal)}
-				{#each fatal as d (d.title + d.evidence)}
-					<div class="diagnosis">
-						<strong>{d.title}</strong>
-						<p>{d.detail}</p>
-						{#if d.culprit}
-							<p class="small muted">
-								Mod file: <code>{d.culprit.fileName}</code>{d.culprit.enabled ? '' : ' (now disabled)'}
-								{#if d.related}· related: <code>{d.related.fileName}</code>{/if}
-							</p>
-						{/if}
-						<p class="small muted evidence"><code>{d.evidence}</code></p>
-						{#if d.fix && !data.running}
-							<form method="POST" action="?/modFix" use:enhance>
-								<input type="hidden" name="fileName" value={d.fix.fileName} />
-								<input type="hidden" name="enable" value={String(d.fix.enable)} />
-								<button type="submit">{d.fix.label}</button>
-							</form>
-						{/if}
-					</div>
-				{/each}
-				{#if other.length}
-					<details class="other-errors">
-						<summary>
-							{other.length} other error{other.length === 1 ? '' : 's'} earlier in this run (the server carried on past {other.length === 1 ? 'it' : 'them'}; often harmless)
-						</summary>
-						<ul>
-							{#each other as d (d.title + d.evidence)}
-								<li><strong>{d.title}</strong> <span class="muted">- {d.detail}</span></li>
-							{/each}
-						</ul>
-					</details>
-				{/if}
-			{/if}
+			<CrashDiagnosis {diagnosis} fixAction={data.running ? null : '?/modFix'} />
 		{/await}
 		<pre class="crash">{data.crashTail}</pre>
 	</section>
@@ -511,30 +477,6 @@
 
 	.notes button {
 		margin-top: var(--space-2);
-	}
-
-	.diagnosis {
-		border-left: 3px solid var(--error);
-		padding: var(--space-2) var(--space-3);
-		margin-bottom: var(--space-3);
-		background: color-mix(in srgb, var(--error) 7%, transparent);
-	}
-
-	.diagnosis p {
-		margin: var(--space-1) 0;
-	}
-
-	.diagnosis .evidence code {
-		overflow-wrap: anywhere;
-	}
-
-	.other-errors {
-		margin-bottom: var(--space-3);
-		font-size: 0.88rem;
-	}
-
-	.other-errors ul {
-		padding-left: 1.2rem;
 	}
 
 	.crash {

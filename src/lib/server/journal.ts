@@ -218,3 +218,76 @@ export async function runFinishedStarting(id: string, since = 0): Promise<boolea
 	const found = await journalctl([...runMatch(entry.invocation), '-g', '\\]: Done \\(', '-n', '1', '-o', 'cat', sinceArg(since)]);
 	return found.trim().length > 0;
 }
+
+export type RunSummary = {
+	invocation: string;
+	startedAt: number;
+	/** When systemd last said something about it (stop, exit); null while running or unknown. */
+	endedAt: number | null;
+	/** e.g. "status=1/FAILURE"; null while running or for a clean stop. */
+	exit: string | null;
+	/** systemd's verdict: 'exit-code', 'signal', ... for a failure, null otherwise. */
+	failure: string | null;
+};
+
+/**
+ * The unit's runs that the journal still holds, newest first: when each
+ * started and how it ended, from the service manager's own lines. Cheap: a
+ * filtered read of those lines only, not the runs' output.
+ */
+const runLists = new Map<string, { cursor: string; runs: RunSummary[] }>();
+
+export async function listRuns(id: string, since = 0): Promise<RunSummary[]> {
+	// The search walks the unit's whole journal (~0.7 s for a big pack's), so
+	// it is reused until the journal has something newer.
+	const newest = await newestEntry(id, since);
+	if (!newest) return [];
+	const hit = runLists.get(id);
+	if (newest.cursor && hit?.cursor === newest.cursor) return hit.runs;
+	const out = await journalctl([
+		...unitMatch(id),
+		'-o',
+		'json',
+		'-g',
+		'^(Started |Stopped )|Main process exited|Failed with result|Deactivated successfully|Consumed ',
+		sinceArg(since)
+	]);
+	const runs = new Map<string, RunSummary>();
+	for (const line of out.split('\n')) {
+		if (!line.trim()) continue;
+		let entry: Record<string, unknown>;
+		try {
+			entry = JSON.parse(line);
+		} catch {
+			continue;
+		}
+		const invocation = [entry.USER_INVOCATION_ID, entry.INVOCATION_ID, entry._SYSTEMD_INVOCATION_ID].find(
+			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
+		);
+		const message = typeof entry.MESSAGE === 'string' ? entry.MESSAGE : '';
+		const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP) / 1000);
+		if (!invocation || !Number.isFinite(at)) continue;
+		let run = runs.get(invocation);
+		if (!run) {
+			run = { invocation, startedAt: at, endedAt: null, exit: null, failure: null };
+			runs.set(invocation, run);
+		}
+		if (/^Started /.test(message)) run.startedAt = at;
+		else {
+			run.endedAt = Math.max(run.endedAt ?? 0, at);
+			const exit = message.match(/Main process exited, (code=\w+, status=\S+)/);
+			if (exit) run.exit = exit[1].replace(/,$/, '');
+			const failed = message.match(/Failed with result '([^']+)'/);
+			if (failed) run.failure = failed[1];
+		}
+	}
+	const list = [...runs.values()].sort((a, b) => b.startedAt - a.startedAt);
+	if (newest.cursor) runLists.set(id, { cursor: newest.cursor, runs: list });
+	return list;
+}
+
+/** One run's output (its last LAST_RUN_LINES lines), by invocation id. */
+export async function readRun(invocation: string, since = 0): Promise<string> {
+	if (!/^[0-9a-f]{32}$/.test(invocation)) return '';
+	return journalctl([...runMatch(invocation), '-n', String(LAST_RUN_LINES), '-o', 'cat', sinceArg(since)]);
+}

@@ -7,6 +7,7 @@
 	const tabs = [
 		{ slug: '', label: 'Overview' },
 		{ slug: 'console', label: 'Console' },
+		{ slug: 'logs', label: 'Logs' },
 		{ slug: 'properties', label: 'Server settings' },
 		{ slug: 'mods', label: 'Mods' },
 		{ slug: 'world', label: 'World' },
