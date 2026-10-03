@@ -29,10 +29,11 @@ snapshotted before an update so a failed update can be rolled back. That operate
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
-Status: still a maybe. The narrower case - a world snapshot before MineShell's own risky
-operations - is planned separately (see "World snapshot before risky operations" under
-Near term), because there the server is already stopped and the consistency problem above
-does not arise.
+Status: still a maybe. The narrower case is built: a world snapshot before MineShell's own
+risky operations, and snapshots on request from the World tab (`snapshots.ts`, `world.ts`).
+There the server is always stopped, so the consistency problem above does not arise. The
+World tab's download of a running server's world does the save-off / save-all flush /
+save-on dance, with save-on in a finally.
 
 ---
 
@@ -59,34 +60,8 @@ independent and can be done in any order.
 
 ## Near term
 
-### World snapshot before risky operations
-
-Build on the operations journal (`operations.ts`, `recovery.ts`): the snapshot is a step of
-the journalled operation, so a restart mid-copy is handled like any other interruption.
-
-Before a pack version change, loader switch or Cleanroom migration (the operations whose
-Minecraft-version warning already says they can corrupt a world), copy the world folder(s)
-aside. How many snapshots each server keeps is a global setting, default 3 (they are full
-copies, so 5 gets expensive on a big modded world; 3 still covers a couple of operations in
-a row); older ones are deleted after a new one succeeds. The server is already stopped for these,
-so the copy is consistent without any save-off/save-on dance.
-
-A large world makes the copy slow and disk-hungry, so above a size threshold the operation
-asks first: snapshot, or continue without one. The threshold is a global setting (MB);
-`-1` turns the question off, with a short note next to the field saying so. With the
-question off, the snapshot is always taken: the setting only removes the prompt, not the
-safety net.
-
-### World tools
-
-Download a world as a zip, replace it with an uploaded one, reset it (optionally with a new
-seed). The Files page only handles single files today. A world tab is the natural home,
-and it is where the older "world controls" note pointed too.
-
-### Clone a server
-
-Copy a server (folder plus DB row, fresh ports and RCON password) to try a pack update or a
-Cleanroom migration on the copy first.
+Agreed order: Java auto-install, then mod updating, then the rest of this list roughly as
+written. (World snapshots, world tools and server copies are built.)
 
 ### Smaller operational features
 
