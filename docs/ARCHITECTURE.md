@@ -164,6 +164,11 @@ search, project, versions and version, and adding it to the registry. Packs and 
 mods have separate registries (`getProvider` / `getModProvider`): Modrinth serves both
 from one API, but CurseForge mods come from different mirror endpoints than its packs.
 
+Pack mods are tracked by where they came from. A CurseForge pack names the project and
+file behind every jar (the mirror's file list and `manifest.json` both do), so those are
+recorded as CurseForge mods; everything else is identified by hash against Modrinth, and
+whatever neither recognises is tracked as manual.
+
 Pack import detects the format from what is inside the archive: `modrinth.index.json`
 means an mrpack, `manifest.json` means CurseForge. Both resolve to the same internal
 `ParsedPack` shape, so downstream code does not care which it was.

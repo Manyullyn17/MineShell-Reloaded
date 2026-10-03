@@ -14,7 +14,7 @@ vi.mock('$lib/server/cleanroom', async (importOriginal) => {
 const { createFromPack } = await import('$lib/server/instances');
 const { LOADERS } = await import('$lib/server/modloaders');
 const { packFromFileList } = await import('$lib/server/packs');
-const { listInstanceMods } = await import('$lib/server/mods');
+const { listInstanceMods, syncMods } = await import('$lib/server/mods');
 const { readProperties } = await import('$lib/server/properties');
 const cleanroom = await import('$lib/server/cleanroom');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
@@ -32,9 +32,36 @@ function serve(url: string, body: string | Buffer) {
 	served[url] = () => new Response(typeof body === 'string' ? body : new Uint8Array(body));
 }
 
+type MirrorFile = { id: number; name: string; version?: string };
+
+function mirrorFile(f: MirrorFile) {
+	return { ...f, url: `https://files.test/cf/${f.name}`, targets: [] };
+}
+
+/** The modpacks.ch record of a CurseForge project: name, icon, page, newest files. */
+function mirrorProject(id: number, name: string, newest: MirrorFile[] = []) {
+	served[`https://api.modpacks.ch/public/mod/${id}`] = () =>
+		Response.json({
+			id,
+			name,
+			synopsis: `${name}, in short`,
+			art: [{ type: 'square', url: `https://img.test/${id}.png` }],
+			links: [{ type: 'curseforge', link: `https://www.curseforge.com/minecraft/mc-mods/${id}` }],
+			versions: newest.map(mirrorFile)
+		});
+}
+
 /** A CurseForge-style file-list pack: two mods plus overrides.zip, at URLs of its own. */
 let packs = 0;
-function pack(opts: { loader?: 'forge' | 'fabric'; minecraft?: string; missing?: boolean } = {}) {
+function pack(
+	opts: {
+		loader?: 'forge' | 'fabric';
+		minecraft?: string;
+		missing?: boolean;
+		/** CurseForge project and file ids for a.jar and b.jar, as modpacks.ch lists them. */
+		curseforge?: [string, string][];
+	} = {}
+) {
 	const base = `https://files.test/${++packs}`;
 	serve(`${base}/a.jar`, 'mod a');
 	if (!opts.missing) serve(`${base}/b.jar`, 'mod b');
@@ -53,11 +80,15 @@ function pack(opts: { loader?: 'forge' | 'fabric'; minecraft?: string; missing?:
 		modloader: opts.loader ?? 'fabric',
 		modloaderVersion: null,
 		files: [
-			{ path: 'mods/', name: 'a.jar', url: `${base}/a.jar` },
-			{ path: 'mods/', name: 'b.jar', url: `${base}/b.jar` },
+			{ path: 'mods/', name: 'a.jar', url: `${base}/a.jar`, curseforge: ids(opts.curseforge?.[0]) },
+			{ path: 'mods/', name: 'b.jar', url: `${base}/b.jar`, curseforge: ids(opts.curseforge?.[1]) },
 			{ path: './', name: 'overrides.zip', url: `${base}/overrides.zip` }
 		]
 	});
+}
+
+function ids(pair?: [string, string]) {
+	return pair ? { projectId: pair[0], fileId: pair[1] } : undefined;
 }
 
 function fakeInstall(loader: 'fabric' | 'forge' | 'cleanroom') {
@@ -136,5 +167,52 @@ describe('installing a pack', () => {
 		const row = reload(instance.id);
 		expect(row.modloader).toBe('fabric');
 		expect(row.statusMessage).toMatch(/Cleanroom was requested/);
+	});
+
+	it('tracks a CurseForge pack’s mods as the CurseForge mods they are', async () => {
+		// Previously identified by hash against Modrinth only: a mod also on
+		// Modrinth was tracked as Modrinth, the rest as manual.
+		fakeInstall('fabric');
+		mirrorProject(100, 'Mod A', [{ id: 1001, name: 'a.jar', version: '1.0 for Fabric 1.20.1' }]);
+		served['https://api.modpacks.ch/public/mod/200'] = () => new Response('down', { status: 500 });
+		const { instance, taskId } = await createFromPack(
+			'From CurseForge',
+			pack({ curseforge: [['100', '1001'], ['200', '2001']] }),
+			{ source: 'curseforge', projectId: '1', versionId: 'v1' }
+		);
+		expect((await waitForTask(taskId)).state).toBe('done');
+
+		const mods = Object.fromEntries((await listInstanceMods(reload(instance.id))).map((m) => [m.fileName, m]));
+		expect(mods['a.jar']).toMatchObject({
+			source: 'curseforge',
+			slug: '100',
+			name: 'Mod A',
+			version: '1.0 for Fabric 1.20.1',
+			versionId: '1001',
+			projectUrl: 'https://www.curseforge.com/minecraft/mc-mods/100',
+			fromPack: true
+		});
+		// The mirror being down only costs the name.
+		expect(mods['b.jar']).toMatchObject({ source: 'curseforge', slug: '200', name: 'b', versionId: '2001' });
+		// Bundled in the overrides: nothing says where it came from.
+		expect(mods['bundled.jar']).toMatchObject({ source: 'manual' });
+	});
+
+	it('re-tracks pack mods an earlier install got wrong', async () => {
+		fakeInstall('fabric');
+		const { instance, taskId } = await createFromPack('Older Install', pack(), { source: 'curseforge' });
+		await waitForTask(taskId);
+		const before = await listInstanceMods(reload(instance.id));
+		expect(before.find((m) => m.fileName === 'a.jar')).toMatchObject({ source: 'manual' });
+
+		// What Sync does for a CurseForge pack: the pack's file list says which project each jar is.
+		mirrorProject(300, 'Mod A Again');
+		const result = await syncMods(reload(instance.id), {
+			curseforge: new Map([['a.jar', { projectId: '300', fileId: '3001' }]])
+		});
+		expect(result.curseforge).toBe(1);
+		const after = Object.fromEntries((await listInstanceMods(reload(instance.id))).map((m) => [m.fileName, m]));
+		expect(after['a.jar']).toMatchObject({ source: 'curseforge', slug: '300', name: 'Mod A Again', fromPack: true });
+		expect(after['b.jar']).toMatchObject({ source: 'manual' });
 	});
 });

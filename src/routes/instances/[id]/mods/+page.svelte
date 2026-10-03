@@ -477,6 +477,14 @@
 			<input type="file" name="jars" accept=".jar" multiple aria-label="Upload jar files" />
 			<button type="submit">Upload jars</button>
 		</form>
+		<form method="POST" action="?/sync" use:enhance>
+			<button
+				type="submit"
+				title="Track jars MineShell did not install and re-identify where pack mods came from"
+			>
+				Sync
+			</button>
+		</form>
 	</div>
 
 	{#if visible.length === 0}

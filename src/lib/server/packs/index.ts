@@ -43,7 +43,11 @@ export type PackDownload = {
 	target: string;
 	urls: string[];
 	hash: { algo: 'sha1' | 'sha512'; value: string } | null;
-	/** CurseForge only: resolved lazily through the API. */
+	/**
+	 * The CurseForge project and file. Without `urls` (a manifest.json pack)
+	 * it is resolved to a URL at download time, which also fills in `target`;
+	 * either way it is how the installed jar gets tracked as a CurseForge mod.
+	 */
 	curseforge?: { projectId: number; fileId: number };
 	required: boolean;
 };
@@ -293,7 +297,7 @@ export async function downloadPackFiles(
 				let urls = item.urls;
 				let hash = item.hash;
 
-				if (item.curseforge) {
+				if (item.curseforge && !urls.length) {
 					const resolved = await resolveCurseforgeDownload(
 						item.curseforge.projectId,
 						item.curseforge.fileId
@@ -301,6 +305,8 @@ export async function downloadPackFiles(
 					target = path.join('mods', resolved.filename);
 					urls = [resolved.url];
 					hash = resolved.sha1 ? { algo: 'sha1', value: resolved.sha1 } : null;
+					// Known from here on, for curseforgeOrigins().
+					item.target = target;
 				}
 
 				if (!urls.length) throw new Error('no download URL');
@@ -320,7 +326,7 @@ export async function downloadPackFiles(
 				if (!ok) throw lastError ?? new Error('all mirrors failed');
 				task?.log(`Installed ${path.basename(target)}`);
 			} catch (err) {
-				const label = item.curseforge
+				const label = item.curseforge && !item.target
 					? `CurseForge file ${item.curseforge.fileId}`
 					: item.target || 'unknown file';
 				const message = err instanceof Error ? err.message : String(err);
@@ -350,7 +356,13 @@ export function packFromFileList(input: {
 	minecraftVersion: string;
 	modloader: ModloaderId;
 	modloaderVersion: string | null;
-	files: { path: string; name: string; url: string; sha1?: string | null }[];
+	files: {
+		path: string;
+		name: string;
+		url: string;
+		sha1?: string | null;
+		curseforge?: { projectId: string; fileId: string };
+	}[];
 }): ParsedPack {
 	const files = input.files
 		.filter((f) => Boolean(f.url))
@@ -369,6 +381,9 @@ export function packFromFileList(input: {
 				target: path.posix.join(f.dir, f.name),
 				urls: [f.url],
 				hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
+				...(f.curseforge
+					? { curseforge: { projectId: Number(f.curseforge.projectId), fileId: Number(f.curseforge.fileId) } }
+					: {}),
 				required: true
 			})),
 		overrideEntries: [],
@@ -377,6 +392,23 @@ export function packFromFileList(input: {
 			? { url: archive.url, hash: archive.sha1 ? { algo: 'sha1', value: archive.sha1 } : null }
 			: null
 	};
+}
+
+/**
+ * The CurseForge project and file behind each of the pack's mod jars, keyed
+ * by file name, for syncMods. A manifest.json pack's names are only known
+ * once downloadPackFiles has resolved them.
+ */
+export function curseforgeOrigins(pack: ParsedPack): Map<string, { projectId: string; fileId: string }> {
+	const origins = new Map<string, { projectId: string; fileId: string }>();
+	for (const d of pack.downloads) {
+		if (!d.curseforge || !d.target || path.posix.dirname(d.target.replace(/\\/g, '/')) !== 'mods') continue;
+		origins.set(path.posix.basename(d.target), {
+			projectId: String(d.curseforge.projectId),
+			fileId: String(d.curseforge.fileId)
+		});
+	}
+	return origins;
 }
 
 /** Fetch and open a file-list pack's overrides.zip so applyOverrides can unpack it. */

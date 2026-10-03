@@ -15,7 +15,7 @@ import {
 	type ModRow,
 	type ProjectVersion
 } from './mods';
-import { applyOverrides, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
+import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
@@ -554,7 +554,7 @@ export async function applyPackChange(
 		}
 		try {
 			task.setProgress(null, 'Identifying mods');
-			await syncMods(requireInstance(instance.id), { fromPack: true });
+			await syncMods(requireInstance(instance.id), { fromPack: true, curseforge: curseforgeOrigins(pack) });
 			if (plan.target.loader === 'cleanroom') {
 				const fixes = await applyCleanroomModFixes(requireInstance(instance.id), task);
 				problems.push(...fixes.failures);

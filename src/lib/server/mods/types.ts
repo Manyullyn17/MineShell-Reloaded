@@ -34,6 +34,12 @@ export type VersionFile = {
 	primary: boolean;
 	hash: { algo: 'sha1' | 'sha512'; value: string } | null;
 	size: number | null;
+	/**
+	 * The CurseForge project and file this is, where a pack file list says
+	 * (modpacks.ch does for every CurseForge mod). Lets a pack install track
+	 * its mods as CurseForge mods instead of guessing from hashes.
+	 */
+	curseforge?: { projectId: string; fileId: string };
 };
 
 export type Dependency = {

@@ -96,6 +96,7 @@ type VersionDetail = {
 		sha1?: string;
 		size?: number;
 		clientonly?: boolean;
+		curseforge?: { project: string | number; file: string | number };
 	}[];
 };
 
@@ -174,7 +175,10 @@ function detailToVersion(projectId: string, version: VersionDetail): ProjectVers
 			url: f.url,
 			primary: true,
 			size: f.size ?? null,
-			hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null
+			hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
+			...(f.curseforge
+				? { curseforge: { projectId: String(f.curseforge.project), fileId: String(f.curseforge.file) } }
+				: {})
 		})),
 		dependencies: []
 	};

@@ -72,6 +72,8 @@ export type ModRow = {
 	slug: string | null;
 	source: SourceId;
 	version: string | null;
+	/** The provider's id for the installed version (a CurseForge file id). */
+	versionId: string | null;
 	filePath: string;
 	fileName: string;
 	sizeBytes: number;
@@ -109,6 +111,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			projectUrl: modsTable.projectUrl,
 			iconUrl: modsTable.iconUrl,
 			version: instanceMods.version,
+			versionId: instanceMods.versionId,
 			filePath: instanceMods.filePath,
 			enabled: instanceMods.enabled,
 			fromPack: instanceMods.fromPack,
@@ -138,6 +141,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			slug: record?.slug ?? null,
 			source: (record?.source as SourceId) ?? 'manual',
 			version: record?.version ?? null,
+			versionId: record?.versionId ?? null,
 			filePath: path.join('mods', fileName),
 			fileName,
 			sizeBytes,
@@ -163,6 +167,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			slug: record.slug,
 			source: record.source as SourceId,
 			version: record.version,
+			versionId: record.versionId,
 			filePath: record.filePath,
 			fileName,
 			sizeBytes: 0,
@@ -184,27 +189,42 @@ export type SyncResult = {
 	removedStale: number;
 	/** Untracked files identified via Modrinth and given a real record. */
 	resolved: number;
+	/** Files tracked as the CurseForge mods their pack says they are. */
+	curseforge: number;
 	/** Untracked files that couldn't be identified, tracked as plain manual jars instead. */
 	trackedAsManual: number;
 };
+
+/** Which CurseForge project and file a pack jar is, keyed by file name. */
+export type CurseforgeOrigins = Map<string, { projectId: string; fileId: string }>;
+
+/** Mirror lookups at once while naming a pack's CurseForge mods. */
+const TRACKING_CONCURRENCY = 8;
 
 /**
  * Brings the DB in line with what's actually in the mods folder, in both
  * directions: drops rows whose jar is gone, and gives every untracked jar a
  * real record.
  *
- * Identification is hash-based against Modrinth, batched so a 150-mod pack
- * costs a couple of requests rather than 150. A CurseForge-only mod (or a
- * genuine network miss) can't be identified this way; those are tracked as a
- * plain manual entry, the same treatment as a hand-uploaded jar, so they stop
- * showing as untracked even though MineShell doesn't know their real name.
+ * A CurseForge pack says which project and file each of its jars is
+ * (`curseforge`, from the pack's file list or manifest); those are tracked
+ * as CurseForge mods, and re-tracked when an earlier sync recorded them as
+ * something else. Everything else is identified by hash against Modrinth,
+ * batched so a 150-mod pack costs a couple of requests rather than 150. A
+ * jar neither can identify is tracked as a plain manual entry, the same
+ * treatment as a hand-uploaded jar, so it stops showing as untracked even
+ * though MineShell doesn't know its real name.
  *
  * Called automatically at the end of a pack install and available as a manual
  * action on the mods page.
  */
 export async function syncMods(
 	instance: ServerInstance,
-	opts: { fromPack?: boolean; onProgress?: (done: number, total: number) => void } = {}
+	opts: {
+		fromPack?: boolean;
+		curseforge?: CurseforgeOrigins;
+		onProgress?: (done: number, total: number) => void;
+	} = {}
 ): Promise<SyncResult> {
 	const rows = await listInstanceMods(instance);
 
@@ -218,12 +238,33 @@ export async function syncMods(
 		removedStale += 1;
 	}
 
-	const untracked = rows.filter((r) => r.untracked);
-	if (untracked.length === 0) return { removedStale, resolved: 0, trackedAsManual: 0 };
+	const origins = opts.curseforge ?? new Map();
+	const originOf = (row: ModRow) => origins.get(stripDisabled(row.fileName));
+	const fromCurseforge = rows.filter((r) => {
+		const origin = originOf(r);
+		if (r.missing || !origin) return false;
+		return r.untracked || r.source !== 'curseforge' || r.slug !== origin.projectId || r.versionId !== origin.fileId;
+	});
+	const untracked = rows.filter((r) => r.untracked && !originOf(r));
+	const total = fromCurseforge.length + untracked.length;
+	let done = 0;
+
+	const queue = [...fromCurseforge];
+	async function trackNext(): Promise<void> {
+		for (let row = queue.shift(); row; row = queue.shift()) {
+			await trackCurseforgeJar(instance, row, originOf(row)!);
+			opts.onProgress?.(++done, total);
+		}
+	}
+	await Promise.all(Array.from({ length: Math.min(TRACKING_CONCURRENCY, queue.length) }, trackNext));
+
+	if (untracked.length === 0) {
+		return { removedStale, resolved: 0, curseforge: fromCurseforge.length, trackedAsManual: 0 };
+	}
 
 	// Hash everything first, then identify in bulk.
 	const hashed: { fileName: string; hash: string | null }[] = [];
-	for (const [index, row] of untracked.entries()) {
+	for (const row of untracked) {
 		let hash: string | null = null;
 		try {
 			hash = await hashFile(safeJoin(modsDir(instance.path), row.fileName), 'sha512');
@@ -231,7 +272,7 @@ export async function syncMods(
 			/* unreadable or vanished mid-scan */
 		}
 		hashed.push({ fileName: row.fileName, hash });
-		opts.onProgress?.(index + 1, untracked.length);
+		opts.onProgress?.(++done, total);
 	}
 
 	const byHash = await versionsFromHashes(
@@ -275,7 +316,58 @@ export async function syncMods(
 		}
 	}
 
-	return { removedStale, resolved, trackedAsManual };
+	return { removedStale, resolved, curseforge: fromCurseforge.length, trackedAsManual };
+}
+
+function stripDisabled(fileName: string): string {
+	return fileName.endsWith(DISABLED_SUFFIX) ? fileName.slice(0, -DISABLED_SUFFIX.length) : fileName;
+}
+
+/**
+ * Records a jar as the CurseForge file its pack says it is - a pack mod by
+ * definition, whoever asked for the sync. The project's
+ * name and icon come from the mirror the first time the project is seen; a
+ * failed lookup still tracks it as CurseForge, named after the file.
+ */
+async function trackCurseforgeJar(
+	instance: ServerInstance,
+	row: ModRow,
+	origin: { projectId: string; fileId: string }
+): Promise<void> {
+	const known = db
+		.select({ id: modsTable.id })
+		.from(modsTable)
+		.where(and(eq(modsTable.source, 'curseforge'), eq(modsTable.slug, origin.projectId)))
+		.get();
+	let modId = known?.id;
+	if (!modId) {
+		const project = await curseforgeModProvider.getProject(origin.projectId).catch(() => null);
+		modId = upsertMod({
+			source: 'curseforge',
+			slug: origin.projectId,
+			name: project?.name ?? stripDisabled(row.fileName).replace(/\.jar$/i, ''),
+			author: project?.author,
+			summary: project?.summary,
+			projectUrl: project?.projectUrl,
+			iconUrl: project?.iconUrl
+		});
+	}
+	// Only the newest files are in the project record already fetched; an
+	// older file keeps no version label rather than costing a paged search.
+	const version = await curseforgeModProvider
+		.getVersion(origin.projectId, origin.fileId)
+		.then((v) => v.versionNumber)
+		.catch(() => null);
+	recordInstanceMod({
+		instanceId: instance.id,
+		modId,
+		version,
+		versionId: origin.fileId,
+		filePath: row.filePath,
+		hash: null,
+		hashAlgo: null,
+		fromPack: true
+	});
 }
 
 export async function setModEnabled(

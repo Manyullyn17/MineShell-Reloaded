@@ -29,7 +29,14 @@ import {
 import { rconExec, parsePlayerList } from './rcon';
 import { getTask, startTask } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
-import { applyOverrides, downloadPackFiles, loadOverridesArchive, parsePack, type ParsedPack } from './packs';
+import {
+	applyOverrides,
+	curseforgeOrigins,
+	downloadPackFiles,
+	loadOverridesArchive,
+	parsePack,
+	type ParsedPack
+} from './packs';
 import { deleteMod, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
 import { applyCleanroomModFixes } from './cleanroom';
 import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
@@ -371,11 +378,13 @@ function provisionFromPack(instance: ServerInstance, pack: ParsedPack, notes: st
 			try {
 				const synced = await syncMods(requireInstance(instance.id), {
 					fromPack: true,
+					curseforge: curseforgeOrigins(pack),
 					onProgress: (done, total) => task.setProgress((done / total) * 100, 'Identifying mods')
 				});
 				task.log(
-					`Tracked ${synced.resolved + synced.trackedAsManual} mods ` +
-						`(${synced.resolved} identified, ${synced.trackedAsManual} unrecognised).`
+					`Tracked ${synced.curseforge + synced.resolved + synced.trackedAsManual} mods ` +
+						`(${synced.curseforge} from CurseForge, ${synced.resolved} identified on Modrinth, ` +
+						`${synced.trackedAsManual} unrecognised).`
 				);
 			} catch (err) {
 				// Identification is a convenience; a failure here must not undo a

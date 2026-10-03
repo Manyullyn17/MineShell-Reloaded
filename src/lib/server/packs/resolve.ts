@@ -43,7 +43,8 @@ export async function resolveProviderPack(
 			path: f.path ?? 'mods',
 			name: f.filename,
 			url: f.url,
-			sha1: f.hash?.algo === 'sha1' ? f.hash.value : null
+			sha1: f.hash?.algo === 'sha1' ? f.hash.value : null,
+			curseforge: f.curseforge
 		}))
 	});
 	if (!pack.minecraftVersion) {
