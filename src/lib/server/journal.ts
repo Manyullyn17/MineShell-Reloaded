@@ -158,38 +158,45 @@ const lastRuns = new Map<string, { cursor: string; text: string }>();
  * service's own lines carry `_SYSTEMD_INVOCATION_ID`, the service manager's
  * ("Started ...", "Consumed ...") `USER_INVOCATION_ID` or `INVOCATION_ID`.
  */
-export async function readLastRun(id: string, since = 0): Promise<string> {
+/** The unit's newest entry: its cursor and the invocation (run) it belongs to. Null when there is none. */
+async function newestEntry(id: string, since: number): Promise<{ cursor: string | null; invocation: string | null } | null> {
 	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(since)])).trim();
-	if (!newest) {
-		lastRuns.delete(id);
-		return '';
-	}
+	if (!newest) return null;
 	let entry: Record<string, unknown> = {};
 	try {
 		entry = JSON.parse(newest.split('\n')[0]);
 	} catch {
-		/* unreadable entry: read by line count below */
+		/* unreadable entry: callers fall back to line counts */
 	}
-	const cursor = typeof entry.__CURSOR === 'string' ? entry.__CURSOR : null;
-	const hit = lastRuns.get(id);
-	if (cursor && hit?.cursor === cursor) return hit.text;
-
 	const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
 		(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
 	);
+	return { cursor: typeof entry.__CURSOR === 'string' ? entry.__CURSOR : null, invocation: invocation ?? null };
+}
+
+/** Every entry of one run: the service's own lines and the service manager's about it. */
+function runMatch(invocation: string): string[] {
+	return [
+		`_SYSTEMD_INVOCATION_ID=${invocation}`,
+		'+',
+		`USER_INVOCATION_ID=${invocation}`,
+		'+',
+		`INVOCATION_ID=${invocation}`
+	];
+}
+
+export async function readLastRun(id: string, since = 0): Promise<string> {
+	const entry = await newestEntry(id, since);
+	if (!entry) {
+		lastRuns.delete(id);
+		return '';
+	}
+	const { cursor, invocation } = entry;
+	const hit = lastRuns.get(id);
+	if (cursor && hit?.cursor === cursor) return hit.text;
+
 	const text = invocation
-		? await journalctl([
-				`_SYSTEMD_INVOCATION_ID=${invocation}`,
-				'+',
-				`USER_INVOCATION_ID=${invocation}`,
-				'+',
-				`INVOCATION_ID=${invocation}`,
-				'-n',
-				String(LAST_RUN_LINES),
-				'-o',
-				'cat',
-				sinceArg(since)
-			])
+		? await journalctl([...runMatch(invocation), '-n', String(LAST_RUN_LINES), '-o', 'cat', sinceArg(since)])
 		: await readJournal(id, LAST_RUN_LINES, since);
 	if (cursor) lastRuns.set(id, { cursor, text });
 	return text;
@@ -198,4 +205,16 @@ export async function readLastRun(id: string, since = 0): Promise<string> {
 export function stopAllTails(): void {
 	for (const [, tail] of tails) tail.child.kill('SIGTERM');
 	tails.clear();
+}
+
+/**
+ * Whether the current run has logged "Done (", searched across the whole
+ * run (journalctl -g), so a server running for days whose start has long
+ * scrolled out of the last lines still counts as started.
+ */
+export async function runFinishedStarting(id: string, since = 0): Promise<boolean> {
+	const entry = await newestEntry(id, since);
+	if (!entry?.invocation) return /\]: Done \(/.test(await readJournal(id, LAST_RUN_LINES, since));
+	const found = await journalctl([...runMatch(entry.invocation), '-g', '\\]: Done \\(', '-n', '1', '-o', 'cat', sinceArg(since)]);
+	return found.trim().length > 0;
 }

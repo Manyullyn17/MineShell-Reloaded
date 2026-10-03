@@ -78,6 +78,17 @@
 	</section>
 {/if}
 
+{#if data.stuckSince}
+	<div class="notice warning">
+		<p>
+			Started {formatRelative(data.stuckSince)} and still not done starting: the log never reached "Done". It may be
+			stuck, typically on a mod waiting for something or a deadlock. The <a href="/instances/{data.instance.id}/console"
+				>console</a
+			> shows where it stopped; Force stop if it does not move.
+		</p>
+	</div>
+{/if}
+
 {#if data.summary.javaWarning}
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}

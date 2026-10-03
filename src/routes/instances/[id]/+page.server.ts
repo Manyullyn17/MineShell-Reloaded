@@ -21,7 +21,7 @@ import { bucketSamples, recentSamples } from '$lib/server/monitor';
 import { resolveJava } from '$lib/server/java';
 import { cpus, hostname, networkInterfaces } from 'node:os';
 import { describeSchedule } from '$lib/server/scheduler';
-import { readLastRun } from '$lib/server/journal';
+import { readLastRun, runFinishedStarting } from '$lib/server/journal';
 import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
 import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
@@ -56,6 +56,27 @@ async function diagnoseLastRun(instanceId: string, instancePath: string, journal
 	return result;
 }
 
+/**
+ * A server still not "Done (" this long after starting is probably hung
+ * (crash diagnosis only covers runs that ended). MeatballCraft, the biggest
+ * pack here, takes about 95 s; a first start that also generates the world
+ * takes several times that.
+ */
+const STUCK_AFTER_MS = 10 * 60_000;
+
+/** Runs (by start time) already seen to finish starting; their log is not read again. */
+const startedRuns = new Map<string, number>();
+
+async function stuckStarting(instanceId: string, createdAt: number, startedAt: number): Promise<boolean> {
+	if (!startedAt || Date.now() - startedAt < STUCK_AFTER_MS) return false;
+	if (startedRuns.get(instanceId) === startedAt) return false;
+	if (await runFinishedStarting(instanceId, createdAt)) {
+		startedRuns.set(instanceId, startedAt);
+		return false;
+	}
+	return true;
+}
+
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
@@ -77,6 +98,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			(startedRun && !/\]: Done \(/.test(lastRunLog));
 	}
 	const players = summary.running ? await onlinePlayers(instance) : null;
+	const stuck = summary.running && (await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
 	// Which runtime actually gets used, so the overview can name it instead of
 	// only saying that matching happens.
 	const java = resolveJava({
@@ -124,6 +146,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		players,
 		countdown: getCountdown(instance.id),
+		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		diskBytes: await instanceDiskUsage(instance),
 		// CPU is measured across all cores, so the chart needs the core count to
 		// show a meaningful ceiling instead of an unexplained 400%.
