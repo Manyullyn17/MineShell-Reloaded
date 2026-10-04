@@ -14,6 +14,9 @@ import {
 	worldFolders
 } from '$lib/server/snapshots';
 import {
+	countPrunable,
+	lastPruneCount,
+	pruneChunks,
 	resetDimension,
 	resetWorld,
 	restoreDimension,
@@ -52,6 +55,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		snapshotPrompt: await snapshotPrompt(instance.path),
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
+		pruneCount: lastPruneCount(instance.id),
 		snapshots: await Promise.all(
 			(await listSnapshots(instance.path)).map(async (s) => ({
 				...s,
@@ -88,6 +92,11 @@ function chunkyRefused(err: unknown) {
 	if (err instanceof ChunkyError) return fail(400, { ok: false, message: err.message });
 	throw err;
 }
+
+const pruneSettings = (form: FormData) => ({
+	maxTicks: Number(form.get('maxTicks')),
+	keepAroundSpawn: Number(form.get('keepAroundSpawn') ?? 0)
+});
 
 const worldOf = (form: FormData) => String(form.get('world') ?? '') || null;
 
@@ -210,6 +219,30 @@ export const actions: Actions = {
 		if (!(await getSnapshot(instance.path, id))) return fail(400, { ok: false, message: 'That snapshot no longer exists.' });
 		await deleteSnapshot(instance.path, id);
 		return { ok: true, message: 'Snapshot deleted.' };
+	},
+
+	pruneCount: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await countPrunable(instance, String(form.get('dimension') ?? ''), pruneSettings(form));
+			return { ok: true, message: 'Counting; the result shows here when the task finishes.' };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	prune: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await pruneChunks(instance, String(form.get('dimension') ?? ''), pruneSettings(form), {
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
+			});
+			return { ok: true, message: `Pruning. ${STARTED}` };
+		} catch (err) {
+			return refused(err);
+		}
 	},
 
 	resetDimension: async ({ request, params }) => {

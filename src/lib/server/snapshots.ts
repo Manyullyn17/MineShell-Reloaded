@@ -37,6 +37,7 @@ export type SnapshotReason =
 	| 'world-restore'
 	| 'world-reset-dimension'
 	| 'world-restore-dimension'
+	| 'world-prune'
 	| 'mod-update'
 	| 'manual';
 

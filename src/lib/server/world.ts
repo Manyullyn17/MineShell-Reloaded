@@ -20,6 +20,9 @@ import { rconExec } from './rcon';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
+import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
+import { child, parseNbt } from './nbt';
+import { constants as fsConstants } from 'node:fs';
 import {
 	finishSnapshot,
 	getSnapshot,
@@ -293,6 +296,136 @@ export async function restoreDimension(
 /** The dimensions a snapshot holds, found the way the live world's are. */
 export async function snapshotDimensions(instance: ServerInstance, snapshot: Snapshot): Promise<Dimension[]> {
 	return listDimensions(snapshotPath(instance.path, snapshot.id), await serverWorldName(instance.path));
+}
+
+// ------------------------------------------------------------ chunk pruning ---
+
+export type PruneSettings = {
+	/** Chunks visited for fewer ticks than this go. */
+	maxTicks: number;
+	/** Overworld only: chunks within this many blocks of the world spawn stay. */
+	keepAroundSpawn: number;
+};
+
+export type PruneCount = PruneSettings & {
+	dimension: string;
+	label: string;
+	chunks: number;
+	remove: number;
+	unreadable: number;
+	bytes: number;
+	at: number;
+};
+
+/** The last count per server, for the World tab; in memory, a count is quick to redo. */
+const pruneCounts = new Map<string, PruneCount>();
+
+export function lastPruneCount(instanceId: string): PruneCount | null {
+	return pruneCounts.get(instanceId) ?? null;
+}
+
+/** The world spawn from level.dat (Data.SpawnX/SpawnZ); null when unreadable. */
+async function worldSpawn(root: string): Promise<{ x: number; z: number } | null> {
+	try {
+		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
+		const data = child(level.root, 'Data');
+		const x = child(data, 'SpawnX');
+		const z = child(data, 'SpawnZ');
+		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, z: z.value } : null;
+	} catch {
+		return null;
+	}
+}
+
+/** The folder holding a dimension's region/: the world folder for the overworld, else the dimension's own. */
+function dimensionBase(root: string, dimension: Dimension): string {
+	return path.join(root, dimension.overworld ? path.dirname(dimension.paths[0]) : dimension.paths[0]);
+}
+
+async function pruneOptions(root: string, dimension: Dimension, settings: PruneSettings): Promise<PruneOptions> {
+	const spawn = dimension.overworld && settings.keepAroundSpawn > 0 ? await worldSpawn(root) : null;
+	return { maxTicks: settings.maxTicks, keep: spawn ? { ...spawn, radius: settings.keepAroundSpawn } : null };
+}
+
+function validSettings(settings: PruneSettings): PruneSettings {
+	if (!Number.isInteger(settings.maxTicks) || settings.maxTicks < 1) throw new InstanceError('Pick how long a chunk must have been visited to stay.');
+	if (!Number.isInteger(settings.keepAroundSpawn) || settings.keepAroundSpawn < 0) throw new InstanceError('The radius to keep is a whole number of blocks.');
+	return settings;
+}
+
+/**
+ * Counts what pruning would remove, without changing anything. Reads only, so
+ * it also runs while the server is up (the count is then a moment's picture).
+ */
+export async function countPrunable(instance: ServerInstance, key: string, settings: PruneSettings): Promise<string> {
+	validSettings(settings);
+	const dimension = await findDimension(instance.path, key);
+	if (!dimension) throw new InstanceError('That dimension is not in the world.');
+	const opts = await pruneOptions(instance.path, dimension, settings);
+	return startTask({ label: `Counting chunks to prune in ${dimension.label}: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		const plan = await planPrune(dimensionBase(instance.path, dimension), opts, (done, total) =>
+			task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`)
+		);
+		pruneCounts.set(instance.id, {
+			...settings,
+			dimension: key,
+			label: dimension.label,
+			chunks: plan.chunks,
+			remove: plan.remove,
+			unreadable: plan.unreadable,
+			bytes: plan.bytes,
+			at: Date.now()
+		});
+		task.log(`${plan.remove} of ${plan.chunks} chunks would go${plan.unreadable ? `; ${plan.unreadable} could not be read and stay` : ''}.`);
+	});
+}
+
+/**
+ * Deletes barely visited chunks of one dimension. A world change like the
+ * others: the dimension is copied (a reflink where the filesystem can), the
+ * copy pruned, then the original moves aside - into a partial snapshot when
+ * wanted - and the pruned copy takes its place. A failure or crash puts the
+ * original back.
+ */
+export async function pruneChunks(
+	instance: ServerInstance,
+	key: string,
+	settings: PruneSettings,
+	opts: { snapshot: boolean }
+): Promise<string> {
+	validSettings(settings);
+	const dimension = await findDimension(instance.path, key);
+	if (!dimension) throw new InstanceError('That dimension is not in the world.');
+	const pruneOpts = await pruneOptions(instance.path, dimension, settings);
+	return runWorldChange(instance, {
+		action: 'prune',
+		label: `Pruning ${dimension.label}`,
+		snapshot: opts.snapshot,
+		moving: dimension.paths,
+		placing: dimension.paths,
+		assemble: async (incoming, task) => {
+			task.setProgress(null, `Copying ${dimension.label}`);
+			for (const rel of dimension.paths) {
+				await fs.mkdir(path.dirname(path.join(incoming, rel)), { recursive: true });
+				await fs.cp(path.join(instance.path, rel), path.join(incoming, rel), {
+					recursive: true,
+					preserveTimestamps: true,
+					mode: fsConstants.COPYFILE_FICLONE
+				});
+			}
+			const base = dimensionBase(incoming, dimension);
+			const plan = await planPrune(base, pruneOpts, (done, total) =>
+				task.setProgress(total ? (done / total) * 90 : null, `Reading region file ${done} of ${total}`)
+			);
+			task.setProgress(null, `Removing ${plan.remove} chunks`);
+			await applyPrune(base, plan);
+			pruneCounts.delete(instance.id);
+			task.log(
+				`Removed ${plan.remove} of ${plan.chunks} chunks${plan.unreadable ? `; ${plan.unreadable} could not be read and stayed` : ''}.`
+			);
+		},
+		done: `${dimension.label} is pruned; removed chunks generate again when someone goes there.`
+	});
 }
 
 /** Take a snapshot now, outside any other operation. */

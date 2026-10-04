@@ -150,7 +150,10 @@ re-proposed or built twice.
   (now moved to `old-configs/`) and the new pack config.
 - **World tools**: dimension reset is built (World tab; `dimensions.ts`, `resetDimension`).
   The overworld means its terrain (region, entities, poi); level.dat, player data and the
-  world's data stay. Chunk pruning: see below.
+  world's data stay. Chunk pruning is built too (`chunkprune.ts`, World tab): chunks whose
+  InhabitedTime is under a threshold go from region/, entities/ and poi/, files rewritten
+  compactly; optionally keeping a radius around spawn; counted first, run as a world change
+  into a partial snapshot. LZ4-compressed chunks (1.20.5+ option) cannot be read and stay.
 - **Granular snapshot restore**: built for one dimension (`restoreDimension`); a region of
   one is not. A dimension reset keeps a partial snapshot (`partial: true`), whose restore
   puts back only those folders.

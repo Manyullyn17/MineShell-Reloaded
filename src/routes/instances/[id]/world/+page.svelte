@@ -32,6 +32,28 @@
 		const timer = setInterval(() => void invalidateAll(), 5000);
 		return () => clearInterval(timer);
 	});
+	// ---- chunk pruning
+	const PRUNE_TICKS = [
+		{ ticks: 1, label: 'never (0 seconds)' },
+		{ ticks: 100, label: '5 seconds' },
+		{ ticks: 1200, label: '1 minute' },
+		{ ticks: 6000, label: '5 minutes' },
+		{ ticks: 36000, label: '30 minutes' }
+	];
+	let pruneDimension = $state('');
+	let pruneTicks = $state(1200);
+	let pruneKeep = $state(256);
+	$effect(() => {
+		if (!pruneDimension && data.dimensions.length) pruneDimension = data.dimensions[0].key;
+	});
+	const pruneIsOverworld = $derived(data.dimensions.find((d) => d.key === pruneDimension)?.overworld ?? false);
+	const countMatches = $derived(
+		data.pruneCount &&
+			data.pruneCount.dimension === pruneDimension &&
+			data.pruneCount.maxTicks === pruneTicks &&
+			(!pruneIsOverworld || data.pruneCount.keepAroundSpawn === pruneKeep)
+	);
+
 	const confirmCancel = (world: string) => ({ cancel }: { cancel: () => void }) => {
 		if (!confirm(`Cancel pre-generating ${world}? A cancelled task cannot be continued.`)) cancel();
 	};
@@ -463,6 +485,77 @@
 	</form>
 </section>
 
+{#if data.dimensions.length}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Prune chunks</h2>
+				<p>
+					Deletes chunks that were generated but hardly visited, so they generate again when someone goes there. That is
+					what flying through and pre-generation leave behind, and usually most of a world's size. Minecraft counts how
+					long players spent near each chunk; builds are in chunks people spent time in. Terrain that generates again
+					uses the current seed, mods and data packs, so it can differ from what was there.
+				</p>
+			</div>
+		</div>
+		<form method="POST" use:enhance={() => async ({ update }) => update({ reset: false })} class="pregen-form">
+			<div class="field">
+				<label for="prune-dimension">Dimension</label>
+				<select id="prune-dimension" name="dimension" bind:value={pruneDimension}>
+					{#each data.dimensions as d (d.key)}
+						<option value={d.key}>{d.label}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="field">
+				<label for="prune-ticks">Delete chunks visited less than</label>
+				<select id="prune-ticks" name="maxTicks" bind:value={pruneTicks}>
+					{#each PRUNE_TICKS as option (option.ticks)}
+						<option value={option.ticks}>{option.label}</option>
+					{/each}
+				</select>
+			</div>
+			{#if pruneIsOverworld}
+				<div class="field">
+					<label for="prune-keep">Always keep within (blocks of spawn)</label>
+					<input id="prune-keep" name="keepAroundSpawn" type="number" min="0" step="16" bind:value={pruneKeep} />
+				</div>
+			{/if}
+			<button formaction="?/pruneCount" type="submit">Count</button>
+		</form>
+
+		{#if countMatches && data.pruneCount}
+			<p class="prune-result">
+				<strong class="mono">{data.pruneCount.remove.toLocaleString()}</strong> of
+				{data.pruneCount.chunks.toLocaleString()} chunks in {data.pruneCount.label} would go, freeing about
+				<strong class="mono">{formatBytes(data.pruneCount.bytes)}</strong> of terrain (entities and points of interest
+				free a little more).{data.pruneCount.unreadable
+					? ` ${data.pruneCount.unreadable.toLocaleString()} could not be read and stay.`
+					: ''}
+				<span class="faint small">Counted {formatRelative(data.pruneCount.at)}.</span>
+			</p>
+			<form
+				method="POST"
+				action="?/prune"
+				use:enhance={({ cancel }) => {
+					if (!confirm(`Delete ${data.pruneCount?.remove.toLocaleString()} chunks from ${data.pruneCount?.label}?`)) cancel();
+				}}
+			>
+				<input type="hidden" name="dimension" value={pruneDimension} />
+				<input type="hidden" name="maxTicks" value={pruneTicks} />
+				<input type="hidden" name="keepAroundSpawn" value={pruneIsOverworld ? pruneKeep : 0} />
+				<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="prune" />
+				{#if data.running}<p class="muted small">Stop the server to prune.</p>{/if}
+				<button class="button-danger" type="submit" disabled={data.running || busy || data.pruneCount.remove === 0}>
+					Prune {data.pruneCount.remove.toLocaleString()} chunks
+				</button>
+			</form>
+		{:else}
+			<p class="muted small">Count first: it reads the region files and changes nothing, so it also works while the server runs.</p>
+		{/if}
+	</section>
+{/if}
+
 <section class="panel danger">
 	<h2>Reset the world</h2>
 	<p class="muted">
@@ -527,6 +620,10 @@
 </section>
 
 <style>
+	.prune-result {
+		margin-top: var(--space-4);
+	}
+
 	.restore-scope {
 		max-width: 28rem;
 	}
