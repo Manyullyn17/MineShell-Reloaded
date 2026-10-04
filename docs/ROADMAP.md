@@ -79,15 +79,117 @@ Not built from the original design:
 - Required dependencies are installed, but nothing checks `incompatible` ones or removes a
   dependency the new version no longer needs.
 
+---
+
+## Brainstorm, October 2026
+
+A list of ideas from a brainstorm, checked against the code on 2026-10-04. Where an idea was
+already built, or already has an entry elsewhere in this file, that is noted, so it is not
+re-proposed or built twice.
+
+### Already built (listed in the brainstorm, nothing to do)
+
+- **Scheduler upgrades**: scheduled restarts wait while players are online, for up to an
+  hour per cycle (`scheduler.ts`), and warn in-game at 15/10/5/1 minutes
+  (`restartWarnMinutes`). Countdown stops/restarts: `countdown.ts`.
+- **Mod diff before an update**: the pack change preview (`PackChangePanel`) lists every
+  pack mod and data pack as `+`/`~`/`−`. The "Update mods" review shows `current → target`
+  for each mod.
+- **Mod list view**: the installed list on the Mods tab links each mod to its project page
+  and flags client-only ones. Loader is per server. The crash analyzer reads the jars itself
+  (`crashdiag.ts`) and does not need this list.
+- **Start-time Java resolution**: `start()` runs `syncUnit()`, which resolves Java again and
+  rewrites the unit's env file, so the unit cannot go stale (see "Default Java per major
+  version" below for what is still missing).
+- Also built: crash analyzer, auto-restart, CPU/RAM graphs, the whitelist/ops/bans lists,
+  the `server.properties` editor, snapshot pinning, and a basic audit log (the `audit_log`
+  table; Settings shows the newest 40 entries).
+
+### Next up
+
+- **Spark + TPS layer.** `tps.ts` does not use Spark on purpose: Spark answers
+  asynchronously, after RCON has already returned. Using Spark means reading its answer
+  from the console or journal after sending the command. That is the core of this item, and
+  the profiler flow below needs it too.
+- **Spark profiler flow**: start/stop a profile from the UI and show the
+  `spark.lucko.me` link it prints. Same async-answer problem.
+
+### Agreed
+
+- **Chunky integration**: pregeneration with progress, pause/resume, and a scheduler slot.
+  Not started.
+- **Console enhancements.** Exists: Up/Down command history (in memory, lost on reload)
+  and colouring by log level (`Console.svelte`). Missing: level filters, search, collapsed
+  stack traces, join/leave highlighting, macros, persistent history, autocomplete. The Logs
+  tab (journal runs and `logs/`/`crash-reports/` files) has no search or filter either.
+- **Ban UI, the rest.** The Players tab already edits the whitelist, ops and bans
+  (`players.ts`). Missing: a reason when banning (it always writes "Banned by an
+  operator."), IP bans (`banned-ips.json` is not read or written), and op levels.
+- **Disk usage breakdown.** Only a total per server exists (`instanceDiskUsage`, cached for
+  60 s). Missing: the world split by dimension, logs, snapshots, `old-configs/`,
+  `.mineshell/` backups, and cleanup suggestions. Modded dimensions live in `DIM*` /
+  `dimensions/` inside the world, not only in the `_nether`/`_the_end` siblings.
+- **Default Java per major version.** Order: the instance's pinned Java (`java_path`,
+  exists), then a global default for that major (new: a radio button per version on the
+  Java page), then the current automatic pick, which must be deterministic. Also an
+  instance label showing which Java it will use.
+
+### Later
+
+- **Three-way config diffs on pack update**: the old pack config, the user's edited copy
+  (now moved to `old-configs/`) and the new pack config.
+- **World tools**: dimension reset and chunk pruning. Reset, replace, restore and download
+  of the whole world exist (`world.ts`).
+- **Granular snapshot restore**: one dimension, or a region of one. Restore is whole
+  snapshot only.
+- **Scheduler hook**: run a script after a snapshot.
+
+### Maybe someday
+
+- **Notifications (Discord/webhook)**: see "Notifications" under Later.
+- **Client pack export**: a pack players can import into their launcher. Different from
+  "Instance export and import" below, which moves a server between machines.
+- **Player stats** from `<world>/stats/<uuid>.json`.
+- Multi-user roles: out of scope.
+
+### Undecided
+
+- **Read-only status page**, mainly worth it together with a **join page** (address,
+  version, pack download).
+
+### Suggested, not yet confirmed or rejected
+
+- **RAM guard on start**: refuse or warn when the heap plus other running servers exceeds
+  free memory. Nothing reads `/proc/meminfo` today.
+- **Port management**: same as "Multi-instance port management" under Later. Start already
+  refuses when a port is taken by something else.
+- **Sleep when empty**: `pause-when-empty-seconds` on vanilla 1.21.2+. For older and modded
+  versions, it is unknown which loaders honour it.
+- **Mod bisect assistant**: disable half, start, narrow down. It could build on the crash
+  analyzer and the journalled mod toggles.
+- **Update availability checks**: mods have one (`modupdates.ts`). Missing: a newer pack
+  version, loader build, or Java update shown on the overview.
+- **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` today.
+- **Server bundle export/import**: the same as "Instance export and import" under Later.
+
+### Dropped
+
+- Panel hardening (it is LAN-only; remote access stays the Tailscale route below), idle
+  auto-stop (wake-on-connect needs too much machinery), a fuller audit log beyond the
+  existing one, adopting an existing server.
+- Full world backups: see "Deliberately not built" above.
+
+---
+
+## Later
+
 ### Notifications
 
 A Discord webhook on crash loops and scheduled restarts. The event bus in `events.ts`
 already emits everything needed, so this is a settings form, a fetch, and a subscriber.
 Deliberately kept out of v1 to avoid designing a notification framework for one webhook.
 
----
-
-## Later
+Moved from near term to later in October 2026.
 
 ### Duplicate detection across platforms
 
