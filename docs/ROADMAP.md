@@ -277,6 +277,17 @@ Ports are allocated automatically and conflicts are detected, but there is no vi
 what is bound where across all instances. Cosmetic until you are running enough servers to
 lose track.
 
+### Start servers at boot
+
+Servers do not come back after the host reboots: only MineShell itself is started at boot
+(`docs/DEPLOYMENT.md`), and nothing ever runs `systemctl enable` on an instance unit.
+`enableUnit` and `isUnitEnabled` in `systemd.ts` exist but nothing calls them, and the
+template already has `WantedBy=default.target`, so enabling `<prefix>@<id>` would work.
+Open questions before wiring a per-server toggle: whether enabled state lives in systemd
+only or also in the database (clones, recreated servers with the same id), how it interacts
+with a crash loop at boot, and whether MineShell should start them itself after boot
+instead. Noticed in the October 2026 sanity pass; parked for a later look.
+
 ---
 
 ## Considered and rejected
