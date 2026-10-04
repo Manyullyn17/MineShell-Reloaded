@@ -33,7 +33,7 @@
     "@sveltejs/adapter-node": "^5.2.9",
     "@sveltejs/kit": "^2.8.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
-    "@types/better-sqlite3": "^7.6.11",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.1",
     "drizzle-kit": "^0.31.11",
