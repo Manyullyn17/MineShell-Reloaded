@@ -5,6 +5,7 @@ import { audit, listInstances, onlinePlayers, rconPassword, restart } from './in
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
+import { autoPauseForPlayers } from './chunky';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -141,6 +142,9 @@ async function checkAll(): Promise<void> {
 		} catch (err) {
 			console.error(`[mineshell] scheduler error for ${instance.id}:`, err);
 		}
+		await autoPauseForPlayers(instance).catch((err) =>
+			console.error(`[mineshell] Chunky auto-pause failed for ${instance.id}:`, err)
+		);
 	}
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 }

@@ -1,10 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
-import { indexMods } from './crashdiag';
 import { rconPassword } from './instances';
 import { subscribeConsole } from './journal';
-import { modsDir } from './mods';
+import { hasEnabledMod } from './mods';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { cancelTask, startTask, type TaskHandle } from './tasks';
@@ -85,18 +84,8 @@ const STARTED = /new profiler|profiler is now running|profiler now active/i;
 /** Old Spark builds called the profiler the sampler. */
 const isProfile = (upload: SparkUpload) => /profil|sampl/i.test(upload.type);
 
-/** Mods folder mtime -> installed; the overview asks on every poll. */
-const installedCache = new Map<string, { mtimeMs: number; installed: boolean }>();
-
-export async function hasSpark(root: string): Promise<boolean> {
-	const dir = modsDir(root);
-	const stat = await fs.stat(dir).catch(() => null);
-	if (!stat) return false;
-	const hit = installedCache.get(dir);
-	if (hit && hit.mtimeMs === stat.mtimeMs) return hit.installed;
-	const installed = (await indexMods(dir)).some((jar) => jar.enabled && jar.ids.includes('spark'));
-	installedCache.set(dir, { mtimeMs: stat.mtimeMs, installed });
-	return installed;
+export function hasSpark(root: string): Promise<boolean> {
+	return hasEnabledMod(root, 'spark');
 }
 
 // ------------------------------------------------------------- profiling ---

@@ -14,6 +14,28 @@
 	let pendingDelete = $state<string | null>(null);
 	let seedMode = $state<'keep' | 'random' | 'set'>('keep');
 
+	// ---- Chunky pre-generation
+	let pregenWorld = $state('minecraft:overworld');
+	let pregenShape = $state<'square' | 'circle'>('square');
+	let pregenRadius = $state(2500);
+	/** Chunks a selection covers, as Chunky counts them (16-block chunks). */
+	const pregenChunks = $derived(
+		pregenShape === 'circle'
+			? Math.round((Math.PI * pregenRadius * pregenRadius) / 256)
+			: Math.round(((2 * pregenRadius) / 16) ** 2)
+	);
+	const clock = (seconds: number) =>
+		`${Math.floor(seconds / 3600)}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+	// Progress moves on its own while a task runs; nothing else on this page does.
+	$effect(() => {
+		if (!data.chunky?.status?.running.length) return;
+		const timer = setInterval(() => void invalidateAll(), 5000);
+		return () => clearInterval(timer);
+	});
+	const confirmCancel = (world: string) => ({ cancel }: { cancel: () => void }) => {
+		if (!confirm(`Cancel pre-generating ${world}? A cancelled task cannot be continued.`)) cancel();
+	};
+
 	// Uploads go straight to the endpoint (not a form action), which takes the
 	// raw file so a big world is never held in memory; XHR for the progress.
 	let uploadPercent = $state<number | null>(null);
@@ -246,6 +268,163 @@
 	{/if}
 </section>
 
+{#if data.chunky}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Pre-generate chunks</h2>
+				<p>
+					Chunky generates the world ahead of time, so exploring new land does not lag the server. The chunks it makes
+					are the same ones players would.
+				</p>
+			</div>
+		</div>
+
+		{#if data.chunky.status?.running.length}
+			<ul class="pregen">
+				{#each data.chunky.status.running as task (task.world)}
+					<li>
+						<div class="spread">
+							<strong class="mono">{task.world}</strong>
+							<span class="mono">{task.percent.toFixed(2)}%</span>
+						</div>
+						<div class="meter" role="progressbar" aria-valuenow={task.percent} aria-valuemin={0} aria-valuemax={100} aria-label="{task.world} generated">
+							<span style:width="{Math.min(100, task.percent)}%"></span>
+						</div>
+						<div class="spread small">
+							<span class="muted">
+								{task.chunks.toLocaleString()} chunks, {task.rate} per second, about {clock(task.etaSeconds)} left
+							</span>
+							<span class="row">
+								<form method="POST" action="?/chunkyPause" use:enhance>
+									<input type="hidden" name="world" value={task.world} />
+									<button class="button-quiet">Pause</button>
+								</form>
+								<form method="POST" action="?/chunkyCancel" use:enhance={confirmCancel(task.world)}>
+									<input type="hidden" name="world" value={task.world} />
+									<button class="button-quiet button-danger">Cancel</button>
+								</form>
+							</span>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		{:else if data.chunky.status && !data.chunky.english && data.chunky.status.text}
+			<pre class="chunky-says">{data.chunky.status.text}</pre>
+		{/if}
+
+		{#if data.chunky.unfinished.length}
+			<h3>Paused or unfinished</h3>
+			<ul class="pregen">
+				{#each data.chunky.unfinished as task (task.world)}
+					<li class="spread">
+						<span>
+							<strong class="mono">{task.world}</strong>
+							<span class="muted small">
+								{task.chunks.toLocaleString()} chunks done, {task.shape} of radius {task.radius.toLocaleString()} around
+								{task.centerX}, {task.centerZ}{data.chunky.pausedForPlayers.includes(task.world) ? ', paused while players are online' : ''}
+							</span>
+						</span>
+						{#if data.running}
+							<span class="row">
+								<form method="POST" action="?/chunkyContinue" use:enhance>
+									<input type="hidden" name="world" value={task.world} />
+									<button>Continue</button>
+								</form>
+								<form method="POST" action="?/chunkyCancel" use:enhance={confirmCancel(task.world)}>
+									<input type="hidden" name="world" value={task.world} />
+									<button class="button-quiet button-danger">Cancel</button>
+								</form>
+							</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
+		{#if form && 'chunkyConfirm' in form && form.chunkyConfirm}
+			<div class="notice warning">
+				<p>{form.chunkyConfirm} has an unfinished task. Continue it, or start over with the new selection?</p>
+				<div class="button-row">
+					<form method="POST" action="?/chunkyContinue" use:enhance>
+						<input type="hidden" name="world" value={form.chunkyConfirm} />
+						<button>Continue it</button>
+					</form>
+					<form method="POST" action="?/chunkyConfirm" use:enhance>
+						<button class="button-danger">Start over</button>
+					</form>
+				</div>
+			</div>
+		{/if}
+
+		{#if data.running}
+			<form method="POST" action="?/chunkyStart" use:enhance class="pregen-form">
+				<div class="field">
+					<label for="pregen-world">Dimension</label>
+					<select id="pregen-world" name="world" bind:value={pregenWorld}>
+						<option value="minecraft:overworld">Overworld</option>
+						<option value="minecraft:the_nether">The Nether</option>
+						<option value="minecraft:the_end">The End</option>
+						<option value="other">Another dimension</option>
+					</select>
+				</div>
+				{#if pregenWorld === 'other'}
+					<div class="field">
+						<label for="pregen-custom">Dimension id</label>
+						<input id="pregen-custom" name="customWorld" class="mono" placeholder="twilightforest:twilight_forest" />
+					</div>
+				{/if}
+				<div class="field">
+					<label for="pregen-shape">Shape</label>
+					<select id="pregen-shape" name="shape" bind:value={pregenShape}>
+						<option value="square">Square</option>
+						<option value="circle">Circle</option>
+					</select>
+				</div>
+				<div class="field">
+					<label for="pregen-x">Center X</label>
+					<input id="pregen-x" name="centerX" type="number" value="0" step="1" />
+				</div>
+				<div class="field">
+					<label for="pregen-z">Center Z</label>
+					<input id="pregen-z" name="centerZ" type="number" value="0" step="1" />
+				</div>
+				<div class="field">
+					<label for="pregen-radius">Radius in blocks</label>
+					<input id="pregen-radius" name="radius" type="number" min="16" step="1" bind:value={pregenRadius} />
+				</div>
+				<button class="button-primary" type="submit">Start</button>
+			</form>
+			<p class="muted small pregen-note">
+				About {pregenChunks.toLocaleString()} chunks. Generation is heavy work for the server; players notice it.
+			</p>
+		{:else}
+			<p class="muted small">Start the server to pre-generate chunks.</p>
+		{/if}
+
+		<form method="POST" action="?/chunkyAuto" use:enhance class="auto">
+			<input type="hidden" name="enabled" value={String(!data.chunky.pauseForPlayers)} />
+			<span class="small">
+				{#if data.chunky.english}
+					{data.chunky.pauseForPlayers
+						? 'Pre-generation pauses while anyone is online and continues when the server is empty.'
+						: 'Pre-generation runs whether or not anyone is online.'}
+				{:else}
+					Pausing while players are online needs Chunky set to English (language in config/chunky/config.json):
+					MineShell reads which tasks run from its messages.
+				{/if}
+			</span>
+			<button class="button-quiet" disabled={!data.chunky.english && !data.chunky.pauseForPlayers}>
+				{data.chunky.pauseForPlayers ? 'Run it regardless' : 'Pause while players are online'}
+			</button>
+		</form>
+		<p class="faint small">
+			To run it only at certain hours, add scheduled commands <code>chunky continue</code> and <code>chunky pause</code>
+			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings">server settings</a>.
+		</p>
+	</section>
+{/if}
+
 <section class="panel">
 	<h2>Replace the world</h2>
 	<p class="muted">
@@ -302,6 +481,74 @@
 </section>
 
 <style>
+	.pregen {
+		list-style: none;
+		margin: 0 0 var(--space-4);
+		padding: 0;
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.pregen li {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.pregen li.spread {
+		display: flex;
+	}
+
+	/* One task, one value: how much of the selection is generated. */
+	.meter {
+		height: 8px;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		overflow: hidden;
+	}
+
+	.meter span {
+		display: block;
+		height: 100%;
+		background: var(--accent);
+	}
+
+	.chunky-says {
+		white-space: pre-wrap;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		padding: var(--space-3);
+		font-size: 0.8rem;
+	}
+
+	.pregen-form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--space-3);
+	}
+
+	.pregen-form .field {
+		margin-bottom: 0;
+		flex: 0 1 10rem;
+	}
+
+	.pregen-note {
+		margin-top: var(--space-2);
+	}
+
+	.auto {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-top: var(--space-4);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--line);
+	}
+
 	.danger {
 		border-color: color-mix(in srgb, var(--error) 30%, var(--line));
 	}

@@ -118,8 +118,11 @@ re-proposed or built twice.
 
 ### Agreed
 
-- **Chunky integration**: pregeneration with progress, pause/resume, and a scheduler slot.
-  Not started.
+- **Chunky integration**: built (`chunky.ts`, World tab). Start a square or circle around a
+  center in any dimension, live progress (ETA, rate), pause, continue, cancel, continue
+  unfinished tasks, and pausing while players are online (MineShell's scheduler, English
+  Chunky only). Time windows: scheduled commands `chunky continue` / `chunky pause`.
+  Chunky has no 1.12 build.
 - **Console enhancements**: built. Level filters, "only players joining and leaving",
   search with highlighted matches, stack traces folded under their error, ANSI colour codes
   stripped (modern Forge), the server's lines about RCON connections hidden by default

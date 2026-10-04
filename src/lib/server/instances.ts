@@ -58,6 +58,7 @@ import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
 import { deleteMacros, getMacros, setMacros } from './macros';
+import { deleteChunkySettings } from './chunky';
 
 export class InstanceError extends Error {}
 
@@ -1278,6 +1279,7 @@ export async function deleteInstance(
 	// Kept in settings, not on the row, so nothing cascades: a server recreated
 	// under the same name would otherwise find the old one's commands.
 	deleteMacros(instance.id);
+	deleteChunkySettings(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'

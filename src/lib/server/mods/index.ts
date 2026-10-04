@@ -9,6 +9,7 @@ import { ftbProvider } from './modpacksch';
 import { curseforgeModProvider, curseforgeProvider } from './curseforge';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeJoin } from '../files';
+import { indexMods } from '../crashdiag';
 
 export * from './types';
 export { modrinthProvider, curseforgeProvider, curseforgeModProvider, ftbProvider };
@@ -64,6 +65,22 @@ export const DISABLED_SUFFIX = '.disabled';
 
 export function modsDir(instancePath: string): string {
 	return path.join(instancePath, 'mods');
+}
+
+/** Mods folder mtime + mod id -> installed; pages that ask on every poll (Spark, Chunky) stay cheap. */
+const installedCache = new Map<string, { mtimeMs: number; installed: boolean }>();
+
+/** Whether an enabled jar in mods/ declares this mod id (fabric.mod.json, mods.toml, mcmod.info). */
+export async function hasEnabledMod(instancePath: string, modId: string): Promise<boolean> {
+	const dir = modsDir(instancePath);
+	const stat = await fs.stat(dir).catch(() => null);
+	if (!stat) return false;
+	const key = `${dir}\0${modId}`;
+	const hit = installedCache.get(key);
+	if (hit && hit.mtimeMs === stat.mtimeMs) return hit.installed;
+	const installed = (await indexMods(dir)).some((jar) => jar.enabled && jar.ids.includes(modId));
+	installedCache.set(key, { mtimeMs: stat.mtimeMs, installed });
+	return installed;
 }
 
 export type ModRow = {
