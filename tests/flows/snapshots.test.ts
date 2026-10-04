@@ -246,15 +246,13 @@ describe('world tools', () => {
 		const file = await upload({
 			'My World/level.dat': 'uploaded',
 			'My World/region/r.1.1.mca': 'uploaded chunks',
-			'My World/session.lock': 'lock',
-			'My World/../../escape.txt': 'nope'
+			'My World/session.lock': 'lock'
 		});
 		await waitForTask(await replaceWorld(instance, file, { snapshot: false }));
 		const files = await tree(instance.path);
 		expect(files['world/level.dat']).toBe('uploaded');
 		expect(files['world/region/r.1.1.mca']).toBe('uploaded chunks');
 		expect(files['world/session.lock']).toBeUndefined();
-		expect(Object.keys(files).some((f) => f.includes('escape'))).toBe(false);
 		// The old nether went with the old world, and the upload is cleaned up.
 		expect(files['world_nether/DIM-1/region/r.0.0.mca']).toBeUndefined();
 		await expect(fs.access(file)).rejects.toThrow();
@@ -267,6 +265,17 @@ describe('world tools', () => {
 		await expect(replaceWorld(instance, file, { snapshot: true })).rejects.toThrow(/no level.dat/);
 		expect(await tree(instance.path)).toEqual(before);
 		expect(reload(instance.id).status).toBe('ready');
+	});
+
+	it('refuses a zip with an entry that climbs out of its folder', async () => {
+		// The test zips used to be built with adm-zip, which rewrote this name
+		// to escape.txt, so no test ever held a real one.
+		const instance = await instanceWithWorld();
+		const before = await tree(instance.path);
+		const file = await upload({ 'My World/level.dat': 'uploaded', 'My World/../../escape.txt': 'nope' });
+		await expect(replaceWorld(instance, file, { snapshot: false })).rejects.toThrow(/not a readable zip/);
+		expect(await tree(instance.path)).toEqual(before);
+		await expect(fs.access(path.join(path.dirname(instance.path), 'escape.txt'))).rejects.toThrow();
 	});
 
 	it('puts the world back wherever MineShell stopped during a change', async () => {

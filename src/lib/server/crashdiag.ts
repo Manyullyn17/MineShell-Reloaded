@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { inflateRawSync } from 'node:zlib';
+// With the extension: capture.mjs runs this file under plain node, which needs it.
+import { openZipBuffer, openZipFile, type ZipEntry } from './zip.ts';
 
 /**
  * Turns a failed server start into "mod X broke because Y", for every loader
@@ -14,100 +15,9 @@ import { inflateRawSync } from 'node:zlib';
  * attribution line) and which jar, if any, should have provided the missing
  * piece.
  *
- * Deliberately self-contained (node built-ins only) so it can be run against
- * saved logs outside the app.
+ * Deliberately self-contained (node built-ins and zip.ts only) so it can be run
+ * against saved logs outside the app.
  */
-
-// ------------------------------------------------------------------ zip I/O ---
-
-type ZipEntry = { name: string; method: number; compSize: number; offset: number };
-
-/** Central directory listing; reads a few KB instead of the whole jar. */
-function parseCentralDirectory(buf: Buffer, cdOffset: number, cdSize: number): ZipEntry[] {
-	const entries: ZipEntry[] = [];
-	let p = cdOffset;
-	const end = cdOffset + cdSize;
-	while (p + 46 <= end && buf.readUInt32LE(p) === 0x02014b50) {
-		const method = buf.readUInt16LE(p + 10);
-		const compSize = buf.readUInt32LE(p + 20);
-		const nameLen = buf.readUInt16LE(p + 28);
-		const extraLen = buf.readUInt16LE(p + 30);
-		const commentLen = buf.readUInt16LE(p + 32);
-		const offset = buf.readUInt32LE(p + 42);
-		entries.push({ name: buf.toString('utf8', p + 46, p + 46 + nameLen), method, compSize, offset });
-		p += 46 + nameLen + extraLen + commentLen;
-	}
-	return entries;
-}
-
-function findEocd(tail: Buffer): number {
-	for (let i = tail.length - 22; i >= 0; i--) if (tail.readUInt32LE(i) === 0x06054b50) return i;
-	return -1;
-}
-
-type ZipSource = {
-	entries: ZipEntry[];
-	read: (entry: ZipEntry) => Promise<Buffer>;
-};
-
-async function openZipFile(file: string): Promise<ZipSource | null> {
-	const handle = await fs.open(file, 'r');
-	try {
-		const { size } = await handle.stat();
-		const tailLen = Math.min(size, 65_557);
-		const tail = Buffer.alloc(tailLen);
-		await handle.read(tail, 0, tailLen, size - tailLen);
-		const eocd = findEocd(tail);
-		if (eocd < 0) return null;
-		const cdSize = tail.readUInt32LE(eocd + 12);
-		const cdOffset = tail.readUInt32LE(eocd + 16);
-		if (cdOffset === 0xffffffff) return null; // zip64; no mod jar is that big
-		const cd = Buffer.alloc(cdSize);
-		await handle.read(cd, 0, cdSize, cdOffset);
-		const entries = parseCentralDirectory(cd, 0, cdSize);
-		return {
-			entries,
-			read: async (entry) => {
-				const h = await fs.open(file, 'r');
-				try {
-					const header = Buffer.alloc(30);
-					await h.read(header, 0, 30, entry.offset);
-					const start = entry.offset + 30 + header.readUInt16LE(26) + header.readUInt16LE(28);
-					const data = Buffer.alloc(entry.compSize);
-					await h.read(data, 0, entry.compSize, start);
-					return entry.method === 8 ? inflateRawSync(data) : data;
-				} finally {
-					await h.close();
-				}
-			}
-		};
-	} finally {
-		await handle.close();
-	}
-}
-
-/** The names in a zip's central directory; null when it is not a readable zip. */
-export async function zipEntryNames(file: string): Promise<string[] | null> {
-	const zip = await openZipFile(file).catch(() => null);
-	return zip ? zip.entries.map((e) => e.name) : null;
-}
-
-function openZipBuffer(buf: Buffer): ZipSource | null {
-	const eocd = findEocd(buf.subarray(Math.max(0, buf.length - 65_557)));
-	if (eocd < 0) return null;
-	const base = Math.max(0, buf.length - 65_557);
-	const cdSize = buf.readUInt32LE(base + eocd + 12);
-	const cdOffset = buf.readUInt32LE(base + eocd + 16);
-	const entries = parseCentralDirectory(buf, cdOffset, cdSize);
-	return {
-		entries,
-		read: async (entry) => {
-			const start = entry.offset + 30 + buf.readUInt16LE(entry.offset + 26) + buf.readUInt16LE(entry.offset + 28);
-			const data = buf.subarray(start, start + entry.compSize);
-			return entry.method === 8 ? inflateRawSync(data) : Buffer.from(data);
-		}
-	};
-}
 
 // ---------------------------------------------------------------- mod index ---
 
@@ -128,6 +38,9 @@ export type ModJar = {
 };
 
 const jarCache = new Map<string, { key: string; jar: Omit<ModJar, 'fileName' | 'enabled'> }>();
+
+/** A jar on disk or nested in another one. */
+type ZipSource = { entries: ZipEntry[]; read: (entry: ZipEntry) => Buffer | Promise<Buffer> };
 
 async function readText(zip: ZipSource, name: string): Promise<string | null> {
 	const entry = zip.entries.find((e) => e.name === name);

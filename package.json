@@ -21,7 +21,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
     "better-sqlite3": "^13.0.3",
     "dompurify": "^3.1.6",
     "drizzle-orm": "^0.36.0",
@@ -34,7 +33,6 @@
     "@sveltejs/adapter-node": "^5.2.9",
     "@sveltejs/kit": "^2.8.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
-    "@types/adm-zip": "^0.5.5",
     "@types/better-sqlite3": "^7.6.11",
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.1",

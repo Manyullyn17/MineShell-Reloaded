@@ -1,4 +1,3 @@
-import AdmZip from 'adm-zip';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { downloadFile, fetchJson } from '../download';
@@ -7,6 +6,7 @@ import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import type { ModloaderId } from '../modloaders';
 import type { TaskHandle } from '../tasks';
 import { TMP_DIR } from '../config';
+import { openZipBuffer, type ZipArchive } from '../zip';
 
 /**
  * Both supported pack formats are zips with a manifest plus an `overrides/`
@@ -28,7 +28,7 @@ export type ParsedPack = {
 	/** Entries inside the archive to copy verbatim. */
 	overrideEntries: string[];
 	/** Null when the pack came from an API file list rather than an archive. */
-	zip: AdmZip | null;
+	zip: ZipArchive | null;
 	/**
 	 * File lists (modpacks.ch) ship configs, scripts and bundled jars as one
 	 * `overrides.zip` at the instance root rather than as separate files.
@@ -83,10 +83,10 @@ function loaderFromMrDependencies(deps: Record<string, string>): {
 	return { loader: 'vanilla', version: null, minecraft };
 }
 
-function parseMrpack(zip: AdmZip): ParsedPack {
-	const entry = zip.getEntry('modrinth.index.json');
-	if (!entry) throw new Error('This .mrpack has no modrinth.index.json.');
-	const index = JSON.parse(zip.readAsText(entry)) as MrIndex;
+function parseMrpack(zip: ZipArchive): ParsedPack {
+	const text = zip.readText('modrinth.index.json');
+	if (!text) throw new Error('This .mrpack has no modrinth.index.json.');
+	const index = JSON.parse(text) as MrIndex;
 	const { loader, version, minecraft } = loaderFromMrDependencies(index.dependencies ?? {});
 
 	const downloads: PackDownload[] = index.files
@@ -139,10 +139,10 @@ function loaderFromCfId(id: string): { loader: ModloaderId; version: string | nu
 	return { loader: loader ?? 'vanilla', version };
 }
 
-function parseCurseforge(zip: AdmZip): ParsedPack {
-	const entry = zip.getEntry('manifest.json');
-	if (!entry) throw new Error('This archive has no manifest.json.');
-	const manifest = JSON.parse(zip.readAsText(entry)) as CfManifest;
+function parseCurseforge(zip: ZipArchive): ParsedPack {
+	const text = zip.readText('manifest.json');
+	if (!text) throw new Error('This archive has no manifest.json.');
+	const manifest = JSON.parse(text) as CfManifest;
 	const primary =
 		manifest.minecraft.modLoaders.find((l) => l.primary) ?? manifest.minecraft.modLoaders[0];
 	const { loader, version } = loaderFromCfId(primary?.id ?? '');
@@ -169,19 +169,19 @@ function parseCurseforge(zip: AdmZip): ParsedPack {
 	};
 }
 
-function zipEntriesUnder(zip: AdmZip, prefixes: string[]): string[] {
-	return zip
-		.getEntries()
-		.filter((e) => !e.isDirectory && prefixes.some((p) => e.entryName.startsWith(p)))
-		.map((e) => e.entryName);
+function zipEntriesUnder(zip: ZipArchive, prefixes: string[]): string[] {
+	return zip.entries
+		.filter((e) => !e.name.endsWith('/') && prefixes.some((p) => e.name.startsWith(p)))
+		.map((e) => e.name);
 }
 
 // ------------------------------------------------------------------ shared ---
 
 export function parsePack(buffer: Buffer): ParsedPack {
-	const zip = new AdmZip(buffer);
-	if (zip.getEntry('modrinth.index.json')) return parseMrpack(zip);
-	if (zip.getEntry('manifest.json')) return parseCurseforge(zip);
+	const zip = openZipBuffer(buffer);
+	const names = new Set(zip?.entries.map((e) => e.name));
+	if (zip && names.has('modrinth.index.json')) return parseMrpack(zip);
+	if (zip && names.has('manifest.json')) return parseCurseforge(zip);
 	throw new Error(
 		'Unrecognised archive. MineShell reads Modrinth .mrpack files and CurseForge pack zips.'
 	);
@@ -424,7 +424,8 @@ export async function loadOverridesArchive(pack: ParsedPack, task?: TaskHandle):
 				if (total) task?.setProgress((received / total) * 100, 'Downloading pack overrides');
 			}
 		});
-		pack.zip = new AdmZip(file);
+		pack.zip = openZipBuffer(await fs.readFile(file));
+		if (!pack.zip) throw new Error('The pack overrides download is not a zip archive.');
 		pack.overrideEntries = zipEntriesUnder(pack.zip, ['overrides/']);
 	} finally {
 		await fs.rm(file, { force: true });

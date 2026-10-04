@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import AdmZip from 'adm-zip';
 import type { ServerInstance } from './db/schema';
 import type { TaskHandle } from './tasks';
 import {
@@ -15,6 +14,7 @@ import {
 } from './mods';
 import { CLEANROOM_MINECRAFT, cleanroomJavaMajor } from '$lib/shared/cleanroom';
 import { compareVersions } from './java';
+import { openZipFile } from './zip';
 
 /**
  * Moving a Forge 1.12.2 pack onto Cleanroom, following Cleanroom's own
@@ -161,19 +161,19 @@ export type JarInfo = {
 };
 
 /**
- * Reading mcmod.info means opening every jar, which adm-zip does by loading
- * the whole file; caching by size + mtime keeps repeat page loads cheap.
+ * Reading mcmod.info means opening every jar (its central directory and that
+ * one entry); caching by size + mtime keeps repeat page loads cheap.
  */
 const jarCache = new Map<string, { key: string; modids: string[]; names: string[] }>();
 
-function readMcmodInfo(file: string): { modids: string[]; names: string[] } {
+async function readMcmodInfo(file: string): Promise<{ modids: string[]; names: string[] }> {
 	try {
-		const zip = new AdmZip(file);
-		const entry = zip.getEntry('mcmod.info');
-		if (!entry) return { modids: [], names: [] };
+		const zip = await openZipFile(file);
+		const entry = zip?.entries.find((e) => e.name === 'mcmod.info');
+		if (!zip || !entry) return { modids: [], names: [] };
 		// Plenty of mcmod.info files are not valid JSON (raw newlines in
 		// descriptions), so pull the two fields out directly.
-		const text = entry.getData().toString('utf8');
+		const text = (await zip.read(entry)).toString('utf8');
 		return {
 			modids: [...text.matchAll(/"modid"\s*:\s*"([^"]+)"/g)].map((m) => m[1].toLowerCase()),
 			names: [...text.matchAll(/"name"\s*:\s*"([^"]+)"/g)].map((m) => m[1])
@@ -201,7 +201,7 @@ export async function scanModJars(instancePath: string): Promise<JarInfo[]> {
 		const key = `${stat.size}:${stat.mtimeMs}`;
 		let info = jarCache.get(full);
 		if (!info || info.key !== key) {
-			info = { key, ...readMcmodInfo(full) };
+			info = { key, ...(await readMcmodInfo(full)) };
 			jarCache.set(full, info);
 		}
 		jars.push({ fileName, enabled, modids: info.modids, names: info.names });

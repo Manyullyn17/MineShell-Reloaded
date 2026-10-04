@@ -42,7 +42,7 @@ export async function serverWorldName(root: string): Promise<string> {
 export function packLevelName(pack: ParsedPack): string | null {
 	for (const prefix of ['server-overrides/', 'overrides/']) {
 		const entry = pack.overrideEntries.find((e) => e === `${prefix}server.properties`);
-		const text = entry ? pack.zip?.readAsText(entry) : null;
+		const text = entry ? pack.zip?.readText(entry) : null;
 		if (text) {
 			const name = cleanWorldPath(parseProperties(text).values['level-name']);
 			if (name) return name;

@@ -5,7 +5,7 @@ import { db } from '../db';
 import { instanceDatapacks, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
 import { serverWorldName } from '../packworld';
-import { zipEntryNames } from '../crashdiag';
+import { zipEntryNames } from '../zip';
 import { child, parseNbt } from '../nbt';
 import type { ProjectVersion, SourceId } from './types';
 
