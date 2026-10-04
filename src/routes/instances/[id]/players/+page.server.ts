@@ -6,6 +6,7 @@ import {
 	kickPlayer,
 	loadPlayerLists,
 	removePlayer,
+	setOpOptions,
 	setWhitelistEnforced,
 	type ListName
 } from '$lib/server/players';
@@ -21,7 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 function listFrom(form: FormData): ListName {
 	const value = String(form.get('list') ?? 'whitelist');
-	return (['whitelist', 'ops', 'bans'] as ListName[]).includes(value as ListName)
+	return (['whitelist', 'ops', 'bans', 'ipBans'] as ListName[]).includes(value as ListName)
 		? (value as ListName)
 		: 'whitelist';
 }
@@ -30,7 +31,20 @@ export const actions: Actions = {
 	add: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const result = await addPlayer(instance, listFrom(form), String(form.get('name') ?? ''));
+		const result = await addPlayer(instance, listFrom(form), String(form.get('name') ?? ''), {
+			reason: String(form.get('reason') ?? ''),
+			level: Number(form.get('level') ?? 4)
+		});
+		return result.ok ? result : fail(400, result);
+	},
+
+	opOptions: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const result = await setOpOptions(instance, String(form.get('name') ?? ''), {
+			level: Number(form.get('level')),
+			bypassesPlayerLimit: form.get('bypass') === 'on'
+		});
 		return result.ok ? result : fail(400, result);
 	},
 

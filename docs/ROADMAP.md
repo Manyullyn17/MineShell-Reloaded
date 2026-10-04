@@ -124,9 +124,10 @@ re-proposed or built twice.
   and colouring by log level (`Console.svelte`). Missing: level filters, search, collapsed
   stack traces, join/leave highlighting, macros, persistent history, autocomplete. The Logs
   tab (journal runs and `logs/`/`crash-reports/` files) has no search or filter either.
-- **Ban UI, the rest.** The Players tab already edits the whitelist, ops and bans
-  (`players.ts`). Missing: a reason when banning (it always writes "Banned by an
-  operator."), IP bans (`banned-ips.json` is not read or written), and op levels.
+- **Ban UI, the rest**: built. Ban reasons, IP bans (`banned-ips.json`; by address while
+  stopped, by online player while running), Ban / Ban IP next to Kick, operator levels and
+  player-limit bypass (picked and changed only while stopped: vanilla has no command for
+  them and keeps ops.json in memory).
 - **Disk usage breakdown.** Only a total per server exists (`instanceDiskUsage`, cached for
   60 s). Missing: the world split by dimension, logs, snapshots, `old-configs/`,
   `.mineshell/` backups, and cleanup suggestions. Modded dimensions live in `DIM*` /
