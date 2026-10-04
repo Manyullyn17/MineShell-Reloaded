@@ -8,9 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * built on the same moves (world.ts): reset, replace, restore.
  */
 
-const { changeLoaderVersion } = await import('$lib/server/instances');
-const { LOADERS } = await import('$lib/server/modloaders');
-const { listOperations } = await import('$lib/server/operations');
+const { changeLoaderVersion } = await import('#lib/server/instances.js');
+const { LOADERS } = await import('#lib/server/modloaders.js');
+const { listOperations } = await import('#lib/server/operations.js');
 const {
 	decideSnapshot,
 	listSnapshots,
@@ -20,12 +20,12 @@ const {
 	DEFAULT_POLICY,
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
-} = await import('$lib/server/snapshots');
+} = await import('#lib/server/snapshots.js');
 const { replaceWorld, resetWorld, restoreSnapshot, snapshotNow, zipWorlds, worldRootIn, entryTarget } = await import(
-	'$lib/server/world'
+	'#lib/server/world.js'
 );
-const { readProperties } = await import('$lib/server/properties');
-const { TMP_DIR } = await import('$lib/server/config');
+const { readProperties } = await import('#lib/server/properties.js');
+const { TMP_DIR } = await import('#lib/server/config.js');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { zipBuffer } = await import('../helpers/fs');

@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance, InstanceError } from '$lib/server/instances';
-import { planPackChange } from '$lib/server/packchange';
+import { getInstance, InstanceError } from '#lib/server/instances.js';
+import { planPackChange } from '#lib/server/packchange.js';
 
 /**
  * Preview of moving the instance's pack to another version. Read-only, but

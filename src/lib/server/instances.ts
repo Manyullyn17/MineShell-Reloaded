@@ -51,7 +51,7 @@ import {
 	OperationInProgressError,
 	type Journal
 } from './operations';
-import { canUseCleanroom, cleanroomJavaMajor } from '$lib/shared/cleanroom';
+import { canUseCleanroom, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { directorySize } from './files';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { installJava, type JavaVendor } from './javadownload';

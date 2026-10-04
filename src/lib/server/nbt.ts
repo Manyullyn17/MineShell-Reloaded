@@ -1,5 +1,5 @@
 import zlib from 'node:zlib';
-import type { TagType } from '$lib/shared/nbt';
+import type { TagType } from '#lib/shared/nbt.js';
 
 /**
  * Minecraft's NBT: big-endian, named tags, strings in Java's modified UTF-8.

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { db } from '$lib/server/db';
-import { settings } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { settings } from '#lib/server/db/schema.js';
 import {
 	decideSnapshot,
 	DEFAULT_POLICY,
@@ -14,8 +14,8 @@ import {
 	snapshotsToDelete,
 	takeSnapshot,
 	type Snapshot
-} from '$lib/server/snapshots';
-import { snapshotNow } from '$lib/server/world';
+} from '#lib/server/snapshots.js';
+import { snapshotNow } from '#lib/server/world.js';
 import { createInstance, systemdStopped } from '../helpers/instances';
 
 const MB = 1024 * 1024;

@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { previewProviderPack } from '$lib/server/packs/preview';
+import { previewProviderPack } from '#lib/server/packs/preview.js';
 
 /**
  * The mods a pack version installs, with client-only ones marked, for the

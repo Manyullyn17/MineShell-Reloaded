@@ -6,10 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Updating mods and switching one mod's version (modupdates.ts), against a fake Modrinth. */
 
-const { checkModUpdates, changeModVersions, listModVersions, pickUpdate } = await import('$lib/server/modupdates');
-const { db } = await import('$lib/server/db');
-const { instanceMods, mods } = await import('$lib/server/db/schema');
-const { listSnapshots } = await import('$lib/server/snapshots');
+const { checkModUpdates, changeModVersions, listModVersions, pickUpdate } = await import('#lib/server/modupdates.js');
+const { db } = await import('#lib/server/db/index.js');
+const { instanceMods, mods } = await import('#lib/server/db/schema.js');
+const { listSnapshots } = await import('#lib/server/snapshots.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { useRecordedHttp } = await import('../helpers/http');

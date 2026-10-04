@@ -3,8 +3,8 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rcon = vi.hoisted(() => ({ answers: {} as Record<string, string | (() => string)>, down: false }));
-vi.mock('$lib/server/rcon', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/rcon')>()),
+vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		if (rcon.down) throw new Error('connection refused');
 		return commands.map((c) => {
@@ -14,11 +14,11 @@ vi.mock('$lib/server/rcon', async (importOriginal) => ({
 	})
 }));
 
-const { listPlayerData, listBackups, readPlayerData, restorePlayerBackup, savePlayerData, playerView } = await import('$lib/server/playerdata');
-const { writeNbt } = await import('$lib/server/nbt');
-const { addCustomField, copyCustomFields, listCustomFields, remapCustomField, removeCustomField } = await import('$lib/server/playerfields');
-const { encryptSecret } = await import('$lib/server/crypto');
-const { invalidateUnitState } = await import('$lib/server/systemd');
+const { listPlayerData, listBackups, readPlayerData, restorePlayerBackup, savePlayerData, playerView } = await import('#lib/server/playerdata.js');
+const { writeNbt } = await import('#lib/server/nbt.js');
+const { addCustomField, copyCustomFields, listCustomFields, remapCustomField, removeCustomField } = await import('#lib/server/playerfields.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
+const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, systemdStopped } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 

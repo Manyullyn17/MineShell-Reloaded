@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getModProvider, getProvider } from '$lib/server/mods';
+import { getModProvider, getProvider } from '#lib/server/mods/index.js';
 
 /**
  * Full description and changelog for one project/version.

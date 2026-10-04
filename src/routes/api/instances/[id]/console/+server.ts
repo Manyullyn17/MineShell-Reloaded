@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance } from '$lib/server/instances';
-import { subscribeConsole, type ConsoleSubscription } from '$lib/server/journal';
+import { getInstance } from '#lib/server/instances.js';
+import { subscribeConsole, type ConsoleSubscription } from '#lib/server/journal.js';
 
 /**
  * Server-Sent Events rather than a WebSocket: SvelteKit serves this from a plain

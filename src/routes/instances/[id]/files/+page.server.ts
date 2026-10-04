@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '$lib/server/instances';
+import { requireInstance } from '#lib/server/instances.js';
 import {
 	createDirectory,
 	deleteEntry,
@@ -10,7 +10,7 @@ import {
 	saveUpload,
 	writeTextFile,
 	type DirEntry
-} from '$lib/server/files';
+} from '#lib/server/files.js';
 import path from 'node:path';
 
 export const load: PageServerLoad = async ({ params, url }) => {

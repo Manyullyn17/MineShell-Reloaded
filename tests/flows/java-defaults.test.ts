@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { db } from '$lib/server/db';
-import { javaRuntimes, settings } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { javaRuntimes, settings } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { getJavaDefaults, resolveJava, setJavaDefault } from '$lib/server/java';
+import { getJavaDefaults, resolveJava, setJavaDefault } from '#lib/server/java.js';
 import { clearJava } from '../helpers/instances';
 
 function install(path: string, majorVersion: number, versionString: string) {

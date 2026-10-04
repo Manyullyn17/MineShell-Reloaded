@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Flash from '$lib/components/Flash.svelte';
-	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
-	import PackChangePanel from '$lib/components/PackChangePanel.svelte';
-	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
-	import JavaPrompt from '$lib/components/JavaPrompt.svelte';
-	import RestartFields from '$lib/components/RestartFields.svelte';
-	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
-	import SnapshotPolicyFields from '$lib/components/SnapshotPolicyFields.svelte';
-	import { formatBytes } from '$lib/shared/format';
-	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
+	import Flash from '#lib/components/Flash.svelte';
+	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
+	import PackChangePanel from '#lib/components/PackChangePanel.svelte';
+	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
+	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
+	import RestartFields from '#lib/components/RestartFields.svelte';
+	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
+	import { formatBytes } from '#lib/shared/format.js';
+	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
 
 	let { data, form } = $props();
 

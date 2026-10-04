@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { requireInstance } from '$lib/server/instances';
-import { listRuns, readRun } from '$lib/server/journal';
-import { listLogFiles, readLogFile } from '$lib/server/logfiles';
-import { diagnoseRun, type Diagnosis } from '$lib/server/crashdiag';
-import { modsDir } from '$lib/server/mods';
+import { requireInstance } from '#lib/server/instances.js';
+import { listRuns, readRun } from '#lib/server/journal.js';
+import { listLogFiles, readLogFile } from '#lib/server/logfiles.js';
+import { diagnoseRun, type Diagnosis } from '#lib/server/crashdiag.js';
+import { modsDir } from '#lib/server/mods/index.js';
 
 /**
  * Earlier runs (from the journal, as long as it keeps them) and the server's

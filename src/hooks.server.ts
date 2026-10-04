@@ -1,6 +1,6 @@
-import type { Handle } from '@sveltejs/kit';
-import { boot } from '$lib/server/boot';
-import { guard } from '$lib/server/guard';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { boot } from '#lib/server/boot.js';
+import { guard } from '#lib/server/guard.js';
 
 boot();
 

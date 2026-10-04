@@ -1,9 +1,9 @@
 <script lang="ts">
 	import '../app.css';
-	import { page } from '$app/stores';
-	import { THEMES, THEME_STORAGE_KEY } from '$lib/shared/themes';
-	import { describeState } from '$lib/shared/format';
-	import TaskToasts from '$lib/components/TaskToasts.svelte';
+	import { page } from '$app/state';
+	import { THEMES, THEME_STORAGE_KEY } from '#lib/shared/themes.js';
+	import { describeState } from '#lib/shared/format.js';
+	import TaskToasts from '#lib/components/TaskToasts.svelte';
 
 	let { data, children } = $props();
 
@@ -21,7 +21,7 @@
 		localStorage.setItem(THEME_STORAGE_KEY, next);
 	}
 
-	const bare = $derived($page.url.pathname === '/login' || $page.url.pathname === '/setup');
+	const bare = $derived(page.url.pathname === '/login' || page.url.pathname === '/setup');
 	const instances = $derived(data.railInstances ?? []);
 </script>
 
@@ -64,7 +64,7 @@
 
 		<nav class="rail" aria-label="Servers">
 			<div class="rail-section">
-				<a class="rail-link" class:current={$page.url.pathname === '/'} href="/">Overview</a>
+				<a class="rail-link" class:current={page.url.pathname === '/'} href="/">Overview</a>
 			</div>
 
 			<div class="rail-section">
@@ -81,7 +81,7 @@
 							<li>
 								<a
 									class="rail-instance"
-									class:current={$page.url.pathname.startsWith(`/instances/${instance.id}`)}
+									class:current={page.url.pathname.startsWith(`/instances/${instance.id}`)}
 									data-tone={state.tone}
 									href="/instances/{instance.id}"
 									onclick={() => (railOpen = false)}
@@ -99,12 +99,12 @@
 			</div>
 
 			<div class="rail-section rail-bottom">
-				<a class="rail-link" class:current={$page.url.pathname === '/tasks'} href="/tasks">
+				<a class="rail-link" class:current={page.url.pathname === '/tasks'} href="/tasks">
 					Activity
 				</a>
 				<a
 					class="rail-link"
-					class:current={$page.url.pathname.startsWith('/settings')}
+					class:current={page.url.pathname.startsWith('/settings')}
 					href="/settings"
 				>
 					Settings

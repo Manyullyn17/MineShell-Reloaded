@@ -1,6 +1,6 @@
 <script lang="ts">
 	import NbtNode from './NbtNode.svelte';
-	import { childMatches, selfMatches, treeToSnbt, type Path, type TreeTag } from '$lib/shared/nbt';
+	import { childMatches, selfMatches, treeToSnbt, type Path, type TreeTag } from '#lib/shared/nbt.js';
 
 	/**
 	 * One entry of an NBT tree: a value that can be edited or removed in place,

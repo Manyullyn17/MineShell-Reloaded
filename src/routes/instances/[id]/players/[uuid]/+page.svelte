@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import Flash from '$lib/components/Flash.svelte';
-	import NbtNode from '$lib/components/NbtNode.svelte';
-	import { formatDateTime } from '$lib/shared/format';
-	import { countMatches, type Path, type TreeTag } from '$lib/shared/nbt';
+	import Flash from '#lib/components/Flash.svelte';
+	import NbtNode from '#lib/components/NbtNode.svelte';
+	import { formatDateTime } from '#lib/shared/format.js';
+	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
 
 	let { data } = $props();
 

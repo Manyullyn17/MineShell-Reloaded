@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getModProvider, getProvider } from '$lib/server/mods';
+import { getModProvider, getProvider } from '#lib/server/mods/index.js';
 
 /** The filter groups a browse sidebar should render for one source and kind. */
 export const GET: RequestHandler = async ({ url }) => {

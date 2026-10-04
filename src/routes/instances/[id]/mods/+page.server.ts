@@ -1,9 +1,9 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { InstanceError, requireInstance, summarise } from '$lib/server/instances';
-import { changeModVersions, syncInstanceMods } from '$lib/server/modupdates';
-import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
-import type { ServerInstance } from '$lib/server/db/schema';
+import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
+import { changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
+import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
+import type { ServerInstance } from '#lib/server/db/schema.js';
 import {
 	deleteMod,
 	getModProvider,
@@ -13,12 +13,12 @@ import {
 	setModEnabled,
 	setModLocked,
 	trackManualJar
-} from '$lib/server/mods';
-import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '$lib/server/modloaders';
-import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '$lib/server/mods/datapacks';
-import { saveUpload } from '$lib/server/files';
-import { db } from '$lib/server/db';
-import { serverInstances } from '$lib/server/db/schema';
+} from '#lib/server/mods/index.js';
+import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '#lib/server/modloaders.js';
+import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
+import { saveUpload } from '#lib/server/files.js';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import path from 'node:path';
 

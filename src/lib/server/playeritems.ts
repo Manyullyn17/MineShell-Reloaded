@@ -1,5 +1,5 @@
 import { child, num, removeChild, setChild, str, type Compound, type Tag } from './nbt';
-import type { Path } from '$lib/shared/nbt';
+import type { Path } from '#lib/shared/nbt.js';
 
 /**
  * Items inside NBT: what they show (fields like name, lore, enchantments),

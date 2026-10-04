@@ -6,7 +6,7 @@
 		cleanroomJavaMajor,
 		recommendedForForgePacks,
 		usesCleanMix
-	} from '$lib/shared/cleanroom';
+	} from '#lib/shared/cleanroom.js';
 
 	/**
 	 * Cleanroom version picker with a Java check, shared by the pack install

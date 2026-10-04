@@ -2,10 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyPrune, inhabitedTime, planPrune } from '$lib/server/chunkprune';
-import { parseNbt, writeNbt, type Tag } from '$lib/server/nbt';
-import { listSnapshots } from '$lib/server/snapshots';
-import { countPrunable, lastPruneCount, pruneChunks, restoreSnapshot } from '$lib/server/world';
+import { applyPrune, inhabitedTime, planPrune } from '#lib/server/chunkprune.js';
+import { parseNbt, writeNbt, type Tag } from '#lib/server/nbt.js';
+import { listSnapshots } from '#lib/server/snapshots.js';
+import { countPrunable, lastPruneCount, pruneChunks, restoreSnapshot } from '#lib/server/world.js';
 import { createInstance, systemdStopped, tree, waitForTask } from '../helpers/instances';
 import { restartMineShell, runAndDieAtMove } from '../helpers/crash';
 

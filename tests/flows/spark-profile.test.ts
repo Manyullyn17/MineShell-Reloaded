@@ -12,8 +12,8 @@ const rcon = vi.hoisted(() => ({
 	answers: {} as Record<string, string>,
 	after: {} as Record<string, () => Promise<void> | void>
 }));
-vi.mock('$lib/server/rcon', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/rcon')>()),
+vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		rcon.commands.push(...commands);
 		for (const c of commands) {
@@ -25,11 +25,11 @@ vi.mock('$lib/server/rcon', async (importOriginal) => ({
 }));
 
 const { activeProfile, cancelProfile, hasSpark, sparkUploads, startProfile, stopProfile, SparkError } = await import(
-	'$lib/server/spark'
+	'#lib/server/spark.js'
 );
-const { bus } = await import('$lib/server/events');
-const { encryptSecret } = await import('$lib/server/crypto');
-const { invalidateUnitState } = await import('$lib/server/systemd');
+const { bus } = await import('#lib/server/events.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
+const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 const { writeJar } = await import('../helpers/fs');

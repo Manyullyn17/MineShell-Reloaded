@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance, InstanceError } from '$lib/server/instances';
-import { listModVersions, previewDependencies } from '$lib/server/modupdates';
+import { getInstance, InstanceError } from '#lib/server/instances.js';
+import { listModVersions, previewDependencies } from '#lib/server/modupdates.js';
 
 /**
  * The versions one installed mod can switch to, older ones included; with

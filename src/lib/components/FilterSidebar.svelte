@@ -8,7 +8,7 @@
 	 * "category" group are rendered identically. The caller decides what
 	 * groups exist and what to do with the selections.
 	 */
-	import { fitToViewport } from '$lib/shared/fitToViewport';
+	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 
 	type FilterGroup = { id: string; label: string; options: { value: string; label: string }[] };
 

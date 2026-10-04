@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '$lib/server/instances';
+import { requireInstance } from '#lib/server/instances.js';
 import {
 	listBackups,
 	onlinePlayerIds,
@@ -10,8 +10,8 @@ import {
 	readPlayerData,
 	restorePlayerBackup,
 	savePlayerData
-} from '$lib/server/playerdata';
-import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '$lib/server/playerfields';
+} from '#lib/server/playerdata.js';
+import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '#lib/server/playerfields.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

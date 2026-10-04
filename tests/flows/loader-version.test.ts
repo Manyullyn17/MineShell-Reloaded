@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { changeLoaderVersion } from '$lib/server/instances';
-import { LOADERS } from '$lib/server/modloaders';
-import { UNITS_DIR } from '$lib/server/config';
-import { invalidateUnitState } from '$lib/server/systemd';
+import { changeLoaderVersion } from '#lib/server/instances.js';
+import { LOADERS } from '#lib/server/modloaders.js';
+import { UNITS_DIR } from '#lib/server/config.js';
+import { invalidateUnitState } from '#lib/server/systemd.js';
 import { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } from '../helpers/instances';
 import { fakeProcesses } from '../helpers/process';
 

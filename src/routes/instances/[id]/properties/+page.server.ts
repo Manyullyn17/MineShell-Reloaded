@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance, summarise, syncPortsToProperties } from '$lib/server/instances';
+import { requireInstance, summarise, syncPortsToProperties } from '#lib/server/instances.js';
 import {
 	PROPERTY_GROUPS,
 	PROPERTY_SCHEMA,
@@ -12,11 +12,11 @@ import {
 	serialiseProperties,
 	levelTypeOptionsFor,
 	propertiesFromForm
-} from '$lib/server/properties';
-import { db } from '$lib/server/db';
-import { serverInstances } from '$lib/server/db/schema';
+} from '#lib/server/properties.js';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { portConflict } from '$lib/server/ports';
+import { portConflict } from '#lib/server/ports.js';
 
 /** Keys MineShell owns; editing them here would desynchronise the DB. */
 const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port']);

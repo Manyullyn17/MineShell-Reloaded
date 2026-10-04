@@ -3,20 +3,20 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 // The download writes a stand-in file; no network in tests.
-vi.mock('$lib/server/download', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/download')>()),
+vi.mock('#lib/server/download.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/download.js')>()),
 	downloadFile: vi.fn(async (url: string, destination: string) => {
 		await fs.mkdir(path.dirname(destination), { recursive: true });
 		await fs.writeFile(destination, `zip from ${url}`);
 	})
 }));
 
-const { DatapackInUseError, installDatapackVersion, listDatapacks, removeDatapack } = await import('$lib/server/mods/datapacks');
-const { writeNbt } = await import('$lib/server/nbt');
+const { DatapackInUseError, installDatapackVersion, listDatapacks, removeDatapack } = await import('#lib/server/mods/datapacks.js');
+const { writeNbt } = await import('#lib/server/nbt.js');
 const { zipBuffer } = await import('../helpers/fs');
 const { createInstance } = await import('../helpers/instances');
-const { db } = await import('$lib/server/db');
-const { serverInstances } = await import('$lib/server/db/schema');
+const { db } = await import('#lib/server/db/index.js');
+const { serverInstances } = await import('#lib/server/db/schema.js');
 const { eq } = await import('drizzle-orm');
 
 const PROJECT = { id: 'bxa7yl3z', slug: 'terralith', name: 'Terralith', projectUrl: 'https://modrinth.com/project/terralith', iconUrl: null };

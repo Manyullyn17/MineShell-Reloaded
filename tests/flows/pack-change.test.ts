@@ -2,9 +2,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import type { Modloader } from '$lib/server/modloaders';
-import type { ParsedPack } from '$lib/server/packs';
-import type { ModProvider, ProjectVersion } from '$lib/server/mods';
+import type { Modloader } from '#lib/server/modloaders.js';
+import type { ParsedPack } from '#lib/server/packs/index.js';
+import type { ModProvider, ProjectVersion } from '#lib/server/mods/index.js';
 
 /**
  * Pack version change, end to end on an instance installed by the real pack
@@ -13,7 +13,7 @@ import type { ModProvider, ProjectVersion } from '$lib/server/mods';
  */
 
 const PACKS: Record<string, () => ParsedPack> = {};
-vi.mock('$lib/server/packs/resolve', () => ({
+vi.mock('#lib/server/packs/resolve.js', () => ({
 	resolveProviderPack: async (_source: string, _project: string, versionId: string) => ({
 		pack: PACKS[versionId](),
 		projectName: 'Test Pack'
@@ -44,8 +44,8 @@ const fakeModrinth: Partial<ModProvider> = {
 };
 // Lets a test make re-tracking mods (after the change is committed) fail.
 const syncControl = vi.hoisted(() => ({ fail: false }));
-vi.mock('$lib/server/mods', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/server/mods')>();
+vi.mock('#lib/server/mods/index.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/server/mods/index.js')>();
 	return {
 		...actual,
 		getModProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getModProvider(id)),
@@ -54,18 +54,18 @@ vi.mock('$lib/server/mods', async (importOriginal) => {
 	};
 });
 
-const { createFromPack } = await import('$lib/server/instances');
-const { planPackChange, applyPackChange } = await import('$lib/server/packchange');
-const { recoverInterruptedOperations } = await import('$lib/server/recovery');
-const { listOperations } = await import('$lib/server/operations');
-const { db } = await import('$lib/server/db');
-const { operations } = await import('$lib/server/db/schema');
+const { createFromPack } = await import('#lib/server/instances.js');
+const { planPackChange, applyPackChange } = await import('#lib/server/packchange.js');
+const { recoverInterruptedOperations } = await import('#lib/server/recovery.js');
+const { listOperations } = await import('#lib/server/operations.js');
+const { db } = await import('#lib/server/db/index.js');
+const { operations } = await import('#lib/server/db/schema.js');
 const { hangForever, restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
-const { LOADERS } = await import('$lib/server/modloaders');
-const { packFromFileList } = await import('$lib/server/packs');
-const { recordInstanceMod, setModEnabled, upsertMod } = await import('$lib/server/mods');
-const { patchProperties, readProperties } = await import('$lib/server/properties');
-const { serverInstances } = await import('$lib/server/db/schema');
+const { LOADERS } = await import('#lib/server/modloaders.js');
+const { packFromFileList } = await import('#lib/server/packs/index.js');
+const { recordInstanceMod, setModEnabled, upsertMod } = await import('#lib/server/mods/index.js');
+const { patchProperties, readProperties } = await import('#lib/server/properties.js');
+const { serverInstances } = await import('#lib/server/db/schema.js');
 const { eq } = await import('drizzle-orm');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');

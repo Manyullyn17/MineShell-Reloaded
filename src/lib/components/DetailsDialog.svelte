@@ -7,7 +7,7 @@
 	 */
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
-	import { fixLink } from '$lib/shared/links';
+	import { fixLink } from '#lib/shared/links.js';
 
 	function renderMarkdown(text: string, base: string | null): string {
 		// CurseForge's HTML-to-Markdown conversion leaves Pandoc-style image

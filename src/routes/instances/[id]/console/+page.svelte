@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import Console from '$lib/components/Console.svelte';
-	import Flash from '$lib/components/Flash.svelte';
+	import Console from '#lib/components/Console.svelte';
+	import Flash from '#lib/components/Flash.svelte';
 
 	let { data, form } = $props();
 

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Flash from '$lib/components/Flash.svelte';
-	import RestartFields from '$lib/components/RestartFields.svelte';
-	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
-	import PropertyInput from '$lib/components/PropertyInput.svelte';
+	import Flash from '#lib/components/Flash.svelte';
+	import RestartFields from '#lib/components/RestartFields.svelte';
+	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+	import PropertyInput from '#lib/components/PropertyInput.svelte';
 
 	let { data, form } = $props();
 

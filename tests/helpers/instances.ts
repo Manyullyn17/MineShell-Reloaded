@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
-import { db } from '$lib/server/db';
-import { javaRuntimes, serverInstances, type ServerInstance } from '$lib/server/db/schema';
-import { instanceDir } from '$lib/server/config';
-import { invalidateUnitState } from '$lib/server/systemd';
-import { getTask, type Task } from '$lib/server/tasks';
+import { db } from '#lib/server/db/index.js';
+import { javaRuntimes, serverInstances, type ServerInstance } from '#lib/server/db/schema.js';
+import { instanceDir } from '#lib/server/config.js';
+import { invalidateUnitState } from '#lib/server/systemd.js';
+import { getTask, type Task } from '#lib/server/tasks.js';
 import { fakeProcesses } from './process';
 
 /**

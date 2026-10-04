@@ -8,10 +8,10 @@ import {
 	restartsFromForm,
 	setInstanceDefaults,
 	suggestedMaxMb
-} from '$lib/server/instance-defaults';
-import { getPreset, listPresets } from '$lib/server/jvm-presets';
-import { PROPERTY_GROUPS, propertiesFromForm } from '$lib/server/properties';
-import { audit } from '$lib/server/instances';
+} from '#lib/server/instance-defaults.js';
+import { getPreset, listPresets } from '#lib/server/jvm-presets.js';
+import { PROPERTY_GROUPS, propertiesFromForm } from '#lib/server/properties.js';
+import { audit } from '#lib/server/instances.js';
 
 export const load: PageServerLoad = async () => {
 	return {

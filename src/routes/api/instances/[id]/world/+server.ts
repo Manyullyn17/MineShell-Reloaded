@@ -6,10 +6,10 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { getInstance, InstanceError, requireStopped } from '$lib/server/instances';
-import { TMP_DIR } from '$lib/server/config';
-import { decideSnapshot, SnapshotChoiceNeeded } from '$lib/server/snapshots';
-import { downloadWorld, replaceWorld } from '$lib/server/world';
+import { getInstance, InstanceError, requireStopped } from '#lib/server/instances.js';
+import { TMP_DIR } from '#lib/server/config.js';
+import { decideSnapshot, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
+import { downloadWorld, replaceWorld } from '#lib/server/world.js';
 
 /** The world (or `?snapshot=<id>`) as a zip, streamed while it is built. */
 export const GET: RequestHandler = async ({ params, url, locals }) => {

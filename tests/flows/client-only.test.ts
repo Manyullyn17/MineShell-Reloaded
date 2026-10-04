@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-const { disableClientOnlyMods, describeClientOnlyResult } = await import('$lib/server/clientonly');
-const { listInstanceMods, syncMods } = await import('$lib/server/mods');
+const { disableClientOnlyMods, describeClientOnlyResult } = await import('#lib/server/clientonly.js');
+const { listInstanceMods, syncMods } = await import('#lib/server/mods/index.js');
 const { createInstance, tree } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');

@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { getInstance, summarise } from '$lib/server/instances';
-import { LOADERS } from '$lib/server/modloaders';
-import type { ModloaderId } from '$lib/server/modloaders';
+import { getInstance, summarise } from '#lib/server/instances.js';
+import { LOADERS } from '#lib/server/modloaders.js';
+import type { ModloaderId } from '#lib/server/modloaders.js';
 
 export const load: LayoutServerLoad = async ({ params, url }) => {
 	const instance = getInstance(params.id);

@@ -1,13 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerInstance } from '$lib/server/db/schema';
+import type { ServerInstance } from '#lib/server/db/schema.js';
 
 // Cleanroom's own mod fixes (Fugue/Scalar downloads, mod disabling) are unit
 // tested in cleanroom.test.ts; here a stand-in disables one mod and adds one,
 // which is exactly what a revert has to undo.
-vi.mock('$lib/server/cleanroom', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/server/cleanroom')>();
+vi.mock('#lib/server/cleanroom.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/server/cleanroom.js')>();
 	return {
 		...actual,
 		applyCleanroomModFixes: async (instance: ServerInstance) => {
@@ -19,8 +19,8 @@ vi.mock('$lib/server/cleanroom', async (importOriginal) => {
 	};
 });
 
-const { migrateToCleanroom, readForgeBackup, revertToForge } = await import('$lib/server/instances');
-const { LOADERS } = await import('$lib/server/modloaders');
+const { migrateToCleanroom, readForgeBackup, revertToForge } = await import('#lib/server/instances.js');
+const { LOADERS } = await import('#lib/server/modloaders.js');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForStatusSettled, waitForTask } = await import('../helpers/instances');
 
 const FORGE_FILES = {

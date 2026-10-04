@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { audit, getInstance, sendCommand } from '$lib/server/instances';
+import { audit, getInstance, sendCommand } from '#lib/server/instances.js';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');

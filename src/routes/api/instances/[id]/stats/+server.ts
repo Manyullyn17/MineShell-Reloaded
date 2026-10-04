@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance } from '$lib/server/instances';
-import { bus } from '$lib/server/events';
+import { getInstance } from '#lib/server/instances.js';
+import { bus } from '#lib/server/events.js';
 
 /** Live CPU/memory push, used by any view that wants a moving number. */
 export const GET: RequestHandler = async ({ params, locals }) => {

@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getProvider } from '$lib/server/mods';
+import { getProvider } from '#lib/server/mods/index.js';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const source = url.searchParams.get('source') ?? 'modrinth';

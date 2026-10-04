@@ -16,7 +16,7 @@ const STATE_CHANGING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  * such requests. Only the host is compared, not the scheme: MineShell is
  * reached by raw IP, alternate hostnames and through TLS-terminating proxies,
  * which is what tripped SvelteKit's own full-origin check (disabled in
- * svelte.config.js). Requests without Origin (scripts, curl) are not
+ * vite.config.ts). Requests without Origin (scripts, curl) are not
  * cross-site requests from a browser and pass.
  */
 export function isCrossSiteRequest(request: Request): boolean {

@@ -44,7 +44,7 @@ globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
 }) as typeof fetch;
 
 const expected = process.env.MINESHELL_DATA;
-const { DATA_DIR, systemdUnitDir } = await import('$lib/server/config');
+const { DATA_DIR, systemdUnitDir } = await import('#lib/server/config.js');
 const tmp = path.resolve(os.tmpdir());
 const resolved = path.resolve(DATA_DIR);
 if (!expected || resolved !== path.resolve(expected) || !resolved.startsWith(tmp)) {

@@ -225,7 +225,7 @@ device, an IoT box, a Tailscale exit node — and this application can delete a 
 
 ## Frontend
 
-SvelteKit 2, Svelte 5 runes, no UI framework. Server state comes from `load` functions and
+SvelteKit 3, Svelte 5 runes, no UI framework. Server state comes from `load` functions and
 form actions; only the genuinely live things (console, stats, task progress) use SSE.
 
 There is no separate REST API layer. The notes reasoned that no other consumer is planned,

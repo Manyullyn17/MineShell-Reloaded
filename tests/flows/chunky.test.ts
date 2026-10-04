@@ -7,8 +7,8 @@ const rcon = vi.hoisted(() => ({
 	answers: {} as Record<string, string>,
 	players: 0
 }));
-vi.mock('$lib/server/rcon', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/rcon')>()),
+vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		rcon.commands.push(...commands);
 		return commands.map((c) =>
@@ -17,9 +17,9 @@ vi.mock('$lib/server/rcon', async (importOriginal) => ({
 	})
 }));
 
-const chunky = await import('$lib/server/chunky');
-const { encryptSecret } = await import('$lib/server/crypto');
-const { invalidateUnitState } = await import('$lib/server/systemd');
+const chunky = await import('#lib/server/chunky.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
+const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 

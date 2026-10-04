@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { javaRuntimes, settings } from './db/schema';
 import { run } from './systemd';
-import { cleanroomJavaMajor } from '$lib/shared/cleanroom';
+import { cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { minecraftJavaMajor } from './modloaders';
 import { DATA_DIR } from './config';
 

@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { serverInstances } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import {
 	acceptEula,
@@ -16,17 +16,17 @@ import {
 	stop,
 	summarise,
 	wasStopIntentional
-} from '$lib/server/instances';
-import { bucketSamples, recentSamples } from '$lib/server/monitor';
-import { resolveJava } from '$lib/server/java';
+} from '#lib/server/instances.js';
+import { bucketSamples, recentSamples } from '#lib/server/monitor.js';
+import { resolveJava } from '#lib/server/java.js';
 import { cpus, hostname, networkInterfaces } from 'node:os';
-import { describeSchedule } from '$lib/server/scheduler';
-import { readLastRun, runFinishedStarting } from '$lib/server/journal';
-import { diagnoseRun, lastRun, type Diagnosis } from '$lib/server/crashdiag';
-import { modsDir, setModEnabled } from '$lib/server/mods';
+import { describeSchedule } from '#lib/server/scheduler.js';
+import { readLastRun, runFinishedStarting } from '#lib/server/journal.js';
+import { diagnoseRun, lastRun, type Diagnosis } from '#lib/server/crashdiag.js';
+import { modsDir, setModEnabled } from '#lib/server/mods/index.js';
 import { redirect } from '@sveltejs/kit';
-import { cancelCountdown, getCountdown, startCountdown } from '$lib/server/countdown';
-import { tickStats } from '$lib/server/tps';
+import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
+import { tickStats } from '#lib/server/tps.js';
 import {
 	activeProfile,
 	cancelProfile,
@@ -36,7 +36,7 @@ import {
 	sparkUploads,
 	startProfile,
 	stopProfile
-} from '$lib/server/spark';
+} from '#lib/server/spark.js';
 
 /**
  * First non-internal IPv4 address found across interfaces. Falls back to the

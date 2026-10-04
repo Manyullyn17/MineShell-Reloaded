@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { deleteOldLogs, diskBreakdown } from '$lib/server/diskusage';
-import { setSnapshotPinned, takeSnapshot } from '$lib/server/snapshots';
+import { deleteOldLogs, diskBreakdown } from '#lib/server/diskusage.js';
+import { setSnapshotPinned, takeSnapshot } from '#lib/server/snapshots.js';
 import { createInstance } from '../helpers/instances';
 
 const bytes = (n: number) => 'x'.repeat(n);

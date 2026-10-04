@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance, restart, start, stop, summarise } from '$lib/server/instances';
-import { getMacros } from '$lib/server/macros';
+import { requireInstance, restart, start, stop, summarise } from '#lib/server/instances.js';
+import { getMacros } from '#lib/server/macros.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

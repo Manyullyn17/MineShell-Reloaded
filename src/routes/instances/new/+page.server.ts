@@ -1,16 +1,16 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '$lib/server/modloaders';
+import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	JavaMissingError,
 	createFromArchive,
 	createFromLoader,
 	createFromPack
-} from '$lib/server/instances';
-import { takeProviderPack } from '$lib/server/packs/preview';
-import { listJavaRuntimes } from '$lib/server/java';
-import { isJavaVendor } from '$lib/server/javadownload';
-import { defaultMaxMb, getInstanceDefaults } from '$lib/server/instance-defaults';
+} from '#lib/server/instances.js';
+import { takeProviderPack } from '#lib/server/packs/preview.js';
+import { listJavaRuntimes } from '#lib/server/java.js';
+import { isJavaVendor } from '#lib/server/javadownload.js';
+import { defaultMaxMb, getInstanceDefaults } from '#lib/server/instance-defaults.js';
 
 export const load: PageServerLoad = async () => {
 	// The metadata servers are third-party; a failure should not blank the form.

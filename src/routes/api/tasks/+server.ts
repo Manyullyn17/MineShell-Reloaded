@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { listTasks } from '$lib/server/tasks';
-import { bus } from '$lib/server/events';
+import { listTasks } from '#lib/server/tasks.js';
+import { bus } from '#lib/server/events.js';
 
 /** Push task progress so the Activity page does not have to poll. */
 export const GET: RequestHandler = async ({ locals, url }) => {

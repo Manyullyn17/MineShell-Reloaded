@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vitest/config';
 
 // Under Vitest, env files come from tests/env (which has none; see also
-// kit.env.dir in svelte.config.js), so the real .env - and with it the real
+// env.dir in the sveltekit() options below), so the real .env - and with it the real
 // MINESHELL_DATA - can never reach a test run. SvelteKit builds $env once,
 // from this process, while the config loads, so the throwaway data directory
 // has to be chosen here; the test workers inherit it and tests/setup.ts
@@ -21,7 +23,26 @@ if (testing) {
 }
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [
+    // SvelteKit 3 takes its configuration here; svelte.config.js is no longer read.
+    sveltekit({
+      preprocess: vitePreprocess(),
+      adapter: adapter({ out: 'build' }),
+      // SvelteKit loads .env through its own setting, not Vite's envDir. Under
+      // Vitest it reads tests/env (no .env there), so tests never see the real
+      // MINESHELL_DATA. tests/setup.ts double-checks and aborts otherwise.
+      env: { dir: testing ? 'tests/env' : '.' },
+      csrf: {
+        // SvelteKit's own check compares the full origin, which breaks behind
+        // TLS-terminating proxies (the app sees http, the browser https).
+        // src/lib/server/guard.ts does the cross-site check instead, comparing
+        // hosts only - so raw-IP, alternate-hostname and proxied access work,
+        // and other sites (or other ports on the same machine) are refused.
+        // '*' turns SvelteKit's own check off (checkOrigin was removed).
+        trustedOrigins: ['*']
+      }
+    })
+  ],
   envDir: testing ? 'tests/env' : undefined,
   test: {
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],

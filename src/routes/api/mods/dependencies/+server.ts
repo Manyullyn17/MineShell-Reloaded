@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { bestVersion, getModProvider, listInstanceMods } from '$lib/server/mods';
-import { getInstance } from '$lib/server/instances';
+import { bestVersion, getModProvider, listInstanceMods } from '#lib/server/mods/index.js';
+import { getInstance } from '#lib/server/instances.js';
 
 /**
  * Resolves one version's dependencies into named, installable entries.

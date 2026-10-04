@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import StatusPill from '$lib/components/StatusPill.svelte';
-	import Flash from '$lib/components/Flash.svelte';
-	import { formatBytes, formatDuration, formatRelative } from '$lib/shared/format';
+	import StatusPill from '#lib/components/StatusPill.svelte';
+	import Flash from '#lib/components/Flash.svelte';
+	import { formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 

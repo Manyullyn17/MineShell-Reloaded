@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
-import { summariseAll } from '$lib/server/instances';
-import { listTasks } from '$lib/server/tasks';
+import { summariseAll } from '#lib/server/instances.js';
+import { listTasks } from '#lib/server/tasks.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	if (!locals.authenticated) {

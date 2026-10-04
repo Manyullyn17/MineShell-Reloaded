@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getLoader, listReleaseVersions } from '$lib/server/modloaders';
+import { getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
 
 /** Powers the version pickers on the new-server form. */
 export const GET: RequestHandler = async ({ url }) => {

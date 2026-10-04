@@ -1,7 +1,7 @@
 <script lang="ts">
-	import CrashDiagnosis from '$lib/components/CrashDiagnosis.svelte';
-	import { fitToViewport } from '$lib/shared/fitToViewport';
-	import { formatBytes, formatDateTime } from '$lib/shared/format';
+	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
+	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 
 	let { data } = $props();
 

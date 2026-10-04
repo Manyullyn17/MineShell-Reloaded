@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { cancelTask, listTasks } from '$lib/server/tasks';
+import { cancelTask, listTasks } from '#lib/server/tasks.js';
 
 export const load: PageServerLoad = async () => ({ tasks: listTasks() });
 

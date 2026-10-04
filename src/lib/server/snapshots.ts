@@ -6,7 +6,7 @@ import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
 import { directorySize } from './files';
 import { serverWorldName } from './packworld';
-import { formatBytes } from '$lib/shared/format';
+import { formatBytes } from '#lib/shared/format.js';
 
 /**
  * Copies of a server's world taken before MineShell does something that can

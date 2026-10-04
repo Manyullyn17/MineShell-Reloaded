@@ -26,7 +26,7 @@ import {
 	type Style
 } from './playeritems';
 import { addEffect, LIST_ITEMS, playerEffects, playerFields, type EffectsView, type FieldView } from './playerfields';
-import type { Path, TreeTag } from '$lib/shared/nbt';
+import type { Path, TreeTag } from '#lib/shared/nbt.js';
 
 export type { Path, TreeTag };
 import { rconPassword } from './instances';

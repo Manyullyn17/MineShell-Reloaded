@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Flash from '$lib/components/Flash.svelte';
-	import JavaPrompt from '$lib/components/JavaPrompt.svelte';
-	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
-	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
-	import CleanroomOption from '$lib/components/CleanroomOption.svelte';
-	import PackModList from '$lib/components/PackModList.svelte';
-	import SplitButton from '$lib/components/SplitButton.svelte';
-	import { fitToViewport } from '$lib/shared/fitToViewport';
-	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '$lib/shared/cleanroom';
+	import Flash from '#lib/components/Flash.svelte';
+	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
+	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
+	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
+	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
+	import PackModList from '#lib/components/PackModList.svelte';
+	import SplitButton from '#lib/components/SplitButton.svelte';
+	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '#lib/shared/cleanroom.js';
 
 	let { data, form } = $props();
 

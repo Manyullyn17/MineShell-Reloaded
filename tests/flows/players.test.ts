@@ -3,8 +3,8 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rcon = vi.hoisted(() => ({ commands: [] as string[], answer: '' }));
-vi.mock('$lib/server/rcon', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/rcon')>()),
+vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		rcon.commands.push(...commands);
 		return commands.map(() => rcon.answer);
@@ -12,17 +12,17 @@ vi.mock('$lib/server/rcon', async (importOriginal) => ({
 }));
 
 // Mojang's profile lookup, for names added while the server is stopped.
-vi.mock('$lib/server/download', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/server/download')>()),
+vi.mock('#lib/server/download.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/download.js')>()),
 	fetchJson: vi.fn(async (url: string) => {
 		if (url.endsWith('/Notch')) return { id: '069a79f444e94726a5befca90e38aaf5', name: 'Notch' };
 		throw new Error('404');
 	})
 }));
 
-const { addPlayer, banDate, loadPlayerLists, removePlayer, setOpOptions } = await import('$lib/server/players');
-const { encryptSecret } = await import('$lib/server/crypto');
-const { invalidateUnitState } = await import('$lib/server/systemd');
+const { addPlayer, banDate, loadPlayerLists, removePlayer, setOpOptions } = await import('#lib/server/players.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
+const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, systemdStopped } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 

@@ -50,7 +50,8 @@ await fs.writeFile(path.join(here, 'fixtures', `${name}.log`), log);
 await fs.writeFile(path.join(here, 'fixtures', `${name}.mods.json`), JSON.stringify(jars, null, 1));
 
 const casesFile = path.join(here, 'cases.json');
-const cases = JSON.parse(await fs.readFile(casesFile, 'utf8').catch(() => '[]')).filter((c) => c.name !== name);
+/** @typedef {{ name: string; kind: string; culprit: string; related?: string }} Case */
+const cases = /** @type {Case[]} */ (JSON.parse(await fs.readFile(casesFile, 'utf8').catch(() => '[]'))).filter((c) => c.name !== name);
 cases.push({ name, kind, culprit, ...(related ? { related } : {}) });
 cases.sort((a, b) => a.name.localeCompare(b.name));
 await fs.writeFile(casesFile, JSON.stringify(cases, null, '\t') + '\n');

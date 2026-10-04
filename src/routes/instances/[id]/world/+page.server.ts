@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { InstanceError, requireInstance, summarise } from '$lib/server/instances';
-import { readProperties } from '$lib/server/properties';
-import { serverWorldName } from '$lib/server/packworld';
+import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
+import { readProperties } from '#lib/server/properties.js';
+import { serverWorldName } from '#lib/server/packworld.js';
 import {
 	decideSnapshot,
 	deleteSnapshot,
@@ -12,7 +12,7 @@ import {
 	snapshotPrompt,
 	SnapshotChoiceNeeded,
 	worldFolders
-} from '$lib/server/snapshots';
+} from '#lib/server/snapshots.js';
 import {
 	countPrunable,
 	lastPruneCount,
@@ -24,8 +24,8 @@ import {
 	snapshotDimensions,
 	snapshotNow,
 	type SeedChoice
-} from '$lib/server/world';
-import { listDimensions, type Dimension } from '$lib/server/dimensions';
+} from '#lib/server/world.js';
+import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import {
 	cancelPregen,
 	chunkyLanguage,
@@ -40,7 +40,7 @@ import {
 	savedTasks,
 	setPausesForPlayers,
 	startPregen
-} from '$lib/server/chunky';
+} from '#lib/server/chunky.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

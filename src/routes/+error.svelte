@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 </script>
 
-<svelte:head><title>{$page.status} - MineShell</title></svelte:head>
+<svelte:head><title>{page.status} - MineShell</title></svelte:head>
 
 <div class="panel wrap">
-	<h1>{$page.status}</h1>
-	<p class="muted">{$page.error?.message ?? 'Something went wrong.'}</p>
+	<h1>{page.status}</h1>
+	<p class="muted">{page.error?.message ?? 'Something went wrong.'}</p>
 	<a class="button button-primary" href="/">Back to the server list</a>
 </div>
 

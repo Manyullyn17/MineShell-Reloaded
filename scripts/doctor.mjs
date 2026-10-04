@@ -80,11 +80,13 @@ async function tryRun(cmd, args) {
 const systemctlArgs = (args) => (SCOPE === 'user' ? ['--user', ...args] : args);
 
 async function main() {
-	// package.json's engines.node, e.g. ">=22". A distro's own Node is often older
+	// package.json's engines.node, e.g. ">=22.12". A distro's own Node is often older
 	// (Ubuntu 24.04 ships 18), and the service unit runs whatever /usr/bin/node is.
-	const wanted = Number(JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).engines?.node?.match(/\d+/)?.[0] ?? 0);
-	const major = Number(process.versions.node.split('.')[0]);
-	record(major >= wanted, `Node.js ${process.versions.node}`, major >= wanted ? '' : `MineShell needs Node.js ${wanted} or newer (${process.execPath}).`);
+	const engines = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).engines?.node ?? '';
+	const [wantMajor = 0, wantMinor = 0] = (engines.match(/\d+(\.\d+)?/)?.[0] ?? '0').split('.').map(Number);
+	const [major, minor] = process.versions.node.split('.').map(Number);
+	const ok = major > wantMajor || (major === wantMajor && minor >= wantMinor);
+	record(ok, `Node.js ${process.versions.node}`, ok ? '' : `MineShell needs Node.js ${wantMajor}.${wantMinor} or newer (${process.execPath}).`);
 
 	const version = await tryRun('systemctl', systemctlArgs(['--version']));
 	record(version.ok, `systemctl reachable (${SCOPE} scope)`, version.ok ? version.stdout.split('\n')[0] : version.error);

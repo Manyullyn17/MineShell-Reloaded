@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import { vi } from 'vitest';
-import { db } from '$lib/server/db';
-import { operations } from '$lib/server/db/schema';
-import { recoverInterruptedOperations } from '$lib/server/recovery';
+import { db } from '#lib/server/db/index.js';
+import { operations } from '#lib/server/db/schema.js';
+import { recoverInterruptedOperations } from '#lib/server/recovery.js';
 import { waitForTask } from './instances';
 
 /**

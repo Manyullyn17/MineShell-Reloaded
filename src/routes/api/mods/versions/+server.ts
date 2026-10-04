@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { compareVersionPriority, getModProvider } from '$lib/server/mods';
-import { isDatapackVersion } from '$lib/server/mods/datapacks';
+import { compareVersionPriority, getModProvider } from '#lib/server/mods/index.js';
+import { isDatapackVersion } from '#lib/server/mods/datapacks.js';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const source = url.searchParams.get('source') ?? 'modrinth';

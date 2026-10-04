@@ -22,7 +22,7 @@ import { getLoader, type ModloaderId } from './modloaders';
 import { resolveJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
-import { canUseCleanroom } from '$lib/shared/cleanroom';
+import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { datapackNames, isDatapackFile, packWorldFiles, packWorldName, serverWorldName } from './packworld';
 import {
 	beginOperation,

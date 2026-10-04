@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The maintained LTS lines; package.json declares node >=22 (20 reached
+        # The maintained LTS lines; package.json declares node >=22.12 (20 reached
         # end of life in April 2026). Development uses 24 (.nvmrc), so 22 is
         # what catches something only newer Node has.
         node: [22, 24]

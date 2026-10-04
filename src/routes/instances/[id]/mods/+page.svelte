@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import type { SubmitFunction } from '@sveltejs/kit';
-	import Flash from '$lib/components/Flash.svelte';
-	import DetailsDialog from '$lib/components/DetailsDialog.svelte';
-	import FilterSidebar from '$lib/components/FilterSidebar.svelte';
-	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
-	import InfoTip from '$lib/components/InfoTip.svelte';
-	import { fitToViewport } from '$lib/shared/fitToViewport';
-	import { formatBytes } from '$lib/shared/format';
+	import { enhance, type SubmitFunction } from '$app/forms';
+	import Flash from '#lib/components/Flash.svelte';
+	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
+	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
+	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
+	import InfoTip from '#lib/components/InfoTip.svelte';
+	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import { formatBytes } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 

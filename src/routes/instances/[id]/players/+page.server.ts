@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '$lib/server/instances';
+import { requireInstance } from '#lib/server/instances.js';
 import {
 	addPlayer,
 	kickPlayer,
@@ -9,9 +9,9 @@ import {
 	setOpOptions,
 	setWhitelistEnforced,
 	type ListName
-} from '$lib/server/players';
-import { onlinePlayers } from '$lib/server/instances';
-import { listPlayerData } from '$lib/server/playerdata';
+} from '#lib/server/players.js';
+import { onlinePlayers } from '#lib/server/instances.js';
+import { listPlayerData } from '#lib/server/playerdata.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

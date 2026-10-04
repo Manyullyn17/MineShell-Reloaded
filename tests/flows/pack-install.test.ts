@@ -1,22 +1,22 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServerInstance } from '$lib/server/db/schema';
+import type { ServerInstance } from '#lib/server/db/schema.js';
 
-vi.mock('$lib/server/cleanroom', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/server/cleanroom')>();
+vi.mock('#lib/server/cleanroom.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('#lib/server/cleanroom.js')>();
 	return {
 		...actual,
 		applyCleanroomModFixes: vi.fn(async (_instance: ServerInstance) => ({ disabled: [], added: [], failures: [], advise: [] }))
 	};
 });
 
-const { createFromPack } = await import('$lib/server/instances');
-const { LOADERS } = await import('$lib/server/modloaders');
-const { packFromFileList, parsePack } = await import('$lib/server/packs');
-const { listInstanceMods, syncMods } = await import('$lib/server/mods');
-const { readProperties } = await import('$lib/server/properties');
-const cleanroom = await import('$lib/server/cleanroom');
+const { createFromPack } = await import('#lib/server/instances.js');
+const { LOADERS } = await import('#lib/server/modloaders.js');
+const { packFromFileList, parsePack } = await import('#lib/server/packs/index.js');
+const { listInstanceMods, syncMods } = await import('#lib/server/mods/index.js');
+const { readProperties } = await import('#lib/server/properties.js');
+const cleanroom = await import('#lib/server/cleanroom.js');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');

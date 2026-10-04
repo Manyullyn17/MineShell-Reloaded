@@ -7,14 +7,14 @@ import {
 	TEMPLATE_UNIT,
 	UNITS_DIR,
 	systemdUnitDir
-} from '$lib/server/config';
-import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '$lib/server/curseforge';
+} from '#lib/server/config.js';
+import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '#lib/server/curseforge.js';
 import {
 	installTemplateUnit,
 	probeSystemd,
 	renderTemplateUnit,
 	templateUnitInstalled
-} from '$lib/server/systemd';
+} from '#lib/server/systemd.js';
 import {
 	addManualJava,
 	getJavaDefaults,
@@ -25,7 +25,7 @@ import {
 	runtimeForMajor,
 	scanJavaRuntimes,
 	setJavaDefault
-} from '$lib/server/java';
+} from '#lib/server/java.js';
 import {
 	isJavaVendor,
 	isManagedJava,
@@ -33,12 +33,12 @@ import {
 	OFFERED_MAJORS,
 	removeManagedJava,
 	startJavaDownload
-} from '$lib/server/javadownload';
-import { authEnabled, destroyAllSessions, setPassword } from '$lib/server/auth';
-import { db } from '$lib/server/db';
-import { auditLog, serverInstances } from '$lib/server/db/schema';
+} from '#lib/server/javadownload.js';
+import { authEnabled, destroyAllSessions, setPassword } from '#lib/server/auth.js';
+import { db } from '#lib/server/db/index.js';
+import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
-import { listInstances, syncUnit } from '$lib/server/instances';
+import { listInstances, syncUnit } from '#lib/server/instances.js';
 import {
 	freeSpace,
 	getSnapshotPolicy,
@@ -46,8 +46,8 @@ import {
 	saveSnapshotPolicy,
 	serverSnapshotOverrides,
 	snapshotUsage
-} from '$lib/server/snapshots';
-import { policyFormValues } from '$lib/shared/snapshots';
+} from '#lib/server/snapshots.js';
+import { policyFormValues } from '#lib/shared/snapshots.js';
 
 export const load: PageServerLoad = async () => {
 	const systemd = await probeSystemd();

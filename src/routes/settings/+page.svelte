@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import Flash from '$lib/components/Flash.svelte';
-	import SnapshotPolicyFields from '$lib/components/SnapshotPolicyFields.svelte';
-	import { formatBytes, formatDateTime } from '$lib/shared/format';
+	import Flash from '#lib/components/Flash.svelte';
+	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
+	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagnoseLog, indexMods, type ModJar } from '$lib/server/crashdiag';
+import { diagnoseLog, indexMods, type ModJar } from '#lib/server/crashdiag.js';
 import { mcmodInfo, tempDir, writeJar, zipBuffer } from '../helpers/fs';
 
 /**

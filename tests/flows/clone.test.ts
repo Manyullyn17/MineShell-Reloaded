@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Copying a server to try changes on (cloneInstance). */
 
-const { cloneInstance, rconPassword, start } = await import('$lib/server/instances');
-const { db } = await import('$lib/server/db');
-const { instanceMods, mods } = await import('$lib/server/db/schema');
-const { encryptSecret } = await import('$lib/server/crypto');
-const { readProperties } = await import('$lib/server/properties');
+const { cloneInstance, rconPassword, start } = await import('#lib/server/instances.js');
+const { db } = await import('#lib/server/db/index.js');
+const { instanceMods, mods } = await import('#lib/server/db/schema.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
+const { readProperties } = await import('#lib/server/properties.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { hangForever, restartMineShell } = await import('../helpers/crash');
 

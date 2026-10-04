@@ -10,8 +10,8 @@ import {
 	passwordIsSet,
 	recordFailedLogin,
 	sessionCookieOptions
-} from '$lib/server/auth';
-import { sameOriginPath } from '$lib/shared/links';
+} from '#lib/server/auth.js';
+import { sameOriginPath } from '#lib/shared/links.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	if (!passwordIsSet()) redirect(303, '/setup');

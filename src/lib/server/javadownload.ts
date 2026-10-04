@@ -9,7 +9,7 @@ import { DATA_DIR, TMP_DIR } from './config';
 import { downloadFile, fetchJson } from './download';
 import { probeJava, type ProbedJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
-import { formatBytes } from '$lib/shared/format';
+import { formatBytes } from '#lib/shared/format.js';
 
 /**
  * Java runtimes MineShell downloads itself, from Eclipse Temurin (the

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatBytes } from '$lib/shared/format';
-	import type { SnapshotPromptView } from '$lib/shared/snapshots';
+	import { formatBytes } from '#lib/shared/format.js';
+	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
 	 * The snapshot part of a risky operation's form. Below the size threshold

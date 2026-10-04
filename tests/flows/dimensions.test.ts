@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listDimensions } from '$lib/server/dimensions';
-import { listSnapshots, SNAPSHOTS_DIR } from '$lib/server/snapshots';
-import { resetDimension, restoreDimension, restoreSnapshot, snapshotNow } from '$lib/server/world';
+import { listDimensions } from '#lib/server/dimensions.js';
+import { listSnapshots, SNAPSHOTS_DIR } from '#lib/server/snapshots.js';
+import { resetDimension, restoreDimension, restoreSnapshot, snapshotNow } from '#lib/server/world.js';
 import { createInstance, reload, systemdStopped, tree, waitForTask } from '../helpers/instances';
 import { restartMineShell, runAndDieAtMove } from '../helpers/crash';
 

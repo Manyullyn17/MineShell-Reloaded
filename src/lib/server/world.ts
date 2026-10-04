@@ -19,7 +19,7 @@ import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
-import { formatBytes } from '$lib/shared/format';
+import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
 import { child, parseNbt } from './nbt';

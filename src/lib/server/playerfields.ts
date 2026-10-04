@@ -3,7 +3,7 @@ import { db } from './db';
 import { playerFields as playerFieldsTable } from './db/schema';
 import { child, num, setChild, shortestFloat, type Compound, type Tag } from './nbt';
 import { PlayerDataError } from './playeritems';
-import type { Path, TagType } from '$lib/shared/nbt';
+import type { Path, TagType } from '#lib/shared/nbt.js';
 
 /**
  * The player's values as form fields: built-in ones (stats up front, the

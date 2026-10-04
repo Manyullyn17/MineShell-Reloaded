@@ -2,9 +2,9 @@ import { fail } from '@sveltejs/kit';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
-import { db } from '$lib/server/db';
-import { serverInstances, type ServerInstance } from '$lib/server/db/schema';
-import { consoleFromForm, restartsFromForm, type RestartSettings } from '$lib/server/instance-defaults';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances, type ServerInstance } from '#lib/server/db/schema.js';
+import { consoleFromForm, restartsFromForm, type RestartSettings } from '#lib/server/instance-defaults.js';
 import {
 	InstanceError,
 	JavaMissingError,
@@ -17,9 +17,9 @@ import {
 	summarise,
 	syncPortsToProperties,
 	syncUnit
-} from '$lib/server/instances';
-import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
-import { applyPackChange } from '$lib/server/packchange';
+} from '#lib/server/instances.js';
+import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
+import { applyPackChange } from '#lib/server/packchange.js';
 import {
 	decideSnapshot,
 	getSnapshotPolicy,
@@ -29,22 +29,22 @@ import {
 	SnapshotChoiceNeeded,
 	snapshotPrompt,
 	snapshotUsage
-} from '$lib/server/snapshots';
-import { policyFormValues } from '$lib/shared/snapshots';
-import { isJavaVendor } from '$lib/server/javadownload';
+} from '#lib/server/snapshots.js';
+import { policyFormValues } from '#lib/shared/snapshots.js';
+import { isJavaVendor } from '#lib/server/javadownload.js';
 import {
 	addScheduledCommand,
 	cleanCommand,
 	listScheduledCommands,
 	removeScheduledCommand,
 	setScheduledCommandEnabled
-} from '$lib/server/scheduledcommands';
-import { canUseCleanroom } from '$lib/shared/cleanroom';
-import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '$lib/server/java';
-import { portConflict } from '$lib/server/ports';
-import { rescheduleInstance } from '$lib/server/scheduler';
-import { encryptSecret, randomPassword } from '$lib/server/crypto';
-import { LOADER_LIST, getLoader, listReleaseVersions } from '$lib/server/modloaders';
+} from '#lib/server/scheduledcommands.js';
+import { canUseCleanroom } from '#lib/shared/cleanroom.js';
+import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
+import { portConflict } from '#lib/server/ports.js';
+import { rescheduleInstance } from '#lib/server/scheduler.js';
+import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
+import { LOADER_LIST, getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
 import {
 	composeJvmArgs,
 	deleteCustomPreset,
@@ -52,7 +52,7 @@ import {
 	listPresets,
 	saveCustomPreset,
 	stripMemoryFlags
-} from '$lib/server/jvm-presets';
+} from '#lib/server/jvm-presets.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

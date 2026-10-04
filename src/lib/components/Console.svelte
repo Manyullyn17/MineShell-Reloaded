@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '$lib/shared/consolelines';
+	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
 
 	/**
 	 * Output arrives over Server-Sent Events (one long-lived GET) and input goes

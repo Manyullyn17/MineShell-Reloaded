@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseSnbt, SnbtError } from './snbt';
 import { toTree } from './playerdata';
-import { treeToSnbt } from '$lib/shared/nbt';
+import { treeToSnbt } from '#lib/shared/nbt.js';
 
 describe('parseSnbt', () => {
 	it('reads typed numbers, booleans, strings, lists and arrays', () => {

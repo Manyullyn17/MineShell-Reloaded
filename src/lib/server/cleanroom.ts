@@ -12,7 +12,7 @@ import {
 	type ProjectVersion,
 	type SourceId
 } from './mods';
-import { CLEANROOM_MINECRAFT, cleanroomJavaMajor } from '$lib/shared/cleanroom';
+import { CLEANROOM_MINECRAFT, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { compareVersions } from './java';
 import { openZipFile } from './zip';
 

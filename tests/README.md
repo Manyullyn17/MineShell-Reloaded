@@ -15,7 +15,7 @@ src/lib/server/java.ts        src/lib/server/java.test.ts
 src/lib/shared/links.ts       src/lib/shared/links.test.ts
 ```
 
-`$lib` imports work as in the app. Bigger fixture-driven suites get their own folder here
+`#lib` imports work as in the app. Bigger fixture-driven suites get their own folder here
 (see [crashdiag/](crashdiag/README.md)).
 
 ## Real data is never touched
@@ -29,7 +29,7 @@ Vitest:
   `XDG_CONFIG_HOME` points inside it too, so systemd unit files are never written to
   `~/.config/systemd/user`.
 - Vite and SvelteKit read env files from `tests/env/`, which has none, so `.env` never loads
-  (`envDir` in `vite.config.ts`, `kit.env.dir` in `svelte.config.js`).
+  (`envDir` and the `sveltekit()` `env.dir` option, both in `vite.config.ts`).
 - `tests/setup.ts` checks the data and unit directories MineShell actually resolved before any
   test file runs and aborts the whole run if they are not inside that temporary directory.
 - `tests/global-setup.ts` deletes the temporary directory afterwards.

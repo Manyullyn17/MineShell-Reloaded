@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
-	import type { SnapshotPromptView } from '$lib/shared/snapshots';
+	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
 	 * Move an installed pack to another version (or reinstall the current one).

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import StatusPill from '$lib/components/StatusPill.svelte';
+	import { page } from '$app/state';
+	import StatusPill from '#lib/components/StatusPill.svelte';
 
 	let { data, children } = $props();
 
@@ -17,7 +17,7 @@
 	];
 
 	const base = $derived(`/instances/${data.instance.id}`);
-	const current = $derived($page.url.pathname.replace(base, '').replace(/^\//, ''));
+	const current = $derived(page.url.pathname.replace(base, '').replace(/^\//, ''));
 </script>
 
 <svelte:head><title>{data.instance.name} - MineShell</title></svelte:head>

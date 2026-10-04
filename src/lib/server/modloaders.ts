@@ -3,7 +3,7 @@ import path from 'node:path';
 import { downloadFile, fetchJson, fetchText } from './download';
 import { run } from './systemd';
 import type { TaskHandle } from './tasks';
-import { CLEANROOM_MINECRAFT } from '$lib/shared/cleanroom';
+import { CLEANROOM_MINECRAFT } from '#lib/shared/cleanroom.js';
 
 /**
  * Every loader answers the same two questions: what versions exist, and how do I

@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 
 function defaultDataDir(): string {
 	const xdg = env.XDG_DATA_HOME || process.env.XDG_DATA_HOME;

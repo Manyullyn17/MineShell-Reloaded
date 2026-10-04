@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Flash from '$lib/components/Flash.svelte';
+	import Flash from '#lib/components/Flash.svelte';
 	let { data, form } = $props();
 </script>
 

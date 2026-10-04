@@ -9,17 +9,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const { changeLoaderVersion, createFromLoader, migrateToCleanroom, revertToForge, setStatus } = await import(
-	'$lib/server/instances'
+	'#lib/server/instances.js'
 );
-const { LOADERS } = await import('$lib/server/modloaders');
-const { listOperations } = await import('$lib/server/operations');
-const { recoverInterruptedOperations } = await import('$lib/server/recovery');
+const { LOADERS } = await import('#lib/server/modloaders.js');
+const { listOperations } = await import('#lib/server/operations.js');
+const { recoverInterruptedOperations } = await import('#lib/server/recovery.js');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import(
 	'../helpers/instances'
 );
 const { hangForever, restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
-const { db } = await import('$lib/server/db');
-const { operations } = await import('$lib/server/db/schema');
+const { db } = await import('#lib/server/db/index.js');
+const { operations } = await import('#lib/server/db/schema.js');
 
 const FABRIC_FILES = {
 	'server.jar': 'fabric launcher 0.15',

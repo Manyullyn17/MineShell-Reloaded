@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { describeState } from '$lib/shared/format';
+	import { describeState } from '#lib/shared/format.js';
 
 	let { active, sub, compact = false }: { active: string; sub: string; compact?: boolean } =
 		$props();

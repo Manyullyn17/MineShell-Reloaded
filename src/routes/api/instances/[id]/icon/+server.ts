@@ -2,8 +2,8 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { audit, getInstance } from '$lib/server/instances';
-import { checkServerIcon } from '$lib/server/servericon';
+import { audit, getInstance } from '#lib/server/instances.js';
+import { checkServerIcon } from '#lib/server/servericon.js';
 
 const ICON = 'server-icon.png';
 

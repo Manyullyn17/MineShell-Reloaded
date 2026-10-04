@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '$lib/server/instances';
-import { deleteOldLogs, diskBreakdown } from '$lib/server/diskusage';
-import { formatBytes } from '$lib/shared/format';
+import { requireInstance } from '#lib/server/instances.js';
+import { deleteOldLogs, diskBreakdown } from '#lib/server/diskusage.js';
+import { formatBytes } from '#lib/shared/format.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);

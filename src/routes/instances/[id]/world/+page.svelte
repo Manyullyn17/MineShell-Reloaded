@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
-	import Flash from '$lib/components/Flash.svelte';
-	import SnapshotChoice from '$lib/components/SnapshotChoice.svelte';
-	import { formatBytes, formatDateTime, formatRelative } from '$lib/shared/format';
+	import Flash from '#lib/components/Flash.svelte';
+	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
+	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 

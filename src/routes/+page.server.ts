@@ -1,13 +1,13 @@
 import type { Actions, PageServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { serverInstances } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
-import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } from '$lib/server/instances';
-import { latestSample } from '$lib/server/monitor';
-import { describeSchedule } from '$lib/server/scheduler';
-import { probeSystemd, templateUnitInstalled } from '$lib/server/systemd';
-import { listJavaRuntimes } from '$lib/server/java';
+import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } from '#lib/server/instances.js';
+import { latestSample } from '#lib/server/monitor.js';
+import { describeSchedule } from '#lib/server/scheduler.js';
+import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
+import { listJavaRuntimes } from '#lib/server/java.js';
 
 export const load: PageServerLoad = async () => {
 	const summaries = await summariseAll();

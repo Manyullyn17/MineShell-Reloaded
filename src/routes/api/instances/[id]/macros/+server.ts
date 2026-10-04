@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance } from '$lib/server/instances';
-import { setMacros } from '$lib/server/macros';
+import { getInstance } from '#lib/server/instances.js';
+import { setMacros } from '#lib/server/macros.js';
 
 /** The console's saved commands; the whole list is sent each time, in display order. */
 export const PUT: RequestHandler = async ({ params, request, locals }) => {
