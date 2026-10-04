@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { modrinthProvider, versionsFromHashes } from './modrinth';
 import { compareVersions } from '../java';
 import { FUGUE_JAVA25_FROM, pickVersionForJava } from '../cleanroom';
+import { isDatapackVersion } from './datapacks';
 import { fetchCalls, useRecordedHttp } from '../../../../tests/helpers/http';
 
 useRecordedHttp('modrinth');
@@ -44,6 +45,23 @@ describe('modrinth projects and versions', () => {
 		const file = versions[0].files.find((f) => f.primary)!;
 		expect(file.hash?.algo).toBe('sha512');
 		expect(file.filename).toMatch(/fugue/i);
+	});
+
+	it('lists data pack releases next to the loader\'s when asked, and tells them apart', async () => {
+		// Terralith publishes its data pack (.zip, loader "datapack") and its mod (.jar) as separate versions.
+		const versions = await modrinthProvider.listVersions('terralith', {
+			minecraftVersion: '1.21.1',
+			loader: 'fabric',
+			includeDatapacks: true
+		});
+		expect(JSON.parse(lastUrl().searchParams.get('loaders')!)).toEqual(['fabric', 'datapack']);
+		const pack = versions.find((v) => v.loaders.includes('datapack') && !v.loaders.includes('fabric'))!;
+		const jar = versions.find((v) => v.loaders.includes('fabric'))!;
+		expect(pack.files[0].filename).toMatch(/\.zip$/);
+		expect(isDatapackVersion(pack, 'fabric')).toBe(true);
+		expect(isDatapackVersion(jar, 'fabric')).toBe(false);
+		expect(isDatapackVersion(jar, 'vanilla')).toBe(jar.loaders.includes('datapack'));
+		expect(isDatapackVersion(pack, 'quilt')).toBe(true);
 	});
 
 	it('picks a Fugue a Java 21 Cleanroom can load', async () => {

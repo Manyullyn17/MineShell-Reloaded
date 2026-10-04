@@ -233,9 +233,13 @@ reverse proxy — is where this should land unless there is a specific reason ot
 
 ### Data packs from the mod browser
 
-Modrinth projects that only publish a data pack `.zip` (no loader `.jar` build) show up in
-the mod browser but have no installable versions, because versions are listed for the
-server's loader. Install those into `<level-name>/datapacks/` instead, tracked like a mod.
+Built (`mods/datapacks.ts`). The versions list asks Modrinth for the server's loader or
+"datapack"; a version without the server's loader but tagged datapack installs into
+`<level-name>/datapacks/` (created before the world exists, so world-generation packs apply
+from the first start), tracked in `instance_datapacks`. The Mods tab lists that folder (from
+the browser, from the modpack, or added by hand) with Remove; vanilla servers get the browser
+for data pack releases. Not done: CurseForge data packs (a separate class the mod browser does
+not search), and updates for data packs.
 
 ### Pack change preview: content in data-pack-loader folders
 

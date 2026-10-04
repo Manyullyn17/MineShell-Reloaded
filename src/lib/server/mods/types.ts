@@ -116,7 +116,8 @@ export interface ModProvider {
 	getProject(id: string): Promise<SearchHit>;
 	listVersions(
 		id: string,
-		filter?: { minecraftVersion?: string; loader?: string }
+		/** includeDatapacks: also versions published as a data pack (Modrinth's "datapack" loader). */
+		filter?: { minecraftVersion?: string; loader?: string; includeDatapacks?: boolean }
 	): Promise<ProjectVersion[]>;
 	/**
 	 * `context` helps a provider that cannot look a version up by id alone:

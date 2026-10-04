@@ -2498,6 +2498,435 @@
    }
   ]
  },
+ "GET https://api.modrinth.com/v2/project/terralith/version?game_versions=%5B%221.21.1%22%5D&loaders=%5B%22fabric%22%2C%22datapack%22%5D": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": [
+   {
+    "game_versions": [
+     "1.21.1"
+    ],
+    "loaders": [
+     "fabric"
+    ],
+    "environment": "server_only",
+    "id": "eWDLFabb",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": true,
+    "name": "v2.6.2 ~ Fabric Mod 1.21.1",
+    "version_number": "2.6.2",
+    "changelog": "# Terralith 2.6.2 (1.21.1)\nFinally, Terralith 2.6.0 has been backported to 1.21.1. This update also includes an assortment of features and bug fixed backported from later versions of Terralith.\n- Now depends on [Lithostitched](https://modrinth.com/mod/lithostitched)\n- Now compatible with Superflat, Single Biome, Large Biomes, and Amplified world types\n- Added two new world types: **Amplified + Large Biomes**, and **Oops! All Skylands**\n- Added a config file. It is now possible to toggle the intro message, recipe changes, custom structures, Vanilla stone generation, Skylands, and Terrain slabs\n- Edited intro message to warn about uninstallation\n- Removed Endermen from Underground Jungle to prevent them from surpassing the mobcap\n- Removed Skeletons from Frostfire Caves in lieu of Stray\n- Cobblestone in Infested Caves is now Infested Cobblestone\n- Added extra purple flowers to Lavendar biomes\n- Small tweaks to Autumn and Spring Skylands\n- Camels now naturally spawn in desert biomes (to match Vanilla 1.21.5 behaviour)\n- Fixed issue where modded structures could spawn underneath Skyland biomes\n- Removed Axolotls from incorrect biomes\n- Serene Seasons will no longer affect Skyland biomes\n- Fixed issue where some trapdoors could be waterlogged in Mage Towers\n- Disabled Zombie Sieges in Terralith's rare island biomes\n\nThanks to Apollo for making this update possible.",
+    "changelog_url": null,
+    "date_published": "2026-06-09T17:42:24.605095Z",
+    "downloads": 333516,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "NUvbDndV",
+      "hashes": {
+       "sha1": "c200e0c01f48aecd7f34c4be337d8ff65b60c2dc",
+       "sha512": "1dcd6d8576b5a664ca39aa530964c3439275c9ec1f83e4a43a35eb1eea125158f18d3a1d1b453db869f3f353555dfe69abc0460221c66f50613b5b30079ac54a"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/eWDLFabb/Terralith_1.21.x_v2.6.2.jar",
+      "filename": "Terralith_1.21.x_v2.6.2.jar",
+      "primary": true,
+      "size": 2813817,
+      "file_type": null
+     }
+    ],
+    "dependencies": [
+     {
+      "version_id": null,
+      "project_id": "P7dR8mSH",
+      "file_name": null,
+      "dependency_type": "required"
+     },
+     {
+      "version_id": null,
+      "project_id": "XaDC71GB",
+      "file_name": null,
+      "dependency_type": "required"
+     }
+    ]
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3",
+     "1.21.4"
+    ],
+    "loaders": [
+     "datapack"
+    ],
+    "environment": "unknown",
+    "id": "urbokcOc",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": false,
+    "name": "v2.5.8 ~ Datapack 1.21.x",
+    "version_number": "2.5.8",
+    "changelog": "# Terralith 2.5.8\n- Added missing loot table in the Mage Complex houses\n- Added missing loot table in the shepherd house in the Desert Fortified Village\n- Fixed issue with enchanted books/items receiving enchantments they shouldn't",
+    "changelog_url": null,
+    "date_published": "2025-01-15T16:46:11.544593Z",
+    "downloads": 4561969,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "rv8WhrCd",
+      "hashes": {
+       "sha512": "31dfba2a60d144ca3af3c0aa8662db84f3e966fdb555b9eadbd5bdf4e4d864d2e4a8393b99388c0eaa0f03052bf35b6ae44b1858fa046fae35d408c40b789166",
+       "sha1": "fc1349e387e480bec84c6813d1d75e85c3a5ac4f"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/urbokcOc/Terralith_1.21_v2.5.8.zip",
+      "filename": "Terralith_1.21_v2.5.8.zip",
+      "primary": true,
+      "size": 3112105,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3",
+     "1.21.4"
+    ],
+    "loaders": [
+     "fabric",
+     "forge",
+     "neoforge",
+     "quilt"
+    ],
+    "environment": "server_only",
+    "id": "MuJMtPGQ",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": true,
+    "name": "v2.5.8 ~ Mod 1.21.x",
+    "version_number": "2.5.8",
+    "changelog": "# Terralith 2.5.8\n- Added missing loot table in the Mage Complex houses\n- Added missing loot table in the shepherd house in the Desert Fortified Village\n- Fixed issue with enchanted books/items receiving enchantments they shouldn't",
+    "changelog_url": null,
+    "date_published": "2025-01-15T16:45:23.822443Z",
+    "downloads": 4572465,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "aMKw6D2u",
+      "hashes": {
+       "sha1": "bee0cfb1a8cd4bf3d96bccea224fb45d74de9085",
+       "sha512": "f862ed5435ce4c11a97d2ea5c40eee9f817c908f3223b5fd3e3fff0562a55111d7429dc73a2f1ca0b1af7b1ff6fa0470ed6efebb5de13336c40bb70fb357dd60"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/MuJMtPGQ/Terralith_1.21.x_v2.5.8.jar",
+      "filename": "Terralith_1.21.x_v2.5.8.jar",
+      "primary": true,
+      "size": 3115385,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3",
+     "1.21.4"
+    ],
+    "loaders": [
+     "fabric",
+     "forge",
+     "neoforge",
+     "quilt"
+    ],
+    "environment": "server_only",
+    "id": "lQreFvOm",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": true,
+    "name": "v2.5.7 ~ Mod 1.21.x",
+    "version_number": "2.5.7",
+    "changelog": "# Terralith 2.5.7\n\n## New\n- Supports 1.21.4 (all 1.21.x versions)\n- Infested Caves rework using the new Pale Garden blocks\n- Added boulders to Sakura Grove's floor\n- Added a Deep Warm Ocean biome\n- Added `#terralith:caves` biome tag for quickly locating a cave biome\n\n## Changes\n- *Greatly* nerfed loot quality and quantity in the Fortified Villages and Mage Towers\n- Pale Garden generates in a similar location to Dark Forest, instead of in plateau regions like in Vanilla\n- Small Pale Garden tweaks, such as raising the tree height\n- Moonlight Grove/Valley have the Acacia Logs from its trees replaced with Pale Oak Logs\n- Pink-colored leaves in Sakura Valley/Grove and Spring Skylands are replaced with Cherry Leaves or Azalea Leaves\n- Removed small dripstone generation from Underground Jungle's ground vegetation\n\n## Bug Fixes\n- Gravel Desert now should generate in colder areas of the world\n- Doubled Mooshroom spawn count in Mushroom Fields (back to Vanilla numbers)\n- Fixed issue where enchanted books in some loot tables could take on any enchantment possible\n- Ocelot no longer spawns as part of the monster group",
+    "changelog_url": null,
+    "date_published": "2024-12-04T14:14:03.481925Z",
+    "downloads": 154869,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "D5CfR2Xh",
+      "hashes": {
+       "sha512": "43d40bfe8dce603b7c9ebeb72db389e277cd3055414629350f2883a6c76472a887ac350a95d9ec55c28aec165dee773640462cb674cdc4c3efb30099f3463b72",
+       "sha1": "3f3ec06abc67d4bd28213b79c512ebc604c709b2"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/lQreFvOm/Terralith_1.21.x_v2.5.7.jar",
+      "filename": "Terralith_1.21.x_v2.5.7.jar",
+      "primary": true,
+      "size": 3113485,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3",
+     "1.21.4"
+    ],
+    "loaders": [
+     "datapack"
+    ],
+    "environment": "unknown",
+    "id": "PcYlKx8w",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": false,
+    "name": "v2.5.7 ~ Datapack 1.21.x",
+    "version_number": "2.5.7",
+    "changelog": "# Terralith 2.5.7\n\n## New\n- Supports 1.21.4 (all 1.21.x versions)\n- Infested Caves rework using the new Pale Garden blocks\n- Added boulders to Sakura Grove's floor\n- Added a Deep Warm Ocean biome\n- Added `#terralith:caves` biome tag for quickly locating a cave biome\n\n## Changes\n- *Greatly* nerfed loot quality and quantity in the Fortified Villages and Mage Towers\n- Pale Garden generates in a similar location to Dark Forest, instead of in plateau regions like in Vanilla\n- Small Pale Garden tweaks, such as raising the tree height\n- Moonlight Grove/Valley have the Acacia Logs from its trees replaced with Pale Oak Logs\n- Pink-colored leaves in Sakura Valley/Grove and Spring Skylands are replaced with Cherry Leaves or Azalea Leaves\n- Removed small dripstone generation from Underground Jungle's ground vegetation\n\n## Bug Fixes\n- Gravel Desert now should generate in colder areas of the world\n- Doubled Mooshroom spawn count in Mushroom Fields (back to Vanilla numbers)\n- Fixed issue where enchanted books in some loot tables could take on any enchantment possible\n- Ocelot no longer spawns as part of the monster group",
+    "changelog_url": null,
+    "date_published": "2024-12-03T18:30:39.230727Z",
+    "downloads": 25506,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "PAS6GP2z",
+      "hashes": {
+       "sha1": "9645d4c557e8419154cc5775c5fe3ba9e82bfb8f",
+       "sha512": "832d307d662646b69a9253fcd6ed1e6f81b9e863f7692985fcba182c709bbe97735421e06497491c0b3390224d8a5bce17e5e2a3c15b15ac9cf8208367d44258"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/PcYlKx8w/Terralith_1.21_v2.5.7.zip",
+      "filename": "Terralith_1.21_v2.5.7.zip",
+      "primary": true,
+      "size": 3110208,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3"
+    ],
+    "loaders": [
+     "datapack"
+    ],
+    "environment": "unknown",
+    "id": "tnavs2WP",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": false,
+    "name": "v2.5.6 ~ Datapack 1.21.x",
+    "version_number": "2.5.6",
+    "changelog": "# Terralith 2.5.6\n- Updated to support 1.21.3\n- 1.21.2+ bundle changes:\n  - Will be a random color in loot tables\n  - Now will appear in their loot tables normally, as they were prior to 2.5.5",
+    "changelog_url": null,
+    "date_published": "2024-10-29T14:19:19.606466Z",
+    "downloads": 15700,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "t8lDgvvk",
+      "hashes": {
+       "sha1": "8a12c94e20d5ecde1232529f8d57c476f0958bfa",
+       "sha512": "898a44ae639e185b20a9297e77a989d645036a24f612c69d6fe48e7f002b395806c982e662db49fced24ee3c72d204d11ac81822d1b04baa019fe1565d0c8130"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/tnavs2WP/Terralith_1.21_v2.5.6.zip",
+      "filename": "Terralith_1.21_v2.5.6.zip",
+      "primary": true,
+      "size": 3001534,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1",
+     "1.21.2",
+     "1.21.3"
+    ],
+    "loaders": [
+     "fabric",
+     "forge",
+     "neoforge",
+     "quilt"
+    ],
+    "environment": "server_only",
+    "id": "81gyNzd0",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": true,
+    "name": "v2.5.6 ~ Mod 1.21.x",
+    "version_number": "2.5.6",
+    "changelog": "# Terralith 2.5.6\n- Updated to support 1.21.3\n- 1.21.2+ bundle changes:\n  - Will be a random color in loot tables\n  - Now will appear in their loot tables normally, as they were prior to 2.5.5",
+    "changelog_url": null,
+    "date_published": "2024-10-29T14:15:46.749624Z",
+    "downloads": 92122,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "XD9BZrqu",
+      "hashes": {
+       "sha1": "4387245232dd9d6f5e7a06b222cb0fa404a6503f",
+       "sha512": "3696528f49892c7e7719013ebf46e8af4c2db0924011e67b800262e3aca7728ac116b16689f29990a15f292bf8130955b4c165c118925b0689c8c27cd1f249f0"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/81gyNzd0/Terralith_1.21.x_v2.5.6.jar",
+      "filename": "Terralith_1.21.x_v2.5.6.jar",
+      "primary": true,
+      "size": 3004814,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1"
+    ],
+    "loaders": [
+     "datapack"
+    ],
+    "environment": "unknown",
+    "id": "4LsxILTH",
+    "project_id": "8oi3bsk5",
+    "author_id": "SR8MIsEo",
+    "featured": false,
+    "name": "v2.5.5 ~ Datapack 1.21.x",
+    "version_number": "2.5.5",
+    "changelog": "First datapack upload for the current latest version of **Terralith** for `1.21.x`! See the corresponding mod version on this Modrinth page for the changelog.",
+    "changelog_url": null,
+    "date_published": "2024-09-18T08:41:10.499609Z",
+    "downloads": 23925,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "6n6mjGqS",
+      "hashes": {
+       "sha1": "b3b99c6536118ab53ccac7a4df3752c4f5e8811b",
+       "sha512": "c1b48a5d30a5ac3fb2dc9cc57c68304625bb55e36a1482e4f6f8935ab037151a03eee51b32bed10ec52a902626185f7c887585e5b575958851ff40390e84ee8d"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/4LsxILTH/Terralith_1.21_v2.5.5.zip",
+      "filename": "Terralith_1.21_v2.5.5.zip",
+      "primary": true,
+      "size": 2962968,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1"
+    ],
+    "loaders": [
+     "fabric",
+     "forge",
+     "neoforge",
+     "quilt"
+    ],
+    "environment": "server_only",
+    "id": "rEF3UnUI",
+    "project_id": "8oi3bsk5",
+    "author_id": "oRXQvVNJ",
+    "featured": true,
+    "name": "v2.5.5 ~ Mod 1.21.x",
+    "version_number": "2.5.5",
+    "changelog": "# Terralith 2.5.5\n- Made Spire and all Rubble rarer\n- Replaced roofs on Mage Towers that were accidentally cut off\n- Optimised mob spawning in Mage Towers\n- Various house/road fixes in Fortified Village\n- Fixed missing fisherman loot table in Desert Fortified Village\n- Fixed erroneous leaf decay on many of Terralith's custom trees\n- Fix broken leaf placement in Skylands accidentally introduced in 2.5.4\n- Bundles now only appear in loot tables if the player has unlocked the bundle recipe (aka, if the experiment is enabled)",
+    "changelog_url": null,
+    "date_published": "2024-09-13T18:45:02.510460Z",
+    "downloads": 109858,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "u0vR6sHm",
+      "hashes": {
+       "sha1": "e9681a1963843e5be381d7ba6b2e869b47f062e6",
+       "sha512": "8a0c06e3380d80f346a2e0ccba24dcd95011152c5110070d2093af35da1fa2c1399ab1fa9b5d466de2ed233ef2d8c99e6804ea9d20e49c886f0f7d5d46cad4ef"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/rEF3UnUI/Terralith_1.21.x_v2.5.5.jar",
+      "filename": "Terralith_1.21.x_v2.5.5.jar",
+      "primary": true,
+      "size": 2966255,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   },
+   {
+    "game_versions": [
+     "1.21",
+     "1.21.1"
+    ],
+    "loaders": [
+     "fabric",
+     "forge",
+     "neoforge",
+     "quilt"
+    ],
+    "environment": "server_only",
+    "id": "Mm6TmSwo",
+    "project_id": "8oi3bsk5",
+    "author_id": "oRXQvVNJ",
+    "featured": false,
+    "name": "v2.5.4 ~ Mod 1.21",
+    "version_number": "2.5.4",
+    "changelog": "# 2.5.4\n- Fixed uncommon crash regarding features in Thermal Caves\n- Fixed annoying (but harmless) console spam regarding Biome Tag Villagers\n- Armadillos correctly spawn in Savannas and Savanna Plateaus\n- Striped and Spotted wolf variants now spawn in all Vanilla and Terralith biomes that they're meant to\n- Barrels inside the Terralith Witch Hut have a new loot table\n- Fixed issue where some suspicious gravel/sand in a few of the large Rubble structures were missing loot tables\n- Fixed missing fisherman loot table in Desert Fortified Village\n- The book in the lectern in the Desert Outpost is now readable and doesn't glitch out",
+    "changelog_url": null,
+    "date_published": "2024-07-07T22:16:47.104769Z",
+    "downloads": 155071,
+    "version_type": "release",
+    "status": "listed",
+    "requested_status": null,
+    "files": [
+     {
+      "id": "hdkfW272",
+      "hashes": {
+       "sha512": "d49f8a854a6ec8f49323986bbbffc061d62f2a85b91bc9ed442158c00551a66dcf8883b8151cfd732de8d6ba1006d0d94e6e456f15510eb32aacfd38da1095e1",
+       "sha1": "e76c7b37826574840604442a08c10d2c3bd2c213"
+      },
+      "url": "https://cdn.modrinth.com/data/8oi3bsk5/versions/Mm6TmSwo/Terralith_1.21_v2.5.4.jar",
+      "filename": "Terralith_1.21_v2.5.4.jar",
+      "primary": true,
+      "size": 2794022,
+      "file_type": null
+     }
+    ],
+    "dependencies": []
+   }
+  ]
+ },
  "GET https://api.modrinth.com/v2/search?limit=20&offset=0&index=relevance&facets=%5B%5B%22environment%3Aclient_and_server%22%2C%22environment%3Aclient_only_server_optional%22%2C%22environment%3Aserver_only%22%2C%22environment%3Aserver_only_client_optional%22%2C%22environment%3Adedicated_server_only%22%2C%22environment%3Aclient_or_server%22%2C%22environment%3Aclient_or_server_prefers_both%22%2C%22environment%3Aunknown%22%5D%2C%5B%22project_type%3Amod%22%2C%22project_type%3Adatapack%22%5D%2C%5B%22versions%3A1.21.1%22%5D%2C%5B%22categories%3Afabric%22%2C%22categories%3Adatapack%22%5D%5D&query=chunky": {
   "status": 200,
   "contentType": "application/json",

@@ -213,9 +213,10 @@ export const modrinthProvider: ModProvider = {
 		if (filter?.minecraftVersion) {
 			params.set('game_versions', JSON.stringify([filter.minecraftVersion]));
 		}
-		if (filter?.loader && filter.loader !== 'vanilla') {
-			params.set('loaders', JSON.stringify([filter.loader]));
-		}
+		const loaders = filter?.loader && filter.loader !== 'vanilla' ? [filter.loader] : [];
+		// Data pack releases carry the loader "datapack"; Modrinth ORs the list.
+		if (filter?.includeDatapacks) loaders.push('datapack');
+		if (loaders.length) params.set('loaders', JSON.stringify(loaders));
 		const suffix = params.toString() ? `?${params}` : '';
 		const versions = await fetchJson<MrVersion[]>(
 			`${API}/project/${encodeURIComponent(id)}/version${suffix}`

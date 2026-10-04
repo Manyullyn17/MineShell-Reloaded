@@ -59,6 +59,7 @@ import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
 import { deleteMacros, getMacros, setMacros } from './macros';
 import { deleteChunkySettings } from './chunky';
+import { copyDatapackRows } from './mods/datapacks';
 
 export class InstanceError extends Error {}
 
@@ -1387,6 +1388,7 @@ export async function cloneInstance(
 				copyScheduledCommands(source.id, id);
 				copyCustomFields(source.id, id);
 				setMacros(id, getMacros(source.id));
+				copyDatapackRows(source.id, id);
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

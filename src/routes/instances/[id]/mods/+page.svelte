@@ -163,6 +163,8 @@
 		versionNumber: string;
 		channel: string;
 		clientOnly: boolean;
+		/** Installs into the world's datapacks folder rather than mods/. */
+		datapack: boolean;
 		dependencies: { type: string; name: string | null }[];
 	};
 	let versions = $state<Version[]>([]);
@@ -360,8 +362,8 @@
 {#if !data.supportsMods}
 	<div class="notice info">
 		<p>
-			This server runs {data.modloader}, which does not load mods. Change the loader in instance
-			settings, or use datapacks under Files.
+			This server runs {data.modloader}, which does not load mods. Data packs work: the browser below offers
+			their data pack releases. For mods, change the loader in instance settings.
 		</p>
 	</div>
 {/if}
@@ -618,7 +620,7 @@
 												<option value={v.id}>
 													{v.versionNumber}{v.channel !== 'release' ? ` (${v.channel})` : ''}{v.clientOnly
 														? ' (client only)'
-														: ''}
+														: ''}{v.datapack ? ' (data pack)' : ''}
 												</option>
 											{/each}
 										{/if}
@@ -629,6 +631,13 @@
 									<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
 								</div>
 							</div>
+
+							{#if versions.find((v) => v.id === versionId)?.datapack}
+								<p class="notice info small">
+									A data pack: it goes into <code>{data.datapacks.world}/datapacks</code>, not the mods folder. Packs that
+									change world generation only affect chunks generated after it is installed.
+								</p>
+							{/if}
 
 							{#if versions.find((v) => v.id === versionId)?.clientOnly}
 								<p class="notice warning small">
@@ -872,7 +881,70 @@
 	{/if}
 </section>
 
+<section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>Data packs</h2>
+			<p>
+				In <code>{data.datapacks.world}/datapacks</code>. Minecraft loads new ones when the world loads; on a running
+				server, <code>/reload</code> loads them now.
+			</p>
+		</div>
+	</div>
+	{#if data.datapacks.packs.length === 0}
+		<div class="empty"><p>No data packs. Data pack releases from the browser above land here.</p></div>
+	{:else}
+		<table>
+			<thead>
+				<tr>
+					<th>Data pack</th>
+					<th>Version</th>
+					<th class="num">Size</th>
+					<th><span class="visually-hidden">Actions</span></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.datapacks.packs as pack (pack.fileName)}
+					<tr>
+						<td>
+							{#if pack.projectUrl}
+								<a href={pack.projectUrl} target="_blank" rel="noreferrer">{pack.name}</a>
+							{:else}
+								<span class="mono small">{pack.name}</span>
+							{/if}
+							{#if pack.fromPack}<span class="tag">from the modpack</span>{/if}
+						</td>
+						<td class="mono small">{pack.version ?? ''}</td>
+						<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
+						<td class="right">
+							<form
+								method="POST"
+								action="?/removeDatapack"
+								use:enhance={({ cancel }) => {
+									if (!confirm(`Remove ${pack.name}?`)) cancel();
+								}}
+							>
+								<input type="hidden" name="fileName" value={pack.fileName} />
+								<button class="button-quiet button-danger">Remove</button>
+							</form>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+</section>
+
 <style>
+	.num {
+		text-align: right;
+		white-space: nowrap;
+	}
+
+	.right {
+		text-align: right;
+	}
+
 	.warn-text {
 		color: var(--warning);
 	}

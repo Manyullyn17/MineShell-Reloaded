@@ -263,3 +263,31 @@ export const playerFields = sqliteTable(
 	})
 );
 
+
+/** Data packs installed from the mod browser (lib/server/mods/datapacks.ts). */
+export const instanceDatapacks = sqliteTable(
+	'instance_datapacks',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		source: text('source').notNull(),
+		projectId: text('project_id').notNull(),
+		slug: text('slug').notNull(),
+		name: text('name').notNull(),
+		projectUrl: text('project_url'),
+		iconUrl: text('icon_url'),
+		version: text('version'),
+		versionId: text('version_id'),
+		/** Relative to <level-name>/datapacks, which follows level-name. */
+		fileName: text('file_name').notNull(),
+		hash: text('hash'),
+		installedAt: integer('installed_at').notNull()
+	},
+	(t) => ({
+		uniqueFile: uniqueIndex('instance_datapacks_file_idx').on(t.instanceId, t.fileName)
+	})
+);
+
+export type InstanceDatapack = typeof instanceDatapacks.$inferSelect;

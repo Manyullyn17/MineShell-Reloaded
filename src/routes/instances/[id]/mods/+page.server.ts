@@ -15,6 +15,7 @@ import {
 	trackManualJar
 } from '$lib/server/mods';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '$lib/server/modloaders';
+import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '$lib/server/mods/datapacks';
 import { saveUpload } from '$lib/server/files';
 import { db } from '$lib/server/db';
 import { serverInstances } from '$lib/server/db/schema';
@@ -34,11 +35,13 @@ export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
 	const mods = await listInstanceMods(instance);
+	const datapacks = await listDatapacks(instance);
 	const loader = getLoader(instance.modloader);
 	const catalogLoader = loader.catalogLoader ?? loader.id;
 
 	return {
 		mods,
+		datapacks,
 		running: summary.running,
 		busy: instance.status === 'provisioning',
 		/** Changing single mods of a modpack is opt-in on the page; the pack's version is the usual thing to change. */
@@ -183,6 +186,23 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: 'Pick a mod and a version.' });
 		}
 
+		const loader = getLoader(instance.modloader);
+		const catalogLoader = loader.catalogLoader ?? loader.id;
+		let datapacks = 0;
+		/** A data pack release goes into the world's datapacks folder, anything else into mods/. */
+		const installVersion = async (
+			provider: ReturnType<typeof getModProvider>,
+			project: Awaited<ReturnType<ReturnType<typeof getModProvider>['getProject']>>,
+			version: Awaited<ReturnType<ReturnType<typeof getModProvider>['getVersion']>>
+		) => {
+			const meta = { id: project.id, slug: project.slug, name: project.name, projectUrl: project.projectUrl, iconUrl: project.iconUrl };
+			if (isDatapackVersion(version, catalogLoader)) {
+				datapacks++;
+				return installDatapackVersion(instance, provider.id, meta, version);
+			}
+			return installModVersion(instance, provider.id, meta, version);
+		};
+
 		try {
 			const provider = getModProvider(source);
 			const context = { minecraftVersion: instance.minecraftVersion };
@@ -191,20 +211,7 @@ export const actions: Actions = {
 				provider.getVersion(projectId, versionId, context)
 			]);
 
-			const installed = [
-				await installModVersion(
-					instance,
-					provider.id,
-					{
-						id: project.id,
-						slug: project.slug,
-						name: project.name,
-						projectUrl: project.projectUrl,
-						iconUrl: project.iconUrl
-					},
-					version
-				)
-			];
+			const installed = [await installVersion(provider, project, version)];
 
 			// Dependencies are chosen individually in the UI and arrive as
 			// "<projectId>:<versionId>" pairs, so skipping just one is possible.
@@ -217,20 +224,7 @@ export const actions: Actions = {
 						provider.getProject(depProjectId),
 						provider.getVersion(depProjectId, depVersionId, context)
 					]);
-					installed.push(
-						await installModVersion(
-							instance,
-							provider.id,
-							{
-								id: depProject.id,
-								slug: depProject.slug,
-								name: depProject.name,
-								projectUrl: depProject.projectUrl,
-								iconUrl: depProject.iconUrl
-							},
-							depVersion
-						)
-					);
+					installed.push(await installVersion(provider, depProject, depVersion));
 				} catch {
 					failedDeps.push(depProjectId);
 				}
@@ -240,9 +234,10 @@ export const actions: Actions = {
 			const note = failedDeps.length
 				? ` ${failedDeps.length} dependenc${failedDeps.length === 1 ? 'y' : 'ies'} could not be installed.`
 				: '';
+			const when = datapacks && datapacks === installed.length ? 'Restart the server or run /reload' : 'Restart the server';
 			return {
 				ok: true,
-				message: `Installed ${installed.join(', ')}. Restart the server to load ${installed.length === 1 ? 'it' : 'them'}.${note}`
+				message: `Installed ${installed.join(', ')}. ${when} to load ${installed.length === 1 ? 'it' : 'them'}.${note}`
 			};
 		} catch (err) {
 			return fail(502, {
@@ -250,6 +245,17 @@ export const actions: Actions = {
 				message: err instanceof Error ? err.message : 'Install failed.'
 			});
 		}
+	},
+
+	removeDatapack: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const fileName = String((await request.formData()).get('fileName') ?? '');
+		try {
+			await removeDatapack(instance, fileName);
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not remove it.' });
+		}
+		return { ok: true, message: `Removed ${fileName}. The world drops it at the next start or /reload.` };
 	},
 
 	sync: async ({ params }) => {
