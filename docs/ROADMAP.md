@@ -243,8 +243,14 @@ Built (`mods/datapacks.ts`). The versions list asks Modrinth for the server's lo
 `<level-name>/datapacks/` (created before the world exists, so world-generation packs apply
 from the first start), tracked in `instance_datapacks`. The Mods tab lists that folder (from
 the browser, from the modpack, or added by hand) with Remove; vanilla servers get the browser
-for data pack releases. Not done: CurseForge data packs (a separate class the mod browser does
-not search), and updates for data packs.
+for data pack releases.
+
+Saved for later (October 2026):
+- CurseForge data packs: a separate class ("Data Packs") the mod browser does not search; the
+  mirror's coverage of it is unchecked.
+- Updates for data packs: `instance_datapacks` has project and version ids, so the mod update
+  check could cover them. A world-generation pack the world has loaded needs care on update
+  (removed or renamed biomes break loading, the same way removing the pack does).
 
 ### Pack change preview: content in data-pack-loader folders
 
