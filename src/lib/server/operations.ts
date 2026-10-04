@@ -51,14 +51,14 @@ export type Journal =
 	/** A snapshot taken on request; a copy cut short is a `.partial` folder that recovery deletes. */
 	| { kind: 'snapshot' }
 	| {
-			/** Reset, replace or restore the world (world.ts). */
+			/** Reset, replace or restore the world, or one dimension of it (world.ts). */
 			kind: 'world-change';
-			action: 'reset' | 'replace' | 'restore';
+			action: 'reset' | 'replace' | 'restore' | 'reset-dimension' | 'restore-dimension';
 			/** Where the current world folders move: a snapshot being assembled, or a folder deleted afterwards. */
 			aside: string;
 			/** The snapshot `aside` is renamed to once complete, when one was wanted. */
 			keepAs: string | null;
-			/** World folders that existed, all moved aside. */
+			/** World folders (or one dimension's folders) that existed, all moved aside. */
 			worlds: string[];
 			/** World folders the change puts in place. */
 			placing: string[];

@@ -13,7 +13,16 @@ import {
 	SnapshotChoiceNeeded,
 	worldFolders
 } from '$lib/server/snapshots';
-import { resetWorld, restoreSnapshot, snapshotNow, type SeedChoice } from '$lib/server/world';
+import {
+	resetDimension,
+	resetWorld,
+	restoreDimension,
+	restoreSnapshot,
+	snapshotDimensions,
+	snapshotNow,
+	type SeedChoice
+} from '$lib/server/world';
+import { listDimensions, type Dimension } from '$lib/server/dimensions';
 import {
 	cancelPregen,
 	chunkyLanguage,
@@ -41,7 +50,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		worlds: await worldFolders(instance.path),
 		seed: values['level-seed'] ?? '',
 		snapshotPrompt: await snapshotPrompt(instance.path),
-		snapshots: await listSnapshots(instance.path),
+		// Dimensions travel to the page as the first of their folders, which is how actions name them.
+		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
+		snapshots: await Promise.all(
+			(await listSnapshots(instance.path)).map(async (s) => ({
+				...s,
+				dimensions: (await snapshotDimensions(instance, s)).map(dimensionOption)
+			}))
+		),
 		current: {
 			minecraftVersion: instance.minecraftVersion,
 			modloader: instance.modloader,
@@ -65,6 +81,8 @@ async function chunkyData(instance: ReturnType<typeof requireInstance>, running:
 		pausedForPlayers: pausedForPlayers(instance.id)
 	};
 }
+
+const dimensionOption = (d: Dimension) => ({ key: d.paths[0], label: d.label, overworld: d.overworld });
 
 function chunkyRefused(err: unknown) {
 	if (err instanceof ChunkyError) return fail(400, { ok: false, message: err.message });
@@ -158,10 +176,14 @@ export const actions: Actions = {
 	restore: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
+		const dimension = String(form.get('dimension') ?? '');
 		try {
-			await restoreSnapshot(instance, String(form.get('id') ?? ''), {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
-			});
+			const snapshot = await decideSnapshot(instance.path, form.get('snapshot'));
+			if (dimension) {
+				await restoreDimension(instance, String(form.get('id') ?? ''), dimension, { snapshot });
+				return { ok: true, message: `Restoring one dimension from the snapshot. ${STARTED}` };
+			}
+			await restoreSnapshot(instance, String(form.get('id') ?? ''), { snapshot });
 			return { ok: true, message: `Restoring the snapshot. ${STARTED}` };
 		} catch (err) {
 			return refused(err);
@@ -188,6 +210,19 @@ export const actions: Actions = {
 		if (!(await getSnapshot(instance.path, id))) return fail(400, { ok: false, message: 'That snapshot no longer exists.' });
 		await deleteSnapshot(instance.path, id);
 		return { ok: true, message: 'Snapshot deleted.' };
+	},
+
+	resetDimension: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await resetDimension(instance, String(form.get('dimension') ?? ''), {
+				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
+			});
+			return { ok: true, message: `Resetting the dimension. ${STARTED}` };
+		} catch (err) {
+			return refused(err);
+		}
 	},
 
 	reset: async ({ request, params }) => {

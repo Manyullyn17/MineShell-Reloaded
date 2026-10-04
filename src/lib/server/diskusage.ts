@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
+import { dimensionLabel, isDimensionFolder } from './dimensions';
 import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
 import { serverWorldName } from './packworld';
@@ -58,18 +59,6 @@ async function sizeOf(full: string): Promise<number> {
 	return stat.isDirectory() ? directorySize(full) : stat.size;
 }
 
-async function isDimension(dir: string): Promise<boolean> {
-	const names = new Set((await entries(dir)).filter((e) => e.isDirectory()).map((e) => e.name));
-	return names.has('region') || names.has('entities');
-}
-
-/** "DIM-1" -> The Nether; 1.16+ keeps the nether and end in DIM-1/DIM1 as well. */
-function dimensionLabel(name: string): string {
-	if (name === 'DIM-1') return 'The Nether';
-	if (name === 'DIM1') return 'The End';
-	return name;
-}
-
 /**
  * One world folder split into dimensions: vanilla's DIM-1/DIM1, 1.12 mods'
  * DIM<n> and named folders (AoA_Abyss), 1.16+ `dimensions/<namespace>/<name>`.
@@ -87,7 +76,7 @@ async function worldItems(root: string, world: string): Promise<UsageItem[]> {
 				for (const dim of ns.isDirectory() ? await entries(path.join(full, ns.name)) : []) {
 					const dimRel = path.join(rel, ns.name, dim.name);
 					const bytes = await sizeOf(path.join(root, dimRel));
-					if (dim.isDirectory() && (await isDimension(path.join(root, dimRel)))) {
+					if (dim.isDirectory() && (await isDimensionFolder(path.join(root, dimRel)))) {
 						items.push({ label: `${ns.name}:${dim.name}`, path: dimRel, bytes });
 					} else rest += bytes;
 				}
@@ -95,7 +84,7 @@ async function worldItems(root: string, world: string): Promise<UsageItem[]> {
 			continue;
 		}
 		const bytes = await sizeOf(full);
-		if (entry.isDirectory() && (await isDimension(full))) {
+		if (entry.isDirectory() && (await isDimensionFolder(full))) {
 			items.push({ label: dimensionLabel(entry.name), path: rel, bytes });
 		} else rest += bytes;
 	}

@@ -35,6 +35,8 @@ export type SnapshotReason =
 	| 'world-reset'
 	| 'world-replace'
 	| 'world-restore'
+	| 'world-reset-dimension'
+	| 'world-restore-dimension'
 	| 'mod-update'
 	| 'manual';
 
@@ -46,6 +48,11 @@ export type Snapshot = {
 	label: string;
 	/** World folders in the snapshot, relative to the server folder. */
 	worlds: string[];
+	/**
+	 * Holds only these folders (one dimension, before it was reset), not the
+	 * whole world: restoring it puts back just them.
+	 */
+	partial?: boolean;
 	sizeBytes: number;
 	/** What the world was last run on, to warn before restoring it onto something else. */
 	minecraftVersion: string;
@@ -207,13 +214,21 @@ export async function getSnapshot(root: string, id: string): Promise<Snapshot | 
 
 export type SnapshotInput = { reason: SnapshotReason; label: string };
 
-function manifestFor(instance: ServerInstance, id: string, input: SnapshotInput, worlds: string[], sizeBytes: number): Snapshot {
+function manifestFor(
+	instance: ServerInstance,
+	id: string,
+	input: SnapshotInput,
+	worlds: string[],
+	sizeBytes: number,
+	partial: boolean
+): Snapshot {
 	return {
 		id,
 		createdAt: Date.now(),
 		reason: input.reason,
 		label: input.label,
 		worlds,
+		...(partial ? { partial: true } : {}),
 		sizeBytes,
 		minecraftVersion: instance.minecraftVersion,
 		modloader: instance.modloader,
@@ -239,10 +254,11 @@ export async function finishSnapshot(
 	instance: ServerInstance,
 	id: string,
 	input: SnapshotInput,
-	worlds: string[]
+	worlds: string[],
+	opts: { partial?: boolean } = {}
 ): Promise<Snapshot> {
 	const partial = partialPath(instance.path, id);
-	const manifest = manifestFor(instance, id, input, worlds, await directorySize(partial));
+	const manifest = manifestFor(instance, id, input, worlds, await directorySize(partial), opts.partial ?? false);
 	await fs.writeFile(path.join(partial, MANIFEST), JSON.stringify(manifest, null, 2), 'utf8');
 	await fs.rename(partial, snapshotPath(instance.path, id));
 	return manifest;

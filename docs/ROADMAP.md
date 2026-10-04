@@ -148,10 +148,12 @@ re-proposed or built twice.
 
 - **Three-way config diffs on pack update**: the old pack config, the user's edited copy
   (now moved to `old-configs/`) and the new pack config.
-- **World tools**: dimension reset and chunk pruning. Reset, replace, restore and download
-  of the whole world exist (`world.ts`).
-- **Granular snapshot restore**: one dimension, or a region of one. Restore is whole
-  snapshot only.
+- **World tools**: dimension reset is built (World tab; `dimensions.ts`, `resetDimension`).
+  The overworld means its terrain (region, entities, poi); level.dat, player data and the
+  world's data stay. Chunk pruning: see below.
+- **Granular snapshot restore**: built for one dimension (`restoreDimension`); a region of
+  one is not. A dimension reset keeps a partial snapshot (`partial: true`), whose restore
+  puts back only those folders.
 - **Scheduler hook**: run a script after a snapshot.
 
 ### Maybe someday

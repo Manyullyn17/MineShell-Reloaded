@@ -169,6 +169,7 @@
 						<td>
 							{s.label}
 							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
+							{#if s.partial}<span class="tag">part of the world</span>{/if}
 							<div class="faint small mono">{s.worlds.join(', ')}</div>
 						</td>
 						<td class="small nowrap" class:warn-text={differs(s)}>
@@ -222,9 +223,25 @@
 									}}
 								>
 									<input type="hidden" name="id" value={s.id} />
-									<p>
-										Replaces the current world with this snapshot from {formatDateTime(s.createdAt)}.
-									</p>
+									{#if s.partial}
+										<p>
+											Puts back {s.dimensions.map((d) => d.label).join(', ') || s.worlds.join(', ')} as it was on
+											{formatDateTime(s.createdAt)}. The rest of the world stays as it is.
+										</p>
+									{:else}
+										<p>Replaces the current world with this snapshot from {formatDateTime(s.createdAt)}.</p>
+										{#if s.dimensions.length > 1}
+											<div class="field restore-scope">
+												<label for="restore-dim-{s.id}">What to restore</label>
+												<select id="restore-dim-{s.id}" name="dimension">
+													<option value="">The whole world</option>
+													{#each s.dimensions as d (d.key)}
+														<option value={d.key}>Only {d.label}{d.overworld ? ' (terrain; players and world data stay)' : ''}</option>
+													{/each}
+												</select>
+											</div>
+										{/if}
+									{/if}
 									{#if differs(s)}
 										<p class="warn-text small">
 											This world last ran on Minecraft {s.minecraftVersion} with {s.modloader}
@@ -478,9 +495,48 @@
 		{#if data.running}<p class="hint">Stop the server to reset its world.</p>{/if}
 		<button class="button-danger" type="submit" disabled={data.running || busy || !data.worlds.length}>Reset the world</button>
 	</form>
+
+	{#if data.dimensions.length}
+		<h3 class="dimension-heading">Reset one dimension</h3>
+		<p class="muted small">
+			Removes one dimension so it generates again, with the world's seed, the next time it is loaded; the rest of the
+			world stays. Resetting the overworld removes its terrain only: player data, level.dat and the world's data stay.
+			Players inside it come back at the same spot in the new terrain.
+		</p>
+		<form
+			method="POST"
+			action="?/resetDimension"
+			use:enhance={({ formData, cancel }) => {
+				const key = String(formData.get('dimension'));
+				const label = data.dimensions.find((d) => d.key === key)?.label ?? key;
+				if (!confirm(`Reset ${label} of ${data.instance.name}?`)) cancel();
+			}}
+		>
+			<div class="field restore-scope">
+				<label for="reset-dimension">Dimension</label>
+				<select id="reset-dimension" name="dimension">
+					{#each data.dimensions as d (d.key)}
+						<option value={d.key}>{d.label}</option>
+					{/each}
+				</select>
+			</div>
+			<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="reset-dimension" />
+			<button class="button-danger" type="submit" disabled={data.running || busy}>Reset this dimension</button>
+		</form>
+	{/if}
 </section>
 
 <style>
+	.restore-scope {
+		max-width: 28rem;
+	}
+
+	.dimension-heading {
+		margin-top: var(--space-5);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--line);
+	}
+
 	.pregen {
 		list-style: none;
 		margin: 0 0 var(--space-4);

@@ -19,6 +19,7 @@ import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
+import { findDimension, listDimensions, type Dimension } from './dimensions';
 import {
 	finishSnapshot,
 	getSnapshot,
@@ -86,6 +87,11 @@ export async function restoreWorldChange(root: string, journal: WorldChangeJourn
 
 type WorldChange = {
 	action: WorldChangeJournal['action'];
+	/**
+	 * Folders to move aside, relative to the server folder; default: every
+	 * world folder. One dimension's folders make the snapshot partial.
+	 */
+	moving?: string[];
 	/** Shown in the task list and the snapshot, e.g. "Before resetting the world". */
 	label: string;
 	snapshot: boolean;
@@ -103,7 +109,11 @@ type WorldChange = {
 async function runWorldChange(instance: ServerInstance, change: WorldChange): Promise<string> {
 	await requireStopped(instance);
 	const root = instance.path;
-	const worlds = await worldFolders(root);
+	const worlds = change.moving
+		? (await Promise.all(change.moving.map(async (p) => ((await exists(path.join(root, p))) ? p : null)))).filter(
+				(p): p is string => p !== null
+			)
+		: await worldFolders(root);
 	const now = Date.now();
 	const snapshotId = change.snapshot && worlds.length ? await newSnapshotId(root, `world-${change.action}`) : null;
 	const rel = (p: string) => path.relative(root, p);
@@ -147,7 +157,8 @@ async function applyWorldChange(
 			await fs.mkdir(incoming, { recursive: true });
 			await change.assemble(incoming, task);
 		}
-		task.setProgress(null, snapshotId ? 'Moving the current world into a snapshot' : 'Moving the current world aside');
+		const what = change.moving ? 'what is there now' : 'the current world';
+		task.setProgress(null, snapshotId ? `Moving ${what} into a snapshot` : `Moving ${what} aside`);
 		await fs.mkdir(aside, { recursive: true });
 		for (const name of worlds) {
 			await fs.mkdir(path.dirname(path.join(aside, name)), { recursive: true });
@@ -162,8 +173,14 @@ async function applyWorldChange(
 		}
 		if (change.properties) await patchProperties(root, change.properties);
 		if (snapshotId) {
-			const snapshot = await finishSnapshot(instance, snapshotId, { reason: `world-${change.action}`, label: `Before ${change.label.toLowerCase()}` }, worlds);
-			task.log(`The previous world is kept as snapshot ${snapshot.id}.`);
+			const snapshot = await finishSnapshot(
+				instance,
+				snapshotId,
+				{ reason: `world-${change.action}`, label: `Before ${change.label.toLowerCase()}` },
+				worlds,
+				{ partial: !!change.moving }
+			);
+			task.log(`${change.moving ? 'What was there' : 'The previous world'} is kept as snapshot ${snapshot.id}.`);
 		}
 		commitOperation(instance.id, {});
 	} catch (err) {
@@ -208,8 +225,10 @@ export async function restoreSnapshot(instance: ServerInstance, id: string, opts
 	const from = snapshotPath(instance.path, snapshot.id);
 	return runWorldChange(instance, {
 		action: 'restore',
-		label: 'Restoring a world snapshot',
+		label: snapshot.partial ? 'Restoring part of the world' : 'Restoring a world snapshot',
 		snapshot: opts.snapshot,
+		// A partial snapshot (one dimension) replaces just its folders.
+		moving: snapshot.partial ? snapshot.worlds : undefined,
 		placing: snapshot.worlds,
 		// Copied, not moved: the snapshot stays usable.
 		assemble: async (incoming, task) => {
@@ -221,6 +240,59 @@ export async function restoreSnapshot(instance: ServerInstance, id: string, opts
 		},
 		done: `Restored the world from ${snapshot.id}.`
 	});
+}
+
+/**
+ * Delete one dimension so the next start generates it again. The overworld
+ * means its terrain (region, entities, poi); level.dat, player data and the
+ * world's data stay. Players standing in it come back at the same spot in the
+ * new terrain.
+ */
+export async function resetDimension(instance: ServerInstance, key: string, opts: { snapshot: boolean }): Promise<string> {
+	const dimension = await findDimension(instance.path, key);
+	if (!dimension) throw new InstanceError('That dimension is not in the world.');
+	return runWorldChange(instance, {
+		action: 'reset-dimension',
+		label: `Resetting ${dimension.label}`,
+		snapshot: opts.snapshot,
+		moving: dimension.paths,
+		placing: [],
+		done: `${dimension.label} is gone; the next start generates it again.`
+	});
+}
+
+/** Put one dimension back from a snapshot, leaving the rest of the world as it is. */
+export async function restoreDimension(
+	instance: ServerInstance,
+	snapshotId: string,
+	key: string,
+	opts: { snapshot: boolean }
+): Promise<string> {
+	const snapshot = await getSnapshot(instance.path, snapshotId);
+	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
+	const from = snapshotPath(instance.path, snapshot.id);
+	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
+	if (!dimension) throw new InstanceError('That snapshot does not have this dimension.');
+	return runWorldChange(instance, {
+		action: 'restore-dimension',
+		label: `Restoring ${dimension.label}`,
+		snapshot: opts.snapshot,
+		moving: dimension.paths,
+		placing: dimension.paths,
+		assemble: async (incoming, task) => {
+			task.setProgress(null, `Copying ${dimension.label} from snapshot ${snapshot.id}`);
+			for (const rel of dimension.paths) {
+				await fs.mkdir(path.dirname(path.join(incoming, rel)), { recursive: true });
+				await fs.cp(path.join(from, rel), path.join(incoming, rel), { recursive: true, preserveTimestamps: true });
+			}
+		},
+		done: `Restored ${dimension.label} from ${snapshot.id}.`
+	});
+}
+
+/** The dimensions a snapshot holds, found the way the live world's are. */
+export async function snapshotDimensions(instance: ServerInstance, snapshot: Snapshot): Promise<Dimension[]> {
+	return listDimensions(snapshotPath(instance.path, snapshot.id), await serverWorldName(instance.path));
 }
 
 /** Take a snapshot now, outside any other operation. */
