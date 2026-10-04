@@ -27,6 +27,16 @@ import { modsDir, setModEnabled } from '$lib/server/mods';
 import { redirect } from '@sveltejs/kit';
 import { cancelCountdown, getCountdown, startCountdown } from '$lib/server/countdown';
 import { tickStats } from '$lib/server/tps';
+import {
+	activeProfile,
+	cancelProfile,
+	hasSpark,
+	PROFILE_SECONDS,
+	SparkError,
+	sparkUploads,
+	startProfile,
+	stopProfile
+} from '$lib/server/spark';
 
 /**
  * First non-internal IPv4 address found across interfaces. Falls back to the
@@ -112,6 +122,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		modloaderVersion: instance.modloaderVersion
 	});
 
+	const spark = (await hasSpark(instance.path))
+		? {
+				active: activeProfile(instance.id),
+				durations: PROFILE_SECONDS,
+				uploads: (await sparkUploads(instance.path)).slice(0, 5)
+			}
+		: null;
+
 	return {
 		summary: {
 			uptimeMs: summary.uptimeMs,
@@ -151,6 +169,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		players,
 		countdown: getCountdown(instance.id),
 		tick,
+		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		diskBytes: await instanceDiskUsage(instance),
 		// CPU is measured across all cores, so the chart needs the core count to
@@ -218,6 +237,38 @@ export const actions: Actions = {
 		diagnosisCache.delete(instance.id);
 		const name = fileName.replace(/\.jar(\.disabled)?$/i, '');
 		return { ok: true, message: `${enable ? 'Enabled' : 'Disabled'} ${name}. Start the server to try again.` };
+	},
+
+	profile: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const seconds = Number((await request.formData()).get('seconds'));
+		if (!(await summarise(instance)).running) return fail(400, { ok: false, message: 'Start the server first.' });
+		try {
+			startProfile(instance, seconds);
+		} catch (err) {
+			if (err instanceof SparkError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Profiling. The link appears below when Spark has uploaded the result.' };
+	},
+
+	profileStop: async ({ params }) => {
+		try {
+			await stopProfile(requireInstance(params.id));
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof SparkError ? err.message : 'Spark did not answer over RCON.' });
+		}
+		return { ok: true, message: 'Stopping; Spark uploads what it has so far.' };
+	},
+
+	profileCancel: async ({ params }) => {
+		try {
+			cancelProfile(requireInstance(params.id));
+		} catch (err) {
+			if (err instanceof SparkError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Profile cancelled.' };
 	},
 
 	eula: async ({ params }) => {

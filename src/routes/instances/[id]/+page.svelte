@@ -17,10 +17,10 @@
 		const seconds = Math.max(0, Math.round(ms / 1000));
 		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 	};
-	// Ticks the countdown between polls.
+	// Ticks the countdown and a running profile between polls.
 	let now = $state(Date.now());
 	$effect(() => {
-		if (!data.countdown) return;
+		if (!data.countdown && !data.spark?.active) return;
 		const tick = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(tick);
 	});
@@ -37,6 +37,8 @@
 	 * rounded up to the next whole core. The full ceiling is only used as an
 	 * upper bound.
 	 */
+	const durationLabel = (seconds: number) => (seconds < 60 ? `${seconds} s` : `${seconds / 60} min`);
+
 	const cpuCeiling = $derived.by(() => {
 		const peak = Math.max(0, ...data.cpu.map((p) => p.value));
 		const rounded = Math.ceil(peak / 100) * 100;
@@ -301,6 +303,71 @@
 	</section>
 </div>
 
+{#if data.spark}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Spark profiler</h2>
+				<p>
+					Records what the server spends its time on, then uploads the result to spark.lucko.me to open in the
+					browser.
+				</p>
+			</div>
+		</div>
+		{#if data.spark.active}
+			<form method="POST" use:enhance class="profiling">
+				<span>
+					{#if data.spark.active.endsAt > now}
+						Profiling, <strong class="mono">{clock(data.spark.active.endsAt - now)}</strong> left
+					{:else}
+						Waiting for Spark to upload the result
+					{/if}
+				</span>
+				<button formaction="?/profileStop">Stop and upload now</button>
+				<button class="button-quiet" formaction="?/profileCancel">Cancel</button>
+			</form>
+		{:else if data.running}
+			<form method="POST" action="?/profile" use:enhance class="row">
+				<select name="seconds" aria-label="How long to profile" class="duration">
+					{#each data.spark.durations as seconds (seconds)}
+						<option value={seconds} selected={seconds === 60}>{durationLabel(seconds)}</option>
+					{/each}
+				</select>
+				<button type="submit">Start profiling</button>
+			</form>
+		{:else}
+			<p class="muted small">Start the server to profile it.</p>
+		{/if}
+
+		{#if data.spark.uploads.length}
+			<table class="uploads">
+				<thead>
+					<tr><th>When</th><th>What</th><th>Started by</th><th></th></tr>
+				</thead>
+				<tbody>
+					{#each data.spark.uploads as upload (upload.time)}
+						<tr>
+							<td title={formatDateTime(upload.time)}>{formatRelative(upload.time)}</td>
+							<td>{upload.type}</td>
+							<td>{upload.user}</td>
+							<td class="wrap">
+								{#if upload.url}
+									<a href={upload.url} target="_blank" rel="noreferrer">Open</a>
+								{:else}
+									<span class="mono small">{upload.file}</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+			<p class="faint small">Spark lists its uploads for 60 days, including ones started in-game.</p>
+		{:else}
+			<p class="faint small">Nothing uploaded from this server yet.</p>
+		{/if}
+	</section>
+{/if}
+
 <section class="panel">
 	<div class="panel-head">
 		<div>
@@ -378,6 +445,25 @@
 </section>
 
 <style>
+	.profiling {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.profiling span {
+		margin-right: var(--space-2);
+	}
+
+	.duration {
+		width: auto;
+	}
+
+	.uploads {
+		margin-top: var(--space-4);
+	}
+
 	.countdown {
 		display: flex;
 		align-items: center;

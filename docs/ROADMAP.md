@@ -107,12 +107,14 @@ re-proposed or built twice.
 
 ### Next up
 
-- **Spark + TPS layer.** `tps.ts` does not use Spark on purpose: Spark answers
-  asynchronously, after RCON has already returned. Using Spark means reading its answer
-  from the console or journal after sending the command. That is the core of this item, and
-  the profiler flow below needs it too.
-- **Spark profiler flow**: start/stop a profile from the UI and show the
-  `spark.lucko.me` link it prints. Same async-answer problem.
+- **Spark profiler flow**: built (`spark.ts`, the Spark profiler panel on the overview).
+- **Spark as a TPS source**: not possible over RCON. Spark runs every command on a worker
+  thread, so RCON has already returned when Spark answers, and `spark tps` replies only to
+  the sender: the answer is dropped (vanilla clears the RCON buffer at the next command).
+  Only broadcasts reach the console. The servers this would help are Fabric/Quilt/vanilla
+  before 1.20.3 (no `tick query`). Ways left, none cheap: a stdin channel into the server
+  (a FIFO as the unit's StandardInput, so commands run as the console), or a small
+  companion mod. Not planned.
 
 ### Agreed
 
