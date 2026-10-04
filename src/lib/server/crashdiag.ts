@@ -86,6 +86,12 @@ async function openZipFile(file: string): Promise<ZipSource | null> {
 	}
 }
 
+/** The names in a zip's central directory; null when it is not a readable zip. */
+export async function zipEntryNames(file: string): Promise<string[] | null> {
+	const zip = await openZipFile(file).catch(() => null);
+	return zip ? zip.entries.map((e) => e.name) : null;
+}
+
 function openZipBuffer(buf: Buffer): ZipSource | null {
 	const eocd = findEocd(buf.subarray(Math.max(0, buf.length - 65_557)));
 	if (eocd < 0) return null;

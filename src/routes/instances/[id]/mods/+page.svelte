@@ -913,6 +913,7 @@
 								<span class="mono small">{pack.name}</span>
 							{/if}
 							{#if pack.fromPack}<span class="tag">from the modpack</span>{/if}
+							{#if pack.worldgen}<span class="tag warn" title="Adds or changes world generation">world generation</span>{/if}
 						</td>
 						<td class="mono small">{pack.version ?? ''}</td>
 						<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
@@ -921,10 +922,16 @@
 								method="POST"
 								action="?/removeDatapack"
 								use:enhance={({ cancel }) => {
-									if (!confirm(`Remove ${pack.name}?`)) cancel();
+									const question =
+										pack.worldgen && pack.loadedByWorld
+											? `${pack.name} changes world generation, and this world has loaded it. Without it Minecraft may refuse to load the world at all. Take a snapshot on the World tab first. Remove it anyway?`
+											: `Remove ${pack.name}?`;
+									if (!confirm(question)) cancel();
 								}}
 							>
 								<input type="hidden" name="fileName" value={pack.fileName} />
+								<!-- The question above was the warning; the server refuses without this. -->
+								<input type="hidden" name="force" value="on" />
 								<button class="button-quiet button-danger">Remove</button>
 							</form>
 						</td>

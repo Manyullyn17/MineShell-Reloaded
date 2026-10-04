@@ -5,6 +5,8 @@ import { db } from '../db';
 import { instanceDatapacks, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
 import { serverWorldName } from '../packworld';
+import { zipEntryNames } from '../crashdiag';
+import { child, parseNbt } from '../nbt';
 import type { ProjectVersion, SourceId } from './types';
 
 /**
@@ -83,6 +85,40 @@ export async function installDatapackVersion(
 	return fileName;
 }
 
+/**
+ * A pack that adds or changes world generation. level.dat stores the world's
+ * generation settings, which then name the pack's biomes and noise settings:
+ * once the world has loaded it, removing the pack stops the world from
+ * loading ("Failed to decode value ... terralith:moonlight_valley"), seen with
+ * Terralith on 1.20.1.
+ */
+const WORLDGEN = /^data\/[^/]+\/(worldgen|dimension|dimension_type)\//;
+
+async function changesWorldgen(full: string, isDirectory: boolean): Promise<boolean> {
+	if (!isDirectory) return ((await zipEntryNames(full)) ?? []).some((name) => WORLDGEN.test(name));
+	const data = path.join(full, 'data');
+	for (const ns of await fs.readdir(data, { withFileTypes: true }).catch(() => [])) {
+		if (!ns.isDirectory()) continue;
+		const sub = await fs.readdir(path.join(data, ns.name)).catch(() => [] as string[]);
+		if (sub.some((name) => ['worldgen', 'dimension', 'dimension_type'].includes(name))) return true;
+	}
+	return false;
+}
+
+/** The world's enabled packs as level.dat records them: "file/Terralith_1.20_v2.5.4.zip", "vanilla", ... */
+async function enabledInWorld(root: string, world: string): Promise<Set<string>> {
+	try {
+		const level = parseNbt(await fs.readFile(path.join(root, world, 'level.dat')));
+		const enabled = child(child(child(level.root, 'Data'), 'DataPacks'), 'Enabled');
+		if (enabled?.type !== 'list') return new Set();
+		return new Set(enabled.value.flatMap((tag) => (tag.type === 'string' ? [tag.value] : [])));
+	} catch {
+		return new Set();
+	}
+}
+
+export class DatapackInUseError extends Error {}
+
 export type DatapackRow = {
 	fileName: string;
 	/** Relative to the server folder, for Files. */
@@ -95,6 +131,10 @@ export type DatapackRow = {
 	fromPack: boolean;
 	/** Installed from the browser. */
 	tracked: boolean;
+	/** Adds or changes world generation (see WORLDGEN). */
+	worldgen: boolean;
+	/** level.dat lists it as enabled: the world has loaded it. */
+	loadedByWorld: boolean;
 };
 
 /** What is in the world's datapacks folder, with where each came from. */
@@ -109,6 +149,7 @@ export async function listDatapacks(instance: ServerInstance): Promise<{ world: 
 	} catch {
 		/* unknown: nothing marked */
 	}
+	const enabled = await enabledInWorld(instance.path, world);
 	const packs: DatapackRow[] = [];
 	for (const entry of entries) {
 		// Minecraft loads folders and .zip files from here; anything else is ignored by it too.
@@ -123,17 +164,32 @@ export async function listDatapacks(instance: ServerInstance): Promise<{ world: 
 			projectUrl: row?.projectUrl ?? null,
 			sizeBytes: stat?.isFile() ? stat.size : 0,
 			fromPack: fromPack.has(entry.name),
-			tracked: !!row
+			tracked: !!row,
+			worldgen: await changesWorldgen(path.join(dir, entry.name), entry.isDirectory()),
+			loadedByWorld: enabled.has(`file/${entry.name}`)
 		});
 	}
 	return { world, packs: packs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })) };
 }
 
-/** Deletes a data pack from the folder; the world drops it at the next start or /reload. */
-export async function removeDatapack(instance: ServerInstance, fileName: string): Promise<void> {
+/**
+ * Deletes a data pack from the folder; the world drops it at the next start or
+ * /reload. A world-generation pack the world has loaded is refused unless
+ * `force`: the world may not load without it.
+ */
+export async function removeDatapack(instance: ServerInstance, fileName: string, opts: { force?: boolean } = {}): Promise<void> {
 	const name = safeFileName(fileName);
-	const { dir } = await datapacksDir(instance.path);
-	await fs.rm(path.join(dir, name), { recursive: true, force: true });
+	const { world, dir } = await datapacksDir(instance.path);
+	const full = path.join(dir, name);
+	if (!opts.force) {
+		const stat = await fs.stat(full).catch(() => null);
+		if (stat && (await enabledInWorld(instance.path, world)).has(`file/${name}`) && (await changesWorldgen(full, stat.isDirectory()))) {
+			throw new DatapackInUseError(
+				`${name} changes world generation and this world has loaded it. Without it Minecraft may not load the world at all. Take a snapshot first if you go ahead.`
+			);
+		}
+	}
+	await fs.rm(full, { recursive: true, force: true });
 	db.delete(instanceDatapacks)
 		.where(and(eq(instanceDatapacks.instanceId, instance.id), eq(instanceDatapacks.fileName, name)))
 		.run();

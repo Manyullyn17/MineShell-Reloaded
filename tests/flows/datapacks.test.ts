@@ -11,7 +11,9 @@ vi.mock('$lib/server/download', async (importOriginal) => ({
 	})
 }));
 
-const { installDatapackVersion, listDatapacks, removeDatapack } = await import('$lib/server/mods/datapacks');
+const { DatapackInUseError, installDatapackVersion, listDatapacks, removeDatapack } = await import('$lib/server/mods/datapacks');
+const { writeNbt } = await import('$lib/server/nbt');
+const { zipBuffer } = await import('../helpers/fs');
 const { createInstance } = await import('../helpers/instances');
 const { db } = await import('$lib/server/db');
 const { serverInstances } = await import('$lib/server/db/schema');
@@ -72,5 +74,66 @@ describe('data packs from the mod browser', () => {
 		expect((await listDatapacks(instance)).packs).toEqual([]);
 		await expect(removeDatapack(instance, '../server.properties')).rejects.toThrow();
 		await expect(removeDatapack(instance, '.')).rejects.toThrow();
+	});
+
+	it('refuses to quietly remove a world-generation pack the world has loaded', async () => {
+		// level.dat as 1.20.1 writes it: Data.DataPacks.Enabled lists "file/<name>" for each pack loaded.
+		const levelDat = writeNbt({
+			name: '',
+			gzipped: true,
+			root: {
+				type: 'compound',
+				value: [
+					[
+						'Data',
+						{
+							type: 'compound',
+							value: [
+								[
+									'DataPacks',
+									{
+										type: 'compound',
+										value: [
+											[
+												'Enabled',
+												{
+													type: 'list',
+													itemType: 'string',
+													value: ['vanilla', 'file/Terralith.zip', 'file/tweaks.zip'].map((value) => ({ type: 'string' as const, value }))
+												}
+											]
+										]
+									}
+								]
+							]
+						}
+					]
+				]
+			}
+		});
+		const instance = await createInstance(
+			{ modloader: 'vanilla', minecraftVersion: '1.20.1' },
+			{
+				'world/level.dat': levelDat,
+				'world/datapacks/Terralith.zip': zipBuffer({
+					'pack.mcmeta': '{}',
+					'data/terralith/worldgen/biome/moonlight_valley.json': '{}'
+				}),
+				'world/datapacks/tweaks.zip': zipBuffer({ 'pack.mcmeta': '{}', 'data/tweaks/recipes/x.json': '{}' }),
+				'world/datapacks/new-biomes.zip': zipBuffer({ 'pack.mcmeta': '{}', 'data/nb/worldgen/biome/x.json': '{}' })
+			}
+		);
+		const { packs } = await listDatapacks(instance);
+		expect(packs.map((p) => [p.fileName, p.worldgen, p.loadedByWorld])).toEqual([
+			['new-biomes.zip', true, false],
+			['Terralith.zip', true, true],
+			['tweaks.zip', false, true]
+		]);
+		await expect(removeDatapack(instance, 'Terralith.zip')).rejects.toThrow(DatapackInUseError);
+		// Not loaded yet, or not world generation: removed without a fuss.
+		await removeDatapack(instance, 'new-biomes.zip');
+		await removeDatapack(instance, 'tweaks.zip');
+		await removeDatapack(instance, 'Terralith.zip', { force: true });
+		expect((await listDatapacks(instance)).packs).toEqual([]);
 	});
 });

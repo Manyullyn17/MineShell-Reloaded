@@ -249,9 +249,10 @@ export const actions: Actions = {
 
 	removeDatapack: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
-		const fileName = String((await request.formData()).get('fileName') ?? '');
+		const form = await request.formData();
+		const fileName = String(form.get('fileName') ?? '');
 		try {
-			await removeDatapack(instance, fileName);
+			await removeDatapack(instance, fileName, { force: form.get('force') === 'on' });
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not remove it.' });
 		}
