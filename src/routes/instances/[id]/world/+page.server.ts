@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		levelName: await serverWorldName(instance.path),
 		worlds: await worldFolders(instance.path),
 		seed: values['level-seed'] ?? '',
-		snapshotPrompt: await snapshotPrompt(instance.path),
+		snapshotPrompt: await snapshotPrompt(instance),
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
 		pruneCount: lastPruneCount(instance.id),
@@ -187,7 +187,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const dimension = String(form.get('dimension') ?? '');
 		try {
-			const snapshot = await decideSnapshot(instance.path, form.get('snapshot'));
+			const snapshot = await decideSnapshot(instance, form.get('snapshot'), { moves: true });
 			if (dimension) {
 				await restoreDimension(instance, String(form.get('id') ?? ''), dimension, { snapshot });
 				return { ok: true, message: `Restoring one dimension from the snapshot. ${STARTED}` };
@@ -237,7 +237,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			await pruneChunks(instance, String(form.get('dimension') ?? ''), pruneSettings(form), {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
+				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true })
 			});
 			return { ok: true, message: `Pruning. ${STARTED}` };
 		} catch (err) {
@@ -250,7 +250,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			await resetDimension(instance, String(form.get('dimension') ?? ''), {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot'))
+				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true })
 			});
 			return { ok: true, message: `Resetting the dimension. ${STARTED}` };
 		} catch (err) {
@@ -266,7 +266,7 @@ export const actions: Actions = {
 			mode === 'random' ? { mode: 'random' } : mode === 'set' ? { mode: 'set', seed: String(form.get('seed') ?? '').trim() } : { mode: 'keep' };
 		if (seed.mode === 'set' && !seed.seed) return fail(400, { ok: false, message: 'Enter the seed to use.' });
 		try {
-			await resetWorld(instance, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')), seed });
+			await resetWorld(instance, { snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true }), seed });
 			return { ok: true, message: `Resetting the world. ${STARTED}` };
 		} catch (err) {
 			return refused(err);

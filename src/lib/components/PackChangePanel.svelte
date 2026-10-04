@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
+	import type { SnapshotPromptView } from '$lib/shared/snapshots';
 
 	/**
 	 * Move an installed pack to another version (or reinstall the current one).
@@ -18,7 +19,7 @@
 		instanceId: string;
 		pack: { source: string; projectId: string; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
-		snapshotPrompt: { worldBytes: number; ask: boolean; policy: { keep: number; askAboveMb: number } };
+		snapshotPrompt: SnapshotPromptView;
 		/** The page's action result, for the missing-Java prompt. */
 		form: { javaMissing?: { major: number; action: string }; [key: string]: unknown } | null | undefined;
 	} = $props();

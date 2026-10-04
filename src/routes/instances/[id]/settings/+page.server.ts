@@ -20,7 +20,17 @@ import {
 } from '$lib/server/instances';
 import { applyCleanroomModFixes, cleanroomReport } from '$lib/server/cleanroom';
 import { applyPackChange } from '$lib/server/packchange';
-import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '$lib/server/snapshots';
+import {
+	decideSnapshot,
+	getSnapshotPolicy,
+	policyFromForm,
+	saveServerSnapshotOverrides,
+	serverSnapshotOverrides,
+	SnapshotChoiceNeeded,
+	snapshotPrompt,
+	snapshotUsage
+} from '$lib/server/snapshots';
+import { policyFormValues } from '$lib/shared/snapshots';
 import { isJavaVendor } from '$lib/server/javadownload';
 import {
 	addScheduledCommand,
@@ -124,7 +134,13 @@ export const load: PageServerLoad = async ({ params }) => {
 			: null,
 		// Streamed: scanning means opening every mod jar.
 		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null,
-		snapshotPrompt: await snapshotPrompt(instance.path),
+		snapshotPrompt: await snapshotPrompt(instance),
+		// The server's own retention settings (blank = global), with the global values as placeholders.
+		snapshotSettings: {
+			values: policyFormValues(serverSnapshotOverrides(instance.id)),
+			global: policyFormValues(getSnapshotPolicy()),
+			usage: await snapshotUsage(instance.path)
+		},
 		scheduledCommands: listScheduledCommands(instance.id)
 	};
 };
@@ -209,7 +225,7 @@ export const actions: Actions = {
 			await applyPackChange(instance, versionId, {
 				updateMods: form.getAll('updateMod').map(String),
 				confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)
 			});
 			return {
@@ -230,7 +246,7 @@ export const actions: Actions = {
 		}
 		try {
 			await changeLoaderVersion(instance, version, {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)
 			});
 			return { ok: true, message: 'Reinstalling the loader. Follow it in Tasks; the server stays stopped until it finishes.' };
@@ -433,13 +449,26 @@ export const actions: Actions = {
 		return { ok: true, message: 'Console preferences saved.' };
 	},
 
+	snapshotPolicy: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		if (form.get('useGlobal') === 'on') {
+			saveServerSnapshotOverrides(instance.id, {});
+			return { ok: true, message: 'This server follows the global snapshot settings again.' };
+		}
+		const { fields, error } = policyFromForm(form);
+		if (error) return fail(400, { ok: false, message: error });
+		saveServerSnapshotOverrides(instance.id, fields);
+		return { ok: true, message: 'Snapshot settings saved. They apply from the next snapshot on.' };
+	},
+
 	migrateCleanroom: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const version = String(form.get('cleanroomVersion') ?? '').trim() || null;
 		try {
 			await migrateToCleanroom(instance, version, {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)
 			});
 			return { ok: true, message: 'Migration started. Follow it in Tasks; the server stays stopped until it finishes.' };
@@ -454,7 +483,7 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		try {
-			await revertToForge(instance, { snapshot: await decideSnapshot(instance.path, form.get('snapshot')) });
+			await revertToForge(instance, { snapshot: await decideSnapshot(instance, form.get('snapshot')) });
 			return { ok: true, message: 'Reverting to Forge. Follow it in Tasks.' };
 		} catch (err) {
 			const failure = refused(err);

@@ -44,7 +44,7 @@ export const PUT: RequestHandler = async ({ params, url, request, locals }) => {
 	try {
 		// Refused before the upload is read, not after gigabytes of it.
 		await requireStopped(instance);
-		snapshot = await decideSnapshot(instance.path, url.searchParams.get('snapshot'));
+		snapshot = await decideSnapshot(instance, url.searchParams.get('snapshot'), { moves: true });
 	} catch (err) {
 		if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return json({ message: err.message }, { status: 400 });
 		throw err;

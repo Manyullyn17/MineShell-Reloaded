@@ -7,9 +7,18 @@
 	import JavaPrompt from '$lib/components/JavaPrompt.svelte';
 	import RestartFields from '$lib/components/RestartFields.svelte';
 	import ConsoleFields from '$lib/components/ConsoleFields.svelte';
+	import SnapshotPolicyFields from '$lib/components/SnapshotPolicyFields.svelte';
+	import { formatBytes } from '$lib/shared/format';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '$lib/shared/cleanroom';
 
 	let { data, form } = $props();
+
+	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
+	// svelte-ignore state_referenced_locally
+	let snapshotValues = $state({ ...data.snapshotSettings.values });
+	$effect(() => {
+		snapshotValues = { ...data.snapshotSettings.values };
+	});
 
 	const s = $derived(data.settings);
 	let showRcon = $state(false);
@@ -619,6 +628,27 @@
 			</div>
 		{/if}
 		<button type="submit">Add</button>
+	</form>
+</section>
+
+<section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>World snapshots</h2>
+			<p>
+				How many to keep for this server. A blank field follows the
+				<a href="/settings">global settings</a>, shown greyed. Now: {data.snapshotSettings.usage.full} full,
+				{data.snapshotSettings.usage.partial} partial, {data.snapshotSettings.usage.pinned} pinned,
+				{formatBytes(data.snapshotSettings.usage.bytes)} in all.
+			</p>
+		</div>
+	</div>
+	<form method="POST" action="?/snapshotPolicy" use:enhance={keepValues}>
+		<SnapshotPolicyFields bind:values={snapshotValues} placeholders={data.snapshotSettings.global} idPrefix="server-snap" />
+		<div class="button-row">
+			<button class="button-primary" type="submit">Save snapshot settings</button>
+			<button class="button-quiet" type="submit" name="useGlobal" value="on">Use the global settings</button>
+		</div>
 	</form>
 </section>
 

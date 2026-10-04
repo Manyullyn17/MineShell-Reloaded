@@ -46,7 +46,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		busy: instance.status === 'provisioning',
 		/** Changing single mods of a modpack is opt-in on the page; the pack's version is the usual thing to change. */
 		packName: instance.packSource ? (instance.packName ?? 'a modpack') : null,
-		snapshotPrompt: await snapshotPrompt(instance.path),
+		snapshotPrompt: await snapshotPrompt(instance),
 		supportsMods: loader.supportsMods,
 		modloader: instance.modloader,
 		/** What mod catalogs call this loader; Cleanroom mods are listed as Forge. */
@@ -98,7 +98,7 @@ export const actions: Actions = {
 		if (!changes.length) return fail(400, { ok: false, message: 'Tick at least one mod to update.' });
 		try {
 			await changeModVersions(instance, changes, {
-				snapshot: await decideSnapshot(instance.path, form.get('snapshot')),
+				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				label: `Updating ${changes.length} mod${changes.length === 1 ? '' : 's'}`
 			});
 			return { ok: true, message: 'Updating mods. Follow it in Tasks; the server stays stopped until it finishes.' };

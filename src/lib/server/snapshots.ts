@@ -66,44 +66,204 @@ export type Snapshot = {
 
 // ---------------------------------------------------------------- policy ---
 
+/**
+ * How many snapshots a server keeps. Full snapshots (the whole world) and
+ * partial ones (one dimension, before a reset, restore or prune) are counted
+ * apart, so a run of dimension resets never pushes the last full worlds out.
+ * The newest `keepMin` / `partialMin` always stay; older ones stay, newest
+ * first, while all kept snapshots together fit in `budgetMb` and the type is
+ * under its max. Pinned snapshots are outside all of it. Sizes are file sizes:
+ * on btrfs/XFS a snapshot shares space with the world, so it really takes less.
+ */
 export type SnapshotPolicy = {
-	/** Snapshots kept per server; older ones go once a new one is complete. */
-	keep: number;
+	keepMin: number;
+	keepMax: number;
+	partialMin: number;
+	partialMax: number;
+	/** Storage for everything kept beyond the minimums, MB; full and partial share it. */
+	budgetMb: number;
 	/**
 	 * Worlds above this size (MB) ask first whether to snapshot. -1 turns the
 	 * question off: the snapshot is then always taken, never skipped.
 	 */
 	askAboveMb: number;
+	/**
+	 * A snapshot that copies the world is not taken when it would leave less
+	 * than this much free on the disk (MB); 0 turns the check off. A full disk
+	 * mid-save is how worlds get damaged.
+	 */
+	minFreeMb: number;
 };
 
-const POLICY_KEY = 'snapshots.policy';
-export const DEFAULT_POLICY: SnapshotPolicy = { keep: 3, askAboveMb: 2048 };
+export const POLICY_FIELDS = ['keepMin', 'keepMax', 'partialMin', 'partialMax', 'budgetMb', 'askAboveMb', 'minFreeMb'] as const;
 
-function validPolicy(raw: unknown): SnapshotPolicy {
-	const value = (raw ?? {}) as Partial<SnapshotPolicy>;
-	const keep = Number.isInteger(value.keep) && value.keep! >= 1 && value.keep! <= 50 ? value.keep! : DEFAULT_POLICY.keep;
-	const ask =
-		Number.isInteger(value.askAboveMb) && value.askAboveMb! >= -1 ? value.askAboveMb! : DEFAULT_POLICY.askAboveMb;
-	return { keep, askAboveMb: ask };
+const POLICY_KEY = 'snapshots.policy';
+const serverPolicyKey = (instanceId: string) => `snapshots.policy:${instanceId}`;
+export const DEFAULT_POLICY: SnapshotPolicy = {
+	keepMin: 3,
+	keepMax: 50,
+	partialMin: 5,
+	partialMax: 100,
+	budgetMb: 10 * 1024,
+	askAboveMb: 2048,
+	minFreeMb: 5 * 1024
+};
+
+const LIMITS: Record<keyof SnapshotPolicy, [number, number]> = {
+	keepMin: [1, 500],
+	keepMax: [1, 500],
+	partialMin: [0, 500],
+	partialMax: [0, 500],
+	budgetMb: [0, 100 * 1024 * 1024],
+	askAboveMb: [-1, 100 * 1024 * 1024],
+	minFreeMb: [0, 100 * 1024 * 1024]
+};
+
+/** The fields of `raw` that are valid whole numbers in range; anything else is left out. */
+function validFields(raw: unknown): Partial<SnapshotPolicy> {
+	const value = (raw ?? {}) as Record<string, unknown>;
+	const fields: Partial<SnapshotPolicy> = {};
+	// Before October 2026 there was one number, `keep`: it becomes the minimum.
+	if (value.keepMin === undefined && value.keep !== undefined) value.keepMin = value.keep;
+	for (const field of POLICY_FIELDS) {
+		const n = value[field];
+		const [lo, hi] = LIMITS[field];
+		if (typeof n === 'number' && Number.isInteger(n) && n >= lo && n <= hi) fields[field] = n;
+	}
+	return fields;
 }
 
-/** Every read is validated, so a stale or hand-edited row degrades to the defaults. */
-export function getSnapshotPolicy(): SnapshotPolicy {
-	const row = db.select().from(settings).where(eq(settings.key, POLICY_KEY)).get();
+/** A whole policy: defaults under the fields given, and a max never below its min. */
+function complete(...layers: Partial<SnapshotPolicy>[]): SnapshotPolicy {
+	const policy = Object.assign({}, DEFAULT_POLICY, ...layers) as SnapshotPolicy;
+	policy.keepMax = Math.max(policy.keepMax, policy.keepMin);
+	policy.partialMax = Math.max(policy.partialMax, policy.partialMin);
+	return policy;
+}
+
+function readFields(key: string): Partial<SnapshotPolicy> {
+	const row = db.select().from(settings).where(eq(settings.key, key)).get();
 	try {
-		return validPolicy(row ? JSON.parse(row.value) : null);
+		return row ? validFields(JSON.parse(row.value)) : {};
 	} catch {
-		return DEFAULT_POLICY;
+		return {};
 	}
 }
 
-export function saveSnapshotPolicy(policy: SnapshotPolicy): SnapshotPolicy {
-	const valid = validPolicy(policy);
-	db.insert(settings)
-		.values({ key: POLICY_KEY, value: JSON.stringify(valid) })
-		.onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(valid) } })
-		.run();
-	return valid;
+function writeFields(key: string, fields: Partial<SnapshotPolicy>): void {
+	const value = JSON.stringify(fields);
+	db.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
+
+/**
+ * The policy in force: the global one, with a server's own overrides on top
+ * when an instance id is given. Every read is validated, so a stale or
+ * hand-edited row degrades to the defaults field by field.
+ */
+export function getSnapshotPolicy(instanceId?: string): SnapshotPolicy {
+	return complete(readFields(POLICY_KEY), instanceId ? readFields(serverPolicyKey(instanceId)) : {});
+}
+
+export function saveSnapshotPolicy(policy: Partial<SnapshotPolicy>): SnapshotPolicy {
+	const fields = validFields(policy);
+	writeFields(POLICY_KEY, fields);
+	return complete(fields);
+}
+
+/** A server's own overrides only (what its settings page shows as set). */
+export function serverSnapshotOverrides(instanceId: string): Partial<SnapshotPolicy> {
+	return readFields(serverPolicyKey(instanceId));
+}
+
+/** Replaces a server's overrides; fields left out follow the global policy. */
+export function saveServerSnapshotOverrides(instanceId: string, overrides: Partial<SnapshotPolicy>): void {
+	const fields = validFields(overrides);
+	if (Object.keys(fields).length) writeFields(serverPolicyKey(instanceId), fields);
+	else deleteServerSnapshotOverrides(instanceId);
+}
+
+export function deleteServerSnapshotOverrides(instanceId: string): void {
+	db.delete(settings).where(eq(settings.key, serverPolicyKey(instanceId))).run();
+}
+
+export function copyServerSnapshotOverrides(fromId: string, toId: string): void {
+	const fields = serverSnapshotOverrides(fromId);
+	if (Object.keys(fields).length) writeFields(serverPolicyKey(toId), fields);
+}
+
+const FIELD_LABELS: Record<keyof SnapshotPolicy, string> = {
+	keepMin: 'Full snapshots always kept',
+	keepMax: 'Full snapshots at most',
+	partialMin: 'Partial snapshots always kept',
+	partialMax: 'Partial snapshots at most',
+	budgetMb: 'Storage for more',
+	askAboveMb: 'Ask first above',
+	minFreeMb: 'Keep free on the disk'
+};
+
+/**
+ * The policy fields a settings form sent. Budget and free space come in GB
+ * (budgetGb, minFreeGb), the rest as is. A blank field is left out: the
+ * default globally, the global value for a server.
+ */
+export function policyFromForm(form: FormData): { fields: Partial<SnapshotPolicy>; error: string | null } {
+	const fields: Partial<SnapshotPolicy> = {};
+	for (const field of POLICY_FIELDS) {
+		const gb = field === 'budgetMb' || field === 'minFreeMb';
+		const raw = String(form.get(gb ? field.replace('Mb', 'Gb') : field) ?? '').trim();
+		if (!raw) continue;
+		const n = Number(raw);
+		const value = gb ? Math.round(n * 1024) : n;
+		const [lo, hi] = LIMITS[field];
+		if (!Number.isFinite(n) || !Number.isInteger(value) || value < lo || value > hi) {
+			return { fields, error: `${FIELD_LABELS[field]}: ${gb ? 'a number of GB' : 'a whole number'} from ${gb ? lo / 1024 : lo}${field === 'askAboveMb' ? ' (-1: never ask)' : ''}.` };
+		}
+		fields[field] = value;
+	}
+	if (fields.keepMin !== undefined && fields.keepMax !== undefined && fields.keepMax < fields.keepMin) {
+		return { fields, error: 'Full snapshots at most cannot be fewer than always kept.' };
+	}
+	if (fields.partialMin !== undefined && fields.partialMax !== undefined && fields.partialMax < fields.partialMin) {
+		return { fields, error: 'Partial snapshots at most cannot be fewer than always kept.' };
+	}
+	return { fields, error: null };
+}
+
+/** The snapshots the policy lets go: oldest first within what does not fit. Pinned ones never. */
+export function snapshotsToDelete(snapshots: Snapshot[], policy: SnapshotPolicy): Snapshot[] {
+	const unpinned = snapshots.filter((s) => !s.pinned).sort((a, b) => b.createdAt - a.createdAt);
+	const kept = new Set<string>();
+	const count = { full: 0, partial: 0 };
+	let used = 0;
+	const keep = (s: Snapshot) => {
+		kept.add(s.id);
+		count[s.partial ? 'partial' : 'full']++;
+		used += s.sizeBytes;
+	};
+	for (const s of unpinned) {
+		if (s.partial ? count.partial < policy.partialMin : count.full < policy.keepMin) keep(s);
+	}
+	const budget = policy.budgetMb * 1024 * 1024;
+	for (const s of unpinned) {
+		if (kept.has(s.id)) continue;
+		const underMax = s.partial ? count.partial < policy.partialMax : count.full < policy.keepMax;
+		if (underMax && used + s.sizeBytes <= budget) keep(s);
+	}
+	return unpinned.filter((s) => !kept.has(s.id)).reverse();
+}
+
+export type SnapshotUsage = { full: number; partial: number; pinned: number; bytes: number; pinnedBytes: number };
+
+export async function snapshotUsage(root: string): Promise<SnapshotUsage> {
+	const usage: SnapshotUsage = { full: 0, partial: 0, pinned: 0, bytes: 0, pinnedBytes: 0 };
+	for (const s of await listSnapshots(root)) {
+		usage.bytes += s.sizeBytes;
+		if (s.pinned) {
+			usage.pinned++;
+			usage.pinnedBytes += s.sizeBytes;
+		} else usage[s.partial ? 'partial' : 'full']++;
+	}
+	return usage;
 }
 
 // ---------------------------------------------------------------- worlds ---
@@ -139,26 +299,71 @@ export async function worldSize(root: string): Promise<number> {
  * What an operation's form shows: whether this world is big enough to ask
  * about, and how big it is.
  */
-export type SnapshotPrompt = { worldBytes: number; ask: boolean; policy: SnapshotPolicy };
+export type SnapshotPrompt = {
+	worldBytes: number;
+	/** The form shows the question: the world is above askAboveMb, or a copy would not fit. */
+	ask: boolean;
+	/** Above askAboveMb alone; what counts for operations that move the world instead of copying it. */
+	asksBySize: boolean;
+	policy: SnapshotPolicy;
+	/** Free on the disk holding the server, bytes; null when unknown. */
+	freeBytes: number | null;
+	/** A snapshot copying the world would leave less than minFreeMb free. */
+	lowSpace: boolean;
+};
 
-export async function snapshotPrompt(root: string): Promise<SnapshotPrompt> {
-	const policy = getSnapshotPolicy();
-	const worldBytes = await worldSize(root);
-	const ask = policy.askAboveMb !== -1 && worldBytes > policy.askAboveMb * 1024 * 1024;
-	return { worldBytes, ask, policy };
+/** Free bytes for an unprivileged user on the disk holding `dir`; null when the system cannot say. */
+export async function freeSpace(dir: string): Promise<number | null> {
+	try {
+		const stats = await fs.statfs(dir);
+		return stats.bavail * stats.bsize;
+	} catch {
+		return null;
+	}
+}
+
+function lacksSpace(policy: SnapshotPolicy, worldBytes: number, freeBytes: number | null): boolean {
+	return policy.minFreeMb > 0 && freeBytes !== null && worldBytes > 0 && freeBytes - worldBytes < policy.minFreeMb * 1024 * 1024;
+}
+
+export async function snapshotPrompt(instance: Pick<ServerInstance, 'id' | 'path'>): Promise<SnapshotPrompt> {
+	const policy = getSnapshotPolicy(instance.id);
+	const worldBytes = await worldSize(instance.path);
+	const freeBytes = await freeSpace(instance.path);
+	const lowSpace = lacksSpace(policy, worldBytes, freeBytes);
+	const asksBySize = policy.askAboveMb !== -1 && worldBytes > policy.askAboveMb * 1024 * 1024;
+	return { worldBytes, ask: lowSpace || asksBySize, asksBySize, policy, freeBytes, lowSpace };
 }
 
 export class SnapshotChoiceNeeded extends Error {}
 
+/** A copying snapshot refused for lack of disk space (minFreeMb). */
+export class LowDiskSpaceError extends Error {}
+
+const lowSpaceMessage = (worldBytes: number, freeBytes: number, policy: SnapshotPolicy) =>
+	`Only ${formatBytes(freeBytes)} is free on the disk; a snapshot of this world (${formatBytes(worldBytes)}) would leave less than the ${formatBytes(policy.minFreeMb * 1024 * 1024)} to keep free. Continue without a snapshot, or free some space first.`;
+
 /**
  * Whether to snapshot, from what the form sent (`snapshot` = yes | no).
  * Below the threshold, or with the question turned off, it always does and
- * the form's value is ignored; above it the form must say.
+ * the form's value is ignored; above it the form must say. A snapshot that
+ * would copy the world onto a nearly full disk is refused: only "no" goes
+ * on. `moves`: the operation keeps the old world by moving it (the World
+ * tab's reset, replace, restore, prune), which takes no space, so the disk
+ * check does not apply.
  */
-export async function decideSnapshot(root: string, choice: FormDataEntryValue | null): Promise<boolean> {
-	const prompt = await snapshotPrompt(root);
+export async function decideSnapshot(
+	instance: Pick<ServerInstance, 'id' | 'path'>,
+	choice: FormDataEntryValue | null,
+	opts: { moves?: boolean } = {}
+): Promise<boolean> {
+	const prompt = await snapshotPrompt(instance);
 	if (prompt.worldBytes === 0) return false;
-	if (!prompt.ask) return true;
+	if (prompt.lowSpace && !opts.moves) {
+		if (choice === 'no') return false;
+		throw new SnapshotChoiceNeeded(lowSpaceMessage(prompt.worldBytes, prompt.freeBytes ?? 0, prompt.policy));
+	}
+	if (!prompt.asksBySize) return true;
 	if (choice === 'yes') return true;
 	if (choice === 'no') return false;
 	throw new SnapshotChoiceNeeded(
@@ -274,6 +479,11 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 	const root = instance.path;
 	const worlds = await worldFolders(root);
 	if (!worlds.length) return null;
+	// The form already asked; this catches what changed since, and callers that never ask (Snapshot now).
+	const policy = getSnapshotPolicy(instance.id);
+	const worldBytes = await worldSize(root);
+	const freeBytes = await freeSpace(root);
+	if (lacksSpace(policy, worldBytes, freeBytes)) throw new LowDiskSpaceError(lowSpaceMessage(worldBytes, freeBytes ?? 0, policy));
 	const id = await newSnapshotId(root, input.reason);
 	const partial = partialPath(root, id);
 	try {
@@ -294,10 +504,10 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 	}
 }
 
-/** Keeps the newest `keep` unpinned snapshots, deleting older unpinned ones. Pinned ones always stay. */
-export async function pruneSnapshots(root: string, keep: number): Promise<string[]> {
+/** Deletes what the policy does not keep (snapshotsToDelete). Pinned ones always stay. */
+export async function pruneSnapshots(root: string, policy: SnapshotPolicy): Promise<string[]> {
 	const removed: string[] = [];
-	for (const old of (await listSnapshots(root)).filter((s) => !s.pinned).slice(keep)) {
+	for (const old of snapshotsToDelete(await listSnapshots(root), policy)) {
 		await fs.rm(snapshotPath(root, old.id), { recursive: true, force: true });
 		removed.push(old.id);
 	}
@@ -346,7 +556,7 @@ export async function snapshotStep(instance: ServerInstance, input: SnapshotInpu
 		return null;
 	}
 	task.log(`Snapshotted ${snapshot.worlds.join(', ')} (${formatBytes(snapshot.sizeBytes)}) as ${snapshot.id}.`);
-	const removed = await pruneSnapshots(instance.path, getSnapshotPolicy().keep);
+	const removed = await pruneSnapshots(instance.path, getSnapshotPolicy(instance.id));
 	if (removed.length) task.log(`Deleted older snapshot${removed.length === 1 ? '' : 's'}: ${removed.join(', ')}.`);
 	return snapshot;
 }

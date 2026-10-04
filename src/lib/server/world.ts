@@ -19,6 +19,7 @@ import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
+import { formatBytes } from '$lib/shared/format';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
 import { child, parseNbt } from './nbt';
@@ -31,6 +32,7 @@ import {
 	partialPath,
 	pruneSnapshots,
 	snapshotPath,
+	snapshotPrompt,
 	snapshotStep,
 	worldFolders,
 	type Snapshot
@@ -197,7 +199,7 @@ async function applyWorldChange(
 	// Committed: tidy up. A failure here leaves folders that recovery removes.
 	if (!snapshotId) await fs.rm(aside, { recursive: true, force: true });
 	if (incoming) await fs.rm(incoming, { recursive: true, force: true });
-	const removed = await pruneSnapshots(root, getSnapshotPolicy().keep);
+	const removed = await pruneSnapshots(root, getSnapshotPolicy(instance.id));
 	if (removed.length) task.log(`Deleted older snapshot${removed.length === 1 ? '' : 's'}: ${removed.join(', ')}.`);
 	setStatus(instance.id, 'ready', null);
 	audit(`instance.world_${change.action}`, { instanceId: instance.id });
@@ -432,6 +434,12 @@ export async function pruneChunks(
 export async function snapshotNow(instance: ServerInstance): Promise<string> {
 	await requireStopped(instance);
 	if (!(await worldFolders(instance.path)).length) throw new InstanceError('There is no world to snapshot yet.');
+	const prompt = await snapshotPrompt(instance);
+	if (prompt.lowSpace) {
+		throw new InstanceError(
+			`Only ${formatBytes(prompt.freeBytes ?? 0)} is free on the disk; this snapshot (${formatBytes(prompt.worldBytes)}) would leave less than the ${formatBytes(prompt.policy.minFreeMb * 1024 * 1024)} to keep free.`
+		);
+	}
 	begin(instance.id, { kind: 'snapshot' });
 	setStatus(instance.id, 'provisioning', 'Snapshotting the world');
 	const taskId = startTask({ label: `Snapshot ${instance.name}`, instanceId: instance.id }, async (task) => {

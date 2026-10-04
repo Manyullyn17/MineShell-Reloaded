@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Flash from '$lib/components/Flash.svelte';
-	import { formatDateTime } from '$lib/shared/format';
+	import SnapshotPolicyFields from '$lib/components/SnapshotPolicyFields.svelte';
+	import { formatBytes, formatDateTime } from '$lib/shared/format';
 
 	let { data, form } = $props();
 
@@ -249,28 +250,45 @@
 <section class="panel">
 	<h2>World snapshots</h2>
 	<p class="muted">
-		Before a pack version change or reinstall, a loader version change, a Cleanroom migration or revert, and
-		resetting, replacing or restoring a world, the world is copied to a snapshot you can restore from the server's
-		World tab. These are full copies, so big worlds cost time and disk space.
+		Before a pack version change or reinstall, a loader version change, a Cleanroom migration or revert, or a mod
+		update, the world is copied to a snapshot you can restore from the server's World tab; these copies cost time and
+		disk space on big worlds. Resetting, replacing, restoring or pruning keeps what it replaces as a snapshot by
+		moving it, which costs no extra space. Snapshots of one dimension are partial ones.
 	</p>
 	<form method="POST" action="?/snapshots" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="grid-2">
-			<div class="field">
-				<label for="snap-keep">Snapshots kept per server</label>
-				<input id="snap-keep" name="keep" type="number" min="1" max="50" required bind:value={snap.keep} />
-				<p class="hint">Older ones are deleted once a new one is complete.</p>
-			</div>
-			<div class="field">
-				<label for="snap-ask">Ask first for worlds above (MB)</label>
-				<input id="snap-ask" name="askAboveMb" type="number" min="-1" required bind:value={snap.askAboveMb} />
-				<p class="hint">
-					Bigger worlds ask whether to snapshot or continue without. <code>-1</code> turns the question off: the
-					snapshot is then always taken.
-				</p>
-			</div>
-		</div>
+		<SnapshotPolicyFields bind:values={snap} idPrefix="snap" />
+		<p class="faint small">
+			Each server can set its own in its settings; a blank field there follows these. Old snapshots go when the next one
+			is taken. Pinned snapshots are never deleted and not counted.
+		</p>
 		<button class="button-primary" type="submit">Save</button>
 	</form>
+
+	{#if data.snapshotUsage.length}
+		<h3 class="usage-heading">Per server</h3>
+		<table>
+			<thead>
+				<tr><th>Server</th><th>Full</th><th>Partial</th><th>Pinned</th><th class="num">Size</th></tr>
+			</thead>
+			<tbody>
+				{#each data.snapshotUsage as row (row.id)}
+					<tr>
+						<td>
+							<a href="/instances/{encodeURIComponent(row.id)}/world">{row.name}</a>
+							{#if row.ownSettings}<span class="tag">own settings</span>{/if}
+						</td>
+						<td class="mono">{row.usage.full}</td>
+						<td class="mono">{row.usage.partial}</td>
+						<td class="mono">{row.usage.pinned}{row.usage.pinned ? ` (${formatBytes(row.usage.pinnedBytes)})` : ''}</td>
+						<td class="num mono">{formatBytes(row.usage.bytes)}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+		{#if data.freeBytes !== null}
+			<p class="faint small">{formatBytes(data.freeBytes)} free on the disk holding the servers.</p>
+		{/if}
+	{/if}
 </section>
 
 <section class="panel">
@@ -358,6 +376,14 @@
 </section>
 
 <style>
+	.usage-heading {
+		margin-top: var(--space-5);
+	}
+
+	.num {
+		text-align: right;
+	}
+
 	.default-form {
 		display: inline;
 	}

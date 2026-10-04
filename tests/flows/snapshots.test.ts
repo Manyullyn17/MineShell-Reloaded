@@ -87,7 +87,7 @@ describe('world snapshots', () => {
 	it('copies every world folder before a loader change, and keeps the newest ones only', async () => {
 		const instance = await instanceWithWorld();
 		fakeInstall();
-		saveSnapshotPolicy({ keep: 2, askAboveMb: -1 });
+		saveSnapshotPolicy({ keepMin: 2, keepMax: 2, askAboveMb: -1 });
 		for (const version of ['0.16.0', '0.16.5', '0.17.0']) {
 			expect((await waitForTask(await changeLoaderVersion(reload(instance.id), version, { snapshot: true }))).state).toBe('done');
 		}
@@ -110,18 +110,18 @@ describe('world snapshots', () => {
 
 	it('keeps pinned snapshots, without them counting towards the limit', async () => {
 		const instance = await instanceWithWorld();
-		saveSnapshotPolicy({ keep: 10, askAboveMb: -1 });
+		saveSnapshotPolicy({ keepMin: 10, askAboveMb: -1 });
 		for (let i = 0; i < 4; i++) await waitForTask(await snapshotNow(reload(instance.id)));
 		const [newest, , , oldest] = await listSnapshots(instance.path);
 		await setSnapshotPinned(instance.path, oldest.id, true);
-		await pruneSnapshots(instance.path, 2);
+		await pruneSnapshots(instance.path, { ...DEFAULT_POLICY, keepMin: 2, keepMax: 2 });
 		const left = await listSnapshots(instance.path);
 		// The two newest unpinned ones, plus the pinned oldest.
 		expect(left.map((s) => s.id)).toEqual([newest.id, left[1].id, oldest.id]);
 		expect(left.find((s) => s.id === oldest.id)?.pinned).toBe(true);
 
 		await setSnapshotPinned(instance.path, oldest.id, false);
-		await pruneSnapshots(instance.path, 2);
+		await pruneSnapshots(instance.path, { ...DEFAULT_POLICY, keepMin: 2, keepMax: 2 });
 		expect((await listSnapshots(instance.path)).map((s) => s.id)).not.toContain(oldest.id);
 	});
 
@@ -169,27 +169,27 @@ describe('world snapshots', () => {
 	describe('whether to ask', () => {
 		it('always snapshots below the threshold, whatever the form says', async () => {
 			const instance = await instanceWithWorld();
-			saveSnapshotPolicy({ keep: 3, askAboveMb: 1 });
-			expect(await decideSnapshot(instance.path, 'no')).toBe(true);
+			saveSnapshotPolicy({ askAboveMb: 1 });
+			expect(await decideSnapshot(instance, 'no')).toBe(true);
 		});
 
 		it('needs an answer above it', async () => {
 			const instance = await instanceWithWorld();
-			saveSnapshotPolicy({ keep: 3, askAboveMb: 0 });
-			await expect(decideSnapshot(instance.path, null)).rejects.toBeInstanceOf(SnapshotChoiceNeeded);
-			expect(await decideSnapshot(instance.path, 'no')).toBe(false);
-			expect(await decideSnapshot(instance.path, 'yes')).toBe(true);
+			saveSnapshotPolicy({ askAboveMb: 0 });
+			await expect(decideSnapshot(instance, null)).rejects.toBeInstanceOf(SnapshotChoiceNeeded);
+			expect(await decideSnapshot(instance, 'no')).toBe(false);
+			expect(await decideSnapshot(instance, 'yes')).toBe(true);
 		});
 
 		it('never asks with -1, and still snapshots', async () => {
 			const instance = await instanceWithWorld();
-			saveSnapshotPolicy({ keep: 3, askAboveMb: -1 });
-			expect(await decideSnapshot(instance.path, 'no')).toBe(true);
+			saveSnapshotPolicy({ askAboveMb: -1 });
+			expect(await decideSnapshot(instance, 'no')).toBe(true);
 		});
 
 		it('has nothing to snapshot without a world', async () => {
 			const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' }, { 'server.jar': 'x' });
-			expect(await decideSnapshot(instance.path, null)).toBe(false);
+			expect(await decideSnapshot(instance, null)).toBe(false);
 		});
 	});
 });

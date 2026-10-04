@@ -161,8 +161,10 @@
 		<div>
 			<h2>Snapshots</h2>
 			<p>
-				Taken before risky operations and on request; the newest {data.snapshotPrompt.policy.keep} are kept
-				(<a href="/settings">Settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
+				Taken before risky operations and on request. At least the newest {data.snapshotPrompt.policy.keepMin} full
+				and {data.snapshotPrompt.policy.partialMin} partial ones are kept, more while they fit in
+				{formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
+					href="/instances/{encodeURIComponent(data.instance.id)}/settings">server settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
 				unless you choose otherwise.
 			</p>
 		</div>
@@ -272,7 +274,7 @@
 											revert those too, or blocks and items from them may be lost.
 										</p>
 									{/if}
-									<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="restore-{s.id}" />
+									<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="restore-{s.id}" />
 									<div class="button-row">
 										<button class="button-primary" type="submit">Restore this snapshot</button>
 										<button class="button-quiet" type="button" onclick={() => (pendingRestore = null)}>Cancel</button>
@@ -475,7 +477,7 @@
 			<label for="world-zip">World zip</label>
 			<input id="world-zip" name="world" type="file" accept=".zip,application/zip" />
 		</div>
-		<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="replace" />
+		<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="replace" />
 		{#if data.running}<p class="hint">Stop the server to replace its world.</p>{/if}
 		<button class="button-primary" type="submit" disabled={data.running || busy || uploadPercent !== null}>
 			{uploadPercent !== null ? `Uploading ${uploadPercent}%` : 'Upload and replace'}
@@ -544,7 +546,7 @@
 				<input type="hidden" name="dimension" value={pruneDimension} />
 				<input type="hidden" name="maxTicks" value={pruneTicks} />
 				<input type="hidden" name="keepAroundSpawn" value={pruneIsOverworld ? pruneKeep : 0} />
-				<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="prune" />
+				<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="prune" />
 				{#if data.running}<p class="muted small">Stop the server to prune.</p>{/if}
 				<button class="button-danger" type="submit" disabled={data.running || busy || data.pruneCount.remove === 0}>
 					Prune {data.pruneCount.remove.toLocaleString()} chunks
@@ -584,7 +586,7 @@
 				<input name="seed" aria-label="Seed" disabled={seedMode !== 'set'} />
 			</div>
 		</fieldset>
-		<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="reset" />
+		<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="reset" />
 		{#if data.running}<p class="hint">Stop the server to reset its world.</p>{/if}
 		<button class="button-danger" type="submit" disabled={data.running || busy || !data.worlds.length}>Reset the world</button>
 	</form>
@@ -613,7 +615,7 @@
 					{/each}
 				</select>
 			</div>
-			<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="reset-dimension" />
+			<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="reset-dimension" />
 			<button class="button-danger" type="submit" disabled={data.running || busy}>Reset this dimension</button>
 		</form>
 	{/if}
