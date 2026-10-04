@@ -120,10 +120,13 @@ re-proposed or built twice.
 
 - **Chunky integration**: pregeneration with progress, pause/resume, and a scheduler slot.
   Not started.
-- **Console enhancements.** Exists: Up/Down command history (in memory, lost on reload)
-  and colouring by log level (`Console.svelte`). Missing: level filters, search, collapsed
-  stack traces, join/leave highlighting, macros, persistent history, autocomplete. The Logs
-  tab (journal runs and `logs/`/`crash-reports/` files) has no search or filter either.
+- **Console enhancements**: built. Level filters, "only players joining and leaving",
+  search with highlighted matches, stack traces folded under their error, ANSI colour codes
+  stripped (modern Forge), the server's lines about RCON connections hidden by default
+  (MineShell's own polling floods them), command history kept per server in the browser,
+  and saved commands per server (`macros.ts`, copied with a server copy). Autocomplete was
+  left out: RCON cannot ask Brigadier for completions, and a fixed list would not know mod
+  commands. The Logs tab still has no search.
 - **Ban UI, the rest**: built. Ban reasons, IP bans (`banned-ips.json`; by address while
   stopped, by online player while running), Ban / Ban IP next to Kick, operator levels and
   player-limit bypass (picked and changed only while stopped: vanilla has no command for

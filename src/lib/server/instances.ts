@@ -57,6 +57,7 @@ import { snapshotStep } from './snapshots';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
+import { deleteMacros, getMacros, setMacros } from './macros';
 
 export class InstanceError extends Error {}
 
@@ -1274,6 +1275,9 @@ export async function deleteInstance(
 		}
 	}
 	db.delete(serverInstances).where(eq(serverInstances.id, instance.id)).run();
+	// Kept in settings, not on the row, so nothing cascades: a server recreated
+	// under the same name would otherwise find the old one's commands.
+	deleteMacros(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'
@@ -1380,6 +1384,7 @@ export async function cloneInstance(
 				}
 				copyScheduledCommands(source.id, id);
 				copyCustomFields(source.id, id);
+				setMacros(id, getMacros(source.id));
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

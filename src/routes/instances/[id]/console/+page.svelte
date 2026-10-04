@@ -62,5 +62,6 @@
 		bufferLines={data.bufferLines}
 		canSend={data.running}
 		resetKey={consoleGeneration}
+		macros={data.macros}
 	/>
 </section>
