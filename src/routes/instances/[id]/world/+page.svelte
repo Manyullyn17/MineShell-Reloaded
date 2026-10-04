@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
@@ -29,7 +29,7 @@
 	// Progress moves on its own while a task runs; nothing else on this page does.
 	$effect(() => {
 		if (!data.chunky?.status?.running.length) return;
-		const timer = setInterval(() => void invalidateAll(), 5000);
+		const timer = setInterval(() => void refreshAll(), 5000);
 		return () => clearInterval(timer);
 	});
 	// ---- chunk pruning
@@ -95,7 +95,7 @@
 				uploadError = '';
 				uploadMessage = 'Uploaded. Replacing the world; follow it in Tasks.';
 				formEl.reset();
-				void invalidateAll();
+				void refreshAll();
 			} else {
 				uploadMessage = '';
 				uploadError =

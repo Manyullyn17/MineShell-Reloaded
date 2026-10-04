@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 
 	/**
 	 * Background installs finish while you are looking at some other page, so
@@ -67,7 +67,7 @@
 				announce(task);
 				finished = true;
 			}
-			if (finished) void invalidateAll();
+			if (finished) void refreshAll();
 		});
 
 		return () => source.close();

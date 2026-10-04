@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { deserialize } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import NbtNode from '#lib/components/NbtNode.svelte';
 	import { formatDateTime } from '#lib/shared/format.js';
@@ -36,7 +36,7 @@
 			} else {
 				result = { ok: false, message: 'Could not save.' };
 			}
-			await invalidateAll();
+			await refreshAll();
 			return outcome.type === 'success';
 		} catch {
 			result = { ok: false, message: 'Could not reach MineShell.' };

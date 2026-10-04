@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
 
@@ -29,7 +29,7 @@
 			<button
 				onclick={async () => {
 					measuring = true;
-					await invalidateAll();
+					await refreshAll();
 					measuring = false;
 				}}
 				disabled={measuring}>{measuring ? 'Measuring' : 'Measure again'}</button

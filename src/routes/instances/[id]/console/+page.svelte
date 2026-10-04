@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import Console from '#lib/components/Console.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 
@@ -20,7 +20,7 @@
 			const payload = JSON.parse((event as MessageEvent).data);
 			const key = `${payload.active}/${payload.sub}`;
 			if (last !== null && last !== key) {
-				void invalidateAll();
+				void refreshAll();
 				// A restart goes through this same transition on its way back
 				// up - clearing here, rather than waiting for "running" again,
 				// means the view is already empty before the new process's

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
@@ -12,7 +12,7 @@
 	// Systemd state changes a second or two after the button click, so the page
 	// re-reads itself on a slow tick rather than pretending it is instant.
 	$effect(() => {
-		const timer = setInterval(() => void invalidateAll(), 5000);
+		const timer = setInterval(() => void refreshAll(), 5000);
 		return () => clearInterval(timer);
 	});
 

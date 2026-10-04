@@ -14,7 +14,7 @@
 	const tone = $derived(form ? (form.ok === false ? 'error' : 'success') : type);
 
 	// `form` is only reset by SvelteKit on a real navigation, not by
-	// invalidateAll()'s periodic reload - so a page that polls its own load
+	// refreshAll()'s periodic reload - so a page that polls its own load
 	// function (like the instance overview) keeps re-showing e.g. "Starting."
 	// long after it's stopped being true, until the person happens to switch
 	// tabs. Errors stay until the next action; other tones clear themselves.

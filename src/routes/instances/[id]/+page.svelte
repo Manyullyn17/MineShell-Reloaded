@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
+	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
@@ -26,7 +26,7 @@
 	});
 
 	$effect(() => {
-		const timer = setInterval(() => void invalidateAll(), 5000);
+		const timer = setInterval(() => void refreshAll(), 5000);
 		return () => clearInterval(timer);
 	});
 
