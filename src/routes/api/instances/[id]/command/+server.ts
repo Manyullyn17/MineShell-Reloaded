@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { audit, getInstance, sendCommand } from '#lib/server/instances.js';
 
@@ -9,14 +9,14 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 
 	const body = (await request.json().catch(() => ({}))) as { command?: string };
 	const command = (body.command ?? '').trim();
-	if (!command) return json({ message: 'Nothing to send.' }, { status: 400 });
+	if (!command) return Response.json({ message: 'Nothing to send.' }, { status: 400 });
 
 	try {
 		const response = await sendCommand(instance, command);
 		audit('console.command', { instanceId: instance.id, detail: command.slice(0, 200) });
-		return json({ response });
+		return Response.json({ response });
 	} catch (err) {
-		return json(
+		return Response.json(
 			{
 				message:
 					err instanceof Error

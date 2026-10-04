@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance, InstanceError } from '#lib/server/instances.js';
 import { planPackChange } from '#lib/server/packchange.js';
@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	if (!versionId) error(400, 'A pack version is required.');
 
 	try {
-		return json({ plan: await planPackChange(instance, versionId) });
+		return Response.json({ plan: await planPackChange(instance, versionId) });
 	} catch (err) {
 		if (err instanceof InstanceError) error(400, err.message);
 		error(502, err instanceof Error ? err.message : 'Could not look up that pack version.');

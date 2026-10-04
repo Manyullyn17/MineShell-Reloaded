@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { previewProviderPack } from '#lib/server/packs/preview.js';
 
@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const versionId = url.searchParams.get('versionId');
 	if (!projectId || !versionId) error(400, 'A pack and a version are required.');
 	try {
-		return json({ preview: await previewProviderPack(source, projectId, versionId) });
+		return Response.json({ preview: await previewProviderPack(source, projectId, versionId) });
 	} catch (err) {
 		error(502, err instanceof Error ? err.message : 'Could not read that pack version.');
 	}

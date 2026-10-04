@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { compareVersionPriority, getModProvider } from '#lib/server/mods/index.js';
 import { isDatapackVersion } from '#lib/server/mods/datapacks.js';
@@ -25,7 +25,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		if (loader !== 'vanilla') {
 			versions.sort((a, b) => Number(isDatapackVersion(a, loader)) - Number(isDatapackVersion(b, loader)));
 		}
-		return json({
+		return Response.json({
 			versions: versions.slice(0, 40).map((v) => ({
 				id: v.id,
 				versionNumber: v.versionNumber,

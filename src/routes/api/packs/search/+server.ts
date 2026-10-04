@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getProvider } from '#lib/server/mods/index.js';
 
@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			page: Number(url.searchParams.get('page') ?? 1),
 			limit: 20
 		});
-		return json({ hits });
+		return Response.json({ hits });
 	} catch (err) {
 		error(502, err instanceof Error ? err.message : 'Search failed.');
 	}

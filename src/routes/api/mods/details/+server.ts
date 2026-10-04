@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getModProvider, getProvider } from '#lib/server/mods/index.js';
 
@@ -40,7 +40,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			changelog = version?.changelog?.trim() || null;
 		}
 
-		return json({
+		return Response.json({
 			name: project.name,
 			author: project.author,
 			projectUrl: project.projectUrl,

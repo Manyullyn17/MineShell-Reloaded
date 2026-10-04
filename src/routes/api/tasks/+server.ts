@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { listTasks } from '#lib/server/tasks.js';
 import { bus } from '#lib/server/events.js';
@@ -8,7 +8,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
 
 	if (url.searchParams.get('stream') !== '1') {
-		return json({ tasks: listTasks() });
+		return Response.json({ tasks: listTasks() });
 	}
 
 	let unsubscribe: (() => void) | null = null;

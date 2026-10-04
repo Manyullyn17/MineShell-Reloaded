@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
 
@@ -11,12 +11,12 @@ export const GET: RequestHandler = async ({ url }) => {
 		if (url.searchParams.get('kind') === 'game') {
 			const loader = getLoader(loaderId);
 			const versions = await loader.listGameVersions();
-			return json({ versions });
+			return Response.json({ versions });
 		}
-		if (!minecraft) return json({ versions: [] });
+		if (!minecraft) return Response.json({ versions: [] });
 		const loader = getLoader(loaderId);
 		const versions = await loader.listLoaderVersions(minecraft);
-		return json({ versions });
+		return Response.json({ versions });
 	} catch (err) {
 		// The upstream metadata servers go down occasionally; the form falls back
 		// to a free-text field rather than blocking the user.
@@ -26,5 +26,5 @@ export const GET: RequestHandler = async ({ url }) => {
 
 export const fallback: RequestHandler = async () => {
 	const versions = await listReleaseVersions();
-	return json({ versions });
+	return Response.json({ versions });
 };

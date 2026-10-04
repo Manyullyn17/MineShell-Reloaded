@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -28,10 +28,10 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	const instance = instanceOr404(params.id);
 	const bytes = Buffer.from(await request.arrayBuffer());
 	const problem = checkServerIcon(bytes);
-	if (problem) return json({ message: problem }, { status: 400 });
+	if (problem) return Response.json({ message: problem }, { status: 400 });
 	await fs.writeFile(path.join(instance.path, ICON), bytes);
 	audit('instance.icon_changed', { instanceId: instance.id });
-	return json({ ok: true });
+	return Response.json({ ok: true });
 };
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
@@ -39,5 +39,5 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 	const instance = instanceOr404(params.id);
 	await fs.rm(path.join(instance.path, ICON), { force: true });
 	audit('instance.icon_removed', { instanceId: instance.id });
-	return json({ ok: true });
+	return Response.json({ ok: true });
 };

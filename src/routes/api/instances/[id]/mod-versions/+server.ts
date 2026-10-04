@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance, InstanceError } from '#lib/server/instances.js';
 import { listModVersions, previewDependencies } from '#lib/server/modupdates.js';
@@ -14,10 +14,10 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	try {
 		const fileName = url.searchParams.get('fileName') ?? '';
 		const versionId = url.searchParams.get('versionId');
-		if (versionId) return json({ dependencies: await previewDependencies(instance, fileName, versionId) });
-		return json(await listModVersions(instance, fileName));
+		if (versionId) return Response.json({ dependencies: await previewDependencies(instance, fileName, versionId) });
+		return Response.json(await listModVersions(instance, fileName));
 	} catch (err) {
 		const status = err instanceof InstanceError ? 400 : 502;
-		return json({ message: err instanceof Error ? err.message : 'Looking up versions failed.' }, { status });
+		return Response.json({ message: err instanceof Error ? err.message : 'Looking up versions failed.' }, { status });
 	}
 };

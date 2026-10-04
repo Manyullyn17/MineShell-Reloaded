@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { bestVersion, getModProvider, listInstanceMods } from '#lib/server/mods/index.js';
 import { getInstance } from '#lib/server/instances.js';
@@ -84,7 +84,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			})
 		);
 
-		return json({ dependencies: resolved });
+		return Response.json({ dependencies: resolved });
 	} catch (err) {
 		error(502, err instanceof Error ? err.message : 'Dependency lookup failed.');
 	}

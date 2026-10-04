@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { compareVersionPriority, getProvider } from '#lib/server/mods/index.js';
 
@@ -13,7 +13,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			minecraftVersion: url.searchParams.get('mc') || undefined
 		});
 		versions.sort(compareVersionPriority);
-		return json({
+		return Response.json({
 			versions: versions.slice(0, 60).map((v) => ({
 				id: v.id,
 				name: v.name,

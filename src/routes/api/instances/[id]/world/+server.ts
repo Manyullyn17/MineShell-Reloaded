@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -46,7 +46,7 @@ export const PUT: RequestHandler = async ({ params, url, request, locals }) => {
 		await requireStopped(instance);
 		snapshot = await decideSnapshot(instance, url.searchParams.get('snapshot'), { moves: true });
 	} catch (err) {
-		if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return json({ message: err.message }, { status: 400 });
+		if (err instanceof InstanceError || err instanceof SnapshotChoiceNeeded) return Response.json({ message: err.message }, { status: 400 });
 		throw err;
 	}
 
@@ -56,12 +56,12 @@ export const PUT: RequestHandler = async ({ params, url, request, locals }) => {
 		await pipeline(Readable.fromWeb(request.body as import('node:stream/web').ReadableStream), createWriteStream(file));
 	} catch {
 		await fs.rm(file, { force: true });
-		return json({ message: 'The upload did not finish.' }, { status: 400 });
+		return Response.json({ message: 'The upload did not finish.' }, { status: 400 });
 	}
 	try {
-		return json({ taskId: await replaceWorld(instance, file, { snapshot }) });
+		return Response.json({ taskId: await replaceWorld(instance, file, { snapshot }) });
 	} catch (err) {
-		if (err instanceof InstanceError) return json({ message: err.message }, { status: 400 });
+		if (err instanceof InstanceError) return Response.json({ message: err.message }, { status: 400 });
 		throw err;
 	}
 };

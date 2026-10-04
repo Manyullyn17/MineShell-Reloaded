@@ -1,4 +1,4 @@
-import { error, json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
 import { checkModUpdates } from '#lib/server/modupdates.js';
@@ -9,8 +9,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	const instance = getInstance(params.id);
 	if (!instance) error(404, 'No server with that name.');
 	try {
-		return json(await checkModUpdates(instance));
+		return Response.json(await checkModUpdates(instance));
 	} catch (err) {
-		return json({ message: err instanceof Error ? err.message : 'Checking for updates failed.' }, { status: 502 });
+		return Response.json({ message: err instanceof Error ? err.message : 'Checking for updates failed.' }, { status: 502 });
 	}
 };

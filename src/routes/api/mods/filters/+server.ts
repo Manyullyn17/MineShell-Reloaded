@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getModProvider, getProvider } from '#lib/server/mods/index.js';
 
@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const provider = kind === 'mod' ? getModProvider(source) : getProvider(source);
 		const groups = (await provider.filterGroups?.(kind)) ?? [];
-		return json({ groups });
+		return Response.json({ groups });
 	} catch (err) {
 		error(502, err instanceof Error ? err.message : 'Could not load filters.');
 	}
