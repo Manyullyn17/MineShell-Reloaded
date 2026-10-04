@@ -180,7 +180,9 @@
 			{/if}
 			<div>
 				<dt>Disk used</dt>
-				<dd class="mono">{formatBytes(data.diskBytes)}</dd>
+				<dd class="mono">
+					<a href="/instances/{data.instance.id}/files/usage" title="Where the space goes">{formatBytes(data.diskBytes)}</a>
+				</dd>
 			</div>
 			<div>
 				<dt>Crash restarts</dt>

@@ -128,10 +128,11 @@ re-proposed or built twice.
   stopped, by online player while running), Ban / Ban IP next to Kick, operator levels and
   player-limit bypass (picked and changed only while stopped: vanilla has no command for
   them and keeps ops.json in memory).
-- **Disk usage breakdown.** Only a total per server exists (`instanceDiskUsage`, cached for
-  60 s). Missing: the world split by dimension, logs, snapshots, `old-configs/`,
-  `.mineshell/` backups, and cleanup suggestions. Modded dimensions live in `DIM*` /
-  `dimensions/` inside the world, not only in the `_nether`/`_the_end` siblings.
+- **Disk usage breakdown**: built (`diskusage.ts`, Files tab > Disk usage, or the overview's
+  "Disk used"). The world per dimension (vanilla, 1.12 `DIM<n>` and named mod folders,
+  1.16+ `dimensions/<ns>/<name>`, Bukkit siblings), snapshots and MineShell backups,
+  `old-configs/` per version, logs, mods, loader, the rest; suggestions point to where to
+  act, and archived logs/crash reports older than 30 days can be deleted from there.
 - **Default Java per major version**: built. A pinned path wins, then the runtime set as
   default for the major (Settings, "Servers use" column), then the newest build of it, with
   the path between equal builds. The overview and the server's Java picker say which applied.

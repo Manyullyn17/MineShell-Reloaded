@@ -68,6 +68,7 @@
 			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>
 				New folder
 			</button>
+			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/files/usage">Disk usage</a>
 			<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance class="upload">
 				<input type="hidden" name="dir" value={data.dir} />
 				<input type="file" name="files" multiple aria-label="Files to upload" />
