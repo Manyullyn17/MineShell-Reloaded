@@ -185,10 +185,6 @@ export type PlayerView = {
 	tree: TreeTag;
 };
 
-export function formatOf(dataVersion: number | null): Format {
-	return styleOf(dataVersion).format;
-}
-
 function usesEquipment(root: Compound, dataVersion: number | null): boolean {
 	return child(root, 'equipment')?.type === 'compound' || (dataVersion ?? 0) >= EQUIPMENT;
 }
@@ -439,7 +435,7 @@ function step(tag: Tag, key: string | number): Tag {
 }
 
 /** Where an item for (section, slot) lives: a list and the slot number in it, or an equipment key. */
-function itemHome(root: Compound, section: Section, slot: number, equipment: boolean) {
+function itemHome(section: Section, slot: number, equipment: boolean) {
 	if (section === 'ender') {
 		if (slot < 0 || slot > 26) throw new PlayerDataError('The ender chest has slots 0 to 26.');
 		return { list: 'EnderItems' as const, slot };
@@ -465,7 +461,7 @@ function listOf(root: Compound, name: string): Extract<Tag, { type: 'list' }> {
 
 function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeItem' }>, style: Style, equipment: boolean): void {
 	const format = style.format;
-	const home = itemHome(root, edit.section, edit.slot, equipment);
+	const home = itemHome(edit.section, edit.slot, equipment);
 	let existing: Compound | undefined;
 	let dropExisting: () => void = () => undefined;
 	let place: (item: Compound) => void;

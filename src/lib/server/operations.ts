@@ -81,8 +81,6 @@ export type Journal =
 			world?: { datapacks: string; datapacksBefore: string[]; added: string[] };
 	  };
 
-export type OperationKind = Journal['kind'];
-
 /**
  * Identifies this MineShell process, kept on globalThis so a dev-mode module
  * reload keeps it: recovery must never act on an operation this process is

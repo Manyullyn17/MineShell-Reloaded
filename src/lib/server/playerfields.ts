@@ -148,11 +148,6 @@ export function playerFields(root: Compound): FieldView[] {
 	return [...FIELDS.map((def) => fieldFor(root, def)).filter((f): f is FieldView => !!f), ...attributeFields(root)];
 }
 
-/** A checkbox's or input's value as the text a `set` edit takes. */
-export function fieldEditValue(kind: FieldKind, value: string | boolean): string {
-	return kind === 'checkbox' ? (value ? '1' : '0') : String(value);
-}
-
 // ---------------------------------------------------------------- effects ---
 
 /** The numeric effect ids used up to 1.20.1. */

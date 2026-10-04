@@ -12,7 +12,6 @@ import {
 	defaultProperties,
 	fillPropertyDefaults,
 	patchProperties,
-	readProperties,
 	writeProperties
 } from './properties';
 import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
@@ -1466,8 +1465,4 @@ export async function syncPortsToProperties(instance: ServerInstance): Promise<v
 		'rcon.port': String(instance.rconPort),
 		...(password ? { 'rcon.password': password } : {})
 	});
-}
-
-export async function currentProperties(instance: ServerInstance) {
-	return readProperties(instance.path);
 }

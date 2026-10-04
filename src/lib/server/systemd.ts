@@ -361,12 +361,6 @@ export async function unitState(id: string, options: { fresh?: boolean } = {}): 
 	return pending;
 }
 
-/** Batched status read for the instance list; one systemctl call per instance. */
-export async function unitStates(ids: string[]): Promise<Record<string, UnitState>> {
-	const entries = await Promise.all(ids.map(async (id) => [id, await unitState(id)] as const));
-	return Object.fromEntries(entries);
-}
-
 export async function startUnit(id: string) {
 	invalidateUnitState(id);
 	const res = await systemctl('start', unitName(id));

@@ -379,14 +379,3 @@ export async function projectBody(id: string): Promise<string | null> {
 		return null;
 	}
 }
-
-export async function versionFromHash(sha512: string): Promise<ProjectVersion | null> {
-	try {
-		const version = await fetchJson<MrVersion>(
-			`${API}/version_file/${sha512}?algorithm=sha512`
-		);
-		return toVersion(version);
-	} catch {
-		return null;
-	}
-}

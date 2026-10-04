@@ -54,7 +54,7 @@ export default defineConfig({
     testTimeout: process.env.RECORD_HTTP ? 60_000 : 5_000,
     // Every test file shares the one throwaway database (SvelteKit fixes the
     // env once per run), and parallel workers migrating it at the same time
-    // lock it. The suite takes about a second, so files simply run in turn.
+    // lock it, so files simply run in turn (the suite takes about half a minute).
     fileParallelism: false
   },
   server: {

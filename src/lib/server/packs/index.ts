@@ -272,8 +272,6 @@ export function curseforgeCdnUrl(fileId: number, fileName: string): string {
 	return `https://edge.forgecdn.net/files/${Math.floor(fileId / 1000)}/${fileId % 1000}/${encodeURIComponent(fileName)}`;
 }
 
-export type PackInstallProgress = { done: number; total: number; current: string };
-
 /** Fetch every file the pack lists, in small batches, into the instance. */
 export async function downloadPackFiles(
 	pack: ParsedPack,
