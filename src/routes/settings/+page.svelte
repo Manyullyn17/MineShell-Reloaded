@@ -81,7 +81,7 @@
 			<h2>Java runtimes</h2>
 			<p>
 				Each server picks a runtime matching its Minecraft version, unless one is pinned in that
-				server's settings.
+				server's settings. With several of one version, it takes the one set here, or else the newest.
 			</p>
 		</div>
 		<form method="POST" action="?/scanJava" use:enhance>
@@ -103,6 +103,7 @@
 					<th>Version</th>
 					<th>Path</th>
 					<th>Found</th>
+					<th>Servers use</th>
 					<th><span class="visually-hidden">Actions</span></th>
 				</tr>
 			</thead>
@@ -114,6 +115,23 @@
 						<td class="small faint">
 							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
 							{#if java.vendor}<div class="small">{java.vendor}</div>{/if}
+						</td>
+						<td class="small">
+							{#if java.inUse}
+								<span class="tag accent">Java {java.majorVersion}{java.isDefault ? ', default' : ''}</span>
+							{/if}
+							{#if java.siblings > 1}
+								<form method="POST" action="?/javaDefault" use:enhance class="default-form">
+									<input type="hidden" name="major" value={java.majorVersion} />
+									{#if java.isDefault}
+										<input type="hidden" name="path" value="" />
+										<button class="button-quiet" title="Use the newest Java {java.majorVersion} instead">Use newest</button>
+									{:else if !java.inUse}
+										<input type="hidden" name="path" value={java.path} />
+										<button class="button-quiet">Use for Java {java.majorVersion}</button>
+									{/if}
+								</form>
+							{/if}
 						</td>
 						<td class="right">
 							{#if java.managed}
@@ -340,6 +358,10 @@
 </section>
 
 <style>
+	.default-form {
+		display: inline;
+	}
+
 	.java-download {
 		margin-top: var(--space-5);
 	}

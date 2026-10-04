@@ -259,12 +259,88 @@ export function removeJavaRuntime(binary: string) {
 	db.delete(javaRuntimes).where(eq(javaRuntimes.path, binary)).run();
 }
 
+// ------------------------------------------------- default per major ---
+
+/**
+ * The runtime to use for each Java major when several are installed, set in
+ * Settings: { "17": "/usr/lib/jvm/java-17-openjdk-amd64/bin/java" }. A server
+ * pinned to a path ignores it.
+ */
+const DEFAULTS_KEY = 'java.defaults';
+
+/** Every read is validated, so a stale or hand-edited row degrades to no defaults. */
+export function getJavaDefaults(): Record<number, string> {
+	const row = db.select().from(settings).where(eq(settings.key, DEFAULTS_KEY)).get();
+	let raw: unknown;
+	try {
+		raw = row ? JSON.parse(row.value) : {};
+	} catch {
+		return {};
+	}
+	const defaults: Record<number, string> = {};
+	if (!raw || typeof raw !== 'object') return defaults;
+	for (const [key, value] of Object.entries(raw)) {
+		const major = Number(key);
+		if (Number.isInteger(major) && major > 0 && typeof value === 'string' && value) defaults[major] = value;
+	}
+	return defaults;
+}
+
+/** Null clears it, back to the newest runtime of that major. */
+export function setJavaDefault(major: number, binary: string | null): void {
+	const defaults = getJavaDefaults();
+	if (binary) defaults[major] = binary;
+	else delete defaults[major];
+	const value = JSON.stringify(defaults);
+	db.insert(settings)
+		.values({ key: DEFAULTS_KEY, value })
+		.onConflictDoUpdate({ target: settings.key, set: { value } })
+		.run();
+}
+
+/** "17.0.12" / "1.8.0_422" -> numbers, for comparing builds of one major. */
+function versionParts(version: string): number[] {
+	return (version.match(/\d+/g) ?? []).map(Number);
+}
+
+function newerFirst(a: { versionString: string; path: string }, b: { versionString: string; path: string }): number {
+	const x = versionParts(a.versionString);
+	const y = versionParts(b.versionString);
+	for (let i = 0; i < Math.max(x.length, y.length); i++) {
+		const diff = (y[i] ?? 0) - (x[i] ?? 0);
+		if (diff) return diff;
+	}
+	return a.path.localeCompare(b.path);
+}
+
+type Runtime = ReturnType<typeof listJavaRuntimes>[number];
+
+/**
+ * The runtime used for one major: the default set for it if that is still
+ * installed, otherwise the newest build, and the path between equal builds -
+ * so the same machine always gives the same answer.
+ */
+export function runtimeForMajor(
+	installed: Runtime[],
+	major: number,
+	defaults: Record<number, string> = getJavaDefaults()
+): { runtime: Runtime; isDefault: boolean } | null {
+	const candidates = installed.filter((j) => j.majorVersion === major);
+	const chosen = candidates.find((j) => j.path === defaults[major]);
+	if (chosen) return { runtime: chosen, isDefault: true };
+	const newest = [...candidates].sort(newerFirst)[0];
+	return newest ? { runtime: newest, isDefault: false } : null;
+}
+
 export type JavaResolution = {
 	path: string | null;
 	majorVersion: number | null;
 	requiredMajor: number;
-	/** explicit = pinned on the instance, auto = matched by version, missing = none found */
-	origin: 'explicit' | 'auto' | 'missing';
+	/**
+	 * explicit = pinned on the instance, default = the runtime set as default for
+	 * its major, auto = matched by version, missing = none found
+	 */
+	origin: 'explicit' | 'default' | 'auto' | 'missing';
 	warning: string | null;
 };
 
@@ -298,14 +374,16 @@ export function resolveJava(opts: {
 		};
 	}
 
-	// Prefer the exact required major, then the closest acceptable one.
-	const exact = installed.filter((j) => j.majorVersion === requiredMajor);
-	const nearby = installed
-		.filter((j) => acceptable.includes(j.majorVersion))
-		.sort((a, b) => a.majorVersion - b.majorVersion);
-	const chosen = exact[0] ?? nearby[0];
+	// Prefer the exact required major, then the lowest acceptable one.
+	const defaults = getJavaDefaults();
+	const majors = [requiredMajor, ...[...new Set(installed.map((j) => j.majorVersion))].filter((m) => acceptable.includes(m)).sort((a, b) => a - b)];
+	let pick: ReturnType<typeof runtimeForMajor> = null;
+	for (const major of majors) {
+		pick = runtimeForMajor(installed, major, defaults);
+		if (pick) break;
+	}
 
-	if (!chosen) {
+	if (!pick) {
 		return {
 			path: null,
 			majorVersion: null,
@@ -315,11 +393,12 @@ export function resolveJava(opts: {
 		};
 	}
 
+	const chosen = pick.runtime;
 	return {
 		path: chosen.path,
 		majorVersion: chosen.majorVersion,
 		requiredMajor,
-		origin: 'auto',
+		origin: pick.isDefault ? 'default' : 'auto',
 		warning:
 			chosen.majorVersion === requiredMajor
 				? null

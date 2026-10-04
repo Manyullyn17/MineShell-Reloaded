@@ -15,7 +15,17 @@ import {
 	renderTemplateUnit,
 	templateUnitInstalled
 } from '$lib/server/systemd';
-import { addManualJava, listJavaRuntimes, removeJavaRuntime, requiredJavaMajor, resolveJava, scanJavaRuntimes } from '$lib/server/java';
+import {
+	addManualJava,
+	getJavaDefaults,
+	listJavaRuntimes,
+	removeJavaRuntime,
+	requiredJavaMajor,
+	resolveJava,
+	runtimeForMajor,
+	scanJavaRuntimes,
+	setJavaDefault
+} from '$lib/server/java';
 import {
 	isJavaVendor,
 	isManagedJava,
@@ -43,7 +53,7 @@ export const load: PageServerLoad = async () => {
 		},
 		systemd: { ...systemd, scope: SYSTEMD_SCOPE, unitInstalled: await templateUnitInstalled() },
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
-		javaRuntimes: listJavaRuntimes().map((j) => ({ ...j, managed: isManagedJava(j.path) })),
+		javaRuntimes: javaRuntimeRows(),
 		javaDownloads: javaDownloads(),
 		authEnabled: authEnabled(),
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
@@ -51,6 +61,25 @@ export const load: PageServerLoad = async () => {
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all()
 	};
 };
+
+/**
+ * Each runtime, and whether servers matching Java automatically use it for its
+ * major (`inUse`), and whether that is because it was set as default.
+ */
+function javaRuntimeRows() {
+	const installed = listJavaRuntimes();
+	const defaults = getJavaDefaults();
+	return installed.map((j) => {
+		const pick = runtimeForMajor(installed, j.majorVersion, defaults);
+		return {
+			...j,
+			managed: isManagedJava(j.path),
+			inUse: pick?.runtime.path === j.path,
+			isDefault: defaults[j.majorVersion] === j.path,
+			siblings: installed.filter((o) => o.majorVersion === j.majorVersion).length
+		};
+	});
+}
 
 /**
  * The majors to offer for download (the built-in list plus whatever an
@@ -88,6 +117,28 @@ export const actions: Actions = {
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not delete that runtime.' });
 		}
+	},
+
+	javaDefault: async ({ request }) => {
+		const form = await request.formData();
+		const major = Number(form.get('major'));
+		const binary = String(form.get('path') ?? '');
+		const runtime = listJavaRuntimes().find((j) => j.path === binary);
+		if (binary && (!runtime || runtime.majorVersion !== major)) {
+			return fail(400, { ok: false, message: 'That runtime is no longer in the list. Rescan and try again.' });
+		}
+		setJavaDefault(major, binary || null);
+		// Servers pick up the change on their next start; rewriting the env files
+		// now keeps what Settings and the unit files say in step.
+		for (const instance of listInstances().filter((i) => !i.javaPath)) {
+			await syncUnit(instance).catch(() => undefined);
+		}
+		return {
+			ok: true,
+			message: binary
+				? `Servers that need Java ${major} now use ${binary} from their next start.`
+				: `Servers that need Java ${major} use the newest one installed again.`
+		};
 	},
 
 	snapshots: async ({ request }) => {

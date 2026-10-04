@@ -244,9 +244,11 @@
 							: 'Java (version unknown)'}
 					</span>
 					<span class="faint small">
-						{data.detail.java.pinned
+						{data.detail.java.origin === 'explicit'
 							? 'pinned for this server'
-							: `auto-matched, Minecraft ${data.detail.minecraftVersion} expects ${data.detail.java.requiredMajor}`}
+							: data.detail.java.origin === 'default'
+								? `the default for Java ${data.detail.java.majorVersion}, set in Settings`
+								: `auto-matched, Minecraft ${data.detail.minecraftVersion} expects ${data.detail.java.requiredMajor}`}
 					</span>
 					<div class="faint small mono wrap">{data.detail.java.path}</div>
 				{:else}

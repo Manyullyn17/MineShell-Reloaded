@@ -101,6 +101,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		javaRuntimes: listJavaRuntimes(),
 		requiredJava: requiredJavaMajor(instance.minecraftVersion, instance.modloader, instance.modloaderVersion),
 		javaResolution: java,
+		// What "Match automatically" would pick, which differs from `java` when a path is pinned.
+		autoJava: instance.javaPath ? resolveJava({ ...instance, explicitPath: null }) : java,
 		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label })),
 		running,
 		pack:

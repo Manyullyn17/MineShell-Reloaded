@@ -132,10 +132,10 @@ re-proposed or built twice.
   60 s). Missing: the world split by dimension, logs, snapshots, `old-configs/`,
   `.mineshell/` backups, and cleanup suggestions. Modded dimensions live in `DIM*` /
   `dimensions/` inside the world, not only in the `_nether`/`_the_end` siblings.
-- **Default Java per major version.** Order: the instance's pinned Java (`java_path`,
-  exists), then a global default for that major (new: a radio button per version on the
-  Java page), then the current automatic pick, which must be deterministic. Also an
-  instance label showing which Java it will use.
+- **Default Java per major version**: built. A pinned path wins, then the runtime set as
+  default for the major (Settings, "Servers use" column), then the newest build of it, with
+  the path between equal builds. The overview and the server's Java picker say which applied.
+  Resolution at start time already existed (`start()` rewrites the env file).
 
 ### Later
 

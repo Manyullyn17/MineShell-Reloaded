@@ -319,7 +319,9 @@
 			<label for="javaPath">Java runtime</label>
 			<select id="javaPath" name="javaPath" bind:value={sv.javaPath}>
 				<option value="">
-					Match automatically (currently {data.javaResolution.path ?? 'nothing installed'})
+					Match automatically (currently {data.autoJava.path ?? 'nothing installed'}{data.autoJava.origin === 'default'
+						? ', the default set in Settings'
+						: ''})
 				</option>
 				{#each data.javaRuntimes as java (java.path)}
 					<option value={java.path}>Java {java.majorVersion} - {java.path}</option>

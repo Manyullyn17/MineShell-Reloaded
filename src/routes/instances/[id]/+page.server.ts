@@ -157,7 +157,7 @@ export const load: PageServerLoad = async ({ params }) => {
 				path: java.path,
 				majorVersion: java.majorVersion,
 				requiredMajor: java.requiredMajor,
-				pinned: java.origin === 'explicit'
+				origin: java.origin
 			},
 			// The address players actually connect to. The bind address is usually
 			// blank (all interfaces). A bare hostname needs mDNS or local DNS to
