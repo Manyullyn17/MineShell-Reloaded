@@ -97,14 +97,14 @@ export async function systemctl(...args: string[]): Promise<RunResult> {
  * EnvironmentFile so a single unit file serves every server.
  */
 export function renderTemplateUnit(): string {
-	return `# Managed by MineShell. Regenerate from Settings > System, or \`npm run setup\`.
+	return `# Managed by MineShell. Regenerate from Settings > systemd, or \`npm run setup\`.
 # One instance per Minecraft server: ${UNIT_PREFIX}@<instance-id>.service
 [Unit]
 Description=Minecraft server (%i) managed by MineShell
 After=network-online.target
 Wants=network-online.target
-# Crash-loop brake. MineShell writes these defaults; tune per-instance values in
-# the UI and they are re-rendered into the drop-in at ${UNITS_DIR}/%i.d/
+# Crash-loop brake. MineShell writes these defaults; per-instance values set in
+# the UI go into a drop-in next to this file, ${UNIT_PREFIX}@<id>.service.d/restart.conf
 StartLimitIntervalSec=600
 StartLimitBurst=5
 

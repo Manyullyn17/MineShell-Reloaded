@@ -164,7 +164,7 @@
 				Taken before risky operations and on request. At least the newest {data.snapshotPrompt.policy.keepMin} full
 				and {data.snapshotPrompt.policy.partialMin} partial ones are kept, more while they fit in
 				{formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
-					href="/instances/{encodeURIComponent(data.instance.id)}/settings">server settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
+					href="/instances/{encodeURIComponent(data.instance.id)}/settings">Instance settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
 				unless you choose otherwise.
 			</p>
 		</div>
@@ -461,7 +461,7 @@
 		</form>
 		<p class="faint small">
 			To run it only at certain hours, add scheduled commands <code>chunky continue</code> and <code>chunky pause</code>
-			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings">server settings</a>.
+			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings">Instance settings</a>.
 		</p>
 	</section>
 {/if}
