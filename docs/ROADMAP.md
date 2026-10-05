@@ -288,13 +288,30 @@ Per-server memory and CPU limits exist (server Settings, `limits.conf` drop-in w
 `MemoryMax`/`CPUQuota`, heap + 512 MB checked). Wanted (October 2026): one cap on all
 servers combined, mainly RAM and CPU, so a few big packs cannot take the whole machine.
 systemd does this with a slice: the template unit gets `Slice=<prefix>.slice`, and a
-`<prefix>.slice` unit carries `MemoryMax=`/`CPUQuota=`, which then bounds the sum of every
-server under it. Same controller delegation as the per-server limits (user units, memory
-and cpu delegated by default). Questions: what happens at the cap (the kernel OOM-kills
-inside the slice, i.e. one of the servers - worth `MemoryHigh` a bit below to throttle
-first?), warning when the per-server limits or max heaps of running servers add up past it,
-and a running server picks up a new `Slice=` only after a restart. Also worth adding the
-per-server limits to the new-server defaults (`instance-defaults.ts`), which they are not.
+`<prefix>.slice` unit carries the limits, which then bound the sum of every server under
+it. Same controller delegation as the per-server limits (user units, memory and cpu
+delegated by default). A running server picks up a new `Slice=` only after a restart.
+
+Decided (2026-10-05): the all-server memory cap is a **soft** cap, `MemoryHigh=` on the
+slice, not `MemoryMax=`. Past it the kernel throttles and reclaims inside the slice instead
+of killing a server. What that means for Java, so the UI says it honestly: the kernel first
+drops page cache (cheap), then swaps or stalls the JVMs' own memory, which shows as lag on
+every server in the slice. The JVM does not hand heap back under pressure (G1 only uncommits
+after a periodic GC, and never below `-Xms`, the server's min memory), so the cap
+cannot shrink what the servers already hold. CPU: `CPUQuota=` on the slice, which is a
+throttle anyway. Warn when the running servers' heaps plus headroom add up past the cap.
+
+Headroom over the heap: `-Xmx` is the heap only; metaspace (grows with mod count), code
+cache, thread stacks, GC bookkeeping (a few % of heap) and direct buffers come on top.
+Measured 2026-10-05 on `irithyll` (Fabric, 65 mods, 10 GB heap): 890 MB resident outside
+the heap. Big Forge packs load several times the classes, so more. The current per-server
+check (`LIMIT_HEADROOM_MB = 512` in the instance settings route) is too little for that
+server: a hard `MemoryMax` at heap + 512 MB would kill it. Proposal for both the per-server
+check and the cap warning: heap + 1 GB + 10% of heap (4 GB -> 5.4 GB, 10 GB -> 12 GB),
+to be checked against a big Forge/Cleanroom pack (MeatballCraft) before settling.
+
+Also: add the per-server limits to the new-server defaults (`instance-defaults.ts`), which
+they are not.
 
 ### Data packs from the mod browser
 
