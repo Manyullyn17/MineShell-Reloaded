@@ -1,6 +1,7 @@
 # Roadmap
 
-What is not built, why, and roughly what order it makes sense to build it in.
+What is not built, why, and roughly what order it makes sense to build it in - and, where an
+idea turned into something built, a line saying so, so it is not proposed again.
 
 This is not a schedule. It is a record of decisions so that future-you does not have to
 re-derive the reasoning, and does not accidentally build something in an order that makes
@@ -24,13 +25,14 @@ it, so a real implementation needs `save-off`, `save-all flush`, copy, `save-on`
 guarantee that `save-on` runs even if the copy fails. Everything else is scheduling and
 retention policy.
 
-Note there is already a *different* backup mechanism in the codebase: the mod folder is
-snapshotted before an update so a failed update can be rolled back. That operates on the
+Note there is already a *different* backup mechanism in the codebase: an update moves the
+replaced mod jars aside (the `mod-update` journal) so a failed update can be rolled back. That operates on the
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
 Status: still a maybe. The narrower case is built: a world snapshot before MineShell's own
-risky operations, and snapshots on request from the World tab (`snapshots.ts`, `world.ts`).
+risky operations, and snapshots on request from the World tab (`snapshots.ts`, `world.ts`),
+kept by count and by storage per server.
 There the server is always stopped, so the consistency problem above does not arise. The
 World tab's download of a running server's world does the save-off / save-all flush /
 save-on dance, with save-on in a finally.
@@ -51,8 +53,8 @@ notifications ────────► needs no new infrastructure, the event
 remote access ────────► depends on the auth model, which is now settled
 ```
 
-Mod updates are the biggest unlock and the most involved. Everything else is largely
-independent and can be done in any order.
+Mod updates were the biggest unlock and are built, so both arrows on the left are open now.
+Everything else is largely independent and can be done in any order.
 
 ---
 
@@ -184,7 +186,9 @@ re-proposed or built twice.
   analyzer and the journalled mod toggles.
 - **Update availability checks**: mods have one (`modupdates.ts`). Missing: a newer pack
   version, loader build, or Java update shown on the overview.
-- **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` today.
+- **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
+  own; the disk usage page offers to delete archived logs and crash reports older than 30
+  days.
 - **Server bundle export/import**: the same as "Instance export and import" under Later.
 
 ### Dropped
@@ -226,8 +230,8 @@ packs ship patched jars under upstream version numbers.
 
 The original design specified a `.jcpack` bundle containing mod metadata, overrides,
 configs and instance settings, for moving an instance between machines. Still a good idea,
-still not built. Its natural moment is after mod updating, since both depend on the mod
-metadata being trustworthy.
+still not built. Its natural moment was after mod updating, since both depend on the mod
+metadata being trustworthy; that is built now.
 
 ### Remote access
 

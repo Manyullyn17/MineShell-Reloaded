@@ -1,7 +1,7 @@
 # Tests
 
 ```sh
-npm test                  # whole suite (Vitest), about 5 seconds, fully offline
+npm test                  # whole suite (Vitest), about 30 seconds, fully offline
 npm run test:watch        # re-runs affected tests on save
 npx vitest run java       # only test files whose path contains "java"
 ```
@@ -73,7 +73,9 @@ RECORD_HTTP=1 npx vitest run src/lib/server/mods/modrinth.test.ts
 ```
 
 Re-recording replaces the whole fixture with what the current tests request; review the diff
-before committing, since live data moves (new versions appear). Write assertions that survive
+before committing, since live data moves (new versions appear). When only a new request is
+needed, keeping the rest as recorded makes a smaller diff: copy just the new entries into the
+old fixture, written as the recorder writes it (keys sorted, `JSON.stringify(…, null, 1)`). Write assertions that survive
 that: "contains 0.4.4-alpha", not "exactly these 37 versions". Large downloads (a `.mrpack`,
 a mod jar) are not recorded; pass a small stand-in through the `extra` option instead.
 
@@ -84,9 +86,10 @@ matching), which is why some modules export small helpers such as `targetModName
 ## Flow tests
 
 `tests/flows/` runs whole operations - pack install, pack version change, loader version
-change, Cleanroom migration and revert, world snapshots and tools, server copies, mod
-updates - on
-throwaway instances. The orchestration is real
+change, Cleanroom migration and revert, world snapshots, retention and tools (dimensions,
+chunk pruning), server copies, mod updates and data packs, player lists and player data,
+Spark profiles and Chunky over a faked RCON, disk usage, Java defaults - on throwaway
+instances. The orchestration is real
 (what gets moved aside, installed, restored, recorded in the database); only the outside world
 is faked: each loader's `install` (spied to write files or fail on cue), downloads (served by
 `useRecordedHttp`'s `extra`), systemd (`systemdStopped()`) and Java (`addJava()`).
@@ -112,6 +115,8 @@ expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing le
 | `mcmodInfo(modid, name)` | A Forge 1.12-style `mcmod.info` |
 | `ls(dir)` | Sorted directory listing |
 
+`zipBuffer(files, { store: true })` writes the entries uncompressed.
+
 `tests/helpers/process.ts`: `fakeProcesses(handler)` and `spawnCalls`, see above.
 
 `tests/helpers/http.ts`: `useRecordedHttp(name, { extra })` and `fetchCalls`, see above.
@@ -124,8 +129,20 @@ expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing le
 | `reload(id)` | The instance row as the database has it now |
 | `tree(dir)` | Every file and its content, for before/after comparisons |
 | `waitForTask(id)` | Wait for a background task and return it |
+| `waitForStatusSettled(id)` | Wait until an instance is no longer `provisioning` |
 | `systemdStopped()` | systemctl reports the server stopped and accepts everything else |
 | `addJava(major)` / `clearJava()` | Register fake Java runtimes; clear them first, the database is shared |
+
+`tests/helpers/crash.ts`, for operations that must survive MineShell dying halfway:
+
+| Helper | Use |
+|---|---|
+| `runAndDieAtMove(root, n, start)` | Run an operation that freezes at its n-th file move into `root`, as if the process died there |
+| `restartMineShell()` | Lift the freeze, hand the journal to a "previous process" and run recovery |
+| `hangForever()` | A promise that never settles, for freezing an operation at a chosen step |
+
+The usual loop tries every n until the operation finishes, checking after each restart that
+`tree(instance.path)` is what it was before.
 
 ## When fixing a bug
 
@@ -141,3 +158,8 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Failure while moving a loader aside lost files | `flows/loader-version.test.ts` |
 | Cleanup after a failed recovery deleted the originals | `flows/recovery.test.ts` |
 | Overview re-read 20000 journal lines every poll | `journal.test.ts` |
+| Bans written while stopped had a date vanilla reads as "now" | `flows/players.test.ts` |
+| An RCON refusal ("Invalid IP address…") reported as success | `flows/players.test.ts` |
+| Removing a loaded world-generation data pack broke the world | `flows/datapacks.test.ts` |
+| Restoring a one-dimension snapshot would replace the whole world | `flows/dimensions.test.ts` |
+| Same-major Java runtimes picked in database order | `flows/java-defaults.test.ts` |

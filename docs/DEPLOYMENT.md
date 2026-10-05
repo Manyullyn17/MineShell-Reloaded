@@ -36,32 +36,32 @@ loginctl show-user $USER -p Linger --value    # should print: yes
 Use this when MineShell itself runs as a system service, or when servers must start before
 any user logs in and lingering is not an option.
 
-MineShell then needs permission to run specific `systemctl` commands. Rather than running
-the whole app as root, give it narrow sudo rules. Create `/etc/sudoers.d/mineshell` with
-`visudo -f /etc/sudoers.d/mineshell`:
+MineShell then needs permission to run specific `systemctl` and `journalctl` commands.
+Rather than running the whole app as root, give it narrow sudo rules. Create
+`/etc/sudoers.d/mineshell` with `visudo -f /etc/sudoers.d/mineshell`:
 
 ```
-# Replace "mineshell" with the user MineShell runs as.
+# Replace "mineshell" with the user MineShell runs as, and "minecraft" with
+# MINESHELL_UNIT_PREFIX if you changed it.
 mineshell ALL=(root) NOPASSWD: /usr/bin/systemctl start minecraft@*, \
                                /usr/bin/systemctl stop minecraft@*, \
                                /usr/bin/systemctl restart minecraft@*, \
-                               /usr/bin/systemctl enable minecraft@*, \
-                               /usr/bin/systemctl disable minecraft@*, \
                                /usr/bin/systemctl reset-failed minecraft@*, \
                                /usr/bin/systemctl show minecraft@*, \
-                               /usr/bin/systemctl is-enabled minecraft@*, \
-                               /usr/bin/systemctl daemon-reload
+                               /usr/bin/systemctl disable --now minecraft@*, \
+                               /usr/bin/systemctl daemon-reload, \
+                               /usr/bin/systemctl --version, \
+                               /usr/bin/journalctl *
 ```
 
-That user also needs to be in the `systemd-journal` group to read server output:
+`disable --now` runs when a server is deleted. MineShell runs `journalctl` through the same
+prefix in system scope, with arguments that vary (`-u minecraft@<id>`, an invocation id, a
+search pattern), hence the broad rule; it only reads logs.
 
-```sh
-sudo usermod -aG systemd-journal mineshell
-```
-
-and it needs write access to `/etc/systemd/system` to install the template unit, or you can
-install it once yourself with `sudo npm run setup` and leave the directory alone
-afterwards.
+MineShell writes into `/etc/systemd/system` too: the template unit, and a drop-in folder per
+server (`minecraft@<id>.service.d/` with `restart.conf` and `limits.conf`) whenever a server
+starts or its settings are saved. So the user needs write access to that directory, or to the
+template and those folders.
 
 `MINESHELL_PRIVILEGE_PREFIX` controls the prefix MineShell puts in front of `systemctl`;
 it defaults to `sudo -n`. The `-n` matters — it makes sudo fail immediately rather than
@@ -162,9 +162,11 @@ systemctl --user restart mineshell
 Database migrations run automatically at startup. Back up
 `$MINESHELL_DATA/mineshell.db` first if you want to be careful; it is a single file.
 
-Re-run `npm run setup` after an upgrade only if the release notes say the unit file
-changed. Reinstalling the unit is safe — the Settings page has a button for it, and it
-re-syncs every instance's environment file afterwards.
+The template unit does not need reinstalling: at startup MineShell rewrites an installed
+template that an older MineShell wrote. Reinstalling it is safe anyway — the Settings page
+has a button for it, and it re-syncs every instance's environment file and drop-ins
+afterwards. (`npm run setup` writes a simpler copy of the template; MineShell replaces it
+with its own at the next start.)
 
 ---
 
@@ -195,11 +197,14 @@ location / {
 ```
 
 Keep both `Host` and `X-Forwarded-Proto`: MineShell refuses form submissions whose browser
-`Origin` does not match the host the request was sent to (protection against other sites
-driving your panel), and marks the login cookie `Secure` when the browser used https.
+`Origin` names a different host from the one the request was sent to (`Host`, or
+`X-Forwarded-Host` if your proxy sets it), which stops other sites driving your panel, and
+marks the login cookie `Secure` when the browser used https.
 
-Never expose an RCON port. It is plaintext and only weakly authenticated. MineShell binds
-RCON for its own use; nothing outside the host needs it.
+Never expose an RCON port. It is plaintext and only weakly authenticated, and only MineShell
+on the same machine needs it. Minecraft listens for RCON on every interface unless
+`server-ip` is set (which binds the game port to that address too), so keep the RCON ports
+closed in the firewall and open only the game ports.
 
 ---
 
@@ -219,7 +224,7 @@ journalctl --user-unit=minecraft@<id> -n 100 --no-pager
 ```
 
 The usual causes are a missing or mismatched Java runtime, the EULA not accepted, or a
-port already taken.
+port already taken (MineShell checks the ports before starting and says so).
 
 **Console shows nothing but the server is clearly running.**
 Journal permissions. In system scope, the MineShell user needs to be in
@@ -227,8 +232,9 @@ Journal permissions. In system scope, the MineShell user needs to be in
 
 **Server starts, then stops seconds later, repeatedly.**
 A crash loop. systemd gives up after the configured attempt limit; the overview page shows
-the last output before it stopped. Almost always a mod incompatibility — check the log for
-the mod named in the stack trace, and disable it from the Mods page.
+the last output before it stopped and, usually, which mod caused it (a missing dependency,
+a client-only mod on a server, a mixin failure), with a button to disable it. Otherwise
+check the log for the mod named in the stack trace and disable it from the Mods page.
 
 **"Java 21 expected, found 17."**
 Download it in Settings → Java runtimes (Eclipse Temurin or Azul Zulu), or install it
