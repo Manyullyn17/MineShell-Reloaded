@@ -236,6 +236,66 @@ default. That was the blocker for designing remote access, so it can proceed whe
 is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
 reverse proxy — is where this should land unless there is a specific reason otherwise.
 
+### playit.gg tunnels
+
+Connect MineShell to a playit.gg account and let it manage tunnels for servers, so a
+server can be reached from outside without port forwarding. Different job from "Remote
+access" above: that is reaching MineShell, this is players reaching the game. Requested
+October 2026; researched 2026-10-05 from the agent's source
+(`github.com/playit-cloud/playit-agent`, 1.0.12) and two panels that did it.
+
+How playit works: one agent process per machine holds an outbound connection to playit;
+each tunnel (made on the account) names an agent and a local `ip:port`, and the agent
+forwards to it. So one agent serves every MineShell server; tunnels just point at ports.
+
+- **Linking** (no password or API key handled by MineShell): the agent's claim flow.
+  Generate a random code, `POST /claim/setup {code, agent_type: "self-managed", version}`
+  until the user has opened `https://playit.gg/claim/<code>` and approved (answers
+  `WaitingForUserVisit` / `WaitingForUser` / `UserAccepted` / `UserRejected`), then
+  `POST /claim/exchange {code}` returns the agent's secret key. Works on a free account.
+- **API**: `https://api.playit.gg`, every call a POST with JSON, header
+  `Authorization: Agent-Key <secret>`, answers wrapped in `{status, data}`.
+  `/v1/agents/rundata` lists the agent's tunnels (name, `display_address` = what players
+  type, `agent_config` with `local_ip`/`local_port`, `disabled_reason`), pending ones, and
+  `permissions {is_self_managed, has_premium, account_status}`.
+- **Running the agent**: 1.0 splits it into `playitd` (the daemon) and `playit` (CLI/TUI).
+  Headless: `playitd --secret <key>` or `--secret-path <file>` (their Docker image runs
+  `playitd --secret "$SECRET_KEY"`). MineShell would run it as one more user unit next to
+  the server units, the secret in a file under `$DATA`, the binary downloaded from the
+  GitHub releases like Java.
+- **The open question: can MineShell create tunnels?** The client library has
+  `/v1/tunnels/create` (type `minecraft-java` or a custom TCP port, origin = this agent +
+  local port), `/v1/tunnels/config` and `/tunnels/delete`, but nothing in the agent calls
+  them. playit staff said in August 2026 that agent keys are read-only for tunnel creation
+  and account API keys are "not available for that purpose" (discuss.playit.gg, "Account
+  level API key"). One panel (CloudGate, Oct 2026) says it creates tunnels with the agent
+  key; another (hearth-panel) could not confirm it and has the user make them on the
+  dashboard. The `self-managed` agent type and `is_self_managed` hint that such an agent
+  may manage its own tunnels. Only a real account can settle it: claim a self-managed
+  agent and try `/v1/tunnels/create`.
+
+Plan that works either way: link by claim; if creating works, a per-server "Make public"
+toggle creates a `minecraft-java` tunnel to its port, updates it (`/v1/tunnels/config`)
+when the port changes and deletes it with the server. If not, the user makes tunnels on
+playit's dashboard pointing at this agent, and MineShell matches them to servers by
+`local_port` = `server-port` (what hearth-panel does). Either way the server page shows
+`display_address`, and a tunnel whose port matches no server is listed as unassigned.
+Free plan limits (tunnel count, regions) were not checked.
+
+### Resource cap for all servers together
+
+Per-server memory and CPU limits exist (server Settings, `limits.conf` drop-in with
+`MemoryMax`/`CPUQuota`, heap + 512 MB checked). Wanted (October 2026): one cap on all
+servers combined, mainly RAM and CPU, so a few big packs cannot take the whole machine.
+systemd does this with a slice: the template unit gets `Slice=<prefix>.slice`, and a
+`<prefix>.slice` unit carries `MemoryMax=`/`CPUQuota=`, which then bounds the sum of every
+server under it. Same controller delegation as the per-server limits (user units, memory
+and cpu delegated by default). Questions: what happens at the cap (the kernel OOM-kills
+inside the slice, i.e. one of the servers - worth `MemoryHigh` a bit below to throttle
+first?), warning when the per-server limits or max heaps of running servers add up past it,
+and a running server picks up a new `Slice=` only after a restart. Also worth adding the
+per-server limits to the new-server defaults (`instance-defaults.ts`), which they are not.
+
 ### Data packs from the mod browser
 
 Built (`mods/datapacks.ts`). The versions list asks Modrinth for the server's loader or
