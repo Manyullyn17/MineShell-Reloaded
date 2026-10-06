@@ -379,13 +379,12 @@ segmented buttons for difficulty and game mode, the likely cause of a crash on i
 card, the item editor beside the inventory grid, the updated date and licence in the mod
 detail pane (licence from Modrinth only; CurseForge has none) and a note per available
 update (from Modrinth changelogs; the CurseForge mirror's version lists carry none), a game
-port field and an EULA checkbox when adding a server. These parts of the mockup need data or
+port field and an EULA checkbox when adding a server, folders expanding in place in Files. These parts of the mockup need data or
 behaviour MineShell does not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
   (Online now). Nothing records player counts or join times; it would need the monitor to
   sample `list` or the console's join/leave lines to be kept.
-- **Expanding folders in place** in Files; folders open as their own listing.
 
 ---
 

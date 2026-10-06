@@ -296,7 +296,8 @@ form actions; only the genuinely live things (console, stats, task progress) use
 
 There is no separate REST API layer. The notes reasoned that no other consumer is planned,
 so endpoints (`src/routes/api/`) exist only where a form action cannot do the job: SSE
-streams, file and world downloads, a world upload streamed to disk (a form body would be
+streams, file and world downloads (and a folder's listing, for folders opened in place in
+Files), a world upload streamed to disk (a form body would be
 held in memory whole), console commands and saved commands sent from the console, and the
 search and preview endpoints the browse-and-install forms call as you type.
 
