@@ -19,7 +19,8 @@ import {
 } from '#lib/server/instances.js';
 import { bucketSamples, recentSamples } from '#lib/server/monitor.js';
 import { resolveJava } from '#lib/server/java.js';
-import { cpus, hostname, networkInterfaces } from 'node:os';
+import { cpus } from 'node:os';
+import { primaryLanAddress } from '#lib/server/network.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { readLastRun, runFinishedStarting } from '#lib/server/journal.js';
 import { diagnoseRun, lastRun, type Diagnosis } from '#lib/server/crashdiag.js';
@@ -27,6 +28,7 @@ import { modsDir, setModEnabled } from '#lib/server/mods/index.js';
 import { redirect } from '@sveltejs/kit';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
 import { tickStats } from '#lib/server/tps.js';
+import { kickPlayer } from '#lib/server/players.js';
 import {
 	activeProfile,
 	cancelProfile,
@@ -37,20 +39,6 @@ import {
 	startProfile,
 	stopProfile
 } from '#lib/server/spark.js';
-
-/**
- * First non-internal IPv4 address found across interfaces. Falls back to the
- * hostname if the machine somehow has none (e.g. no network up at all) -
- * still wrong on a typical LAN, but no worse than before.
- */
-function primaryLanAddress(): string {
-	for (const addrs of Object.values(networkInterfaces())) {
-		for (const addr of addrs ?? []) {
-			if (addr.family === 'IPv4' && !addr.internal) return addr.address;
-		}
-	}
-	return hostname();
-}
 
 /**
  * The overview polls every few seconds; a crashed server's journal does not
@@ -88,10 +76,16 @@ async function stuckStarting(instanceId: string, createdAt: number, startedAt: n
 	return true;
 }
 
-export const load: PageServerLoad = async ({ params }) => {
+/** The performance chart's windows; the monitor keeps a day of samples. */
+const RANGES = { '1h': 60 * 60 * 1000, '6h': 6 * 60 * 60 * 1000, '24h': 24 * 60 * 60 * 1000 } as const;
+type Range = keyof typeof RANGES;
+
+export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
-	const samples = bucketSamples(recentSamples(instance.id));
+	const requested = url.searchParams.get('range');
+	const range: Range = requested && requested in RANGES ? (requested as Range) : '1h';
+	const samples = bucketSamples(recentSamples(instance.id, RANGES[range]));
 	// Shown only when the last run ended badly, so a crash is not silent. A
 	// stop MineShell asked for reports the same systemd Result as a crash, so
 	// intent is checked rather than inferred from the unit state. Most loaders
@@ -133,6 +127,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		summary: {
 			uptimeMs: summary.uptimeMs,
+			startedAt: summary.running ? summary.state.activeEnterTimestamp : null,
 			javaWarning: summary.javaWarning,
 			restarts: summary.state.nRestarts,
 			mainPid: summary.state.mainPid,
@@ -141,6 +136,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		detail: {
 			jvmArgs: instance.jvmArgs,
 			memoryMaxMb: instance.memoryMaxMb,
+			memoryMinMb: instance.memoryMinMb,
+			crashRestartWindowSec: instance.crashRestartWindowSec,
 			javaPath: instance.javaPath,
 			rconPort: instance.rconPort,
 			autoRestartOnCrash: instance.autoRestartOnCrash,
@@ -175,6 +172,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		// CPU is measured across all cores, so the chart needs the core count to
 		// show a meaningful ceiling instead of an unexplained 400%.
 		cpuCores: cpus().length || 1,
+		range,
+		rangeMs: RANGES[range],
 		cpu: samples.map((s) => ({ timestamp: s.timestamp, value: s.cpuPercent })),
 		memory: samples.map((s) => ({ timestamp: s.timestamp, value: s.memoryBytes })),
 		crashTail: crashed && lastRunLog ? lastRunLog.split('\n').slice(-40).join('\n') : null,
@@ -187,11 +186,12 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	power: async ({ request, params }) => {
+	power: async ({ request, params, url }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const verb = String(form.get('verb') ?? '');
-		const delay = Number(form.get('delay') ?? 0);
+		// The header menu's buttons carry the verb, so their delay is in the URL.
+		const delay = Number(form.get('delay') ?? url.searchParams.get('delay') ?? 0);
 		if ((verb === 'stop' || verb === 'restart') && Number.isInteger(delay) && delay > 0 && delay <= 3600) {
 			const result = await startCountdown(instance, verb, delay);
 			return result.ok ? result : fail(400, result);
@@ -269,6 +269,16 @@ export const actions: Actions = {
 			throw err;
 		}
 		return { ok: true, message: 'Profile cancelled.' };
+	},
+
+	kick: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const name = String((await request.formData()).get('name') ?? '').trim();
+		if (!name) return fail(400, { ok: false, message: 'No player given.' });
+		if ((await kickPlayer(instance, name, '')) === null) {
+			return fail(400, { ok: false, message: 'The server is not reachable over RCON.' });
+		}
+		return { ok: true, message: `Kicked ${name}.` };
 	},
 
 	eula: async ({ params }) => {

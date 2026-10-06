@@ -1,6 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { getInstance, summarise } from '#lib/server/instances.js';
+import { getCountdown } from '#lib/server/countdown.js';
+import { activeProfile, hasSpark } from '#lib/server/spark.js';
+import { primaryLanAddress } from '#lib/server/network.js';
 import { LOADERS } from '#lib/server/modloaders.js';
 import type { ModloaderId } from '#lib/server/modloaders.js';
 
@@ -21,6 +24,7 @@ export const load: LayoutServerLoad = async ({ params, url }) => {
 			modloaderLabel: LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader,
 			modloaderVersion: instance.modloaderVersion,
 			packName: instance.packName,
+			packVersionName: instance.packVersionName,
 			serverPort: instance.serverPort,
 			status: instance.status,
 			statusMessage: instance.statusMessage,
@@ -30,6 +34,10 @@ export const load: LayoutServerLoad = async ({ params, url }) => {
 		state: { active: summary.state.active, sub: summary.state.sub },
 		running: summary.running,
 		eulaAccepted: summary.eulaAccepted,
+		// The header's actions work from every tab, so what they need is here.
+		countdown: getCountdown(instance.id),
+		address: `${primaryLanAddress()}:${instance.serverPort}`,
+		spark: (await hasSpark(instance.path)) ? { active: activeProfile(instance.id) !== null } : null,
 		section: url.pathname.split('/')[3] ?? 'overview'
 	};
 };

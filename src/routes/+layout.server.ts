@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { summariseAll } from '#lib/server/instances.js';
+import { recentPlayerCount, summariseAll } from '#lib/server/instances.js';
 import { listTasks } from '#lib/server/tasks.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
@@ -12,13 +12,16 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		authRequired: locals.authRequired,
 		path: url.pathname,
 		runningTasks: listTasks().filter((t) => t.state === 'running').length,
-		railInstances: summaries.map((s) => ({
-			id: s.instance.id,
-			name: s.instance.name,
-			active: s.state.active,
-			sub: s.state.sub,
-			pinned: s.instance.pinned,
-			status: s.instance.status
-		}))
+		railInstances: await Promise.all(
+			summaries.map(async (s) => ({
+				id: s.instance.id,
+				name: s.instance.name,
+				active: s.state.active,
+				sub: s.state.sub,
+				pinned: s.instance.pinned,
+				status: s.instance.status,
+				players: s.running ? await recentPlayerCount(s.instance) : null
+			}))
+		)
 	};
 };

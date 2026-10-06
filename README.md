@@ -78,14 +78,14 @@ something on the copy first. Those operations are journalled: a crash halfway th
 rolled back at the next start.
 
 **Running servers.** Start, stop, restart, force stop, or stop/restart after a countdown
-with in-game warnings. Stopping goes through RCON with `save-all` then `stop` and waits for
+with in-game warnings, from the header of every server tab. Stopping goes through RCON with `save-all` then `stop` and waits for
 Java to exit, falling back to SIGTERM, so worlds are not cut off mid-write. Crash restarts
 are handled by systemd with a configurable attempt limit; scheduled restarts and scheduled
 console commands by MineShell, with an option to wait while players are online. Per-server
 memory and CPU limits, and a warning when a server never finishes starting.
 
-**Overview.** Uptime, players, tick rate where the server reports it, 24 hours of CPU and
-memory, disk use. After a crash: the last output and a diagnosis naming the mod that caused
+**Overview.** Uptime, players (with a kick button), tick rate where the server reports it,
+CPU and memory over the last hour, 6 hours or day, disk use, the address to connect to. After a crash: the last output and a diagnosis naming the mod that caused
 it, with a one-click disable. With Spark installed, timed profiles uploaded for viewing.
 
 **Console and logs.** Live output streamed from the journal, commands sent over RCON.

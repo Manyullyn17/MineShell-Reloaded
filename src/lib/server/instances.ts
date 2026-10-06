@@ -1261,6 +1261,25 @@ export async function onlinePlayers(
 	}
 }
 
+const PLAYER_COUNT_TTL_MS = 15_000;
+const playerCounts = new Map<string, { at: number; players: { online: number; max: number } | null }>();
+
+/**
+ * The rail shows "Running · 3/12" on every page load. Each `list` is an RCON
+ * connection the server logs twice, so the rail reuses an answer for a few
+ * seconds rather than asking on every navigation.
+ */
+export async function recentPlayerCount(
+	instance: ServerInstance
+): Promise<{ online: number; max: number } | null> {
+	const hit = playerCounts.get(instance.id);
+	if (hit && Date.now() - hit.at < PLAYER_COUNT_TTL_MS) return hit.players;
+	const list = await onlinePlayers(instance);
+	const players = list ? { online: list.online, max: list.max } : null;
+	playerCounts.set(instance.id, { at: Date.now(), players });
+	return players;
+}
+
 export async function deleteInstance(
 	instance: ServerInstance,
 	opts: { deleteFiles: boolean }

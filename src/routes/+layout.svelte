@@ -40,12 +40,12 @@
 				<span aria-hidden="true">☰</span>
 				<span class="visually-hidden">Toggle server list</span>
 			</button>
-			<a class="wordmark" href="/">MineShell</a>
+			<a class="wordmark" href="/"><span class="logo" aria-hidden="true"></span>MineShell</a>
 			<div class="topbar-right">
 				{#if data.runningTasks > 0}
-					<a class="button-quiet button task-pill" href="/tasks">
+					<a class="task-pill" href="/tasks">
 						<span class="dot busy"></span>
-						{data.runningTasks} running
+						{data.runningTasks} task{data.runningTasks === 1 ? '' : 's'} running
 					</a>
 				{/if}
 				<label class="visually-hidden" for="theme-select">Theme</label>
@@ -63,9 +63,9 @@
 		</header>
 
 		<nav class="rail" aria-label="Servers">
-			<div class="rail-section">
-				<a class="rail-link" class:current={page.url.pathname === '/'} href="/">Overview</a>
-			</div>
+			<a class="rail-link" class:current={page.url.pathname === '/'} href="/" onclick={() => (railOpen = false)}>
+				All servers
+			</a>
 
 			<div class="rail-section">
 				<div class="rail-heading">
@@ -87,10 +87,18 @@
 									onclick={() => (railOpen = false)}
 								>
 									<span class="dot {state.tone}"></span>
-									<span class="rail-instance-name">{instance.name}</span>
-									{#if instance.status === 'provisioning'}
-										<span class="tag warn">setup</span>
-									{/if}
+									<span class="rail-instance-text">
+										<span class="rail-instance-name">{instance.name}</span>
+										<span class="rail-instance-sub">
+											{#if instance.status === 'provisioning'}
+												Being set up
+											{:else}
+												{state.label}{state.tone === 'busy' ? '...' : ''}{instance.players
+													? ` · ${instance.players.online}/${instance.players.max}`
+													: ''}
+											{/if}
+										</span>
+									</span>
 								</a>
 							</li>
 						{/each}
@@ -98,16 +106,17 @@
 				{/if}
 			</div>
 
-			<div class="rail-section rail-bottom">
-				<a class="rail-link" class:current={page.url.pathname === '/tasks'} href="/tasks">
+			<div class="rail-bottom">
+				<a class="rail-link" class:current={page.url.pathname === '/tasks'} href="/tasks" onclick={() => (railOpen = false)}>
 					Activity
 				</a>
 				<a
 					class="rail-link"
 					class:current={page.url.pathname.startsWith('/settings')}
 					href="/settings"
+					onclick={() => (railOpen = false)}
 				>
-					Settings
+					MineShell settings
 				</a>
 				{#if data.authRequired}
 					<form method="POST" action="/login?/logout">
@@ -155,8 +164,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
-		padding: 0 var(--space-4);
-		height: 3rem;
+		padding: 0 1.25rem;
+		height: 3.25rem;
 		border-bottom: 1px solid var(--line);
 		background: var(--panel);
 		position: sticky;
@@ -165,11 +174,23 @@
 	}
 
 	.wordmark {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
 		font-weight: 600;
 		font-size: 1rem;
 		letter-spacing: 0.01em;
 		color: var(--text);
 		text-decoration: none;
+	}
+
+	/* A grass block seen from above: the shade on two edges gives it depth. */
+	.logo {
+		width: 14px;
+		height: 14px;
+		background: var(--accent);
+		border-radius: 2px;
+		box-shadow: inset -4px -4px 0 color-mix(in srgb, var(--accent) 70%, black);
 	}
 
 	.topbar-right {
@@ -180,14 +201,25 @@
 	}
 
 	.task-pill {
-		font-size: 0.82rem;
-		padding: 0.2rem 0.55rem;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		padding: 0.25rem 0.65rem;
+		border-radius: var(--radius);
+		background: var(--panel-raised);
+		text-decoration: none;
+	}
+
+	.task-pill:hover {
+		color: var(--text);
 	}
 
 	.theme-select {
 		width: auto;
-		font-size: 0.82rem;
-		padding: 0.2rem 0.4rem;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.5rem;
 		background: var(--panel-raised);
 	}
 
@@ -200,40 +232,49 @@
 		grid-area: rail;
 		border-right: 1px solid var(--line);
 		background: var(--bg-sunken);
-		padding: var(--space-4) 0;
+		padding: var(--space-4) 0.625rem;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-5);
+		gap: 1.4rem;
 		overflow-y: auto;
 		position: sticky;
-		top: 3rem;
-		height: calc(100vh - 3rem);
+		top: 3.25rem;
+		height: calc(100vh - 3.25rem);
 	}
 
 	.rail-section ul {
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
 	}
 
 	.rail-bottom {
 		margin-top: auto;
 		border-top: 1px solid var(--line);
 		padding-top: var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 
 	.rail-heading {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 var(--space-4) var(--space-2);
+		padding: 0 var(--space-3) 0.4rem;
 		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
 		color: var(--text-faint);
 	}
 
 	.rail-heading a {
 		text-decoration: none;
-		font-size: 1.1rem;
+		font-size: 1.15rem;
 		line-height: 1;
 		color: var(--text-muted);
 		padding: 0 0.25rem;
@@ -244,7 +285,7 @@
 	}
 
 	.rail-empty {
-		padding: 0 var(--space-4);
+		padding: 0 var(--space-3);
 		font-size: 0.85rem;
 		color: var(--text-faint);
 	}
@@ -253,42 +294,62 @@
 	.rail-instance {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
-		padding: 0.4rem var(--space-4);
+		gap: 0.7rem;
+		padding: var(--space-2) var(--space-3);
 		color: var(--text-muted);
 		text-decoration: none;
-		font-size: 0.9rem;
-		border-left: 3px solid transparent;
+		font-size: 0.92rem;
+		border-radius: var(--radius-lg);
+	}
+
+	.rail-instance {
+		padding: 0.55rem var(--space-3);
 	}
 
 	.rail-link:hover,
 	.rail-instance:hover {
 		color: var(--text);
-		background: var(--panel);
+		background: color-mix(in srgb, var(--panel) 60%, transparent);
 	}
 
 	.rail-link.current,
 	.rail-instance.current {
 		color: var(--text);
 		background: var(--panel);
-		border-left-color: var(--accent);
 	}
 
-	/* The rail doubles as a status board: colour on the edge, not the label. */
-	.rail-instance[data-tone='running'] {
-		border-left-color: color-mix(in srgb, var(--success) 55%, transparent);
+	.rail-instance .dot {
+		width: 9px;
+		height: 9px;
+		flex-basis: 9px;
 	}
-	.rail-instance[data-tone='failed'] {
-		border-left-color: var(--error);
-	}
-	.rail-instance.current[data-tone='running'] {
-		border-left-color: var(--success);
+
+	.rail-instance-text {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.rail-instance-name {
+		color: var(--text);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	/* The rail doubles as a status board: the line under the name says it. */
+	.rail-instance-sub {
+		font-size: 0.8rem;
+		color: var(--text-faint);
+	}
+	.rail-instance[data-tone='running'] .rail-instance-sub {
+		color: var(--accent-hover);
+	}
+	.rail-instance[data-tone='failed'] .rail-instance-sub {
+		color: var(--error);
+	}
+	.rail-instance[data-tone='busy'] .rail-instance-sub {
+		color: var(--warning);
 	}
 
 	.rail-signout {
@@ -296,21 +357,19 @@
 		justify-content: flex-start;
 		background: none;
 		border: 0;
-		border-left: 3px solid transparent;
-		border-radius: 0;
 		font-weight: 400;
 	}
 
 	.content {
 		grid-area: content;
-		padding: var(--space-5);
+		padding: var(--space-5) 2.5rem;
 		min-width: 0;
 	}
 
 	.scrim {
 		display: none;
 		position: fixed;
-		inset: 3rem 0 0;
+		inset: 3.25rem 0 0;
 		background: rgba(0, 0, 0, 0.5);
 		border: 0;
 		z-index: 5;
@@ -330,7 +389,7 @@
 
 		.rail {
 			position: fixed;
-			top: 3rem;
+			top: 3.25rem;
 			left: 0;
 			width: min(var(--rail-width), 80vw);
 			z-index: 10;
