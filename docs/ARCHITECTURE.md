@@ -364,6 +364,13 @@ toast and reloads the page data. Toasts (`lib/shared/toasts.svelte.ts`) are also
 results go that have no place on the page, like a save in the player editor: closable,
 and anything but an error closes itself after 8 s. The Activity page keeps the logs.
 
+Phones: layout changes for narrow windows sit under `@media (max-width: 60rem)` (the rail
+slides in, the instance header stops sticking, tab bars scroll with a fade, tables scroll
+in their own box), and touch-only changes under `@media (pointer: coarse)` (16 px text in
+fields, which stops iOS zooming in on focus; finger-sized buttons; a larger invisible hit
+area for controls marked `hit-area`), so a narrow desktop window with a mouse is
+unaffected by the second set.
+
 Styling is one stylesheet of custom properties. Two rules carry meaning rather than taste:
 monospace is used only for machine output — paths, versions, ports, log lines, metrics —
 and never for MineShell's own writing; and motion appears only on state change, never as

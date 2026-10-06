@@ -363,6 +363,12 @@
 	}
 
 	@media (max-width: 60rem) {
+		.tabs {
+		/* Fades out at the right edge, so it reads as "scrolls for more"; the padding lets the last tab scroll clear of it. */
+		mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+		padding-right: 2rem;
+		}
+
 		/* On a phone the header and tabs are most of the screen: they scroll away. */
 		.sticky-head {
 			position: static;

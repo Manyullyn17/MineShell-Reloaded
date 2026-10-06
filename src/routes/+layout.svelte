@@ -26,6 +26,14 @@
 	const instances = $derived(data.railInstances ?? []);
 </script>
 
+{#snippet themeSelect(id: string)}
+	<select {id} class="theme-select" value={theme} onchange={(e) => applyTheme((e.currentTarget as HTMLSelectElement).value)}>
+		{#each THEMES as option (option.id)}
+			<option value={option.id}>{option.label}</option>
+		{/each}
+	</select>
+{/snippet}
+
 {#if bare}
 	<main class="bare">
 		{@render children()}
@@ -44,17 +52,10 @@
 			<a class="wordmark" href="/"><LogoMark size={26} /><span>Mine<span class="wordmark-accent">Shell</span></span></a>
 			<div class="topbar-right">
 				<NotificationCenter running={data.runningTasks} />
-				<label class="visually-hidden" for="theme-select">Theme</label>
-				<select
-					id="theme-select"
-					class="theme-select"
-					value={theme}
-					onchange={(e) => applyTheme((e.currentTarget as HTMLSelectElement).value)}
-				>
-					{#each THEMES as option (option.id)}
-						<option value={option.id}>{option.label}</option>
-					{/each}
-				</select>
+				<span class="topbar-theme">
+					<label class="visually-hidden" for="theme-select">Theme</label>
+					{@render themeSelect('theme-select')}
+				</span>
 			</div>
 		</header>
 
@@ -105,6 +106,11 @@
 			</div>
 
 			<div class="rail-bottom">
+				<!-- On a phone the theme lives here; the top bar has no room for it. -->
+				<label class="rail-theme">
+					<span>Theme</span>
+					{@render themeSelect('rail-theme-select')}
+				</label>
 				<a class="rail-link" class:current={page.url.pathname === '/tasks'} href="/tasks" onclick={() => (railOpen = false)}>
 					Activity
 				</a>
@@ -189,6 +195,17 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+
+	.rail-theme {
+		display: none;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: 0 var(--space-3);
+		font-size: 0.92rem;
+		color: var(--text-muted);
 	}
 
 	.theme-select {
@@ -360,6 +377,14 @@
 
 		.rail-toggle {
 			display: inline-flex;
+		}
+
+		.topbar-theme {
+			display: none;
+		}
+
+		.rail-theme {
+			display: flex;
 		}
 
 		.rail {

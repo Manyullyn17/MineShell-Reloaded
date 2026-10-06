@@ -574,7 +574,7 @@
 										<input type="hidden" name="enabled" value={String(!mod.enabled)} />
 										<button
 											type="submit"
-											class="switch"
+											class="switch hit-area"
 											role="switch"
 											aria-checked={mod.enabled}
 											aria-label="{mod.enabled ? 'Disable' : 'Enable'} {mod.name}"

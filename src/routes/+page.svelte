@@ -113,7 +113,7 @@
 						<form method="POST" action="?/pin" use:enhance>
 							<input type="hidden" name="id" value={instance.id} />
 							<button
-								class="pin"
+								class="pin hit-area"
 								class:pinned={instance.pinned}
 								type="submit"
 								title={instance.pinned ? 'Unpin from the top' : 'Pin to the top'}

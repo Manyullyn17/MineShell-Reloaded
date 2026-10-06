@@ -88,7 +88,7 @@
 					<span class="entry">
 						<button
 							type="button"
-							class="toggle"
+							class="toggle hit-area"
 							aria-expanded={!!expanded[entry.relPath]}
 							aria-label="{expanded[entry.relPath] ? 'Collapse' : 'Expand'} {entry.name}"
 							onclick={() => toggle(entry.relPath)}>{expanded[entry.relPath] ? '▾' : '▸'}</button

@@ -465,6 +465,35 @@ tbody tr:last-child td {
 	}
 }
 
+/* Touch screens (phones, tablets), whatever the window width; a mouse is unaffected. */
+@media (pointer: coarse) {
+	/* iOS Safari zooms in on any field with text under 16 px, and stays zoomed. */
+	input:not([type='checkbox']):not([type='radio']):not([type='range']),
+	select,
+	textarea {
+		font-size: 16px !important;
+	}
+
+	/* Finger-sized buttons; chips and summaries too. */
+	button:not(.hit-area):not(.slot),
+	.button,
+	summary {
+		min-height: 2.25rem;
+	}
+
+	/* Controls that must stay small to look right (switches, the ▸ in Files, pins, the ⓘ)
+	   get a larger invisible hit area instead. */
+	.hit-area {
+		position: relative;
+	}
+
+	.hit-area::before {
+		content: '';
+		position: absolute;
+		inset: -0.6rem;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -621,6 +650,12 @@ tbody tr:last-child td {
 	/* The tabs get the whole row; tools beside them (search, buttons) go below. */
 	.subhead > .subtabs {
 		flex: 1 1 100%;
+	}
+
+	.subtabs {
+	/* Fades out at the right edge, so it reads as "scrolls for more"; the padding lets the last tab scroll clear of it. */
+	mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+	padding-right: 2rem;
 	}
 
 	/* A table too wide for a phone scrolls inside its own box, not the page. */

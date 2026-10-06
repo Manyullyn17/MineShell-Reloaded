@@ -78,7 +78,7 @@
 		<input type="hidden" name="enabled" value={String(!data.lists.whitelistEnforced)} />
 		<button
 			type="submit"
-			class="switch"
+			class="switch hit-area"
 			role="switch"
 			aria-checked={data.lists.whitelistEnforced}
 			aria-label="Whitelist"

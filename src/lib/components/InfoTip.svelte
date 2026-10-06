@@ -5,7 +5,7 @@
 </script>
 
 <span class="info-tip">
-	<button type="button" aria-label={label} aria-describedby={id}>i</button>
+	<button type="button" class="hit-area" aria-label={label} aria-describedby={id}>i</button>
 	<span role="tooltip" {id}>{text}</span>
 </span>
 
