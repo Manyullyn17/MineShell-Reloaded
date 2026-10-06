@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanroomReport, isCleanroomRequiredJar } from './cleanroom';
+import { cleanroomDisabledReasons, cleanroomReport, isCleanroomRequiredJar } from './cleanroom';
 import { mcmodInfo, tempDir, writeJar } from '../../../tests/helpers/fs';
 
 async function report(jars: Record<string, Record<string, string>>) {
@@ -51,5 +51,25 @@ describe('isCleanroomRequiredJar', () => {
 		expect(isCleanroomRequiredJar('+Fugue-0.24.4.jar')).toBe(true);
 		expect(isCleanroomRequiredJar('scalar-1.12.2-2.11.1.jar')).toBe(true);
 		expect(isCleanroomRequiredJar('jei.jar')).toBe(false);
+	});
+});
+
+async function modsDir(jars: Record<string, Record<string, string>>) {
+	const dir = await tempDir();
+	for (const [name, files] of Object.entries(jars)) await writeJar(`${dir}/mods`, name, files);
+	return dir;
+}
+
+describe('cleanroomDisabledReasons', () => {
+	it('names disabled jars the must-remove list covers, by file, and nothing else', async () => {
+		const dir = await modsDir({
+			'MixinBootstrap-1.1.0.jar.disabled': {},
+			'SerializationIsBad-1.5.2.jar.disabled': { 'mcmod.info': mcmodInfo('serializationisbad', 'SerializationIsBad') },
+			'SmoothFont-mc1.12.2-2.1.4.jar': { 'mcmod.info': mcmodInfo('smoothfont', 'Smooth Font') },
+			'jei_1.12.2-4.16.jar.disabled': { 'mcmod.info': mcmodInfo('jei', 'Just Enough Items') }
+		});
+		const reasons = await cleanroomDisabledReasons(dir);
+		expect(Object.keys(reasons).sort()).toEqual(['MixinBootstrap-1.1.0.jar.disabled', 'SerializationIsBad-1.5.2.jar.disabled']);
+		expect(reasons['SerializationIsBad-1.5.2.jar.disabled']).toBe('SerializationIsBad: Redundant on modern Java.');
 	});
 });

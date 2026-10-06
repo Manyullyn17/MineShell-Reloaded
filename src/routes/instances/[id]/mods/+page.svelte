@@ -597,6 +597,11 @@
 											title="Known to do nothing on a dedicated server, or to crash it. MineShell disables these when a pack installs them; re-enable it only if another mod needs it."
 										>client-only</span>
 									{/if}
+									{#if data.cleanroomOff[mod.fileName]}
+										<span class="tag" title="Disabled because it breaks on Cleanroom or Cleanroom already does its job. {data.cleanroomOff[mod.fileName]}"
+											>off for Cleanroom</span
+										>
+									{/if}
 									{#if mod.untracked}<span class="tag warn">untracked</span>{/if}
 									{#if mod.missing}<span class="tag bad">file missing</span>{/if}
 									{#if mod.locked}<span class="tag">locked</span>{/if}

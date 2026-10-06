@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { cleanroomDisabledReasons } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
@@ -41,6 +42,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		mods,
+		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */
+		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
 		running: summary.running,
 		busy: instance.status === 'provisioning',

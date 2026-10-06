@@ -270,6 +270,22 @@ export async function cleanroomReport(instancePath: string): Promise<CleanroomRe
 	};
 }
 
+/**
+ * Disabled jars that Cleanroom's must-remove list covers, with why, so the
+ * Mods list can say a mod is off for Cleanroom rather than leave it looking
+ * disabled for no reason. Read from the jars, so it also covers servers
+ * installed straight onto Cleanroom (no migration manifest).
+ */
+export async function cleanroomDisabledReasons(instancePath: string): Promise<Record<string, string>> {
+	const reasons: Record<string, string> = {};
+	for (const jar of await scanModJars(instancePath)) {
+		if (jar.enabled) continue;
+		const rule = DISABLE_RULES.find((r) => matches(jar, r));
+		if (rule) reasons[jar.fileName] = `${rule.label}: ${rule.reason}${rule.replacement ? ` Use ${rule.replacement} instead.` : ''}`;
+	}
+	return reasons;
+}
+
 // --------------------------------------------------------------- applying ---
 
 /**
