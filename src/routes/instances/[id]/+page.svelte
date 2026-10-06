@@ -5,6 +5,7 @@
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative } from '#lib/shared/format.js';
+	import { avatarTone } from '#lib/shared/avatar.js';
 
 	let { data, form } = $props();
 
@@ -46,13 +47,6 @@
 	const latestCpu = $derived(data.cpu.length ? data.cpu[data.cpu.length - 1].value : null);
 	const latestMemory = $derived(data.memory.length ? data.memory[data.memory.length - 1].value : null);
 
-	/** A stable colour per player, from the theme's palette, for the avatar square. */
-	const AVATAR_TONES = ['var(--accent)', 'var(--info)', 'var(--warning)', 'var(--error)', 'var(--text-muted)'];
-	function avatarTone(name: string): string {
-		let hash = 0;
-		for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-		return AVATAR_TONES[Math.abs(hash) % AVATAR_TONES.length];
-	}
 
 	let copied = $state(false);
 	async function copyAddress() {
