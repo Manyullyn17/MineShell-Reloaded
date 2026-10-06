@@ -107,7 +107,7 @@ updates. Client-only mods are spotted and disabled after pack installs. Data pac
 from the browser go into the world's `datapacks/` folder. Jars added outside MineShell are
 detected and identified rather than ignored. Export a client pack for players as a Modrinth
 `.mrpack`, a CurseForge zip or a Prism Launcher instance, with the mods and folders you tick
-(server-only mods start unticked) and, for a server installed from a pack, the pack's
+(all of them by default) and, for a server installed from a pack, the pack's
 client-side files the server never needed.
 
 **World.** Snapshots before risky operations and on request, kept by count and by storage

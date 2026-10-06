@@ -7,7 +7,7 @@ import type { ServerInstance } from './db/schema';
 import { TMP_DIR } from './config';
 import { downloadFile, hashFile } from './download';
 import { getProvider, listInstanceMods, DISABLED_SUFFIX } from './mods';
-import { serverOnlyProjects, versionsFromHashes } from './mods/modrinth';
+import { versionsFromHashes } from './mods/modrinth';
 import { packVersionFiles } from './mods/modpacksch';
 import { serverWorldName } from './packworld';
 import { readForgeBackup } from './instances';
@@ -45,8 +45,6 @@ export type ExportMod = {
 	/** Enabled in the export: as on the server, except client-only mods, which the client needs. */
 	enabled: boolean;
 	clientOnly: boolean;
-	/** Modrinth says it does nothing on a client; unticked by default. */
-	serverOnly: boolean;
 	sizeBytes: number;
 };
 
@@ -143,25 +141,14 @@ async function worldFolders(instance: ServerInstance): Promise<Set<string>> {
 }
 
 export async function planExport(instance: ServerInstance): Promise<ExportPlan> {
+	// Every mod, server-only ones too: they do nothing on a client, but a singleplayer
+	// test world then plays like the server.
 	const rows = (await listInstanceMods(instance)).filter((m) => !m.missing);
-	const modsDir = path.join(instance.path, 'mods');
-
-	// Modrinth knows which mods do nothing on a client.
-	const sha512 = new Map<string, string>();
-	await Promise.all(rows.map(async (m) => sha512.set(m.fileName, (await hashes(path.join(modsDir, m.fileName))).sha512)));
-	const versions = await versionsFromHashes([...sha512.values()], 'sha512');
-	const serverOnly = await serverOnlyProjects([...versions.values()].map((v) => v.projectId));
-	const isServerOnly = (file: string) => {
-		const v = versions.get(sha512.get(file) ?? '');
-		return !!v && serverOnly.has(v.projectId);
-	};
-
 	const mods: ExportMod[] = rows.map((m) => ({
 		file: m.fileName,
 		name: m.name,
 		enabled: m.enabled || m.clientOnly,
 		clientOnly: m.clientOnly,
-		serverOnly: isServerOnly(m.fileName),
 		sizeBytes: m.sizeBytes
 	}));
 

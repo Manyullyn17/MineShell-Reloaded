@@ -240,8 +240,8 @@ cache-by-hash, but nothing reads it yet (the update check hashes the jars on dis
 **Client pack export** (`packexport.ts`, the server's Export page) builds a pack for
 players' launchers: a Modrinth `.mrpack`, a CurseForge zip or a Prism Launcher instance,
 as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour.
-In it: the mods ticked on the form (Modrinth's `client_side: unsupported` starts a mod
-unticked: worldgen mods like YUNG's say that), each as on the server except client-only
+In it: the mods ticked on the form (all by default: server-only ones do nothing on a
+client, and a singleplayer test world then matches the server), each as on the server except client-only
 ones, which come back enabled; the folders ticked; and for a server installed from a
 provider pack, the pack's client-side files the server never got - mods the pack marks
 client-only (`env.server: unsupported` in a .mrpack, `clientonly` in the mirror's lists)

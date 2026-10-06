@@ -12,7 +12,7 @@ const { zipBuffer } = await import('../helpers/fs');
 
 const sha = (algo: string, body: string | Buffer) => crypto.createHash(algo).update(body).digest('hex');
 
-// The server's mods. sodium.jar is on Modrinth; ledger.jar too, as a server-only project.
+// The server's mods. sodium.jar and ledger.jar (a server-only project) are on Modrinth.
 const MODS = {
 	sodium: 'sodium bytes',
 	ledger: 'ledger bytes',
@@ -68,11 +68,6 @@ useRecordedHttp('none', {
 			const known = [mrVersion('sodium', 'sodium.jar', MODS.sodium), mrVersion('ledger', 'ledger.jar', MODS.ledger)];
 			return Response.json(Object.fromEntries(known.filter((v) => hashes.includes(v.files[0].hashes.sha512)).map((v) => [v.files[0].hashes.sha512, v])));
 		},
-		[`https://api.modrinth.com/v2/projects?ids=${encodeURIComponent(JSON.stringify(['sodium', 'ledger']))}`]: () =>
-			Response.json([
-				{ id: 'sodium', client_side: 'required' },
-				{ id: 'ledger', client_side: 'unsupported' }
-			]),
 		'https://api.modrinth.com/v2/version/pack-v2': () =>
 			Response.json({ ...mrVersion('pack', 'pack.mrpack', 'x'), files: [{ filename: 'pack.mrpack', url: 'https://cdn.modrinth.com/pack.mrpack', primary: true, size: 1, hashes: {} }] }),
 		'https://api.modrinth.com/v2/project/pack': () => Response.json({ id: 'pack', slug: 'pack', title: 'Test Pack', description: '', icon_url: null, downloads: 0, loaders: [], game_versions: [], team: 't' }),
@@ -130,7 +125,7 @@ async function exported(instance: ServerInstance, format: 'mrpack' | 'curseforge
 		format,
 		name: 'My Pack',
 		version: '1.0',
-		mods: plan.mods.filter((m) => !m.serverOnly).map((m) => m.file),
+		mods: plan.mods.map((m) => m.file),
 		folders: plan.folders.filter((f) => f.include).map((f) => f.name)
 	});
 	const task = await waitForTask(taskId);
@@ -140,10 +135,10 @@ async function exported(instance: ServerInstance, format: 'mrpack' | 'curseforge
 }
 
 describe('client pack export', () => {
-	it('plans: server-only mods flagged, client-only ones enabled, server files never offered', async () => {
+	it('plans: every mod, client-only ones enabled, server files never offered', async () => {
 		const plan = await planExport(await server());
 		const mod = (file: string) => plan.mods.find((m) => m.file === file)!;
-		expect(mod('ledger.jar').serverOnly).toBe(true);
+		expect(mod('ledger.jar')).toMatchObject({ enabled: true, clientOnly: false });
 		expect(mod('sodium.jar.disabled')).toMatchObject({ enabled: true, clientOnly: true });
 		expect(mod('spare.jar.disabled').enabled).toBe(false);
 		expect(plan.folders).toEqual([
@@ -157,8 +152,8 @@ describe('client pack export', () => {
 		const { zip, names } = await exported(await server(), 'mrpack');
 		const index = JSON.parse(zip.readText('modrinth.index.json')!);
 		expect(index.dependencies).toEqual({ minecraft: '1.20.1', 'fabric-loader': '0.16.9' });
-		expect(index.files.map((f: { path: string }) => f.path)).toEqual(['mods/sodium.jar']);
-		expect(index.files[0].downloads).toEqual(['https://cdn.modrinth.com/data/sodium/versions/1/sodium.jar']);
+		expect(index.files.map((f: { path: string }) => f.path)).toEqual(['mods/ledger.jar', 'mods/sodium.jar']);
+		expect(index.files[1].downloads).toEqual(['https://cdn.modrinth.com/data/sodium/versions/1/sodium.jar']);
 		expect(names).toEqual([
 			'modrinth.index.json',
 			'overrides/config/shared.cfg',
@@ -193,6 +188,7 @@ describe('client pack export', () => {
 		expect(zip.readText('instance.cfg')).toContain('name=My Pack');
 		expect(names.filter((n) => n.startsWith('.minecraft/mods/'))).toEqual([
 			'.minecraft/mods/jei.jar',
+			'.minecraft/mods/ledger.jar',
 			'.minecraft/mods/mine.jar',
 			'.minecraft/mods/sodium.jar',
 			'.minecraft/mods/spare.jar.disabled',
@@ -205,7 +201,7 @@ describe('client pack export', () => {
 		const instance = await server({ packSource: 'modrinth', packProjectId: 'pack', packVersionId: 'pack-v2', packName: 'Test Pack' });
 		const { zip, names } = await exported(instance, 'mrpack');
 		const files = JSON.parse(zip.readText('modrinth.index.json')!).files.map((f: { path: string }) => f.path);
-		expect(files).toEqual(['mods/sodium.jar', 'shaderpacks/pretty.zip']);
+		expect(files).toEqual(['mods/ledger.jar', 'mods/sodium.jar', 'shaderpacks/pretty.zip']);
 		expect(names).toContain('overrides/options.txt');
 		// The server's edited config wins over the pack's.
 		expect(zip.readText('overrides/config/shared.cfg')).toBe('server version of shared');

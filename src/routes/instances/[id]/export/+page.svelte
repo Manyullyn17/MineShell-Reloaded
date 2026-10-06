@@ -23,7 +23,7 @@
 		version = plan.defaultVersion;
 		// Only a Prism instance keeps Cleanroom.
 		if (plan.loaderNotes.mrpack) format = 'prism';
-		excludedMods = new Set(plan.mods.filter((m) => m.serverOnly).map((m) => m.file));
+		excludedMods = new Set();
 		excludedFolders = new Set(plan.folders.filter((f) => !f.include).map((f) => f.name));
 	}
 
@@ -71,7 +71,7 @@
 <Flash form={form && 'message' in form ? form : null} />
 
 {#await data.plan}
-	<p class="muted">Looking through the mods (and asking Modrinth which ones only a server needs).</p>
+	<p class="muted">Looking through the mods.</p>
 {:then plan}
 	{@const shownMods = plan.mods.filter((m) => !modFilter || m.name.toLowerCase().includes(modFilter.toLowerCase()) || m.file.toLowerCase().includes(modFilter.toLowerCase()))}
 	{@const includedCount = plan.mods.filter((m) => !excludedMods?.has(m.file)).length}
@@ -156,8 +156,9 @@
 				<div>
 					<h3>Mods <span class="count">{includedCount} of {plan.mods.length}</span></h3>
 					<p class="small muted">
-						Mods only a server needs (Modrinth says so) start unticked. Client-only mods the server has disabled are
-						exported enabled; other disabled mods stay disabled.
+						All of them by default: server-only mods do nothing on a client, but a singleplayer world then plays
+						like the server. Client-only mods the server has disabled are exported enabled; other disabled mods stay
+						disabled.
 					</p>
 				</div>
 				<div class="row">
@@ -188,7 +189,6 @@
 									<div class="faint small mono">{m.file}</div>
 								</td>
 								<td class="tags">
-									{#if m.serverOnly}<span class="tag warn">server-only</span>{/if}
 									{#if m.clientOnly}<span class="tag accent">client-only, exported enabled</span>{/if}
 									{#if !m.enabled}<span class="tag">disabled</span>{/if}
 								</td>
