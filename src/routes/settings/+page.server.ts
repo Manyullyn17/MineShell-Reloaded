@@ -3,7 +3,6 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	DATA_DIR,
 	INSTANCES_DIR,
-	SYSTEMD_SCOPE,
 	TEMPLATE_UNIT,
 	UNITS_DIR,
 	systemdUnitDir
@@ -59,7 +58,7 @@ export const load: PageServerLoad = async () => {
 			unitDir: systemdUnitDir(),
 			templateUnit: TEMPLATE_UNIT
 		},
-		systemd: { ...systemd, scope: SYSTEMD_SCOPE, unitInstalled: await templateUnitInstalled() },
+		systemd: { ...systemd, unitInstalled: await templateUnitInstalled() },
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
 		javaDownloads: javaDownloads(),

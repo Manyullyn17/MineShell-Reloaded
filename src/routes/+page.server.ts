@@ -51,7 +51,6 @@ export const load: PageServerLoad = async () => {
 		environment: {
 			systemdAvailable: systemd.available,
 			systemdMessage: systemd.message,
-			scope: systemd.scope,
 			unitInstalled,
 			javaCount
 		}

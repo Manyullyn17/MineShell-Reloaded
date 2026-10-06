@@ -56,11 +56,11 @@ function loadDotenv(dir = process.cwd()) {
 }
 
 loadDotenv();
-const SCOPE = process.env.MINESHELL_SYSTEMD_SCOPE === 'system' ? 'system' : 'user';
-const PREFIX = process.env.MINESHELL_UNIT_PREFIX ?? 'minecraft';
+// `||`, as config.ts reads them: an empty value means the default there too.
+const PREFIX = process.env.MINESHELL_UNIT_PREFIX || 'minecraft';
 const DATA_DIR = path.resolve(
-	process.env.MINESHELL_DATA ??
-		path.join(process.env.XDG_DATA_HOME ?? path.join(homedir(), '.local', 'share'), 'mineshell')
+	process.env.MINESHELL_DATA ||
+		path.join(process.env.XDG_DATA_HOME || path.join(homedir(), '.local', 'share'), 'mineshell')
 );
 
 const results = [];
@@ -77,8 +77,6 @@ async function tryRun(cmd, args) {
 	}
 }
 
-const systemctlArgs = (args) => (SCOPE === 'user' ? ['--user', ...args] : args);
-
 async function main() {
 	// package.json's engines.node, e.g. ">=22.12". A distro's own Node is often older
 	// (Ubuntu 24.04 ships 18), and the service unit runs whatever /usr/bin/node is.
@@ -88,22 +86,17 @@ async function main() {
 	const ok = major > wantMajor || (major === wantMajor && minor >= wantMinor);
 	record(ok, `Node.js ${process.versions.node}`, ok ? '' : `MineShell needs Node.js ${wantMajor}.${wantMinor} or newer (${process.execPath}).`);
 
-	const version = await tryRun('systemctl', systemctlArgs(['--version']));
-	record(version.ok, `systemctl reachable (${SCOPE} scope)`, version.ok ? version.stdout.split('\n')[0] : version.error);
+	const version = await tryRun('systemctl', ['--user', '--version']);
+	record(version.ok, 'systemctl reachable (user units)', version.ok ? version.stdout.split('\n')[0] : version.error);
 
 	const journal = await tryRun('journalctl', ['--version']);
 	record(journal.ok, 'journalctl available', journal.ok ? '' : 'Console output will not work.');
 
-	if (SCOPE === 'user') {
-		const linger = await tryRun('loginctl', ['show-user', process.env.USER ?? '', '-p', 'Linger', '--value']);
-		const enabled = linger.stdout.trim() === 'yes';
-		record(enabled, 'Lingering enabled', enabled ? '' : `Run: loginctl enable-linger ${process.env.USER}`);
-	}
+	const linger = await tryRun('loginctl', ['show-user', process.env.USER ?? '', '-p', 'Linger', '--value']);
+	const enabled = linger.stdout.trim() === 'yes';
+	record(enabled, 'Lingering enabled', enabled ? '' : `Run: loginctl enable-linger ${process.env.USER}`);
 
-	const unitDir =
-		SCOPE === 'user'
-			? path.join(process.env.XDG_CONFIG_HOME ?? path.join(homedir(), '.config'), 'systemd', 'user')
-			: '/etc/systemd/system';
+	const unitDir = path.join(process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config'), 'systemd', 'user');
 	const unitPath = path.join(unitDir, `${PREFIX}@.service`);
 	const unitExists = await fs.access(unitPath).then(() => true, () => false);
 	record(unitExists, 'Template unit installed', unitExists ? unitPath : 'Run: npm run setup');

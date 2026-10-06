@@ -5,13 +5,14 @@ import {
 	invalidateUnitState,
 	refreshTemplateUnit,
 	renderTemplateUnit,
-	scopedCommand,
+	startUnit,
 	unitState,
 	writeResourceLimits,
 	writeRestartPolicy,
 	writeUnitEnv
 } from './systemd';
 import { TEMPLATE_UNIT, UNITS_DIR, systemdUnitDir, unitName } from './config';
+import { readJournal } from './journal';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const SHOW_RUNNING = [
@@ -69,9 +70,14 @@ describe('unitState', () => {
 });
 
 describe('unit files', () => {
-	it('scopes systemctl to the user session by default', () => {
-		expect(scopedCommand('systemctl', ['start', 'x'])).toEqual(['systemctl', '--user', 'start', 'x']);
-		expect(scopedCommand('journalctl', ['-n', '5'])).toEqual(['journalctl', '-n', '5']);
+	it("runs systemctl and journalctl as the user's own, never through sudo", async () => {
+		fakeProcesses(() => ({}));
+		await startUnit('epsilon');
+		await readJournal('epsilon', 5);
+		expect(spawnCalls.map((c) => [c.cmd, ...c.args.slice(0, 2)])).toEqual([
+			['systemctl', '--user', 'start'],
+			['journalctl', '--user', `--user-unit=${unitName('epsilon')}`]
+		]);
 	});
 
 	it('writes nothing into the systemd folder while the template unit is not installed', async () => {

@@ -44,8 +44,8 @@
 {#if !data.environment.systemdAvailable}
 	<div class="notice error">
 		<p>
-			MineShell cannot reach systemd in <code>{data.environment.scope}</code> scope, so servers
-			cannot be started. {data.environment.systemdMessage}
+			MineShell cannot reach the user's systemd instance, so servers cannot be started.
+			{data.environment.systemdMessage}
 		</p>
 		<p>See <a href="/settings">Settings</a> for what to check.</p>
 	</div>

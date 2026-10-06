@@ -27,9 +27,9 @@
 		<div>
 			<h2>systemd</h2>
 			<p>
-				MineShell runs each server as <code>{data.paths.templateUnit}</code> in
-				<code>{data.systemd.scope}</code> scope. One template unit serves every instance; the
-				per-instance details live in environment files.
+				MineShell runs each server as a systemd user unit, <code>{data.paths.templateUnit}</code>, under
+				the account MineShell runs as. One template unit serves every instance; the per-instance details
+				live in environment files.
 			</p>
 		</div>
 		<form method="POST" action="?/installUnit" use:enhance>
@@ -44,13 +44,10 @@
 			<p>
 				<code>systemctl</code> is not reachable: {data.systemd.message}
 			</p>
-			{#if data.systemd.scope === 'user'}
-				<p>
-					In user scope MineShell must run as a normal logged-in user with a session bus. If it
-					runs from a system service, set <code>MINESHELL_SYSTEMD_SCOPE=system</code> and grant
-					sudo rules instead. See <code>docs/DEPLOYMENT.md</code>.
-				</p>
-			{/if}
+			<p>
+				MineShell needs the user's systemd instance: run it as a normal user with lingering enabled, for
+				example as a user service (see <code>docs/DEPLOYMENT.md</code>), not from a system service or cron.
+			</p>
 		</div>
 	{:else if !data.systemd.unitInstalled}
 		<div class="notice warning">
@@ -62,11 +59,9 @@
 		</div>
 	{/if}
 
-	{#if data.systemd.scope === 'user'}
-		<p class="muted small">
-			Run <code>loginctl enable-linger $USER</code> once so servers keep running after you log out.
-		</p>
-	{/if}
+	<p class="muted small">
+		Run <code>loginctl enable-linger $USER</code> once so servers keep running after you log out.
+	</p>
 
 	<button class="button-quiet" onclick={() => (showUnit = !showUnit)}>
 		{showUnit ? 'Hide unit file' : 'Show unit file'}

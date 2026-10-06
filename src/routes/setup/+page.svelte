@@ -36,7 +36,7 @@
 		<dt>systemd</dt>
 		<dd>
 			{#if data.systemd.available}
-				<span class="mono">{data.scope} scope</span>
+				<span class="mono">user units</span>
 				{#if !data.unitInstalled}
 					<span class="tag warn">unit file not installed yet</span>
 				{/if}

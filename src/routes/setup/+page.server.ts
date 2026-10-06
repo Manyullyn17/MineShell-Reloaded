@@ -8,7 +8,7 @@ import {
 	sessionCookieOptions,
 	setPassword
 } from '#lib/server/auth.js';
-import { DATA_DIR, SYSTEMD_SCOPE } from '#lib/server/config.js';
+import { DATA_DIR } from '#lib/server/config.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
 
 export const load: PageServerLoad = async () => {
@@ -16,7 +16,6 @@ export const load: PageServerLoad = async () => {
 	const systemd = await probeSystemd();
 	return {
 		dataDir: DATA_DIR,
-		scope: SYSTEMD_SCOPE,
 		systemd,
 		unitInstalled: await templateUnitInstalled()
 	};

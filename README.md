@@ -153,7 +153,6 @@ worth knowing:
 | Variable | Default | Why you would change it |
 | --- | --- | --- |
 | `MINESHELL_DATA` | `~/.local/share/mineshell` | Put instances on a bigger disk |
-| `MINESHELL_SYSTEMD_SCOPE` | `user` | `system` if MineShell runs as a system service |
 | `MINESHELL_AUTH` | `on` | `off` only on a network you fully trust |
 | `MINESHELL_UNIT_PREFIX` | `minecraft` | Units are `<prefix>@<id>.service`; change to run a second MineShell |
 | `CURSEFORGE_API_KEY` | unset | Better CurseForge metadata; can also be set in Settings |

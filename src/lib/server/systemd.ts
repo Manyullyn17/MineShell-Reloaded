@@ -4,8 +4,6 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
 	INSTANCES_DIR,
-	PRIVILEGE_PREFIX,
-	SYSTEMD_SCOPE,
 	TEMPLATE_UNIT,
 	UNITS_DIR,
 	UNIT_PREFIX,
@@ -43,18 +41,6 @@ export const UNKNOWN_STATE: UnitState = {
 	result: 'unknown'
 };
 
-/**
- * Build the argv for a systemctl/journalctl invocation in the configured scope.
- * journalctl wants `--user-unit=X` where systemctl wants `--user -u X`, so unit
- * selection is left to the caller and only the scope flag is added here.
- */
-export function scopedCommand(binary: 'systemctl' | 'journalctl', args: string[]): string[] {
-	if (SYSTEMD_SCOPE === 'user') {
-		return binary === 'systemctl' ? [binary, '--user', ...args] : [binary, ...args];
-	}
-	return [...PRIVILEGE_PREFIX, binary, ...args];
-}
-
 /** System boot wall-clock time, needed to turn systemd's monotonic stamps into dates. */
 let bootTimeMs = 0;
 function systemBootTimeMs(): number {
@@ -91,7 +77,7 @@ export function run(argv: string[], opts: { timeoutMs?: number; cwd?: string } =
 }
 
 export async function systemctl(...args: string[]): Promise<RunResult> {
-	return run(scopedCommand('systemctl', args));
+	return run(['systemctl', '--user', ...args]);
 }
 
 /**
@@ -349,12 +335,10 @@ export async function resetFailed(id: string) {
 	return systemctl('reset-failed', unitName(id));
 }
 
-/** Quick environment probe used by the setup page and `npm run doctor`. */
+/** Quick environment probe used by the setup and settings pages. */
 export async function probeSystemd(): Promise<{
 	available: boolean;
-	scope: string;
 	version: string;
-	lingerHint: boolean;
 	message: string;
 }> {
 	const res = await systemctl('--version');
@@ -362,9 +346,7 @@ export async function probeSystemd(): Promise<{
 	const version = res.stdout.split('\n')[0] ?? '';
 	return {
 		available,
-		scope: SYSTEMD_SCOPE,
 		version,
-		lingerHint: SYSTEMD_SCOPE === 'user',
 		message: available ? '' : res.stderr.trim() || 'systemctl not reachable'
 	};
 }

@@ -64,16 +64,17 @@ success, because only a stop someone asked for sends it. Big packs can take minu
 save, which is why the wait is long: the old fixed 20 seconds cut saves off and could stop
 a server that had been started again in the meantime.
 
-### User scope by default
+### User scope only
 
-MineShell defaults to `systemctl --user`, which needs no root at all. The cost is that
-services stop when the user's last session ends unless lingering is enabled — hence the
-`loginctl enable-linger` step in setup and the check in `doctor`.
+MineShell uses `systemctl --user`, which needs no root at all, and servers run as the
+account MineShell runs as. The cost is that services stop when the account's last session
+ends unless lingering is enabled — hence the `loginctl enable-linger` step in setup and the
+check in `doctor`. Output is read with `journalctl --user-unit=<unit>`.
 
-Set `MINESHELL_SYSTEMD_SCOPE=system` to use system units instead. Then MineShell needs
-either to run as root or to have narrow sudo rules; `docs/DEPLOYMENT.md` has them. The
-scope also changes how the journal is read — `journalctl --user-unit=X` for user scope,
-`journalctl -u X` for system — which is handled in `journal.ts` and is easy to get wrong.
+A system scope (system units, sudo rules for `systemctl` and `journalctl`) existed until
+October 2026 and was removed: its servers ran as root, MineShell needed write access to
+`/etc/systemd/system`, and it was never used. A separate account with lingering gives the
+same isolation without root (`docs/DEPLOYMENT.md`).
 
 ---
 

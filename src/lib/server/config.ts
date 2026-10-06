@@ -17,30 +17,21 @@ export const TMP_DIR = path.join(DATA_DIR, 'tmp');
 export const DB_PATH = path.join(DATA_DIR, 'mineshell.db');
 export const KEY_PATH = path.join(DATA_DIR, 'secret.key');
 
-/** `user` uses `systemctl --user`, `system` uses `systemctl` with a privilege prefix. */
-export const SYSTEMD_SCOPE: 'user' | 'system' =
-	env.MINESHELL_SYSTEMD_SCOPE === 'system' ? 'system' : 'user';
-
 export const UNIT_PREFIX = env.MINESHELL_UNIT_PREFIX || 'minecraft';
 export const TEMPLATE_UNIT = `${UNIT_PREFIX}@.service`;
-
-/** Only applied when SYSTEMD_SCOPE === 'system'. Split on whitespace. */
-export const PRIVILEGE_PREFIX = (env.MINESHELL_PRIVILEGE_PREFIX ?? 'sudo -n')
-	.split(/\s+/)
-	.filter(Boolean);
 
 export const AUTH_ENABLED = (env.MINESHELL_AUTH ?? 'on').toLowerCase() !== 'off';
 
 export const CURSEFORGE_API_KEY = env.CURSEFORGE_API_KEY || '';
 
-/** Where the user-scope systemd unit files live. */
+/**
+ * Where the systemd user units live. Servers always run as user units of the
+ * account MineShell runs as: no root, nothing in /etc (system scope with sudo
+ * rules was removed in October 2026; it ran every server as root).
+ */
 export function systemdUnitDir(): string {
-	if (SYSTEMD_SCOPE === 'user') {
-		const xdgConfig =
-			env.XDG_CONFIG_HOME || process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config');
-		return path.join(xdgConfig, 'systemd', 'user');
-	}
-	return '/etc/systemd/system';
+	const xdgConfig = env.XDG_CONFIG_HOME || process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config');
+	return path.join(xdgConfig, 'systemd', 'user');
 }
 
 let ensured = false;

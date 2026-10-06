@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { PRIVILEGE_PREFIX, SYSTEMD_SCOPE, unitName } from './config';
+import { unitName } from './config';
 import { bus } from './events';
 
 /**
@@ -23,10 +23,7 @@ const IDLE_GRACE_MS = 60_000;
 function journalArgs(id: string, backlog: number, since: number): string[] {
 	const unit = unitName(id);
 	const common = ['-n', String(backlog), '-f', '-o', 'cat', sinceArg(since), '--no-pager'];
-	if (SYSTEMD_SCOPE === 'user') {
-		return ['journalctl', `--user-unit=${unit}`, ...common];
-	}
-	return [...PRIVILEGE_PREFIX, 'journalctl', '-u', unit, ...common];
+	return ['journalctl', `--user-unit=${unit}`, ...common];
 }
 
 function startTail(id: string, backlog: number, since: number): Tail {
@@ -113,11 +110,7 @@ export function subscribeConsole(
 }
 
 function journalctl(args: string[]): Promise<string> {
-	const argv =
-		SYSTEMD_SCOPE === 'user'
-			? ['journalctl', '--user', ...args, '--no-pager']
-			: [...PRIVILEGE_PREFIX, 'journalctl', ...args, '--no-pager'];
-	const [cmd, ...rest] = argv;
+	const [cmd, ...rest] = ['journalctl', '--user', ...args, '--no-pager'];
 	return new Promise((resolve) => {
 		const child = spawn(cmd, rest, { env: process.env });
 		let out = '';
@@ -128,7 +121,7 @@ function journalctl(args: string[]): Promise<string> {
 }
 
 function unitMatch(id: string): string[] {
-	return SYSTEMD_SCOPE === 'user' ? [`--user-unit=${unitName(id)}`] : ['-u', unitName(id)];
+	return [`--user-unit=${unitName(id)}`];
 }
 
 /**

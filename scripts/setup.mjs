@@ -64,15 +64,11 @@ const DATA_DIR = path.resolve(
 	process.env.MINESHELL_DATA ||
 		path.join(process.env.XDG_DATA_HOME || path.join(homedir(), '.local', 'share'), 'mineshell')
 );
-const SCOPE = process.env.MINESHELL_SYSTEMD_SCOPE === 'system' ? 'system' : 'user';
 const PREFIX = process.env.MINESHELL_UNIT_PREFIX || 'minecraft';
 const INSTANCES_DIR = path.join(DATA_DIR, 'instances');
 const UNITS_DIR = path.join(DATA_DIR, 'units');
 
-const unitDir =
-	SCOPE === 'user'
-		? path.join(process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config'), 'systemd', 'user')
-		: '/etc/systemd/system';
+const unitDir = path.join(process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config'), 'systemd', 'user');
 
 // The same template the app writes (src/lib/server/unit-template.js).
 const unit = installedTemplateUnit({ prefix: PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR });
@@ -90,23 +86,20 @@ async function main() {
 		console.log(`Unit file written:         ${target}`);
 	} catch (err) {
 		console.error(`Could not write ${target}: ${err.message}`);
-		if (SCOPE === 'system') console.error('System scope needs root. Try: sudo npm run setup');
 		process.exitCode = 1;
 		return;
 	}
 
 	try {
-		await run('systemctl', SCOPE === 'user' ? ['--user', 'daemon-reload'] : ['daemon-reload']);
+		await run('systemctl', ['--user', 'daemon-reload']);
 		console.log('systemd reloaded.');
 	} catch (err) {
 		console.warn(`daemon-reload failed: ${err.message}`);
 	}
 
-	if (SCOPE === 'user') {
-		console.log('');
-		console.log('One more step so servers survive logout:');
-		console.log(`  loginctl enable-linger ${process.env.USER ?? '$USER'}`);
-	}
+	console.log('');
+	console.log('One more step so servers survive logout:');
+	console.log(`  loginctl enable-linger ${process.env.USER ?? '$USER'}`);
 }
 
 main();

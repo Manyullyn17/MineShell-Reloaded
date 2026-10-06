@@ -2,22 +2,19 @@
 
 Getting MineShell running on the machine that will actually host your servers.
 
-Two decisions shape everything else: which systemd scope to use, and whether MineShell
-itself should start at boot.
+Servers run as systemd **user** units of the account MineShell runs as: `systemctl --user`,
+no root, nothing written to `/etc`, and a bug in MineShell cannot touch anything that
+account cannot already touch. (A system-scope mode with sudo rules existed until October
+2026; it ran every server as root and was removed.)
+
+One decision is left: whether MineShell itself should start at boot (below).
 
 ---
 
-## Choosing a scope
+## Lingering
 
-### User scope (recommended)
-
-`MINESHELL_SYSTEMD_SCOPE=user`, the default.
-
-Servers run as `systemctl --user` units owned by your login account. Nothing needs root,
-nothing writes to `/etc`, and a bug in MineShell cannot touch anything your user account
-cannot already touch.
-
-The one catch: user services stop when your last session ends. Fix it once:
+User services stop when the account's last session ends, and do not start at boot before
+someone logs in. Lingering fixes both. Run it once:
 
 ```sh
 loginctl enable-linger $USER
@@ -29,43 +26,23 @@ Check it took:
 loginctl show-user $USER -p Linger --value    # should print: yes
 ```
 
-### System scope
+### A dedicated account (optional)
 
-`MINESHELL_SYSTEMD_SCOPE=system`.
+To keep the servers away from your own files, run MineShell under its own account, for
+example `mineshell`, with lingering enabled for that account. It still needs no root:
+everything runs as that user's units. Start MineShell as that user's own user service
+(below), not as a system service: `systemctl --user` needs the account's user manager, which
+lingering keeps running.
 
-Use this when MineShell itself runs as a system service, or when servers must start before
-any user logs in and lingering is not an option.
-
-MineShell then needs permission to run specific `systemctl` and `journalctl` commands.
-Rather than running the whole app as root, give it narrow sudo rules. Create
-`/etc/sudoers.d/mineshell` with `visudo -f /etc/sudoers.d/mineshell`:
-
-```
-# Replace "mineshell" with the user MineShell runs as, and "minecraft" with
-# MINESHELL_UNIT_PREFIX if you changed it.
-mineshell ALL=(root) NOPASSWD: /usr/bin/systemctl start minecraft@*, \
-                               /usr/bin/systemctl stop minecraft@*, \
-                               /usr/bin/systemctl restart minecraft@*, \
-                               /usr/bin/systemctl reset-failed minecraft@*, \
-                               /usr/bin/systemctl show minecraft@*, \
-                               /usr/bin/systemctl disable --now minecraft@*, \
-                               /usr/bin/systemctl daemon-reload, \
-                               /usr/bin/systemctl --version, \
-                               /usr/bin/journalctl *
+```sh
+sudo useradd --create-home mineshell
+sudo loginctl enable-linger mineshell
+sudo machinectl shell mineshell@     # a full session as that user; install and set up there
 ```
 
-`disable --now` runs when a server is deleted. MineShell runs `journalctl` through the same
-prefix in system scope, with arguments that vary (`-u minecraft@<id>`, an invocation id, a
-search pattern), hence the broad rule; it only reads logs.
-
-MineShell writes into `/etc/systemd/system` too: the template unit, and a drop-in folder per
-server (`minecraft@<id>.service.d/` with `restart.conf` and `limits.conf`) whenever a server
-starts or its settings are saved. So the user needs write access to that directory, or to the
-template and those folders.
-
-`MINESHELL_PRIVILEGE_PREFIX` controls the prefix MineShell puts in front of `systemctl`;
-it defaults to `sudo -n`. The `-n` matters — it makes sudo fail immediately rather than
-hang forever waiting for a password nobody will type.
+`sudo -iu mineshell` also works, but it does not set `XDG_RUNTIME_DIR`, so `systemctl
+--user` cannot find the user manager until you `export XDG_RUNTIME_DIR=/run/user/$(id -u)`.
+(`machinectl` comes with the `systemd-container` package.)
 
 ---
 
@@ -81,7 +58,6 @@ Create `.env` from `.env.example`. On a server you will usually want:
 
 ```
 MINESHELL_DATA=/srv/mineshell-data
-MINESHELL_SYSTEMD_SCOPE=user
 MINESHELL_AUTH=on
 PORT=3000
 HOST=0.0.0.0
@@ -209,10 +185,10 @@ closed in the firewall and open only the game ports.
 
 ## Troubleshooting
 
-**`npm run doctor` says systemctl is unreachable, user scope.**
-The process has no session bus. This happens when MineShell is started from a system
-service, from cron, or over an SSH command with no PTY. Either run it as a user service
-(above) or switch to system scope.
+**`npm run doctor` says systemctl is unreachable.**
+The process cannot reach the account's user manager. This happens when MineShell is started
+from a system service, from cron, or over an SSH command with no PTY. Run it as a user
+service (above), with lingering enabled.
 
 **A server will not start and the console is empty.**
 Check the unit directly:
@@ -226,8 +202,11 @@ The usual causes are a missing or mismatched Java runtime, the EULA not accepted
 port already taken (MineShell checks the ports before starting and says so).
 
 **Console shows nothing but the server is clearly running.**
-Journal permissions. In system scope, the MineShell user needs to be in
-`systemd-journal`. Confirm with `journalctl -u minecraft@<id> -n 5` as that user.
+Journal permissions. Some distributions keep the journal only in memory or do not split it
+per user, and then an account cannot read its own units' output. Add the account to
+`systemd-journal` (`sudo usermod -aG systemd-journal $USER`, then log in again), or make the
+journal persistent (`sudo mkdir -p /var/log/journal`). Confirm with
+`journalctl --user-unit=minecraft@<id> -n 5` as that account.
 
 **Server starts, then stops seconds later, repeatedly.**
 A crash loop. systemd gives up after the configured attempt limit; the overview page shows
