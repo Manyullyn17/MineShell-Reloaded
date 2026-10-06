@@ -6,6 +6,7 @@ import {
 	onlinePlayerIds,
 	parseEdits,
 	PlayerDataError,
+	playerFileInfo,
 	playerView,
 	readPlayerData,
 	restorePlayerBackup,
@@ -31,6 +32,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		view: playerView(data.file),
 		customFields: customFieldViews(data.file.root, listCustomFields(instance.id)),
 		backups: await listBackups(instance, uuid),
+		file: await playerFileInfo(instance, uuid),
+		online: online?.has(uuid) ?? false,
 		// Why it cannot be edited right now, if it cannot.
 		locked:
 			online === null

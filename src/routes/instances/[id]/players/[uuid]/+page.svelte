@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { avatarTone } from '#lib/shared/avatar.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import NbtNode from '#lib/components/NbtNode.svelte';
-	import { formatDateTime } from '#lib/shared/format.js';
+	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
 
 	let { data } = $props();
@@ -148,6 +149,42 @@
 
 	// ---- inventory and containers
 	let tab = $state<'inventory' | 'ender'>('inventory');
+	/** The editor's tabs; Inventory and Ender chest share the grid view. */
+	type View = 'inventory' | 'ender' | 'player' | 'effects' | 'data' | 'backups';
+	let view = $state<View>('inventory');
+	const VIEWS: { id: View; label: string }[] = [
+		{ id: 'inventory', label: 'Inventory' },
+		{ id: 'ender', label: 'Ender chest' },
+		{ id: 'player', label: 'Player' },
+		{ id: 'effects', label: 'Effects' },
+		{ id: 'data', label: 'All data' }
+	];
+	function show(next: View) {
+		view = next;
+		if (next === 'inventory' || next === 'ender') {
+			tab = next;
+			stack = [];
+		}
+	}
+	// Remapping a field means picking a value in All data.
+	$effect(() => {
+		if (remapping || mapping) view = 'data';
+	});
+
+	/** Online players' files are read-only; kicking them (over RCON) frees it. */
+	async function kick() {
+		if (!data.name) return;
+		const body = new FormData();
+		body.set('name', data.name);
+		body.set('reason', 'Your player data is being edited');
+		const res = await fetch(`${base}?/kick`, { method: 'POST', body, headers: { accept: 'application/json', 'x-sveltekit-action': 'true' } });
+		const outcome = deserialize(await res.text());
+		result =
+			outcome.type === 'success'
+				? { ok: true, message: `Kicked ${data.name}. Editing unlocks once the server has saved them.` }
+				: { ok: false, message: 'Could not kick them over RCON.' };
+		await refreshAll();
+	}
 	/** The slots opened, outermost first: a backpack, then a slot inside it. */
 	let stack = $state<Loc[]>([]);
 	const current = $derived(stack.at(-1) ?? null);
@@ -372,22 +409,50 @@
 	</div>
 {/snippet}
 
-<p class="back"><a href={base}>← Players</a></p>
-
-<header class="head">
-	<h2>{data.name ?? 'Unknown name'}</h2>
-	<p class="mono small muted">{data.uuid}</p>
-	<p class="small faint">
-		{FORMAT_LABEL[data.view.format]} data{data.view.dataVersion !== null ? ` (DataVersion ${data.view.dataVersion})` : ''}
-	</p>
-</header>
+<div class="editor-head">
+	<a class="back" href={base}>← All players</a>
+	<header class="head">
+		<span class="avatar" style="--hue: {avatarTone(data.name ?? data.uuid)}" aria-hidden="true"></span>
+		<div class="who">
+			<div class="who-name">
+				<h2>{data.name ?? 'Unknown name'}</h2>
+				{#if data.online}<span class="online"><span class="dot running"></span>Online</span>{/if}
+			</div>
+			<p class="small faint">
+				<span class="mono">{data.uuid}</span>{data.file ? ` · saved ${formatRelative(data.file.modifiedAt)}` : ''} · {FORMAT_LABEL[data.view.format]} data{data.view
+					.dataVersion !== null
+					? ` (DataVersion ${data.view.dataVersion})`
+					: ''}
+			</p>
+		</div>
+		<div class="button-row">
+			<button type="button" class="button-quiet" aria-pressed={view === 'backups'} onclick={() => show('backups')}>
+				Backups ({data.backups.length})
+			</button>
+			{#if data.file}
+				<a class="button" href="/api/instances/{encodeURIComponent(data.instance.id)}/files?path={encodeURIComponent(data.file.path)}"
+					>Download .dat</a
+				>
+			{/if}
+		</div>
+	</header>
+	<nav class="subtabs" aria-label="Player data sections">
+		{#each VIEWS as v (v.id)}
+			<button type="button" aria-current={view === v.id ? 'page' : undefined} onclick={() => show(v.id)}>{v.label}</button>
+		{/each}
+	</nav>
+</div>
 
 {#if data.locked}
-	<div class="notice warning"><p>{data.locked}</p></div>
+	<div class="notice warning spread">
+		<p>{data.locked}</p>
+		{#if data.online && data.name}<button type="button" onclick={kick} disabled={busy}>Kick to edit</button>{/if}
+	</div>
 {/if}
 <!-- Keyed: the same message twice in a row would otherwise stay dismissed. -->
 {#key result}<Flash form={result} />{/key}
 
+{#if view === 'player'}
 <form class="panel" onsubmit={saveFields}>
 	<h2>Player</h2>
 	<div class="fields">
@@ -435,10 +500,10 @@
 		<button class="button-primary" type="submit" disabled={locked || busy || changed.length === 0}>
 			Save{changed.length ? ` ${changed.length} change${changed.length === 1 ? '' : 's'}` : ''}
 		</button>
-		<p class="small faint">Any value in the data below can become a field here: hover it and pick “Field”.</p>
+		<p class="small faint">Any value in All data can become a field here: hover it and pick “Field”.</p>
 	</div>
 </form>
-
+{:else if view === 'effects'}
 <section class="panel">
 	<h2>Effects</h2>
 	{#if data.view.effects.effects.length === 0}
@@ -479,13 +544,9 @@
 	</form>
 	<p class="hint">-1 seconds lasts forever.</p>
 </section>
-
+{:else if view === 'inventory' || view === 'ender'}
 <section class="panel">
 	<div class="inv-head">
-		<div class="switcher" role="tablist">
-			<button role="tab" aria-selected={tab === 'inventory'} onclick={() => ((tab = 'inventory'), (stack = []))}>Inventory</button>
-			<button role="tab" aria-selected={tab === 'ender'} onclick={() => ((tab = 'ender'), (stack = []))}>Ender chest</button>
-		</div>
 		<p class="small faint">Pick a slot to edit, add or remove its item. ▣ marks an item that holds items.</p>
 	</div>
 
@@ -509,6 +570,7 @@
 
 	</div>
 </section>
+{/if}
 
 <dialog class="item-dialog" bind:this={dialog} onclose={() => (stack = [])} onclick={(e) => e.target === dialog && (stack = [])}>
 	{#if current}
@@ -613,6 +675,7 @@
 	{/if}
 </dialog>
 
+{#if view === 'data'}
 <section class="panel" class:remapping={!!remapping}>
 	<h2>All data</h2>
 	{#if remapping}
@@ -656,7 +719,7 @@
 		{/each}
 	</ul>
 </section>
-
+{:else if view === 'backups'}
 <section class="panel">
 	<h2>Backups</h2>
 	<p class="small muted">MineShell keeps the file as it was before each editing session (the newest 10).</p>
@@ -673,10 +736,74 @@
 		</ul>
 	{/if}
 </section>
+{/if}
 
 <style>
+	.editor-head {
+		margin: calc(var(--space-5) * -1) -2.5rem 1.25rem;
+		padding: 0.9rem 2.5rem 0;
+		border-bottom: 1px solid var(--line);
+	}
+
 	.back {
-		margin: 0 0 var(--space-3);
+		font-size: 0.87rem;
+		text-decoration: none;
+	}
+
+	.head {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		margin: 0.6rem 0 0.4rem;
+	}
+
+	.avatar {
+		width: 40px;
+		height: 40px;
+		flex: none;
+		border-radius: 4px;
+		background: var(--hue);
+	}
+
+	.who {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.who-name {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+
+	.who p {
+		margin: 0.15rem 0 0;
+	}
+
+	.online {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		color: var(--accent-hover);
+	}
+
+	.notice.spread {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.notice.spread p {
+		margin: 0;
+	}
+
+	@media (max-width: 60rem) {
+		.editor-head {
+			margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 1.25rem;
+			padding: 0.9rem var(--space-4) 0;
+		}
 	}
 
 	.head {
@@ -830,15 +957,7 @@
 		margin: 0;
 	}
 
-	.switcher {
-		display: flex;
-		gap: var(--space-1);
-	}
 
-	.switcher button[aria-selected='true'] {
-		background: var(--bg-sunken);
-		border-color: var(--accent);
-	}
 
 	.inv-layout {
 		display: flex;

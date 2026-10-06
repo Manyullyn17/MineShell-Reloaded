@@ -66,6 +66,13 @@ async function playerDir(instance: ServerInstance): Promise<string> {
 	return path.join(instance.path, await serverWorldName(instance.path), 'playerdata');
 }
 
+/** Where a player's file is, relative to the server folder (for Files' download), and when it was saved. */
+export async function playerFileInfo(instance: ServerInstance, uuid: string): Promise<{ path: string; modifiedAt: number } | null> {
+	const file = path.join(await playerDir(instance), `${checkUuid(uuid)}.dat`);
+	const stat = await fs.stat(file).catch(() => null);
+	return stat ? { path: path.relative(instance.path, file), modifiedAt: stat.mtimeMs } : null;
+}
+
 function checkUuid(uuid: string): string {
 	if (!UUID.test(uuid)) throw new PlayerDataError('That is not a player id.');
 	return uuid.toLowerCase();
