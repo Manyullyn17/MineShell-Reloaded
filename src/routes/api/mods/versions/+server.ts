@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			versions.sort((a, b) => Number(isDatapackVersion(a, loader)) - Number(isDatapackVersion(b, loader)));
 		}
 		return Response.json({
-			versions: versions.slice(0, 40).map((v) => ({
+			versions: versions.map((v) => ({
 				id: v.id,
 				versionNumber: v.versionNumber,
 				channel: v.channel,

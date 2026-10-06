@@ -168,3 +168,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Removing a loaded world-generation data pack broke the world | `flows/datapacks.test.ts` |
 | Restoring a one-dimension snapshot would replace the whole world | `flows/dimensions.test.ts` |
 | Same-major Java runtimes picked in database order | `flows/java-defaults.test.ts` |
+| With a CurseForge key, a pack listed only its newest 50 files | `src/lib/server/mods/curseforge-official.test.ts` |

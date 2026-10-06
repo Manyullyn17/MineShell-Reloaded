@@ -190,6 +190,9 @@
 	let versions = $state<Version[]>([]);
 	let versionId = $state('');
 	let loadingVersions = $state(false);
+	/** Versions are listed in batches: a big project has hundreds. */
+	const VERSION_BATCH = 50;
+	let shownVersions = $state(VERSION_BATCH);
 
 	type Dependency = {
 		projectId: string;
@@ -301,6 +304,7 @@
 	async function choose(hit: Hit) {
 		selected = hit;
 		versions = [];
+		shownVersions = VERSION_BATCH;
 		versionId = '';
 		loadingVersions = true;
 		const params = new URLSearchParams({
@@ -847,7 +851,7 @@
 							<p class="muted">No versions were returned for this mod.</p>
 						{:else}
 							<ul class="version-list plain">
-								{#each versions as v (v.id)}
+								{#each versions.slice(0, shownVersions) as v (v.id)}
 									<li>
 										<label class="version" class:picked={versionId === v.id}>
 											<input type="radio" name="version-pick" value={v.id} bind:group={versionId} />
@@ -869,6 +873,11 @@
 									</li>
 								{/each}
 							</ul>
+							{#if versions.length > shownVersions}
+								<button type="button" class="button-quiet show-more" onclick={() => (shownVersions += VERSION_BATCH)}>
+									{versions.length - shownVersions > VERSION_BATCH ? `Show ${VERSION_BATCH} more (${versions.length - shownVersions} left)` : `Show the other ${versions.length - shownVersions}`}
+								</button>
+							{/if}
 						{/if}
 					{/snippet}
 					{#snippet footer()}
@@ -1437,6 +1446,11 @@
 	.detail.placeholder {
 		display: grid;
 		place-items: center;
+	}
+
+	.show-more {
+		width: 100%;
+		margin-top: var(--space-2);
 	}
 
 	.version-list {

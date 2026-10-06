@@ -198,15 +198,25 @@ export async function description(id: string): Promise<string | null> {
 	return data.data?.trim() || null;
 }
 
+/** Enough for any real project; the API refuses an index past 10000 anyway. */
+const MAX_FILE_PAGES = 40;
+
 export async function listVersions(
 	id: string,
 	filter?: { minecraftVersion?: string; loader?: string }
 ): Promise<ProjectVersion[]> {
-	const data = await cfFetch<{ data: CfFile[] }>(`/mods/${id}/files`, {
-		gameVersion: filter?.minecraftVersion,
-		pageSize: 50
-	});
-	return (data.data ?? []).map((file) => fileToVersion(id, file, null));
+	// 50 files a page (the API's most), newest first; a big pack has hundreds.
+	const files: CfFile[] = [];
+	for (let page = 0; page < MAX_FILE_PAGES; page++) {
+		const data = await cfFetch<{ data: CfFile[]; pagination?: { totalCount?: number } }>(`/mods/${id}/files`, {
+			gameVersion: filter?.minecraftVersion,
+			pageSize: 50,
+			index: page * 50
+		});
+		files.push(...(data.data ?? []));
+		if (!data.data?.length || files.length >= (data.pagination?.totalCount ?? 0)) break;
+	}
+	return files.map((file) => fileToVersion(id, file, null));
 }
 
 export async function getVersion(projectId: string, versionId: string): Promise<ProjectVersion> {

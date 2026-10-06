@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		});
 		versions.sort(compareVersionPriority);
 		return Response.json({
-			versions: versions.slice(0, 60).map((v) => ({
+			versions: versions.map((v) => ({
 				id: v.id,
 				name: v.name,
 				versionNumber: v.versionNumber,
