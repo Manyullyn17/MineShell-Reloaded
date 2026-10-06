@@ -222,6 +222,9 @@
 	});
 	let javaMajors = $derived(data.javaRuntimes.map((j) => j.majorVersion));
 	let loadingVersions = $state(false);
+	/** Versions are listed in batches: a big project has hundreds. */
+	const VERSION_BATCH = 50;
+	let shownVersions = $state(VERSION_BATCH);
 
 	// The picked version's mod list, for the install form.
 	type Preview = { mods: { target: string; fileName: string; name: string; clientOnly: string | null; packDisabled: boolean; neededBy: string[] }[]; otherFiles: number };
@@ -285,6 +288,7 @@
 		if (!nameTouched) name = hit.name;
 		loadingVersions = true;
 		packVersions = [];
+		shownVersions = VERSION_BATCH;
 		versionId = '';
 		try {
 			const res = await fetch(`/api/packs/versions?source=${source}&id=${encodeURIComponent(hit.id)}`);
@@ -423,7 +427,8 @@
 				{#if showFilters}
 					<FilterSidebar groups={combinedFilterGroups} bind:selected={filterSelections} loading={loadingFilters} limitNote={filterLimitNote} />
 				{/if}
-				<ul class="hits" use:fitToViewport={{ bottomMarginPx: 90 }}>
+				<!-- 104: the form's 5rem kept free for the bottom bar, plus the page's own padding. -->
+				<ul class="hits" use:fitToViewport={{ bottomMarginPx: 104 }}>
 					{#each hits as hit (hit.id)}
 						<li>
 							<button type="button" class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
@@ -453,7 +458,7 @@
 				</ul>
 
 				{#if selected}
-					<div class="detail" use:fitToViewport={{ bottomMarginPx: 90 }}>
+					<div class="detail" use:fitToViewport={{ bottomMarginPx: 104 }}>
 						<DetailsDialog
 							inline
 							{source}
@@ -472,7 +477,7 @@
 									<p class="muted">No versions were returned for this pack.</p>
 								{:else}
 									<ul class="version-list plain">
-										{#each packVersions as v (v.id)}
+										{#each packVersions.slice(0, shownVersions) as v (v.id)}
 											<li>
 												<label class="version" class:picked={versionId === v.id}>
 													<input type="radio" value={v.id} bind:group={versionId} />
@@ -493,6 +498,11 @@
 											</li>
 										{/each}
 									</ul>
+									{#if packVersions.length > shownVersions}
+										<button type="button" class="button-quiet show-more" onclick={() => (shownVersions += VERSION_BATCH)}>
+											{packVersions.length - shownVersions > VERSION_BATCH ? `Show ${VERSION_BATCH} more (${packVersions.length - shownVersions} left)` : `Show the other ${packVersions.length - shownVersions}`}
+										</button>
+									{/if}
 								{/if}
 							{/snippet}
 							{#snippet footer()}
@@ -992,6 +1002,11 @@
 	.detail.empty {
 		display: grid;
 		place-items: center;
+	}
+
+	.show-more {
+		width: 100%;
+		margin-top: var(--space-2);
 	}
 
 	.version-list {

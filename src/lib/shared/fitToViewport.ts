@@ -65,6 +65,12 @@ export function fitToViewport(node: HTMLElement, params: FitToViewportParams = 2
 
 	const bodyObserver = new ResizeObserver(recompute);
 	bodyObserver.observe(document.body);
+	// A node mounted inside a hidden section (a later step of a form) measures
+	// from the top of the screen and gets the whole viewport; nothing above
+	// changes size when the section is shown, but the node itself does (from
+	// 0). Re-measuring on its own size changes is stable: the same top gives
+	// the same max-height.
+	bodyObserver.observe(node);
 
 	// ResizeObserver fires once immediately on observe() with the current
 	// size, so pointing it at a freshly-mounted reserveElement also covers
