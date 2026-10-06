@@ -13,9 +13,10 @@ instantiation of it: `minecraft@survival.service`, `minecraft@skyblock.service`,
 The instance id is the slug, and it doubles as the systemd instance name and the directory
 name, so there is never a mapping table to keep in sync.
 
-The template is written by `renderTemplateUnit()` in `systemd.ts`. MineShell rewrites an
-installed copy at startup when it was written by an older MineShell (`refreshTemplateUnit`),
-so changes to it reach existing setups without reinstalling.
+The template lives in `unit-template.js`, plain JavaScript so that `npm run setup` (plain
+Node, outside SvelteKit) writes exactly what the app writes. MineShell rewrites an installed
+copy at startup when it was written by an older MineShell (`refreshTemplateUnit`), so
+changes to it reach existing setups without reinstalling.
 
 Per-instance differences live in an environment file at `<data>/units/<id>.env`:
 

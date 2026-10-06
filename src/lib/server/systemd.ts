@@ -14,6 +14,9 @@ import {
 	unitEnvFile,
 	unitName
 } from './config';
+import { installedTemplateUnit, renderTemplateUnit as renderTemplate } from './unit-template.js';
+
+const TEMPLATE_PATHS = { prefix: UNIT_PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR };
 
 export type UnitState = {
 	/** active | inactive | failed | activating | deactivating | unknown */
@@ -97,52 +100,7 @@ export async function systemctl(...args: string[]): Promise<RunResult> {
  * EnvironmentFile so a single unit file serves every server.
  */
 export function renderTemplateUnit(): string {
-	return `# Managed by MineShell. Regenerate from Settings > systemd, or \`npm run setup\`.
-# One instance per Minecraft server: ${UNIT_PREFIX}@<instance-id>.service
-[Unit]
-Description=Minecraft server (%i) managed by MineShell
-After=network-online.target
-Wants=network-online.target
-# Crash-loop brake. MineShell writes these defaults; per-instance values set in
-# the UI go into a drop-in next to this file, ${UNIT_PREFIX}@<id>.service.d/restart.conf
-StartLimitIntervalSec=600
-StartLimitBurst=5
-
-[Service]
-Type=simple
-WorkingDirectory=${INSTANCES_DIR}/%i
-EnvironmentFile=${UNITS_DIR}/%i.env
-
-# exec so systemd tracks the JVM directly. A wrapper that forks would break
-# restart detection and resource accounting.
-ExecStart=/bin/sh -c 'exec "$MS_JAVA" $MS_JVM_ARGS $MS_LAUNCH_ARGS'
-
-# Minecraft installs a shutdown hook, so SIGTERM saves and exits cleanly.
-# MineShell still prefers an RCON "stop" first and only falls back to this.
-KillSignal=SIGTERM
-KillMode=mixed
-TimeoutStopSec=180
-# The JVM exits 143 (128 + SIGTERM) when stopped that way, after saving. Only a
-# stop asked for sends SIGTERM, so 143 is never a crash.
-SuccessExitStatus=143
-
-Restart=\${MS_RESTART_POLICY}
-RestartSec=15
-
-CPUAccounting=yes
-MemoryAccounting=yes
-
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=${UNIT_PREFIX}-%i
-
-# Modest hardening. Instances still need write access to their own directory.
-NoNewPrivileges=yes
-PrivateTmp=yes
-
-[Install]
-WantedBy=default.target
-`;
+	return renderTemplate(TEMPLATE_PATHS);
 }
 
 /**
@@ -162,7 +120,7 @@ Restart=${policy}
 
 /** The template as installed: the Restart= placeholder filled, so it is valid without a drop-in. */
 function installedTemplateContents(): string {
-	return renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure');
+	return installedTemplateUnit(TEMPLATE_PATHS);
 }
 
 /**

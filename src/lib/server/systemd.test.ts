@@ -148,6 +148,13 @@ describe('unit files', () => {
 		expect(await fs.readFile(file, 'utf8')).toBe('# my own unit\n[Service]\n');
 	});
 
+	it('is the one template npm run setup writes too', async () => {
+		// setup.mjs had its own copy, which lacked SuccessExitStatus=143 and drifted further with every change.
+		const setup = await fs.readFile(path.join(process.cwd(), 'scripts', 'setup.mjs'), 'utf8');
+		expect(setup).toContain("from '../src/lib/server/unit-template.js'");
+		expect(setup).not.toMatch(/ExecStart=|\[Service\]/);
+	});
+
 	it('launches through the env file from the instance folder', () => {
 		const unit = renderTemplateUnit();
 		expect(unit).toContain('EnvironmentFile=');

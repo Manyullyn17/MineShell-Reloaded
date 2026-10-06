@@ -165,8 +165,7 @@ Database migrations run automatically at startup. Back up
 The template unit does not need reinstalling: at startup MineShell rewrites an installed
 template that an older MineShell wrote. Reinstalling it is safe anyway — the Settings page
 has a button for it, and it re-syncs every instance's environment file and drop-ins
-afterwards. (`npm run setup` writes a simpler copy of the template; MineShell replaces it
-with its own at the next start.)
+afterwards. `npm run setup` writes the same template.
 
 ---
 

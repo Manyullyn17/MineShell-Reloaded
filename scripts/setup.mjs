@@ -12,6 +12,7 @@ import { homedir } from 'node:os';
 import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { installedTemplateUnit } from '../src/lib/server/unit-template.js';
 
 const run = promisify(execFile);
 
@@ -58,55 +59,23 @@ function loadDotenv(dir = process.cwd()) {
 
 loadDotenv();
 
+// `||`, as config.ts reads them: an empty value means the default there too.
 const DATA_DIR = path.resolve(
-	process.env.MINESHELL_DATA ??
-		path.join(process.env.XDG_DATA_HOME ?? path.join(homedir(), '.local', 'share'), 'mineshell')
+	process.env.MINESHELL_DATA ||
+		path.join(process.env.XDG_DATA_HOME || path.join(homedir(), '.local', 'share'), 'mineshell')
 );
 const SCOPE = process.env.MINESHELL_SYSTEMD_SCOPE === 'system' ? 'system' : 'user';
-const PREFIX = process.env.MINESHELL_UNIT_PREFIX ?? 'minecraft';
+const PREFIX = process.env.MINESHELL_UNIT_PREFIX || 'minecraft';
 const INSTANCES_DIR = path.join(DATA_DIR, 'instances');
 const UNITS_DIR = path.join(DATA_DIR, 'units');
 
 const unitDir =
 	SCOPE === 'user'
-		? path.join(process.env.XDG_CONFIG_HOME ?? path.join(homedir(), '.config'), 'systemd', 'user')
+		? path.join(process.env.XDG_CONFIG_HOME || path.join(homedir(), '.config'), 'systemd', 'user')
 		: '/etc/systemd/system';
 
-const unit = `# Managed by MineShell.
-[Unit]
-Description=Minecraft server (%i) managed by MineShell
-After=network-online.target
-Wants=network-online.target
-StartLimitIntervalSec=600
-StartLimitBurst=5
-
-[Service]
-Type=simple
-WorkingDirectory=${INSTANCES_DIR}/%i
-EnvironmentFile=${UNITS_DIR}/%i.env
-
-ExecStart=/bin/sh -c 'exec "$MS_JAVA" $MS_JVM_ARGS $MS_LAUNCH_ARGS'
-
-KillSignal=SIGTERM
-KillMode=mixed
-TimeoutStopSec=180
-
-Restart=on-failure
-RestartSec=15
-
-CPUAccounting=yes
-MemoryAccounting=yes
-
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=${PREFIX}-%i
-
-NoNewPrivileges=yes
-PrivateTmp=yes
-
-[Install]
-WantedBy=default.target
-`;
+// The same template the app writes (src/lib/server/unit-template.js).
+const unit = installedTemplateUnit({ prefix: PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR });
 
 async function main() {
 	for (const dir of [DATA_DIR, INSTANCES_DIR, UNITS_DIR, path.join(DATA_DIR, 'cache'), path.join(DATA_DIR, 'tmp')]) {
