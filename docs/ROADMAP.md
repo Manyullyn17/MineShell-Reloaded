@@ -352,6 +352,32 @@ id to a picture: flat items are one texture via their item model (`models/item/<
 and leather, potions or grass need tinting. Something decent for most items is reachable;
 perfect for every model is not.
 
+### Item and enchantment names in the player editor
+
+The editor shows item ids (`thermalfoundation:material`) and, on 1.12 and older, mod
+enchantments as bare numbers (only vanilla's numbers are mapped, `LEGACY_ENCHANTMENTS`).
+Both can come from the server's own files. Checked 2026-10-06 on `meatballcraft-cleanroom`:
+
+- **Enchantment ids, exact (do first)**: Forge (and Cleanroom) keep each world's number -> id
+  table in `level.dat`, `FML.Registries` -> `minecraft:enchantments` (`ids`: `{K: "<mod>:<name>",
+  V: <number>}`). MeatballCraft's lists every mod's enchantments (`cofhcore:soulbound`,
+  `abyssalcraft:coralium`, ...). Numbers are per world, so the table must be read from the
+  world the player file belongs to, never shared. Writing an enchantment by id maps back
+  through the same table. `minecraft:items` is there too (needed only for numeric item ids,
+  which 1.12 player files do not use).
+- **Display names, heuristic on 1.12**: the English text is on disk - the 1.12.2 server jar
+  carries vanilla's `assets/minecraft/lang/en_us.lang`, and 269 of MeatballCraft's 342 mod
+  jars ship an `en_us.lang` (some `en_US.lang`). The lang key comes from the mod's code, not
+  from the id, and often depends on the damage value (wool colours, ores), so the lookup tries
+  likely keys (`item.<mod>.<name>.name`, `tile.<mod>.<name>.name`, the same without the mod
+  prefix) and falls back to the id. Enchantment keys (`enchantment.<name>`) are more regular.
+- **1.13+, nearly exact**: the key follows the id (`item.<mod>.<name>` / `block.<mod>.<name>`),
+  JSON lang files in the jars; vanilla's are in the client jar (as for item icons above), so
+  vanilla names on modern versions need that download or stay ids.
+
+Shares the jar-reading with item icons above: one index of `mods/` (lang files, textures)
+cached by the jars' sizes and dates.
+
 ### Multi-instance port management
 
 Ports are allocated automatically and conflicts are detected, but there is no view showing
