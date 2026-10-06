@@ -119,11 +119,31 @@ export class RconClient {
 	}
 }
 
+/**
+ * Commands waiting per server. Vanilla collects an RCON command's output in
+ * one buffer for the whole server (cleared when a command starts, read when
+ * it ends), so two clients' commands running at once get each other's
+ * output: the player list came back holding the tick report. MineShell asks
+ * from several places on timers (overview, server list, rail, scheduler),
+ * so commands to one server run one after another. Connect and every command
+ * time out, so one that hangs holds the rest back for seconds, not forever.
+ */
+const lines = new Map<string, Promise<unknown>>();
+
 /** Open, run one or more commands, close. Callers never manage the socket. */
-export async function rconExec(
-	opts: { host?: string; port: number; password: string },
-	commands: string[]
-): Promise<string[]> {
+export function rconExec(opts: { host?: string; port: number; password: string }, commands: string[]): Promise<string[]> {
+	const key = `${opts.host ?? '127.0.0.1'}:${opts.port}`;
+	const before = lines.get(key) ?? Promise.resolve();
+	const run = before.then(() => execNow(opts, commands));
+	const settled = run.catch(() => undefined);
+	lines.set(key, settled);
+	void settled.then(() => {
+		if (lines.get(key) === settled) lines.delete(key);
+	});
+	return run;
+}
+
+async function execNow(opts: { host?: string; port: number; password: string }, commands: string[]): Promise<string[]> {
 	const client = new RconClient(opts.host ?? '127.0.0.1', opts.port, opts.password);
 	await client.connect();
 	try {
