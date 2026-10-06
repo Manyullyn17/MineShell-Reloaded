@@ -76,6 +76,7 @@ type CfMod = {
 	links?: CfLinks;
 	categories?: CfCategory[];
 	latestFilesIndexes?: CfFilesIndex[];
+	dateModified?: string;
 };
 
 type CfFile = {
@@ -129,6 +130,7 @@ function modToHit(mod: CfMod): SearchHit {
 		summary: mod.summary?.trim() || null,
 		iconUrl: iconUrl(mod),
 		downloads: mod.downloadCount ?? null,
+		updatedAt: mod.dateModified ?? null,
 		projectUrl: mod.links?.websiteUrl ?? null,
 		loaders,
 		gameVersions

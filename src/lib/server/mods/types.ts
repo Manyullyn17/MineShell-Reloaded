@@ -22,6 +22,10 @@ export type SearchHit = {
 	gameVersions: string[];
 	/** Known to do nothing on a dedicated server, where the source says. */
 	clientOnly?: boolean;
+	/** When the project last changed (ISO), where the source says. */
+	updatedAt?: string | null;
+	/** The licence's name or SPDX id; only Modrinth gives one. */
+	license?: string | null;
 };
 
 export type VersionFile = {

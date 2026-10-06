@@ -17,10 +17,10 @@ const { useRecordedHttp } = await import('../helpers/http');
 const API = 'https://api.modrinth.com/v2';
 const sha512 = (s: string) => crypto.createHash('sha512').update(s).digest('hex');
 
-type V = { id: string; project: string; number: string; type: string; date: string; file: string; content: string; requires?: string[] };
+type V = { id: string; project: string; number: string; type: string; date: string; file: string; content: string; requires?: string[]; changelog?: string };
 const versions: V[] = [
 	{ id: 'S1', project: 'sodium', number: '0.5.0', type: 'release', date: '2025-01-01', file: 'sodium-0.5.0.jar', content: 'sodium 0.5.0' },
-	{ id: 'S2', project: 'sodium', number: '0.6.0', type: 'release', date: '2025-06-01', file: 'sodium-0.6.0.jar', content: 'sodium 0.6.0', requires: ['P_FAPI'] },
+	{ id: 'S2', project: 'sodium', number: '0.6.0', type: 'release', date: '2025-06-01', file: 'sodium-0.6.0.jar', content: 'sodium 0.6.0', requires: ['P_FAPI'], changelog: '## Sodium 0.6.0\n\n- Fixes a crash with [trains](https://example.com) crossing chunk borders\n- Faster' },
 	{ id: 'S3', project: 'sodium', number: '0.7.0-beta', type: 'beta', date: '2025-09-01', file: 'sodium-0.7.0-beta.jar', content: 'sodium 0.7.0' },
 	{ id: 'L1', project: 'lithium', number: '1.0', type: 'release', date: '2025-01-01', file: 'lithium-1.0.jar', content: 'lithium 1.0' },
 	{ id: 'L2', project: 'lithium', number: '2.0', type: 'release', date: '2025-08-01', file: 'lithium-2.0.jar', content: 'lithium 2.0', requires: ['P_FAPI'] },
@@ -49,7 +49,7 @@ function mr(v: V) {
 		date_published: `${v.date}T00:00:00Z`,
 		game_versions: ['1.21.1'],
 		loaders: ['fabric'],
-		changelog: null,
+		changelog: v.changelog ?? null,
 		files: [{ filename: v.file, url: `https://cdn.example/${v.file}`, primary: true, size: v.content.length, hashes: { sha512: sha512(v.content) } }],
 		dependencies: (v.requires ?? []).map((id) => ({ project_id: id, version_id: null, dependency_type: 'required', file_name: null }))
 	};
@@ -118,7 +118,10 @@ describe('mod updates', () => {
 	it('offers the newest release to a mod on a release, leaving locked and untracked ones out', async () => {
 		const instance = await server();
 		const check = await checkModUpdates(instance);
-		expect(check.updates).toMatchObject([{ name: 'Sodium', currentVersion: '0.5.0', targetVersionId: 'S2', targetVersion: '0.6.0' }]);
+		expect(check.updates).toMatchObject([
+			// The note is the changelog's first line of substance, as plain text.
+			{ name: 'Sodium', currentVersion: '0.5.0', targetVersionId: 'S2', targetVersion: '0.6.0', note: 'Fixes a crash with trains crossing chunk borders' }
+		]);
 		expect(check.dependencies).toMatchObject({ install: [{ name: 'Fabric API', versionNumber: '1.0', neededBy: ['Sodium'] }], unresolved: [] });
 		expect(check.skipped.map((s) => [s.name, s.reason])).toEqual([
 			['Lithium', 'Locked'],

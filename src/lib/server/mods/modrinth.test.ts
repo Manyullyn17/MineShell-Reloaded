@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { modrinthProvider, versionsFromHashes } from './modrinth';
+import { modrinthProvider, spdxOrName, versionsFromHashes } from './modrinth';
 import { compareVersions } from '../java';
 import { FUGUE_JAVA25_FROM, pickVersionForJava } from '../cleanroom';
 import { isDatapackVersion } from './datapacks';
@@ -28,10 +28,25 @@ describe('modrinth search', () => {
 	});
 });
 
+describe('spdxOrName', () => {
+	it('prefers the SPDX id, then a custom licence\'s name, then its id as words', () => {
+		expect(spdxOrName({ id: 'MIT', name: 'MIT License' })).toBe('MIT');
+		expect(spdxOrName({ id: 'LicenseRef-Custom', name: 'My License' })).toBe('My License');
+		expect(spdxOrName({ id: 'LicenseRef-Create-Mod-License', name: '' })).toBe('Create Mod License');
+		expect(spdxOrName(undefined)).toBeNull();
+	});
+});
+
 describe('modrinth projects and versions', () => {
 	it('maps a project', async () => {
 		const project = await modrinthProvider.getProject('fugue');
-		expect(project).toMatchObject({ source: 'modrinth', slug: 'fugue', projectUrl: 'https://modrinth.com/project/fugue' });
+		expect(project).toMatchObject({
+			source: 'modrinth',
+			slug: 'fugue',
+			projectUrl: 'https://modrinth.com/project/fugue',
+			updatedAt: '2026-09-14T07:52:17.037902Z',
+			license: 'GPL-3.0-or-later'
+		});
 		expect(project.loaders).toContain('forge');
 		expect(project.gameVersions).toContain('1.12.2');
 	});

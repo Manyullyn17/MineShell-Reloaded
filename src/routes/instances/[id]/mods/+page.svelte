@@ -30,7 +30,7 @@
 		(mod.source === 'modrinth' || mod.source === 'curseforge') && !mod.missing;
 
 	type UpdateCheck = {
-		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; enabled: boolean; fromPack: boolean }[];
+		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; enabled: boolean; fromPack: boolean; note: string | null }[];
 		upToDate: number;
 		skipped: { fileName: string; name: string; reason: string }[];
 		dependencies: DependencyPlan;
@@ -748,6 +748,7 @@
 										{u.name}
 										{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
 									</span>
+									{#if u.note}<span class="muted small">{u.note}</span>{/if}
 									{#if !u.enabled}<span class="faint small">disabled, stays disabled</span>{/if}
 								</span>
 								<span class="mono small versions">

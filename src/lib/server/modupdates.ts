@@ -100,6 +100,25 @@ export function pickUpdate(versions: ProjectVersion[], current: { versionId: str
 	return bestVersion(pool);
 }
 
+/**
+ * A changelog's first line of substance, as plain text, for one line in the
+ * update list: headings that only repeat the name or version are skipped,
+ * list markers and markdown links and emphasis dropped.
+ */
+export function changelogNote(changelog: string | null | undefined): string | null {
+	for (const raw of (changelog ?? '').split('\n')) {
+		if (/^\s*#/.test(raw)) continue;
+		const line = raw
+			.replace(/^\s*(?:[-*+]|\d+\.)\s+/, '')
+			.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+			.replace(/<[^>]+>/g, '')
+			.replace(/[*_`]/g, '')
+			.trim();
+		if (line.length > 2) return line.length > 120 ? `${line.slice(0, 117)}...` : line;
+	}
+	return null;
+}
+
 export type ModUpdate = {
 	fileName: string;
 	name: string;
@@ -110,6 +129,8 @@ export type ModUpdate = {
 	channel: string;
 	enabled: boolean;
 	fromPack: boolean;
+	/** The first line of the new version's changelog, where the source has one. */
+	note: string | null;
 };
 
 export type UpdateCheck = {
@@ -191,7 +212,8 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 				targetVersion: target.versionNumber,
 				channel: target.channel,
 				enabled: row.enabled,
-				fromPack: row.fromPack
+				fromPack: row.fromPack,
+				note: changelogNote(target.changelog)
 			});
 		} catch (err) {
 			result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });

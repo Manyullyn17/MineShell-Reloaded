@@ -117,6 +117,12 @@ function projectUrl(source: SourceId, id: number | string): string | null {
 	return source === 'ftb' ? `https://feed-the-beast.com/modpacks/${id}` : null;
 }
 
+/** The latest of the mirror's epoch-second timestamps, as ISO. */
+function newest(times: (number | undefined)[] | undefined): string | null {
+	const latest = Math.max(0, ...(times ?? []).filter((t): t is number => typeof t === 'number'));
+	return latest ? new Date(latest * 1000).toISOString() : null;
+}
+
 function cardToHit(source: SourceId, card: BrowseCard): SearchHit {
 	return {
 		source,
@@ -144,6 +150,7 @@ function detailToHit(source: SourceId, pack: PackDetail): SearchHit {
 		summary: pack.synopsis?.trim() || pack.description?.slice(0, 240) || null,
 		iconUrl: artUrl(pack),
 		downloads: pack.installs ?? null,
+		updatedAt: newest(pack.versions?.map((v) => v.updated)),
 		projectUrl: projectUrl(source, pack.id),
 		loaders: targetsToLoaders(targets),
 		gameVersions: targetsToGameVersions(targets)
@@ -500,6 +507,7 @@ function modDetailToHit(mod: ModDetail, files: ModFile[] = mod.versions ?? []): 
 		summary: mod.synopsis?.trim() || null,
 		iconUrl: artUrl(mod),
 		downloads: mod.installs ?? null,
+		updatedAt: newest(files.map((f) => f.updated)),
 		// The project page is type "curseforge" here, "website" on the pack endpoint.
 		projectUrl: mod.links?.find((l) => l.type === 'curseforge' || l.type === 'website')?.link ?? null,
 		loaders: [...new Set(files.flatMap((f) => targetsToLoaders(f.targets)))],

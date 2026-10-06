@@ -9,6 +9,7 @@
 	import DOMPurify from 'dompurify';
 	import type { Snippet } from 'svelte';
 	import { fixLink } from '#lib/shared/links.js';
+	import { formatRelative } from '#lib/shared/format.js';
 
 	function renderMarkdown(text: string, base: string | null): string {
 		// CurseForge's HTML-to-Markdown conversion leaves Pandoc-style image
@@ -91,6 +92,8 @@
 		author: string | null;
 		projectUrl: string | null;
 		summary: string | null;
+		updatedAt: string | null;
+		license: string | null;
 		description: string | null;
 		changelog: string | null;
 	};
@@ -191,6 +194,8 @@
 				</div>
 				<div class="faint small meta">
 					{#if meta}<span>{meta}</span>{/if}
+					{#if details?.updatedAt}<span>updated {formatRelative(Date.parse(details.updatedAt))}</span>{/if}
+					{#if details?.license}<span>{details.license}</span>{/if}
 					{#if details?.projectUrl}
 						<a href={details.projectUrl} target="_blank" rel="noreferrer">Project page ↗</a>
 					{/if}

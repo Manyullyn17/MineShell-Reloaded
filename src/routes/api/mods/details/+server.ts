@@ -45,6 +45,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			author: project.author,
 			projectUrl: project.projectUrl,
 			summary: project.summary,
+			updatedAt: project.updatedAt ?? null,
+			license: project.license ?? null,
 			description,
 			changelog
 		});

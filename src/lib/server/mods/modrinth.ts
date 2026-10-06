@@ -28,6 +28,8 @@ type MrSearchResponse = {
 		downloads: number;
 		categories: string[];
 		versions: string[];
+		date_modified?: string;
+		license?: string;
 	}[];
 };
 
@@ -43,6 +45,8 @@ type MrProject = {
 	loaders: string[];
 	game_versions: string[];
 	team: string;
+	updated?: string;
+	license?: { id: string; name: string };
 	/** A list, e.g. ["client_only"], despite the singular name. */
 	environment?: string[] | string;
 };
@@ -74,6 +78,17 @@ type MrVersion = {
 
 type MrTag = { name: string; project_type: string };
 
+/**
+ * The short SPDX id ("GPL-3.0-or-later") where there is one; a custom licence
+ * by its name, or, as Create's comes with none, its id read as words
+ * ("LicenseRef-Create-Mod-License" -> "Create Mod License").
+ */
+export function spdxOrName(license: { id: string; name: string } | undefined): string | null {
+	if (!license?.id) return license?.name || null;
+	if (!license.id.startsWith('LicenseRef-')) return license.id;
+	return license.name || license.id.slice('LicenseRef-'.length).replace(/-/g, ' ') || null;
+}
+
 function toHit(project: MrProject | MrSearchResponse['hits'][number]): SearchHit {
 	const isSearch = 'project_id' in project;
 	return {
@@ -85,6 +100,8 @@ function toHit(project: MrProject | MrSearchResponse['hits'][number]): SearchHit
 		summary: project.description,
 		iconUrl: project.icon_url,
 		downloads: project.downloads,
+		updatedAt: (isSearch ? project.date_modified : project.updated) ?? null,
+		license: (isSearch ? project.license : spdxOrName(project.license)) || null,
 		projectUrl: `https://modrinth.com/project/${project.slug}`,
 		// Search hits have no `loaders` field of their own - the loader is
 		// lumped into `categories` there, while a full project fetch carries a
