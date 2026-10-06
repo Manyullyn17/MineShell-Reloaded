@@ -320,6 +320,14 @@ commands, copy and delete) keep their own buttons.
 tab. Its forms post to the overview's actions; an enhanced form posting to another page
 would navigate there, so the header applies the result itself and reloads in place.
 
+**The notification center** (top bar, `NotificationCenter.svelte`) follows the task stream
+(`/api/tasks?stream=1&brief=1`, without logs) on every page: running tasks with progress
+and Cancel, tasks finished in the last half hour (the server keeps them that long),
+an unread count kept per browser. A task that finishes while the panel is closed becomes a
+toast and reloads the page data. Toasts (`lib/shared/toasts.svelte.ts`) are also where
+results go that have no place on the page, like a save in the player editor: closable,
+and anything but an error closes itself after 8 s. The Activity page keeps the logs.
+
 Styling is one stylesheet of custom properties. Two rules carry meaning rather than taste:
 monospace is used only for machine output — paths, versions, ports, log lines, metrics —
 and never for MineShell's own writing; and motion appears only on state change, never as

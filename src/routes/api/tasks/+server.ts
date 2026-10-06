@@ -3,12 +3,18 @@ import type { RequestHandler } from './$types';
 import { listTasks } from '#lib/server/tasks.js';
 import { bus } from '#lib/server/events.js';
 
-/** Push task progress so the Activity page does not have to poll. */
+/**
+ * Push task progress so the Activity page does not have to poll. `brief=1`
+ * leaves out the logs: the notification center on every page only needs
+ * progress, and a 300-mod install logs a line per mod.
+ */
 export const GET: RequestHandler = async ({ locals, url }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
+	const brief = url.searchParams.get('brief') === '1';
+	const tasks = () => (brief ? listTasks().map(({ log: _, ...task }) => task) : listTasks());
 
 	if (url.searchParams.get('stream') !== '1') {
-		return Response.json({ tasks: listTasks() });
+		return Response.json({ tasks: tasks() });
 	}
 
 	let unsubscribe: (() => void) | null = null;
@@ -20,7 +26,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			const push = () => {
 				try {
 					controller.enqueue(
-						encoder.encode(`event: tasks\ndata: ${JSON.stringify(listTasks())}\n\n`)
+						encoder.encode(`event: tasks\ndata: ${JSON.stringify(tasks())}\n\n`)
 					);
 				} catch {
 					/* client gone */

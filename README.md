@@ -75,7 +75,8 @@ mods and can untick client-only ones. Each instance gets its own directory, port
 port can be picked), RCON password and systemd unit. Later you can change the pack version or the loader version,
 migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try
 something on the copy first. Those operations are journalled: a crash halfway through is
-rolled back at the next start.
+rolled back at the next start. Long operations run in the background; the notification center in
+the top bar shows their progress from any page and lists what finished.
 
 **Running servers.** Start, stop, restart, force stop, or stop/restart after a countdown
 with in-game warnings, from the header of every server tab. Stopping goes through RCON with `save-all` then `stop` and waits for

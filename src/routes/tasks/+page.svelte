@@ -75,8 +75,8 @@
 				</div>
 
 				{#if task.state === 'running'}
-					<div class="bar" role="progressbar" aria-valuenow={task.progress ?? undefined}>
-						<div class="fill" class:indeterminate={task.progress === null} style="width: {task.progress ?? 100}%"></div>
+					<div class="progress bar" role="progressbar" aria-valuenow={task.progress ?? undefined}>
+						<span class:indeterminate={task.progress === null} style="width: {task.progress ?? 100}%"></span>
 					</div>
 				{/if}
 
@@ -133,34 +133,7 @@
 	}
 
 	.bar {
-		height: 4px;
-		background: var(--bg-sunken);
-		border-radius: 2px;
-		overflow: hidden;
 		margin: var(--space-3) 0;
-	}
-
-	.fill {
-		height: 100%;
-		background: var(--accent);
-		transition: width 0.3s ease-out;
-	}
-
-	.fill.indeterminate {
-		animation: sweep 1.6s ease-in-out infinite;
-		transform-origin: left;
-	}
-
-	@keyframes sweep {
-		0% {
-			transform: scaleX(0.15) translateX(0);
-		}
-		50% {
-			transform: scaleX(0.4) translateX(150%);
-		}
-		100% {
-			transform: scaleX(0.15) translateX(560%);
-		}
 	}
 
 	.meta {

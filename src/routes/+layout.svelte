@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { THEMES, THEME_STORAGE_KEY } from '#lib/shared/themes.js';
 	import { describeState } from '#lib/shared/format.js';
-	import TaskToasts from '#lib/components/TaskToasts.svelte';
+	import NotificationCenter from '#lib/components/NotificationCenter.svelte';
 
 	let { data, children } = $props();
 
@@ -42,12 +42,7 @@
 			</button>
 			<a class="wordmark" href="/"><span class="logo" aria-hidden="true"></span>MineShell</a>
 			<div class="topbar-right">
-				{#if data.runningTasks > 0}
-					<a class="task-pill" href="/tasks">
-						<span class="dot busy"></span>
-						{data.runningTasks} task{data.runningTasks === 1 ? '' : 's'} running
-					</a>
-				{/if}
+				<NotificationCenter running={data.runningTasks} />
 				<label class="visually-hidden" for="theme-select">Theme</label>
 				<select
 					id="theme-select"
@@ -138,8 +133,6 @@
 		<main class="content">
 			{@render children()}
 		</main>
-
-		<TaskToasts />
 	</div>
 {/if}
 
@@ -200,22 +193,6 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-	}
-
-	.task-pill {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		padding: 0.25rem 0.65rem;
-		border-radius: var(--radius);
-		background: var(--panel-raised);
-		text-decoration: none;
-	}
-
-	.task-pill:hover {
-		color: var(--text);
 	}
 
 	.theme-select {

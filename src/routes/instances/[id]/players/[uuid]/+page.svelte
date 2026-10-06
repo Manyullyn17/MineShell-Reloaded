@@ -2,10 +2,10 @@
 	import { avatarTone } from '#lib/shared/avatar.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
-	import Flash from '#lib/components/Flash.svelte';
 	import NbtNode from '#lib/components/NbtNode.svelte';
 	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
+	import { toast } from '#lib/shared/toasts.svelte.js';
 
 	let { data } = $props();
 
@@ -16,7 +16,8 @@
 	/** A slot: one of the player's own, or one inside a container (by the container's list). */
 	type Loc = { kind: 'slot'; section: Item['section']; slot: number } | { kind: 'container'; list: Path; slot: number };
 
-	let result = $state<{ ok: boolean; message: string } | null>(null);
+	/** Results go to a toast: one message for the item panel and the page alike, closable, gone after a few seconds. */
+	const report = (ok: boolean, message: string) => message && toast({ tone: ok ? 'ok' : 'error', message });
 	let busy = $state(false);
 	const locked = $derived(!!data.locked);
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}/players`);
@@ -33,14 +34,14 @@
 			const outcome = deserialize(await res.text());
 			if (outcome.type === 'success' || outcome.type === 'failure') {
 				const d = outcome.data as { ok?: boolean; message?: string } | undefined;
-				result = { ok: outcome.type === 'success', message: d?.message ?? '' };
+				report(outcome.type === 'success', d?.message ?? '');
 			} else {
-				result = { ok: false, message: 'Could not save.' };
+				report(false, 'Could not save.');
 			}
 			await refreshAll();
 			return outcome.type === 'success';
 		} catch {
-			result = { ok: false, message: 'Could not reach MineShell.' };
+			report(false, 'Could not reach MineShell.');
 			return false;
 		} finally {
 			busy = false;
@@ -179,10 +180,8 @@
 		body.set('reason', 'Your player data is being edited');
 		const res = await fetch(`${base}?/kick`, { method: 'POST', body, headers: { accept: 'application/json', 'x-sveltekit-action': 'true' } });
 		const outcome = deserialize(await res.text());
-		result =
-			outcome.type === 'success'
-				? { ok: true, message: `Kicked ${data.name}. Editing unlocks once the server has saved them.` }
-				: { ok: false, message: 'Could not kick them over RCON.' };
+		if (outcome.type === 'success') report(true, `Kicked ${data.name}. Editing unlocks once the server has saved them.`);
+		else report(false, 'Could not kick them over RCON.');
 		await refreshAll();
 	}
 	/** The slots opened, outermost first: a backpack, then a slot inside it. */
@@ -448,8 +447,6 @@
 		{#if data.online && data.name}<button type="button" onclick={kick} disabled={busy}>Kick to edit</button>{/if}
 	</div>
 {/if}
-<!-- Keyed: the same message twice in a row would otherwise stay dismissed. -->
-{#key result}<Flash form={result} />{/key}
 
 {#if view === 'player'}
 <form class="panel" onsubmit={saveFields}>
@@ -569,7 +566,6 @@
 
 		<aside class="item-panel" aria-label="Item">
 			{#if current}
-		{#key result}<Flash form={result} />{/key}
 			<form class="item-editor" onsubmit={saveItem}>
 				<button type="button" class="dialog-close button-quiet" aria-label="Close" onclick={() => (stack = [])}>×</button>
 				<nav class="crumbs small">

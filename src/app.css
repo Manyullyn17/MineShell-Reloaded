@@ -433,6 +433,38 @@ tbody tr:last-child td {
 	}
 }
 
+.progress {
+	height: 4px;
+	background: var(--bg-sunken);
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.progress > span {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+	transition: width 0.3s ease-out;
+}
+
+/* Total not known yet: a short bar sweeping across. */
+.progress > span.indeterminate {
+	animation: sweep 1.6s ease-in-out infinite;
+	transform-origin: left;
+}
+
+@keyframes sweep {
+	0% {
+		transform: scaleX(0.15) translateX(0);
+	}
+	50% {
+		transform: scaleX(0.4) translateX(150%);
+	}
+	100% {
+		transform: scaleX(0.15) translateX(560%);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
