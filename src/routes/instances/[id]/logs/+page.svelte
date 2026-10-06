@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
-	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data } = $props();
 
@@ -21,14 +21,14 @@
 
 	/** How a run ended, from systemd's lines. 143 is Java answering SIGTERM: a normal stop. */
 	function outcome(run: { endedAt: number | null; exit: string | null; failure: string | null }, newest: boolean) {
-		if (!run.endedAt) return { label: newest && data.running ? 'running now' : 'no end recorded', tone: '' };
+		if (!run.endedAt) return newest && data.running ? { label: 'running now', tone: 'running' } : { label: 'no end recorded', tone: '' };
 		if (run.failure && !/status=143\b/.test(run.exit ?? '')) return { label: run.exit ?? run.failure, tone: 'bad' };
 		return { label: 'stopped', tone: '' };
 	}
 </script>
 
 <div class="logs">
-	<section class="panel list">
+	<section class="list">
 		<div class="switcher">
 			<button class:active={list === 'runs'} onclick={() => (list = 'runs')}>Runs ({data.runs.length})</button>
 			<button class:active={list === 'files'} onclick={() => (list = 'files')}>Files ({data.files.length})</button>
@@ -39,8 +39,13 @@
 					{@const end = outcome(run, i === 0)}
 					<li>
 						<a href="{base}?run={run.invocation}" class:current={data.view?.key === run.invocation}>
-							<span>{formatDateTime(run.startedAt)}</span>
-							<span class="small" class:bad={end.tone === 'bad'}>{end.label}{run.endedAt ? ` after ${duration(run)}` : ''}</span>
+							<span class="dot" class:running={end.tone === 'running'} class:failed={end.tone === 'bad'}></span>
+							<span class="item">
+								<span>{formatDateTime(run.startedAt)}</span>
+								<span class="sub" class:bad={end.tone === 'bad'} class:good={end.tone === 'running'}
+									>{end.label}{run.endedAt ? ` after ${duration(run)}` : ''}</span
+								>
+							</span>
 						</a>
 					</li>
 				{:else}
@@ -50,8 +55,11 @@
 				{#each data.files as file (file.path)}
 					<li>
 						<a href="{base}?file={encodeURIComponent(file.path)}" class:current={data.view?.key === file.path}>
-							<span class="mono small">{file.path}</span>
-							<span class="small faint">{formatDateTime(file.modifiedAt)} · {formatBytes(file.size)}</span>
+							<span class="dot" class:failed={file.path.startsWith('crash-reports/')}></span>
+							<span class="item">
+								<span class="mono path">{file.path}</span>
+								<span class="sub faint">{formatDateTime(file.modifiedAt)} · {formatBytes(file.size)}</span>
+							</span>
 						</a>
 					</li>
 				{:else}
@@ -61,8 +69,16 @@
 		</ul>
 	</section>
 
-	<section class="panel viewer">
+	<section class="viewer">
 		{#if data.view}
+			{@const run = data.runs.find((r) => r.invocation === data.view?.key)}
+			{@const file = data.files.find((f) => f.path === data.view?.key)}
+			<div class="viewer-head">
+				<h2 class:mono={!!file}>{run ? formatDateTime(run.startedAt) : (file?.path ?? '')}</h2>
+				<span class="faint small">
+					{#if run}started {formatRelative(run.startedAt)}{:else if file}{formatBytes(file.size)}{/if}
+				</span>
+			</div>
 			{#if data.diagnosis}
 				{#await data.diagnosis}
 					<p class="muted small">Working out what went wrong.</p>
@@ -91,13 +107,9 @@
 <style>
 	.logs {
 		display: grid;
-		grid-template-columns: minmax(16rem, 22rem) 1fr;
-		gap: var(--space-4);
+		grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
+		gap: 1.25rem;
 		align-items: start;
-	}
-
-	.logs > .panel {
-		margin: 0;
 	}
 
 	@media (max-width: 800px) {
@@ -106,51 +118,111 @@
 		}
 	}
 
+	.switcher {
+		display: flex;
+		gap: 2px;
+		padding: 3px;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+	}
+
+	.switcher button {
+		flex: 1;
+		border: 0;
+		background: transparent;
+		color: var(--text-muted);
+		font-weight: 400;
+		padding: 0.3rem 0;
+	}
+
+	.switcher button.active {
+		background: var(--panel-raised);
+		color: var(--text);
+	}
+
 	.list ul {
 		list-style: none;
 		padding: 0;
-		margin: var(--space-3) 0 0;
+		margin: 0.6rem 0 0;
 		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 	}
 
 	.list a {
 		display: flex;
-		flex-direction: column;
-		padding: var(--space-2);
+		align-items: flex-start;
+		gap: 0.6rem;
+		padding: 0.55rem 0.6rem;
 		border-radius: var(--radius);
 		color: inherit;
 		text-decoration: none;
+		font-size: 0.9rem;
+	}
+
+	.list a .dot {
+		margin-top: 0.4rem;
 	}
 
 	.list a:hover,
 	.list a.current {
-		background: var(--bg-sunken);
+		background: var(--panel);
+	}
+
+	.item {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.path {
+		overflow-wrap: anywhere;
+	}
+
+	.sub {
+		font-size: 0.8rem;
+		color: var(--text-muted);
 	}
 
 	.bad {
 		color: var(--error);
 	}
 
+	.good {
+		color: var(--accent-hover);
+	}
+
 	.viewer {
 		min-width: 0;
+	}
+
+	.viewer-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin-bottom: 0.75rem;
+	}
+
+	.viewer-head h2 {
+		font-size: 1.05rem;
+		overflow-wrap: anywhere;
+	}
+
+	.viewer-head h2.mono {
+		font-size: 0.95rem;
 	}
 
 	.viewer pre {
 		background: var(--bg-sunken);
 		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		padding: var(--space-3);
+		border-radius: var(--radius-lg);
+		padding: 0.75rem 0.9rem;
 		overflow: auto;
 		font-size: 0.8rem;
+		line-height: 1.6;
 		margin: 0;
-	}
-
-	.switcher {
-		display: flex;
-		gap: var(--space-1);
-	}
-
-	.switcher button.active {
-		background: var(--bg-sunken);
 	}
 </style>

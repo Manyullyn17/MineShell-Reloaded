@@ -14,8 +14,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
 	const [runs, files] = await Promise.all([listRuns(instance.id, instance.createdAt), listLogFiles(instance.path)]);
 
-	const runId = url.searchParams.get('run');
 	const filePath = url.searchParams.get('file');
+	// With nothing picked, the newest run is shown (one run reads by invocation id, which is quick).
+	const runId = url.searchParams.get('run') ?? (filePath ? null : (runs[0]?.invocation ?? null));
 	let view: { kind: 'run' | 'file'; key: string; text: string; truncated: boolean; failed: boolean } | null = null;
 
 	if (runId) {
