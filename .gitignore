@@ -1,6 +1,7 @@
 node_modules/
 build/
 .svelte-kit/
+.svelte-kit-*/
 .env
 .env.local
 data/

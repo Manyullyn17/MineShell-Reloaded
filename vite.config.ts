@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -22,11 +23,27 @@ if (testing) {
   process.env.MINESHELL_AUTH = 'off';
 }
 
+// SvelteKit writes the env a process started with into its output folder
+// (generated/dev/env/config.js), and every dev server watching that folder
+// reloads with it. A shared folder let one process switch another onto its
+// data: `npm test` moved a running `npm run dev` to the test's temporary
+// directory, a throwaway dev server moved it to /tmp/ms-test. So a test run,
+// and a dev server given its own MINESHELL_DATA on the command line, each get
+// a folder of their own. A plain `npm run dev` (data from .env) keeps
+// .svelte-kit.
+const explicitData = !testing && process.env.MINESHELL_DATA;
+const outDir = testing
+  ? '.svelte-kit-test'
+  : explicitData
+    ? `.svelte-kit-${createHash('sha256').update(path.resolve(explicitData)).digest('hex').slice(0, 8)}`
+    : '.svelte-kit';
+
 export default defineConfig({
   plugins: [
     // SvelteKit 3 takes its configuration here; svelte.config.js is no longer read.
     sveltekit({
       preprocess: vitePreprocess(),
+      outDir,
       adapter: adapter({ out: 'build' }),
       // SvelteKit loads .env through its own setting, not Vite's envDir. Under
       // Vitest it reads tests/env (no .env there), so tests never see the real

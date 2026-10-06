@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -18,6 +19,15 @@ describe('test isolation', () => {
 
 	it('writes systemd unit files inside the temporary directory', () => {
 		expect(path.resolve(systemdUnitDir()).startsWith(path.resolve(DATA_DIR))).toBe(true);
+	});
+
+	// SvelteKit writes the env it was started with into its output folder, and
+	// every dev server watching that folder reloads with it. Sharing the folder
+	// switched a running `npm run dev` onto this run's temporary data.
+	it('keeps its generated env out of the dev server folder', () => {
+		const devEnv = path.resolve('.svelte-kit/generated/dev/env/config.js');
+		const written = fs.existsSync(devEnv) ? fs.readFileSync(devEnv, 'utf8') : '';
+		expect(written).not.toContain(DATA_DIR);
 	});
 
 	it('cannot use the network', async () => {

@@ -32,6 +32,9 @@ Vitest:
   (`envDir` and the `sveltekit()` `env.dir` option, both in `vite.config.ts`).
 - `tests/setup.ts` checks the data and unit directories MineShell actually resolved before any
   test file runs and aborts the whole run if they are not inside that temporary directory.
+- SvelteKit's output goes to `.svelte-kit-test`, not `.svelte-kit`: SvelteKit writes the env
+  it started with into that folder, and a running `npm run dev` reloads it, which used to
+  switch the dev server onto the test run's data.
 - `tests/global-setup.ts` deletes the temporary directory afterwards.
 
 Test files run one after another (`fileParallelism: false`) because they share that one
@@ -150,6 +153,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 
 | Bug | Test |
 |---|---|
+| `npm test` switched a running dev server onto the test's data | `config.test.ts` |
 | Rollback deleted originals not yet moved aside | `instances.test.ts` |
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
 | Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
