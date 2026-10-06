@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
@@ -14,6 +15,16 @@
 
 	type Mode = 'browse' | 'upload' | 'loader';
 	let mode = $state<Mode>('browse');
+	/** 1 start from, 2 choose, 3 configure. Steps stay mounted, so going back keeps every field. */
+	let step = $state(1);
+	let showFilters = $state(false);
+	let archiveName = $state('');
+	const ACTIONS: Record<Mode, string> = { browse: '?/install', upload: '?/upload', loader: '?/loader' };
+	const STARTS: { id: Mode; title: string; text: string }[] = [
+		{ id: 'browse', title: 'Modpack', text: 'Search Modrinth, CurseForge or Feed the Beast and install a server version.' },
+		{ id: 'upload', title: 'Upload a pack file', text: 'A CurseForge server zip or .mrpack you already have.' },
+		{ id: 'loader', title: 'Mod loader', text: 'A bare Vanilla, Fabric, Quilt, Forge, NeoForge or Cleanroom server.' }
+	];
 	let submitting = $state(false);
 	// Enhanced, so a refusal (a missing Java above all) keeps the picked pack,
 	// the chosen file and every field instead of reloading the page.
@@ -112,20 +123,10 @@
 	};
 	let hits = $state<Hit[]>([]);
 	let selected = $state<Hit | null>(null);
-	let installEl = $state<HTMLElement | null>(null);
-	let showDetails = $state(false);
-	let detailsTab = $state<'description' | 'changelog'>('description');
-
-	function openDetails(tab: 'description' | 'changelog') {
-		detailsTab = tab;
-		showDetails = true;
-	}
 
 	// Switching source left the previous provider's results on screen, which
 	// looked like the new source had returned them. Minecraft version isn't
 	// source-specific, so that part of the selection survives the reset.
-	// This also runs once on mount (lastSource starts equal to source), which
-	// is what gets a first page of results showing without pressing Search.
 	// svelte-ignore state_referenced_locally
 	let lastSource = $state(source);
 	$effect(() => {
@@ -290,6 +291,22 @@
 		}
 	}
 
+	const canContinue = $derived(
+		step === 1 ||
+			(mode === 'browse' && !!selected && !!versionId) ||
+			(mode === 'upload' && !!archiveName) ||
+			(mode === 'loader' && !!minecraftVersion)
+	);
+	const pickedVersion = $derived(packVersions.find((v) => v.id === versionId));
+	const loaderLabel = $derived(data.loaders.find((l) => l.id === modloader)?.label ?? modloader);
+	const downloads = (n: number | null) =>
+		n === null ? '' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M downloads` : n >= 1e3 ? `${Math.round(n / 1e3)}k downloads` : `${n} downloads`;
+
+	// Choosing a pack opens on popular ones rather than an empty list.
+	$effect(() => {
+		if (step === 2 && mode === 'browse' && !hits.length && !untrack(() => searching || searchError)) void untrack(search);
+	});
+
 	const sources = [
 		{ id: 'modrinth', label: 'Modrinth' },
 		{ id: 'curseforge', label: 'CurseForge' },
@@ -300,360 +317,360 @@
 <svelte:head><title>Add a server - MineShell</title></svelte:head>
 
 <header class="page-head">
-	<h1>Add a server</h1>
-	<p class="muted">
-		Installing a large pack pulls a few hundred megabytes and takes a while. You can leave the page
-		once it starts.
-	</p>
+	<div>
+		<h1>Add a server</h1>
+		<p class="muted">Installs in the background; you can leave the page once it starts. Watch progress under Activity.</p>
+	</div>
+	<ol class="steps" aria-label="Steps">
+		{#each ['Start from', 'Choose', 'Configure'] as label, i (label)}
+			{#if i}<li class="line" aria-hidden="true"></li>{/if}
+			<li class:done={step > i + 1} class:current={step === i + 1}>
+				<span class="num">{step > i + 1 ? '✓' : i + 1}</span>{label}
+			</li>
+		{/each}
+	</ol>
 </header>
 
 <Flash {form} />
 
-<div class="tabs" role="tablist">
-	<button role="tab" aria-selected={mode === 'browse'} onclick={() => (mode = 'browse')}>
-		Browse modpacks
-	</button>
-	<button role="tab" aria-selected={mode === 'upload'} onclick={() => (mode = 'upload')}>
-		Upload a pack file
-	</button>
-	<button role="tab" aria-selected={mode === 'loader'} onclick={() => (mode = 'loader')}>
-		Mod loader only
-	</button>
-</div>
-
-{#snippet memoryFields()}
-	<div class="grid-2">
-		<div class="field">
-			<label for="memoryMaxMb">Maximum memory (MB)</label>
-			<input
-				id="memoryMaxMb"
-				name="memoryMaxMb"
-				type="number"
-				min="512"
-				step="256"
-				bind:value={memoryMaxMb}
-				oninput={() => (memoryTouched = true)}
-			/>
-			<p class="hint">Large modpacks want 6144 or more. <br>Leave room for the rest of the machine.</p>
-		</div>
-		<div class="field">
-			<label for="memoryMinMb">Starting memory (MB)</label>
-			<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={memoryMinMb} />
-		</div>
+{#snippet memoryRows()}
+	<div class="field">
+		<label for="memoryMaxMb">Maximum memory (MB)</label>
+		<input
+			id="memoryMaxMb"
+			name="memoryMaxMb"
+			type="number"
+			min="512"
+			step="256"
+			bind:value={memoryMaxMb}
+			oninput={() => (memoryTouched = true)}
+		/>
+		<p class="hint">Large modpacks want 6144 or more. Leave room for the rest of the machine.</p>
+	</div>
+	<div class="field">
+		<label for="memoryMinMb">Starting memory (MB)</label>
+		<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={memoryMinMb} />
 	</div>
 {/snippet}
 
-{#if mode === 'browse'}
-	<div class="browse-layout">
-		<FilterSidebar
-			groups={combinedFilterGroups}
-			bind:selected={filterSelections}
-			loading={loadingFilters}
-			limitNote={filterLimitNote}
-		/>
-
-	<section class="panel browse-panel">
-		<div class="search-row">
-			<div class="field source">
-				<label for="source">Source</label>
-				<select id="source" bind:value={source}>
-					{#each sources as s (s.id)}
-						<option value={s.id}>{s.label}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="field grow">
-				<label for="term">Search</label>
-				<input
-					id="term"
-					type="search"
-					placeholder="Pack name, or leave blank to browse popular packs"
-					bind:value={term}
-					onkeydown={(e) => e.key === 'Enter' && search()}
-				/>
-			</div>
-			<button class="button-primary find" onclick={search} disabled={searching}>
-				{searching ? 'Searching' : 'Search'}
+<!-- ============================================================ step 1 -->
+<section class="step" hidden={step !== 1}>
+	<h2>What do you want to start from?</h2>
+	<div class="starts" role="radiogroup" aria-label="Start from">
+		{#each STARTS as start (start.id)}
+			<button
+				type="button"
+				class="start"
+				role="radio"
+				aria-checked={mode === start.id}
+				onclick={() => (mode = start.id)}
+				ondblclick={() => {
+					mode = start.id;
+					step = 2;
+				}}
+			>
+				<span class="start-head"><strong>{start.title}</strong><span class="radio" aria-hidden="true"></span></span>
+				<span class="small muted">{start.text}</span>
 			</button>
-		</div>
+		{/each}
+	</div>
+</section>
 
-		{#if searchError}
-			<p class="notice warning">{searchError}</p>
-		{/if}
+<form method="POST" action={ACTIONS[mode]} enctype="multipart/form-data" use:enhance={submit} class="new-form">
+	<!-- ========================================================== step 2 -->
+	<section class="step" hidden={step !== 2}>
+		{#if mode === 'browse'}
+			<input type="hidden" name="source" value={source} />
+			<input type="hidden" name="projectId" value={selected?.id ?? ''} />
+			<input type="hidden" name="versionId" value={versionId} />
+			<div class="browse-bar">
+				<div class="segmented" role="group" aria-label="Source">
+					{#each sources as s (s.id)}
+						<button type="button" aria-pressed={source === s.id} onclick={() => (source = s.id)}>{s.label}</button>
+					{/each}
+				</div>
+				<span class="search">
+					<span aria-hidden="true">⌕</span>
+					<input
+						type="search"
+						placeholder="Search modpacks, or leave blank for popular ones"
+						aria-label="Search modpacks"
+						bind:value={term}
+						onkeydown={(e) => {
+							if (e.key === 'Enter') {
+								e.preventDefault();
+								void search();
+							}
+						}}
+					/>
+				</span>
+				<button type="button" onclick={search} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
+				<button type="button" class="button-quiet" aria-expanded={showFilters} onclick={() => (showFilters = !showFilters)}>
+					{showFilters ? 'Hide filters' : 'Filters'}
+				</button>
+			</div>
 
-		{#if hits.length || selected}
-			<div class="browse-results">
-				{#if hits.length}
-					<ul
-					class="hits"
-					class:compact={!!selected}
-					use:fitToViewport={{ bottomMarginPx: 65, reserveElement: installEl }}
-				>
-						{#each hits as hit (hit.id)}
-							<li>
-								<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
-									{#if hit.iconUrl}
-										<img src={hit.iconUrl} alt="" width="40" height="40" loading="lazy" />
-									{:else}
-										<span class="icon-fallback" aria-hidden="true"></span>
-									{/if}
-									<span class="hit-body">
-										<span class="hit-title">
-											<strong>{hit.name}</strong>
-											{#if hit.author}<span class="faint small">by {hit.author}</span>{/if}
-										</span>
-										<span class="small muted summary">{hit.summary ?? ''}</span>
-										{#if hit.loaders?.length || hit.gameVersions?.length}
-											<span class="hit-meta">
-												{#each [...new Set(hit.loaders ?? [])].slice(0, 2) as loader (loader)}
-													<span class="tag accent">{loader}</span>
-												{/each}
-												{#if hit.gameVersions?.length}
-													<span class="tag">{summariseVersions(hit.gameVersions)}</span>
-												{/if}
-											</span>
-										{/if}
-									</span>
-								</button>
-							</li>
-						{/each}
-					</ul>
+			{#if searchError}<p class="notice warning">{searchError}</p>{/if}
+
+			<div class="browse" class:with-filters={showFilters}>
+				{#if showFilters}
+					<FilterSidebar groups={combinedFilterGroups} bind:selected={filterSelections} loading={loadingFilters} limitNote={filterLimitNote} />
 				{/if}
+				<ul class="hits" use:fitToViewport={{ bottomMarginPx: 90 }}>
+					{#each hits as hit (hit.id)}
+						<li>
+							<button type="button" class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
+								{#if hit.iconUrl}
+									<img src={hit.iconUrl} alt="" width="44" height="44" loading="lazy" />
+								{:else}
+									<span class="icon-fallback" aria-hidden="true"></span>
+								{/if}
+								<span class="hit-body">
+									<span class="hit-title"><strong>{hit.name}</strong></span>
+									{#if hit.loaders?.length || hit.gameVersions?.length}
+										<span class="hit-meta">
+											{#if hit.gameVersions?.length}<span class="tag">{summariseVersions(hit.gameVersions)}</span>{/if}
+											{#each [...new Set(hit.loaders ?? [])].slice(0, 2) as loader (loader)}
+												<span class="tag accent">{loader}</span>
+											{/each}
+										</span>
+									{/if}
+									<span class="small muted summary">{hit.summary ?? ''}</span>
+									<span class="faint small">{[hit.author ? `by ${hit.author}` : '', downloads(hit.downloads)].filter(Boolean).join(' · ')}</span>
+								</span>
+							</button>
+						</li>
+					{:else}
+						<li class="faint small hits-empty">{searching ? 'Searching.' : 'No packs to show yet.'}</li>
+					{/each}
+				</ul>
 
 				{#if selected}
-					<form
-						method="POST"
-						action="?/install"
-						class="install"
-						bind:this={installEl}
-						use:enhance={submit}
-					>
-						<input type="hidden" name="source" value={source} />
-						<input type="hidden" name="projectId" value={selected.id} />
-
-						<h2 class="selected-name">{selected.name}</h2>
-
-						<div class="name-row">
-							<div class="field name-field">
-								<label for="pack-name">Server name</label>
-								<input
-									id="pack-name"
-									name="name"
-									bind:value={name}
-									oninput={() => (nameTouched = true)}
-									required
-								/>
-							</div>
-							<div class="detail-buttons">
-								<button type="button" onclick={() => openDetails('description')}>Description</button>
-								<button type="button" onclick={() => openDetails('changelog')}>Changelog</button>
-							</div>
-						</div>
-
-						<div class="field version-field">
-							<label for="versionId">Pack version</label>
-							<select
-								id="versionId"
-								name="versionId"
-								bind:value={versionId}
-								required
-								disabled={loadingVersions || packVersions.length === 0}
-							>
+					<div class="detail" use:fitToViewport={{ bottomMarginPx: 90 }}>
+						<DetailsDialog
+							inline
+							{source}
+							kind="modpack"
+							projectId={selected.id}
+							{versionId}
+							versionLabel={pickedVersion?.versionNumber ?? ''}
+							iconUrl={selected.iconUrl}
+							meta={downloads(selected.downloads)}
+							versionCount={loadingVersions ? null : packVersions.length}
+						>
+							{#snippet versionsTab({ showChangelog }: { showChangelog: () => void })}
 								{#if loadingVersions}
-									<option value="">Loading.</option>
+									<p class="muted">Loading versions.</p>
 								{:else if packVersions.length === 0}
-									<option value="">No versions were returned for this pack.</option>
+									<p class="muted">No versions were returned for this pack.</p>
 								{:else}
-									{#each packVersions as v (v.id)}
-										<option value={v.id}>
-											{v.versionNumber}
-											{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}
-											{v.channel !== 'release' ? ` (${v.channel})` : ''}
-										</option>
+									<ul class="version-list plain">
+										{#each packVersions as v (v.id)}
+											<li>
+												<label class="version" class:picked={versionId === v.id}>
+													<input type="radio" value={v.id} bind:group={versionId} />
+													<span class="version-name">
+														<span class="mono">{v.versionNumber}</span>
+														{#if v.gameVersions.length}<span class="faint small">MC {v.gameVersions.join(', ')}</span>{/if}
+														{#if v.channel !== 'release'}<span class="tag warn">{v.channel}</span>{/if}
+													</span>
+													<button
+														type="button"
+														class="button-quiet small"
+														onclick={() => {
+															versionId = v.id;
+															showChangelog();
+														}}>Changelog</button
+													>
+												</label>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							{/snippet}
+							{#snippet footer()}
+								<div class="pick-row">
+									<span class="small">
+										{#if pickedVersion}
+											Selected <span class="mono">{pickedVersion.versionNumber}</span>
+											<span class="faint">
+												{[pickedVersion.gameVersions.join(', '), [...new Set(pickedVersion.loaders)].join(', ')].filter(Boolean).join(' · ')}
+											</span>
+										{:else}
+											{loadingVersions ? 'Loading versions.' : 'No version picked.'}
+										{/if}
+									</span>
+									<button type="button" class="button-primary" disabled={!versionId} onclick={() => (step = 3)}>Use this version</button>
+								</div>
+							{/snippet}
+						</DetailsDialog>
+					</div>
+				{:else}
+					<div class="detail empty"><p>Pick a pack to see its description, versions and changelog.</p></div>
+				{/if}
+			</div>
+		{:else if mode === 'upload'}
+			<h2>Pack file</h2>
+			<p class="muted">
+				MineShell reads Modrinth <code>.mrpack</code> files and CurseForge server pack zips. Use this when a pack is not
+				listed, or for a custom export.
+			</p>
+			<label class="drop">
+				<input
+					name="archive"
+					type="file"
+					accept=".mrpack,.zip"
+					class="visually-hidden"
+					onchange={(e) => (archiveName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '')}
+				/>
+				<strong>{archiveName || 'Choose a .mrpack or .zip'}</strong>
+				<span class="small muted">{archiveName ? 'Click to pick another' : 'Click to browse'}</span>
+			</label>
+		{:else}
+			<h2>Mod loader</h2>
+			<div class="loader-grid" role="radiogroup" aria-label="Mod loader">
+				{#each data.loaders as loader (loader.id)}
+					<label class="loader-option" class:selected={modloader === loader.id}>
+						<input type="radio" name="modloader" value={loader.id} bind:group={modloader} />
+						<strong>{loader.label}</strong>
+						<span class="small muted">{loader.blurb}</span>
+					</label>
+				{/each}
+			</div>
+			<div class="grid-2 versions-row">
+				<div class="field">
+					<label for="minecraftVersion">Minecraft version</label>
+					{#if gameVersionChoices.length}
+						<select id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} onchange={() => (versionTouched = true)} required>
+							{#each gameVersionChoices as version (version)}
+								<option value={version}>{version}</option>
+							{/each}
+						</select>
+					{:else}
+						<input id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} placeholder="1.21.1" required />
+						<p class="hint">Mojang's version list was unreachable, so type the version.</p>
+					{/if}
+				</div>
+				{#if modloader !== 'vanilla'}
+					<div class="field">
+						<label for="modloaderVersion">Loader version</label>
+						{#if loadingLoaderVersions || loaderVersions.length}
+							<select id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} disabled={loadingLoaderVersions}>
+								{#if loadingLoaderVersions}
+									<option value="">Loading.</option>
+								{:else}
+									<option value="">Latest ({loaderVersions[0]})</option>
+									{#each loaderVersions.slice(0, 40) as version (version)}
+										<option value={version}>{version}</option>
 									{/each}
 								{/if}
 							</select>
-						</div>
-
-						<PackModList {preview} loading={previewLoading} error={previewError} />
-
-						{#if cleanroomEligible}
-							<CleanroomOption {javaMajors} idPrefix="pack-cleanroom" />
+						{:else}
+							<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
 						{/if}
-
-						{@render memoryFields()}
-
-						<JavaPrompt {form} action="install" />
-						<SplitButton
-							label="Install pack"
-							busyLabel="Starting install"
-							busy={submitting}
-							disabled={!versionId}
-							altLabel="Install & start"
-							altNote="Starts it once installed, accepting the Minecraft EULA"
-						/>
-					</form>
+						{#if loaderVersionError}<p class="hint">{loaderVersionError}</p>{/if}
+						{#if modloader === 'cleanroom' && !loadingLoaderVersions && usesCleanMix(modloaderVersion || null)}
+							<p class="hint warn-text">{CLEANMIX_WARNING}</p>
+						{/if}
+					</div>
 				{/if}
 			</div>
 		{/if}
 	</section>
 
-	</div>
-
-	{#if showDetails && selected}
-		<DetailsDialog
-			{source}
-			kind="modpack"
-			projectId={selected.id}
-			{versionId}
-			versionLabel={packVersions.find((v) => v.id === versionId)?.versionNumber ?? ''}
-			defaultTab={detailsTab}
-			onClose={() => (showDetails = false)}
-		/>
-	{/if}
-{/if}
-
-{#if mode === 'upload'}
-	<form
-		class="panel"
-		method="POST"
-		action="?/upload"
-		enctype="multipart/form-data"
-		use:enhance={submit}
-	>
-		<p class="muted">
-			MineShell reads Modrinth <code>.mrpack</code> files and CurseForge server pack zips. Use this
-			when a pack is not listed, or when you have a custom export.
-		</p>
-
-		<div class="field">
-			<label for="archive">Pack file</label>
-			<input id="archive" name="archive" type="file" accept=".mrpack,.zip" required />
-		</div>
-
-		<div class="field">
-			<label for="upload-name">Server name</label>
-			<input id="upload-name" name="name" bind:value={name} placeholder="Taken from the pack if left blank" />
-		</div>
-
-		<CleanroomOption
-			{javaMajors}
-			idPrefix="upload-cleanroom"
-			label="If this is a Forge 1.12.2 pack, run it on Cleanroom instead"
-		/>
-
-		{@render memoryFields()}
-
-		<JavaPrompt {form} action="upload" />
-		<SplitButton
-			label="Install pack"
-			busyLabel="Uploading"
-			busy={submitting}
-			altLabel="Install & start"
-			altNote="Starts it once installed, accepting the Minecraft EULA"
-		/>
-	</form>
-{/if}
-
-{#if mode === 'loader'}
-	<form class="panel" method="POST" action="?/loader" use:enhance={submit}>
-		<div class="field">
-			<label for="loader-name">Server name</label>
-			<input id="loader-name" name="name" bind:value={name} required placeholder="Survival world" />
-		</div>
-
-		<div class="field">
-			<span class="label-text">Mod loader</span>
-			<div class="loader-grid">
-				{#each data.loaders as loader (loader.id)}
-					<label class="loader-option" class:selected={modloader === loader.id}>
-						<input type="radio" name="modloader" value={loader.id} bind:group={modloader} />
-						<span>
-							<strong>{loader.label}</strong>
-							<span class="small muted">{loader.blurb}</span>
-						</span>
-					</label>
-				{/each}
-			</div>
-		</div>
-
-		<div class="grid-2">
-			<div class="field">
-				<label for="minecraftVersion">Minecraft version</label>
-				{#if gameVersionChoices.length}
-					<select
-						id="minecraftVersion"
-						name="minecraftVersion"
-						bind:value={minecraftVersion}
-						onchange={() => (versionTouched = true)}
-						required
-					>
-						{#each gameVersionChoices as version (version)}
-							<option value={version}>{version}</option>
-						{/each}
-					</select>
+	<!-- ========================================================== step 3 -->
+	<section class="step configure" hidden={step !== 3}>
+		<div class="picked">
+			{#if mode === 'browse' && selected?.iconUrl}
+				<img src={selected.iconUrl} alt="" width="40" height="40" />
+			{:else}
+				<span class="icon-fallback" aria-hidden="true"></span>
+			{/if}
+			<div class="grow">
+				{#if mode === 'browse'}
+					<strong>{selected?.name ?? ''} {pickedVersion?.versionNumber ?? ''}</strong>
+					<div class="faint small">
+						{[pickedVersion?.gameVersions.join(', '), [...new Set(pickedVersion?.loaders ?? [])].join(', ')].filter(Boolean).join(' · ')}
+					</div>
+				{:else if mode === 'upload'}
+					<strong class="mono">{archiveName}</strong>
+					<div class="faint small">Uploaded when you create the server</div>
 				{:else}
-					<input id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} placeholder="1.21.1" required />
-					<p class="hint">Mojang's version list was unreachable, so type the version.</p>
+					<strong>{loaderLabel} {minecraftVersion}</strong>
+					<div class="faint small">
+						{modloader === 'vanilla' ? 'Vanilla server' : `Loader ${modloaderVersion || 'latest'}; add mods yourself afterwards`}
+					</div>
 				{/if}
 			</div>
+			<button type="button" class="button-quiet" onclick={() => (step = 2)}>Change</button>
+		</div>
 
-			{#if modloader !== 'vanilla'}
+		<div class="rows">
+			<div class="field">
+				<label for="server-name">Server name</label>
+				<input
+					id="server-name"
+					name="name"
+					bind:value={name}
+					oninput={() => (nameTouched = true)}
+					required={mode === 'loader'}
+					placeholder={mode === 'loader' ? 'Survival world' : 'Taken from the pack if left blank'}
+				/>
+				<p class="hint">The folder is named after it and cannot change later.</p>
+			</div>
+			{@render memoryRows()}
+			{#if mode === 'loader' && data.javaRuntimes.length > 1}
 				<div class="field">
-					<label for="modloaderVersion">Loader version</label>
-					{#if loadingLoaderVersions || loaderVersions.length}
-						<select
-							id="modloaderVersion"
-							name="modloaderVersion"
-							bind:value={modloaderVersion}
-							disabled={loadingLoaderVersions}
-						>
-							{#if loadingLoaderVersions}
-								<option value="">Loading.</option>
-							{:else}
-								<option value="">Latest ({loaderVersions[0]})</option>
-								{#each loaderVersions.slice(0, 40) as version (version)}
-									<option value={version}>{version}</option>
-								{/each}
-							{/if}
-						</select>
-					{:else}
-						<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
-					{/if}
-					{#if loaderVersionError}
-						<p class="hint">{loaderVersionError}</p>
-					{/if}
-					{#if modloader === 'cleanroom' && !loadingLoaderVersions && usesCleanMix(modloaderVersion || null)}
-						<p class="hint warn-text">{CLEANMIX_WARNING}</p>
-					{/if}
+					<label for="javaPath">Java</label>
+					<select id="javaPath" name="javaPath">
+						<option value="">Match automatically</option>
+						{#each data.javaRuntimes as java (java.path)}
+							<option value={java.path}>Java {java.majorVersion} - {java.path}</option>
+						{/each}
+					</select>
+					<p class="hint">Matched to Minecraft {minecraftVersion} unless you pick one.</p>
 				</div>
 			{/if}
 		</div>
 
-		{@render memoryFields()}
-
-		{#if data.javaRuntimes.length > 1}
-			<div class="field">
-				<label for="javaPath">Java runtime</label>
-				<select id="javaPath" name="javaPath">
-					<option value="">Match automatically to the Minecraft version</option>
-					{#each data.javaRuntimes as java (java.path)}
-						<option value={java.path}>Java {java.majorVersion} - {java.path}</option>
-					{/each}
-				</select>
+		{#if mode === 'browse'}
+			<div class="extra"><PackModList {preview} loading={previewLoading} error={previewError} /></div>
+			{#if cleanroomEligible}
+				<div class="extra"><CleanroomOption {javaMajors} idPrefix="pack-cleanroom" /></div>
+			{/if}
+		{:else if mode === 'upload'}
+			<div class="extra">
+				<CleanroomOption {javaMajors} idPrefix="upload-cleanroom" label="If this is a Forge 1.12.2 pack, run it on Cleanroom instead" />
 			</div>
 		{/if}
 
-		<JavaPrompt {form} action="loader" />
-		<SplitButton
-			label="Create server"
-			busyLabel="Creating"
-			busy={submitting}
-			altLabel="Create & start"
-			altNote="Starts it once installed, accepting the Minecraft EULA"
-		/>
-	</form>
-{/if}
+		<JavaPrompt {form} action={mode === 'browse' ? 'install' : mode} />
+		<p class="faint small">
+			Ports are picked automatically. Game settings, restarts and JVM flags come from
+			<a href="/settings/defaults">New server defaults</a>; change them afterwards in the server's Settings.
+		</p>
+	</section>
+
+	<div class="bottombar">
+		{#if step > 1}
+			<button type="button" class="button-quiet" onclick={() => (step -= 1)}>Back</button>
+		{:else}
+			<span></span>
+		{/if}
+		{#if step < 3}
+			<button type="button" class="button-primary" disabled={!canContinue} onclick={() => (step += 1)}>Continue</button>
+		{:else}
+			<SplitButton
+				label="Create server"
+				busyLabel={mode === 'upload' ? 'Uploading' : 'Creating'}
+				busy={submitting}
+				disabled={mode === 'browse' ? !versionId : mode === 'upload' ? !archiveName : !minecraftVersion}
+				altLabel="Create & start"
+				altNote="Starts it once installed, accepting the Minecraft EULA"
+			/>
+		{/if}
+	</div>
+</form>
 
 <style>
 	.warn-text {
@@ -661,141 +678,241 @@
 	}
 
 	.page-head {
-		margin-bottom: var(--space-5);
-	}
-	.page-head p {
-		margin: var(--space-2) 0 0;
-	}
-
-	.tabs {
 		display: flex;
-		gap: var(--space-1);
-		margin-bottom: var(--space-4);
-		border-bottom: 1px solid var(--line);
-		flex-wrap: wrap;
-	}
-
-	.tabs button {
-		background: none;
-		border: 0;
-		border-bottom: 2px solid transparent;
-		border-radius: 0;
-		color: var(--text-muted);
-		padding: var(--space-2) var(--space-3);
-	}
-
-	.tabs button[aria-selected='true'] {
-		color: var(--text);
-		border-bottom-color: var(--accent);
-	}
-
-	.search-row {
-		display: flex;
-		gap: var(--space-3);
 		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4);
 		flex-wrap: wrap;
+		margin: 0 -2.5rem 1.5rem;
+		padding: 0.3rem 2.5rem 1.4rem;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.page-head p {
+		margin: 0.3rem 0 0;
+	}
+
+	.steps {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		font-size: 0.93rem;
+		color: var(--text-muted);
+	}
+
+	.steps li {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.steps .line {
+		width: 1.6rem;
+		height: 1px;
+		background: var(--line-strong);
+	}
+
+	.steps .num {
+		display: grid;
+		place-items: center;
+		width: 1.35rem;
+		height: 1.35rem;
+		border-radius: 3px;
+		font-size: 0.75rem;
+		font-family: var(--font-mono);
+		background: var(--panel-raised);
+	}
+
+	.steps .current {
+		color: var(--text);
+	}
+
+	.steps .current .num,
+	.steps .done .num {
+		background: var(--accent);
+		color: var(--accent-contrast);
+	}
+
+	.step[hidden] {
+		display: none;
+	}
+
+	.step h2 {
+		font-size: 1.05rem;
 		margin-bottom: var(--space-4);
 	}
 
-	.search-row .field {
-		margin-bottom: 0;
-	}
-	.source {
-		width: 11rem;
-	}
-	.grow {
-		flex: 1 1 16rem;
-	}
-	.find {
-		height: 2.15rem;
+	.starts {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(15rem, 18rem));
+		gap: var(--space-3);
 	}
 
-	/* Sidebar plus the search/results/install column. The sidebar caps its
-	   own height via the fitToViewport action (measures real remaining
-	   space) - min-height here is just the floor for a short viewport. */
-	.browse-layout {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-5);
-		min-height: 22rem;
-	}
-
-	.browse-layout :global(.sidebar) {
-		flex: 0 0 13rem;
-		position: sticky;
-		top: var(--space-4);
-	}
-
-	.browse-panel {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
-
-	/* .hits shrinks itself (via fitToViewport, reserving space for whatever
-	   the install form currently measures) so the pair always fits the
-	   viewport together, using as much of the screen as is actually there
-	   rather than stopping at a fraction of it - unlike the per-instance mod
-	   browser below, this page's install form has no unbounded content (no
-	   dependency list) to need a hard cap against. */
-	.browse-results {
-		margin-top: var(--space-4);
+	.start,
+	.loader-option {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 0.35rem;
+		padding: 1rem 1.1rem;
+		text-align: left;
+		white-space: normal;
+		font-weight: 400;
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+		cursor: pointer;
+	}
+
+	.start[aria-checked='true'],
+	.loader-option.selected {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+	}
+
+	.start-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 1rem;
+	}
+
+	.radio {
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		border: 2px solid var(--line-strong);
+	}
+
+	.start[aria-checked='true'] .radio {
+		border-color: var(--accent);
+		background: radial-gradient(circle, var(--accent) 3.5px, transparent 4px);
+	}
+
+	.loader-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+		gap: var(--space-2);
+		max-width: 60rem;
+		margin-bottom: var(--space-4);
+	}
+
+	.loader-option {
+		margin: 0;
+		color: var(--text);
+		padding: 0.8rem 0.9rem;
+	}
+
+	.loader-option input {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.versions-row {
+		max-width: 60rem;
+	}
+
+	/* ---- choosing a pack */
+
+	.browse-bar {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+		flex-wrap: wrap;
+	}
+
+	.segmented {
+		display: flex;
+		gap: 2px;
+		padding: 2px;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius);
+	}
+
+	.segmented button {
+		border: 0;
+		padding: 0.3rem 0.75rem;
+		font-size: 0.88rem;
+		font-weight: 400;
+		background: transparent;
+		color: var(--text-muted);
+	}
+
+	.segmented button[aria-pressed='true'] {
+		background: var(--line-strong);
+		color: var(--text);
+	}
+
+	.search {
+		flex: 1 1 16rem;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius);
+		padding: 0 0.6rem;
+		color: var(--text-faint);
+	}
+
+	.search input {
+		flex: 1;
+		min-width: 0;
+		background: transparent;
+		border: 0;
+		padding: 0.45rem 0;
+		outline: none;
+	}
+
+	.browse {
+		display: grid;
+		grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+		gap: 1.25rem;
+		align-items: start;
+	}
+
+	.browse.with-filters {
+		grid-template-columns: 12rem minmax(16rem, 22rem) minmax(0, 1fr);
 	}
 
 	.hits {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: var(--space-1);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		overflow-y: auto;
-		min-height: 10rem;
-		align-content: start;
+		min-height: 16rem;
 	}
 
-	/* Once a pack is selected, the install section below needs room to show
-	   without scrolling if it can - fitToViewport shrinks this list's
-	   max-height to make that room, and that has to be free to go below the
-	   floor above, or the two heights fight each other. */
-	.hits.compact {
-		min-height: 0;
-	}
-
-	.hit-title {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-		flex-wrap: wrap;
-	}
-
-	.hit-meta {
-		display: flex;
-		gap: var(--space-1);
-		flex-wrap: wrap;
-		margin-top: 0.25rem;
+	.hits-empty {
+		padding: var(--space-3);
 	}
 
 	.hit {
 		display: flex;
-		/* The global button rule centres its content; these are list rows, so the
-		   icon must stay pinned left regardless of how long the name is. */
 		justify-content: flex-start;
-		gap: var(--space-3);
+		align-items: flex-start;
+		gap: 0.9rem;
 		width: 100%;
 		text-align: left;
-		align-items: flex-start;
-		background: none;
-		border: 1px solid transparent;
-		padding: var(--space-2);
+		padding: 0.9rem var(--space-4);
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
 		font-weight: 400;
 		white-space: normal;
 	}
 
-	.hit:hover,
-	.hit[aria-pressed='true'] {
-		background: var(--panel-raised);
+	.hit:hover:not(:disabled) {
 		border-color: var(--line-strong);
 	}
 
@@ -805,18 +922,29 @@
 
 	.hit img,
 	.icon-fallback {
-		width: 40px;
-		height: 40px;
+		width: 44px;
+		height: 44px;
+		flex: 0 0 44px;
 		border-radius: var(--radius);
-		background: var(--bg-sunken);
-		flex: 0 0 40px;
+		background: var(--panel-raised);
 		object-fit: cover;
 	}
 
 	.hit-body {
 		display: flex;
 		flex-direction: column;
+		gap: 0.2rem;
 		min-width: 0;
+	}
+
+	.hit-title strong {
+		font-weight: 500;
+	}
+
+	.hit-meta {
+		display: flex;
+		gap: var(--space-1);
+		flex-wrap: wrap;
 	}
 
 	.summary {
@@ -827,92 +955,193 @@
 		overflow: hidden;
 	}
 
-	.install {
-		border-top: 1px solid var(--line);
-		padding-top: var(--space-4);
-	}
-
-	.selected-name {
-		margin: 0 0 var(--space-4);
-	}
-
-	/* Server name is the reference width everything else in this form is
-	   sized against - fixed in rem rather than left fluid, so "2x that" and
-	   "same as that" below are both real, stable numbers instead of guesses
-	   at whatever the container happens to be. */
-	.install .name-row {
+	.detail {
 		display: flex;
-		align-items: flex-end;
-		gap: var(--space-3);
-		flex-wrap: wrap;
+		flex-direction: column;
+		min-height: 20rem;
 	}
 
-	.install .name-field {
-		max-width: 20rem;
-		width: 17.25rem;
+	.detail > :global(.pane) {
+		flex: 1;
 	}
 
-	.install .grid-2 {
-		grid-template-columns: repeat(auto-fit, 15rem);
-	}
-
-	.version-field {
-		flex: 1 1 auto;
-	}
-
-	.install .version-field {
-		max-width: 31rem;
-	}
-
-	.detail-buttons {
-		display: flex;
-		flex-direction: row;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
-		height: 2.5rem;
-	}
-
-	.detail-buttons button {
-		font-size: 0.82rem;
-		white-space: nowrap;
-	}
-
-	.label-text {
-		display: block;
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		margin-bottom: var(--space-2);
-	}
-
-	.loader-grid {
+	.detail.empty {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-		gap: var(--space-2);
+		place-items: center;
 	}
 
-	.loader-option {
+	.version-list {
+		list-style: none;
+	}
+
+	.version {
 		display: flex;
-		gap: var(--space-2);
-		align-items: flex-start;
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius);
-		padding: var(--space-3);
-		cursor: pointer;
-		color: var(--text);
+		align-items: center;
+		gap: var(--space-3);
 		margin: 0;
-		font-size: 0.9rem;
+		padding: 0.45rem 0.6rem;
+		border-radius: var(--radius);
+		color: var(--text);
+		cursor: pointer;
 	}
 
-	.loader-option.selected {
-		border-color: var(--accent);
+	.version.picked {
 		background: var(--panel-raised);
 	}
 
-	.loader-option span span {
-		display: block;
+	.version-name {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 
-	.loader-option input {
-		margin-top: 0.25rem;
+	.pick-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.drop {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.3rem;
+		max-width: 40rem;
+		padding: 2.5rem;
+		border: 1px dashed var(--line-strong);
+		border-radius: var(--radius-lg);
+		background: var(--panel);
+		color: var(--text);
+		cursor: pointer;
+	}
+
+	.drop:hover {
+		border-color: var(--accent);
+	}
+
+	/* ---- configure */
+
+	.configure {
+		max-width: 56rem;
+	}
+
+	.picked {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-4);
+		margin-bottom: var(--space-3);
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+	}
+
+	.picked img {
+		border-radius: var(--radius);
+	}
+
+	.picked .icon-fallback {
+		width: 40px;
+		height: 40px;
+		flex-basis: 40px;
+	}
+
+	.grow {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.rows .field {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(9rem, 20rem);
+		column-gap: 2rem;
+		row-gap: 0.2rem;
+		align-items: center;
+		margin: 0;
+		padding: 0.85rem 0;
+		border-bottom: 1px solid var(--panel-raised);
+	}
+
+	.rows .field > label {
+		grid-column: 1;
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 500;
+		color: var(--text);
+	}
+
+	.rows .field > input,
+	.rows .field > select {
+		grid-column: 2;
+		grid-row: 1 / span 2;
+	}
+
+	.rows .field > input[type='number'] {
+		max-width: 8rem;
+		justify-self: end;
+		text-align: right;
+	}
+
+	.rows .field > .hint {
+		grid-column: 1;
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--text-muted);
+	}
+
+	.extra {
+		margin-top: var(--space-4);
+	}
+
+	/* Pinned to the window's bottom edge whatever the step's height, beside the rail. */
+	.new-form {
+		padding-bottom: 5rem;
+	}
+
+	.bottombar {
+		position: fixed;
+		bottom: 0;
+		left: var(--rail-width);
+		right: 0;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		padding: 0.75rem 2.5rem;
+		border-top: 1px solid var(--line);
+		background: var(--bg);
+	}
+
+	@media (max-width: 70rem) {
+		.browse,
+		.browse.with-filters {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (max-width: 60rem) {
+		.page-head {
+			margin: 0 calc(var(--space-4) * -1) 1.5rem;
+			padding: 0.3rem var(--space-4) 1.4rem;
+		}
+
+		.bottombar {
+			left: 0;
+			padding: 0.75rem var(--space-4);
+		}
+
+		.rows .field {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.rows .field > input,
+		.rows .field > select {
+			grid-column: 1;
+			grid-row: auto;
+		}
 	}
 </style>
