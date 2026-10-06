@@ -25,6 +25,18 @@
 	let open = $state(false);
 	let startField = $state<HTMLInputElement | null>(null);
 	let root = $state<HTMLElement | null>(null);
+	/** Where the menu opens: above when there is no room below (the new-server form's bottom bar), right-aligned near the right edge. */
+	let up = $state(false);
+	let alignRight = $state(false);
+
+	function toggle() {
+		if (!open && root) {
+			const box = root.getBoundingClientRect();
+			up = window.innerHeight - box.bottom < 120 && box.top > window.innerHeight - box.bottom;
+			alignRight = box.left + 280 > window.innerWidth;
+		}
+		open = !open;
+	}
 
 	function choose(start: boolean) {
 		if (startField) startField.value = start ? 'on' : '';
@@ -52,12 +64,12 @@
 		aria-haspopup="menu"
 		aria-expanded={open}
 		disabled={busy || disabled}
-		onclick={() => (open = !open)}
+		onclick={toggle}
 	>
 		<svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
 	</button>
 	{#if open}
-		<div class="menu" role="menu">
+		<div class="menu" class:up class:align-right={alignRight} role="menu">
 			<button type="submit" role="menuitem" onclick={() => choose(true)}>
 				<span>{altLabel}</span>
 				{#if altNote}<span class="note">{altNote}</span>{/if}
@@ -96,6 +108,16 @@
 		border-radius: var(--radius);
 		background: var(--panel);
 		box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+	}
+
+	.menu.up {
+		top: auto;
+		bottom: calc(100% + 4px);
+	}
+
+	.menu.align-right {
+		left: auto;
+		right: 0;
 	}
 
 	.menu button {
