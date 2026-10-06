@@ -1136,27 +1136,9 @@
 		color: var(--text);
 	}
 
-	.table-box {
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
 
-	.table-box th {
-		padding: 0.7rem var(--space-4);
-		font-size: 0.82rem;
-		color: var(--text-faint);
-		font-weight: 400;
-	}
 
-	.table-box td {
-		padding: 0.55rem var(--space-4);
-	}
 
-	.table-box tbody tr:hover td {
-		background: color-mix(in srgb, var(--panel-raised) 45%, transparent);
-	}
 
 	.switch-col {
 		width: 3.5rem;
@@ -1266,24 +1248,8 @@
 
 	/* ---- updates and data packs */
 
-	.section-head {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
-		margin-bottom: var(--space-3);
-		flex-wrap: wrap;
-	}
 
-	.section-head h2 {
-		font-size: 1.05rem;
-	}
 
-	.section-head p {
-		margin: 0.2rem 0 0;
-		font-size: 0.88rem;
-		color: var(--text-muted);
-	}
 
 	.update-list {
 		list-style: none;

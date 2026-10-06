@@ -10,6 +10,8 @@
 	const base = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/world`);
 	const busy = $derived(data.instance.status === 'provisioning');
 
+	let view = $state<'snapshots' | 'pregen' | 'prune' | 'reset'>('snapshots');
+	const snapshotBytes = $derived(data.snapshots.reduce((sum, s) => sum + s.sizeBytes, 0));
 	let pendingRestore = $state<string | null>(null);
 	let pendingDelete = $state<string | null>(null);
 	let seedMode = $state<'keep' | 'random' | 'set'>('keep');
@@ -122,22 +124,51 @@
 	}
 </script>
 
+<div class="subhead">
+	<nav class="subtabs" aria-label="World sections">
+		{#each [['snapshots', 'Snapshots'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const as [id, label] (id)}
+			<button type="button" aria-current={view === id ? 'page' : undefined} onclick={() => (view = id)}>{label}</button>
+		{/each}
+	</nav>
+</div>
+
 <Flash {form} />
 
-<section class="panel">
-	<div class="panel-head">
+{#if view === 'snapshots'}
+<dl class="strip">
+	<div>
+		<dt>World size</dt>
+		<dd class="mono">{data.worlds.length ? formatBytes(data.snapshotPrompt.worldBytes) : '-'}</dd>
+	</div>
+	<div>
+		<dt>Dimensions</dt>
+		<dd class="mono">{data.dimensions.length || '-'}</dd>
+	</div>
+	<div>
+		<dt>Seed</dt>
+		<dd class="mono seed-value">{data.seed || 'random'}</dd>
+	</div>
+	<div>
+		<dt>Snapshots</dt>
+		<dd class="mono">{data.snapshots.length}{data.snapshots.length ? ` · ${formatBytes(snapshotBytes)}` : ''}</dd>
+	</div>
+</dl>
+
+<section class="view">
+	<div class="section-head">
 		<div>
-			<h2>World</h2>
-			{#if data.worlds.length}
-				<p>
-					<code>{data.worlds.join(', ')}</code>, {formatBytes(data.snapshotPrompt.worldBytes)}.
-					{#if data.seed}Seed <code>{data.seed}</code>.{/if}
-				</p>
-			{:else}
-				<p>
+			<h2>Snapshots</h2>
+			<p>
+				{#if data.worlds.length}
+					Of <code>{data.worlds.join(', ')}</code>, taken before risky operations and on request.
+				{:else}
 					No world yet; the server creates <code>{data.levelName}</code> on its first start.
-				</p>
-			{/if}
+				{/if}
+				At least the newest {data.snapshotPrompt.policy.keepMin} full and {data.snapshotPrompt.policy.partialMin} partial
+				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
+					href="/instances/{encodeURIComponent(data.instance.id)}/settings">Settings</a>), plus any you pin. Restoring keeps
+				the current world as a snapshot first, unless you choose otherwise.
+			</p>
 		</div>
 		{#if data.worlds.length}
 			<div class="button-row">
@@ -148,31 +179,11 @@
 			</div>
 		{/if}
 	</div>
-	{#if data.running && data.worlds.length}
-		<p class="hint">
-			While the server runs, a download pauses saving (<code>save-off</code>) until the zip is done. Snapshots
-			need it stopped.
-		</p>
-	{/if}
-</section>
-
-<section class="panel">
-	<div class="panel-head">
-		<div>
-			<h2>Snapshots</h2>
-			<p>
-				Taken before risky operations and on request. At least the newest {data.snapshotPrompt.policy.keepMin} full
-				and {data.snapshotPrompt.policy.partialMin} partial ones are kept, more while they fit in
-				{formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
-					href="/instances/{encodeURIComponent(data.instance.id)}/settings">Instance settings</a>), plus any you pin. Restoring keeps the current world as a snapshot first,
-				unless you choose otherwise.
-			</p>
-		</div>
-	</div>
 
 	{#if data.snapshots.length === 0}
 		<div class="empty"><p>No snapshots yet.</p></div>
 	{:else}
+		<div class="table-box">
 		<table>
 			<thead>
 				<tr>
@@ -214,9 +225,10 @@
 										{s.pinned ? 'Unpin' : 'Pin'}
 									</button>
 								</form>
-								<a class="button" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>
+								<a class="button button-quiet" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>
 								<button
 									type="button"
+									class="button-quiet"
 									disabled={data.running || busy}
 									onclick={() => {
 										pendingRestore = pendingRestore === s.id ? null : s.id;
@@ -225,7 +237,7 @@
 								>
 								<button
 									type="button"
-									class="button-danger"
+									class="button-quiet"
 									disabled={busy}
 									onclick={() => {
 										pendingDelete = pendingDelete === s.id ? null : s.id;
@@ -306,12 +318,19 @@
 				{/each}
 			</tbody>
 		</table>
+		</div>
+	{/if}
+	{#if data.running && data.worlds.length}
+		<p class="faint small after">
+			Stop the server to take or restore a snapshot. While it runs, a download pauses saving (<code>save-off</code>) until
+			the zip is done.
+		</p>
 	{/if}
 </section>
-
+{:else if view === 'pregen'}
 {#if data.chunky}
-	<section class="panel">
-		<div class="panel-head">
+	<section class="view">
+		<div class="section-head">
 			<div>
 				<h2>Pre-generate chunks</h2>
 				<p>
@@ -464,32 +483,18 @@
 			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings">Instance settings</a>.
 		</p>
 	</section>
+{:else}
+	<div class="empty">
+		<p>
+			Pre-generating uses the Chunky mod, which this server does not have. Add it from Mods → Add mods and restart;
+			this tab then offers a dimension, shape and radius to generate.
+		</p>
+	</div>
 {/if}
-
-<section class="panel">
-	<h2>Replace the world</h2>
-	<p class="muted">
-		Upload a zipped world, e.g. a singleplayer save. The folder holding <code>level.dat</code> becomes
-		<code>{data.levelName}</code>; whether it was zipped by itself or inside another folder does not matter.
-	</p>
-	<form onsubmit={uploadWorld}>
-		<div class="field">
-			<label for="world-zip">World zip</label>
-			<input id="world-zip" name="world" type="file" accept=".zip,application/zip" />
-		</div>
-		<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="replace" />
-		{#if data.running}<p class="hint">Stop the server to replace its world.</p>{/if}
-		<button class="button-primary" type="submit" disabled={data.running || busy || uploadPercent !== null}>
-			{uploadPercent !== null ? `Uploading ${uploadPercent}%` : 'Upload and replace'}
-		</button>
-		{#if uploadMessage}<p class="hint">{uploadMessage}</p>{/if}
-		{#if uploadError}<p class="hint warn-text">{uploadError}</p>{/if}
-	</form>
-</section>
-
+{:else if view === 'prune'}
 {#if data.dimensions.length}
-	<section class="panel">
-		<div class="panel-head">
+	<section class="view">
+		<div class="section-head">
 			<div>
 				<h2>Prune chunks</h2>
 				<p>
@@ -556,7 +561,31 @@
 			<p class="muted small">Count first: it reads the region files and changes nothing, so it also works while the server runs.</p>
 		{/if}
 	</section>
+{:else}
+	<div class="empty"><p>No world yet, so nothing to prune.</p></div>
 {/if}
+{:else}
+<div class="cards">
+<section class="panel">
+	<h2>Replace the world</h2>
+	<p class="muted">
+		Upload a zipped world, e.g. a singleplayer save. The folder holding <code>level.dat</code> becomes
+		<code>{data.levelName}</code>; whether it was zipped by itself or inside another folder does not matter.
+	</p>
+	<form onsubmit={uploadWorld}>
+		<div class="field">
+			<label for="world-zip">World zip</label>
+			<input id="world-zip" name="world" type="file" accept=".zip,application/zip" />
+		</div>
+		<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="replace" />
+		{#if data.running}<p class="hint">Stop the server to replace its world.</p>{/if}
+		<button class="button-primary" type="submit" disabled={data.running || busy || uploadPercent !== null}>
+			{uploadPercent !== null ? `Uploading ${uploadPercent}%` : 'Upload and replace'}
+		</button>
+		{#if uploadMessage}<p class="hint">{uploadMessage}</p>{/if}
+		{#if uploadError}<p class="hint warn-text">{uploadError}</p>{/if}
+	</form>
+</section>
 
 <section class="panel danger">
 	<h2>Reset the world</h2>
@@ -620,8 +649,24 @@
 		</form>
 	{/if}
 </section>
+</div>
+{/if}
 
 <style>
+	.after {
+		margin: var(--space-3) 0 0;
+	}
+
+	.cards {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.cards > .panel {
+		margin: 0;
+	}
+
 	.prune-result {
 		margin-top: var(--space-4);
 	}
