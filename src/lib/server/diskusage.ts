@@ -130,21 +130,37 @@ const MINESHELL_LABELS: Record<string, string> = {
 };
 
 const SUMMARY_TTL_MS = 60_000;
-const summaries = new Map<string, { at: number; result: Promise<DiskBreakdown> }>();
+type Summary = { at: number; result: Promise<DiskBreakdown>; refreshing: boolean };
+const summaries = new Map<string, Summary>();
 
 /**
- * The Files tab shows the breakdown as a bar above every folder it lists.
- * Walking a big pack takes seconds, so a measurement is reused for a minute
- * rather than redone on each click into a folder. The usage page itself
- * always measures afresh.
+ * The overview (polled every few seconds) and the Files tab's bar show the
+ * breakdown. Walking a big pack takes seconds, so only the first ask waits:
+ * after that the last measurement is returned straight away, and once it is
+ * a minute old it is redone in the background. The usage page itself always
+ * measures afresh.
  */
 export function recentDiskBreakdown(instance: ServerInstance): Promise<DiskBreakdown> {
 	const hit = summaries.get(instance.path);
-	if (hit && Date.now() - hit.at < SUMMARY_TTL_MS) return hit.result;
-	const result = diskBreakdown(instance);
-	summaries.set(instance.path, { at: Date.now(), result });
-	result.catch(() => summaries.delete(instance.path));
-	return result;
+	if (!hit) {
+		const result = diskBreakdown(instance);
+		summaries.set(instance.path, { at: Date.now(), result, refreshing: false });
+		result.catch(() => summaries.delete(instance.path));
+		return result;
+	}
+	if (!hit.refreshing && Date.now() - hit.at > SUMMARY_TTL_MS) {
+		hit.refreshing = true;
+		const next = diskBreakdown(instance);
+		next
+			.then(() => summaries.set(instance.path, { at: Date.now(), result: next, refreshing: false }))
+			.catch(() => (hit.refreshing = false));
+	}
+	return hit.result;
+}
+
+/** A deleted server's measurement must not show for one recreated under the same name. */
+export function forgetDiskBreakdown(instancePath: string): void {
+	summaries.delete(instancePath);
 }
 
 export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreakdown> {

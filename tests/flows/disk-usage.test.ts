@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { deleteOldLogs, diskBreakdown } from '#lib/server/diskusage.js';
+import { describe, expect, it, vi } from 'vitest';
+import { deleteOldLogs, diskBreakdown, forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { setSnapshotPinned, takeSnapshot } from '#lib/server/snapshots.js';
 import { createInstance } from '../helpers/instances';
 
@@ -111,5 +111,27 @@ describe('disk usage breakdown', () => {
 		expect((await fs.readdir(path.join(instance.path, 'logs'))).sort()).toEqual(['2026-10-03-1.log.gz', 'latest.log']);
 		expect(await fs.readdir(path.join(instance.path, 'crash-reports'))).toEqual([]);
 		expect((await diskBreakdown(instance)).suggestions.some((s) => s.action)).toBe(false);
+	});
+});
+
+describe('recentDiskBreakdown', () => {
+	// The overview asks every few seconds; only the first ask may wait for the walk.
+	it('answers from the last measurement and refreshes it in the background once a minute old', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'world/region/r.0.0.mca': bytes(100) });
+		const first = await recentDiskBreakdown(instance);
+		await fs.writeFile(path.join(instance.path, 'world/region/r.1.0.mca'), bytes(50));
+
+		expect((await recentDiskBreakdown(instance)).total).toBe(first.total);
+
+		const now = Date.now();
+		vi.spyOn(Date, 'now').mockReturnValue(now + 61_000);
+		try {
+			// Stale: still the old answer, while the new walk runs.
+			expect((await recentDiskBreakdown(instance)).total).toBe(first.total);
+			await vi.waitFor(async () => expect((await recentDiskBreakdown(instance)).total).toBe(first.total + 50));
+		} finally {
+			vi.restoreAllMocks();
+			forgetDiskBreakdown(instance.path);
+		}
 	});
 });

@@ -51,7 +51,6 @@ import {
 	type Journal
 } from './operations';
 import { canUseCleanroom, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
-import { directorySize } from './files';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
@@ -1286,7 +1285,6 @@ export async function deleteInstance(
 ): Promise<void> {
 	await stopUnit(instance.id).catch(() => undefined);
 	await removeUnitArtifacts(instance.id);
-	diskUsage.delete(instance.path);
 	if (opts.deleteFiles) {
 		// Guard against a hand-edited path pointing somewhere unfortunate.
 		const resolved = path.resolve(instance.path);
@@ -1449,30 +1447,6 @@ export async function summariseAll(): Promise<InstanceSummary[]> {
 	});
 }
 
-const DISK_USAGE_TTL_MS = 60_000;
-const diskUsage = new Map<string, { at: number; bytes: number; refreshing: boolean }>();
-
-/**
- * Walking a big pack (tens of thousands of files) takes a noticeable moment,
- * and the overview asks every few seconds. Only the first ask waits; after
- * that the last measurement is returned and refreshed in the background
- * once it is a minute old.
- */
-export async function instanceDiskUsage(instance: ServerInstance): Promise<number> {
-	const hit = diskUsage.get(instance.path);
-	if (!hit) {
-		const bytes = await directorySize(instance.path);
-		diskUsage.set(instance.path, { at: Date.now(), bytes, refreshing: false });
-		return bytes;
-	}
-	if (!hit.refreshing && Date.now() - hit.at > DISK_USAGE_TTL_MS) {
-		hit.refreshing = true;
-		void directorySize(instance.path)
-			.then((bytes) => diskUsage.set(instance.path, { at: Date.now(), bytes, refreshing: false }))
-			.catch(() => (hit.refreshing = false));
-	}
-	return hit.bytes;
-}
 
 /** Keep server.properties and the DB row agreeing about ports and RCON. */
 export async function syncPortsToProperties(instance: ServerInstance): Promise<void> {

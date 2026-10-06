@@ -46,6 +46,7 @@ import {
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portConflict } from '#lib/server/ports.js';
+import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
 	PROPERTY_SCHEMA,
 	levelTypeOptionsFor,
@@ -612,6 +613,7 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: 'Type DELETE to confirm.' });
 		}
 		await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
+		forgetDiskBreakdown(instance.path);
 		redirect(303, '/');
 	},
 

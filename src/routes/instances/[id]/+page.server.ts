@@ -5,7 +5,6 @@ import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import {
 	acceptEula,
-	instanceDiskUsage,
 	onlinePlayers,
 	requireInstance,
 	restart,
@@ -18,6 +17,7 @@ import { bucketSamples, recentSamples } from '#lib/server/monitor.js';
 import { resolveJava } from '#lib/server/java.js';
 import { cpus } from 'node:os';
 import { primaryLanAddress } from '#lib/server/network.js';
+import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { readLastRun, runFinishedStarting } from '#lib/server/journal.js';
 import { diagnoseRun, lastRun, type Diagnosis } from '#lib/server/crashdiag.js';
@@ -164,7 +164,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		tick,
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
-		diskBytes: await instanceDiskUsage(instance),
+		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
+		...(await recentDiskBreakdown(instance).then(
+			(b) => ({ diskBytes: b.total, worldBytes: b.groups.find((g) => g.id === 'world')?.bytes ?? 0 }),
+			() => ({ diskBytes: 0, worldBytes: 0 })
+		)),
 		// CPU is measured across all cores, so the chart needs the core count to
 		// show a meaningful ceiling instead of an unexplained 400%.
 		cpuCores: cpus().length || 1,

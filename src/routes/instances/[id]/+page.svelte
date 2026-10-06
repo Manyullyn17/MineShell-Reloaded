@@ -156,7 +156,9 @@
 	<div>
 		<dt>Disk</dt>
 		<dd class="mono">{formatBytes(data.diskBytes)}</dd>
-		<dd class="sub"><a href="/instances/{data.instance.id}/files/usage">where it goes</a></dd>
+		<dd class="sub">
+			<a href="/instances/{data.instance.id}/files/usage">{data.worldBytes ? `world ${formatBytes(data.worldBytes)}` : 'where it goes'}</a>
+		</dd>
 	</div>
 </dl>
 
