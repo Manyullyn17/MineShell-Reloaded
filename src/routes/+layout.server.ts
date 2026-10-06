@@ -1,6 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { recentPlayerCount, summariseAll } from '#lib/server/instances.js';
 import { listTasks } from '#lib/server/tasks.js';
+import { gaveUpAfter } from '#lib/shared/format.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	if (!locals.authenticated) {
@@ -20,7 +21,8 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 				sub: s.state.sub,
 				pinned: s.instance.pinned,
 				status: s.instance.status,
-				players: s.running ? await recentPlayerCount(s.instance) : null
+				players: s.running ? await recentPlayerCount(s.instance) : null,
+				gaveUpAfter: gaveUpAfter(s.state.active, s.state.result, s.instance.crashRestartLimit)
 			}))
 		)
 	};

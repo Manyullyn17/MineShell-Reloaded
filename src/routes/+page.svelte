@@ -129,7 +129,11 @@
 				{/if}
 
 				{#if tone === 'failed' && instance.status === 'ready'}
-					<p class="alert error">The last run crashed. The overview shows the final output and a likely cause.</p>
+					<p class="alert error">
+						{instance.gaveUpAfter
+							? `Crashed ${instance.gaveUpAfter} times in a row, so systemd stopped restarting it.`
+							: 'The last run crashed.'} The overview shows the final output and a likely cause.
+					</p>
 				{/if}
 
 				{#if !instance.eulaAccepted}

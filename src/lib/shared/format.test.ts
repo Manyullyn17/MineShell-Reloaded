@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { describeState, formatBytes, formatDuration, formatRelative } from './format';
+import { describeState, formatBytes, formatDuration, formatRelative, gaveUpAfter } from './format';
 
 describe('formatBytes', () => {
 	it.each([
@@ -40,6 +40,17 @@ describe('formatRelative', () => {
 		expect(formatRelative(now - 5 * 60_000)).toBe('5m ago');
 		expect(formatRelative(now + 3 * 3_600_000)).toBe('in 3h');
 		expect(formatRelative(now - 3 * 86_400_000)).toBe('3d ago');
+	});
+});
+
+describe('gaveUpAfter', () => {
+	it('names the limit when systemd stopped restarting a crashed server', () => {
+		expect(gaveUpAfter('failed', 'start-limit-hit', 3)).toBe(3);
+	});
+
+	it('says nothing for a plain crash or a server that is not failed', () => {
+		expect(gaveUpAfter('failed', 'exit-code', 3)).toBeNull();
+		expect(gaveUpAfter('inactive', 'start-limit-hit', 3)).toBeNull();
 	});
 });
 

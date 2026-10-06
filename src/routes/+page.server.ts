@@ -9,6 +9,7 @@ import { describeSchedule } from '#lib/server/scheduler.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
+import { gaveUpAfter } from '#lib/shared/format.js';
 
 export const load: PageServerLoad = async () => {
 	const summaries = await summariseAll();
@@ -35,6 +36,7 @@ export const load: PageServerLoad = async () => {
 				active: summary.state.active,
 				sub: summary.state.sub,
 				running: summary.running,
+				gaveUpAfter: gaveUpAfter(summary.state.active, summary.state.result, summary.instance.crashRestartLimit),
 				uptimeMs: summary.uptimeMs,
 				eulaAccepted: summary.eulaAccepted,
 				javaWarning: summary.javaWarning,

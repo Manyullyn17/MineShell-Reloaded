@@ -93,7 +93,9 @@
 											{#if instance.status === 'provisioning'}
 												Being set up
 											{:else}
-												{state.label}{state.tone === 'busy' ? '...' : ''}{instance.players
+												{state.label}{state.tone === 'busy' ? '...' : ''}{instance.gaveUpAfter
+													? ` · gave up after ${instance.gaveUpAfter} tries`
+													: ''}{instance.players
 													? ` · ${instance.players.online}/${instance.players.max}`
 													: ''}
 											{/if}

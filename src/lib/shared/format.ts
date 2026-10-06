@@ -41,6 +41,15 @@ export function formatDateTime(timestamp: number | null | undefined): string {
 }
 
 /** Turn a systemd ActiveState/SubState pair into something a person can act on. */
+/**
+ * systemd's own words for "stopped restarting it": the unit crashed more
+ * often than StartLimitBurst allows within the window (the server's crash
+ * restart limit), so it was left failed.
+ */
+export function gaveUpAfter(active: string, result: string, limit: number): number | null {
+	return active === 'failed' && result === 'start-limit-hit' ? limit : null;
+}
+
 export function describeState(active: string, sub: string): {
 	label: string;
 	tone: 'running' | 'stopped' | 'busy' | 'failed';
