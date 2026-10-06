@@ -39,12 +39,15 @@
 <style>
 	.flash {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--space-3);
 	}
 
+	/* The close button follows the text, so the global rules for the last paragraph (no margin) and line length do not apply. */
 	.flash p {
 		flex: 1 1 auto;
+		margin: 0;
+		max-width: none;
 	}
 
 	.close {
