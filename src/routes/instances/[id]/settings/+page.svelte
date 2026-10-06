@@ -403,7 +403,7 @@
 			{#if field.type === 'boolean'}
 				<PropertyInput {field} bind:checked={fieldChecks[field.key]} />
 			{:else}
-				<PropertyInput {field} bind:value={fieldValues[field.key]} />
+				<PropertyInput {field} bind:value={fieldValues[field.key]} segmented />
 			{/if}
 		</div>
 	{/each}
@@ -1125,11 +1125,16 @@
 		scrollbar-width: none;
 	}
 
+	/* Nine tabs and the search share one row at common widths. */
+	.subhead .subtabs button {
+		padding-inline: 0.6rem;
+	}
+
 	.subhead .sep {
 		width: 1px;
 		height: 18px;
 		align-self: center;
-		margin: 0 0.6rem;
+		margin: 0 0.35rem;
 		background: var(--line-strong);
 	}
 
@@ -1137,7 +1142,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		width: 13rem;
+		width: 11.5rem;
 		flex: none;
 		margin-bottom: 0.4rem;
 		background: var(--bg-sunken);
