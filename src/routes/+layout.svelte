@@ -4,6 +4,7 @@
 	import { THEMES, THEME_STORAGE_KEY } from '#lib/shared/themes.js';
 	import { describeState } from '#lib/shared/format.js';
 	import NotificationCenter from '#lib/components/NotificationCenter.svelte';
+	import LogoMark from '#lib/components/LogoMark.svelte';
 
 	let { data, children } = $props();
 
@@ -40,7 +41,7 @@
 				<span aria-hidden="true">☰</span>
 				<span class="visually-hidden">Toggle server list</span>
 			</button>
-			<a class="wordmark" href="/"><span class="logo" aria-hidden="true"></span>MineShell</a>
+			<a class="wordmark" href="/"><LogoMark size={26} /><span>Mine<span class="wordmark-accent">Shell</span></span></a>
 			<div class="topbar-right">
 				<NotificationCenter running={data.runningTasks} />
 				<label class="visually-hidden" for="theme-select">Theme</label>
@@ -171,21 +172,16 @@
 	.wordmark {
 		display: flex;
 		align-items: center;
-		gap: 0.55rem;
-		font-weight: 600;
-		font-size: 1rem;
-		letter-spacing: 0.01em;
+		gap: 0.5rem;
+		font-weight: 800;
+		font-size: 1.1rem;
+		letter-spacing: -0.01em;
 		color: var(--text);
 		text-decoration: none;
 	}
 
-	/* A grass block seen from above: the shade on two edges gives it depth. */
-	.logo {
-		width: 14px;
-		height: 14px;
-		background: var(--accent);
-		border-radius: 2px;
-		box-shadow: inset -4px -4px 0 color-mix(in srgb, var(--accent) 70%, black);
+	.wordmark-accent {
+		color: var(--accent);
 	}
 
 	.topbar-right {
