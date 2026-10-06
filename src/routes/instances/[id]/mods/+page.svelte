@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance, type SubmitFunction } from '$app/forms';
 	import Flash from '#lib/components/Flash.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
@@ -239,8 +240,8 @@
 	});
 
 	// Results, the picked mod and categories belong to one source; the loader
-	// selection means the same thing on both and is kept. Searching is left
-	// to the user, as on first opening the browser.
+	// selection means the same thing on both and is kept. Emptying the
+	// results makes the browser below open on the new source's popular mods.
 	// svelte-ignore state_referenced_locally
 	let lastSource = source;
 	$effect(() => {
@@ -292,6 +293,11 @@
 		for (const type of filterSelections.projectTypes ?? []) params.append('type', type);
 		return params;
 	}
+
+	// Opening Add mods shows popular mods rather than an empty list, as the modpack browser does.
+	$effect(() => {
+		if (view === 'browse' && !hits.length && !untrack(() => searching || searchError)) void untrack(search);
+	});
 
 	async function search() {
 		searching = true;
@@ -857,7 +863,7 @@
 				</li>
 			{:else}
 				<li class="faint small hits-empty">
-					{searching ? 'Searching.' : 'Search, or press Search with nothing typed to browse popular mods.'}
+					{searching ? 'Searching.' : 'No mods to show yet.'}
 				</li>
 			{/each}
 			{#if hits.length && moreHits}
