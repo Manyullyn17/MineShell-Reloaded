@@ -131,7 +131,7 @@ re-proposed or built twice.
   (MineShell's own polling floods them), command history kept per server in the browser,
   and saved commands per server (`macros.ts`, copied with a server copy). Autocomplete was
   left out: RCON cannot ask Brigadier for completions, and a fixed list would not know mod
-  commands. The Logs tab still has no search.
+  commands. The Logs tab still has no search ("Log search" under Agreed for later).
 - **Ban UI, the rest**: built. Ban reasons, IP bans (`banned-ips.json`; by address while
   stopped, by online player while running), Ban / Ban IP next to Kick, operator levels and
   player-limit bypass (picked and changed only while stopped: vanilla has no command for
@@ -193,6 +193,35 @@ re-proposed or built twice.
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
 - **Server bundle export/import**: the same as "Instance export and import" under Later.
+
+### Agreed for later (2026-10-07)
+
+Suggested after the client pack export and reboot handling; all wanted, none started.
+
+- **Start-time history**: how long each start took to reach `Done (`, per run, with the
+  trend on the overview ("4 m 10 s, usually 2 m 30 s"), so a pack update or a new mod that
+  slows startup shows. The journal has both timestamps (the unit's start, the `Done (`
+  line); reading them per invocation like `runFinishedStarting` avoids walking old runs.
+  Pairs well with player history, which also wants console lines kept over time.
+- **Crash history**: the overview shows only the last crash (`lastcrash.ts`). Keep each
+  crash with its diagnosis (culprit, cause line) and date, and list them, so a pattern
+  shows ("every few days, always the same mod"). A small table, filled when the monitor
+  sees a crash, rather than re-diagnosing old runs from the journal each time.
+- **Memory advice**: an `OutOfMemoryError` in a run, or memory sitting near the heap limit
+  (the overview's samples), suggests more heap; a heap never half used suggests less.
+  Shown on the overview and next to Java & memory in Settings. Advice only, never changes
+  the setting by itself. Related: the RAM guard and the resource cap above.
+- **Scheduled snapshots**: a world snapshot on a schedule ("nightly at 4:00"), kept by the
+  existing retention policy. The narrow case of "World backups" above, still local only.
+  A running server needs the consistency dance that section describes (`save-off`,
+  `save-all flush`, copy, `save-on` in a finally, as the running-world download already
+  does); snapshots today are only taken with the server stopped.
+- **Chat in the console**: a filter showing only player chat (`<name> message` lines and
+  `[Server]` messages), and sending as the server with `say`. The console already sorts
+  lines by kind (`consolelines.ts`), so it is a new kind plus a send mode.
+- **Log search**: the Logs tab (past runs and log files) cannot search; only the live
+  console can. Searching a run reads it from the journal by invocation; log files and
+  gzipped archives are read from disk.
 
 ### Dropped
 
