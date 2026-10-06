@@ -375,14 +375,13 @@ The October 2026 redesign (Claude Design, "MineShell Redesign") is built: shell,
 header with actions, overview, console, logs, mods, world, players, files, one Settings tab
 per server, the three-step Add a server flow, MineShell settings in tabs, the player editor.
 Built after it: "gave up after N tries" in the rail, the world's size on the overview,
-segmented buttons for difficulty and game mode. These parts of the mockup need data or
+segmented buttons for difficulty and game mode, the likely cause of a crash on its server
+card. These parts of the mockup need data or
 behaviour MineShell does not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
   (Online now). Nothing records player counts or join times; it would need the monitor to
   sample `list` or the console's join/leave lines to be kept.
-- **The likely cause** of a crash ("Sodium is client-only") on its server card. The crash
-  diagnosis exists per server on its overview; the list would need it cached per run.
 - **Updated date and licence** in the mod and modpack detail pane, and a **one-line note per
   available update** (the update list). The providers' search results do not carry them;
   per-project lookups would.

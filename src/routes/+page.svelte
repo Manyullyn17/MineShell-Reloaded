@@ -132,7 +132,12 @@
 					<p class="alert error">
 						{instance.gaveUpAfter
 							? `Crashed ${instance.gaveUpAfter} times in a row, so systemd stopped restarting it.`
-							: 'The last run crashed.'} The overview shows the final output and a likely cause.
+							: 'The last run crashed.'}
+						{#await data.causes}
+							The overview shows the final output.
+						{:then causes}
+							{#if causes[instance.id]}Likely cause: {causes[instance.id]}{:else}The overview shows the final output.{/if}
+						{/await}
 					</p>
 				{/if}
 

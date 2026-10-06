@@ -10,6 +10,7 @@ import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
+import { likelyCause } from '#lib/server/lastcrash.js';
 
 export const load: PageServerLoad = async () => {
 	const summaries = await summariseAll();
@@ -50,8 +51,18 @@ export const load: PageServerLoad = async () => {
 		})
 	);
 
+	// Streamed: indexing a crashed pack's mods takes a moment the first time.
+	// Only servers systemd marks failed, which their cards already show as
+	// crashed; the list polls every few seconds and the rest needs their log.
+	const causes = Promise.all(
+		summaries
+			.filter((s) => s.state.active === 'failed')
+			.map(async (s) => [s.instance.id, await likelyCause(s).catch(() => null)] as const)
+	).then((pairs) => Object.fromEntries(pairs.filter(([, cause]) => cause)) as Record<string, string>);
+
 	return {
 		instances,
+		causes,
 		environment: {
 			systemdAvailable: systemd.available,
 			systemdMessage: systemd.message,
