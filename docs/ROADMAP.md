@@ -213,9 +213,20 @@ Suggested after the client pack export and reboot handling; all wanted, none sta
   the setting by itself. Related: the RAM guard and the resource cap above.
 - **Scheduled snapshots**: a world snapshot on a schedule ("nightly at 4:00"), kept by the
   existing retention policy. The narrow case of "World backups" above, still local only.
-  A running server needs the consistency dance that section describes (`save-off`,
-  `save-all flush`, copy, `save-on` in a finally, as the running-world download already
-  does); snapshots today are only taken with the server stopped.
+  Snapshots today are only taken with the server stopped. Two modes, per schedule:
+  - *While running* (default): the consistency dance that section describes (`save-off`,
+    `save-all flush`, copy, `save-on` in a finally), as the running-world download already
+    does. Players keep playing; the world just is not autosaved during the copy. Things to
+    check: mods that write their own files outside the world's save cycle, and whether
+    `save-all flush` is honoured on old Forge (1.12 has no `flush` argument and saves
+    asynchronously, so it would need waiting for the "Saved the game" line).
+  - *Stop, snapshot, start*: for when a live copy is not trusted (or the checks above fail
+    for a pack). One scheduled action does it all: countdown warnings like a scheduled
+    restart, stop, take the snapshot, start again as soon as it finishes - only if the
+    server was running when the schedule fired. No separate scheduled start with a guessed
+    gap, which either cuts the copy short or keeps the server down longer than needed.
+  A stopped server is snapshotted as it is either way. Shown as a task in the notification
+  center; a failed copy still restarts the server (and says the snapshot failed).
 - **Chat in the console**: a filter showing only player chat (`<name> message` lines and
   `[Server]` messages), and sending as the server with `say`. The console already sorts
   lines by kind (`consolelines.ts`), so it is a new kind plus a send mode.
