@@ -7,7 +7,7 @@ import { auditLog, instanceMods, serverInstances, type ServerInstance } from './
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
-import { allocatePortPair, portIsFree } from './ports';
+import { allocatePort, allocatePortPair, DEFAULT_RCON_PORT, portConflict, portIsFree } from './ports';
 import {
 	defaultProperties,
 	fillPropertyDefaults,
@@ -161,6 +161,10 @@ export type CreateInstanceInput = {
 	downloadJava?: JavaVendor;
 	/** Start the server once it is installed, accepting the EULA. */
 	startWhenReady?: boolean;
+	/** Accept the Minecraft EULA once installed, without starting. */
+	acceptEula?: boolean;
+	/** The game port; picked automatically when absent. */
+	serverPort?: number;
 	/** Pack mods (mods/<file>) to install disabled. */
 	disableMods?: string[];
 	/** Client-only pack mods to leave enabled anyway. */
@@ -182,6 +186,24 @@ function newServerProperties(opts: Parameters<typeof defaultProperties>[0]): Rec
 	return { ...assigned, ...getInstanceDefaults().properties };
 }
 
+/**
+ * The ports a new server gets: the game port asked for (checked against the
+ * other servers and anything already listening) or the next free one, and an
+ * RCON port that is never the same.
+ */
+async function portsFor(requested: number | undefined): Promise<{ serverPort: number; rconPort: number }> {
+	if (requested === undefined) return allocatePortPair();
+	if (!Number.isInteger(requested) || requested < 1 || requested > 65535) {
+		throw new InstanceError('The game port is a number from 1 to 65535.');
+	}
+	const conflict = portConflict(requested);
+	if (conflict) throw new InstanceError(conflict);
+	if (!(await portIsFree(requested))) throw new InstanceError(`Something on this machine already listens on port ${requested}.`);
+	let rconPort = await allocatePort(DEFAULT_RCON_PORT);
+	if (rconPort === requested) rconPort = await allocatePort(requested + 1);
+	return { serverPort: requested, rconPort };
+}
+
 async function insertInstanceRow(
 	input: CreateInstanceInput & {
 		packSource?: string | null;
@@ -191,12 +213,13 @@ async function insertInstanceRow(
 		packVersionName?: string | null;
 	}
 ): Promise<ServerInstance> {
+	// Before anything is created: a refused port leaves nothing behind.
+	const { serverPort, rconPort } = await portsFor(input.serverPort);
 	const id = uniqueId(input.name);
 	const dir = instanceDir(id);
 	await fs.mkdir(path.join(dir, 'mods'), { recursive: true });
 	await fs.mkdir(path.join(dir, '.mineshell'), { recursive: true });
 
-	const { serverPort, rconPort } = await allocatePortPair();
 	const password = randomPassword();
 	const defaults = getInstanceDefaults();
 	const maxMb = input.memoryMaxMb ?? defaultMaxMb(defaults);
@@ -376,6 +399,7 @@ export async function createFromLoader(input: CreateInstanceInput): Promise<{ in
 				commitOperation(instance.id, { status: 'ready', statusMessage: null });
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
 				if (input.startWhenReady) await startWhenInstalled(instance.id, task);
+				else if (input.acceptEula) await acceptEula(requireInstance(instance.id));
 				task.setProgress(100, 'Ready');
 			})
 		);
@@ -407,7 +431,7 @@ function provisionFromPack(
 	pack: ParsedPack,
 	java: JavaPlan,
 	notes: string[] = [],
-	choices: Pick<CreateInstanceInput, 'startWhenReady' | 'disableMods' | 'keepMods' | 'enableMods'> = {}
+	choices: Pick<CreateInstanceInput, 'startWhenReady' | 'acceptEula' | 'disableMods' | 'keepMods' | 'enableMods'> = {}
 ): string {
 	return startTask(
 		{ label: `Install ${pack.name}`, instanceId: instance.id },
@@ -569,6 +593,7 @@ function provisionFromPack(
 				if (failures.length) task.log('Not starting the server: some mods could not be downloaded.');
 				else await startWhenInstalled(instance.id, task);
 			}
+			if (choices.acceptEula && !(await eulaIsAccepted(requireInstance(instance.id)))) await acceptEula(requireInstance(instance.id));
 			task.setProgress(100, 'Ready');
 		})
 	);
@@ -608,6 +633,7 @@ export async function createFromPack(
 		memoryMinMb: overrides.memoryMinMb,
 		memoryMaxMb: overrides.memoryMaxMb,
 		javaPath: overrides.javaPath,
+		serverPort: overrides.serverPort,
 		packSource: meta.source,
 		packName: pack.name,
 		packProjectId: meta.projectId ?? null,
@@ -617,6 +643,7 @@ export async function createFromPack(
 
 	const taskId = provisionFromPack(instance, pack, java, notes, {
 		startWhenReady: overrides.startWhenReady,
+		acceptEula: overrides.acceptEula,
 		disableMods: overrides.disableMods,
 		keepMods: overrides.keepMods,
 		enableMods: overrides.enableMods

@@ -11,6 +11,9 @@ import { takeProviderPack } from '#lib/server/packs/preview.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
 import { defaultMaxMb, getInstanceDefaults } from '#lib/server/instance-defaults.js';
+import { allocatePort, DEFAULT_SERVER_PORT } from '#lib/server/ports.js';
+import { db } from '#lib/server/db/index.js';
+import { serverInstances } from '#lib/server/db/schema.js';
 
 export const load: PageServerLoad = async () => {
 	// The metadata servers are third-party; a failure should not blank the form.
@@ -33,7 +36,15 @@ export const load: PageServerLoad = async () => {
 		})),
 		// Settings page defaults; the maximum is a RAM-based guess unless one is set.
 		suggestedMaxMb: defaultMaxMb(defaults),
-		defaultMinMb: defaults.memoryMinMb
+		defaultMinMb: defaults.memoryMinMb,
+		// The port a new server would get, and the ones the others use, for the port field.
+		nextPort: await allocatePort(DEFAULT_SERVER_PORT).catch(() => DEFAULT_SERVER_PORT),
+		usedPorts: db
+			.select({ port: serverInstances.serverPort })
+			.from(serverInstances)
+			.all()
+			.map((r) => r.port)
+			.sort((a, b) => a - b)
 	};
 };
 
@@ -59,9 +70,14 @@ function memoryFrom(form: FormData) {
 	};
 }
 
-/** The split button's "& start" item. */
-function startFrom(form: FormData) {
-	return form.get('start') === 'on' ? { startWhenReady: true } : {};
+/** The split button's "& start" item, the EULA box and the game port, each only when given. */
+function choicesFrom(form: FormData) {
+	const port = String(form.get('serverPort') ?? '').trim();
+	return {
+		...(form.get('start') === 'on' ? { startWhenReady: true } : {}),
+		...(form.get('acceptEula') === 'on' ? { acceptEula: true } : {}),
+		...(port ? { serverPort: Number(port) } : {})
+	};
 }
 
 /** The install form's mod list: a JSON array of mods/<file> paths, anything else ignored. */
@@ -114,7 +130,7 @@ export const actions: Actions = {
 				javaPath: String(form.get('javaPath') ?? '') || null,
 				...memoryFrom(form),
 				...downloadJavaFrom(form),
-				...startFrom(form)
+				...choicesFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -141,7 +157,7 @@ export const actions: Actions = {
 				...memoryFrom(form),
 				...cleanroomFrom(form),
 				...downloadJavaFrom(form),
-				...startFrom(form)
+				...choicesFrom(form)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -175,7 +191,7 @@ export const actions: Actions = {
 					...memoryFrom(form),
 					...cleanroomFrom(form),
 					...downloadJavaFrom(form),
-					...startFrom(form),
+					...choicesFrom(form),
 					disableMods: targetsFrom(form, 'disableMods'),
 					keepMods: targetsFrom(form, 'keepMods'),
 					enableMods: targetsFrom(form, 'enableMods')

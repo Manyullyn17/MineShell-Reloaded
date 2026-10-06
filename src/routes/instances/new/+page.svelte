@@ -625,6 +625,15 @@
 				/>
 				<p class="hint">The folder is named after it and cannot change later.</p>
 			</div>
+			<div class="field">
+				<label for="serverPort">Game port</label>
+				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" placeholder={String(data.nextPort)} />
+				<p class="hint">
+					Blank takes the next free one, {data.nextPort}.{data.usedPorts.length
+						? ` ${data.usedPorts.join(', ')} ${data.usedPorts.length === 1 ? 'is' : 'are'} taken by your other servers.`
+						: ''}
+				</p>
+			</div>
 			{@render memoryRows()}
 			{#if mode === 'loader' && data.javaRuntimes.length > 1}
 				<div class="field">
@@ -650,6 +659,14 @@
 				<CleanroomOption {javaMajors} idPrefix="upload-cleanroom" label="If this is a Forge 1.12.2 pack, run it on Cleanroom instead" />
 			</div>
 		{/if}
+
+		<label class="eula">
+			<input type="checkbox" name="acceptEula" />
+			<span>
+				<strong>I agree to the <a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a></strong>
+				<span class="small muted">Writes eula=true once installed, so the server can start. "Create &amp; start" accepts it too; you can also accept later.</span>
+			</span>
+		</label>
 
 		<JavaPrompt {form} action={mode === 'browse' ? 'install' : mode} />
 		<p class="faint small">
@@ -1101,6 +1118,30 @@
 
 	.extra {
 		margin-top: var(--space-4);
+	}
+
+	.eula {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.8rem;
+		margin: var(--space-4) 0;
+		padding: var(--space-4);
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+		color: var(--text);
+		font-size: 0.95rem;
+		cursor: pointer;
+	}
+
+	.eula input {
+		margin-top: 0.2rem;
+	}
+
+	.eula > span {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
 	}
 
 	/* Pinned to the window's bottom edge whatever the step's height, beside the rail. */

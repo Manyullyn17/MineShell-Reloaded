@@ -148,3 +148,38 @@ describe('stored defaults', () => {
 		expect(defaults.getInstanceDefaults()).toEqual(defaults.BUILT_IN_DEFAULTS);
 	});
 });
+
+describe('choices made when adding a server', () => {
+	beforeEach(() => {
+		systemdStopped();
+		clearJava();
+		addJava(21);
+		fakeInstall();
+	});
+	afterEach(() => vi.restoreAllMocks());
+
+	it('uses the game port asked for, with an RCON port of its own', async () => {
+		const { instance, taskId } = await createFromLoader({ name: 'Port', minecraftVersion: '1.21.1', modloader: 'fabric', serverPort: 25901 });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		const row = reload(instance.id);
+		expect(row.serverPort).toBe(25901);
+		expect(row.rconPort).not.toBe(25901);
+		expect((await readProperties(row.path)).values['server-port']).toBe('25901');
+	});
+
+	it('refuses a port another server has, before creating anything', async () => {
+		const { instance, taskId } = await createFromLoader({ name: 'First', minecraftVersion: '1.21.1', modloader: 'fabric', serverPort: 25902 });
+		await waitForTask(taskId);
+		const before = (await fs.readdir(path.dirname(instance.path))).length;
+		await expect(
+			createFromLoader({ name: 'Second', minecraftVersion: '1.21.1', modloader: 'fabric', serverPort: 25902 })
+		).rejects.toThrow(/already uses port 25902/);
+		expect((await fs.readdir(path.dirname(instance.path))).length).toBe(before);
+	});
+
+	it('accepts the EULA once installed without starting the server', async () => {
+		const { instance, taskId } = await createFromLoader({ name: 'Eula', minecraftVersion: '1.21.1', modloader: 'fabric', acceptEula: true });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(await fs.readFile(path.join(instance.path, 'eula.txt'), 'utf8')).toMatch(/eula=true/);
+	});
+});

@@ -71,8 +71,8 @@ Tests never touch real data; see [tests/README.md](tests/README.md).
 **Instances.** Create from a modpack you browse in-app (Modrinth, CurseForge, FTB), from a
 `.mrpack` or CurseForge zip you upload, or from just a loader and a Minecraft version
 (vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom). Before a pack installs you see its
-mods and can untick client-only ones. Each instance gets its own directory, port pair, RCON
-password and systemd unit. Later you can change the pack version or the loader version,
+mods and can untick client-only ones. Each instance gets its own directory, port pair (the game
+port can be picked), RCON password and systemd unit. Later you can change the pack version or the loader version,
 migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try
 something on the copy first. Those operations are journalled: a crash halfway through is
 rolled back at the next start.
