@@ -203,13 +203,13 @@
 			</div>
 		</header>
 		<div class="tabs" role="tablist">
-			<button role="tab" aria-selected={tab === 'description'} onclick={() => (tab = 'description')}>Description</button>
+			<button type="button" role="tab" aria-selected={tab === 'description'} onclick={() => (tab = 'description')}>Description</button>
 			{#if versionsTab}
-				<button role="tab" aria-selected={tab === 'versions'} onclick={() => (tab = 'versions')}>
+				<button type="button" role="tab" aria-selected={tab === 'versions'} onclick={() => (tab = 'versions')}>
 					Versions{#if versionCount !== null}<span class="count">{versionCount}</span>{/if}
 				</button>
 			{/if}
-			<button role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>Changelog</button>
+			<button type="button" role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>Changelog</button>
 		</div>
 		<div class="body markdown">
 			{#if loading}
@@ -236,7 +236,7 @@
 			<h2>{details?.name ?? 'Loading'}</h2>
 			{#if details?.author}<span class="faint small">by {details.author}</span>{/if}
 		</div>
-		<button class="close" onclick={onClose} aria-label="Close">×</button>
+		<button type="button" class="close" onclick={onClose} aria-label="Close">×</button>
 	</header>
 
 	{#if loading}
@@ -249,10 +249,10 @@
 		{/if}
 
 		<div class="tabs" role="tablist">
-			<button role="tab" aria-selected={tab === 'description'} onclick={() => (tab = 'description')}>
+			<button type="button" role="tab" aria-selected={tab === 'description'} onclick={() => (tab = 'description')}>
 				Description
 			</button>
-			<button role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>
+			<button type="button" role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>
 				Changelog{versionLabel ? ` (${versionLabel})` : ''}
 			</button>
 		</div>

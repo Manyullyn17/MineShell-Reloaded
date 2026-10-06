@@ -361,7 +361,7 @@
 					<div>
 						<div class="line" data-tone={line.tone}>{#each segments(split.rest, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
 						{#if line.trace.length}
-							<button class="trace-toggle" onclick={() => (open[line.id] = !open[line.id])} aria-expanded={!!open[line.id]}>
+							<button type="button" class="trace-toggle" onclick={() => (open[line.id] = !open[line.id])} aria-expanded={!!open[line.id]}>
 								{open[line.id] ? '▾ hide the stack trace' : `▸ ${line.trace.length} more line${line.trace.length === 1 ? '' : 's'}`}
 							</button>
 							{#if open[line.id]}
@@ -384,8 +384,9 @@
 				<span class="faint">Saved</span>
 				{#each macroList as macro (macro)}
 					<span class="macro">
-						<button class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line">{macro}</button>
+						<button type="button" class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line">{macro}</button>
 						<button
+							type="button"
 							class="button-quiet remove"
 							onclick={() => saveMacros(macroList.filter((m) => m !== macro))}
 							aria-label="Forget {macro}">×</button

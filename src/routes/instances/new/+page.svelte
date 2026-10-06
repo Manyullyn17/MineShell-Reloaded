@@ -28,7 +28,14 @@
 	let submitting = $state(false);
 	// Enhanced, so a refusal (a missing Java above all) keeps the picked pack,
 	// the chosen file and every field instead of reloading the page.
-	const submit = () => {
+	const submit = ({ cancel }: { cancel: () => void }) => {
+		// Only Create on the last step installs. Every step is in this one form,
+		// so any stray submit button (the detail pane's tabs were) would
+		// otherwise install a pack the moment it was looked at.
+		if (step !== 3) {
+			cancel();
+			return;
+		}
 		submitting = true;
 		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
 			await update({ reset: false });

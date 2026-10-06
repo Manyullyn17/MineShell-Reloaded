@@ -83,7 +83,7 @@
 					<span class="small">{toast.message}</span>
 				</div>
 				<a class="button button-quiet" href="/tasks">Details</a>
-				<button class="close" onclick={() => dismiss(toast.id)} aria-label="Dismiss">×</button>
+				<button type="button" class="close" onclick={() => dismiss(toast.id)} aria-label="Dismiss">×</button>
 			</div>
 		{/each}
 	</div>
