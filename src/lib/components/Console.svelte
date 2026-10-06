@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
+	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 
 	/**
 	 * Output arrives over Server-Sent Events (one long-lived GET) and input goes
@@ -40,6 +41,15 @@
 		{ id: 'info', label: 'Info' },
 		{ id: 'debug', label: 'Debug' }
 	];
+	const counts = $derived.by(() => {
+		const n: Record<Level | 'player', number> = { error: 0, warn: 0, info: 0, debug: 0, player: 0 };
+		for (const line of lines) {
+			if (line.level) n[line.level]++;
+			if (line.player) n.player++;
+		}
+		return n;
+	});
+	let below: HTMLElement | null = $state(null);
 	let shownLevels = $state<Record<Level, boolean>>({ error: true, warn: true, info: true, debug: true });
 	let playersOnly = $state(false);
 	let search = $state('');
@@ -219,6 +229,12 @@
 		input?.focus();
 	}
 
+	/** The log's own "[13:02:11] " prefix goes in the time column; the rest is the line. */
+	function splitTime(text: string): { time: string; rest: string } {
+		const m = text.match(/^\[(\d\d:\d\d:\d\d)(?:\.\d+)?\] ?/);
+		return m ? { time: m[1], rest: text.slice(m[0].length) } : { time: '', rest: text };
+	}
+
 	/** Splits text around the search so matches can be marked. */
 	function segments(text: string, query: string): { text: string; hit: boolean }[] {
 		const q = query.trim().toLowerCase();
@@ -266,41 +282,57 @@
 
 <div class="console">
 	<div class="bar">
-		<span class="row small">
+		<span class="stream" class:connected>
 			<span class="dot" class:running={connected} class:failed={!connected}></span>
 			{connected ? 'Streaming from the journal' : 'Not connected'}
 		</span>
-		<span class="row">
-			<label class="row small" for="autoscroll-{instanceId}">
-				<input id="autoscroll-{instanceId}" type="checkbox" bind:checked={autoscroll} />
-				Follow output
-			</label>
-			<button class="button-quiet" onclick={copyAll} disabled={visible.length === 0}>
-				{copied ? 'Copied' : filtering ? 'Copy shown' : 'Copy'}
-			</button>
-			<button class="button-quiet" onclick={() => ((lines = []), (open = {}))}>Clear view</button>
-		</span>
-	</div>
-
-	<div class="filters">
+		<span class="divider" aria-hidden="true"></span>
 		{#each LEVELS as level (level.id)}
-			<label class="row small" for="level-{level.id}-{instanceId}">
-				<input id="level-{level.id}-{instanceId}" type="checkbox" bind:checked={shownLevels[level.id]} />
-				{level.label}
-			</label>
+			<button
+				type="button"
+				class="chip"
+				data-level={level.id}
+				aria-pressed={shownLevels[level.id]}
+				onclick={() => (shownLevels[level.id] = !shownLevels[level.id])}
+			>
+				<span class="swatch"></span>{level.label}<span class="count">{counts[level.id]}</span>
+			</button>
 		{/each}
-		<label class="row small" for="players-{instanceId}">
-			<input id="players-{instanceId}" type="checkbox" bind:checked={playersOnly} />
-			Only players joining and leaving
-		</label>
-		<label class="row small" for="rcon-{instanceId}" title="The server logs every RCON connection; MineShell opens several a minute">
-			<input id="rcon-{instanceId}" type="checkbox" bind:checked={rconConnections} />
-			RCON connections
-		</label>
-		<input class="search" type="search" bind:value={search} placeholder="Search the output" aria-label="Search the output" />
+		<button
+			type="button"
+			class="chip"
+			data-level="player"
+			aria-pressed={playersOnly}
+			title="Show only players joining and leaving"
+			onclick={() => (playersOnly = !playersOnly)}
+		>
+			<span class="swatch"></span>Joins &amp; leaves<span class="count">{counts.player}</span>
+		</button>
+		<button
+			type="button"
+			class="chip"
+			data-level="rcon"
+			aria-pressed={rconConnections}
+			title="The server logs every RCON connection; MineShell opens several a minute"
+			onclick={() => (rconConnections = !rconConnections)}
+		>
+			<span class="swatch"></span>RCON connections
+		</button>
+		<span class="spacer"></span>
+		<span class="search">
+			<span aria-hidden="true">⌕</span>
+			<input type="search" bind:value={search} placeholder="Search the output" aria-label="Search the output" />
+		</span>
 		{#if filtering}
-			<span class="faint small">{visible.length} of {lines.length} lines</span>
+			<span class="faint small">{visible.length} of {lines.length}</span>
 		{/if}
+		<button class="button-quiet" type="button" aria-pressed={autoscroll} onclick={() => (autoscroll = !autoscroll)}>
+			{autoscroll ? 'Following' : 'Follow output'}
+		</button>
+		<button class="button-quiet" type="button" onclick={copyAll} disabled={visible.length === 0}>
+			{copied ? 'Copied' : filtering ? 'Copy shown' : 'Copy'}
+		</button>
+		<button class="button-quiet" type="button" onclick={() => ((lines = []), (open = {}))}>Clear view</button>
 	</div>
 
 	{#if error}
@@ -309,112 +341,231 @@
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<!-- tabindex is deliberate: a scrollable region must be reachable by keyboard. -->
-	<div class="viewport" bind:this={viewport} onscroll={onScroll} tabindex="0" role="log">
+	<div
+		class="viewport"
+		bind:this={viewport}
+		onscroll={onScroll}
+		tabindex="0"
+		role="log"
+		use:fitToViewport={{ bottomMarginPx: 20, reserveElement: below }}
+	>
 		{#if lines.length === 0}
 			<p class="faint">Waiting for output. Nothing is logged while the server is stopped.</p>
 		{:else if visible.length === 0}
 			<p class="faint">No line matches the filters.</p>
 		{:else}
 			{#each visible as line (line.id)}
-				<div class="line" data-tone={line.tone}>{#each segments(line.text, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
-				{#if line.trace.length}
-					<button class="trace-toggle" onclick={() => (open[line.id] = !open[line.id])} aria-expanded={!!open[line.id]}>
-						{open[line.id] ? '▾ hide the stack trace' : `▸ ${line.trace.length} more line${line.trace.length === 1 ? '' : 's'}`}
-					</button>
-					{#if open[line.id]}
-						{#each line.trace as traceLine, i (i)}
-							<div class="line trace">{#each segments(traceLine, search) as part, j (j)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
-						{/each}
-					{/if}
-				{/if}
+				{@const split = splitTime(line.text)}
+				<div class="entry">
+					<span class="time">{split.time}</span>
+					<div>
+						<div class="line" data-tone={line.tone}>{#each segments(split.rest, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
+						{#if line.trace.length}
+							<button class="trace-toggle" onclick={() => (open[line.id] = !open[line.id])} aria-expanded={!!open[line.id]}>
+								{open[line.id] ? '▾ hide the stack trace' : `▸ ${line.trace.length} more line${line.trace.length === 1 ? '' : 's'}`}
+							</button>
+							{#if open[line.id]}
+								<div class="trace">
+									{#each line.trace as traceLine, i (i)}
+										<div class="line">{#each segments(traceLine, search) as part, j (j)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
+									{/each}
+								</div>
+							{/if}
+						{/if}
+					</div>
+				</div>
 			{/each}
 		{/if}
 	</div>
 
-	{#if macroList.length}
-		<div class="macros" aria-label="Saved commands">
-			{#each macroList as macro (macro)}
-				<span class="macro">
-					<button class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line">{macro}</button>
-					<button
-						class="button-quiet remove"
-						onclick={() => saveMacros(macroList.filter((m) => m !== macro))}
-						aria-label="Forget {macro}">×</button
-					>
-				</span>
-			{/each}
-		</div>
-	{/if}
+	<div class="below" bind:this={below}>
+		{#if macroList.length}
+			<div class="macros" aria-label="Saved commands">
+				<span class="faint">Saved</span>
+				{#each macroList as macro (macro)}
+					<span class="macro">
+						<button class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line">{macro}</button>
+						<button
+							class="button-quiet remove"
+							onclick={() => saveMacros(macroList.filter((m) => m !== macro))}
+							aria-label="Forget {macro}">×</button
+						>
+					</span>
+				{/each}
+			</div>
+		{/if}
 
-	<form
-		class="input-row"
-		onsubmit={(e) => {
-			e.preventDefault();
-			void send();
-		}}
-	>
-		<span class="prompt" aria-hidden="true">&gt;</span>
-		<input
-			type="text"
-			bind:this={input}
-			placeholder={canSend ? 'Type a server command, e.g. say hello' : 'Start the server to send commands'}
-			bind:value={command}
-			onkeydown={onKeydown}
-			disabled={!canSend || sending}
-			autocomplete="off"
-			spellcheck="false"
-			aria-label="Server command"
-		/>
-		<button
-			class="button-quiet"
-			type="button"
-			onclick={() => saveMacros([...macroList, command.trim()])}
-			disabled={!command.trim() || macroList.includes(command.trim()) || macroList.length >= 20}
-			title="Keep this command as a button above the command line"
+		<form
+			class="input-row"
+			onsubmit={(e) => {
+				e.preventDefault();
+				void send();
+			}}
 		>
-			Save
-		</button>
-		<button class="button-primary" type="submit" disabled={!canSend || sending || !command.trim()}>
-			Send
-		</button>
-	</form>
+			<span class="prompt" aria-hidden="true">&gt;</span>
+			<input
+				type="text"
+				bind:this={input}
+				placeholder={canSend ? 'Type a server command, e.g. say hello   ·   ↑ for history' : 'Start the server to send commands'}
+				bind:value={command}
+				onkeydown={onKeydown}
+				disabled={!canSend || sending}
+				autocomplete="off"
+				spellcheck="false"
+				aria-label="Server command"
+			/>
+			<button
+				class="button-quiet"
+				type="button"
+				onclick={() => saveMacros([...macroList, command.trim()])}
+				disabled={!command.trim() || macroList.includes(command.trim()) || macroList.length >= 20}
+				title="Keep this command as a button above the command line"
+			>
+				Save
+			</button>
+			<button class="button-primary" type="submit" disabled={!canSend || sending || !command.trim()}>
+				Send
+			</button>
+		</form>
+	</div>
 </div>
 
 <style>
 	.console {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: 0.6rem;
 	}
 
 	.bar {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
+		gap: var(--space-2);
 		flex-wrap: wrap;
 	}
 
-	.bar label {
-		margin: 0;
-		cursor: pointer;
+	.stream {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 0.87rem;
+		color: var(--error);
+	}
+
+	.stream.connected {
+		color: var(--accent-hover);
+	}
+
+	.divider {
+		width: 1px;
+		height: 18px;
+		background: var(--line-strong);
+		margin: 0 0.25rem;
+	}
+
+	.spacer {
+		flex: 1;
+	}
+
+	.chip {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.2rem 0.65rem;
+		border-radius: 12px;
+		font-size: 0.83rem;
+		font-weight: 400;
+		border: 1px solid var(--line);
+		background: transparent;
+		color: var(--text-faint);
+		--swatch: var(--text-muted);
+	}
+
+	.chip[aria-pressed='true'] {
+		background: var(--panel);
+		border-color: var(--line-strong);
+		color: var(--text);
+	}
+
+	.chip[data-level='error'] {
+		--swatch: var(--error);
+	}
+	.chip[data-level='warn'] {
+		--swatch: var(--warning);
+	}
+	.chip[data-level='debug'] {
+		--swatch: var(--text-faint);
+	}
+	.chip[data-level='player'] {
+		--swatch: var(--accent);
+	}
+	.chip[data-level='rcon'] {
+		--swatch: var(--info);
+	}
+
+	.swatch {
+		width: 7px;
+		height: 7px;
+		border-radius: 1px;
+		background: var(--swatch);
+	}
+
+	.count {
+		font-family: var(--font-mono);
+		font-size: 0.73rem;
+		color: var(--text-faint);
+	}
+
+	.search {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		width: 14rem;
+		background: var(--bg-sunken);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius);
+		padding: 0 0.55rem;
+		color: var(--text-faint);
+		font-size: 0.87rem;
+	}
+
+	.search input {
+		flex: 1;
+		min-width: 0;
+		background: transparent;
+		border: 0;
+		padding: 0.3rem 0;
+		font-size: 0.87rem;
+		outline: none;
 	}
 
 	.viewport {
 		background: var(--bg-sunken);
 		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		padding: var(--space-3);
-		height: clamp(20rem, 55vh, 42rem);
-		overflow-y: auto;
-		overflow-x: auto;
+		border-radius: var(--radius-lg);
+		padding: 0.75rem 0.9rem;
+		min-height: 16rem;
+		height: 100vh;
+		overflow: auto;
 		font-family: var(--font-mono);
-		font-size: 0.8rem;
-		line-height: 1.5;
+		font-size: 0.83rem;
+		line-height: 1.6;
+	}
+
+	.entry {
+		display: grid;
+		grid-template-columns: 4.1rem minmax(0, 1fr);
+		gap: 0.75rem;
+	}
+
+	.time {
+		color: var(--text-faint);
+		opacity: 0.75;
 	}
 
 	.line {
-		white-space: pre;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 		color: var(--text);
 	}
 
@@ -430,27 +581,16 @@
 	.line[data-tone='meta'] {
 		color: var(--text-faint);
 	}
-
-	.input-row {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.prompt {
-		font-family: var(--font-mono);
-		color: var(--accent);
-	}
-
-	.input-row input {
-		font-family: var(--font-mono);
-		font-size: 0.85rem;
-	}
 	.line[data-tone='player'] {
 		color: var(--accent-hover);
 	}
 
-	.line.trace {
+	.trace {
+		padding-left: 0.9rem;
+		border-left: 2px solid var(--line);
+	}
+
+	.trace .line {
 		color: var(--text-muted);
 	}
 
@@ -462,7 +602,7 @@
 
 	.trace-toggle {
 		display: block;
-		padding: 0 0 0 var(--space-4);
+		padding: 0;
 		border: 0;
 		background: none;
 		color: var(--text-faint);
@@ -475,31 +615,18 @@
 		color: var(--text);
 	}
 
-	.filters {
+	.below {
 		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-4);
-	}
-
-	.filters label {
-		margin: 0;
-		cursor: pointer;
-		color: var(--text-muted);
-	}
-
-	.filters .search {
-		width: auto;
-		flex: 1 1 12rem;
-		max-width: 20rem;
-		font-size: 0.85rem;
-		padding: 0.25rem 0.5rem;
+		flex-direction: column;
+		gap: 0.6rem;
 	}
 
 	.macros {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-1);
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8rem;
 	}
 
 	.macro {
@@ -510,13 +637,40 @@
 
 	.macro button {
 		font-family: var(--font-mono);
-		font-size: 0.78rem;
-		padding: 0.15rem 0.45rem;
+		font-size: 0.8rem;
+		font-weight: 400;
+		padding: 0.15rem 0.55rem;
 		border-radius: 0;
+		color: var(--text);
 	}
 
 	.macro .remove {
 		color: var(--text-faint);
 		border-left: 1px solid var(--line);
+	}
+
+	.input-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		background: var(--bg-sunken);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-lg);
+		padding: 4px 4px 4px 0.75rem;
+	}
+
+	.prompt {
+		font-family: var(--font-mono);
+		color: var(--accent);
+	}
+
+	.input-row input {
+		flex: 1;
+		background: transparent;
+		border: 0;
+		padding: 0.45rem 0;
+		font-family: var(--font-mono);
+		font-size: 0.88rem;
+		outline: none;
 	}
 </style>
