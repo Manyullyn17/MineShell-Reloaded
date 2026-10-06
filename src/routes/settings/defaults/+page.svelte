@@ -57,11 +57,9 @@
 
 <svelte:head><title>New server defaults - MineShell</title></svelte:head>
 
-<p class="muted"><a href="/settings">Settings</a> /</p>
-<h1>New server defaults</h1>
 <p class="muted intro">
 	What a server starts with when you add it. Existing servers keep their own settings; change
-	those on each server's settings page.
+	those in each server's Settings.
 </p>
 
 <Flash {form} />

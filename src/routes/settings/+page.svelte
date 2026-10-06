@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 
+	const tab = $derived(page.url.searchParams.get('tab') ?? 'system');
 	let showUnit = $state(false);
 	let manualJava = $state('');
 	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
@@ -16,61 +18,13 @@
 	});
 </script>
 
-<svelte:head><title>Settings - MineShell</title></svelte:head>
-
-<h1>Settings</h1>
+<svelte:head><title>MineShell settings - MineShell</title></svelte:head>
 
 <Flash {form} />
 
-<section class="panel">
-	<div class="panel-head">
-		<div>
-			<h2>systemd</h2>
-			<p>
-				MineShell runs each server as a systemd user unit, <code>{data.paths.templateUnit}</code>, under
-				the account MineShell runs as. One template unit serves every instance; the per-instance details
-				live in environment files.
-			</p>
-		</div>
-		<form method="POST" action="?/installUnit" use:enhance>
-			<button class="button-primary" type="submit">
-				{data.systemd.unitInstalled ? 'Reinstall unit file' : 'Install unit file'}
-			</button>
-		</form>
-	</div>
+<div class="app-settings">
 
-	{#if !data.systemd.available}
-		<div class="notice error">
-			<p>
-				<code>systemctl</code> is not reachable: {data.systemd.message}
-			</p>
-			<p>
-				MineShell needs the user's systemd instance: run it as a normal user with lingering enabled, for
-				example as a user service (see <code>docs/DEPLOYMENT.md</code>), not from a system service or cron.
-			</p>
-		</div>
-	{:else if !data.systemd.unitInstalled}
-		<div class="notice warning">
-			<p>The unit file is not installed yet, so servers cannot start.</p>
-		</div>
-	{:else}
-		<div class="notice success">
-			<p>Unit installed at <code>{data.paths.unitDir}/{data.paths.templateUnit}</code>.</p>
-		</div>
-	{/if}
-
-	<p class="muted small">
-		Run <code>loginctl enable-linger $USER</code> once so servers keep running after you log out.
-	</p>
-
-	<button class="button-quiet" onclick={() => (showUnit = !showUnit)}>
-		{showUnit ? 'Hide unit file' : 'Show unit file'}
-	</button>
-	{#if showUnit}
-		<pre class="unit">{data.unitPreview}</pre>
-	{/if}
-</section>
-
+{#if tab === 'java'}
 <section class="panel">
 	<div class="panel-head">
 		<div>
@@ -198,50 +152,7 @@
 		kept in <code>{data.paths.data}/java</code>. Servers set to match Java automatically pick it up.
 	</p>
 </section>
-
-{#if data.authEnabled}
-	<section class="panel">
-		<h2>Admin password</h2>
-		<form method="POST" action="?/password" use:enhance>
-			<div class="grid-2">
-				<div class="field">
-					<label for="password">New password</label>
-					<input id="password" name="password" type="password" minlength="8" required />
-				</div>
-				<div class="field">
-					<label for="confirm">New password again</label>
-					<input id="confirm" name="confirm" type="password" minlength="8" required />
-				</div>
-			</div>
-			<div class="check field">
-				<input id="signOutEverywhere" name="signOutEverywhere" type="checkbox" checked />
-				<label for="signOutEverywhere">Sign out every other device</label>
-			</div>
-			<button class="button-primary" type="submit">Change password</button>
-		</form>
-	</section>
-{:else}
-	<section class="panel">
-		<h2>Authentication</h2>
-		<div class="notice warning">
-			<p>
-				Login is disabled (<code>MINESHELL_AUTH=off</code>). Anyone who can reach this page can
-				start, stop and delete your servers, and read every file in an instance.
-			</p>
-		</div>
-	</section>
-{/if}
-
-<section class="panel">
-	<div class="panel-head">
-		<div>
-			<h2>New server defaults</h2>
-			<p>Memory, JVM preset, restart behaviour, console and game settings a new server starts with.</p>
-		</div>
-		<a class="button" href="/settings/defaults">Edit defaults</a>
-	</div>
-</section>
-
+{:else if tab === 'snapshots'}
 <section class="panel">
 	<h2>World snapshots</h2>
 	<p class="muted">
@@ -285,19 +196,7 @@
 		{/if}
 	{/if}
 </section>
-
-<section class="panel">
-	<h2>Where things live</h2>
-	<dl class="paths">
-		<dt>Data</dt>
-		<dd class="mono wrap">{data.paths.data}</dd>
-		<dt>Instances</dt>
-		<dd class="mono wrap">{data.paths.instances}</dd>
-		<dt>Unit environment files</dt>
-		<dd class="mono wrap">{data.paths.units}</dd>
-	</dl>
-</section>
-
+{:else if tab === 'integrations'}
 <section class="panel">
 	<h2>CurseForge API key</h2>
 	<p>
@@ -346,7 +245,40 @@
 		</form>
 	{/if}
 </section>
-
+{:else if tab === 'security'}
+{#if data.authEnabled}
+	<section class="panel">
+		<h2>Admin password</h2>
+		<form method="POST" action="?/password" use:enhance>
+			<div class="grid-2">
+				<div class="field">
+					<label for="password">New password</label>
+					<input id="password" name="password" type="password" minlength="8" required />
+				</div>
+				<div class="field">
+					<label for="confirm">New password again</label>
+					<input id="confirm" name="confirm" type="password" minlength="8" required />
+				</div>
+			</div>
+			<div class="check field">
+				<input id="signOutEverywhere" name="signOutEverywhere" type="checkbox" checked />
+				<label for="signOutEverywhere">Sign out every other device</label>
+			</div>
+			<button class="button-primary" type="submit">Change password</button>
+		</form>
+	</section>
+{:else}
+	<section class="panel">
+		<h2>Authentication</h2>
+		<div class="notice warning">
+			<p>
+				Login is disabled (<code>MINESHELL_AUTH=off</code>). Anyone who can reach this page can
+				start, stop and delete your servers, and read every file in an instance.
+			</p>
+		</div>
+	</section>
+{/if}
+{:else if tab === 'activity'}
 <section class="panel">
 	<h2>Recent actions</h2>
 	{#if data.recent.length === 0}
@@ -369,6 +301,66 @@
 		</table>
 	{/if}
 </section>
+{:else}
+<section class="panel">
+	<div class="panel-head">
+		<div>
+			<h2>systemd</h2>
+			<p>
+				MineShell runs each server as a systemd user unit, <code>{data.paths.templateUnit}</code>, under
+				the account MineShell runs as. One template unit serves every instance; the per-instance details
+				live in environment files.
+			</p>
+		</div>
+		<form method="POST" action="?/installUnit" use:enhance>
+			<button class="button-primary" type="submit">
+				{data.systemd.unitInstalled ? 'Reinstall unit file' : 'Install unit file'}
+			</button>
+		</form>
+	</div>
+
+	{#if !data.systemd.available}
+		<div class="notice error">
+			<p>
+				<code>systemctl</code> is not reachable: {data.systemd.message}
+			</p>
+			<p>
+				MineShell needs the user's systemd instance: run it as a normal user with lingering enabled, for
+				example as a user service (see <code>docs/DEPLOYMENT.md</code>), not from a system service or cron.
+			</p>
+		</div>
+	{:else if !data.systemd.unitInstalled}
+		<div class="notice warning">
+			<p>The unit file is not installed yet, so servers cannot start.</p>
+		</div>
+	{:else}
+		<div class="notice success">
+			<p>Unit installed at <code>{data.paths.unitDir}/{data.paths.templateUnit}</code>.</p>
+		</div>
+	{/if}
+
+	<p class="muted small">
+		Run <code>loginctl enable-linger $USER</code> once so servers keep running after you log out.
+	</p>
+
+	<button class="button-quiet" onclick={() => (showUnit = !showUnit)}>
+		{showUnit ? 'Hide unit file' : 'Show unit file'}
+	</button>
+	{#if showUnit}
+		<pre class="unit">{data.unitPreview}</pre>
+	{/if}
+</section>
+
+<section class="panel">
+	<h2>Where things live</h2>
+	<dl class="paths">
+		<div><dt>Data</dt><dd class="mono wrap">{data.paths.data}</dd></div>
+		<div><dt>Instances</dt><dd class="mono wrap">{data.paths.instances}</dd></div>
+		<div><dt>Unit environment files</dt><dd class="mono wrap">{data.paths.units}</dd></div>
+	</dl>
+</section>
+{/if}
+</div>
 
 <style>
 	.usage-heading {
@@ -387,8 +379,50 @@
 		margin-top: var(--space-5);
 	}
 
-	h1 {
-		margin-bottom: var(--space-5);
+	/* Sections rather than boxes, as on a server's Settings. */
+	.app-settings {
+		max-width: 62rem;
+	}
+
+	.app-settings :global(.panel) {
+		background: none;
+		border: 0;
+		border-radius: 0;
+		padding: 0;
+		margin: 0 0 2rem;
+	}
+
+	.app-settings :global(.panel > h2),
+	.app-settings :global(.panel-head h2) {
+		font-size: 1.05rem;
+		margin-bottom: 0.3rem;
+	}
+
+	.app-settings :global(table) {
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+		border-collapse: separate;
+		border-spacing: 0;
+		overflow: hidden;
+	}
+
+	.app-settings :global(th) {
+		padding: 0.7rem var(--space-3);
+		font-weight: 400;
+		color: var(--text-faint);
+	}
+
+	.paths div {
+		display: grid;
+		grid-template-columns: 13rem minmax(0, 1fr);
+		gap: var(--space-3);
+		padding: 0.75rem var(--space-4);
+		border-top: 1px solid var(--line);
+	}
+
+	.paths div:first-child {
+		border-top: 0;
 	}
 
 	.unit {
@@ -416,15 +450,15 @@
 	}
 
 	.paths {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		gap: var(--space-2) var(--space-4);
 		font-size: 0.9rem;
-		margin: 0;
+		margin: var(--space-3) 0 0;
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
 	}
 
 	.paths dt {
-		color: var(--text-faint);
+		color: var(--text);
 	}
 
 	.paths dd {
