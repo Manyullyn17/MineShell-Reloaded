@@ -112,9 +112,16 @@
 		tab = defaultTab;
 	});
 
+	/** Whose details are shown: picking another version of the same project keeps them up while the changelog loads. */
+	let shownProject = '';
+	/** Nothing to show yet: first load, another project, or the changelog of a version still loading. */
+	const waiting = $derived(loading && (!details || tab === 'changelog'));
+
 	$effect(() => {
 		const params = new URLSearchParams({ source, kind, id: projectId });
 		if (versionId) params.set('versionId', versionId);
+		if (shownProject !== `${source}:${projectId}`) details = null;
+		shownProject = `${source}:${projectId}`;
 
 		let cancelled = false;
 		loading = true;
@@ -212,8 +219,11 @@
 			<button type="button" role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>Changelog</button>
 		</div>
 		<div class="body markdown">
-			{#if loading}
-				<p class="muted">Loading details.</p>
+			{#if tab === 'versions' && versionsTab}
+				<!-- The parent's list: it does not wait for details, so picking a version does not redraw it. -->
+				{@render versionsTab({ showChangelog: () => (tab = 'changelog') })}
+			{:else if waiting}
+				<p class="muted">{details ? 'Loading the changelog.' : 'Loading details.'}</p>
 			{:else if error}
 				<p class="notice error">{error}</p>
 			{:else if details}
@@ -239,8 +249,8 @@
 		<button type="button" class="close" onclick={onClose} aria-label="Close">×</button>
 	</header>
 
-	{#if loading}
-		<p class="muted pad">Loading details.</p>
+	{#if waiting}
+		<p class="muted pad">{details ? 'Loading the changelog.' : 'Loading details.'}</p>
 	{:else if error}
 		<p class="notice error">{error}</p>
 	{:else if details}
