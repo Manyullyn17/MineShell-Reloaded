@@ -1,4 +1,6 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
 import { eq } from 'drizzle-orm';
@@ -9,6 +11,8 @@ import {
 	InstanceError,
 	JavaMissingError,
 	changeLoaderVersion,
+	cloneInstance,
+	deleteInstance,
 	migrateToCleanroom,
 	readForgeBackup,
 	requireInstance,
@@ -42,6 +46,15 @@ import {
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portConflict } from '#lib/server/ports.js';
+import {
+	PROPERTY_SCHEMA,
+	levelTypeOptionsFor,
+	parseProperties,
+	propertiesFromForm,
+	readProperties,
+	serialiseProperties,
+	writeProperties
+} from '#lib/server/properties.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
 import { LOADER_LIST, getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
@@ -54,8 +67,17 @@ import {
 	stripMemoryFlags
 } from '#lib/server/jvm-presets.js';
 
+/**
+ * server.properties keys with a control of their own elsewhere: MineShell
+ * owns RCON (the DB holds the password and port), and the game port is set
+ * with the RCON port through the network action so the DB and file agree.
+ */
+const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port', 'server-port']);
+const editableProperties = () => PROPERTY_SCHEMA.filter((f) => !MANAGED_KEYS.has(f.key));
+
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
+	const parsed = await readProperties(instance.path);
 	const cleanroomRelevant =
 		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
 	const backup = cleanroomRelevant ? await readForgeBackup(instance) : null;
@@ -141,7 +163,19 @@ export const load: PageServerLoad = async ({ params }) => {
 			global: policyFormValues(getSnapshotPolicy()),
 			usage: await snapshotUsage(instance.path)
 		},
-		scheduledCommands: listScheduledCommands(instance.id)
+		scheduledCommands: listScheduledCommands(instance.id),
+		properties: {
+			values: parsed.values,
+			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k)).map((key) => ({ key, value: parsed.values[key] })),
+			schema: editableProperties().map((field) =>
+				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
+			),
+			raw: serialiseProperties(parsed.values)
+		},
+		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(
+			() => true,
+			() => false
+		)
 	};
 };
 
@@ -294,11 +328,12 @@ export const actions: Actions = {
 				jvmArgs,
 				launchArgs: String(form.get('launchArgs') ?? instance.launchArgs).trim(),
 				// The manual path field wins when it says something different, so a
-				// runtime that was never scanned can still be used.
+				// runtime that was never scanned can still be used. A form without
+				// either field keeps the current choice.
 				javaPath:
-					String(form.get('javaPathManual') ?? '').trim() ||
-					String(form.get('javaPath') ?? '').trim() ||
-					null,
+					form.has('javaPath') || form.has('javaPathManual')
+						? String(form.get('javaPathManual') ?? '').trim() || String(form.get('javaPath') ?? '').trim() || null
+						: instance.javaPath,
 				updatedAt: Date.now()
 			})
 			.where(eq(serverInstances.id, instance.id))
@@ -510,6 +545,74 @@ export const actions: Actions = {
 			ok: result.failures.length === 0,
 			message: [done.length ? `Done: ${done.join('; ')}.` : 'Nothing needed changing.', ...result.failures].join(' ')
 		};
+	},
+
+	/**
+	 * Guided server.properties fields. Settings posts them a section at a time,
+	 * so only the keys on the form are written; the rest keep their values.
+	 */
+	properties: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const next: Record<string, string> = {
+			...(await readProperties(instance.path)).values,
+			...propertiesFromForm(form, editableProperties())
+		};
+		for (const [key, value] of form.entries()) {
+			const match = key.match(/^extra:(.+)$/);
+			if (match && !MANAGED_KEYS.has(match[1])) next[match[1]] = String(value);
+		}
+		await writeProperties(instance.path, next);
+		await syncPortsToProperties(requireInstance(instance.id));
+		return { ok: true, message: 'Saved. Restart the server for the changes to take effect.' };
+	},
+
+	propertiesRaw: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const raw = String((await request.formData()).get('raw') ?? '');
+		const parsed = parseProperties(raw);
+		if (Object.keys(parsed.values).length === 0) {
+			return fail(400, { ok: false, message: 'That does not look like a properties file.' });
+		}
+		// The game port lives in the DB too; a changed one in the raw file moves it.
+		const newPort = Number(parsed.values['server-port']);
+		if (Number.isInteger(newPort) && newPort !== instance.serverPort) {
+			const conflict = portConflict(newPort, instance.id);
+			if (conflict) return fail(400, { ok: false, message: conflict });
+			db.update(serverInstances)
+				.set({ serverPort: newPort, updatedAt: Date.now() })
+				.where(eq(serverInstances.id, instance.id))
+				.run();
+		}
+		await writeProperties(instance.path, parsed.values);
+		await syncPortsToProperties(requireInstance(instance.id));
+		return { ok: true, message: 'File written. Restart to apply.' };
+	},
+
+	clone: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const name = String((await request.formData()).get('name') ?? '').trim().slice(0, 80);
+		let copy;
+		try {
+			({ instance: copy } = await cloneInstance(instance, name));
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		redirect(303, `/instances/${copy.id}`);
+	},
+
+	delete: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		// A fixed phrase rather than the instance name: a name with emoji or
+		// unusual characters could be impractical to retype, and the friction is
+		// the point, not the specific string.
+		if (String(form.get('confirm') ?? '').trim().toUpperCase() !== 'DELETE') {
+			return fail(400, { ok: false, message: 'Type DELETE to confirm.' });
+		}
+		await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
+		redirect(303, '/');
 	},
 
 	rescanJava: async ({ params }) => {

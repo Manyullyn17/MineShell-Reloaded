@@ -9,9 +9,6 @@
 
 	let { data, form } = $props();
 
-	let confirmName = $state('');
-	let showDelete = $state(false);
-	let showClone = $state(false);
 	const clock = (ms: number) => {
 		const seconds = Math.max(0, Math.round(ms / 1000));
 		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -381,82 +378,6 @@
 	</div>
 </div>
 
-<section class="panel">
-	<div class="panel-head">
-		<div>
-			<h2>Copy this server</h2>
-			<p>
-				A separate server with the same files, mods and settings, on its own ports, to try a pack update or a
-				migration on first. World snapshots are not copied.
-			</p>
-		</div>
-		{#if !showClone}
-			<button onclick={() => (showClone = true)}>Copy server</button>
-		{/if}
-	</div>
-	{#if showClone}
-		<form method="POST" action="?/clone" use:enhance>
-			<div class="field">
-				<label for="clone-name">Name of the copy</label>
-				<input id="clone-name" name="name" value="{data.instance.name} (copy)" maxlength="80" required />
-			</div>
-			{#if data.instance.status === 'provisioning' || data.running}
-				<p class="hint">Stop the server to copy it; a running server's world is still being written.</p>
-			{/if}
-			<div class="button-row">
-				<button class="button-primary" type="submit" disabled={data.running || data.instance.status === 'provisioning'}>
-					Copy
-				</button>
-				<button class="button-quiet" type="button" onclick={() => (showClone = false)}>Cancel</button>
-			</div>
-		</form>
-	{/if}
-</section>
-
-<section class="panel danger">
-	<div class="panel-head">
-		<div>
-			<h2>Delete this server</h2>
-			<p>Stops the server, removes its systemd unit, and optionally deletes the world and mods.</p>
-		</div>
-		{#if !showDelete}
-			<button class="button-danger" onclick={() => (showDelete = true)}>Delete server</button>
-		{/if}
-	</div>
-
-	{#if showDelete}
-		<form method="POST" action="?/delete" use:enhance>
-			<div class="field">
-				<label for="confirm">
-					Type <strong>DELETE</strong> to confirm you want to remove
-					<strong>{data.instance.name}</strong>
-				</label>
-				<input
-					id="confirm"
-					name="confirm"
-					bind:value={confirmName}
-					autocomplete="off"
-					placeholder="DELETE"
-				/>
-			</div>
-			<div class="check field">
-				<input id="deleteFiles" name="deleteFiles" type="checkbox" />
-				<label for="deleteFiles">
-					Also delete every file, including the world. This cannot be undone.
-				</label>
-			</div>
-			<div class="button-row">
-				<button class="button-danger" type="submit" disabled={confirmName.trim().toUpperCase() !== 'DELETE'}>
-					Delete permanently
-				</button>
-				<button class="button-quiet" type="button" onclick={() => (showDelete = false)}>
-					Cancel
-				</button>
-			</div>
-		</form>
-	{/if}
-</section>
-
 <style>
 	.profiling {
 		display: flex;
@@ -699,29 +620,9 @@
 		max-height: 16rem;
 	}
 
-	.danger {
-		margin-top: var(--space-4);
-		border-color: color-mix(in srgb, var(--error) 30%, var(--line));
-	}
 
-	/* Paragraphs carry a global 68ch readability cap, which here left a large
-	   dead gap between the text and the delete button. In a single-line panel
-	   header the copy should run as wide as the space allows and stop just
-	   short of the button instead. */
-	.danger .panel-head > div {
-		flex: 1 1 auto;
-		min-width: 0;
-		padding-right: var(--space-4);
-	}
 
-	.danger .panel-head p {
-		max-width: none;
-	}
 
-	.danger .panel-head {
-		align-items: center;
-		gap: var(--space-2);
-	}
 
 	.warn-text {
 		color: var(--warning);

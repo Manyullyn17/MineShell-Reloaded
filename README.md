@@ -93,8 +93,11 @@ Filter by level, search, stack traces folded under their error, players joining 
 marked, command history and saved commands. The Logs tab has earlier runs and the server's
 own log files and crash reports.
 
-**Server settings.** The common `server.properties` keys as typed controls, everything else
-preserved in an "other keys" section, plus a raw editor. Nothing is silently dropped.
+**Settings.** One page per server, in tabs (general, gameplay, players, network,
+performance, Java and memory, automation, snapshots, advanced), searchable, with one save
+bar that says which changes need a restart and can restart for you. The common
+`server.properties` keys are typed controls, everything else is preserved in an "other
+keys" section, plus a raw editor. Nothing is silently dropped.
 
 **Mods.** Search and install from Modrinth and CurseForge with dependency resolution,
 upload jars by hand, enable and disable (which renames to `.jar.disabled`, the thing the

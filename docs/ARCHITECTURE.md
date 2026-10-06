@@ -273,8 +273,8 @@ refuses to operate outside `INSTANCES_DIR`, so a corrupt database row cannot poi
 
 **Secrets.** RCON passwords (and a CurseForge key set in Settings) are AES-256-GCM
 encrypted with a key in a `0600` file (`secret.key`) beside the database. Losing the key
-means regenerating RCON passwords, which a server's Instance settings can do ("Generate a
-new RCON password when saving").
+means regenerating RCON passwords, which a server's Settings can do (Network, "Generate a
+new password on save").
 
 **Cross-site requests.** A state-changing request whose browser `Origin` names another host
 is refused (`guard.ts`). Only the host is compared, against `Host` and `X-Forwarded-Host`,
@@ -299,6 +299,25 @@ so endpoints (`src/routes/api/`) exist only where a form action cannot do the jo
 streams, file and world downloads, a world upload streamed to disk (a form body would be
 held in memory whole), console commands and saved commands sent from the console, and the
 search and preview endpoints the browse-and-install forms call as you type.
+
+**A server's Settings** is one page with nine tabs (server.properties and MineShell's own
+settings together) and one save bar. Each section is still its own form posting to the
+action that saves it (`general`, `properties`, `network`, `runtime`, `limits`, `restarts`,
+`console`, `snapshotPolicy`); the bar submits the changed ones in turn and stops at the
+first refusal, opening its tab. That works because those actions keep the current value
+of any field missing from the form: `properties` writes only the keys posted, `network`
+and `restarts` fall back per field, `runtime` keeps the pinned Java when no Java field is
+posted. Whether a section has unsaved changes is worked out from its fields against the
+loaded data, not from the DOM, and a reload copies in only the values that changed on the
+server, so an action elsewhere on the page (a scheduled command added, a section saved)
+does not wipe edits that are not saved yet. Every section stays mounted and is hidden when
+its tab is closed, so the search can look through all of them. Things that act at once
+(installing a loader version, a pack change, Cleanroom, the icon, presets, scheduled
+commands, copy and delete) keep their own buttons.
+
+**The instance header** carries start, stop, restart and the delayed variants on every
+tab. Its forms post to the overview's actions; an enhanced form posting to another page
+would navigate there, so the header applies the result itself and reloads in place.
 
 Styling is one stylesheet of custom properties. Two rules carry meaning rather than taste:
 monospace is used only for machine output — paths, versions, ports, log lines, metrics —

@@ -56,13 +56,13 @@
 			MineShell cannot reach the user's systemd instance, so servers cannot be started.
 			{data.environment.systemdMessage}
 		</p>
-		<p>See <a href="/settings">Settings</a> for what to check.</p>
+		<p>See <a href="/settings">MineShell settings</a> for what to check.</p>
 	</div>
 {:else if !data.environment.unitInstalled}
 	<div class="notice warning">
 		<p>
 			The <code>minecraft@.service</code> template is not installed yet. Install it from
-			<a href="/settings">Settings</a> before starting a server.
+			<a href="/settings">MineShell settings</a> before starting a server.
 		</p>
 	</div>
 {/if}
@@ -71,7 +71,7 @@
 	<div class="notice warning">
 		<p>
 			No Java runtime has been found on this machine. Install one, then rescan from
-			<a href="/settings">Settings</a>.
+			<a href="/settings">MineShell settings</a>.
 		</p>
 	</div>
 {/if}

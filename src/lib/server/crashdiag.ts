@@ -418,7 +418,7 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 					{
 						kind: 'loader-version',
 						title: `${name} needs ${loaderName}${range ? ` ${range}` : ''}`,
-						detail: `The installed ${loaderName} does not match. Change the version in the instance settings to one in that range, or use a version of ${name} made for this setup.`,
+						detail: `The installed ${loaderName} does not match. Change the version in the server's Settings (General) to one in that range, or use a version of ${name} made for this setup.`,
 						culprit: ref(jar),
 						related: null,
 						evidence: line.trim(),
@@ -627,7 +627,7 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 				{
 					kind: 'java-version',
 					title: `${who} needs Java ${needs}, but the server runs Java ${running}`,
-					detail: `${cls} was built for Java ${needs}. ${jar ? `Use a version of ${who} built for Java ${running}, or install` : 'Install'} Java ${needs} (for example \`sudo apt install openjdk-${needs}-jre-headless\`); MineShell picks it up after "Rescan for Java" in the instance settings, or pin it there under Runtime.`,
+					detail: `${cls} was built for Java ${needs}. ${jar ? `Use a version of ${who} built for Java ${running}, or install` : 'Install'} Java ${needs} (for example \`sudo apt install openjdk-${needs}-jre-headless\`); MineShell picks it up after "Rescan for Java" in the server's Settings (Java & memory), or pin it there.`,
 					culprit: ref(jar),
 					related: null,
 					evidence: line.trim(),

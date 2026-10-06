@@ -369,7 +369,7 @@ export async function createFromLoader(input: CreateInstanceInput): Promise<{ in
 
 				if (input.modloader === 'cleanroom') {
 					task.log(
-						'Most Forge mods also need Fugue and Scalar Legacy on Cleanroom; "Apply required fixes" in the instance settings adds both.'
+						'Most Forge mods also need Fugue and Scalar Legacy on Cleanroom; "Apply required fixes" in the server\'s Settings adds both.'
 					);
 				}
 

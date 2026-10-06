@@ -31,7 +31,7 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'online-mode', label: 'Verify accounts with Mojang', type: 'boolean', group: 'Network', help: 'Turning this off lets cracked clients join. Only do it behind a whitelist on a private network.' },
 	{ key: 'enable-rcon', label: 'Enable RCON', type: 'boolean', group: 'Network', help: 'MineShell sends console commands over RCON. Turning it off makes the console read-only.', restartRequired: true },
 	{ key: 'rcon.port', label: 'RCON port', type: 'number', min: 1, max: 65535, group: 'Network', restartRequired: true },
-	{ key: 'rcon.password', label: 'RCON password', type: 'text', group: 'Network', help: 'Managed by MineShell. Change it in instance settings instead.' },
+	{ key: 'rcon.password', label: 'RCON password', type: 'text', group: 'Network', help: "Managed by MineShell. Change it in the server's Settings (Network) instead." },
 	{ key: 'enable-query', label: 'Enable query protocol', type: 'boolean', group: 'Network' },
 
 	{ key: 'level-name', label: 'World folder', type: 'text', group: 'World', restartRequired: true },

@@ -15,7 +15,6 @@
 		{ slug: 'world', label: 'World' },
 		{ slug: 'players', label: 'Players' },
 		{ slug: 'files', label: 'Files' },
-		{ slug: 'properties', label: 'Server settings' },
 		{ slug: 'settings', label: 'Settings' }
 	];
 

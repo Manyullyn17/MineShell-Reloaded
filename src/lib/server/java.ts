@@ -389,7 +389,7 @@ export function resolveJava(opts: {
 			majorVersion: null,
 			requiredMajor,
 			origin: 'missing',
-			warning: `No Java ${requiredMajor} runtime found. Download one in Settings, install one with your package manager and rescan, or pin a path in instance settings.`
+			warning: `No Java ${requiredMajor} runtime found. Download one in MineShell settings, install one with your package manager and rescan, or pin a path in the server's Settings (Java & memory).`
 		};
 	}
 

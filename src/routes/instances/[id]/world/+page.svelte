@@ -166,7 +166,7 @@
 				{/if}
 				At least the newest {data.snapshotPrompt.policy.keepMin} full and {data.snapshotPrompt.policy.partialMin} partial
 				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
-					href="/instances/{encodeURIComponent(data.instance.id)}/settings">Settings</a>), plus any you pin. Restoring keeps
+					href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=snapshots">Settings</a>), plus any you pin. Restoring keeps
 				the current world as a snapshot first, unless you choose otherwise.
 			</p>
 		</div>
@@ -480,7 +480,7 @@
 		</form>
 		<p class="faint small">
 			To run it only at certain hours, add scheduled commands <code>chunky continue</code> and <code>chunky pause</code>
-			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings">Instance settings</a>.
+			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=automation">Settings → Automation</a>.
 		</p>
 	</section>
 {:else}

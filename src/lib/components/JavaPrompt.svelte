@@ -27,7 +27,7 @@
 		</div>
 		<p class="hint">
 			Kept in MineShell's data folder and matched automatically from then on. Downloaded runtimes are listed
-			in <a href="/settings">Settings</a>.
+			in <a href="/settings">MineShell settings</a>.
 		</p>
 	</div>
 {/if}

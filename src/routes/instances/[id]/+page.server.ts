@@ -5,9 +5,6 @@ import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import {
 	acceptEula,
-	cloneInstance,
-	deleteInstance,
-	InstanceError,
 	instanceDiskUsage,
 	onlinePlayers,
 	requireInstance,
@@ -25,7 +22,6 @@ import { describeSchedule } from '#lib/server/scheduler.js';
 import { readLastRun, runFinishedStarting } from '#lib/server/journal.js';
 import { diagnoseRun, lastRun, type Diagnosis } from '#lib/server/crashdiag.js';
 import { modsDir, setModEnabled } from '#lib/server/mods/index.js';
-import { redirect } from '@sveltejs/kit';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
 import { tickStats } from '#lib/server/tps.js';
 import { kickPlayer } from '#lib/server/players.js';
@@ -318,31 +314,5 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Notes saved.' };
-	},
-
-	clone: async ({ request, params }) => {
-		const instance = requireInstance(params.id);
-		const name = String((await request.formData()).get('name') ?? '').trim().slice(0, 80);
-		let copy;
-		try {
-			({ instance: copy } = await cloneInstance(instance, name));
-		} catch (err) {
-			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
-			throw err;
-		}
-		redirect(303, `/instances/${copy.id}`);
-	},
-
-	delete: async ({ request, params }) => {
-		const instance = requireInstance(params.id);
-		const form = await request.formData();
-		// A fixed phrase rather than the instance name: a name with emoji or
-		// unusual characters could be impractical to retype, and the friction is
-		// the point, not the specific string.
-		if (String(form.get('confirm') ?? '').trim().toUpperCase() !== 'DELETE') {
-			return fail(400, { ok: false, message: 'Type DELETE to confirm.' });
-		}
-		await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
-		redirect(303, '/');
 	}
 };
