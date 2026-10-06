@@ -510,6 +510,74 @@ tbody tr:last-child td {
 	margin-right: auto;
 }
 
+/* ------------------------------------------------------------- sub-tabs --- */
+
+/* A second row of tabs inside a server tab (Mods, World, Settings), flush
+   under the instance tabs, with room on the right for the page's tools. */
+.subhead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	flex-wrap: wrap;
+	margin: calc(var(--space-5) * -1) -2.5rem 1.25rem;
+	padding: 0.5rem 2.5rem 0;
+	border-bottom: 1px solid var(--line);
+}
+
+.subtabs {
+	display: flex;
+	gap: 2px;
+}
+
+.subtabs button {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.55rem 0.8rem 0.7rem;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: none;
+	color: var(--text-muted);
+	font-weight: 400;
+	font-size: 0.93rem;
+	margin-bottom: -1px;
+}
+
+.subtabs button:hover:not(:disabled) {
+	color: var(--text);
+}
+
+.subtabs button[aria-current='page'] {
+	color: var(--text);
+	border-bottom-color: var(--accent);
+}
+
+.count {
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	color: var(--text-faint);
+}
+
+.badge {
+	min-width: 1.15rem;
+	padding: 0 0.3rem;
+	border-radius: 9px;
+	background: var(--warning);
+	color: var(--bg);
+	font-size: 0.72rem;
+	font-weight: 600;
+	text-align: center;
+}
+
+@media (max-width: 60rem) {
+	.subhead {
+		margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 1.25rem;
+		padding: 0.5rem var(--space-4) 0;
+	}
+}
+
 /* ------------------------------------------------------------ utilities --- */
 
 .muted {

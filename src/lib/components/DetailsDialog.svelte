@@ -7,6 +7,7 @@
 	 */
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
+	import type { Snippet } from 'svelte';
 	import { fixLink } from '#lib/shared/links.js';
 
 	function renderMarkdown(text: string, base: string | null): string {
@@ -49,6 +50,7 @@
 		const trimmed = text.trim();
 		return /^https?:\/\/\S+$/.test(trimmed) ? trimmed : null;
 	}
+	type Tab = 'description' | 'versions' | 'changelog';
 	let {
 		source,
 		kind = 'mod',
@@ -56,7 +58,13 @@
 		versionId = null,
 		versionLabel = '',
 		defaultTab = 'description',
-		onClose
+		onClose = () => {},
+		inline = false,
+		iconUrl = null,
+		meta = '',
+		versionsTab,
+		versionCount = null,
+		footer
 	}: {
 		source: string;
 		/** CurseForge mods and packs are looked up through different endpoints. */
@@ -64,8 +72,18 @@
 		projectId: string;
 		versionId?: string | null;
 		versionLabel?: string;
-		defaultTab?: 'description' | 'changelog';
-		onClose: () => void;
+		defaultTab?: Tab;
+		onClose?: () => void;
+		/** A pane in the page (the mod browser's detail) rather than a modal. */
+		inline?: boolean;
+		iconUrl?: string | null;
+		/** A line under the title, e.g. the download count. */
+		meta?: string;
+		/** A Versions tab, filled by the page (it owns the pick). */
+		versionsTab?: Snippet<[{ showChangelog: () => void }]>;
+		versionCount?: number | null;
+		/** Under the tabs, e.g. the install form. */
+		footer?: Snippet;
 	} = $props();
 
 	type Details = {
@@ -81,7 +99,7 @@
 	let loading = $state(true);
 	let error = $state('');
 	// svelte-ignore state_referenced_locally
-	let tab = $state<'description' | 'changelog'>(defaultTab);
+	let tab = $state<Tab>(defaultTab);
 	// The parent reuses this dialog instance rather than remounting it when
 	// it's already open and the user clicks the other "Description" /
 	// "Changelog" pill - that only changes the defaultTab prop, so without
@@ -117,12 +135,94 @@
 	});
 
 	function onKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') onClose();
+		if (event.key === 'Escape' && !inline) onClose();
 	}
 </script>
 
 <svelte:window onkeydown={onKeydown} />
 
+{#snippet content(d: Details)}
+	{#if tab === 'description'}
+		{#if d.description}
+			{@const link = bareUrl(d.description)}
+			{#if link}
+				<p><a href={link} target="_blank" rel="noreferrer">Open the full description</a></p>
+			{:else}
+				{@html renderMarkdown(d.description, d.projectUrl)}
+			{/if}
+		{:else}
+			<p class="muted">No description was provided.</p>
+		{/if}
+	{:else if tab === 'versions' && versionsTab}
+		{@render versionsTab({ showChangelog: () => (tab = 'changelog') })}
+	{:else if d.changelog}
+		{@const link = bareUrl(d.changelog)}
+		{#if link}
+			<p><a href={link} target="_blank" rel="noreferrer">Open the changelog</a></p>
+		{:else}
+			{@render changelogHead()}
+			{@html renderMarkdown(d.changelog, d.projectUrl)}
+		{/if}
+	{:else}
+		<p class="muted">
+			{versionId ? 'No changelog was published for this version.' : 'Pick a version to see its changelog.'}
+		</p>
+	{/if}
+{/snippet}
+
+{#snippet changelogHead()}
+	{#if inline && versionLabel}
+		<p class="changelog-head"><span class="mono">{versionLabel}</span></p>
+	{/if}
+{/snippet}
+
+{#if inline}
+	<section class="pane" aria-label="Project details">
+		<header class="pane-head">
+			{#if iconUrl}
+				<img src={iconUrl} alt="" width="44" height="44" />
+			{:else}
+				<span class="icon-fallback" aria-hidden="true"></span>
+			{/if}
+			<div class="pane-title">
+				<div class="title">
+					<h2>{details?.name ?? 'Loading'}</h2>
+					{#if details?.author}<span class="faint small">by {details.author}</span>{/if}
+				</div>
+				<div class="faint small meta">
+					{#if meta}<span>{meta}</span>{/if}
+					{#if details?.projectUrl}
+						<a href={details.projectUrl} target="_blank" rel="noreferrer">Project page ↗</a>
+					{/if}
+				</div>
+			</div>
+		</header>
+		<div class="tabs" role="tablist">
+			<button role="tab" aria-selected={tab === 'description'} onclick={() => (tab = 'description')}>Description</button>
+			{#if versionsTab}
+				<button role="tab" aria-selected={tab === 'versions'} onclick={() => (tab = 'versions')}>
+					Versions{#if versionCount !== null}<span class="count">{versionCount}</span>{/if}
+				</button>
+			{/if}
+			<button role="tab" aria-selected={tab === 'changelog'} onclick={() => (tab = 'changelog')}>Changelog</button>
+		</div>
+		<div class="body markdown">
+			{#if loading}
+				<p class="muted">Loading details.</p>
+			{:else if error}
+				<p class="notice error">{error}</p>
+			{:else if details}
+				{#if tab === 'description' && details.summary}
+					<p class="summary-inline">{details.summary}</p>
+				{/if}
+				{@render content(details)}
+			{/if}
+		</div>
+		{#if footer}
+			<div class="pane-foot">{@render footer()}</div>
+		{/if}
+	</section>
+{:else}
 <div class="backdrop" role="presentation" onclick={onClose}></div>
 
 <div class="dialog" role="dialog" aria-modal="true" aria-label="Project details">
@@ -153,31 +253,7 @@
 		</div>
 
 		<div class="body markdown">
-			{#if tab === 'description'}
-				{#if details.description}
-					{@const link = bareUrl(details.description)}
-					{#if link}
-						<p><a href={link} target="_blank" rel="noreferrer">Open the full description</a></p>
-					{:else}
-						{@html renderMarkdown(details.description, details.projectUrl)}
-					{/if}
-				{:else}
-					<p class="muted">No description was provided.</p>
-				{/if}
-			{:else if details.changelog}
-				{@const link = bareUrl(details.changelog)}
-				{#if link}
-					<p><a href={link} target="_blank" rel="noreferrer">Open the changelog</a></p>
-				{:else}
-					{@html renderMarkdown(details.changelog, details.projectUrl)}
-				{/if}
-			{:else}
-				<p class="muted">
-					{versionId
-						? 'No changelog was published for this version.'
-						: 'Pick a version to see its changelog.'}
-				</p>
-			{/if}
+			{@render content(details)}
 		</div>
 
 		{#if details.projectUrl}
@@ -189,8 +265,95 @@
 		{/if}
 	{/if}
 </div>
+{/if}
 
 <style>
+	.pane {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		background: var(--panel);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+	}
+
+	.pane-head {
+		display: flex;
+		justify-content: flex-start;
+		gap: 0.9rem;
+		align-items: flex-start;
+		padding: 1.1rem 1.25rem 0;
+		border-bottom: 0;
+	}
+
+	.pane-head img,
+	.icon-fallback {
+		width: 44px;
+		height: 44px;
+		flex: none;
+		border-radius: var(--radius);
+		background: var(--panel-raised);
+	}
+
+	.pane-title {
+		min-width: 0;
+	}
+
+	.pane-title h2 {
+		font-size: 1.15rem;
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.8rem;
+		margin-top: 0.2rem;
+	}
+
+	.meta a {
+		text-decoration: none;
+	}
+
+	.pane .tabs {
+		padding: var(--space-3) 1.25rem 0;
+		margin: 0;
+	}
+
+	.pane .body {
+		padding: var(--space-4) 1.25rem;
+	}
+
+	/* The page's own lists (the Versions tab) are not markdown. */
+	.pane .body.markdown :global(ul.plain) {
+		padding: 0;
+		margin: 0;
+		font-size: inherit;
+		color: inherit;
+	}
+
+	.count {
+		margin-left: 0.4rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--text-faint);
+	}
+
+	.summary-inline {
+		color: var(--text) !important;
+		font-size: 0.92rem !important;
+	}
+
+	.changelog-head {
+		color: var(--text) !important;
+	}
+
+	.pane-foot {
+		border-top: 1px solid var(--line);
+		background: color-mix(in srgb, var(--bg-sunken) 40%, var(--panel));
+		padding: var(--space-3) 1.25rem;
+	}
+
 	.backdrop {
 		position: fixed;
 		inset: 0;
