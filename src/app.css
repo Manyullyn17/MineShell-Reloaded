@@ -471,13 +471,13 @@ tbody tr:last-child td {
 /* -------------------------------------------------------------- notices --- */
 
 .notice {
-	border: 1px solid var(--line-strong);
-	border-left-width: 3px;
-	border-radius: var(--radius);
-	padding: var(--space-3) var(--space-4);
+	--tone: var(--line-strong);
+	border: 1px solid color-mix(in srgb, var(--tone) 28%, transparent);
+	border-radius: var(--radius-lg);
+	padding: 0.65rem 0.9rem;
 	margin-bottom: var(--space-4);
 	font-size: 0.9rem;
-	background: var(--panel);
+	background: color-mix(in srgb, var(--tone) 8%, transparent);
 }
 
 .notice p:last-child {
@@ -485,16 +485,16 @@ tbody tr:last-child td {
 }
 
 .notice.error {
-	border-left-color: var(--error);
+	--tone: var(--error);
 }
 .notice.warning {
-	border-left-color: var(--warning);
+	--tone: var(--warning);
 }
 .notice.success {
-	border-left-color: var(--success);
+	--tone: var(--success);
 }
 .notice.info {
-	border-left-color: var(--info);
+	--tone: var(--info);
 }
 
 .empty {

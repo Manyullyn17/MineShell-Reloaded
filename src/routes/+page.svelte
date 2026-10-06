@@ -3,7 +3,7 @@
 	import { refreshAll } from '$app/navigation';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
-	import { formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
+	import { describeState, formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 
@@ -15,6 +15,15 @@
 		const timer = setInterval(() => void refreshAll(), 5000);
 		return () => clearInterval(timer);
 	});
+
+	/** Something on the card asks to be looked at: a crash, a failed setup, a warning. */
+	const needsAttention = (instance: (typeof data.instances)[number]) =>
+		describeState(instance.active, instance.sub).tone === 'failed' ||
+		instance.status === 'failed' ||
+		!!instance.statusMessage ||
+		!instance.eulaAccepted ||
+		!!instance.javaWarning;
+	const attention = $derived(data.instances.filter(needsAttention).length);
 
 	function powerSubmit(id: string) {
 		busy = id;
@@ -33,7 +42,7 @@
 		<p class="muted">
 			{data.instances.length === 0
 				? 'Nothing here yet.'
-				: `${data.instances.filter((i) => i.running).length} of ${data.instances.length} running.`}
+				: `${data.instances.filter((i) => i.running).length} of ${data.instances.length} running${attention ? ` · ${attention} need${attention === 1 ? 's' : ''} attention` : ''}`}
 		</p>
 	</div>
 	<a class="button button-primary" href="/instances/new">Add a server</a>
@@ -79,10 +88,18 @@
 {:else}
 	<div class="cards">
 		{#each data.instances as instance (instance.id)}
-			<article class="panel card" data-running={instance.running}>
+			{@const tone = describeState(instance.active, instance.sub).tone}
+			<article class="panel card" data-tone={tone}>
 				<div class="card-head">
 					<div class="title">
 						<a href="/instances/{instance.id}"><h2>{instance.name}</h2></a>
+						<div class="tags">
+							<span class="tag">{instance.minecraftVersion}</span>
+							<span class="tag accent">{instance.modloaderLabel}</span>
+							<span class="tag">:{instance.port}</span>
+						</div>
+					</div>
+					<div class="status">
 						<StatusPill active={instance.active} sub={instance.sub} />
 						<form method="POST" action="?/pin" use:enhance>
 							<input type="hidden" name="id" value={instance.id} />
@@ -99,32 +116,31 @@
 							</button>
 						</form>
 					</div>
-					<div class="tags">
-						<span class="tag">{instance.minecraftVersion}</span>
-						<span class="tag accent">{instance.modloader}</span>
-						<span class="tag">:{instance.port}</span>
-					</div>
 				</div>
 
 				{#if instance.status === 'provisioning'}
-					<p class="notice info">
+					<p class="alert info">
 						Still installing. Watch progress under <a href="/tasks">Activity</a>.
 					</p>
 				{:else if instance.status === 'failed'}
-					<p class="notice error">Setup failed: {instance.statusMessage}</p>
+					<p class="alert error">Setup failed: {instance.statusMessage}</p>
 				{:else if instance.statusMessage}
-					<p class="notice warning">{instance.statusMessage}</p>
+					<p class="alert warning">{instance.statusMessage}</p>
+				{/if}
+
+				{#if tone === 'failed' && instance.status === 'ready'}
+					<p class="alert error">The last run crashed. The overview shows the final output and a likely cause.</p>
 				{/if}
 
 				{#if !instance.eulaAccepted}
-					<p class="notice warning">
+					<p class="alert warning">
 						The Minecraft EULA has not been accepted for this server.
 						<a href="/instances/{instance.id}">Review and accept it</a> to start.
 					</p>
 				{/if}
 
 				{#if instance.javaWarning}
-					<p class="notice warning">{instance.javaWarning}</p>
+					<p class="alert warning">{instance.javaWarning}</p>
 				{/if}
 
 				<dl class="stats">
@@ -141,13 +157,13 @@
 					<div>
 						<dt>Memory</dt>
 						<dd class="mono">
-							{instance.memoryBytes ? formatBytes(instance.memoryBytes) : '-'}
+							{instance.running && instance.memoryBytes ? formatBytes(instance.memoryBytes) : '-'}
 						</dd>
 					</div>
 					<div>
 						<dt>CPU</dt>
 						<dd class="mono">
-							{instance.cpuPercent === null ? '-' : `${instance.cpuPercent.toFixed(0)}%`}
+							{!instance.running || instance.cpuPercent === null ? '-' : `${instance.cpuPercent.toFixed(0)}%`}
 						</dd>
 					</div>
 				</dl>
@@ -170,6 +186,9 @@
 									Stop
 								</button>
 								<button name="verb" value="restart" disabled={busy === instance.id}>Restart</button>
+							{:else if tone === 'failed' && instance.status === 'ready'}
+								<a class="button button-danger" href="/instances/{instance.id}">See what went wrong</a>
+								<button name="verb" value="start" disabled={busy === instance.id}>Start</button>
 							{:else}
 								<button
 									class="button-primary"
@@ -181,7 +200,6 @@
 								</button>
 							{/if}
 							<a class="button" href="/instances/{instance.id}/console">Console</a>
-							<a class="button button-quiet" href="/instances/{instance.id}">Manage</a>
 						</div>
 					</form>
 					{#if instance.schedule !== 'Off'}
@@ -241,10 +259,11 @@
 	}
 
 	.card {
-		border-top: 2px solid var(--line);
-		padding: var(--space-4);
+		border-top: 3px solid var(--text-faint);
+		padding: 1.1rem 1.25rem;
 		display: flex;
 		flex-direction: column;
+		gap: 0.9rem;
 	}
 
 	/*
@@ -265,8 +284,14 @@
 		margin-top: auto;
 	}
 
-	.card[data-running='true'] {
-		border-top-color: var(--accent);
+	.card[data-tone='running'] {
+		border-top-color: var(--success);
+	}
+	.card[data-tone='failed'] {
+		border-top-color: var(--error);
+	}
+	.card[data-tone='busy'] {
+		border-top-color: var(--warning);
 	}
 
 	/* Pinning is what reorders this list, so the control belongs here rather
@@ -290,17 +315,27 @@
 
 	.card-head {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.6rem;
 	}
 
 	.title {
 		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: var(--space-3);
-		flex-wrap: wrap;
+		flex-direction: column;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+
+	.title h2 {
+		font-size: 1.1rem;
+	}
+
+	.status {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		flex: none;
 	}
 
 	.title a {
@@ -321,15 +356,15 @@
 	.stats {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: var(--space-3);
-		margin: 0 0 var(--space-4);
+		gap: var(--space-2);
+		margin: 0;
 		padding: var(--space-3) 0;
 		border-top: 1px solid var(--line);
 		border-bottom: 1px solid var(--line);
 	}
 
 	.stats dt {
-		font-size: 0.72rem;
+		font-size: 0.77rem;
 		color: var(--text-faint);
 	}
 
@@ -339,16 +374,30 @@
 	}
 
 	.online {
-		margin-bottom: var(--space-3);
+		margin: 0;
 	}
 
 	.schedule {
 		margin: var(--space-3) 0 0;
 	}
 
-	.notice {
-		font-size: 0.85rem;
-		padding: var(--space-2) var(--space-3);
+	.alert {
+		margin: 0;
+		padding: 0.55rem var(--space-3);
+		border-radius: var(--radius);
+		font-size: 0.87rem;
+	}
+	.alert.error {
+		color: color-mix(in srgb, var(--error) 70%, var(--text));
+		background: color-mix(in srgb, var(--error) 10%, transparent);
+	}
+	.alert.warning {
+		color: color-mix(in srgb, var(--warning) 80%, var(--text));
+		background: color-mix(in srgb, var(--warning) 9%, transparent);
+	}
+	.alert.info {
+		color: var(--text);
+		background: color-mix(in srgb, var(--info) 10%, transparent);
 	}
 
 	.empty h2 {

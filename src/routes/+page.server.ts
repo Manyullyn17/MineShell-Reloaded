@@ -8,6 +8,7 @@ import { latestSample } from '#lib/server/monitor.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
+import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
 
 export const load: PageServerLoad = async () => {
 	const summaries = await summariseAll();
@@ -24,6 +25,7 @@ export const load: PageServerLoad = async () => {
 				name: summary.instance.name,
 				minecraftVersion: summary.instance.minecraftVersion,
 				modloader: summary.instance.modloader,
+				modloaderLabel: LOADERS[summary.instance.modloader as ModloaderId]?.label ?? summary.instance.modloader,
 				modloaderVersion: summary.instance.modloaderVersion,
 				packName: summary.instance.packName,
 				port: summary.instance.serverPort,
