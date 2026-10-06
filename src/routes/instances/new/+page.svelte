@@ -597,7 +597,7 @@
 
 	<!-- ========================================================== step 3 -->
 	<section class="step configure" hidden={step !== 3}>
-		<div class="picked">
+		<div class="picked-pack">
 			{#if mode === 'browse' && selected?.iconUrl}
 				<img src={selected.iconUrl} alt="" width="40" height="40" />
 			{:else}
@@ -1067,7 +1067,7 @@
 		max-width: 56rem;
 	}
 
-	.picked {
+	.picked-pack {
 		display: flex;
 		align-items: center;
 		gap: var(--space-4);
@@ -1078,11 +1078,11 @@
 		border-radius: var(--radius-lg);
 	}
 
-	.picked img {
+	.picked-pack img {
 		border-radius: var(--radius);
 	}
 
-	.picked .icon-fallback {
+	.picked-pack .icon-fallback {
 		width: 40px;
 		height: 40px;
 		flex-basis: 40px;
