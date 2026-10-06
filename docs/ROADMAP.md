@@ -374,32 +374,32 @@ instead. Noticed in the October 2026 sanity pass; parked for a later look.
 The October 2026 redesign (Claude Design, "MineShell Redesign") is built: shell, instance
 header with actions, overview, console, logs, mods, world, players, files, one Settings tab
 per server, the three-step Add a server flow, MineShell settings in tabs, the player editor.
-These parts of the mockup need data or behaviour MineShell does not have, so they were left
-out rather than faked:
+Built after it: "gave up after N tries" in the rail, the world's size on the overview,
+segmented buttons for difficulty and game mode. These parts of the mockup need data or
+behaviour MineShell does not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
   (Online now). Nothing records player counts or join times; it would need the monitor to
   sample `list` or the console's join/leave lines to be kept.
-- **World size next to the disk total** on the overview. The usage breakdown has it, but the
-  overview polls every five seconds and the breakdown walks the whole folder.
-- **"Gave up after 3 tries"** under a crashed server in the rail, and **the likely cause**
-  ("Sodium is client-only") on its server card. The crash diagnosis exists per server on its
-  overview; the list would need it cached per run.
+- **The likely cause** of a crash ("Sodium is client-only") on its server card. The crash
+  diagnosis exists per server on its overview; the list would need it cached per run.
 - **Updated date and licence** in the mod and modpack detail pane, and a **one-line note per
   available update** (the update list). The providers' search results do not carry them;
   per-project lookups would.
 - **A game port field and an EULA checkbox** when adding a server. Ports are picked
   automatically, and the EULA is accepted by "Create & start"; the install actions take
   neither.
-- **Enable RCON** as a switch. MineShell needs RCON for the console, player lists and stops,
-  so it stays managed.
 - **Expanding folders in place** in Files; folders open as their own listing.
 - **The item editor beside the inventory grid** in the player editor; it is still a dialog.
-- **Segmented buttons** for difficulty and game mode in Settings; they are selects.
 
 ---
 
 ## Considered and rejected
+
+**Turning RCON off** (a switch in the redesign mockup's Network settings). MineShell sends
+console commands, reads who is online, edits player lists live and stops servers cleanly
+over RCON; without it most of the server tabs stop working. It stays managed: port and
+password are MineShell's, `enable-rcon` is not offered.
 
 **A versioned REST API.** No second consumer exists — no CLI, no bot, no mobile app. Form
 actions and a few endpoints cover it. Revisit only if a second consumer actually appears,
