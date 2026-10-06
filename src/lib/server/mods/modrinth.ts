@@ -49,6 +49,8 @@ type MrProject = {
 	license?: { id: string; name: string };
 	/** A list, e.g. ["client_only"], despite the singular name. */
 	environment?: string[] | string;
+	/** required | optional | unsupported; "unsupported" on the client means a server-only mod. */
+	client_side?: string;
 };
 
 type MrVersion = {
@@ -383,6 +385,23 @@ export async function projectsByIds(ids: string[]): Promise<Map<string, SearchHi
 		for (const project of projects ?? []) out.set(project.id, toHit(project));
 	} catch {
 		// Fall back to leaving them unnamed; the caller tracks them as manual.
+	}
+	return out;
+}
+
+/** Projects that do nothing in a game client (client_side "unsupported"), of those asked about. */
+export async function serverOnlyProjects(ids: string[]): Promise<Set<string>> {
+	const out = new Set<string>();
+	const unique = [...new Set(ids)];
+	for (let i = 0; i < unique.length; i += 100) {
+		try {
+			const projects = await fetchJson<MrProject[]>(
+				`${API}/projects?ids=${encodeURIComponent(JSON.stringify(unique.slice(i, i + 100)))}`
+			);
+			for (const project of projects ?? []) if (project.client_side === 'unsupported') out.add(project.id);
+		} catch {
+			// Unknown just means nobody is unticked for them.
+		}
 	}
 	return out;
 }

@@ -153,6 +153,9 @@
 						<a role="menuitem" href="{base}/console" onclick={() => (menuOpen = false)}>
 							<span>Open console</span>
 						</a>
+						<a role="menuitem" href="{base}/export" onclick={() => (menuOpen = false)}>
+							<span>Export a client pack</span><span class="hint">Modrinth, CurseForge, Prism</span>
+						</a>
 						{#if data.running}
 							<div class="menu-head">If it's stuck</div>
 							<button type="submit" role="menuitem" class="danger" name="verb" value="kill">

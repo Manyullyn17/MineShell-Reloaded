@@ -164,8 +164,11 @@ re-proposed or built twice.
 ### Maybe someday
 
 - **Notifications (Discord/webhook)**: see "Notifications" under Later.
-- **Client pack export**: a pack players can import into their launcher. Different from
-  "Instance export and import" below, which moves a server between machines.
+- **Client pack export**: built (October 2026; `packexport.ts`, the server's Export page):
+  Modrinth, CurseForge and Prism Launcher formats. Different from "Instance export and
+  import" below, which moves a server between machines. Not done: a pack icon (none of the
+  formats has a place both launchers read), CurseForge fingerprint lookups to link
+  manually added jars in a CurseForge pack (needs the official API key), packwiz.
 - **Player stats** from `<world>/stats/<uuid>.json`.
 - Multi-user roles: out of scope.
 

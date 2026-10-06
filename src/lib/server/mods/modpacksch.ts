@@ -646,6 +646,20 @@ export const curseforgeModProvider = makeCurseforgeModProvider();
 export const ftbProvider = makeFtbProvider();
 
 /** The pack's full description, which search results only carry truncated. */
+/**
+ * Every file of a CurseForge or FTB pack version, client-only ones included
+ * (getVersion leaves those out: a server install has no use for them). For
+ * the client pack export.
+ */
+export async function packVersionFiles(
+	source: 'curseforge' | 'ftb',
+	projectId: string,
+	versionId: string
+): Promise<NonNullable<VersionDetail['files']>> {
+	const base = source === 'ftb' ? `${API}/public/modpack` : `${API}/public/curseforge`;
+	return (await fetchJson<VersionDetail>(`${base}/${projectId}/${versionId}`)).files ?? [];
+}
+
 export async function packDescription(source: 'curseforge' | 'ftb', projectId: string): Promise<string | null> {
 	try {
 		const path = source === 'curseforge' ? `curseforge/${projectId}` : `modpack/${projectId}`;

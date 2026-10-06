@@ -237,6 +237,25 @@ upstream one, and a shared cache would serve the wrong file with no way to tell.
 cheaper than that bug. A `hash` column exists on `instance_mods` for a future opt-in
 cache-by-hash, but nothing reads it yet (the update check hashes the jars on disk).
 
+**Client pack export** (`packexport.ts`, the server's Export page) builds a pack for
+players' launchers: a Modrinth `.mrpack`, a CurseForge zip or a Prism Launcher instance,
+as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour.
+In it: the mods ticked on the form (Modrinth's `client_side: unsupported` starts a mod
+unticked: worldgen mods like YUNG's say that), each as on the server except client-only
+ones, which come back enabled; the folders ticked; and for a server installed from a
+provider pack, the pack's client-side files the server never got - mods the pack marks
+client-only (`env.server: unsupported` in a .mrpack, `clientonly` in the mirror's lists)
+and override files the server lacks (`client-overrides/`, options.txt, shaders). A pack mod
+missing on the server that is not client-only was removed on purpose and stays out. Files
+are linked where the format can: Modrinth's CDN URL (found by the jar's sha512) in a
+.mrpack, whose spec allows only cdn.modrinth.com, GitHub and GitLab hosts; project and file
+id in a CurseForge manifest, which cannot say "disabled", so disabled mods are bundled as
+`.disabled` files. Everything else is bundled in the overrides. Prism bundles everything;
+its loader is `mmc-pack.json` components, and for Cleanroom the patches and components come
+from the instance Cleanroom publishes with each release (0.5.x on). Modrinth and CurseForge
+packs cannot name Cleanroom, so they ask for Forge 1.12.2 (the version migrated from, else
+14.23.5.2860) and the page says so.
+
 ---
 
 ## Worlds

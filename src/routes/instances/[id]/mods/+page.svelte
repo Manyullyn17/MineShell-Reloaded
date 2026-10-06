@@ -483,6 +483,7 @@
 				{syncing ? 'Syncing' : 'Sync'}
 			</button>
 		</form>
+		<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
 	</div>
 </div>
 

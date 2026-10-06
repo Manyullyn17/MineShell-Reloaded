@@ -91,7 +91,8 @@ matching), which is why some modules export small helpers such as `targetModName
 `tests/flows/` runs whole operations - pack install, pack version change, loader version
 change, Cleanroom migration and revert, world snapshots, retention and tools (dimensions,
 chunk pruning), server copies, mod updates and data packs, player lists and player data,
-Spark profiles and Chunky over a faked RCON, disk usage, Java defaults - on throwaway
+Spark profiles and Chunky over a faked RCON, disk usage, Java defaults, client pack
+export - on throwaway
 instances. The orchestration is real
 (what gets moved aside, installed, restored, recorded in the database); only the outside world
 is faked: each loader's `install` (spied to write files or fail on cue), downloads (served by
