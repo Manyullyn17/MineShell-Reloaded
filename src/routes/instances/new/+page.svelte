@@ -10,6 +10,7 @@
 	import SplitButton from '#lib/components/SplitButton.svelte';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '#lib/shared/cleanroom.js';
+	import { peekPack, type PackTarget } from '#lib/shared/packpeek.js';
 
 	let { data, form } = $props();
 
@@ -19,6 +20,17 @@
 	let step = $state(1);
 	let showFilters = $state(false);
 	let archiveName = $state('');
+	/** What the picked file targets, read from its manifest; null until known or when unreadable. */
+	let archiveTarget = $state<PackTarget | null>(null);
+
+	async function pickArchive(file: File | undefined) {
+		archiveName = file?.name ?? '';
+		archiveTarget = null;
+		if (!file) return;
+		const target = await peekPack(file);
+		// Another file may have been picked while this one was read.
+		if (archiveName === file.name) archiveTarget = target;
+	}
 	const ACTIONS: Record<Mode, string> = { browse: '?/install', upload: '?/upload', loader: '?/loader' };
 	const STARTS: { id: Mode; title: string; text: string }[] = [
 		{ id: 'browse', title: 'Modpack', text: 'Search Modrinth, CurseForge or Feed the Beast and install a server version.' },
@@ -575,7 +587,7 @@
 					type="file"
 					accept=".mrpack,.zip"
 					class="visually-hidden"
-					onchange={(e) => (archiveName = (e.currentTarget as HTMLInputElement).files?.[0]?.name ?? '')}
+					onchange={(e) => pickArchive((e.currentTarget as HTMLInputElement).files?.[0])}
 				/>
 				<strong>{archiveName || 'Choose a .mrpack or .zip'}</strong>
 				<span class="small muted">{archiveName ? 'Click to pick another' : 'Click to browse'}</span>
@@ -702,9 +714,9 @@
 				<div class="extra"><CleanroomOption {javaMajors} idPrefix="pack-cleanroom" /></div>
 			{/if}
 		{:else if mode === 'upload'}
-			<div class="extra">
-				<CleanroomOption {javaMajors} idPrefix="upload-cleanroom" label="If this is a Forge 1.12.2 pack, run it on Cleanroom instead" />
-			</div>
+			{#if archiveTarget && canUseCleanroom(archiveTarget.loader ?? '', archiveTarget.minecraft ?? '')}
+				<div class="extra"><CleanroomOption {javaMajors} idPrefix="upload-cleanroom" /></div>
+			{/if}
 		{/if}
 
 		<label class="eula">

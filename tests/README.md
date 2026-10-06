@@ -170,3 +170,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Same-major Java runtimes picked in database order | `flows/java-defaults.test.ts` |
 | With a CurseForge key, a pack listed only its newest 50 files | `src/lib/server/mods/curseforge-official.test.ts` |
 | Page 2 of the mirror's browse skipped packs 21-50 | `src/lib/server/mods/modpacksch-paging.test.ts` |
+| Cleanroom offered for every uploaded pack, not only Forge 1.12.2 | `src/lib/shared/packpeek.test.ts` |
