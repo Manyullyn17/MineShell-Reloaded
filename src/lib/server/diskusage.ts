@@ -129,6 +129,24 @@ const MINESHELL_LABELS: Record<string, string> = {
 	'playerdata-backups': 'Player data backups from the player editor'
 };
 
+const SUMMARY_TTL_MS = 60_000;
+const summaries = new Map<string, { at: number; result: Promise<DiskBreakdown> }>();
+
+/**
+ * The Files tab shows the breakdown as a bar above every folder it lists.
+ * Walking a big pack takes seconds, so a measurement is reused for a minute
+ * rather than redone on each click into a folder. The usage page itself
+ * always measures afresh.
+ */
+export function recentDiskBreakdown(instance: ServerInstance): Promise<DiskBreakdown> {
+	const hit = summaries.get(instance.path);
+	if (hit && Date.now() - hit.at < SUMMARY_TTL_MS) return hit.result;
+	const result = diskBreakdown(instance);
+	summaries.set(instance.path, { at: Date.now(), result });
+	result.catch(() => summaries.delete(instance.path));
+	return result;
+}
+
 export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreakdown> {
 	const root = instance.path;
 	const items: Record<GroupId, UsageItem[]> = {

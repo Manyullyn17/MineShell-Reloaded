@@ -9,6 +9,17 @@
 	let renameValue = $state('');
 	let newFolder = $state('');
 	let showNewFolder = $state(false);
+	let uploadForm = $state<HTMLFormElement | null>(null);
+	/** Short names for the usage bar; the usage page has the long ones. */
+	const SHORT: Record<string, string> = {
+		world: 'World',
+		mods: 'Mods',
+		logs: 'Logs',
+		mineshell: 'Snapshots',
+		'old-configs': 'Old configs',
+		loader: 'Loader',
+		other: 'Other'
+	};
 
 	const base = $derived(`/instances/${data.instance.id}/files`);
 
@@ -52,27 +63,55 @@
 		</form>
 	</section>
 {:else}
-	<section class="panel">
-		<nav class="crumbs" aria-label="Folder path">
-			<a href={href('')}>{data.instance.id}</a>
-			{#each data.crumbs as crumb (crumb.path)}
-				<span class="sep" aria-hidden="true">/</span>
-				<a href={href(crumb.path)}>{crumb.label}</a>
-			{/each}
-		</nav>
+	{#await data.usage then usage}
+		{#if usage && usage.total > 0}
+			<section class="usage">
+				<div class="usage-head">
+					<span class="muted small">{formatBytes(usage.total)} used by this server</span>
+					<a class="small" href="{base}/usage">Where the space goes →</a>
+				</div>
+				<div class="bar" aria-hidden="true">
+					{#each usage.groups as group (group.id)}
+						<span data-group={group.id} style:flex-grow={group.bytes}></span>
+					{/each}
+				</div>
+				<ul class="legend small">
+					{#each usage.groups as group (group.id)}
+						<li data-group={group.id} title={group.label}>
+							<span class="swatch"></span>{SHORT[group.id] ?? group.label}
+							<span class="mono faint">{formatBytes(group.bytes)}</span>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+	{/await}
 
+	<section>
 		<div class="toolbar">
+			<nav class="crumbs" aria-label="Folder path">
+				<a href={href('')}>{data.instance.id}</a>
+				{#each data.crumbs as crumb (crumb.path)}
+					<span class="sep" aria-hidden="true">/</span>
+					<a href={href(crumb.path)}>{crumb.label}</a>
+				{/each}
+			</nav>
 			{#if data.parentDir !== null}
 				<a class="button button-quiet" href={href(data.parentDir)}>Up one level</a>
 			{/if}
-			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>
-				New folder
-			</button>
-			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/files/usage">Disk usage</a>
-			<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance class="upload">
+			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>New folder</button>
+			<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance bind:this={uploadForm}>
 				<input type="hidden" name="dir" value={data.dir} />
-				<input type="file" name="files" multiple aria-label="Files to upload" />
-				<button type="submit">Upload here</button>
+				<label class="button upload">
+					Upload here
+					<input
+						type="file"
+						name="files"
+						multiple
+						class="visually-hidden"
+						onchange={() => uploadForm?.requestSubmit()}
+					/>
+				</label>
 			</form>
 		</div>
 
@@ -87,6 +126,7 @@
 		{#if data.entries.length === 0}
 			<div class="empty"><p>This folder is empty.</p></div>
 		{:else}
+			<div class="table-box">
 			<table>
 				<thead>
 					<tr>
@@ -115,10 +155,10 @@
 									</a>
 								{:else if entry.editable}
 									<a href="{base}?path={encodeURIComponent(data.dir)}&edit={encodeURIComponent(entry.relPath)}" class="entry">
-										{entry.name}
+										<span class="glyph" aria-hidden="true"></span>{entry.name}
 									</a>
 								{:else}
-									<span class="entry mono">{entry.name}</span>
+									<span class="entry"><span class="glyph" aria-hidden="true"></span>{entry.name}</span>
 								{/if}
 							</td>
 							<td class="mono small nowrap">{entry.isDirectory ? '-' : formatBytes(entry.size)}</td>
@@ -150,21 +190,107 @@
 					{/each}
 				</tbody>
 			</table>
+			</div>
 		{/if}
 	</section>
 {/if}
 
 <style>
+	.usage {
+		margin-bottom: 1.4rem;
+	}
+
+	.usage-head {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin-bottom: 0.4rem;
+	}
+
+	.usage-head a {
+		text-decoration: none;
+	}
+
+	.bar {
+		display: flex;
+		gap: 1px;
+		height: 8px;
+		border-radius: 2px;
+		overflow: hidden;
+		background: var(--bg-sunken);
+	}
+
+	.bar span {
+		flex-basis: 0;
+		min-width: 2px;
+		background: var(--swatch);
+	}
+
+	[data-group] {
+		--swatch: var(--text-faint);
+	}
+	[data-group='world'] {
+		--swatch: var(--accent);
+	}
+	[data-group='mods'] {
+		--swatch: var(--info);
+	}
+	[data-group='logs'] {
+		--swatch: var(--warning);
+	}
+	[data-group='mineshell'] {
+		--swatch: var(--text-muted);
+	}
+	[data-group='old-configs'] {
+		--swatch: var(--error);
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem 1rem;
+		list-style: none;
+		margin: 0.5rem 0 0;
+		padding: 0;
+		color: var(--text-muted);
+	}
+
+	.legend li {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.swatch {
+		width: 8px;
+		height: 8px;
+		border-radius: 1px;
+		background: var(--swatch);
+	}
+
 	.crumbs {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.35rem;
 		font-family: var(--font-mono);
-		font-size: 0.85rem;
-		margin-bottom: var(--space-4);
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--line);
+		font-size: 0.9rem;
+		margin-right: auto;
+	}
+
+	.crumbs a {
+		color: var(--text);
+		text-decoration: none;
+	}
+
+	.crumbs a:hover {
+		color: var(--accent-hover);
+	}
+
+	label.upload {
+		margin: 0;
+		color: var(--text);
+		font-size: 0.9rem;
 	}
 
 	.sep {
@@ -177,20 +303,6 @@
 		align-items: center;
 		flex-wrap: wrap;
 		margin-bottom: var(--space-3);
-	}
-
-	.upload {
-		display: flex;
-		gap: var(--space-2);
-		align-items: center;
-		margin-left: auto;
-		flex-wrap: wrap;
-	}
-
-	.upload input[type='file'] {
-		width: auto;
-		font-size: 0.8rem;
-		padding: 0.25rem;
 	}
 
 	.inline-form {
@@ -219,6 +331,8 @@
 	}
 
 	.glyph {
+		display: inline-block;
+		width: 0.7rem;
 		color: var(--accent);
 		font-size: 0.7rem;
 	}

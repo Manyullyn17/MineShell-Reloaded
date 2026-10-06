@@ -12,6 +12,7 @@ import {
 	type DirEntry
 } from '#lib/server/files.js';
 import path from 'node:path';
+import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
@@ -49,7 +50,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		crumbs,
 		entries,
 		editing,
-		listError
+		listError,
+		// Streamed and reused for a minute: walking a big pack takes a moment.
+		usage: recentDiskBreakdown(instance)
+			.then((b) => ({ total: b.total, groups: b.groups.map((g) => ({ id: g.id, label: g.label, bytes: g.bytes })) }))
+			.catch(() => null)
 	};
 };
 
