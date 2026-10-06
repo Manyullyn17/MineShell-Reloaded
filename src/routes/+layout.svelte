@@ -367,7 +367,8 @@
 			top: 3.25rem;
 			left: 0;
 			width: min(var(--rail-width), 80vw);
-			z-index: 10;
+			/* Above the instance page's sticky header (15), below the top bar (20). */
+			z-index: 18;
 			transform: translateX(-100%);
 			transition: transform 0.16s ease-out;
 		}
@@ -379,6 +380,7 @@
 
 		.rail-open .scrim {
 			display: block;
+			z-index: 17;
 		}
 
 		.content {

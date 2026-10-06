@@ -560,6 +560,15 @@ tbody tr:last-child td {
 .subtabs {
 	display: flex;
 	gap: 2px;
+	/* On a phone the tabs scroll sideways rather than widening the page. */
+	max-width: 100%;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.subtabs > * {
+	flex: none;
+	white-space: nowrap;
 }
 
 .subtabs button {
@@ -607,6 +616,20 @@ tbody tr:last-child td {
 	.subhead {
 		margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 1.25rem;
 		padding: 0.5rem var(--space-4) 0;
+	}
+
+	/* The tabs get the whole row; tools beside them (search, buttons) go below. */
+	.subhead > .subtabs {
+		flex: 1 1 100%;
+	}
+
+	/* A table too wide for a phone scrolls inside its own box, not the page. */
+	.content table {
+		display: block;
+		max-width: 100%;
+		overflow-x: auto;
+		/* Keeps absolutely placed labels (visually-hidden headers) inside the scroll box. */
+		position: relative;
 	}
 }
 
@@ -724,8 +747,13 @@ tbody tr:last-child td {
 }
 .visually-hidden {
 	position: absolute;
-	width: 1px;
-	height: 1px;
+	/* !important: form rules (input { width: 100% }) are more specific, and a
+	   full-width hidden file input widened the page on phones. */
+	width: 1px !important;
+	height: 1px !important;
+	padding: 0 !important;
+	margin: -1px;
+	border: 0;
 	overflow: hidden;
 	clip: rect(0 0 0 0);
 	white-space: nowrap;

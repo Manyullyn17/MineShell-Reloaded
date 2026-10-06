@@ -1132,6 +1132,21 @@
 		padding-inline: 0.6rem;
 	}
 
+	/* On a phone the tabs get the whole row and the search goes under them. */
+	@media (max-width: 60rem) {
+		.subhead {
+			flex-wrap: wrap;
+		}
+
+		.subhead .subtabs {
+			flex-basis: 100%;
+		}
+
+		.subhead .search {
+			width: 100%;
+		}
+	}
+
 	.subhead .sep {
 		width: 1px;
 		height: 18px;

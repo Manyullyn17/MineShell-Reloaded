@@ -363,7 +363,9 @@
 	}
 
 	@media (max-width: 60rem) {
+		/* On a phone the header and tabs are most of the screen: they scroll away. */
 		.sticky-head {
+			position: static;
 			margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-5);
 			padding: var(--space-4) var(--space-4) 0;
 		}

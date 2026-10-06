@@ -750,6 +750,7 @@
 
 	.head {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.9rem;
 		margin: 0.6rem 0 0.4rem;
@@ -764,8 +765,13 @@
 	}
 
 	.who {
-		flex: 1;
+		flex: 1 1 14rem;
 		min-width: 0;
+	}
+
+	/* A UUID has no spaces; it breaks anywhere rather than one segment per line. */
+	.who .mono {
+		word-break: break-all;
 	}
 
 	.who-name {
@@ -788,6 +794,7 @@
 
 	.notice.spread {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
@@ -966,8 +973,16 @@
 	.grid,
 	.equip {
 		display: grid;
-		grid-template-columns: repeat(9, 3.75rem);
+		/* Nine across, shrinking on a phone instead of running off the screen. */
+		grid-template-columns: repeat(9, minmax(0, 3.75rem));
 		gap: 3px;
+	}
+
+	.grid:not(.wide) .slot,
+	.equip .slot {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
 	}
 
 	.hotbar {

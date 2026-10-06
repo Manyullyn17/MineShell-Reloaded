@@ -1098,6 +1098,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		flex-wrap: wrap;
 		padding-bottom: 0.4rem;
 	}
 
@@ -1132,6 +1133,7 @@
 
 	.notice.spread {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);

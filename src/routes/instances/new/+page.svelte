@@ -790,6 +790,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.45rem;
+		white-space: nowrap;
 	}
 
 	.steps .line {
@@ -1240,6 +1241,14 @@
 	}
 
 	@media (max-width: 60rem) {
+		.starts {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.steps .line {
+			width: 0.8rem;
+		}
+
 		.page-head {
 			margin: 0 calc(var(--space-4) * -1) 1.5rem;
 			padding: 0.3rem var(--space-4) 1.4rem;

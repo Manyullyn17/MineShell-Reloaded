@@ -391,6 +391,7 @@
 
 	.segmented {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 2px;
 		padding: 3px;
 		background: var(--bg-sunken);
