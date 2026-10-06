@@ -128,7 +128,8 @@ describe('recentDiskBreakdown', () => {
 		try {
 			// Stale: still the old answer, while the new walk runs.
 			expect((await recentDiskBreakdown(instance)).total).toBe(first.total);
-			await vi.waitFor(async () => expect((await recentDiskBreakdown(instance)).total).toBe(first.total + 50));
+			// The walk runs in the background; a loaded machine can take over waitFor's default second.
+			await vi.waitFor(async () => expect((await recentDiskBreakdown(instance)).total).toBe(first.total + 50), { timeout: 4000 });
 		} finally {
 			vi.restoreAllMocks();
 			forgetDiskBreakdown(instance.path);
