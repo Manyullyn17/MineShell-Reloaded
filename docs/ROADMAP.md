@@ -376,7 +376,7 @@ header with actions, overview, console, logs, mods, world, players, files, one S
 per server, the three-step Add a server flow, MineShell settings in tabs, the player editor.
 Built after it: "gave up after N tries" in the rail, the world's size on the overview,
 segmented buttons for difficulty and game mode, the likely cause of a crash on its server
-card. These parts of the mockup need data or
+card, the item editor beside the inventory grid. These parts of the mockup need data or
 behaviour MineShell does not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
@@ -389,7 +389,6 @@ behaviour MineShell does not have, so they were left out rather than faked:
   automatically, and the EULA is accepted by "Create & start"; the install actions take
   neither.
 - **Expanding folders in place** in Files; folders open as their own listing.
-- **The item editor beside the inventory grid** in the player editor; it is still a dialog.
 
 ---
 

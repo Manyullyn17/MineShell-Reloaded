@@ -188,13 +188,10 @@
 	/** The slots opened, outermost first: a backpack, then a slot inside it. */
 	let stack = $state<Loc[]>([]);
 	const current = $derived(stack.at(-1) ?? null);
-	// The item editor is a modal over the page, open while a slot is.
-	let dialog = $state<HTMLDialogElement | null>(null);
-	$effect(() => {
-		if (!dialog) return;
-		if (stack.length && !dialog.open) dialog.showModal();
-		if (!stack.length && dialog.open) dialog.close();
-	});
+	// The item editor sits beside the grid while a slot is open; Escape closes it.
+	function onKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && stack.length) stack = [];
+	}
 
 	function allContainers(): Container[] {
 		const out: Container[] = [];
@@ -409,6 +406,8 @@
 	</div>
 {/snippet}
 
+<svelte:window onkeydown={onKeydown} />
+
 <div class="editor-head">
 	<a class="back" href={base}>← All players</a>
 	<header class="head">
@@ -547,7 +546,7 @@
 {:else if view === 'inventory' || view === 'ender'}
 <section class="panel">
 	<div class="inv-head">
-		<p class="small faint">Pick a slot to edit, add or remove its item. ▣ marks an item that holds items.</p>
+		<p class="small faint">▣ marks an item that holds items; pick it to open what is inside.</p>
 	</div>
 
 	<div class="inv-layout">
@@ -568,12 +567,8 @@
 			{/if}
 		</div>
 
-	</div>
-</section>
-{/if}
-
-<dialog class="item-dialog" bind:this={dialog} onclose={() => (stack = [])} onclick={(e) => e.target === dialog && (stack = [])}>
-	{#if current}
+		<aside class="item-panel" aria-label="Item">
+			{#if current}
 		{#key result}<Flash form={result} />{/key}
 			<form class="item-editor" onsubmit={saveItem}>
 				<button type="button" class="dialog-close button-quiet" aria-label="Close" onclick={() => (stack = [])}>×</button>
@@ -672,8 +667,15 @@
 					</div>
 				{/if}
 			</form>
-	{/if}
-</dialog>
+			{:else}
+				<p class="faint small pick">Pick a slot to see and change its item.</p>
+			{/if}
+		</aside>
+	</div>
+</section>
+{/if}
+
+
 
 {#if view === 'data'}
 <section class="panel" class:remapping={!!remapping}>
@@ -959,12 +961,6 @@
 
 
 
-	.inv-layout {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-
 	.grids {
 		display: flex;
 		flex-direction: column;
@@ -1084,36 +1080,52 @@
 		color: var(--accent);
 	}
 
-	.item-dialog {
-		width: min(70rem, calc(100vw - 2rem));
-		max-height: calc(100vh - 3rem);
-		padding: var(--space-5);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius);
-		background: var(--panel);
-		color: var(--text);
-		box-shadow: 0 10px 40px rgb(0 0 0 / 0.45);
+	.inv-layout {
+		display: grid;
+		grid-template-columns: auto minmax(20rem, 1fr);
+		gap: 1.25rem;
+		align-items: start;
 	}
 
-	.item-dialog::backdrop {
-		background: rgb(0 0 0 / 0.5);
+	/* The item editor, beside the grid while a slot is open. */
+	.item-panel {
+		position: sticky;
+		top: 13rem;
+		max-height: calc(100vh - 14rem);
+		overflow-y: auto;
+		min-width: 0;
+		padding: 1.1rem 1.25rem;
+		background: var(--panel-raised);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-lg);
+	}
+
+	.pick {
+		margin: 0;
+		text-align: center;
+		padding: 2rem 0;
+	}
+
+	@media (max-width: 1100px) {
+		.inv-layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.item-panel {
+			position: static;
+			max-height: none;
+		}
 	}
 
 	.item-editor {
 		position: relative;
 		display: grid;
-		grid-template-columns: minmax(18rem, 28rem) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr);
 		column-gap: var(--space-5);
 	}
 
 	.crumbs {
 		grid-column: 1 / -1;
-	}
-
-	@media (max-width: 1100px) {
-		.item-editor {
-			grid-template-columns: minmax(0, 1fr);
-		}
 	}
 
 	.item-side > .container:first-child {
@@ -1127,8 +1139,8 @@
 
 	.dialog-close {
 		position: absolute;
-		top: -0.5rem;
-		right: -0.5rem;
+		top: -0.4rem;
+		right: -0.6rem;
 		font-size: 1.2rem;
 		line-height: 1;
 		padding: 0.2rem 0.55rem;
