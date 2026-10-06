@@ -76,6 +76,7 @@
 			restartDailyTime: d.restartDailyTime,
 			restartWarnMinutes: d.restartWarnMinutes,
 			restartSkipIfPlayers: d.restartSkipIfPlayers,
+			bootStart: d.bootStart,
 			consoleBacklogLines: d.consoleBacklogLines,
 			consoleBufferLines: d.consoleBufferLines,
 			limitMemoryMb: (d.limitMemoryMb ?? '') as number | string,
@@ -223,7 +224,8 @@
 					'restartIntervalHours',
 					'restartDailyTime',
 					'restartWarnMinutes',
-					'restartSkipIfPlayers'
+					'restartSkipIfPlayers',
+					'bootStart'
 				)
 		},
 		{
@@ -955,7 +957,7 @@
 
 	<SettingsSection tab="automation" title="Restarts" dirty={dirtyIds.has('restarts')}>
 		<form method="POST" action="?/restarts" class="rows" bind:this={forms.restarts} onsubmit={onSectionSubmit}>
-			<RestartFields bind:values={sv} />
+			<RestartFields bind:values={sv} bootNote={data.bootNote} />
 		</form>
 	</SettingsSection>
 

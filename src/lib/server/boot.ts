@@ -1,3 +1,4 @@
+import { startServersAfterBoot } from './bootstart';
 import { startMonitor } from './monitor';
 import { startScheduler } from './scheduler';
 import { learnJavaRequirement, scanJavaRuntimes } from './java';
@@ -21,9 +22,13 @@ export function boot(): void {
 
 	// Before anything else: servers a previous MineShell left mid-operation
 	// are put back (and stay marked busy, so unstartable, until then).
-	void recoverInterruptedOperations().catch((err) =>
-		console.error('[mineshell] recovering interrupted operations failed:', err)
-	);
+	// Then, after a reboot, the servers that should come back are started
+	// (bootstart.ts); only once recovery is done, so none starts half-changed.
+	void recoverInterruptedOperations()
+		.catch((err) => console.error('[mineshell] recovering interrupted operations failed:', err))
+		.then(() => startServersAfterBoot())
+		.then((taskId) => taskId && console.log('[mineshell] starting servers after the reboot'))
+		.catch((err) => console.error('[mineshell] starting servers after the reboot failed:', err));
 
 	void refreshTemplateUnit()
 		.then((refreshed) => refreshed && console.log('[mineshell] updated the systemd template unit'))

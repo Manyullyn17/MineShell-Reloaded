@@ -1152,7 +1152,13 @@ export async function start(instance: ServerInstance): Promise<{ ok: boolean; me
 		return { ok: false, message: res.stderr.trim() || `systemctl start ${unitName(instance.id)} failed.` };
 	}
 	audit('instance.start', { instanceId: instance.id });
+	setWantedRunning(instance.id, true);
 	return { ok: true, message: sync.warning ?? 'Starting.' };
+}
+
+/** Whether a server comes back after a reboot when it is set to "if it was running" (bootstart.ts). */
+export function setWantedRunning(id: string, wanted: boolean): void {
+	db.update(serverInstances).set({ wantedRunning: wanted }).where(eq(serverInstances.id, id)).run();
 }
 
 /**
@@ -1231,6 +1237,7 @@ export async function stop(
 	opts: { graceful?: boolean } = {}
 ): Promise<{ ok: boolean; message: string }> {
 	intentionalStops.set(instance.id, Date.now());
+	setWantedRunning(instance.id, false);
 	cancelPendingStop(instance.id);
 	const password = rconPassword(instance);
 	if (opts.graceful !== false && password) {
@@ -1261,6 +1268,7 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 	await syncUnit(instance);
 	const res = await restartUnit(instance.id);
 	audit('instance.restart', { instanceId: instance.id });
+	if (res.code === 0) setWantedRunning(instance.id, true);
 	return {
 		ok: res.code === 0,
 		message: res.code === 0 ? 'Restarting.' : res.stderr.trim() || 'Restart failed.'
@@ -1271,6 +1279,8 @@ export async function sendCommand(instance: ServerInstance, command: string): Pr
 	const password = rconPassword(instance);
 	if (!password) throw new InstanceError('No RCON password is set for this instance.');
 	const [response] = await rconExec({ port: instance.rconPort, password }, [command]);
+	// Stopped from the console: it stays stopped after a reboot too.
+	if (/^\/?stop\s*$/i.test(command.trim())) setWantedRunning(instance.id, false);
 	return response;
 }
 
@@ -1397,6 +1407,7 @@ export async function cloneInstance(
 			rconPort,
 			rconPasswordEnc: encryptSecret(password),
 			pinned: false,
+			wantedRunning: false,
 			restartNextAt: null,
 			status: 'provisioning',
 			statusMessage: `Copying ${source.name}`,

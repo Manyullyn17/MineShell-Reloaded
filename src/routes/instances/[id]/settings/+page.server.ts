@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
+import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances, type ServerInstance } from '#lib/server/db/schema.js';
@@ -124,6 +125,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			autoRestartOnCrash: instance.autoRestartOnCrash,
 			crashRestartLimit: instance.crashRestartLimit,
 			crashRestartWindowSec: instance.crashRestartWindowSec,
+			bootStart: instance.bootStart,
 			consoleBacklogLines: instance.consoleBacklogLines,
 			consoleBufferLines: instance.consoleBufferLines,
 			limitMemoryMb: instance.limitMemoryMb,
@@ -173,6 +175,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			),
 			raw: serialiseProperties(parsed.values)
 		},
+		bootNote: bootStartNote(),
 		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(
 			() => true,
 			() => false
@@ -214,7 +217,8 @@ function restartSettingsOf(instance: ServerInstance): RestartSettings {
 		restartSkipIfPlayers: instance.restartSkipIfPlayers,
 		autoRestartOnCrash: instance.autoRestartOnCrash,
 		crashRestartLimit: instance.crashRestartLimit,
-		crashRestartWindowSec: instance.crashRestartWindowSec
+		crashRestartWindowSec: instance.crashRestartWindowSec,
+		bootStart: instance.bootStart
 	};
 }
 

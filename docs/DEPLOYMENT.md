@@ -7,7 +7,10 @@ no root, nothing written to `/etc`, and a bug in MineShell cannot touch anything
 account cannot already touch. (A system-scope mode with sudo rules existed until October
 2026; it ran every server as root and was removed.)
 
-One decision is left: whether MineShell itself should start at boot (below).
+One decision is left: whether MineShell itself should start at boot (below). Servers come
+back after a reboot only if it does: MineShell starts them itself once it is up (each
+server's "When the computer starts" setting), and a server's Settings say so while
+MineShell is not running as a systemd service.
 
 ---
 

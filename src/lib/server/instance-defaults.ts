@@ -27,6 +27,8 @@ export type RestartSettings = {
 	autoRestartOnCrash: boolean;
 	crashRestartLimit: number;
 	crashRestartWindowSec: number;
+	/** After the computer starts: if-running | always | never (bootstart.ts). */
+	bootStart: string;
 };
 
 export type ConsoleSettings = {
@@ -87,7 +89,8 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 		restartSkipIfPlayers: false,
 		autoRestartOnCrash: true,
 		crashRestartLimit: 5,
-		crashRestartWindowSec: 600
+		crashRestartWindowSec: 600,
+		bootStart: 'if-running'
 	},
 	console: { consoleBacklogLines: 300, consoleBufferLines: 2000 },
 	properties: builtInProperties()
@@ -110,6 +113,8 @@ function clampInt(value: unknown, min: number, max: number, fallback: number): n
 const SCHEDULES = ['none', 'interval', 'daily'];
 
 /** Ranges match the inputs on the settings pages. */
+export const BOOT_STARTS = ['if-running', 'always', 'never'];
+
 export function cleanRestarts(input: Partial<Record<keyof RestartSettings, unknown>>, fallback: RestartSettings): RestartSettings {
 	const time = String(input.restartDailyTime ?? '');
 	return {
@@ -120,7 +125,8 @@ export function cleanRestarts(input: Partial<Record<keyof RestartSettings, unkno
 		restartSkipIfPlayers: typeof input.restartSkipIfPlayers === 'boolean' ? input.restartSkipIfPlayers : fallback.restartSkipIfPlayers,
 		autoRestartOnCrash: typeof input.autoRestartOnCrash === 'boolean' ? input.autoRestartOnCrash : fallback.autoRestartOnCrash,
 		crashRestartLimit: clampInt(input.crashRestartLimit, 1, 50, fallback.crashRestartLimit),
-		crashRestartWindowSec: clampInt(input.crashRestartWindowSec, 60, 86400, fallback.crashRestartWindowSec)
+		crashRestartWindowSec: clampInt(input.crashRestartWindowSec, 60, 86400, fallback.crashRestartWindowSec),
+		bootStart: BOOT_STARTS.includes(String(input.bootStart)) ? String(input.bootStart) : fallback.bootStart
 	};
 }
 
@@ -142,7 +148,8 @@ export function restartsFromForm(form: FormData, fallback: RestartSettings): Res
 			restartSkipIfPlayers: form.get('restartSkipIfPlayers') === 'on',
 			autoRestartOnCrash: form.get('autoRestartOnCrash') === 'on',
 			crashRestartLimit: form.get('crashRestartLimit'),
-			crashRestartWindowSec: form.get('crashRestartWindowSec')
+			crashRestartWindowSec: form.get('crashRestartWindowSec'),
+			bootStart: form.get('bootStart')
 		},
 		fallback
 	);

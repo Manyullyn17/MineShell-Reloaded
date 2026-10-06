@@ -389,7 +389,12 @@ lose track.
 
 ### Start servers at boot
 
-Servers do not come back after the host reboots: only MineShell itself is started at boot
+Built (October 2026; `bootstart.ts`, ARCHITECTURE "Servers after a reboot"). Decided: MineShell
+starts them after a new boot (kernel boot id), after recovery, one at a time; per server
+"if it was running before" (default, also in New server defaults) / always / never; the
+database holds it (clones get the setting, never "was running"). The original note:
+
+Servers did not come back after the host reboots: only MineShell itself is started at boot
 (`docs/DEPLOYMENT.md`), and nothing ever runs `systemctl enable` on an instance unit.
 `enableUnit` and `isUnitEnabled` in `systemd.ts` exist but nothing calls them, and the
 template already has `WantedBy=default.target`, so enabling `<prefix>@<id>` would work.

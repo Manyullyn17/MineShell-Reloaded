@@ -114,6 +114,23 @@ So `scheduler.ts` ticks every 30 seconds, computes the next run per instance, se
 warnings over RCON, and calls the same `restart()` path the button in the UI calls. One
 control path, one set of bugs.
 
+### Servers after a reboot are started by MineShell, not enabled in systemd
+
+The template has `WantedBy=default.target`, so `systemctl --user enable` would bring a
+server back at boot without MineShell. It is not used: systemd would start the server
+before MineShell's recovery runs, so a power cut in the middle of a pack change would boot
+a half-changed server; it would start with whatever env file was last written (a start
+resolves Java and rewrites it); and every server would load at once. Instead `bootstart.ts`
+runs at MineShell startup, after `recoverInterruptedOperations`. It compares the kernel's
+boot id (`/proc/sys/kernel/random/boot_id`) with the one stored in `settings`
+(`host.bootId`): only a new boot starts anything, so restarting MineShell never does. Then
+it starts, one at a time in list order, every ready server without an unfinished operation
+whose `boot_start` is `always`, or `if-running` with `wanted_running` set, through the
+normal `start()`, waiting for `Done (` (or the unit stopping, or 3 minutes) before the
+next, as a task in the notification center. `wanted_running` is set by start and restart
+and cleared by stop and by a `stop` sent from the console; a crash leaves it. The first
+run with no stored boot id only records which servers are running.
+
 ---
 
 ## Console

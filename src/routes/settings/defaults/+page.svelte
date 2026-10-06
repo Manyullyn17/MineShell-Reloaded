@@ -107,7 +107,7 @@
 
 	<section class="panel">
 		<h2>Restarts</h2>
-		<RestartFields bind:values={v.restarts} />
+		<RestartFields bind:values={v.restarts} bootNote={data.bootNote} />
 	</section>
 
 	<section class="panel">

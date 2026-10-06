@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { bootStartNote } from '#lib/server/bootstart.js';
 import {
 	DEFAULTABLE_PROPERTIES,
 	consoleFromForm,
@@ -17,6 +18,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		defaults: getInstanceDefaults(),
 		suggestedMaxMb: suggestedMaxMb(),
+		bootNote: bootStartNote(),
 		presets: listPresets().map((p) => ({ id: p.id, name: p.name, description: p.description })),
 		propertyGroups: PROPERTY_GROUPS.map((group) => ({
 			group,

@@ -1,7 +1,8 @@
 <script lang="ts">
 	/**
-	 * Crash and scheduled restart fields, shared by an instance's settings and
-	 * the new-server defaults. Field names are what restartsFromForm reads.
+	 * Crash, scheduled and after-reboot start fields, shared by an instance's
+	 * settings and the new-server defaults. Field names are what
+	 * restartsFromForm reads.
 	 */
 	type RestartValues = {
 		autoRestartOnCrash: boolean;
@@ -12,9 +13,34 @@
 		restartDailyTime: string | null;
 		restartWarnMinutes: number;
 		restartSkipIfPlayers: boolean;
+		bootStart: string;
 	};
-	let { values = $bindable() }: { values: RestartValues } = $props();
+	let {
+		values = $bindable(),
+		bootNote = null
+	}: {
+		values: RestartValues;
+		/** Shown under the after-reboot choice: why it may not happen (MineShell not started at boot). */
+		bootNote?: string | null;
+	} = $props();
 </script>
+
+<fieldset>
+	<legend>When the computer starts</legend>
+	<div class="field">
+		<label for="bootStart">Start this server</label>
+		<select id="bootStart" name="bootStart" bind:value={values.bootStart}>
+			<option value="if-running">If it was running before</option>
+			<option value="always">Always</option>
+			<option value="never">Never</option>
+		</select>
+		<p class="hint">
+			MineShell starts these one at a time once it is up after a reboot. "Running before" means the last thing done
+			to it was a start: a stop clears it, a crash does not.
+		</p>
+		{#if bootNote}<p class="hint warn-text">{bootNote}</p>{/if}
+	</div>
+</fieldset>
 
 <fieldset>
 	<legend>After a crash</legend>
@@ -86,3 +112,10 @@
 		</div>
 	{/if}
 </fieldset>
+
+<style>
+	/* Beats the forms' grey hint colour. */
+	.field > p.hint.warn-text {
+		color: var(--warning);
+	}
+</style>
