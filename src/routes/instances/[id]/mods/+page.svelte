@@ -177,6 +177,10 @@
 		clientOnly?: boolean;
 	};
 	let hits = $state<Hit[]>([]);
+	let searchPage = $state(1);
+	let moreHits = $state(false);
+	let loadingMore = $state(false);
+	let lastQuery = '';
 	let selected = $state<Hit | null>(null);
 	type Version = {
 		id: string;
@@ -279,25 +283,53 @@
 			: ''
 	);
 
+	function searchQuery() {
+		const params = new URLSearchParams({ source, term, mc: data.minecraftVersion });
+		for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
+		for (const category of filterSelections.categories ?? []) {
+			params.append('category', category);
+		}
+		for (const type of filterSelections.projectTypes ?? []) params.append('type', type);
+		return params;
+	}
+
 	async function search() {
 		searching = true;
 		searchError = '';
 		selected = null;
+		searchPage = 1;
 		try {
-			const params = new URLSearchParams({ source, term, mc: data.minecraftVersion });
-			for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
-			for (const category of filterSelections.categories ?? []) {
-				params.append('category', category);
-			}
-			for (const type of filterSelections.projectTypes ?? []) params.append('type', type);
-			const res = await fetch(`/api/mods/search?${params}`);
+			lastQuery = searchQuery().toString();
+			const res = await fetch(`/api/mods/search?${lastQuery}`);
 			if (!res.ok) throw new Error('Search failed.');
 			hits = (await res.json()).hits ?? [];
+			moreHits = hits.length > 0;
 			if (!hits.length) searchError = 'Nothing matched. Try different terms or fewer filters.';
 		} catch (err) {
 			searchError = err instanceof Error ? err.message : 'Search failed.';
 		} finally {
 			searching = false;
+		}
+	}
+
+	/** The next page of the same search, added below; stops offering more once a page brings nothing new. */
+	async function loadMore() {
+		loadingMore = true;
+		try {
+			// The search as it ran, not as the boxes read now.
+			const params = new URLSearchParams(lastQuery);
+			params.set('page', String(searchPage + 1));
+			const res = await fetch(`/api/mods/search?${params}`);
+			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Could not load more.');
+			const known = new Set(hits.map((h) => h.id));
+			const fresh = ((await res.json()).hits ?? []).filter((h: Hit) => !known.has(h.id));
+			searchPage += 1;
+			hits = [...hits, ...fresh];
+			moreHits = fresh.length > 0;
+		} catch (err) {
+			searchError = err instanceof Error ? err.message : 'Could not load more.';
+		} finally {
+			loadingMore = false;
 		}
 	}
 
@@ -828,6 +860,11 @@
 					{searching ? 'Searching.' : 'Search, or press Search with nothing typed to browse popular mods.'}
 				</li>
 			{/each}
+			{#if hits.length && moreHits}
+				<li class="more-hits">
+					<button type="button" class="button-quiet" onclick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading' : 'Load more'}</button>
+				</li>
+			{/if}
 		</ul>
 
 		{#if selected}
@@ -1361,6 +1398,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+	}
+
+	.more-hits button {
+		width: 100%;
 	}
 
 	.hits-empty {

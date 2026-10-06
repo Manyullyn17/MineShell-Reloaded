@@ -129,6 +129,10 @@
 		gameVersions: string[];
 	};
 	let hits = $state<Hit[]>([]);
+	let searchPage = $state(1);
+	let moreHits = $state(false);
+	let loadingMore = $state(false);
+	let lastQuery = '';
 	let selected = $state<Hit | null>(null);
 
 	// Switching source left the previous provider's results on screen, which
@@ -259,27 +263,55 @@
 		};
 	});
 
+	function searchQuery() {
+		const params = new URLSearchParams({ source, term });
+		for (const version of filterSelections.minecraftVersions ?? []) params.append('mc', version);
+		for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
+		for (const category of filterSelections.categories ?? []) {
+			params.append('category', category);
+		}
+		return params;
+	}
+
 	async function search() {
 		searching = true;
 		searchError = '';
 		selected = null;
 		packVersions = [];
+		searchPage = 1;
 		try {
-			const params = new URLSearchParams({ source, term });
-			for (const version of filterSelections.minecraftVersions ?? []) params.append('mc', version);
-			for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
-			for (const category of filterSelections.categories ?? []) {
-				params.append('category', category);
-			}
-			const res = await fetch(`/api/packs/search?${params}`);
+			lastQuery = searchQuery().toString();
+			const res = await fetch(`/api/packs/search?${lastQuery}`);
 			if (!res.ok) throw new Error((await res.json()).message ?? 'Search failed.');
 			hits = (await res.json()).hits ?? [];
+			moreHits = hits.length > 0;
 			if (hits.length === 0) searchError = 'Nothing matched. Try different terms or fewer filters.';
 		} catch (err) {
 			searchError = err instanceof Error ? err.message : 'Search failed.';
 			hits = [];
 		} finally {
 			searching = false;
+		}
+	}
+
+	/** The next page of the same search, added below; stops offering more once a page brings nothing new. */
+	async function loadMore() {
+		loadingMore = true;
+		try {
+			// The search as it ran, not as the boxes read now.
+			const params = new URLSearchParams(lastQuery);
+			params.set('page', String(searchPage + 1));
+			const res = await fetch(`/api/packs/search?${params}`);
+			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Could not load more.');
+			const known = new Set(hits.map((h) => h.id));
+			const fresh = ((await res.json()).hits ?? []).filter((h: Hit) => !known.has(h.id));
+			searchPage += 1;
+			hits = [...hits, ...fresh];
+			moreHits = fresh.length > 0;
+		} catch (err) {
+			searchError = err instanceof Error ? err.message : 'Could not load more.';
+		} finally {
+			loadingMore = false;
 		}
 	}
 
@@ -455,6 +487,11 @@
 					{:else}
 						<li class="faint small hits-empty">{searching ? 'Searching.' : 'No packs to show yet.'}</li>
 					{/each}
+					{#if hits.length && moreHits}
+						<li class="more-hits">
+							<button type="button" class="button-quiet" onclick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading' : 'Load more'}</button>
+						</li>
+					{/if}
 				</ul>
 
 				{#if selected}
@@ -925,6 +962,10 @@
 		gap: 0.5rem;
 		overflow-y: auto;
 		min-height: 16rem;
+	}
+
+	.more-hits button {
+		width: 100%;
 	}
 
 	.hits-empty {

@@ -201,9 +201,44 @@ function browseSegments(query: SearchQuery, tagId: string, sort: string): string
 	const version = query.minecraftVersions?.[0] ?? query.minecraftVersion ?? '';
 	const segments = [tagId, loader, version].filter(Boolean);
 	segments.push(sort);
-	if ((query.page ?? 1) > 1) segments.push(String(query.page));
 	return segments;
 }
+
+/** The mirror's browse lists come 50 to a page. */
+const BROWSE_PAGE = 50;
+
+/**
+ * One page of our size (`query.limit`, 20) out of the mirror's 50-card browse
+ * pages: page 2 is cards 21-40 of the mirror's first page, page 3 spans its
+ * first and second. Past the last page the mirror answers "No packs."
+ */
+async function browseCards(
+	url: (mirrorPage: number) => string,
+	pick: (data: { packs?: BrowseCard[]; mods?: BrowseCard[] }) => BrowseCard[] | undefined,
+	query: SearchQuery
+): Promise<BrowseCard[]> {
+	const limit = query.limit ?? 20;
+	const start = ((query.page ?? 1) - 1) * limit;
+	const first = Math.floor(start / BROWSE_PAGE) + 1;
+	const last = Math.floor((start + limit - 1) / BROWSE_PAGE) + 1;
+	const cards: BrowseCard[] = [];
+	for (let page = first; page <= last; page++) {
+		const data = await fetchJson<{ packs?: BrowseCard[]; mods?: BrowseCard[] }>(url(page));
+		const list = pick(data) ?? [];
+		cards.push(...list);
+		if (list.length < BROWSE_PAGE) break;
+	}
+	const skip = start - (first - 1) * BROWSE_PAGE;
+	return cards.slice(skip, skip + limit);
+}
+
+/** Term search answers the first `n` ids; a later page asks for more and keeps its share. */
+function pageOfIds<T>(ids: T[] | undefined, query: SearchQuery): T[] {
+	const limit = query.limit ?? 20;
+	return (ids ?? []).slice(((query.page ?? 1) - 1) * limit, (query.page ?? 1) * limit);
+}
+
+const idsWanted = (query: SearchQuery) => (query.limit ?? 20) * (query.page ?? 1);
 
 function applyPostFilters(hits: SearchHit[], query: SearchQuery): SearchHit[] {
 	let result = hits;
@@ -261,9 +296,9 @@ function makeFtbProvider(): ModProvider {
 
 		async search(query) {
 			if (query.term) {
-				const ids = await sharedTermSearch(query.term, query.limit ?? 20);
+				const ids = await sharedTermSearch(query.term, idsWanted(query));
 				const settled = await Promise.allSettled(
-					(ids.packs ?? []).map((id) =>
+					pageOfIds(ids.packs, query).map((id) =>
 						fetchJson<PackDetail>(`${API}/public/modpack/${id}`).then((p) => detailToHit('ftb', p))
 					)
 				);
@@ -274,10 +309,15 @@ function makeFtbProvider(): ModProvider {
 			}
 
 			const segments = browseSegments(query, query.categories?.[0] ?? '', 'featured');
-			const data = await fetchJson<{ packs: BrowseCard[] }>(
-				`${API}/public/modpack/browse/${segments.join('/')}`
-			);
-			return (data.packs ?? []).slice(0, query.limit ?? 20).map((card) => cardToHit('ftb', card));
+			const cards = await browseCards(
+				(page) => `${API}/public/modpack/browse/${[...segments, ...(page > 1 ? [page] : [])].join('/')}`,
+				(data) => data.packs,
+				query
+			).catch((err) => {
+				if ((query.page ?? 1) > 1) return [];
+				throw err;
+			});
+			return cards.map((card) => cardToHit('ftb', card));
 		},
 
 		async getProject(id) {
@@ -338,9 +378,9 @@ function makeCurseforgeProvider(): ModProvider {
 
 		async search(query) {
 			if (query.term) {
-				const ids = await sharedTermSearch(query.term, query.limit ?? 20);
+				const ids = await sharedTermSearch(query.term, idsWanted(query));
 				const settled = await Promise.allSettled(
-					(ids.curseforge ?? []).map((id) =>
+					pageOfIds(ids.curseforge, query).map((id) =>
 						fetchJson<PackDetail>(`${API}/public/curseforge/${id}`).then((p) => detailToHit('curseforge', p))
 					)
 				);
@@ -354,11 +394,15 @@ function makeCurseforgeProvider(): ModProvider {
 			const tagId = query.categories?.[0] ?? '';
 			const segments = browseSegments(query, tagId, 'featured');
 			const base = kind === 'mod' ? `${API}/public/curseforge/mods/browse` : `${API}/public/curseforge/browse`;
-			const data = await fetchJson<{ packs?: BrowseCard[]; mods?: BrowseCard[] }>(
-				`${base}/${segments.join('/')}`
-			);
-			const cards = kind === 'mod' ? data.mods : data.packs;
-			return (cards ?? []).slice(0, query.limit ?? 20).map((card) => cardToHit('curseforge', card));
+			const cards = await browseCards(
+				(page) => `${base}/${[...segments, ...(page > 1 ? [page] : [])].join('/')}`,
+				(data) => (kind === 'mod' ? data.mods : data.packs),
+				query
+			).catch((err) => {
+				if ((query.page ?? 1) > 1) return [];
+				throw err;
+			});
+			return cards.map((card) => cardToHit('curseforge', card));
 		},
 
 		async getProject(id) {
@@ -546,12 +590,13 @@ function makeCurseforgeModProvider(): ModProvider {
 
 		async search(query) {
 			if (!query.term) return packs.search({ ...query, kind: 'mod' });
-			const limit = query.limit ?? 20;
+			// The list mixes in Modrinth ids (strings); a page is cut from the CurseForge ones.
 			const ids = await fetchJson<{ mods?: (number | string)[] }>(
-				`${API}/public/mod/search/${limit}?term=${encodeURIComponent(query.term)}`
+				`${API}/public/mod/search/${idsWanted(query)}?term=${encodeURIComponent(query.term)}`
 			);
+			const curseforge = (ids.mods ?? []).filter((id) => typeof id === 'number');
 			const settled = await Promise.allSettled(
-				(ids.mods ?? []).filter((id) => typeof id === 'number').map((id) => modSearchHit(String(id), query))
+				pageOfIds(curseforge, query).map((id) => modSearchHit(String(id), query))
 			);
 			return settled
 				.filter((r): r is PromiseFulfilledResult<SearchHit | null> => r.status === 'fulfilled')
