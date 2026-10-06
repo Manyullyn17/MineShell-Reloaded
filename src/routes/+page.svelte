@@ -25,6 +25,15 @@
 		!!instance.javaWarning;
 	const attention = $derived(data.instances.filter(needsAttention).length);
 
+	// The page reloads every few seconds, each time with a new pending promise;
+	// keeping the last answer stops the line flashing back to its loading text.
+	let causes = $state<Record<string, string>>({});
+	$effect(() => {
+		let current = true;
+		data.causes.then((found) => current && (causes = found)).catch(() => undefined);
+		return () => (current = false);
+	});
+
 	function powerSubmit(id: string) {
 		busy = id;
 		return async ({ update }: { update: () => Promise<void> }) => {
@@ -133,11 +142,7 @@
 						{instance.gaveUpAfter
 							? `Crashed ${instance.gaveUpAfter} times in a row, so systemd stopped restarting it.`
 							: 'The last run crashed.'}
-						{#await data.causes}
-							The overview shows the final output.
-						{:then causes}
-							{#if causes[instance.id]}Likely cause: {causes[instance.id]}{:else}The overview shows the final output.{/if}
-						{/await}
+						{#if causes[instance.id]}Likely cause: {causes[instance.id]}{:else}The overview shows the final output.{/if}
 					</p>
 				{/if}
 
