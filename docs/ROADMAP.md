@@ -449,6 +449,43 @@ only or also in the database (clones, recreated servers with the same id), how i
 with a crash loop at boot, and whether MineShell should start them itself after boot
 instead. Noticed in the October 2026 sanity pass; parked for a later look.
 
+### GT New Horizons as its own install option
+
+Agreed (2026-10-07), not started. GTNH's own docs say to take server files only from
+`gtnewhorizons.com/downloads` (its wiki, "Server Setup"); the downloads page calls
+CurseForge and Technic "not recommended, provided for convenience" (Prism is recommended
+for clients). MineShell's pack browser would today build a server from the CurseForge
+listing (project 252507, on the mirror up to 2.8.4 and 2.9.0-RC-2): the client pack, on
+Forge 1.7.10, so Java 8 only. The official server pack has a Java 17-25 variant, which GTNH
+recommends for performance, and server and clients must run the exact same GTNH version.
+
+Shape: a fourth card on the first step of Add a server, next to Modpack / Upload / Mod
+loader: "GT New Horizons". Picking it never enters the Modrinth/CurseForge flow, so the
+browser needs no GTNH special case. Its step 2 lists GTNH versions (stable, and betas
+behind a toggle) and the Java variant (17-25 by default, 8 offered); step 3 is the usual
+configure step.
+
+Work it needs:
+- **Version list**: the server zips are
+  `downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_<version>_Server_Java_<range>.zip`,
+  but the folder listing answers "not found". The docker-minecraft-server image
+  (`TYPE=GTNH`, `GTNH_PACK_VERSION=latest|latest-beta|2.8.1`) resolves versions somehow;
+  read how before choosing (a page to scrape, a JSON in GTNH's GitHub, or their releases).
+- **Install**: the official server zip is already a server (its own Forge 1.7.10 and
+  libraries), so it unpacks rather than going through a loader install. The rejection of
+  CurseForge server packs below does not apply: this is one known, maintained layout, and
+  the pack's official route.
+- **Java 17+ launch**: lwjgl3ify's setup: `java9args.txt` and `lwjgl3ify-forgePatches.jar`
+  (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`), a new launch shape for
+  `isLoaderInstallEntry` and Java planning (needs 17+, not 8 as Forge 1.7.10 would say).
+  The Java 8 variant is a plain Forge 1.7.10 server.
+- **Updates**: GTNH's update steps replace mods and configs and keep the world, which is
+  what a pack version change does already (`old-configs/`); it needs the version list as
+  its source and GTNH's notes on files to delete (the wiki lists ones to remove when
+  switching to Java 17+). The docker image keeps old configs in `gtnh-upgrade-<date>` folders.
+- **Client side**: the client pack export has nothing to add here; GTNH clients install
+  from GTNH (Prism zip). The server page could link the matching client download.
+
 ### UI redesign: what the mockup shows that is not built
 
 The October 2026 redesign (Claude Design, "MineShell Redesign") is built: shell, instance
@@ -499,4 +536,5 @@ client pack, the jars carry no project ids, and they run to 1.2 GB (a pack chang
 would download all of it). The client mod list plus `clientonly.ts` stays the one install
 path. If the author's curation is ever wanted, the cheap form is reading only the server
 pack's file list (HTTP range requests on the zip's central directory, a few KB) and flagging
-client-list mods missing from its `mods/` as client-only - not installing from it.
+client-list mods missing from its `mods/` as client-only - not installing from it. (GT New Horizons is the one exception planned, as its own install option: see "GT New
+Horizons as its own install option" under Later.)
