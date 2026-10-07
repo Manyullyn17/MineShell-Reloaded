@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import PathText from '#lib/components/PathText.svelte';
 	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
@@ -61,7 +62,7 @@
 				{#each data.javaRuntimes as java (java.path)}
 					<tr>
 						<td class="mono">Java {java.majorVersion}</td>
-						<td class="mono small wrap">{java.path}</td>
+						<td class="mono small"><PathText path={java.path} /></td>
 						<td class="small faint">
 							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
 							{#if java.vendor}<div class="small">{java.vendor}</div>{/if}
@@ -335,7 +336,7 @@
 		</div>
 	{:else}
 		<div class="notice success">
-			<p>Unit installed at <code class="wrap">{data.paths.unitDir}/{data.paths.templateUnit}</code>.</p>
+			<p>Unit installed at <code><PathText path="{data.paths.unitDir}/{data.paths.templateUnit}" /></code>.</p>
 		</div>
 	{/if}
 
@@ -354,9 +355,9 @@
 <section class="panel">
 	<h2>Where things live</h2>
 	<dl class="paths">
-		<div><dt>Data</dt><dd class="mono wrap">{data.paths.data}</dd></div>
-		<div><dt>Instances</dt><dd class="mono wrap">{data.paths.instances}</dd></div>
-		<div><dt>Unit environment files</dt><dd class="mono wrap">{data.paths.units}</dd></div>
+		<div><dt>Data</dt><dd class="mono"><PathText path={data.paths.data} /></dd></div>
+		<div><dt>Instances</dt><dd class="mono"><PathText path={data.paths.instances} /></dd></div>
+		<div><dt>Unit environment files</dt><dd class="mono"><PathText path={data.paths.units} /></dd></div>
 	</dl>
 </section>
 {/if}
