@@ -5,6 +5,7 @@
 	import { describeState } from '#lib/shared/format.js';
 	import NotificationCenter from '#lib/components/NotificationCenter.svelte';
 	import LogoMark from '#lib/components/LogoMark.svelte';
+	import TapTips from '#lib/components/TapTips.svelte';
 
 	let { data, children } = $props();
 
@@ -140,6 +141,8 @@
 		<main class="content">
 			{@render children()}
 		</main>
+
+		<TapTips />
 	</div>
 {/if}
 

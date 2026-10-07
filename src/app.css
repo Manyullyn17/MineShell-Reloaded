@@ -492,6 +492,12 @@ tbody tr:last-child td {
 		position: absolute;
 		inset: -0.6rem;
 	}
+
+	/* Tapping an element with a title shows it (TapTips); iOS only sends taps on
+	   elements that look clickable. */
+	[title]:not(a, button, input, select, textarea, label, summary) {
+		cursor: pointer;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

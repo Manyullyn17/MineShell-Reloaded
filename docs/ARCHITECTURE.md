@@ -368,8 +368,8 @@ Phones: layout changes for narrow windows sit under `@media (max-width: 60rem)` 
 slides in, the instance header stops sticking, tab bars scroll with a fade, tables scroll
 in their own box), and touch-only changes under `@media (pointer: coarse)` (16 px text in
 fields, which stops iOS zooming in on focus; finger-sized buttons; a larger invisible hit
-area for controls marked `hit-area`), so a narrow desktop window with a mouse is
-unaffected by the second set.
+area for controls marked `hit-area`; tapping an element that only has a `title` shows it in a
+bubble, `TapTips.svelte`), so a narrow desktop window with a mouse is unaffected by the second set.
 
 Styling is one stylesheet of custom properties. Two rules carry meaning rather than taste:
 monospace is used only for machine output — paths, versions, ports, log lines, metrics —
