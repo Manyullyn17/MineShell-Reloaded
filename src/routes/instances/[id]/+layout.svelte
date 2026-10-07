@@ -342,6 +342,8 @@
 		gap: var(--space-1);
 		border-bottom: 1px solid var(--line);
 		overflow-x: auto;
+		overflow-y: hidden;
+		overscroll-behavior-x: contain;
 	}
 
 	.tabs a {

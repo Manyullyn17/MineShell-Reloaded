@@ -1124,7 +1124,8 @@
 		flex: 1;
 		min-width: 0;
 		overflow-x: auto;
-		scrollbar-width: none;
+		overflow-y: hidden;
+		overscroll-behavior-x: contain;
 	}
 
 	/* Nine tabs and the search share one row at common widths. */

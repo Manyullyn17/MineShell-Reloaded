@@ -592,7 +592,12 @@ tbody tr:last-child td {
 	/* On a phone the tabs scroll sideways rather than widening the page. */
 	max-width: 100%;
 	overflow-x: auto;
-	scrollbar-width: none;
+	/* Sideways only: otherwise a vertical swipe on it scrolls (and on Android, stretches) the bar. */
+	overflow-y: hidden;
+	overscroll-behavior-x: contain;
+	/* The active tab's underline sits on the line under the bar. Overlapping it here, not on
+	   each tab, keeps the tabs inside the scroll box, so nothing is clipped or scrolls up/down. */
+	margin-bottom: -1px;
 }
 
 .subtabs > * {
@@ -612,7 +617,6 @@ tbody tr:last-child td {
 	color: var(--text-muted);
 	font-weight: 400;
 	font-size: 0.93rem;
-	margin-bottom: -1px;
 }
 
 .subtabs button:hover:not(:disabled) {
