@@ -24,6 +24,14 @@
 
 	const actionUrl = (name: string) => `${base}?/${name}`;
 	let menuOpen = $state(false);
+	/** The menu opens toward the side with room: leftward from the ⋯ at the right of a desktop
+	   header, rightward on a phone, where the header's buttons wrap to the left edge. */
+	let menuWrap = $state<HTMLElement | null>(null);
+	let menuFromLeft = $state(false);
+	function toggleMenu() {
+		if (!menuOpen && menuWrap) menuFromLeft = menuWrap.getBoundingClientRect().right < 16 * 16 + 16;
+		menuOpen = !menuOpen;
+	}
 	let message = $state<{ ok?: boolean; message?: string } | null>(null);
 
 	/**
@@ -98,20 +106,20 @@
 			{:else}
 				<button class="button-primary" name="verb" value="start" disabled={!canStart}>Start</button>
 			{/if}
-			<div class="menu-wrap">
+			<div class="menu-wrap" bind:this={menuWrap}>
 				<button
 					type="button"
 					class="more"
 					aria-label="More actions"
 					aria-haspopup="menu"
 					aria-expanded={menuOpen}
-					onclick={() => (menuOpen = !menuOpen)}
+					onclick={toggleMenu}
 				>
 					⋯
 				</button>
 				{#if menuOpen}
 					<button type="button" class="menu-scrim" aria-label="Close menu" onclick={() => (menuOpen = false)}></button>
-					<div class="menu" role="menu">
+					<div class="menu" class:from-left={menuFromLeft} role="menu">
 						{#if data.running}
 							<div class="menu-head">Stop with a warning</div>
 							{#each delays as minutes (minutes)}
@@ -274,6 +282,12 @@
 		border-radius: var(--radius-lg);
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 		padding: 5px;
+	}
+
+	.menu.from-left {
+		right: auto;
+		left: 0;
+		max-width: calc(100vw - 2rem);
 	}
 
 	.menu-head {
