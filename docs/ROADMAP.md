@@ -397,6 +397,12 @@ perfect for every model is not.
 
 ### Item and enchantment names in the player editor
 
+Enchantments: built (2026-10-07, `enchantnames.ts`). On 1.12-or-older worlds the editor's
+picker lists the world's table from `level.dat` by name (vanilla's names built in, mod ones
+from their lang files with likely keys, otherwise made from the id) and writes the number.
+On MeatballCraft: 132 enchantments, every number to an exact id. Item names are not done.
+The original note:
+
 The editor shows item ids (`thermalfoundation:material`) and, on 1.12 and older, mod
 enchantments as bare numbers (only vanilla's numbers are mapped, `LEGACY_ENCHANTMENTS`).
 Both can come from the server's own files. Checked 2026-10-06 on `meatballcraft-cleanroom`:

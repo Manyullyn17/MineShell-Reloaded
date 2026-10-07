@@ -321,6 +321,15 @@
 
 	/** The name part of an id (the full id is in the slot's tooltip). */
 	const LEGACY_NAMES = $derived(data.view.legacyEnchantments);
+	/** The world's enchantments for the picker, by name; the mod in the label tells same-named ones apart. */
+	const legacyOptions = $derived(
+		Object.entries(LEGACY_NAMES)
+			.map(([number, e]) => {
+				const mod = e.id.split(':')[0];
+				return { number, label: mod === 'minecraft' ? e.name : `${e.name} · ${mod}`, id: e.id };
+			})
+			.sort((a, b) => a.label.localeCompare(b.label))
+	);
 	const short = (id: string) => (id.split(':').pop() ?? id).replace(/_/g, ' ');
 	const SLOT_LABELS: Record<number, string> = { 103: 'Head', 102: 'Chest', 101: 'Legs', 100: 'Feet', [-106]: 'Offhand' };
 	const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
@@ -632,14 +641,23 @@
 						<span class="label-text">{selectedItem.fields.stored ? 'Stored enchantments' : 'Enchantments'}</span>
 						{#each itemEnchants as e, i (i)}
 							<div class="enchant">
-								<input class="mono" bind:value={e.id} placeholder={legacy ? '16 (sharpness)' : 'minecraft:sharpness'} aria-label="Enchantment" disabled={locked} />
+								{#if legacy}
+									<!-- 1.12 stores numbers; the picker shows this world's names and writes the number. -->
+									<select bind:value={e.id} aria-label="Enchantment" title={LEGACY_NAMES[Number(e.id)]?.id ?? ''} disabled={locked}>
+										{#if !LEGACY_NAMES[Number(e.id)] || e.id.trim() === ''}
+											<option value={e.id}>{e.id.trim() === '' ? 'Pick an enchantment' : `Unknown (${e.id})`}</option>
+										{/if}
+										{#each legacyOptions as o (o.number)}<option value={o.number}>{o.label}</option>{/each}
+									</select>
+								{:else}
+									<input class="mono" bind:value={e.id} placeholder="minecraft:sharpness" aria-label="Enchantment" disabled={locked} />
+								{/if}
 								<input type="number" min="1" max="255" bind:value={e.level} aria-label="Level" disabled={locked} />
-								{#if legacy && LEGACY_NAMES[Number(e.id)]}<span class="small faint enchant-name">{LEGACY_NAMES[Number(e.id)]}</span>{/if}
 								<button type="button" class="button-quiet button-danger" aria-label="Remove enchantment" disabled={locked} onclick={() => itemEnchants.splice(i, 1)}>×</button>
 							</div>
 						{/each}
 						<button type="button" class="button-quiet" disabled={locked} onclick={() => itemEnchants.push({ id: '', level: 1 })}>Add enchantment</button>
-						{#if legacy}<p class="hint">1.12 numbers enchantments: 0 protection, 16 sharpness, 32 efficiency, 34 unbreaking, 70 mending.</p>{/if}
+						{#if legacy}<p class="hint">{legacyOptions.length} enchantments in this world's table.</p>{/if}
 					</div>
 				{/if}
 
@@ -1207,11 +1225,6 @@
 		padding: 0.2rem 0.55rem;
 	}
 
-	.enchant-name {
-		align-self: center;
-		white-space: nowrap;
-	}
-
 	.sep {
 		margin: 0 0.35rem;
 	}
@@ -1247,8 +1260,14 @@
 		margin-bottom: var(--space-1);
 	}
 
-	.enchant input {
+	.enchant input,
+	.enchant select {
 		margin: 0;
+		min-width: 0;
+	}
+
+	.enchant select {
+		flex: 1 1 auto;
 	}
 
 	.enchant input[type='number'] {

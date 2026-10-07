@@ -120,7 +120,8 @@ pre-generate terrain with live progress.
 **Players.** Whitelist, operators (with levels) and bans (with reasons, and IP bans),
 edited live over RCON when the server is up and directly in the JSON files when it is down.
 Names resolve to UUIDs through Mojang. A player data editor changes inventories, effects
-and other saved data of players who are offline.
+and other saved data of players who are offline; on 1.12 and older, enchantments are picked
+by name from the world's own table, mod enchantments included.
 
 **Files.** Browse, upload, download, rename, delete, and edit text files in place, all
 confined to the instance directory. A disk usage page shows where the space goes.

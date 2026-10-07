@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
@@ -12,6 +13,8 @@ import {
 	restorePlayerBackup,
 	savePlayerData
 } from '#lib/server/playerdata.js';
+import { legacyEnchantmentTable } from '#lib/server/enchantnames.js';
+import { serverWorldName } from '#lib/server/packworld.js';
 import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '#lib/server/playerfields.js';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -25,11 +28,16 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 	const online = await onlinePlayerIds(instance);
 	const uuid = params.uuid.toLowerCase();
+	const view = playerView(data.file);
+	// 1.12 and older number enchantments per world: this world's table names mod ones too.
+	if (view.format === 'legacy') {
+		view.legacyEnchantments = await legacyEnchantmentTable(instance.path, path.join(instance.path, await serverWorldName(instance.path)));
+	}
 	return {
 		uuid,
 		name: data.name,
 		version: data.version,
-		view: playerView(data.file),
+		view,
 		customFields: customFieldViews(data.file.root, listCustomFields(instance.id)),
 		backups: await listBackups(instance, uuid),
 		file: await playerFileInfo(instance, uuid),

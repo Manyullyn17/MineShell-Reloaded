@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
+import { vanillaEnchantmentTable, type EnchantmentInfo } from './enchantnames';
 import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
 import { serverWorldName } from './packworld';
 import { parseSnbt, SnbtError } from './snbt';
@@ -9,7 +10,6 @@ import {
 	checkItem,
 	describeItem,
 	findContainers,
-	LEGACY_ENCHANTMENTS,
 	PlayerDataError,
 	setContainerItem,
 	countStyle,
@@ -187,8 +187,11 @@ export type PlayerView = {
 	items: ItemView[];
 	/** Other item lists in the file: Curios, Trinkets and other mod slots. */
 	containers: ContainerView[];
-	/** 1.12's enchantment numbers and their names, for the item editor; empty for newer files. */
-	legacyEnchantments: Record<number, string>;
+	/**
+	 * 1.12-or-older enchantment numbers, for the item editor: vanilla's here, the
+	 * world's own table (enchantnames.ts) once the route has read level.dat. Empty for newer files.
+	 */
+	legacyEnchantments: Record<number, EnchantmentInfo>;
 	tree: TreeTag;
 };
 
@@ -245,7 +248,7 @@ export function playerView(file: NbtFile): PlayerView {
 		effects: playerEffects(root, dataVersion),
 		items,
 		containers: findContainers(root, [], style, '', 0, new Set(['Inventory', 'EnderItems', 'equipment'])),
-		legacyEnchantments: style.format === 'legacy' ? LEGACY_ENCHANTMENTS : {},
+		legacyEnchantments: style.format === 'legacy' ? vanillaEnchantmentTable() : {},
 		tree: toTree(root)
 	};
 }
