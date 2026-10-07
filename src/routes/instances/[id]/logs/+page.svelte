@@ -47,6 +47,7 @@
 										? ` · started in ${formatSeconds(data.startTimes[run.invocation])}`
 										: ''}</span
 								>
+								{#if data.crashCauses[run.invocation]}<span class="sub cause">{data.crashCauses[run.invocation]}</span>{/if}
 							</span>
 						</a>
 					</li>

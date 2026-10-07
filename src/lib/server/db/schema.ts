@@ -255,7 +255,16 @@ export const serverRuns = sqliteTable(
 		invocation: text('invocation').notNull(),
 		startedAt: integer('started_at').notNull(),
 		doneAt: integer('done_at'),
-		endedAt: integer('ended_at')
+		endedAt: integer('ended_at'),
+		/** The process's exit status ("Main process exited, ... status=N"); null for a clean exit or unknown. */
+		exitStatus: integer('exit_status'),
+		/** systemd said "Failed with result ...". */
+		failed: integer('failed', { mode: 'boolean' }).notNull().default(false),
+		/** Ended badly: a failure other than an asked-for stop, or stopped on its own before "Done (". */
+		crashed: integer('crashed', { mode: 'boolean' }).notNull().default(false),
+		/** The crash analyzer's one-line verdict; null when nothing was recognised. */
+		cause: text('cause'),
+		diagnosed: integer('diagnosed', { mode: 'boolean' }).notNull().default(false)
 	},
 	(t) => ({
 		byInvocation: uniqueIndex('server_runs_invocation_idx').on(t.instanceId, t.invocation)

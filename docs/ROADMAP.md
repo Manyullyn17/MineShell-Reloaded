@@ -204,7 +204,9 @@ Suggested after the client pack export and reboot handling; all wanted.
   slows startup shows. The journal has both timestamps (the unit's start, the `Done (`
   line); reading them per invocation like `runFinishedStarting` avoids walking old runs.
   Pairs well with player history, which also wants console lines kept over time.
-- **Crash history**: the overview shows only the last crash (`lastcrash.ts`). Keep each
+- **Crash history**: built (2026-10-07, `history.ts`): crashed runs marked by the overview's
+  rule, each put through the crash analyzer once; Recent crashes on the overview (with the
+  cause that repeats), causes in the Logs run list. The note: the overview shows only the last crash (`lastcrash.ts`). Keep each
   crash with its diagnosis (culprit, cause line) and date, and list them, so a pattern
   shows ("every few days, always the same mod"). A small table, filled when the monitor
   sees a crash, rather than re-diagnosing old runs from the journal each time.

@@ -89,7 +89,7 @@ server "if it was running before" (the default), always, or never.
 
 **Overview.** Uptime and how long the last start took against the usual, players (with
 how long each has been on, today's peak and a kick button), tick rate where the server reports it,
-CPU and memory over the last hour, 6 hours or day, disk use, the address to connect to. After a crash: the last output and a diagnosis naming the mod that caused
+CPU and memory over the last hour, 6 hours or day, disk use, the address to connect to. Recent crashes with their causes, and which cause keeps coming back. After a crash: the last output and a diagnosis naming the mod that caused
 it, with a one-click disable. With Spark installed, timed profiles uploaded for viewing.
 
 **Console and logs.** Live output streamed from the journal, commands sent over RCON.

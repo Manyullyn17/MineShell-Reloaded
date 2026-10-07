@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const { applyEvents, onlineSince, peakPlayers, playtimes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
+const { applyEvents, crashCausesByRun, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 
@@ -78,6 +78,59 @@ describe('server history from journal events', () => {
 			ev(T0 + 2 * MIN, line('Alex joined the game'))
 		]);
 		expect(peakPlayers(s.id, T0, T0 + 5 * MIN)).toBe(1);
+	});
+});
+
+describe('crash history', () => {
+	it('marks crashed runs: failures and stops before Done, not asked-for stops', async () => {
+		const s = await server();
+		const at = (h: number) => T0 + h * 60 * MIN;
+		applyEvents(s.id, [
+			// 1: ran, then stopped over RCON: exit 0, nothing logged about the exit.
+			ev(at(0), 'Started x.service', 1),
+			ev(at(0) + MIN, line('Done (5.0s)!'), 1),
+			ev(at(1), 'x.service: Deactivated successfully.', 1),
+			// 2: crashed while running.
+			ev(at(2), 'Started x.service', 2),
+			ev(at(2) + MIN, line('Done (5.0s)!'), 2),
+			ev(at(3), 'x.service: Main process exited, code=exited, status=1/FAILURE', 2),
+			ev(at(3), "x.service: Failed with result 'exit-code'.", 2),
+			// 3: stopped through systemd (SIGTERM) while still starting: asked for.
+			ev(at(4), 'Started x.service', 3),
+			ev(at(4) + MIN, 'x.service: Main process exited, code=exited, status=143/n/a', 3),
+			ev(at(4) + MIN, 'Stopped x.service.', 3),
+			// 4: a startup crash the loader caught: exit 0, never Done.
+			ev(at(5), 'Started x.service', 4),
+			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4)
+		]);
+		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
+	});
+
+	it('puts each crash through the crash analyzer once', async () => {
+		const s = await server();
+		const crashLog = [
+			'Started x.service',
+			'[10:00:01] [main/ERROR] [FML]: Missing or unsupported mandatory dependencies:',
+			'[10:00:01] [main/INFO] [Server thread/INFO]: whatever'
+		].join('\n');
+		let runReads = 0;
+		fakeProcesses((cmd, args) => {
+			if (cmd !== 'journalctl') return {};
+			if (args.some((a) => a.startsWith('_SYSTEMD_INVOCATION_ID='))) {
+				runReads++;
+				return { stdout: crashLog + '\n' };
+			}
+			if (args.includes('-n')) return { stdout: JSON.stringify({ __CURSOR: 'k', __REALTIME_TIMESTAMP: String((T0 + 5 * MIN) * 1000) }) + '\n' };
+			const e = (at: number, message: string) => JSON.stringify({ MESSAGE: message, __REALTIME_TIMESTAMP: String(at * 1000), _SYSTEMD_INVOCATION_ID: inv(9) });
+			return { stdout: [e(T0, 'Started x.service'), e(T0 + MIN, "x.service: Failed with result 'exit-code'.")].join('\n') + '\n' };
+		});
+		await recordHistory(reload(s.id));
+		const [crash] = recentCrashes(s.id, 0);
+		expect(crash).toMatchObject({ invocation: inv(9), diagnosed: true });
+		expect(runReads).toBe(1);
+		await recordHistory(reload(s.id));
+		expect(runReads).toBe(1);
+		expect(Object.keys(crashCausesByRun(s.id))).toEqual(crash.cause ? [inv(9)] : []);
 	});
 });
 

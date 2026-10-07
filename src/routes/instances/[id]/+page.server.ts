@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { onlineSince, peakPlayers, startTimes } from '#lib/server/history.js';
+import { onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -132,7 +132,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		},
 		players,
 		/** From the journal (history.ts): today's peak, since when each online player is on, start times. */
-		history: { peakToday: peakPlayers(instance.id), onlineSince: onlineSince(instance.id), start: startTimes(instance.id) },
+		history: {
+			peakToday: peakPlayers(instance.id),
+			onlineSince: onlineSince(instance.id),
+			start: startTimes(instance.id),
+			crashes: recentCrashes(instance.id)
+		},
 		countdown: getCountdown(instance.id),
 		tick,
 		spark,

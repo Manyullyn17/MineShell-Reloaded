@@ -209,7 +209,10 @@ filtered with `journalctl -g` to systemd's start/stop lines, `Done (`, and join/
 while MineShell was down are caught up on, and the first read takes in what the journal still
 holds. The position stored is the newest entry, read before the filtered read (matches newer
 than it wait for the next call), so a server quiet for days is not rescanned from an old
-match each time. A run ending, or the next one starting, closes any open session. From it:
+match each time. A run ending, or the next one starting, closes any open session. Crashes use the overview's
+rule (`lastcrash.ts`) on every run: a failure that is not exit 143 (SIGTERM, which only an
+asked-for stop sends), or stopping on its own before `Done (`; each is put through the crash
+analyzer once (a few per pass) and its verdict kept on the run. From it:
 today's peak and time online (overview), playtime and last seen (Players), start times
 (overview against the median of the five before, and per run in Logs).
 

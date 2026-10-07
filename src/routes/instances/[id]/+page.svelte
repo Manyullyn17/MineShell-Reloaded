@@ -237,6 +237,34 @@
 			</section>
 		{/if}
 
+		{#if data.history.crashes.length}
+			{@const crashes = data.history.crashes}
+			{@const counts = crashes.reduce((m, c) => (c.cause ? m.set(c.cause, (m.get(c.cause) ?? 0) + 1) : m), new Map<string, number>())}
+			{@const repeated = [...counts].sort((a, b) => b[1] - a[1])[0]}
+			<section class="panel">
+				<div class="panel-head">
+					<div>
+						<h2>Recent crashes</h2>
+						<p>{crashes.length} in the last 30 days{crashes.length === 10 ? ' (newest ten)' : ''}.</p>
+					</div>
+					<a class="small" href="/instances/{data.instance.id}/logs">Logs →</a>
+				</div>
+				{#if repeated && repeated[1] > 1}
+					<p class="notice warning repeat">The same cause {repeated[1]} times: {repeated[0]}</p>
+				{/if}
+				<ul class="crash-list">
+					{#each crashes as crash (crash.invocation)}
+						<li>
+							<a href="/instances/{data.instance.id}/logs?run={crash.invocation}">{formatDateTime(crash.at)}</a>
+							<span class="small" class:muted={!crash.cause}>
+								{crash.cause ?? (crash.diagnosed ? 'Cause not recognised; the log has the details.' : 'Being looked at.')}
+							</span>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+
 		{#if data.spark}
 			<section class="panel">
 				<div class="panel-head">
@@ -395,6 +423,28 @@
 </div>
 
 <style>
+	.crash-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.crash-list li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		padding: 0.5rem 0;
+		border-top: 1px solid var(--line);
+	}
+
+	.crash-list li:first-child {
+		border-top: 0;
+	}
+
+	.repeat {
+		margin: 0 0 var(--space-2);
+	}
+
 	.profiling {
 		display: flex;
 		align-items: center;
