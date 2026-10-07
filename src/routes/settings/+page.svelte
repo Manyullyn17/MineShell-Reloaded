@@ -47,7 +47,7 @@
 			</p>
 		</div>
 	{:else}
-		<table>
+		<table class="stacked java-table">
 			<thead>
 				<tr>
 					<th>Version</th>
@@ -284,7 +284,7 @@
 	{#if data.recent.length === 0}
 		<p class="muted">Nothing recorded yet.</p>
 	{:else}
-		<table>
+		<table class="stacked activity-table">
 			<thead>
 				<tr><th>When</th><th>Server</th><th>Action</th><th>Detail</th></tr>
 			</thead>
@@ -335,7 +335,7 @@
 		</div>
 	{:else}
 		<div class="notice success">
-			<p>Unit installed at <code>{data.paths.unitDir}/{data.paths.templateUnit}</code>.</p>
+			<p>Unit installed at <code class="wrap">{data.paths.unitDir}/{data.paths.templateUnit}</code>.</p>
 		</div>
 	{/if}
 
@@ -444,6 +444,11 @@
 		margin-top: var(--space-4);
 	}
 
+	/* A field's own bottom margin left the button beside it sitting lower than the select. */
+	.inline-form .field {
+		margin-bottom: 0;
+	}
+
 	.grow {
 		flex: 1 1 18rem;
 		margin-bottom: 0;
@@ -477,5 +482,59 @@
 	td button {
 		font-size: 0.82rem;
 		padding: 0.2rem 0.5rem;
+	}
+
+	@media (max-width: 60rem) {
+		/* Name and path one under the other: side by side the path had a sliver of the width. */
+		.paths div {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.15rem;
+		}
+
+		/* Wide tables become a card per row: too many columns for a phone, where scrolling
+		   them sideways inside their box looked cut off. */
+		.stacked,
+		.stacked tbody,
+		.stacked tr,
+		.stacked td {
+			display: block;
+		}
+
+		.stacked {
+			overflow: visible;
+		}
+
+		.stacked thead {
+			display: none;
+		}
+
+		.stacked tr {
+			padding: 0.7rem var(--space-4);
+			border-top: 1px solid var(--line);
+		}
+
+		.stacked tr:first-child {
+			border-top: 0;
+		}
+
+		.stacked td {
+			padding: 0.1rem 0;
+			border: 0;
+			text-align: left;
+		}
+
+		.java-table td:first-child {
+			font-weight: 600;
+		}
+
+		.java-table td.right {
+			margin-top: var(--space-2);
+		}
+
+		/* When and server on one line, then what happened. */
+		.activity-table td:nth-child(-n + 2) {
+			display: inline;
+			margin-right: var(--space-2);
+		}
 	}
 </style>

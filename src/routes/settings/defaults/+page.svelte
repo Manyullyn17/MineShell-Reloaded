@@ -147,6 +147,11 @@
 </form>
 
 <style>
+	/* The save button sat right against the settings box above it. */
+	form > .button-row {
+		margin-top: var(--space-4);
+	}
+
 	.intro {
 		margin-bottom: var(--space-4);
 	}
