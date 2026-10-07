@@ -247,6 +247,19 @@ Suggested after the client pack export and reboot handling; all wanted.
 
 ---
 
+## Known bugs, not yet looked at
+
+Reported 2026-10-07; diagnose and fix when asked.
+
+- **Console page froze on a starting ATM10 server**: the whole page stopped responding while
+  watching the console of an All the Mods 10 server that was starting (a big NeoForge pack,
+  so a very fast, long stream of lines).
+- **The "RCON connections" console filter does nothing**: lines like
+  `[RCON Listener #1/INFO] [minecraft/GenericThread]: Thread RCON Client /127.0.0.1 started` and
+  `[RCON Client /127.0.0.1 #2/INFO] [minecraft/RconClient]: Thread RCON Client /127.0.0.1 shutting down`
+  show whatever the filter is set to, and with only that filter on nothing shows. Seen on
+  the same ATM10 server (NeoForge's log format, with a `[minecraft/...]` logger tag).
+
 ## Later
 
 ### Notifications
