@@ -4,7 +4,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
-	import { formatBytes, formatDateTime, formatDuration, formatRelative } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import { avatarTone } from '#lib/shared/avatar.js';
 
 	let { data, form } = $props();
@@ -130,11 +130,20 @@
 				? ` · ${data.summary.restarts} crash restart${data.summary.restarts === 1 ? '' : 's'}`
 				: ''}
 		</dd>
+		{#if data.history.start}
+			{@const s = data.history.start}
+			<!-- A start much slower than usual is worth noticing: a pack update or a new mod. -->
+			<dd class="sub" class:warn-text={s.usualMs !== null && s.lastMs > s.usualMs * 1.5 && s.lastMs - s.usualMs > 20_000}>
+				{data.running ? 'started in' : 'last start took'} {formatSeconds(s.lastMs)}{s.usualMs !== null ? `, usually ${formatSeconds(s.usualMs)}` : ''}
+			</dd>
+		{/if}
 	</div>
 	<div>
 		<dt>Players</dt>
 		<dd class="mono">{data.players ? `${data.players.online}/${data.players.max}` : '-'}</dd>
-		<dd class="sub"><a href="/instances/{data.instance.id}/players">all players</a></dd>
+		<dd class="sub">
+			{#if data.history.peakToday}peak today {data.history.peakToday} · {/if}<a href="/instances/{data.instance.id}/players">all players</a>
+		</dd>
 	</div>
 	<div>
 		<dt>Tick rate</dt>
@@ -210,6 +219,11 @@
 							<li>
 								<span class="avatar" style="--hue: {avatarTone(name)}" aria-hidden="true"></span>
 								<span class="online-name">{name}</span>
+								{#if data.history.onlineSince[name]}
+									<span class="faint small" title="Online since {formatDateTime(data.history.onlineSince[name])}"
+										>{formatSeconds(Date.now() - data.history.onlineSince[name])}</span
+									>
+								{/if}
 								<form method="POST" action="?/kick" use:enhance>
 									<input type="hidden" name="name" value={name} />
 									<button class="button-quiet small" type="submit">Kick</button>

@@ -66,6 +66,8 @@ export const serverInstances = sqliteTable('server_instances', {
 	bootStart: text('boot_start').notNull().default('if-running'),
 	/** The last thing asked of the server was a start, not a stop; a crash leaves it. */
 	wantedRunning: integer('wanted_running', { mode: 'boolean' }).notNull().default(false),
+	/** Where history.ts got to in the server's journal; null until first read. */
+	historyCursor: text('history_cursor'),
 
 	/** systemd resource limits (limits.conf drop-in); null = none. CPU in percent of one core. */
 	limitMemoryMb: integer('limit_memory_mb'),
@@ -238,6 +240,42 @@ export const auditLog = sqliteTable(
 	},
 	(t) => ({
 		byTime: index('audit_log_ts_idx').on(t.timestamp)
+	})
+);
+
+/** One start of a server, from its journal (history.ts): began, reached "Done (", ended. */
+export const serverRuns = sqliteTable(
+	'server_runs',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		/** systemd's invocation id for the run. */
+		invocation: text('invocation').notNull(),
+		startedAt: integer('started_at').notNull(),
+		doneAt: integer('done_at'),
+		endedAt: integer('ended_at')
+	},
+	(t) => ({
+		byInvocation: uniqueIndex('server_runs_invocation_idx').on(t.instanceId, t.invocation)
+	})
+);
+
+/** A player's time on a server, join to leave (history.ts); left_at null while online. */
+export const playerSessions = sqliteTable(
+	'player_sessions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		player: text('player').notNull(),
+		joinedAt: integer('joined_at').notNull(),
+		leftAt: integer('left_at')
+	},
+	(t) => ({
+		byInstance: index('player_sessions_instance_idx').on(t.instanceId, t.joinedAt)
 	})
 );
 

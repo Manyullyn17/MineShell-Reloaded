@@ -12,12 +12,13 @@ import {
 } from '#lib/server/players.js';
 import { onlinePlayers } from '#lib/server/instances.js';
 import { listPlayerData } from '#lib/server/playerdata.js';
+import { playtimes } from '#lib/server/history.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const lists = await loadPlayerLists(instance);
 	const online = lists.serverRunning ? await onlinePlayers(instance) : null;
-	return { lists, online, playerFiles: await listPlayerData(instance) };
+	return { lists, online, playerFiles: await listPlayerData(instance), playtimes: playtimes(instance.id) };
 };
 
 function listFrom(form: FormData): ListName {

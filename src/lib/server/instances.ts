@@ -1408,6 +1408,7 @@ export async function cloneInstance(
 			rconPasswordEnc: encryptSecret(password),
 			pinned: false,
 			wantedRunning: false,
+			historyCursor: null,
 			restartNextAt: null,
 			status: 'provisioning',
 			statusMessage: `Copying ${source.name}`,

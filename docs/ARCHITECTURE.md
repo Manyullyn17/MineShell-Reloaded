@@ -201,6 +201,18 @@ caches for 1.5 seconds and caches the *promise* rather than the value, so severa
 polling at once share one subprocess instead of racing. Anything that changes state —
 start, stop, restart, reset-failed — clears the entry.
 
+**History** (`history.ts`) keeps what happened over time: runs (`server_runs`: when a start
+began, reached `Done (`, ended) and player sessions (`player_sessions`: join to leave). Every
+30 s it reads each server's journal from where it got to (`server_instances.history_cursor`),
+filtered with `journalctl -g` to systemd's start/stop lines, `Done (`, and join/leave lines
+(`playerEventWithName`, which chat cannot fake). Reading from a stored position means events
+while MineShell was down are caught up on, and the first read takes in what the journal still
+holds. The position stored is the newest entry, read before the filtered read (matches newer
+than it wait for the next call), so a server quiet for days is not rescanned from an old
+match each time. A run ending, or the next one starting, closes any open session. From it:
+today's peak and time online (overview), playtime and last seen (Players), start times
+(overview against the median of the five before, and per run in Logs).
+
 ---
 
 ## Mods and packs

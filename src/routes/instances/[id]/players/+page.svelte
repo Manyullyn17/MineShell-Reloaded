@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Flash from '#lib/components/Flash.svelte';
 	import { avatarTone } from '#lib/shared/avatar.js';
-	import { formatRelative } from '#lib/shared/format.js';
+	import { formatDuration, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
 
@@ -160,6 +160,12 @@
 										{#if person.whitelisted}<span class="tag">whitelisted</span>{/if}
 										{#if person.op}<span class="tag accent">op {person.op.level ?? ''}</span>{/if}
 									</div>
+									{#if data.playtimes[person.name]}
+										{@const p = data.playtimes[person.name]}
+										<div class="faint small">
+											played {formatDuration(p.totalMs)} · {p.online ? 'online now' : `last seen ${formatRelative(p.lastSeen)}`}
+										</div>
+									{/if}
 									<div class="faint small mono">
 										{#if person.file}last saved {formatRelative(person.file.modifiedAt)}{:else}never joined{/if}{person.uuid
 											? ` · ${person.uuid}`

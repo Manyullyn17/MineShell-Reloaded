@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import { listRuns, readRun } from '#lib/server/journal.js';
+import { startTimesByRun } from '#lib/server/history.js';
 import { listLogFiles, readLogFile } from '#lib/server/logfiles.js';
 import { diagnoseRun, type Diagnosis } from '#lib/server/crashdiag.js';
 import { modsDir } from '#lib/server/mods/index.js';
@@ -35,6 +36,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 	return {
 		runs,
+		/** How long each run took to reach "Done (", by invocation (history.ts). */
+		startTimes: startTimesByRun(instance.id),
 		files,
 		view,
 		// Streamed: indexing a big pack's mods takes a moment. Against the mods

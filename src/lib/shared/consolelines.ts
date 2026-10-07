@@ -54,11 +54,24 @@ export function continuesPrevious(text: string, previous: { level: Level | null 
 	return EXCEPTION_LINE.test(text) && (previous.level === 'error' || previous.level === 'warn');
 }
 
+const JOIN = /\]: ([.*]?\w{1,16}) joined the game$/;
+const LEAVE = /\]: ([.*]?\w{1,16}) (?:left the game|lost connection: .*)$/;
+
 /** A player name, then what happened; 1.12 adds "[/ip:port] logged in with entity id" first. */
 export function playerEventOf(text: string): PlayerEvent | null {
-	if (/\]: [.*]?\w{1,16} joined the game$/.test(text)) return 'join';
-	if (/\]: [.*]?\w{1,16} (left the game|lost connection: .*)$/.test(text)) return 'leave';
-	return null;
+	return playerEventWithName(text)?.event ?? null;
+}
+
+/**
+ * The same, with who. Chat cannot fake it: a chat line is "<name> text", and
+ * "[Server] x joined the game" from /say has a space inside the bracket.
+ */
+export function playerEventWithName(text: string): { event: PlayerEvent; name: string } | null {
+	const line = stripAnsi(text).trimEnd();
+	const join = line.match(JOIN);
+	if (join) return { event: 'join', name: join[1] };
+	const leave = line.match(LEAVE);
+	return leave ? { event: 'leave', name: leave[1] } : null;
 }
 
 /** systemd's own lines about the unit ("Started mstest@x.service - ...", "x.service: Consumed 2min CPU time"). */

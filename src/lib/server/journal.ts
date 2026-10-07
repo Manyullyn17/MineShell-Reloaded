@@ -284,3 +284,59 @@ export async function readRun(invocation: string, since = 0): Promise<string> {
 	if (!/^[0-9a-f]{32}$/.test(invocation)) return '';
 	return journalctl([...runMatch(invocation), '-n', String(LAST_RUN_LINES), '-o', 'cat', sinceArg(since)]);
 }
+
+export type JournalEvent = { at: number; message: string; invocation: string | null };
+
+/**
+ * The unit's entries matching `pattern` (journalctl -g) after `afterCursor`
+ * (or from `since` on the first read), with the position to continue from.
+ * The position is the newest entry, read first, not the last match: a server
+ * that logged for days without a match would otherwise be scanned from the
+ * same old cursor on every call. Matches newer than that entry are left for
+ * the next call, which starts after it.
+ */
+export async function readJournalEvents(
+	id: string,
+	pattern: string,
+	from: { afterCursor: string | null; since: number }
+): Promise<{ events: JournalEvent[]; cursor: string | null }> {
+	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(from.since)])).trim();
+	if (!newest) return { events: [], cursor: from.afterCursor };
+	let head: Record<string, unknown>;
+	try {
+		head = JSON.parse(newest.split('\n')[0]);
+	} catch {
+		return { events: [], cursor: from.afterCursor };
+	}
+	const cursor = typeof head.__CURSOR === 'string' ? head.__CURSOR : null;
+	const until = Number(head.__REALTIME_TIMESTAMP);
+	if (!cursor || (from.afterCursor && cursor === from.afterCursor)) return { events: [], cursor: from.afterCursor };
+
+	const out = await journalctl([
+		...unitMatch(id),
+		...(from.afterCursor ? [`--after-cursor=${from.afterCursor}`] : [sinceArg(from.since)]),
+		'-o',
+		'json',
+		'-g',
+		pattern
+	]);
+	const events: JournalEvent[] = [];
+	for (const line of out.split('\n')) {
+		if (!line.trim()) continue;
+		let entry: Record<string, unknown>;
+		try {
+			entry = JSON.parse(line);
+		} catch {
+			continue;
+		}
+		const at = Number(entry.__REALTIME_TIMESTAMP);
+		if (!Number.isFinite(at) || at > until) continue;
+		const message = typeof entry.MESSAGE === 'string' ? entry.MESSAGE : '';
+		const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
+			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
+		);
+		events.push({ at: Math.floor(at / 1000), message, invocation: invocation ?? null });
+	}
+	events.sort((a, b) => a.at - b.at);
+	return { events, cursor };
+}

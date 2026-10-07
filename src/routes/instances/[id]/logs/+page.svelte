@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
-	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime, formatRelative, formatSeconds } from '#lib/shared/format.js';
 
 	let { data } = $props();
 
@@ -43,7 +43,9 @@
 							<span class="item">
 								<span>{formatDateTime(run.startedAt)}</span>
 								<span class="sub" class:bad={end.tone === 'bad'} class:good={end.tone === 'running'}
-									>{end.label}{run.endedAt ? ` after ${duration(run)}` : ''}</span
+									>{end.label}{run.endedAt ? ` after ${duration(run)}` : ''}{data.startTimes[run.invocation] !== undefined
+										? ` · started in ${formatSeconds(data.startTimes[run.invocation])}`
+										: ''}</span
 								>
 							</span>
 						</a>

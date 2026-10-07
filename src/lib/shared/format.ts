@@ -19,6 +19,15 @@ export function formatDuration(ms: number): string {
 	return `${minutes}m`;
 }
 
+/** A short span to the second: "45s", "2m 31s", "1h 4m". For start times, where minutes are too coarse. */
+export function formatSeconds(ms: number): string {
+	const total = Math.max(0, Math.round(ms / 1000));
+	if (total >= 3600) return formatDuration(ms);
+	const m = Math.floor(total / 60);
+	const s = total % 60;
+	return m ? `${m}m ${s}s` : `${s}s`;
+}
+
 export function formatRelative(timestamp: number | null | undefined): string {
 	if (!timestamp) return 'never';
 	const diff = timestamp - Date.now();

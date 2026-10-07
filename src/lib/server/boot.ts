@@ -1,5 +1,6 @@
 import { startServersAfterBoot } from './bootstart';
 import { startMonitor } from './monitor';
+import { startHistory } from './history';
 import { startScheduler } from './scheduler';
 import { learnJavaRequirement, scanJavaRuntimes } from './java';
 import { listInstances } from './instances';
@@ -36,6 +37,7 @@ export function boot(): void {
 
 	startMonitor();
 	startScheduler();
+	startHistory();
 
 	// Non-blocking: the first instance creation triggers a rescan anyway. A
 	// Java download cut short leaves a .partial folder, removed first.

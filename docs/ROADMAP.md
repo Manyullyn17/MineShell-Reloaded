@@ -196,9 +196,10 @@ re-proposed or built twice.
 
 ### Agreed for later (2026-10-07)
 
-Suggested after the client pack export and reboot handling; all wanted, none started.
+Suggested after the client pack export and reboot handling; all wanted.
 
-- **Start-time history**: how long each start took to reach `Done (`, per run, with the
+- **Start-time history**: built (2026-10-07, `history.ts`): the overview's Uptime shows the
+  last start against the usual, the Logs run list each run's. The note: how long each start took to reach `Done (`, per run, with the
   trend on the overview ("4 m 10 s, usually 2 m 30 s"), so a pack update or a new mod that
   slows startup shows. The journal has both timestamps (the unit's start, the `Done (`
   line); reading them per invocation like `runFinishedStarting` avoids walking old runs.
@@ -497,11 +498,11 @@ card, the item editor beside the inventory grid, the updated date and licence in
 detail pane (licence from Modrinth only; CurseForge has none) and a note per available
 update (from Modrinth changelogs; the CurseForge mirror's version lists carry none), a game
 port field and an EULA checkbox when adding a server, folders expanding in place in Files. These parts of the mockup need data or
-behaviour MineShell does not have, so they were left out rather than faked:
+behaviour MineShell did not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
-  (Online now). Nothing records player counts or join times; it would need the monitor to
-  sample `list` or the console's join/leave lines to be kept.
+  (Online now): built (2026-10-07, `history.ts`) from the console's join/leave lines, kept
+  in the database; the Players tab also shows each player's playtime and last seen.
 
 ---
 

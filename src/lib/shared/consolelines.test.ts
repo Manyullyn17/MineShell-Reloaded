@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendLine, isRconConnection, levelOf, matchesFilter, playerEventOf, stripAnsi, type ConsoleEntry, type Level } from './consolelines';
+import { appendLine, isRconConnection, levelOf, matchesFilter, playerEventOf, playerEventWithName, stripAnsi, type ConsoleEntry, type Level } from './consolelines';
 
 /** Lines recorded from real servers' journals (MeatballCraft on Cleanroom, Pixelmon on NeoForge, a Fabric 1.20.1 server). */
 const FORGE_1_12_ERROR = [
@@ -81,6 +81,9 @@ describe('console lines', () => {
 		expect(playerEventOf('[15:09:00] [Server thread/INFO]: .BedrockSteve joined the game')).toBe('join');
 		expect(playerEventOf('[15:08:31] [Server thread/INFO]: /192.168.0.20:48290 lost connection: Disconnected')).toBeNull();
 		expect(playerEventOf('[15:08:31] [Server thread/INFO]: <Alex> I joined the game')).toBeNull();
+		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: .BedrockSteve joined the game')).toEqual({ event: 'join', name: '.BedrockSteve' });
+		expect(playerEventWithName('\x1b[32m[15:09:00] [Server thread/INFO] [minecraft/DedicatedServer]: Alex left the game\x1b[0m')).toEqual({ event: 'leave', name: 'Alex' });
+		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: [Server] Bob joined the game')).toBeNull();
 	});
 
 	it("hides the server's lines about RCON connections unless asked", () => {
