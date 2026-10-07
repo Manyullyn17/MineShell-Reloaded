@@ -211,8 +211,17 @@ export type SeedChoice = { mode: 'keep' } | { mode: 'random' } | { mode: 'set'; 
 
 /** Delete the world so the next start generates a new one. */
 export async function resetWorld(instance: ServerInstance, opts: { snapshot: boolean; seed: SeedChoice }): Promise<string> {
+	// "Keep" with level-seed blank used to give the new world a new random seed: the world's
+	// own seed is written down, so the reset world is the same terrain, regenerated.
+	const kept = opts.seed.mode === 'keep' && !(await readProperties(instance.path)).values['level-seed'] ? await worldSeed(instance.path) : null;
 	const properties =
-		opts.seed.mode === 'random' ? { 'level-seed': '' } : opts.seed.mode === 'set' ? { 'level-seed': opts.seed.seed } : undefined;
+		opts.seed.mode === 'random'
+			? { 'level-seed': '' }
+			: opts.seed.mode === 'set'
+				? { 'level-seed': opts.seed.seed }
+				: kept
+					? { 'level-seed': kept }
+					: undefined;
 	return runWorldChange(instance, {
 		action: 'reset',
 		label: 'Resetting the world',
@@ -324,6 +333,22 @@ const pruneCounts = new Map<string, PruneCount>();
 
 export function lastPruneCount(instanceId: string): PruneCount | null {
 	return pruneCounts.get(instanceId) ?? null;
+}
+
+/**
+ * The seed the world was generated with, from level.dat: Data.WorldGenSettings.seed
+ * from 1.16, Data.RandomSeed before. Null without a world (or an unreadable one).
+ * With level-seed blank in server.properties this is the random one picked at creation.
+ */
+export async function worldSeed(root: string): Promise<string | null> {
+	try {
+		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
+		const data = child(level.root, 'Data');
+		const seed = child(child(data, 'WorldGenSettings'), 'seed') ?? child(data, 'RandomSeed');
+		return seed?.type === 'long' ? String(seed.value) : null;
+	} catch {
+		return null;
+	}
 }
 
 /** The world spawn from level.dat (Data.SpawnX/SpawnZ); null when unreadable. */

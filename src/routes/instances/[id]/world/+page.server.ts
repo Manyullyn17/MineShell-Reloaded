@@ -23,6 +23,7 @@ import {
 	restoreSnapshot,
 	snapshotDimensions,
 	snapshotNow,
+	worldSeed,
 	type SeedChoice
 } from '#lib/server/world.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
@@ -52,6 +53,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		levelName: await serverWorldName(instance.path),
 		worlds: await worldFolders(instance.path),
 		seed: values['level-seed'] ?? '',
+		/** The seed the world was made with (level.dat); with level-seed blank, the random one it got. */
+		worldSeed: await worldSeed(instance.path),
 		snapshotPrompt: await snapshotPrompt(instance),
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),

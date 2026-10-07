@@ -146,7 +146,8 @@
 	</div>
 	<div>
 		<dt>Seed</dt>
-		<dd class="mono seed-value">{data.seed || 'random'}</dd>
+		<dd class="mono seed-value">{data.worldSeed ?? (data.seed || 'random')}</dd>
+		{#if data.worldSeed && !data.seed}<dd class="sub">picked at random</dd>{/if}
 	</div>
 	<div>
 		<dt>Snapshots</dt>
@@ -603,7 +604,7 @@
 			<legend>Seed</legend>
 			<div class="check">
 				<input id="seed-keep" type="radio" name="seedMode" value="keep" bind:group={seedMode} />
-				<label for="seed-keep">Keep the current one{data.seed ? ` (${data.seed})` : ' (random)'}</label>
+				<label for="seed-keep">Keep the current one{data.worldSeed || data.seed ? ` (${data.worldSeed ?? data.seed})` : ' (random)'}</label>
 			</div>
 			<div class="check">
 				<input id="seed-random" type="radio" name="seedMode" value="random" bind:group={seedMode} />

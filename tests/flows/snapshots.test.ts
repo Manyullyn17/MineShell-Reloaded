@@ -21,7 +21,8 @@ const {
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
 } = await import('#lib/server/snapshots.js');
-const { replaceWorld, resetWorld, restoreSnapshot, snapshotNow, zipWorlds, worldRootIn, entryTarget } = await import(
+const { writeNbt } = await import('#lib/server/nbt.js');
+const { replaceWorld, resetWorld, restoreSnapshot, snapshotNow, worldSeed, zipWorlds, worldRootIn, entryTarget } = await import(
 	'#lib/server/world.js'
 );
 const { readProperties } = await import('#lib/server/properties.js');
@@ -218,6 +219,37 @@ describe('world tools', () => {
 		expect(await listSnapshots(instance.path)).toEqual([]);
 		expect(await fs.readdir(path.join(instance.path, '.mineshell'))).toEqual([]);
 		expect((await readProperties(instance.path)).values['level-seed']).toBe('1234');
+	});
+
+	it("reads the world's seed from level.dat, and keeps it on a reset when level-seed is blank", async () => {
+		/** A level.dat with the seed where 1.12 (RandomSeed) or 1.16+ (WorldGenSettings.seed) keeps it. */
+		const level = (modern: boolean) =>
+			writeNbt({
+				name: '',
+				gzipped: true,
+				root: {
+					type: 'compound',
+					value: [
+						[
+							'Data',
+							{
+								type: 'compound',
+								value: modern
+									? [['WorldGenSettings', { type: 'compound', value: [['seed', { type: 'long', value: -4172144997902289642n }]] }]]
+									: [['RandomSeed', { type: 'long', value: 8678942899319966093n }]]
+							}
+						]
+					]
+				}
+			});
+		const old = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, { 'server.properties': 'level-seed=\n', 'world/level.dat': level(false) });
+		expect(await worldSeed(old.path)).toBe('8678942899319966093');
+		const modern = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' }, { 'server.properties': 'level-seed=\n', 'world/level.dat': level(true) });
+		expect(await worldSeed(modern.path)).toBe('-4172144997902289642');
+
+		// "Keep the current one" used to leave level-seed blank: a new random world.
+		await waitForTask(await resetWorld(modern, { snapshot: false, seed: { mode: 'keep' } }));
+		expect((await readProperties(modern.path)).values['level-seed']).toBe('-4172144997902289642');
 	});
 
 	it('restores a snapshot, keeping the world it replaces', async () => {
