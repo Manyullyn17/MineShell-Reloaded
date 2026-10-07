@@ -47,6 +47,7 @@ import {
 	beginOperation,
 	commitOperation,
 	endOperation,
+	listOperations,
 	OperationInProgressError,
 	type Journal
 } from './operations';
@@ -1114,7 +1115,14 @@ export async function eulaIsAccepted(instance: ServerInstance): Promise<boolean>
 	}
 }
 
-export async function start(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
+/** While the mod bisect assistant runs, the server is its: only its own starts and stops go through. */
+const BISECT_BUSY = 'A search for the mod behind a crash is running on this server. Cancel it on the Mods tab first.';
+function bisecting(id: string): boolean {
+	return listOperations().some((o) => o.instanceId === id && o.journal.kind === 'bisect');
+}
+
+export async function start(instance: ServerInstance, opts: { internal?: boolean } = {}): Promise<{ ok: boolean; message: string }> {
+	if (!opts.internal && bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
 	// A stop still waiting for the old run to exit must not stop this one.
 	cancelPendingStop(instance.id);
 	if (!(await eulaIsAccepted(instance))) {
@@ -1234,8 +1242,9 @@ export function awaitStop(id: string, deadline: number): void {
 
 export async function stop(
 	instance: ServerInstance,
-	opts: { graceful?: boolean } = {}
+	opts: { graceful?: boolean; internal?: boolean } = {}
 ): Promise<{ ok: boolean; message: string }> {
+	if (!opts.internal && bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
 	intentionalStops.set(instance.id, Date.now());
 	setWantedRunning(instance.id, false);
 	cancelPendingStop(instance.id);
@@ -1259,6 +1268,7 @@ export async function stop(
 }
 
 export async function restart(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
+	if (bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
 	// A stop still waiting for the old run to exit must not stop this one.
 	cancelPendingStop(instance.id);
 	if (!(await eulaIsAccepted(instance))) {

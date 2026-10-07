@@ -185,7 +185,8 @@ re-proposed or built twice.
   refuses when a port is taken by something else.
 - **Sleep when empty**: `pause-when-empty-seconds` on vanilla 1.21.2+. For older and modded
   versions, it is unknown which loaders honour it.
-- **Mod bisect assistant**: disable half, start, narrow down. It could build on the crash
+- **Mod bisect assistant**: built (2026-10-07, `bisect.ts`, Mods tab): see ARCHITECTURE,
+  "The mod bisect assistant". The note: disable half, start, narrow down. It could build on the crash
   analyzer and the journalled mod toggles.
 - **Update availability checks**: mods have one (`modupdates.ts`). Missing: a newer pack
   version, loader build, or Java update shown on the overview.

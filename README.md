@@ -108,7 +108,9 @@ upload jars by hand, enable and disable (which renames to `.jar.disabled`, the t
 loader actually reads), delete, switch a mod to another version, and check for and apply
 updates. Client-only mods are spotted and disabled after pack installs. Data pack releases
 from the browser go into the world's `datapacks/` folder. Jars added outside MineShell are
-detected and identified rather than ignored. Export a client pack for players as a Modrinth
+detected and identified rather than ignored. When a pack crashes and the diagnosis cannot say why, a bisect
+assistant finds the mod (or pair of mods) by starting the server with fewer and fewer of them,
+on a throwaway world, and puts everything back afterwards. Export a client pack for players as a Modrinth
 `.mrpack`, a CurseForge zip or a Prism Launcher instance, with the mods and folders you tick
 (all of them by default) and, for a server installed from a pack, the pack's
 client-side files the server never needed.

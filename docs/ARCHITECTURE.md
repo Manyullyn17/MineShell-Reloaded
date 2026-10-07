@@ -269,6 +269,28 @@ upstream one, and a shared cache would serve the wrong file with no way to tell.
 cheaper than that bug. A `hash` column exists on `instance_mods` for a future opt-in
 cache-by-hash, but nothing reads it yet (the update check hashes the jars on disk).
 
+**The mod bisect assistant** (`bisect.ts`, Mods tab) finds the mod, or pair of mods, a crash
+comes from. Suspects are the enabled mods minus a keep-on list (Cleanroom's own fixes ticked
+by default). The first test starts with all of them (the problem must show), the second with
+none (it must not); then the suspects are halved and the half that still shows the problem
+searched, and when neither half does alone, one half stays on while the other is searched,
+then the partner (delta debugging): about 2 + log2(n) starts for one culprit. A test turns a
+mod on with what it depends on (the jars' declarations, as `crashdiag.ts` indexes them), a
+half that cannot go without the other is searched with its dependencies along, and a failed
+test the crash analyzer explains as "X needs Y, which is disabled" teaches that dependency
+and is repeated. "The problem" is a crash before `Done (`, or optionally a text in the log
+(watched for 30 s after `Done (`); a start that does not finish within max(10 min, 3x the
+usual start) counts as the problem.
+
+Test runs never open the real world: `level-name` points at a throwaway world, since a world
+loaded with mods missing loses their blocks and items. `config/` is copied aside (mods
+rewrite configs when others are missing), crash restarts are off, and scheduled restarts and
+commands skip the server; ordinary start/stop/restart refuse while it searches, as do the
+Mods tab's changes. All of it is journalled (`bisect`) and put back by the same
+`restoreBisect` at the end and by recovery after a crash, which also clears systemd's failed
+state. Runs started during a search are marked (`bisect_sessions`, `server_runs.bisect`) and
+stay out of crash history, start times, the last-crash box and diagnosis.
+
 **Client pack export** (`packexport.ts`, the server's Export page) builds a pack for
 players' launchers: a Modrinth `.mrpack`, a CurseForge zip or a Prism Launcher instance,
 as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour.

@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from './db';
+import { listOperations } from './operations';
 import { scheduledCommands, type ScheduledCommand, type ServerInstance } from './db/schema';
 import { audit, getInstance, rconPassword } from './instances';
 import { rconExec } from './rcon';
@@ -106,7 +107,9 @@ export async function runDueCommands(now = Date.now()): Promise<void> {
 		const instance = getInstance(row.instanceId);
 		if (!instance) continue;
 		const state = await unitState(instance.id);
-		if (state.active !== 'active') {
+		// Not into the mod bisect assistant's test runs (a scheduled "stop" would end one early).
+		const bisecting = listOperations().some((o) => o.instanceId === instance.id && o.journal.kind === 'bisect');
+		if (state.active !== 'active' || bisecting) {
 			db.update(scheduledCommands).set({ nextAt: nextRunAt(row, now) }).where(eq(scheduledCommands.id, row.id)).run();
 			continue;
 		}

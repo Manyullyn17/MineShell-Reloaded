@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, isNotNull, isNull, lte, or } from 'drizzle-orm';
 import { db } from './db';
-import { playerSessions, serverInstances, serverRuns, type ServerInstance } from './db/schema';
+import { bisectSessions, playerSessions, serverInstances, serverRuns, type ServerInstance } from './db/schema';
 import { readJournalEvents, readRun, type JournalEvent } from './journal';
 import { diagnoseRun } from './crashdiag';
 import { modsDir } from './mods/index';
@@ -48,6 +48,21 @@ function closeSessions(instanceId: string, at: number, player?: string): void {
 
 const STOPPED_ON_REQUEST = 143;
 
+/** A run started while the mod bisect assistant searched is one of its tests. */
+function duringBisect(instanceId: string, at: number): boolean {
+	return !!db
+		.select({ id: bisectSessions.id })
+		.from(bisectSessions)
+		.where(
+			and(
+				eq(bisectSessions.instanceId, instanceId),
+				lte(bisectSessions.startedAt, at),
+				or(isNull(bisectSessions.endedAt), gte(bisectSessions.endedAt, at))
+			)
+		)
+		.get();
+}
+
 /** Records how a run ended, and whether that was a crash; called for each of systemd's end lines. */
 function endRun(instanceId: string, invocation: string, at: number, message: string): void {
 	const where = and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, invocation));
@@ -68,7 +83,7 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): void {
 			// A run that ended without its stop being logged (killed, power cut) leaves sessions open.
 			closeSessions(instanceId, e.at);
 			db.insert(serverRuns)
-				.values({ instanceId, invocation: e.invocation, startedAt: e.at })
+				.values({ instanceId, invocation: e.invocation, startedAt: e.at, bisect: duringBisect(instanceId, e.at) })
 				.onConflictDoNothing()
 				.run();
 			continue;
@@ -121,7 +136,9 @@ async function diagnoseCrashes(instance: ServerInstance): Promise<void> {
 	const pending = db
 		.select()
 		.from(serverRuns)
-		.where(and(eq(serverRuns.instanceId, instance.id), eq(serverRuns.crashed, true), eq(serverRuns.diagnosed, false)))
+		.where(
+			and(eq(serverRuns.instanceId, instance.id), eq(serverRuns.crashed, true), eq(serverRuns.diagnosed, false), eq(serverRuns.bisect, false))
+		)
 		.orderBy(desc(serverRuns.startedAt))
 		.limit(DIAGNOSE_PER_PASS)
 		.all();
@@ -165,7 +182,7 @@ export function startTimes(instanceId: string): StartTimes | null {
 	const runs = db
 		.select()
 		.from(serverRuns)
-		.where(and(eq(serverRuns.instanceId, instanceId), isNotNull(serverRuns.doneAt)))
+		.where(and(eq(serverRuns.instanceId, instanceId), isNotNull(serverRuns.doneAt), eq(serverRuns.bisect, false)))
 		.orderBy(desc(serverRuns.startedAt))
 		.limit(6)
 		.all();
@@ -187,7 +204,9 @@ export function recentCrashes(instanceId: string, since = Date.now() - 30 * 24 *
 	return db
 		.select()
 		.from(serverRuns)
-		.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true), gt(serverRuns.startedAt, since)))
+		.where(
+			and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true), eq(serverRuns.bisect, false), gt(serverRuns.startedAt, since))
+		)
 		.orderBy(desc(serverRuns.startedAt))
 		.limit(limit)
 		.all()
@@ -197,7 +216,11 @@ export function recentCrashes(instanceId: string, since = Date.now() - 30 * 24 *
 /** The crash analyzer's verdict per crashed run, by invocation id, for the Logs tab. */
 export function crashCausesByRun(instanceId: string): Record<string, string> {
 	const out: Record<string, string> = {};
-	for (const r of db.select().from(serverRuns).where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true))).all()) {
+	for (const r of db
+		.select()
+		.from(serverRuns)
+		.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true), eq(serverRuns.bisect, false)))
+		.all()) {
 		if (r.cause) out[r.invocation] = r.cause;
 	}
 	return out;
@@ -206,10 +229,24 @@ export function crashCausesByRun(instanceId: string): Record<string, string> {
 /** Start time per run, by invocation id, for the Logs tab's run list. */
 export function startTimesByRun(instanceId: string): Record<string, number> {
 	const out: Record<string, number> = {};
-	for (const r of db.select().from(serverRuns).where(and(eq(serverRuns.instanceId, instanceId), isNotNull(serverRuns.doneAt))).all()) {
+	for (const r of db
+		.select()
+		.from(serverRuns)
+		.where(and(eq(serverRuns.instanceId, instanceId), isNotNull(serverRuns.doneAt), eq(serverRuns.bisect, false)))
+		.all()) {
 		out[r.invocation] = r.doneAt! - r.startedAt;
 	}
 	return out;
+}
+
+/** Runs that were the mod bisect assistant's tests, for the Logs tab to label. */
+export function bisectRuns(instanceId: string): string[] {
+	return db
+		.select({ invocation: serverRuns.invocation })
+		.from(serverRuns)
+		.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.bisect, true)))
+		.all()
+		.map((r) => r.invocation);
 }
 
 /** Since when each online player has been on, by name. */

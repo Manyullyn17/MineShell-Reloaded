@@ -1,6 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { cleanroomDisabledReasons } from '#lib/server/cleanroom.js';
+import { bisectState, cancelBisect, clearBisectState, isBisecting, startBisect } from '#lib/server/bisect.js';
+import { OperationInProgressError } from '#lib/server/operations.js';
+import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
@@ -60,6 +62,12 @@ export const load: PageServerLoad = async ({ params }) => {
 			catalogLoader,
 			...(LOADER_FALLBACKS[instance.modloader as ModloaderId] ?? [])
 		],
+		bisect: {
+			state: bisectState(instance.id),
+			running: isBisecting(instance.id),
+			/** Mods Cleanroom needs (Fugue, Scalar): offered kept on, a search without them is pointless. */
+			keepByDefault: mods.filter((m) => m.enabled && isCleanroomRequiredJar(m.fileName)).map((m) => m.fileName)
+		},
 		counts: {
 			total: mods.length,
 			enabled: mods.filter((m) => m.enabled && !m.missing).length,
@@ -68,6 +76,13 @@ export const load: PageServerLoad = async ({ params }) => {
 		}
 	};
 };
+
+/** While the bisect assistant searches it turns mods on and off itself: nothing else changes them. */
+function bisectBusy(id: string) {
+	return isBisecting(id)
+		? fail(409, { ok: false, message: 'A search for the mod behind a crash is running. Wait for it, or cancel it, first.' })
+		: null;
+}
 
 /** A modpack's mods change only once the page's "change single mods" toggle is on. */
 function packGuard(instance: ServerInstance, form: FormData) {
@@ -86,8 +101,33 @@ function refused(err: unknown) {
 }
 
 export const actions: Actions = {
+	bisect: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const logText = String(form.get('logText') ?? '').trim() || null;
+		try {
+			await startBisect(instance, { keepOn: form.getAll('keepOn').map(String), logText });
+		} catch (err) {
+			if (err instanceof InstanceError || err instanceof OperationInProgressError) return fail(409, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Searching. It runs in the background; progress is shown here and in the notifications.' };
+	},
+
+	bisectCancel: async ({ params }) => {
+		cancelBisect(params.id);
+		return { ok: true, message: 'Cancelling after the current test; the server is then put back as it was.' };
+	},
+
+	bisectDismiss: async ({ params }) => {
+		if (!isBisecting(params.id)) clearBisectState(params.id);
+		return { ok: true };
+	},
+
 	/** "Update mods": the reviewed list, each `change` field being "<fileName>\n<versionId>". */
 	updateMods: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const guard = packGuard(instance, form);
@@ -112,6 +152,8 @@ export const actions: Actions = {
 
 	/** One mod to a version of the person's choosing, older ones included. */
 	changeVersion: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const guard = packGuard(instance, form);
@@ -132,6 +174,8 @@ export const actions: Actions = {
 	},
 
 	toggle: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const fileName = String(form.get('fileName') ?? '');
@@ -146,6 +190,8 @@ export const actions: Actions = {
 	},
 
 	lock: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		setModLocked(instance, String(form.get('filePath') ?? ''), form.get('locked') === 'true');
@@ -154,6 +200,8 @@ export const actions: Actions = {
 	},
 
 	remove: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const fileName = String((await request.formData()).get('fileName') ?? '');
 		await deleteMod(instance, fileName);
@@ -162,6 +210,8 @@ export const actions: Actions = {
 	},
 
 	upload: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const files = form.getAll('jars').filter((f): f is File => f instanceof File && f.size > 0);
@@ -180,6 +230,8 @@ export const actions: Actions = {
 	},
 
 	install: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const source = String(form.get('source') ?? 'modrinth');
@@ -251,6 +303,8 @@ export const actions: Actions = {
 	},
 
 	removeDatapack: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const fileName = String(form.get('fileName') ?? '');
@@ -263,6 +317,8 @@ export const actions: Actions = {
 	},
 
 	sync: async ({ params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const summary = await syncInstanceMods(instance);
 		if (summary) touchInstance(instance.id);

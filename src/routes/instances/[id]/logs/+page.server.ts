@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import { listRuns, readRun } from '#lib/server/journal.js';
-import { crashCausesByRun, startTimesByRun } from '#lib/server/history.js';
+import { bisectRuns, crashCausesByRun, startTimesByRun } from '#lib/server/history.js';
 import { listLogFiles, readLogFile } from '#lib/server/logfiles.js';
 import { diagnoseRun, type Diagnosis } from '#lib/server/crashdiag.js';
 import { modsDir } from '#lib/server/mods/index.js';
@@ -40,6 +40,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		startTimes: startTimesByRun(instance.id),
 		/** The crash analyzer's verdict for crashed runs, by invocation (history.ts). */
 		crashCauses: crashCausesByRun(instance.id),
+		/** The mod bisect assistant's test runs, labelled as such. */
+		bisectRuns: bisectRuns(instance.id),
 		files,
 		view,
 		// Streamed: indexing a big pack's mods takes a moment. Against the mods

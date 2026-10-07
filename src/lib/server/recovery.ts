@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { restoreBisect } from './bisect';
 import type { ServerInstance } from './db/schema';
 import {
 	audit,
@@ -47,7 +48,8 @@ const MESSAGES: Record<Journal['kind'], string> = {
 	'pack-change': 'MineShell stopped while changing the pack version; the server was put back as it was.',
 	snapshot: 'MineShell stopped while snapshotting the world; the unfinished snapshot was removed.',
 	'world-change': 'MineShell stopped while changing the world; the previous world was put back.',
-	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.'
+	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.',
+	bisect: 'MineShell stopped while searching for the mod behind a crash; the mods, world and configs were put back.'
 };
 
 async function restore(instance: ServerInstance, journal: Journal): Promise<void> {
@@ -68,6 +70,9 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			break;
 		case 'mod-update':
 			await restoreModUpdate(instance.id, root, journal);
+			break;
+		case 'bisect':
+			await restoreBisect(instance, journal);
 			break;
 		case 'create':
 		case 'cleanroom-revert':

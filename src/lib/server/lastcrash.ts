@@ -1,3 +1,6 @@
+import { desc, eq } from 'drizzle-orm';
+import { db } from './db';
+import { bisectSessions, serverRuns } from './db/schema';
 import { diagnoseRun, lastRun, type Diagnosis } from './crashdiag';
 import { wasStopIntentional, type InstanceSummary } from './instances';
 import { readLastRun } from './journal';
@@ -26,6 +29,17 @@ export function forgetDiagnosis(instanceId: string): void {
 
 export type LastCrash = { log: string; diagnosis: Promise<Diagnosis[]> };
 
+/** The last run was one of the mod bisect assistant's tests, which crash on purpose. */
+function startedDuringBisect(instanceId: string, startedAt: number): boolean {
+	// The run history knows (after its next read); the unit's start time covers the gap,
+	// though systemd forgets it once the failed state is cleared.
+	const newest = db.select().from(serverRuns).where(eq(serverRuns.instanceId, instanceId)).orderBy(desc(serverRuns.startedAt)).limit(1).get();
+	if (newest?.bisect) return true;
+	if (!startedAt) return false;
+	const sessions = db.select().from(bisectSessions).where(eq(bisectSessions.instanceId, instanceId)).all();
+	return sessions.some((s) => s.startedAt <= startedAt && (s.endedAt === null || s.endedAt >= startedAt));
+}
+
 /**
  * The last run, when it ended badly. A stop MineShell asked for reports the
  * same systemd Result as a crash, so intent is checked rather than inferred
@@ -36,6 +50,7 @@ export type LastCrash = { log: string; diagnosis: Promise<Diagnosis[]> };
 export async function lastCrash(summary: InstanceSummary): Promise<LastCrash | null> {
 	const { instance, state } = summary;
 	if (summary.running || state.active === 'activating' || wasStopIntentional(instance.id)) return null;
+	if (startedDuringBisect(instance.id, state.activeEnterTimestamp)) return null;
 	const log = lastRun(await readLastRun(instance.id, instance.createdAt));
 	const startedRun = /^Started \S+\.service/.test(log);
 	const crashed = state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log));

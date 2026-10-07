@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
+import { listOperations } from './operations';
 import { serverInstances, type ServerInstance } from './db/schema';
 import { audit, listInstances, onlinePlayers, rconPassword, restart } from './instances';
 import { rconExec } from './rcon';
@@ -136,7 +137,10 @@ async function evaluate(instance: ServerInstance): Promise<void> {
 }
 
 async function checkAll(): Promise<void> {
+	const bisecting = new Set(listOperations().filter((o) => o.journal.kind === 'bisect').map((o) => o.instanceId));
 	for (const instance of listInstances()) {
+		// The mod bisect assistant owns the server while it searches: no restarts or Chunky pausing.
+		if (bisecting.has(instance.id)) continue;
 		try {
 			await evaluate(instance);
 		} catch (err) {

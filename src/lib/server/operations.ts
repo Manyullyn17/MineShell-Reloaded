@@ -68,6 +68,15 @@ export type Journal =
 			propertiesBefore: Record<string, string> | null;
 	  }
 	| {
+			/** The mod bisect assistant (bisect.ts): what it changes for its test runs, as it was. */
+			kind: 'bisect';
+			levelName: string;
+			/** Jar file names (without .disabled) that were enabled. */
+			enabledBefore: string[];
+			autoRestartBefore: boolean;
+			wantedRunningBefore: boolean;
+	  }
+	| {
 			kind: 'pack-change';
 			staging: string;
 			oldConfigs: string;

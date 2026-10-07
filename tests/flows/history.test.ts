@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const { applyEvents, crashCausesByRun, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
+const { db } = await import('#lib/server/db/index.js');
+const { bisectSessions } = await import('#lib/server/db/schema.js');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 
 const MIN = 60_000;
@@ -104,6 +106,24 @@ describe('crash history', () => {
 			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4)
 		]);
 		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
+	});
+
+	it("leaves the bisect assistant's test runs out of crashes and start times", async () => {
+		const s = await server();
+		db.insert(bisectSessions).values({ instanceId: s.id, startedAt: T0 + 10 * MIN, endedAt: T0 + 60 * MIN }).run();
+		applyEvents(s.id, [
+			ev(T0, 'Started x.service', 1),
+			ev(T0 + MIN, line('Done (5.0s)!'), 1),
+			ev(T0 + 5 * MIN, 'x.service: Deactivated successfully.', 1),
+			// A test inside the session: crashes on purpose.
+			ev(T0 + 20 * MIN, 'Started x.service', 2),
+			ev(T0 + 21 * MIN, "x.service: Failed with result 'exit-code'.", 2),
+			// A real crash after it.
+			ev(T0 + 90 * MIN, 'Started x.service', 3),
+			ev(T0 + 91 * MIN, "x.service: Failed with result 'exit-code'.", 3)
+		]);
+		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(3)]);
+		expect(startTimes(s.id)).toMatchObject({ lastMs: MIN, runs: 1 });
 	});
 
 	it('puts each crash through the crash analyzer once', async () => {

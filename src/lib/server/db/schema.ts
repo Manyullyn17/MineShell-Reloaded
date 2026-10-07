@@ -264,10 +264,28 @@ export const serverRuns = sqliteTable(
 		crashed: integer('crashed', { mode: 'boolean' }).notNull().default(false),
 		/** The crash analyzer's one-line verdict; null when nothing was recognised. */
 		cause: text('cause'),
-		diagnosed: integer('diagnosed', { mode: 'boolean' }).notNull().default(false)
+		diagnosed: integer('diagnosed', { mode: 'boolean' }).notNull().default(false),
+		/** A test run of the mod bisect assistant: not a crash or start time of the server's own. */
+		bisect: integer('bisect', { mode: 'boolean' }).notNull().default(false)
 	},
 	(t) => ({
 		byInvocation: uniqueIndex('server_runs_invocation_idx').on(t.instanceId, t.invocation)
+	})
+);
+
+/** When the mod bisect assistant ran on a server; runs started inside are its tests. */
+export const bisectSessions = sqliteTable(
+	'bisect_sessions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		startedAt: integer('started_at').notNull(),
+		endedAt: integer('ended_at')
+	},
+	(t) => ({
+		byInstance: index('bisect_sessions_instance_idx').on(t.instanceId)
 	})
 );
 
