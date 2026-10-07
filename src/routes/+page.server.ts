@@ -7,6 +7,7 @@ import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } fr
 import { latestSample } from '#lib/server/monitor.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
+import { TEMPLATE_UNIT } from '#lib/server/config.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
@@ -67,6 +68,8 @@ export const load: PageServerLoad = async () => {
 			systemdAvailable: systemd.available,
 			systemdMessage: systemd.message,
 			unitInstalled,
+		/** The template's real name: the unit prefix is configurable (MINESHELL_UNIT_PREFIX). */
+		templateUnit: TEMPLATE_UNIT,
 			javaCount
 		}
 	};

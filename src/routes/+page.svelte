@@ -70,7 +70,7 @@
 {:else if !data.environment.unitInstalled}
 	<div class="notice warning">
 		<p>
-			The <code>minecraft@.service</code> template is not installed yet. Install it from
+			The <code>{data.environment.templateUnit}</code> template is not installed yet. Install it from
 			<a href="/settings">MineShell settings</a> before starting a server.
 		</p>
 	</div>
@@ -102,11 +102,6 @@
 				<div class="card-head">
 					<div class="title">
 						<a href="/instances/{instance.id}"><h2>{instance.name}</h2></a>
-						<div class="tags">
-							<span class="tag">{instance.minecraftVersion}</span>
-							<span class="tag accent">{instance.modloaderLabel}</span>
-							<span class="tag">:{instance.port}</span>
-						</div>
 					</div>
 					<div class="status">
 						<StatusPill active={instance.active} sub={instance.sub} />
@@ -124,6 +119,12 @@
 								{instance.pinned ? '★' : '☆'}
 							</button>
 						</form>
+					</div>
+					<!-- Across the whole card, not only beside the status, so they stay on one line when they fit. -->
+					<div class="tags">
+						<span class="tag">{instance.minecraftVersion}</span>
+						<span class="tag accent">{instance.modloaderLabel}</span>
+						<span class="tag">:{instance.port}</span>
 					</div>
 				</div>
 
@@ -328,10 +329,10 @@
 	}
 
 	.card-head {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.6rem;
+		gap: 0.4rem 0.6rem;
 	}
 
 	.title {
@@ -362,6 +363,7 @@
 	}
 
 	.tags {
+		grid-column: 1 / -1;
 		display: flex;
 		gap: var(--space-1);
 		flex-wrap: wrap;
