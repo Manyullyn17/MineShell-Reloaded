@@ -452,6 +452,25 @@ only or also in the database (clones, recreated servers with the same id), how i
 with a crash loop at boot, and whether MineShell should start them itself after boot
 instead. Noticed in the October 2026 sanity pass; parked for a later look.
 
+### mclo.gs as a second opinion on crashes
+
+Suggested 2026-10-07, not started. mclo.gs (Aternos) pastes Minecraft logs and analyses them:
+`POST https://api.mclo.gs/1/log` (JSON `{content, source, metadata}`; up to 10 MiB and 25,000
+lines, truncating client-side recommended) returns `id`, `url`, `raw`, an error count, an
+expiry (~90 days) and a delete `token`; `GET /1/log/<id>?insights` returns
+`insights.problems` (each with solutions) and `insights.information`; `DELETE /1/log/<id>`
+with `Authorization: Bearer <token>` removes it. There is no analyse-without-uploading
+endpoint in the current docs, so every analysis publishes the log at a public URL - logs hold
+player names and can hold IP addresses.
+
+Shape: user-triggered only, never automatic. An "Analyse on mclo.gs" button on a crashed run
+(Logs, Recent crashes), saying the log becomes public; the run's log (trimmed to the limits,
+the end kept) is uploaded with `source` MineShell; mclo.gs's problems and solutions shown beside
+MineShell's own diagnosis, with the link to share; id, url and token kept on the run
+(`server_runs`), and "Delete from mclo.gs" using the token. To check first: whether mclo.gs
+already strips IPv4/IPv6 addresses (it may), else MineShell masks them before sending.
+Useful mostly where `crashdiag.ts` recognises nothing ("Cause not recognised").
+
 ### GT New Horizons as its own install option
 
 Agreed (2026-10-07), not started. GTNH's own docs say to take server files only from
