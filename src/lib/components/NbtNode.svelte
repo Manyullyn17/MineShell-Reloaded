@@ -49,6 +49,8 @@
 		open = query ? inside : startOpen;
 	});
 	let editing = $state<false | 'value' | 'snbt' | 'name'>(false);
+	/** On a touch screen, which has no hover, a tap on the row shows its actions. */
+	let picked = $state(false);
 	let draft = $state('');
 	let draftType = $state('');
 	let adding = $state(false);
@@ -109,7 +111,14 @@
 
 {#if !query || hit || inside}
 <li>
-	<div class="row">
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (keyboards reach the actions by focus) -->
+	<div
+		class="row"
+		class:picked
+		onclick={(e) => {
+			if (!(e.target as HTMLElement).closest('button, input, select, textarea, form')) picked = !picked;
+		}}
+	>
 		{#if container}
 			<button class="toggle" type="button" aria-expanded={open} onclick={() => (open = !open)}>{open ? '▾' : '▸'}</button>
 		{:else}
@@ -248,6 +257,7 @@
 	.type {
 		font-size: 0.72rem;
 		color: var(--text-faint);
+		white-space: nowrap;
 	}
 
 	.value {
@@ -284,6 +294,38 @@
 	.field-action:focus-visible,
 	:global(.remapping) .field-action {
 		visibility: visible;
+	}
+
+	/* Touch: hidden actions take no room (they made every row too wide for a phone), and a
+	   tapped row shows them on a line of their own. */
+	@media (pointer: coarse) {
+		.row {
+			flex-wrap: wrap;
+		}
+
+		.actions,
+		.field-action {
+			display: none;
+		}
+
+		.row.picked {
+			background: var(--panel-raised);
+		}
+
+		.row.picked .actions {
+			display: flex;
+			visibility: visible;
+			flex-wrap: wrap;
+			flex-basis: 100%;
+			margin-left: 1.7rem;
+			padding-bottom: 0.3rem;
+		}
+
+		.row.picked .field-action,
+		:global(.remapping) .field-action {
+			display: inline-flex;
+			visibility: visible;
+		}
 	}
 
 	.actions button,

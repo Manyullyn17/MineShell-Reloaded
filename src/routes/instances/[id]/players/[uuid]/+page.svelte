@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { avatarTone } from '#lib/shared/avatar.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
@@ -191,6 +192,18 @@
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape' && stack.length) stack = [];
 	}
+
+	// On a phone the editor is a sheet over the lower part of the screen: the picked slot
+	// is brought up above it, so the grid stays in reach for picking the next one.
+	$effect(() => {
+		if (!current || !matchMedia('(max-width: 60rem)').matches) return;
+		void tick().then(() => {
+			const slot = document.querySelector('.slot[aria-pressed="true"]');
+			// The player's own grid fits above the sheet whole; a slot in a long container list is brought up itself.
+			const target = slot?.closest('.grid.wide') ? slot : (slot?.closest('.grids')?.firstElementChild ?? slot);
+			target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+		});
+	});
 
 	function allContainers(): Container[] {
 		const out: Container[] = [];
@@ -496,7 +509,7 @@
 		<button class="button-primary" type="submit" disabled={locked || busy || changed.length === 0}>
 			Save{changed.length ? ` ${changed.length} change${changed.length === 1 ? '' : 's'}` : ''}
 		</button>
-		<p class="small faint">Any value in All data can become a field here: hover it and pick “Field”.</p>
+		<p class="small faint">Any value in All data can become a field here: hover (or tap) it and pick “Field”.</p>
 	</div>
 </form>
 {:else if view === 'effects'}
@@ -564,7 +577,7 @@
 			{/if}
 		</div>
 
-		<aside class="item-panel" aria-label="Item">
+		<aside class="item-panel" class:open={!!current} aria-label="Item">
 			{#if current}
 			<form class="item-editor" onsubmit={saveItem}>
 				<button type="button" class="dialog-close button-quiet" aria-label="Close" onclick={() => (stack = [])}>×</button>
@@ -683,7 +696,7 @@
 		</div>
 	{:else}
 		<p class="small muted">
-			Everything in the player's file, including what mods store there. Hover an entry to edit, rename, add to or remove
+			Everything in the player's file, including what mods store there. Hover (or tap) an entry to edit, rename, add to or remove
 			it, edit it as SNBT, or show it as a field above. Each change is saved on its own.
 		</p>
 	{/if}
@@ -1125,6 +1138,43 @@
 		.item-panel {
 			position: static;
 			max-height: none;
+		}
+	}
+
+	/* On a phone the item opens in a sheet over the bottom of the screen, instead of
+	   below every container list where a tap seemed to do nothing. */
+	@media (max-width: 60rem) {
+		.item-panel {
+			display: none;
+		}
+
+		.item-panel.open {
+			display: block;
+			position: fixed;
+			top: auto;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 30;
+			max-height: 60vh;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+			border-bottom: 0;
+			padding: 1rem var(--space-4) calc(1rem + env(safe-area-inset-bottom));
+			box-shadow: 0 -12px 32px rgb(0 0 0 / 0.4);
+		}
+
+		/* Room to scroll the picked slot up above the sheet, and clear of the top bar. */
+		.inv-layout:has(.item-panel.open) {
+			padding-bottom: 60vh;
+		}
+
+		.slot,
+		.grids > * {
+			scroll-margin-top: 4.5rem;
+		}
+
+		.fields .field {
+			width: calc(50% - var(--space-3) / 2);
 		}
 	}
 
