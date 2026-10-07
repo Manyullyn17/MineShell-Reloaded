@@ -291,6 +291,13 @@ Mods tab's changes. All of it is journalled (`bisect`) and put back by the same
 state. Runs started during a search are marked (`bisect_sessions`, `server_runs.bisect`) and
 stay out of crash history, start times, the last-crash box and diagnosis.
 
+**Server icons** must be 64x64 PNGs. Scaling happens in the browser (`lib/shared/servericon.ts`),
+which decodes every format pack icons come in (PNG, WebP, JPEG); the server has no image
+library. A pack server's first overview without an icon applies the pack's icon (`packicon.ts`:
+MineShell fetches it from the provider and passes it through, so the canvas may read it),
+once: a `packicon.tried:<id>` setting, also set by replacing or removing the icon, keeps it
+from coming back.
+
 **Client pack export** (`packexport.ts`, the server's Export page) builds a pack for
 players' launchers: a Modrinth `.mrpack`, a CurseForge zip or a Prism Launcher instance,
 as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour.

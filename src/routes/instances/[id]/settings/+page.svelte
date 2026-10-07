@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { deserialize, enhance } from '$app/forms';
+	import { applyPackIcon, toServerIcon } from '#lib/shared/servericon.js';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
@@ -355,21 +356,6 @@
 	let iconVersion = $state(0);
 	let iconError = $state('');
 
-	/** Centre-crop to a square and scale to 64x64, as a PNG. */
-	async function toIcon(file: File): Promise<Blob> {
-		const image = await createImageBitmap(file);
-		const side = Math.min(image.width, image.height);
-		const canvas = document.createElement('canvas');
-		canvas.width = 64;
-		canvas.height = 64;
-		const ctx = canvas.getContext('2d')!;
-		ctx.imageSmoothingQuality = 'high';
-		ctx.drawImage(image, (image.width - side) / 2, (image.height - side) / 2, side, side, 0, 0, 64, 64);
-		return new Promise((resolve, reject) =>
-			canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not convert the image.'))), 'image/png')
-		);
-	}
-
 	async function pickIcon(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
@@ -377,12 +363,23 @@
 		if (!file) return;
 		iconError = '';
 		try {
-			const res = await fetch(iconUrl, { method: 'PUT', body: await toIcon(file) });
+			const res = await fetch(iconUrl, { method: 'PUT', body: await toServerIcon(file) });
 			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Upload failed.');
 			hasIcon = true;
 			iconVersion++;
 		} catch (err) {
 			iconError = err instanceof Error ? err.message : 'Upload failed.';
+		}
+	}
+
+	async function usePackIcon() {
+		iconError = '';
+		try {
+			await applyPackIcon(data.instance.id);
+			hasIcon = true;
+			iconVersion++;
+		} catch (err) {
+			iconError = err instanceof Error ? err.message : 'Could not use the pack icon.';
 		}
 	}
 
@@ -500,6 +497,7 @@
 					{hasIcon ? 'Replace' : 'Choose an image'}
 					<input type="file" accept="image/*" class="visually-hidden" onchange={pickIcon} />
 				</label>
+				{#if data.pack}<button class="button-quiet" type="button" onclick={usePackIcon}>Use the pack's icon</button>{/if}
 				{#if hasIcon}<button class="button-quiet" type="button" onclick={removeIcon}>Remove</button>{/if}
 			</div>
 		</div>

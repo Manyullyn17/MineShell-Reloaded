@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { packIconPending } from '#lib/server/packicon.js';
 import { onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
@@ -138,6 +139,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			start: startTimes(instance.id),
 			crashes: recentCrashes(instance.id)
 		},
+		/** A pack server without an icon yet: the page puts the pack's icon on it, once. */
+		packIconPending: await packIconPending(instance),
 		countdown: getCountdown(instance.id),
 		tick,
 		spark,

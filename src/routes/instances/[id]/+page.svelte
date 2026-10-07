@@ -6,8 +6,18 @@
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import { avatarTone } from '#lib/shared/avatar.js';
+	import { applyPackIcon } from '#lib/shared/servericon.js';
 
 	let { data, form } = $props();
+
+	// A server installed from a pack gets the pack's icon (what Prism shows), the first time
+	// it is opened without one; scaled here, since the browser decodes every format.
+	let packIconDone = false;
+	$effect(() => {
+		if (!data.packIconPending || packIconDone) return;
+		packIconDone = true;
+		void applyPackIcon(data.instance.id).catch(() => undefined);
+	});
 
 	const clock = (ms: number) => {
 		const seconds = Math.max(0, Math.round(ms / 1000));
