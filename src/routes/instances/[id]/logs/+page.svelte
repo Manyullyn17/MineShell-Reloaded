@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { page } from '$app/state';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { enhance } from '#lib/shared/forms.js';
@@ -27,6 +28,9 @@
 	});
 
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}/logs`);
+	/** A log was picked (not just the newest shown by default): on a phone the list then steps aside for it. */
+	const picked = $derived(page.url.searchParams.has('run') || page.url.searchParams.has('file'));
+	const listHref = $derived(data.query ? `${base}?q=${encodeURIComponent(data.query)}` : base);
 
 	function duration(run: { startedAt: number; endedAt: number | null }) {
 		if (!run.endedAt) return '';
@@ -79,7 +83,7 @@
 	}
 </script>
 
-<div class="logs">
+<div class="logs" class:picked>
 	<section class="list">
 		<form class="search" method="GET" action={base} role="search">
 			<input type="search" name="q" value={data.query} placeholder="Search all runs and log files" aria-label="Search all logs" />
@@ -164,6 +168,7 @@
 		{#if data.view}
 			{@const run = data.runs.find((r) => r.invocation === data.view?.key)}
 			{@const file = data.files.find((f) => f.path === data.view?.key)}
+			<a class="back small" href={listHref}>← All runs and files</a>
 			<div class="viewer-head">
 				<h2 class:mono={!!file}>{run ? formatDateTime(run.startedAt) : (file?.path ?? '')}</h2>
 				<span class="faint small">
@@ -212,7 +217,7 @@
 						<button class="button-quiet" type="submit" disabled={asking !== null}>{asking === 'share' ? 'Sharing…' : 'Share on mclo.gs'}</button>
 					</form>
 				{/if}
-				<span class="faint">A second opinion sends the log to mclo.gs to be read, not kept.</span>
+				<span class="faint mclogs-note">A second opinion sends the log to mclo.gs to be read, not kept.</span>
 			</div>
 			{#if form && !form.ok && form.message}
 				<Flash {form} />
@@ -295,9 +300,50 @@
 		align-items: start;
 	}
 
+	.back {
+		display: none;
+		margin-bottom: 0.5rem;
+		text-decoration: none;
+	}
+
 	@media (max-width: 800px) {
 		.logs {
 			grid-template-columns: 1fr;
+		}
+
+		/*
+		 * One at a time: the list, or the log picked from it. Below the list
+		 * the log got what was left of the screen - a line or two.
+		 */
+		.logs.picked .list,
+		.logs:not(.picked) .viewer {
+			display: none;
+		}
+
+		.back {
+			display: inline-block;
+		}
+
+		.viewer pre,
+		.viewer .matches {
+			min-height: 50vh;
+		}
+
+		/* No sideways scrolling through a log on a phone. */
+		.viewer pre {
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
+			padding: 0.5rem 0.6rem;
+			font-size: 0.74rem;
+		}
+
+		.mclogs {
+			gap: 0.25rem 0.5rem;
+			margin-bottom: 0.5rem;
+		}
+
+		.mclogs-note {
+			display: none;
 		}
 	}
 
