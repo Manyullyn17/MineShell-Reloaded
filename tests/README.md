@@ -38,7 +38,10 @@ Vitest:
 - `tests/global-setup.ts` deletes the temporary directory afterwards.
 
 Test files run one after another (`fileParallelism: false`) because they share that one
-database; the suite is small enough that it does not matter.
+database; the suite is small enough that it does not matter. What one file writes is still there
+for the files after it, in an order that can change: give mods, projects and servers ids no
+other test uses (`upsertMod` reuses a row with the same source and slug, name included), and
+do not assert an order that comes from such shared rows.
 
 ## No real processes
 

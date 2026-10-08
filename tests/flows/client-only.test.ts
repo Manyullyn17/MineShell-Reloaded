@@ -28,17 +28,18 @@ const modrinthVersion = (projectId: string) => ({
 	dependencies: []
 });
 
-// CurseForge projects, as the mirror lists their files for Forge 1.12.2 (newest first).
+// CurseForge projects, as the mirror lists their files for Forge 1.12.2 (newest first). Ids no
+// other test uses: the mods table is shared by every test file in a run.
 const cfFile = (id: number, updated: number, clientonly?: boolean) => ({
 	id, name: `file-${id}.jar`, type: 'release', updated, url: `https://cdn.test/${id}.jar`, ...(clientonly ? { clientonly } : {})
 });
 const CF_FILES: Record<string, ReturnType<typeof cfFile>[]> = {
 	// Only the newest file was tagged, later (Mouse Tweaks for 1.12.2).
-	'111': [cfFile(12, 200, true), cfFile(11, 100)],
+	'90111': [cfFile(12, 200, true), cfFile(11, 100)],
 	// The installed file itself is tagged.
-	'222': [cfFile(21, 100, true)],
+	'90222': [cfFile(21, 100, true)],
 	// A content mod: nothing tagged.
-	'333': [cfFile(32, 200), cfFile(31, 100)]
+	'90333': [cfFile(32, 200), cfFile(31, 100)]
 };
 
 const modrinthDown = { fail: false };
@@ -50,7 +51,7 @@ useRecordedHttp('none', {
 				() => Response.json({ versions, page: 1, pages: 1 })
 			])
 		),
-		'https://api.modpacks.ch/public/mod/444/versions/1.12.2/forge': () => new Response('down', { status: 503 }),
+		'https://api.modpacks.ch/public/mod/90444/versions/1.12.2/forge': () => new Response('down', { status: 503 }),
 		'https://api.modrinth.com/v2/version_files': () =>
 			modrinthDown.fail
 				? new Response('down', { status: 503 })
@@ -189,7 +190,7 @@ describe('client-only mods in a server install', () => {
 	it('disables CurseForge mods CurseForge tags as client-only, or whose newest file it tags', async () => {
 		// The mirror's pack file lists leave tagged files out, but uploaded zips
 		// and older files (tagged only on the newest) got through.
-		const jars = { 'mousetweaks.jar': '111/11', 'betterfoliage.jar': '222/21', 'content.jar': '333/31', 'unknown.jar': '444/41' };
+		const jars = { 'mousetweaks.jar': '90111/11', 'betterfoliage.jar': '90222/21', 'content.jar': '90333/31', 'unknown.jar': '90444/41' };
 		const instance = await createInstance(
 			{ modloader: 'forge', minecraftVersion: '1.12.2' },
 			Object.fromEntries(Object.keys(jars).map((f) => [`mods/${f}`, zipBuffer({ 'mcmod.info': `[{"modid":"${f}","name":"${f}"}]` })]))

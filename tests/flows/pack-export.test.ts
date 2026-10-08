@@ -169,10 +169,15 @@ describe('client pack export', () => {
 		const { zip, names } = await exported(await server(), 'curseforge');
 		const manifest = JSON.parse(zip.readText('manifest.json')!);
 		expect(manifest.minecraft).toEqual({ version: '1.20.1', modLoaders: [{ id: 'fabric-0.16.9', primary: true }] });
-		expect(manifest.files).toEqual([
-			{ projectID: 111, fileID: 222, required: true },
-			{ projectID: 238222, fileID: 4712866, required: true }
-		]);
+		// In mod-name order, and the mods table is shared by every test file in a run: another
+		// file's project 111 under another name reordered this list. The order means nothing.
+		expect(manifest.files).toHaveLength(2);
+		expect(manifest.files).toEqual(
+			expect.arrayContaining([
+				{ projectID: 111, fileID: 222, required: true },
+				{ projectID: 238222, fileID: 4712866, required: true }
+			])
+		);
 		expect(names).toContain('overrides/mods/sodium.jar');
 		expect(names).toContain('overrides/mods/spare.jar.disabled');
 		expect(names).not.toContain('overrides/mods/jei.jar');
