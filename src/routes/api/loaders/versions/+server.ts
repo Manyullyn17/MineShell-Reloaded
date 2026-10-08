@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
+import { getLoader, listReleaseVersions, pickerLoaderVersions } from '#lib/server/modloaders.js';
 
 /** Powers the version pickers on the new-server form. */
 export const GET: RequestHandler = async ({ url }) => {
@@ -14,8 +14,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			return Response.json({ versions });
 		}
 		if (!minecraft) return Response.json({ versions: [] });
-		const loader = getLoader(loaderId);
-		const versions = await loader.listLoaderVersions(minecraft);
+		const versions = await pickerLoaderVersions(loaderId, minecraft);
 		return Response.json({ versions });
 	} catch (err) {
 		// The upstream metadata servers go down occasionally; the form falls back

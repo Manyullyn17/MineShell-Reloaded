@@ -496,6 +496,39 @@ export function getLoader(id: string): Modloader {
 	return loader;
 }
 
+const pickerLists = new Map<string, { at: number; versions: string[] }>();
+const PICKER_FRESH_MS = 10 * 60_000;
+
+/**
+ * Version lists for pickers (a server's Settings, the new-server form). Each
+ * was fetched on every page open - 0.1-0.6 s, Forge's metadata is 200 KB - so
+ * the last answer is handed out at once and refreshed behind it once it is
+ * 10 min old. A failed fetch is not kept: the next call tries again.
+ */
+async function pickerList(key: string, fetch: () => Promise<string[]>): Promise<string[]> {
+	const hit = pickerLists.get(key);
+	if (hit && Date.now() - hit.at < PICKER_FRESH_MS) return hit.versions;
+	const fresh = fetch().then((versions) => {
+		pickerLists.set(key, { at: Date.now(), versions });
+		return versions;
+	});
+	if (!hit) return fresh;
+	// Stale: answer now; one refresh at a time, so the old list counts as fresh meanwhile.
+	hit.at = Date.now();
+	fresh.catch(() => {});
+	return hit.versions;
+}
+
+/** Minecraft releases, newest first, for a picker. */
+export function pickerReleaseVersions(): Promise<string[]> {
+	return pickerList('minecraft', listReleaseVersions);
+}
+
+/** A loader's versions for a Minecraft version, newest first, for a picker. */
+export function pickerLoaderVersions(loader: string, minecraftVersion: string): Promise<string[]> {
+	return pickerList(`${loader}:${minecraftVersion}`, () => getLoader(loader).listLoaderVersions(minecraftVersion));
+}
+
 /**
  * Cross-loader compatibility, off by default, per the original design notes.
  * NeoForge can generally load Forge mods; Quilt can load Fabric mods.

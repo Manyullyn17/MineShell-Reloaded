@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { LOADERS } from './modloaders';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LOADERS, pickerLoaderVersions } from './modloaders';
 import { compareVersions } from './java';
-import { useRecordedHttp } from '../../../tests/helpers/http';
+import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
 useRecordedHttp('loaders');
 
@@ -31,5 +31,22 @@ describe('loader version lists', () => {
 	it('Fabric and Quilt: loader builds for a game version', async () => {
 		expect(await LOADERS.fabric.listLoaderVersions('1.21.1')).toEqual(expect.arrayContaining(['0.16.0', '0.19.5']));
 		expect((await LOADERS.quilt.listLoaderVersions('1.20.1')).length).toBeGreaterThan(0);
+	});
+});
+
+describe('version lists for pickers', () => {
+	afterEach(() => vi.useRealTimers());
+
+	it('answers from memory, refreshing behind the answer once 10 min old', async () => {
+		// Settings fetched the loader's list on every open: up to 0.6 s for Forge's.
+		vi.useFakeTimers({ toFake: ['Date'] });
+		const first = await pickerLoaderVersions('neoforge', '1.21.1');
+		const fetched = fetchCalls.length;
+		expect(await pickerLoaderVersions('neoforge', '1.21.1')).toBe(first);
+		expect(fetchCalls).toHaveLength(fetched);
+
+		vi.setSystemTime(Date.now() + 11 * 60_000);
+		expect(await pickerLoaderVersions('neoforge', '1.21.1')).toBe(first);
+		expect(fetchCalls).toHaveLength(fetched + 1);
 	});
 });

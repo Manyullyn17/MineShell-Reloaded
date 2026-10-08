@@ -63,7 +63,7 @@ import {
 } from '#lib/server/properties.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
-import { LOADER_LIST, getLoader, listReleaseVersions } from '#lib/server/modloaders.js';
+import { LOADER_LIST, pickerLoaderVersions, pickerReleaseVersions } from '#lib/server/modloaders.js';
 import {
 	composeJvmArgs,
 	deleteCustomPreset,
@@ -99,10 +99,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	// mislabels the instance. Both lists are best-effort: if the metadata
 	// servers are unreachable the page falls back to a text input.
 	const [minecraftVersions, loaderVersions] = await Promise.all([
-		listReleaseVersions().catch(() => [] as string[]),
-		getLoader(instance.modloader)
-			.listLoaderVersions(instance.minecraftVersion)
-			.catch(() => [] as string[])
+		pickerReleaseVersions().catch(() => [] as string[]),
+		pickerLoaderVersions(instance.modloader, instance.minecraftVersion).catch(() => [] as string[])
 	]);
 
 	return {
