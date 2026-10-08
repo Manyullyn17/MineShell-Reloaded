@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listRuns, readJournalEvents, readLastRun, runFinishedStarting, searchJournal } from './journal';
+import { listRuns, readJournalEvents, readLastRun, readRun, runFinishedStarting, searchJournal } from './journal';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const INVOCATION = '05cab01dbf7f460a8c7facc67e5cd7d5';
@@ -92,6 +92,57 @@ describe('listRuns', () => {
 			{ invocation: b, startedAt: 2000, endedAt: 2300, exit: null, failure: null },
 			{ invocation: a, startedAt: 1000, endedAt: 1006, exit: 'code=exited, status=1/FAILURE', failure: 'exit-code' }
 		]);
+	});
+});
+
+describe('listRuns', () => {
+	it('searches only what was logged since the last call', async () => {
+		// The whole unit's search took 1-3 s on a big pack, redone on every Logs visit while it ran.
+		const line = (at: number, message: string) => JSON.stringify({ USER_INVOCATION_ID: 'c'.repeat(32), __REALTIME_TIMESTAMP: String(at * 1000), MESSAGE: message });
+		const newest = (cursor: string) => ({ stdout: JSON.stringify({ __CURSOR: cursor }) + '\n' });
+		fakeProcesses((_cmd, args) => (args.includes('-g') ? { stdout: line(1000, 'Started minecraft@x.service - Minecraft server.') } : newest('s=1')));
+		const first = await listRuns('runs-b');
+		expect(first).toEqual([{ invocation: 'c'.repeat(32), startedAt: 1000, endedAt: null, exit: null, failure: null }]);
+
+		fakeProcesses((_cmd, args) => (args.includes('-g') ? { stdout: line(1500, 'minecraft@x.service: Consumed 4min CPU time.') } : newest('s=2')));
+		expect(await listRuns('runs-b')).toEqual([{ invocation: 'c'.repeat(32), startedAt: 1000, endedAt: 1500, exit: null, failure: null }]);
+		const search = spawnCalls.find((c) => c.args.includes('-g'))!;
+		expect(search.args).toContain('--after-cursor=s=1');
+		expect(search.args.some((a) => a.startsWith('--since'))).toBe(false);
+		// The list handed out before is not changed under its holder.
+		expect(first[0].endedAt).toBeNull();
+	});
+});
+
+describe('readRun', () => {
+	const RUN_ID = 'd'.repeat(32);
+
+	it('reads only the lines logged since the last call', async () => {
+		// 20000 lines take journalctl 1-2 s; the Logs page read them on every visit.
+		fakeProcesses(() => ({ stdout: 'one\ntwo\n-- cursor: s=2\n' }));
+		expect(await readRun(RUN_ID)).toBe('one\ntwo\n');
+		expect(spawnCalls[0].args).toEqual(expect.arrayContaining(['-n', '20000', '--show-cursor']));
+
+		fakeProcesses(() => ({ stdout: 'three\n-- cursor: s=3\n' }));
+		expect(await readRun(RUN_ID)).toBe('one\ntwo\nthree\n');
+		expect(spawnCalls[0].args).toContain('--after-cursor=s=2');
+		expect(spawnCalls[0].args).not.toContain('-n');
+
+		// Nothing new (an ended run): journalctl prints only the cursor.
+		fakeProcesses(() => ({ stdout: '-- cursor: s=3\n' }));
+		expect(await readRun(RUN_ID)).toBe('one\ntwo\nthree\n');
+		expect(spawnCalls[0].args).toContain('--after-cursor=s=3');
+	});
+
+	it('keeps only the newest 20000 lines of a run that keeps logging', async () => {
+		const many = Array.from({ length: 20000 }, (_, i) => `line ${i}`).join('\n') + '\n';
+		fakeProcesses(() => ({ stdout: many + '-- cursor: s=1\n' }));
+		await readRun('e'.repeat(32));
+		fakeProcesses(() => ({ stdout: 'line 20000\nline 20001\n-- cursor: s=2\n' }));
+		const lines = (await readRun('e'.repeat(32))).split('\n');
+		expect(lines).toHaveLength(20001);
+		expect(lines[0]).toBe('line 2');
+		expect(lines.at(-2)).toBe('line 20001');
 	});
 });
 

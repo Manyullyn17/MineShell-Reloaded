@@ -178,3 +178,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | ATM10's 42 Curios lists showed as identically named open lists | `src/lib/server/playeritems.test.ts` |
 | Coloured journal lines (byte-array MESSAGE) were skipped by history | `src/lib/server/journal.test.ts` |
 | Saving only the Game port set the RCON port to 0 (missing field read as 0) | `src/lib/server/formvalues.test.ts` |
+| The Logs tab re-read the run list and the open run (1-3 s each) on every visit | `src/lib/server/journal.test.ts` |

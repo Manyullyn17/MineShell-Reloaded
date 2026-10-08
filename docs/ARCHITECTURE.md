@@ -160,6 +160,12 @@ several a minute. Chat lines (`<name> text`, `[Not Secure] <name> text`, `* name
 with `say`, which players see as `[Rcon]`. Saved commands are kept per server in the database (`macros.ts`); command
 history stays in the browser.
 
+**Logs tab**: the run list (`listRuns`, systemd's start/stop lines found with `journalctl -g`)
+and a run's text (`readRun`, its last 20000 lines) take journalctl 1-3 s each on a big pack.
+Both are kept in memory with the cursor of the newest entry read; later reads take only what
+came after it (`--after-cursor`), so only the first open after MineShell starts waits. The
+newest 8 runs' text is kept.
+
 **Log search** (`logsearch.ts`) looks through every run the journal still holds
 (`journalctl -g` with the text escaped and `--case-sensitive=false`, the newest 5000
 matching lines, ~0.5 s for a big pack's journal) and every file in `logs/` and

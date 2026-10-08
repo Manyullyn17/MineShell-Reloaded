@@ -142,15 +142,6 @@ const LAST_RUN_LINES = 20000;
 
 const lastRuns = new Map<string, { cursor: string; text: string }>();
 
-/**
- * The unit's last run, for crash detection on the overview, which polls.
- * `journalctl -u` walks matches slowly: 20000 lines take seconds, so reading
- * them on every poll made the overview of a stopped big pack hang. The newest
- * entry costs milliseconds; while its cursor is unchanged the run is the one
- * read before. Otherwise only that run is read, by its invocation id - the
- * service's own lines carry `_SYSTEMD_INVOCATION_ID`, the service manager's
- * ("Started ...", "Consumed ...") `USER_INVOCATION_ID` or `INVOCATION_ID`.
- */
 /** The unit's newest entry: its cursor and the invocation (run) it belongs to. Null when there is none. */
 async function newestEntry(id: string, since: number): Promise<{ cursor: string | null; invocation: string | null } | null> {
 	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(since)])).trim();
@@ -178,6 +169,15 @@ function runMatch(invocation: string): string[] {
 	];
 }
 
+/**
+ * The unit's last run, for crash detection on the overview, which polls.
+ * `journalctl -u` walks matches slowly: 20000 lines take seconds, so reading
+ * them on every poll made the overview of a stopped big pack hang. The newest
+ * entry costs milliseconds; while its cursor is unchanged the run is the one
+ * read before. Otherwise only that run is read, by its invocation id - the
+ * service's own lines carry `_SYSTEMD_INVOCATION_ID`, the service manager's
+ * ("Started ...", "Consumed ...") `USER_INVOCATION_ID` or `INVOCATION_ID`.
+ */
 export async function readLastRun(id: string, since = 0): Promise<string> {
 	const entry = await newestEntry(id, since);
 	if (!entry) {
@@ -188,9 +188,7 @@ export async function readLastRun(id: string, since = 0): Promise<string> {
 	const hit = lastRuns.get(id);
 	if (cursor && hit?.cursor === cursor) return hit.text;
 
-	const text = invocation
-		? await journalctl([...runMatch(invocation), '-n', String(LAST_RUN_LINES), '-o', 'cat', sinceArg(since)])
-		: await readJournal(id, LAST_RUN_LINES, since);
+	const text = invocation ? await readRun(invocation, since) : await readJournal(id, LAST_RUN_LINES, since);
 	if (cursor) lastRuns.set(id, { cursor, text });
 	return text;
 }
@@ -228,24 +226,42 @@ export type RunSummary = {
  * started and how it ended, from the service manager's own lines. Cheap: a
  * filtered read of those lines only, not the runs' output.
  */
-const runLists = new Map<string, { cursor: string; runs: RunSummary[] }>();
+const runLists = new Map<string, { cursor: string; runs: Map<string, RunSummary> }>();
 
 export async function listRuns(id: string, since = 0): Promise<RunSummary[]> {
-	// The search walks the unit's whole journal (~0.7 s for a big pack's), so
-	// it is reused until the journal has something newer.
+	// The search walks the unit's whole journal (~1-3 s for a big pack's), so
+	// the runs are kept and only entries after the newest one seen are searched:
+	// a running server logs all the time, and every Logs visit re-read it all.
 	const newest = await newestEntry(id, since);
 	if (!newest) return [];
-	const hit = runLists.get(id);
-	if (newest.cursor && hit?.cursor === newest.cursor) return hit.runs;
-	const out = await journalctl([
-		...unitMatch(id),
-		'-o',
-		'json',
-		'-g',
-		'^(Started |Stopped )|Main process exited|Failed with result|Deactivated successfully|Consumed ',
-		sinceArg(since)
-	]);
-	const runs = new Map<string, RunSummary>();
+	const key = `${id}@${since}`;
+	const hit = runLists.get(key);
+	if (!(newest.cursor && hit?.cursor === newest.cursor)) {
+		const out = await journalctl([
+			...unitMatch(id),
+			'-o',
+			'json',
+			'-g',
+			'^(Started |Stopped )|Main process exited|Failed with result|Deactivated successfully|Consumed ',
+			hit ? `--after-cursor=${hit.cursor}` : sinceArg(since)
+		]);
+		// Entries logged between reading the newest one and this search are read
+		// again next time; merging is idempotent, so that is harmless.
+		const runs = new Map(hit?.runs);
+		mergeRuns(runs, out);
+		if (newest.cursor) runLists.set(key, { cursor: newest.cursor, runs });
+		else runLists.delete(key);
+		return sortRuns(runs);
+	}
+	return sortRuns(hit.runs);
+}
+
+function sortRuns(runs: Map<string, RunSummary>): RunSummary[] {
+	return [...runs.values()].sort((a, b) => b.startedAt - a.startedAt);
+}
+
+/** Folds the service manager's lines (journalctl -o json) into `runs`, by invocation. */
+function mergeRuns(runs: Map<string, RunSummary>, out: string): void {
 	for (const line of out.split('\n')) {
 		if (!line.trim()) continue;
 		let entry: Record<string, unknown>;
@@ -260,11 +276,9 @@ export async function listRuns(id: string, since = 0): Promise<RunSummary[]> {
 		const message = messageOf(entry.MESSAGE);
 		const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP) / 1000);
 		if (!invocation || !Number.isFinite(at)) continue;
-		let run = runs.get(invocation);
-		if (!run) {
-			run = { invocation, startedAt: at, endedAt: null, exit: null, failure: null };
-			runs.set(invocation, run);
-		}
+		// Copied, not changed in place: a list handed out earlier stays as it was.
+		const run: RunSummary = { ...(runs.get(invocation) ?? { invocation, startedAt: at, endedAt: null, exit: null, failure: null }) };
+		runs.set(invocation, run);
 		if (/^Started /.test(message)) run.startedAt = at;
 		else {
 			run.endedAt = Math.max(run.endedAt ?? 0, at);
@@ -274,15 +288,46 @@ export async function listRuns(id: string, since = 0): Promise<RunSummary[]> {
 			if (failed) run.failure = failed[1];
 		}
 	}
-	const list = [...runs.values()].sort((a, b) => b.startedAt - a.startedAt);
-	if (newest.cursor) runLists.set(id, { cursor: newest.cursor, runs: list });
-	return list;
 }
 
-/** One run's output (its last LAST_RUN_LINES lines), by invocation id. */
+/** Runs' text read so far, by invocation, with the cursor of the last line read. */
+const runTexts = new Map<string, { cursor: string; text: string }>();
+/** A big pack's run is a few MB of text; the Logs page and the overview need only a few. */
+const RUN_TEXTS_KEPT = 8;
+
+/**
+ * One run's output (its last LAST_RUN_LINES lines), by invocation id. Reading
+ * 20000 lines takes journalctl 1-2 s, so the text is kept and later calls
+ * read only what the run logged since (nothing, once it has ended).
+ */
 export async function readRun(invocation: string, since = 0): Promise<string> {
 	if (!/^[0-9a-f]{32}$/.test(invocation)) return '';
-	return journalctl([...runMatch(invocation), '-n', String(LAST_RUN_LINES), '-o', 'cat', sinceArg(since)]);
+	const key = `${invocation}@${since}`;
+	const hit = runTexts.get(key);
+	const out = await journalctl([
+		...runMatch(invocation),
+		...(hit ? [`--after-cursor=${hit.cursor}`] : ['-n', String(LAST_RUN_LINES), sinceArg(since)]),
+		'-o',
+		'cat',
+		'--show-cursor'
+	]);
+	// --show-cursor ends the output with "-- cursor: <cursor>" (also when nothing was new).
+	const end = out.lastIndexOf('\n-- cursor: ');
+	const cursorLine = end >= 0 ? out.slice(end + 1) : out.startsWith('-- cursor: ') ? out : '';
+	const added = end >= 0 ? out.slice(0, end + 1) : cursorLine ? '' : out;
+	let text = (hit?.text ?? '') + added;
+	if (hit && added) {
+		const lines = text.split('\n');
+		// The last element is what follows the final newline: empty.
+		if (lines.length > LAST_RUN_LINES + 1) text = lines.slice(-(LAST_RUN_LINES + 1)).join('\n');
+	}
+	const cursor = cursorLine.slice('-- cursor: '.length).trim();
+	runTexts.delete(key);
+	if (cursor) {
+		runTexts.set(key, { cursor, text });
+		if (runTexts.size > RUN_TEXTS_KEPT) runTexts.delete(runTexts.keys().next().value!);
+	}
+	return text;
 }
 
 export type JournalEvent = { at: number; message: string; invocation: string | null };
