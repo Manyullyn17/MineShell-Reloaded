@@ -498,7 +498,8 @@ Useful mostly where `crashdiag.ts` recognises nothing ("Cause not recognised").
 
 ### Plugin servers (Paper, Purpur)
 
-Asked about 2026-10-08; written up rather than built (user's call). What it would take:
+Asked about 2026-10-08; written up rather than built (user's call). Planned as the next big
+update, once the modded and general features are finished. What it would take:
 
 - **Server types**: Paper and Purpur as entries in `modloaders.ts`, installed as one jar
   (`-jar server.jar`, like vanilla). Paper's builds come from PaperMC's download API (Fill,
