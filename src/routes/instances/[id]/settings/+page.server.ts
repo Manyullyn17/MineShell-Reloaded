@@ -15,6 +15,7 @@ import {
 	cloneInstance,
 	deleteInstance,
 	migrateToCleanroom,
+	movePortAside,
 	readForgeBackup,
 	requireInstance,
 	revertToForge,
@@ -431,9 +432,30 @@ export const actions: Actions = {
 		if (serverPort === rconPort) {
 			return fail(400, { ok: false, message: 'The game port and RCON port must differ.' });
 		}
-		for (const port of [serverPort, rconPort]) {
-			const conflict = portConflict(port, instance.id);
-			if (conflict) return fail(400, { ok: false, message: conflict });
+		// A port another server has moves that server first, as chosen next to the field.
+		const moved: string[] = [];
+		const changes = [
+			{ port: serverPort, field: 'game' as const, current: instance.serverPort, how: form.get('moveGame') },
+			{ port: rconPort, field: 'rcon' as const, current: instance.rconPort, how: form.get('moveRcon') }
+		];
+		for (const change of changes) {
+			if (change.port === change.current) continue;
+			const conflict = portConflict(change.port, instance.id);
+			if (!conflict) continue;
+			if (change.how !== 'swap' && change.how !== 'free') {
+				return fail(400, { ok: false, message: `${conflict} Choose next to the field whether to swap ports with it or move it.` });
+			}
+			try {
+				const result = await movePortAside(instance.id, change.port, change.field, change.how);
+				if (result) {
+					moved.push(
+						`${result.name}'s ${result.kind === 'game' ? 'game' : 'RCON'} port is now ${result.to}${result.running ? ' (restart it to apply)' : ''}.`
+					);
+				}
+			} catch (err) {
+				if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+				throw err;
+			}
 		}
 
 		const update: Record<string, unknown> = { serverPort, rconPort, updatedAt: Date.now() };
@@ -447,7 +469,7 @@ export const actions: Actions = {
 			.run();
 
 		await syncPortsToProperties(requireInstance(instance.id));
-		return { ok: true, message: 'Saved and written to server.properties. Restart to apply.' };
+		return { ok: true, message: ['Saved and written to server.properties. Restart to apply.', ...moved].join(' '), notes: moved };
 	},
 
 	addCommand: async ({ request, params }) => {

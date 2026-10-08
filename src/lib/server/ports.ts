@@ -9,7 +9,16 @@ import { serverInstances } from './db/schema';
  */
 
 export const DEFAULT_SERVER_PORT = 25565;
-export const DEFAULT_RCON_PORT = 25575;
+/**
+ * RCON ports live 1000 above game ports (25565 -> 26565), so a server's pair
+ * is easy to tell apart and a row of game ports never runs into them. They
+ * started at 25575 before October 2026: the eleventh game port took the
+ * first RCON port. Not higher: Linux hands out 32768-60999 to outgoing
+ * connections, which could be holding the port when a server starts.
+ * Existing servers keep what they have.
+ */
+export const RCON_OFFSET = 1000;
+export const DEFAULT_RCON_PORT = DEFAULT_SERVER_PORT + RCON_OFFSET;
 
 function claimedPorts(excludeInstanceId?: string): Set<number> {
 	const rows = db
@@ -49,17 +58,31 @@ export async function allocatePort(start: number, excludeInstanceId?: string): P
 
 export async function allocatePortPair(excludeInstanceId?: string) {
 	const serverPort = await allocatePort(DEFAULT_SERVER_PORT, excludeInstanceId);
-	const rconPort = await allocatePort(DEFAULT_RCON_PORT, excludeInstanceId);
-	return { serverPort, rconPort };
+	return { serverPort, rconPort: await rconPortFor(serverPort, excludeInstanceId) };
+}
+
+/** The game port + 1000 if it is free, else the next free one from there (never the game port itself). */
+export async function rconPortFor(serverPort: number, excludeInstanceId?: string): Promise<number> {
+	const start = serverPort + RCON_OFFSET <= 32767 ? serverPort + RCON_OFFSET : DEFAULT_RCON_PORT;
+	const port = await allocatePort(start, excludeInstanceId);
+	return port === serverPort ? allocatePort(port + 1, excludeInstanceId) : port;
+}
+
+export type PortUser = { instanceId: string; name: string; kind: 'game' | 'rcon' };
+
+/** The other MineShell server using `port`, and for what. */
+export function portUser(port: number, excludeInstanceId?: string): PortUser | null {
+	for (const row of db.select().from(serverInstances).all()) {
+		if (row.id === excludeInstanceId) continue;
+		if (row.serverPort === port) return { instanceId: row.id, name: row.name, kind: 'game' };
+		if (row.rconPort === port) return { instanceId: row.id, name: row.name, kind: 'rcon' };
+	}
+	return null;
 }
 
 /** Used by settings validation to explain a clash instead of silently failing. */
 export function portConflict(port: number, excludeInstanceId?: string): string | null {
-	const rows = db.select().from(serverInstances).all();
-	for (const row of rows) {
-		if (row.id === excludeInstanceId) continue;
-		if (row.serverPort === port) return `${row.name} already uses port ${port} for Minecraft.`;
-		if (row.rconPort === port) return `${row.name} already uses port ${port} for RCON.`;
-	}
-	return null;
+	const user = portUser(port, excludeInstanceId);
+	if (!user) return null;
+	return `${user.name} already uses port ${port} for ${user.kind === 'game' ? 'Minecraft' : 'RCON'}.`;
 }

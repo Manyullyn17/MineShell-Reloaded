@@ -182,7 +182,9 @@ marks the login cookie `Secure` when the browser used https.
 Never expose an RCON port. It is plaintext and only weakly authenticated, and only MineShell
 on the same machine needs it. Minecraft listens for RCON on every interface unless
 `server-ip` is set (which binds the game port to that address too), so keep the RCON ports
-closed in the firewall and open only the game ports.
+closed in the firewall and open only the game ports. New servers get their RCON port 1000
+above the game port (25565 -> 26565), so the two ranges are easy to tell apart in a firewall
+rule; servers made before October 2026 have theirs from 25575 up.
 
 ---
 

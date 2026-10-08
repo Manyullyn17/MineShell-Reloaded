@@ -106,7 +106,9 @@ that MineShell can delete again.
 performance, Java and memory, automation, snapshots, advanced), searchable, with one save
 bar that says which changes need a restart and can restart for you. The common
 `server.properties` keys are typed controls, everything else is preserved in an "other
-keys" section, plus a raw editor. Nothing is silently dropped.
+keys" section, plus a raw editor. Nothing is silently dropped. Port fields say at once
+whether a port is free; one another server has can be taken by swapping ports with it or
+moving it to the next free one.
 
 **Mods.** Search and install from Modrinth and CurseForge with dependency resolution,
 upload jars by hand, enable and disable (which renames to `.jar.disabled`, the thing the

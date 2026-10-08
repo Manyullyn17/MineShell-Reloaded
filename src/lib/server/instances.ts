@@ -7,7 +7,7 @@ import { auditLog, instanceMods, serverInstances, type ServerInstance } from './
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
-import { allocatePort, allocatePortPair, DEFAULT_RCON_PORT, portConflict, portIsFree } from './ports';
+import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
 import {
 	defaultProperties,
 	fillPropertyDefaults,
@@ -202,9 +202,7 @@ async function portsFor(requested: number | undefined): Promise<{ serverPort: nu
 	const conflict = portConflict(requested);
 	if (conflict) throw new InstanceError(conflict);
 	if (!(await portIsFree(requested))) throw new InstanceError(`Something on this machine already listens on port ${requested}.`);
-	let rconPort = await allocatePort(DEFAULT_RCON_PORT);
-	if (rconPort === requested) rconPort = await allocatePort(requested + 1);
-	return { serverPort: requested, rconPort };
+	return { serverPort: requested, rconPort: await rconPortFor(requested) };
 }
 
 async function insertInstanceRow(
@@ -1503,6 +1501,44 @@ export async function summariseAll(): Promise<InstanceSummary[]> {
 
 
 /** Keep server.properties and the DB row agreeing about ports and RCON. */
+/**
+ * Frees `port` for `instanceId` by moving the other server that uses it:
+ * `swap` gives that server `instanceId`'s current port of the same kind
+ * (shuffling two servers), `free` the next free port of its kind. Written to
+ * its server.properties; a running one keeps the old port until restarted.
+ */
+export async function movePortAside(
+	instanceId: string,
+	port: number,
+	field: 'game' | 'rcon',
+	how: 'swap' | 'free'
+): Promise<{ name: string; kind: 'game' | 'rcon'; to: number; running: boolean } | null> {
+	const user = portUser(port, instanceId);
+	const self = getInstance(instanceId);
+	if (!user || !self) return null;
+	const other = getInstance(user.instanceId)!;
+	let to: number;
+	if (how === 'swap') {
+		to = field === 'game' ? self.serverPort : self.rconPort;
+		const taken = portUser(to, instanceId);
+		if (taken && taken.instanceId !== other.id) throw new InstanceError(`${taken.name} uses port ${to} too; pick another way.`);
+		if ((user.kind === 'game' ? other.rconPort : other.serverPort) === to) throw new InstanceError(`${other.name} uses port ${to} for its other port already.`);
+	} else {
+		// Neither the port being freed nor this server's ports.
+		const avoid = new Set([port, self.serverPort, self.rconPort]);
+		to = await allocatePort(user.kind === 'game' ? DEFAULT_SERVER_PORT : other.serverPort + RCON_OFFSET, other.id);
+		while (avoid.has(to)) to = await allocatePort(to + 1, other.id);
+	}
+	db.update(serverInstances)
+		.set({ ...(user.kind === 'game' ? { serverPort: to } : { rconPort: to }), updatedAt: Date.now() })
+		.where(eq(serverInstances.id, other.id))
+		.run();
+	await syncPortsToProperties(getInstance(other.id)!);
+	const state = await unitState(other.id).catch(() => null);
+	audit('instance.port_moved', { instanceId: other.id, detail: `${user.kind} ${port} -> ${to} for ${instanceId}` });
+	return { name: other.name, kind: user.kind, to, running: state?.active === 'active' };
+}
+
 export async function syncPortsToProperties(instance: ServerInstance): Promise<void> {
 	const password = rconPassword(instance);
 	await patchProperties(instance.path, {

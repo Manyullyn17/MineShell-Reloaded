@@ -15,6 +15,7 @@
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
+	import PortCheck from '#lib/components/PortCheck.svelte';
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
@@ -293,6 +294,8 @@
 		message = null;
 		const list = [...dirty];
 		let done = 0;
+		/** What a section's save did beyond saving (another server's port moved), shown after "Saved". */
+		const notes: string[] = [];
 		try {
 			for (const section of list) {
 				const formEl = forms[section.id];
@@ -304,6 +307,7 @@
 					query = '';
 					return;
 				}
+				if (result.type === 'success') notes.push(...((result.data as { notes?: string[] } | undefined)?.notes ?? []));
 				if (section.id === 'rcon') rotateRcon = false;
 				if (section.id === 'runtime') presetToApply = '';
 				done++;
@@ -314,12 +318,12 @@
 				const result = await post(`/instances/${encodeURIComponent(data.instance.id)}?/power`, body);
 				message =
 					result.type === 'success'
-						? { ok: true, message: `Saved ${done} section${done === 1 ? '' : 's'}. Restarting the server.` }
+						? { ok: true, message: [`Saved ${done} section${done === 1 ? '' : 's'}. Restarting the server.`, ...notes].join(' ') }
 						: { ok: false, message: `Saved, but the restart failed: ${resultMessage(result, 'no answer')}` };
 			} else {
 				message = {
 					ok: true,
-					message: needsRestart ? 'Saved. Restart the server for the changes marked restart to apply.' : 'Saved.'
+					message: [needsRestart ? 'Saved. Restart the server for the changes marked restart to apply.' : 'Saved.', ...notes].join(' ')
 				};
 			}
 		} finally {
@@ -764,6 +768,7 @@
 			<div class="field">
 				<label for="serverPort">Game port <span class="tag warn">restart</span></label>
 				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" bind:value={sv.serverPort} />
+				<PortCheck instanceId={data.instance.id} field="game" value={sv.serverPort} current={data.settings.serverPort} name="moveGame" />
 				<p class="hint">Written to server.properties too.</p>
 			</div>
 		</form>
@@ -775,6 +780,7 @@
 			<div class="field">
 				<label for="rconPort">RCON port <span class="tag warn">restart</span></label>
 				<input id="rconPort" name="rconPort" type="number" min="1" max="65535" bind:value={sv.rconPort} />
+				<PortCheck instanceId={data.instance.id} field="rcon" value={sv.rconPort} current={data.settings.rconPort} name="moveRcon" />
 			</div>
 			<div class="field">
 				<span class="label">RCON password</span>
