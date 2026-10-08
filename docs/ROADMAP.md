@@ -474,7 +474,11 @@ instead. Noticed in the October 2026 sanity pass; parked for a later look.
 
 ### mclo.gs as a second opinion on crashes
 
-Suggested 2026-10-07, not started. mclo.gs (Aternos) pastes Minecraft logs and analyses them:
+Built 2026-10-08 (`mclogs.ts`, the Logs tab). Since this was written mclo.gs gained
+`POST /1/analyse`, which analyses without keeping the log, so the second opinion publishes
+nothing; sharing is a separate button (public 90 days, IPs and home folders masked by
+mclo.gs, deletable with the kept token). Deleting a server forgets its shares; the logs
+expire on mclo.gs by themselves. The original notes: mclo.gs (Aternos) pastes Minecraft logs and analyses them:
 `POST https://api.mclo.gs/1/log` (JSON `{content, source, metadata}`; up to 10 MiB and 25,000
 lines, truncating client-side recommended) returns `id`, `url`, `raw`, an error count, an
 expiry (~90 days) and a delete `token`; `GET /1/log/<id>?insights` returns

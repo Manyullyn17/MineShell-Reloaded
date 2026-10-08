@@ -1,11 +1,24 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
+	import Flash from '#lib/components/Flash.svelte';
+	import { enhance } from '#lib/shared/forms.js';
 	import { segments } from '#lib/shared/highlight.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { formatBytes, formatDateTime, formatRelative, formatSeconds } from '#lib/shared/format.js';
 
-	let { data } = $props();
+	let { data, form } = $props();
+
+	let asking = $state<'analyse' | 'share' | null>(null);
+	/** Shows the button busy while mclo.gs answers. */
+	const busy = (what: 'analyse' | 'share') => () => {
+		asking = what;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			asking = null;
+		};
+	};
+	const analysis = $derived(form && 'mclogs' in form && form.mclogs && form.mclogs.key === data.view?.key ? form.mclogs : null);
 
 	let list = $state<'runs' | 'files'>('runs');
 	// Opening a file from the URL shows the file list.
@@ -166,6 +179,63 @@
 					{/if}
 					<CrashDiagnosis {diagnosis} fixAction={`/instances/${encodeURIComponent(data.instance.id)}?/modFix`} />
 				{/await}
+			{/if}
+			<div class="mclogs small">
+				<form method="POST" action="?/mclogsAnalyse" use:enhance={busy('analyse')}>
+					<input type="hidden" name="kind" value={data.view.kind} />
+					<input type="hidden" name="key" value={data.view.key} />
+					<button class="button-quiet" type="submit" disabled={asking !== null}>
+						{asking === 'analyse' ? 'Asking mclo.gs…' : 'Second opinion from mclo.gs'}
+					</button>
+				</form>
+				{#if data.share}
+					<span>Shared: <a href={data.share.url} target="_blank" rel="noreferrer">{data.share.url}</a></span>
+					<form method="POST" action="?/mclogsUnshare" use:enhance>
+						<input type="hidden" name="kind" value={data.view.kind} />
+						<input type="hidden" name="key" value={data.view.key} />
+						<button class="button-quiet button-danger" type="submit">Delete from mclo.gs</button>
+					</form>
+				{:else}
+					<form
+						method="POST"
+						action="?/mclogsShare"
+						use:enhance={(input) => {
+							if (!confirm('Put this log on mclo.gs at a public link for 90 days? mclo.gs hides IP addresses and home folders; player names stay. You can delete it from here.')) {
+								input.cancel();
+								return;
+							}
+							return busy('share')();
+						}}
+					>
+						<input type="hidden" name="kind" value={data.view.kind} />
+						<input type="hidden" name="key" value={data.view.key} />
+						<button class="button-quiet" type="submit" disabled={asking !== null}>{asking === 'share' ? 'Sharing…' : 'Share on mclo.gs'}</button>
+					</form>
+				{/if}
+				<span class="faint">A second opinion sends the log to mclo.gs to be read, not kept.</span>
+			</div>
+			{#if form && !form.ok && form.message}
+				<Flash {form} />
+			{/if}
+			{#if analysis}
+				<section class="mclogs-result">
+					<h3>mclo.gs{analysis.title ? `: ${analysis.title}` : ''}</h3>
+					{#if analysis.problems.length}
+						<ul>
+							{#each analysis.problems as problem, i (i)}
+								<li>
+									<strong>{problem.message}</strong>{#if problem.line}<span class="faint"> · line {problem.line} of what was sent</span>{/if}
+									{#each problem.solutions as solution, j (j)}<div class="solution">→ {solution}</div>{/each}
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="muted small">mclo.gs recognises no problem in this log.</p>
+					{/if}
+					{#if analysis.information.length}
+						<p class="faint small">{analysis.information.map((i) => `${i.label}: ${i.value}`).join(' · ')}</p>
+					{/if}
+				</section>
 			{/if}
 			{#if data.view.truncated}
 				<p class="hint">Long log: only its end is shown{data.view.kind === 'file' ? '; download the whole file from Files' : ''}.</p>
@@ -459,5 +529,44 @@
 		font-size: 0.8rem;
 		line-height: 1.6;
 		margin: 0;
+	}
+	.mclogs {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin-bottom: 0.75rem;
+	}
+
+	.mclogs a {
+		overflow-wrap: anywhere;
+	}
+
+	.mclogs-result {
+		margin-bottom: 0.75rem;
+		padding: 0.6rem 0.8rem;
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--info);
+		border-radius: var(--radius);
+		background: var(--bg-sunken);
+	}
+
+	.mclogs-result h3 {
+		margin: 0 0 0.4rem;
+		font-size: 0.92rem;
+	}
+
+	.mclogs-result ul {
+		margin: 0 0 0.4rem;
+		padding-left: 1.1rem;
+		font-size: 0.88rem;
+	}
+
+	.mclogs-result strong {
+		font-weight: 500;
+	}
+
+	.solution {
+		color: var(--text-muted);
 	}
 </style>

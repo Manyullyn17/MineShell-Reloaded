@@ -160,6 +160,27 @@ export const resourceSamples = sqliteTable(
 	})
 );
 
+/** Logs shared on mclo.gs (mclogs.ts), with the token that deletes them. */
+export const logShares = sqliteTable(
+	'log_shares',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		kind: text('kind', { enum: ['run', 'file'] }).notNull(),
+		logKey: text('log_key').notNull(),
+		pasteId: text('paste_id').notNull(),
+		url: text('url').notNull(),
+		token: text('token').notNull(),
+		createdAt: integer('created_at').notNull(),
+		expiresAt: integer('expires_at')
+	},
+	(t) => ({
+		byLog: uniqueIndex('log_shares_log_idx').on(t.instanceId, t.kind, t.logKey)
+	})
+);
+
 /** Java heap use of running servers, once a minute (heap.ts), for memory advice. */
 export const heapSamples = sqliteTable(
 	'heap_samples',

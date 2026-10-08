@@ -168,6 +168,13 @@ lists its matching lines from all of it (`matchesIn`: one run by invocation, one
 whole), since the viewer shows only a long log's end. `journalctl -o json` gives a MESSAGE
 with control characters (Forge's colour codes) as a byte array; `messageOf` decodes it.
 
+**mclo.gs** (`mclogs.ts`), only when asked from the Logs tab: `POST /1/analyse` returns
+problems with solutions and keeps nothing; `POST /1/log` shares the log publicly for 90 days
+(mclo.gs masks IP addresses, home folders and tokens) and returns a delete token, kept in
+`log_shares` per run or file; Delete calls `DELETE /1/log/<id>` with it. What is sent is the log
+as the page shows it, colours stripped, its end cut to mclo.gs's limits (25,000 lines,
+10 MiB).
+
 ---
 
 ## Data
