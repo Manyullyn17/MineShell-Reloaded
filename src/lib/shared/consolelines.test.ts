@@ -100,6 +100,20 @@ describe('console lines', () => {
 		expect(shown(true)).toBe(4);
 	});
 
+	it('knows NeoForge\'s RCON connection lines, and shows them by their chip alone', () => {
+		const entries = feed([
+			'\x1b[32m[09:14:02] [RCON Listener #1/INFO] [minecraft/GenericThread]: Thread RCON Client /127.0.0.1 started\x1b[0m',
+			'[09:14:02] [RCON Client /127.0.0.1 #2/INFO] [minecraft/RconClient]: Thread RCON Client /127.0.0.1 shutting down',
+			'[09:14:03] [Server thread/INFO] [minecraft/DedicatedServer]: Done (80.1s)!'
+		]);
+		expect(entries.map((e) => e.rconConnection)).toEqual([true, true, false]);
+		const shown = (levels: Level[], rconConnections: boolean) =>
+			entries.filter((e) => matchesFilter(e, { levels: new Set(levels), search: '', playersOnly: false, rconConnections })).length;
+		expect(shown(['info'], false)).toBe(1);
+		expect(shown([], true)).toBe(2);
+		expect(shown(['info'], true)).toBe(3);
+	});
+
 	it('filters by level, players and search; unlevelled lines only answer to the search', () => {
 		const entries = feed([
 			...FORGE_1_12_ERROR,

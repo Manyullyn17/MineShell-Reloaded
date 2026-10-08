@@ -42,9 +42,10 @@
 		{ id: 'debug', label: 'Debug' }
 	];
 	const counts = $derived.by(() => {
-		const n: Record<Level | 'player', number> = { error: 0, warn: 0, info: 0, debug: 0, player: 0 };
+		const n: Record<Level | 'player' | 'rcon', number> = { error: 0, warn: 0, info: 0, debug: 0, player: 0, rcon: 0 };
 		for (const line of lines) {
-			if (line.level) n[line.level]++;
+			if (line.rconConnection) n.rcon++;
+			else if (line.level) n[line.level]++;
 			if (line.player) n.player++;
 		}
 		return n;
@@ -316,7 +317,7 @@
 			title="The server logs every RCON connection; MineShell opens several a minute"
 			onclick={() => (rconConnections = !rconConnections)}
 		>
-			<span class="swatch"></span>RCON connections
+			<span class="swatch"></span>RCON connections<span class="count">{counts.rcon}</span>
 		</button>
 		<span class="spacer"></span>
 		<span class="search">

@@ -88,10 +88,11 @@ function continuesMessage(text: string): boolean {
 /**
  * The server logging each RCON connection open and close: two lines per
  * command, and MineShell sends several a minute (player list, TPS, the
- * scheduler), so they bury everything else.
+ * scheduler), so they bury everything else. Forge and NeoForge add the
+ * logger's name ("[minecraft/RconClient]") before the colon.
  */
 export function isRconConnection(text: string): boolean {
-	return /^\[[^\]]*\] \[RCON (Listener|Client)[^\]]*\]: Thread RCON Client \S+ (started|shutting down)$/.test(text);
+	return /^(?:\[[^\]]*\] )?\[RCON (Listener|Client)[^\]]*\](?: \[[^\]]*\])?: Thread RCON Client \S+ (started|shutting down)$/.test(text.trimEnd());
 }
 
 export type ConsoleTone = 'error' | 'warn' | 'rcon' | 'meta' | 'player' | '';
@@ -111,6 +112,8 @@ export type ConsoleEntry = {
 	level: Level | null;
 	tone: ConsoleTone;
 	player: PlayerEvent | null;
+	/** One of the server's lines about an RCON connection opening or closing. */
+	rconConnection: boolean;
 	/** Stack trace lines folded under this one. */
 	trace: string[];
 };
@@ -135,18 +138,24 @@ export function appendLine(entries: ConsoleEntry[], raw: string, id: number): Co
 		levelOf(text) ??
 		(EXCEPTION_LINE.test(text) ? 'error' : previous && continuesMessage(text) ? previous.level : null);
 	const player = playerEventOf(text);
-	const entry: ConsoleEntry = { id, text, level, tone: toneOf(text, level, player), player, trace: [] };
+	const entry: ConsoleEntry = { id, text, level, tone: toneOf(text, level, player), player, rconConnection: isRconConnection(text), trace: [] };
 	entries.push(entry);
 	return entry;
 }
 
 export type ConsoleFilter = { levels: Set<Level>; playersOnly: boolean; search: string; rconConnections: boolean };
 
-/** Lines without a level (RCON answers, MineShell's notes, plain output) only answer to the search. */
+/**
+ * Lines without a level (RCON answers, MineShell's notes, plain output) only
+ * answer to the search. RCON connection lines are a kind of their own, shown
+ * by their chip whatever the level chips say: they are info lines, so with
+ * Info off the chip used to show nothing.
+ */
 export function matchesFilter(entry: ConsoleEntry, filter: ConsoleFilter): boolean {
 	if (filter.playersOnly && !entry.player) return false;
-	if (!filter.rconConnections && isRconConnection(entry.text)) return false;
-	if (entry.level && !filter.levels.has(entry.level)) return false;
+	if (entry.rconConnection) {
+		if (!filter.rconConnections) return false;
+	} else if (entry.level && !filter.levels.has(entry.level)) return false;
 	const query = filter.search.trim().toLowerCase();
 	if (!query) return true;
 	return entry.text.toLowerCase().includes(query) || entry.trace.some((line) => line.toLowerCase().includes(query));
