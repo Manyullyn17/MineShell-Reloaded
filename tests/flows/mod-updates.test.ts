@@ -13,18 +13,37 @@ const { listSnapshots } = await import('#lib/server/snapshots.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { useRecordedHttp } = await import('../helpers/http');
+const { zipBuffer } = await import('../helpers/fs');
 
 const API = 'https://api.modrinth.com/v2';
-const sha512 = (s: string) => crypto.createHash('sha512').update(s).digest('hex');
+const sha512 = (s: string | Buffer) => crypto.createHash('sha512').update(s).digest('hex');
+const fabricJar = (id: string, depends: Record<string, string> = {}) =>
+	zipBuffer({ 'fabric.mod.json': JSON.stringify({ schemaVersion: 1, id, name: id, depends }) });
+// Zoom 1.0 needs Cloth Config; 2.0 no longer does, and declares OptiFabric incompatible.
+const ZOOM_1 = fabricJar('zoom', { 'cloth-config': '*' });
+const ZOOM_2 = fabricJar('zoom');
 
-type V = { id: string; project: string; number: string; type: string; date: string; file: string; content: string; requires?: string[]; changelog?: string };
+type V = {
+	id: string;
+	project: string;
+	number: string;
+	type: string;
+	date: string;
+	file: string;
+	content: string | Buffer;
+	requires?: string[];
+	incompatible?: string[];
+	changelog?: string;
+};
 const versions: V[] = [
 	{ id: 'S1', project: 'sodium', number: '0.5.0', type: 'release', date: '2025-01-01', file: 'sodium-0.5.0.jar', content: 'sodium 0.5.0' },
 	{ id: 'S2', project: 'sodium', number: '0.6.0', type: 'release', date: '2025-06-01', file: 'sodium-0.6.0.jar', content: 'sodium 0.6.0', requires: ['P_FAPI'], changelog: '## Sodium 0.6.0\n\n- Fixes a crash with [trains](https://example.com) crossing chunk borders\n- Faster' },
 	{ id: 'S3', project: 'sodium', number: '0.7.0-beta', type: 'beta', date: '2025-09-01', file: 'sodium-0.7.0-beta.jar', content: 'sodium 0.7.0' },
 	{ id: 'L1', project: 'lithium', number: '1.0', type: 'release', date: '2025-01-01', file: 'lithium-1.0.jar', content: 'lithium 1.0' },
 	{ id: 'L2', project: 'lithium', number: '2.0', type: 'release', date: '2025-08-01', file: 'lithium-2.0.jar', content: 'lithium 2.0', requires: ['P_FAPI'] },
-	{ id: 'F1', project: 'P_FAPI', number: '1.0', type: 'release', date: '2025-05-01', file: 'fabric-api-1.0.jar', content: 'fabric api 1.0' }
+	{ id: 'F1', project: 'P_FAPI', number: '1.0', type: 'release', date: '2025-05-01', file: 'fabric-api-1.0.jar', content: 'fabric api 1.0' },
+	{ id: 'Z1', project: 'zoom', number: '1.0', type: 'release', date: '2025-01-01', file: 'zoom-1.0.jar', content: ZOOM_1, requires: ['P_CLOTH'] },
+	{ id: 'Z2', project: 'zoom', number: '2.0', type: 'release', date: '2025-08-01', file: 'zoom-2.0.jar', content: ZOOM_2, incompatible: ['P_OPTI'] }
 ];
 
 const project = (id: string, slug: string, title: string) => ({
@@ -51,7 +70,10 @@ function mr(v: V) {
 		loaders: ['fabric'],
 		changelog: v.changelog ?? null,
 		files: [{ filename: v.file, url: `https://cdn.example/${v.file}`, primary: true, size: v.content.length, hashes: { sha512: sha512(v.content) } }],
-		dependencies: (v.requires ?? []).map((id) => ({ project_id: id, version_id: null, dependency_type: 'required', file_name: null }))
+		dependencies: [
+			...(v.requires ?? []).map((id) => ({ project_id: id, version_id: null, dependency_type: 'required', file_name: null })),
+			...(v.incompatible ?? []).map((id) => ({ project_id: id, version_id: null, dependency_type: 'incompatible', file_name: null }))
+		]
 	};
 }
 
@@ -62,7 +84,10 @@ let failDownload: string | null = null;
 const extra: Record<string, () => Response> = {
 	// Newest per installed file, as Modrinth answers: sodium's newest is the beta.
 	[`${API}/version_files/update`]: () =>
-		Response.json({ [sha512('sodium 0.5.0')]: mr(versions[2]), [sha512('lithium 1.0')]: mr(versions[4]) }),
+		Response.json({ [sha512('sodium 0.5.0')]: mr(versions[2]), [sha512('lithium 1.0')]: mr(versions[4]), [sha512(ZOOM_1)]: mr(versions[7]) }),
+	[listUrl('zoom')]: () => Response.json(versions.filter((v) => v.project === 'zoom').reverse().map(mr)),
+	[`${API}/project/P_CLOTH`]: () => Response.json(project('P_CLOTH', 'cloth-config', 'Cloth Config')),
+	[`${API}/project/P_OPTI`]: () => Response.json(project('P_OPTI', 'optifabric', 'OptiFabric')),
 	[listUrl('sodium')]: () => Response.json(versions.filter((v) => v.project === 'sodium').reverse().map(mr)),
 	[listUrl('lithium')]: () => Response.json(versions.filter((v) => v.project === 'lithium').reverse().map(mr)),
 	[listUrl('P_FAPI')]: () => Response.json([mr(versions[5])]),
@@ -74,7 +99,7 @@ const extra: Record<string, () => Response> = {
 for (const v of versions) {
 	extra[`${API}/version/${v.id}`] = () => Response.json(mr(v));
 	extra[`https://cdn.example/${v.file}`] = () =>
-		failDownload === v.file ? new Response('gone', { status: 500 }) : new Response(v.content);
+		failDownload === v.file ? new Response('gone', { status: 500 }) : new Response(typeof v.content === 'string' ? v.content : new Uint8Array(v.content));
 }
 useRecordedHttp('mod-updates', { extra });
 
@@ -248,5 +273,75 @@ describe('picking an update', () => {
 		const list = [v('r2', 'release', '2025-06-01')];
 		expect(pickUpdate(list, { versionId: 'gone', version: '1.0' })).toMatchObject({ id: 'r2' });
 		expect(pickUpdate(list, { versionId: null, version: 'r2' })).toBeNull();
+	});
+});
+
+describe('what an update leaves behind or conflicts with', () => {
+	beforeEach(() => {
+		systemdStopped();
+		failDownload = null;
+	});
+
+	/** Zoom 1.0 with Cloth Config (needed only by it) and OptiFabric, plus `extra` jars. */
+	async function zoomServer(extraJars: Record<string, Buffer> = {}) {
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.21.1', modloaderVersion: '0.16.5' },
+			{
+				'mods/zoom-1.0.jar': ZOOM_1,
+				'mods/cloth-config.jar': fabricJar('cloth-config'),
+				'mods/optifabric.jar': fabricJar('optifabric'),
+				...Object.fromEntries(Object.entries(extraJars).map(([f, b]) => [`mods/${f}`, b]))
+			}
+		);
+		const modId = (slug: string, name: string) =>
+			db.insert(mods).values({ source: 'modrinth', slug, name }).onConflictDoNothing().run() &&
+			db.select().from(mods).where(eq(mods.slug, slug)).get()!.id;
+		const row = { instanceId: instance.id, installedAt: 1, hashAlgo: 'sha512', hash: null };
+		db.insert(instanceMods)
+			.values([
+				{ ...row, modId: modId('zoom', 'Zoom'), filePath: 'mods/zoom-1.0.jar', version: '1.0', versionId: 'Z1' },
+				{ ...row, modId: modId('cloth-config', 'Cloth Config'), filePath: 'mods/cloth-config.jar', version: '9', versionId: 'C9' },
+				{ ...row, modId: modId('optifabric', 'OptiFabric'), filePath: 'mods/optifabric.jar', version: '1', versionId: 'O1' },
+				...Object.keys(extraJars).map((f) => ({ ...row, modId: modId(f, f), filePath: `mods/${f}`, version: '1', versionId: `${f}-1` }))
+			])
+			.run();
+		return instance;
+	}
+
+	it('offers to disable a dependency only the old version needed, and warns about declared incompatibilities', async () => {
+		const instance = await zoomServer();
+		const check = await checkModUpdates(instance);
+		expect(check.updates.map((u) => u.name)).toEqual(['Zoom']);
+		expect(check.dependencies.unneeded).toEqual([{ fileName: 'cloth-config.jar', name: 'Cloth Config', neededBy: ['Zoom'] }]);
+		expect(check.dependencies.conflicts).toEqual([{ name: 'OptiFabric', fileName: 'optifabric.jar', declaredBy: ['Zoom'] }]);
+
+		const task = await waitForTask(
+			await changeModVersions(instance, [{ fileName: 'zoom-1.0.jar', versionId: 'Z2' }], { snapshot: false, label: 'Updating', disableUnneeded: ['cloth-config.jar'] })
+		);
+		expect(task.state).toBe('done');
+		expect(Object.keys(await tree(instance.path)).sort()).toEqual(['mods/cloth-config.jar.disabled', 'mods/optifabric.jar', 'mods/zoom-2.0.jar']);
+		expect(reload(instance.id).statusMessage).toMatch(/Zoom declares OptiFabric incompatible/);
+		expect(rowsOf(instance.id).find((r) => r.filePath === 'mods/cloth-config.jar.disabled')).toMatchObject({ enabled: false });
+	});
+
+	it('keeps a dependency another mod still requires, and one left unticked', async () => {
+		const shared = await zoomServer({ 'needs-cloth.jar': fabricJar('needscloth', { 'cloth-config': '*' }) });
+		expect((await checkModUpdates(shared)).dependencies.unneeded).toEqual([]);
+
+		const unticked = await zoomServer();
+		await waitForTask(await changeModVersions(unticked, [{ fileName: 'zoom-1.0.jar', versionId: 'Z2' }], { snapshot: false, label: 'Updating', disableUnneeded: [] }));
+		expect(Object.keys(await tree(unticked.path))).toContain('mods/cloth-config.jar');
+	});
+
+	it('puts the disabled dependency back when the update fails', async () => {
+		const instance = await zoomServer();
+		const before = { files: await tree(instance.path), rows: rowsOf(instance.id) };
+		failDownload = 'zoom-2.0.jar';
+		const task = await waitForTask(
+			await changeModVersions(instance, [{ fileName: 'zoom-1.0.jar', versionId: 'Z2' }], { snapshot: false, label: 'Updating', disableUnneeded: ['cloth-config.jar'] })
+		);
+		expect(task.state).toBe('failed');
+		expect(await tree(instance.path)).toEqual(before.files);
+		expect(rowsOf(instance.id)).toEqual(before.rows);
 	});
 });

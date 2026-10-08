@@ -13,6 +13,7 @@ import {
 } from './instances';
 import {
 	bestVersion,
+	DISABLED_SUFFIX,
 	getModProvider,
 	installModVersion,
 	listInstanceMods,
@@ -31,6 +32,7 @@ import { getLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
+import { indexMods } from './crashdiag';
 
 /**
  * Updating mods outside a pack version change: all of them at once ("Update
@@ -169,8 +171,15 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 	let synced: string | null = null;
 	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) synced = await syncInstanceMods(instance);
 	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing);
-	const result: UpdateCheck = { updates: [], upToDate: 0, skipped: [], dependencies: { install: [], unresolved: [] }, synced: null };
+	const result: UpdateCheck = {
+		updates: [],
+		upToDate: 0,
+		skipped: [],
+		dependencies: { install: [], unresolved: [], conflicts: [], unneeded: [] },
+		synced: null
+	};
 	const targets: Target[] = [];
+	const changes: { row: ModRow; version: ProjectVersion }[] = [];
 	const candidates: ModRow[] = [];
 	for (const row of rows) {
 		if (!trackable(row)) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Not from Modrinth or CurseForge' });
@@ -204,6 +213,8 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 				return;
 			}
 			targets.push({ source: row.source, name: row.name, slug: row.slug!, version: target });
+			// Disabled ones are not updated unless ticked (the review starts them unticked).
+			if (row.enabled) changes.push({ row, version: target });
 			result.updates.push({
 				fileName: row.fileName,
 				name: row.name,
@@ -222,7 +233,11 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 	});
 	result.updates.sort((a, b) => a.name.localeCompare(b.name));
 	result.skipped.sort((a, b) => a.name.localeCompare(b.name));
-	result.dependencies = (await resolveDependencies(instance, targets)).plan;
+	const deps = await resolveDependencies(instance, targets);
+	result.dependencies = {
+		...deps.plan,
+		unneeded: await unneededDependencies(instance, changes, [...changes.map((c) => c.version), ...deps.resolved.map((d) => d.version)])
+	};
 	result.synced = synced;
 	return result;
 }
@@ -269,7 +284,13 @@ export type DependencyPlan = {
 	install: { source: string; projectId: string; name: string; versionId: string; versionNumber: string; neededBy: string[] }[];
 	/** Required dependencies with no version for this server, or that could not be looked up. */
 	unresolved: { name: string; neededBy: string[]; reason: string }[];
+	/** Enabled mods a new version (or a dependency it brings) declares incompatible. Modrinth only: the mirror has no such type. */
+	conflicts: { name: string; fileName: string; declaredBy: string[] }[];
+	/** Installed dependencies only the old versions required: offered to be disabled (unneededDependencies). */
+	unneeded: Unneeded[];
 };
+
+export type Unneeded = { fileName: string; name: string; neededBy: string[] };
 
 export type ResolvedDependency = {
 	source: string;
@@ -296,8 +317,8 @@ export async function resolveDependencies(
 ): Promise<{ plan: DependencyPlan; resolved: ResolvedDependency[] }> {
 	const filter = opts.filter ?? filterFor(instance);
 	const installed = new Set<string>();
-	for (const row of await listInstanceMods(instance)) {
-		if (row.missing || opts.ignore?.has(row.fileName)) continue;
+	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing && !opts.ignore?.has(r.fileName));
+	for (const row of rows) {
 		installed.add(row.name.toLowerCase());
 		if (row.slug) installed.add(`${row.source}:${row.slug.toLowerCase()}`);
 	}
@@ -363,9 +384,12 @@ export async function resolveDependencies(
 	}
 
 	const list = [...resolved.values()];
+	const conflicts = await findConflicts(rows, [...targets, ...list.map((d) => ({ source: d.source, name: d.project.name, version: d.version }))]);
 	return {
 		resolved: list,
 		plan: {
+			conflicts,
+			unneeded: [],
 			install: list
 				.map((d) => ({
 					source: d.source,
@@ -381,12 +405,116 @@ export async function resolveDependencies(
 	};
 }
 
+/**
+ * Enabled mods that an incoming version declares `incompatible` (Modrinth's
+ * dependency type; the mirror only knows required and optional). Matched by
+ * source and slug or id, or by name; a lookup that fails says nothing.
+ */
+async function findConflicts(
+	rows: ModRow[],
+	incoming: { source: string; name: string; version: ProjectVersion }[]
+): Promise<DependencyPlan['conflicts']> {
+	const found = new Map<string, DependencyPlan['conflicts'][number]>();
+	const enabled = rows.filter((r) => r.enabled);
+	for (const item of incoming) {
+		for (const d of item.version.dependencies) {
+			if (d.type !== 'incompatible' || !d.projectId) continue;
+			const hit = await getModProvider(item.source)
+				.getProject(d.projectId)
+				.catch(() => null);
+			const ids = new Set([d.projectId, hit?.id, hit?.slug].filter(Boolean).map((v) => v!.toLowerCase()));
+			const row = enabled.find(
+				(r) =>
+					(r.source === item.source && r.slug && ids.has(r.slug.toLowerCase())) ||
+					(hit && r.name.toLowerCase() === hit.name.toLowerCase())
+			);
+			if (!row) continue;
+			const entry = found.get(row.fileName) ?? { name: row.name, fileName: row.fileName, declaredBy: [] };
+			if (!entry.declaredBy.includes(item.name)) entry.declaredBy.push(item.name);
+			found.set(row.fileName, entry);
+		}
+	}
+	return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Project ids as the platform gives them: Modrinth's are case-sensitive. */
+const requiredIds = (v: ProjectVersion) => v.dependencies.filter((d) => d.type === 'required' && d.projectId).map((d) => d.projectId!);
+
+/**
+ * Installed mods that only the old versions of the mods being changed
+ * required: the old version's required dependencies (platform metadata) that
+ * the new one, and nothing else incoming, still requires - and that no other
+ * enabled jar requires (its own metadata, crashdiag's index). A jar whose ids
+ * cannot be read, a locked one and a pack's own are never offered.
+ */
+export async function unneededDependencies(
+	instance: ServerInstance,
+	changes: { row: ModRow; version: ProjectVersion }[],
+	incoming: ProjectVersion[]
+): Promise<Unneeded[]> {
+	const stillRequired = new Set(incoming.flatMap(requiredIds));
+	const dropped = new Map<string, { source: string; projectId: string; neededBy: string[] }>();
+	await eachLimited(changes, async ({ row, version }) => {
+		if (!row.versionId || row.versionId === version.id) return;
+		const old = await getModProvider(row.source)
+			.getVersion(row.slug!, row.versionId, { minecraftVersion: instance.minecraftVersion })
+			.catch(() => null);
+		const now = new Set(requiredIds(version));
+		for (const id of old ? requiredIds(old) : []) {
+			if (now.has(id) || stillRequired.has(id)) continue;
+			const entry = dropped.get(`${row.source}:${id}`) ?? { source: row.source, projectId: id, neededBy: [] };
+			entry.neededBy.push(row.name);
+			dropped.set(`${row.source}:${id}`, entry);
+		}
+	});
+	if (!dropped.size) return [];
+
+	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing);
+	const changing = new Set(changes.map((c) => c.row.fileName));
+	const jars = await indexMods(modsDir(instance.path));
+	const jarByFile = new Map(jars.map((j) => [j.fileName, j]));
+	const out: Unneeded[] = [];
+	for (const { source, projectId, neededBy } of dropped.values()) {
+		const project = await getModProvider(source)
+			.getProject(projectId)
+			.catch(() => null);
+		const keys = new Set([projectId, project?.id, project?.slug].filter(Boolean).map((v) => v!.toLowerCase()));
+		const row = rows.find((r) => r.source === source && r.slug && keys.has(r.slug.toLowerCase()));
+		if (!row || !row.enabled || row.locked || row.fromPack || changing.has(row.fileName)) continue;
+		const ids = jarByFile.get(row.fileName)?.ids ?? [];
+		if (!ids.length) continue;
+		const users = jars.filter(
+			(j) => j.enabled && j.fileName !== row.fileName && !changing.has(j.fileName) && j.requires.some((id) => ids.includes(id))
+		);
+		if (!users.length) out.push({ fileName: row.fileName, name: row.name, neededBy });
+	}
+	return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Turns a mod off inside a journalled change: the original goes to the
+ * staging folder and a copy comes back as .disabled, because the restore
+ * deletes every mods/ file that was not there before - a plain rename would
+ * lose the jar on rollback.
+ */
+export async function disableStaged(instance: ServerInstance, staging: string, fileName: string): Promise<void> {
+	const mods = modsDir(instance.path);
+	await fs.mkdir(staging, { recursive: true });
+	await fs.rename(path.join(mods, fileName), path.join(staging, fileName));
+	await fs.copyFile(path.join(staging, fileName), path.join(mods, `${fileName}${DISABLED_SUFFIX}`));
+	db.update(instanceMods)
+		.set({ enabled: false, filePath: path.join('mods', `${fileName}${DISABLED_SUFFIX}`) })
+		.where(and(eq(instanceMods.instanceId, instance.id), eq(instanceMods.filePath, path.join('mods', fileName))))
+		.run();
+}
+
 /** What switching one mod to `versionId` would bring in, for the version picker. */
 export async function previewDependencies(instance: ServerInstance, fileName: string, versionId: string): Promise<DependencyPlan> {
 	const row = (await listInstanceMods(instance)).find((r) => r.fileName === fileName);
 	if (!row || !trackable(row)) throw new InstanceError('Only mods from Modrinth or CurseForge can change version here.');
 	const version = await getModProvider(row.source).getVersion(row.slug!, versionId, { minecraftVersion: instance.minecraftVersion });
-	return (await resolveDependencies(instance, [{ source: row.source, name: row.name, slug: row.slug!, version }])).plan;
+	const { plan, resolved } = await resolveDependencies(instance, [{ source: row.source, name: row.name, slug: row.slug!, version }]);
+	return { ...plan, unneeded: await unneededDependencies(instance, [{ row, version }], [version, ...resolved.map((d) => d.version)]) };
 }
 
 // --------------------------------------------------------------- apply ---
@@ -423,7 +551,7 @@ export async function restoreModUpdate(instanceId: string, root: string, journal
 export async function changeModVersions(
 	instance: ServerInstance,
 	changes: VersionChange[],
-	opts: { snapshot: boolean; label: string }
+	opts: { snapshot: boolean; label: string; disableUnneeded?: string[] }
 ): Promise<string> {
 	if (!changes.length) throw new InstanceError('Nothing to update.');
 	await requireStopped(instance);
@@ -457,7 +585,7 @@ async function applyChanges(
 	changes: VersionChange[],
 	rows: Map<string, ModRow>,
 	journal: ModUpdateJournal,
-	opts: { snapshot: boolean; label: string },
+	opts: { snapshot: boolean; label: string; disableUnneeded?: string[] },
 	task: TaskHandle
 ): Promise<void> {
 	const root = instance.path;
@@ -483,6 +611,16 @@ async function applyChanges(
 		for (const u of deps.plan.unresolved) {
 			problems.push(`${u.name} (needed by ${u.neededBy.join(', ')}) could not be installed: ${u.reason}.`);
 		}
+		for (const c of deps.plan.conflicts) {
+			problems.push(`${c.declaredBy.join(', ')} declare${c.declaredBy.length === 1 ? 's' : ''} ${c.name} incompatible.`);
+		}
+		// Worked out again for what is applied: only offered ones the person kept ticked.
+		const chosen = new Set(opts.disableUnneeded ?? []);
+		const unneeded = chosen.size
+			? (await unneededDependencies(instance, resolved, [...resolved.map((r) => r.version), ...deps.resolved.map((d) => d.version)])).filter((u) =>
+					chosen.has(u.fileName)
+				)
+			: [];
 
 		if (opts.snapshot) await snapshotStep(instance, { reason: 'mod-update', label: `Before ${opts.label[0].toLowerCase()}${opts.label.slice(1)}` }, task);
 
@@ -512,6 +650,10 @@ async function applyChanges(
 			task.setProgress(null, `Installing ${dep.project.name}`);
 			await installModVersion(instance, dep.source as 'modrinth' | 'curseforge', dep.project, dep.version);
 			done.push(`Installed ${dep.project.name} ${dep.version.versionNumber}, needed by ${dep.neededBy.join(', ')}`);
+		}
+		for (const u of unneeded) {
+			await disableStaged(instance, staging, u.fileName);
+			done.push(`Disabled ${u.name}: only the old version of ${u.neededBy.join(', ')} needed it`);
 		}
 		commitOperation(instance.id, {});
 	} catch (err) {

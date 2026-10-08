@@ -5,7 +5,6 @@ import { db } from './db';
 import { instanceMods, type ServerInstance } from './db/schema';
 import {
 	bestVersion,
-	DISABLED_SUFFIX,
 	installModVersion,
 	listInstanceMods,
 	modsDir,
@@ -16,6 +15,7 @@ import {
 } from './mods';
 import {
 	compatibleVersions,
+	disableStaged,
 	eachLimited,
 	filterFor,
 	resolveDependencies,
@@ -178,7 +178,7 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 				[...updates.values()].map(({ row, version }) => ({ source: row.source, name: row.name, slug: row.slug!, version })),
 				{ filter, ignore: new Set(disable) }
 			)
-		: { plan: { install: [], unresolved: [] }, resolved: [] };
+		: { plan: { install: [], unresolved: [], conflicts: [], unneeded: [] }, resolved: [] };
 
 	const order = { disable: 0, update: 1, keep: 2 };
 	mods.sort((a, b) => order[a.action] - order[b.action] || a.name.localeCompare(b.name));
@@ -267,12 +267,7 @@ export async function applyMigration(
 			// 1. Mods without a build for the target: off, the original staged so a
 			// rollback can only ever delete the copy.
 			for (const fileName of disable) {
-				await fs.rename(path.join(mods, fileName), path.join(staging, 'mods', fileName));
-				await fs.copyFile(path.join(staging, 'mods', fileName), path.join(mods, `${fileName}${DISABLED_SUFFIX}`));
-				db.update(instanceMods)
-					.set({ enabled: false, filePath: path.join('mods', `${fileName}${DISABLED_SUFFIX}`) })
-					.where(and(eq(instanceMods.instanceId, instance.id), eq(instanceMods.filePath, path.join('mods', fileName))))
-					.run();
+				await disableStaged(instance, path.join(staging, 'mods'), fileName);
 				done.push(`Disabled ${fileName}`);
 			}
 

@@ -77,9 +77,13 @@ one mod to any compatible version, older ones included (world snapshot opt-in), 
 as `mod-update`. On a modpack server both are greyed out until a toggle is turned on.
 Not built from the original design:
 
-- Downgrade/disabled-mod options: disabled mods are updated and stay disabled; nothing asks.
-- Required dependencies are installed, but nothing checks `incompatible` ones or removes a
-  dependency the new version no longer needs.
+- Downgrade/disabled-mod options: built (2026-10-08): disabled mods start unticked in the
+  update review; ticked, they are updated and stay disabled.
+- Built (2026-10-08): a new version's (or a dependency's) `incompatible` declarations are
+  warned about in the review and the task's status (Modrinth only: the mirror's dependency
+  lists have no such type). A dependency only the old version required, which no other
+  enabled jar requires (its own metadata), is offered to be disabled, ticked, in the same
+  journalled change. Pack mods and locked ones are never offered.
 
 ---
 

@@ -65,6 +65,8 @@
 	type DependencyPlan = {
 		install: { projectId: string; name: string; versionNumber: string; neededBy: string[] }[];
 		unresolved: { name: string; neededBy: string[]; reason: string }[];
+		conflicts: { name: string; fileName: string; declaredBy: string[] }[];
+		unneeded: { fileName: string; name: string; neededBy: string[] }[];
 	};
 	let updateCheck = $state<UpdateCheck | null>(null);
 	let checking = $state(false);
@@ -81,7 +83,8 @@
 			const body = await res.json();
 			if (!res.ok) throw new Error(body.message ?? 'Checking for updates failed.');
 			updateCheck = body;
-			chosenUpdates = Object.fromEntries(body.updates.map((u: { fileName: string }) => [u.fileName, true]));
+			// A disabled mod is updated only when ticked: it is off for a reason.
+			chosenUpdates = Object.fromEntries(body.updates.map((u: { fileName: string; enabled: boolean }) => [u.fileName, u.enabled]));
 		} catch (err) {
 			checkError = err instanceof Error ? err.message : 'Checking for updates failed.';
 		} finally {
@@ -446,6 +449,26 @@
 		<ul class="small deps warn-text">
 			{#each plan.unresolved as d (d.name)}
 				<li>{d.name}, needed by {d.neededBy.join(', ')}, cannot be installed: {d.reason}.</li>
+			{/each}
+		</ul>
+	{/if}
+	{#if plan.conflicts.length}
+		<ul class="small deps warn-text">
+			{#each plan.conflicts as c (c.fileName)}
+				<li>{c.declaredBy.join(', ')} declare{c.declaredBy.length === 1 ? 's' : ''} <strong>{c.name}</strong> incompatible; disable one of them if the server fails to start.</li>
+			{/each}
+		</ul>
+	{/if}
+	{#if plan.unneeded.length}
+		<p class="small">No longer needed by anything here once updated (only the old version required them):</p>
+		<ul class="small deps unneeded">
+			{#each plan.unneeded as u (u.fileName)}
+				<li>
+					<label>
+						<input type="checkbox" name="disableUnneeded" value={u.fileName} checked />
+						Disable <strong>{u.name}</strong> <span class="muted">- was needed by {u.neededBy.join(', ')}</span>
+					</label>
+				</li>
 			{/each}
 		</ul>
 	{/if}
@@ -930,7 +953,7 @@
 										{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
 									</span>
 									{#if u.note}<span class="muted small">{u.note}</span>{/if}
-									{#if !u.enabled}<span class="faint small">disabled, stays disabled</span>{/if}
+									{#if !u.enabled}<span class="faint small">disabled: not updated unless ticked, and stays disabled</span>{/if}
 								</span>
 								<span class="mono small versions">
 									{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span>

@@ -142,7 +142,8 @@ export const actions: Actions = {
 		try {
 			await changeModVersions(instance, changes, {
 				snapshot: await decideSnapshot(instance, form.get('snapshot')),
-				label: `Updating ${changes.length} mod${changes.length === 1 ? '' : 's'}`
+				label: `Updating ${changes.length} mod${changes.length === 1 ? '' : 's'}`,
+				disableUnneeded: form.getAll('disableUnneeded').map(String)
 			});
 			return { ok: true, message: 'Updating mods. Follow it in Tasks; the server stays stopped until it finishes.' };
 		} catch (err) {
@@ -165,7 +166,8 @@ export const actions: Actions = {
 		try {
 			await changeModVersions(instance, [{ fileName, versionId }], {
 				snapshot: form.get('snapshot') === 'on',
-				label: `Switching ${label}`
+				label: `Switching ${label}`,
+				disableUnneeded: form.getAll('disableUnneeded').map(String)
 			});
 			return { ok: true, message: `Switching ${label}. Follow it in Tasks.` };
 		} catch (err) {
