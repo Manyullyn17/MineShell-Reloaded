@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listRuns, readLastRun, runFinishedStarting } from './journal';
+import { listRuns, readJournalEvents, readLastRun, runFinishedStarting } from './journal';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const INVOCATION = '05cab01dbf7f460a8c7facc67e5cd7d5';
@@ -92,5 +92,15 @@ describe('listRuns', () => {
 			{ invocation: b, startedAt: 2000, endedAt: 2300, exit: null, failure: null },
 			{ invocation: a, startedAt: 1000, endedAt: 1006, exit: 'code=exited, status=1/FAILURE', failure: 'exit-code' }
 		]);
+	});
+});
+
+describe('journal lines with colour codes', () => {
+	it('reads a message journalctl hands out as bytes', async () => {
+		const coloured = '\x1b[32m[20:01:20] [Server thread/INFO] [minecraft/MinecraftServer]: Steve joined the game\x1b[0m';
+		const entry = { __CURSOR: 'c', __REALTIME_TIMESTAMP: '5000000', _SYSTEMD_INVOCATION_ID: INVOCATION, MESSAGE: [...Buffer.from(coloured)] };
+		fakeProcesses(() => ({ stdout: JSON.stringify(entry) + '\n' }));
+		const { events } = await readJournalEvents('colour-a', 'joined', { afterCursor: null, since: 0 });
+		expect(events.map((e) => e.message)).toEqual([coloured]);
 	});
 });

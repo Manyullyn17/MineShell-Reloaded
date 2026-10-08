@@ -257,7 +257,7 @@ export async function listRuns(id: string, since = 0): Promise<RunSummary[]> {
 		const invocation = [entry.USER_INVOCATION_ID, entry.INVOCATION_ID, entry._SYSTEMD_INVOCATION_ID].find(
 			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
 		);
-		const message = typeof entry.MESSAGE === 'string' ? entry.MESSAGE : '';
+		const message = messageOf(entry.MESSAGE);
 		const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP) / 1000);
 		if (!invocation || !Number.isFinite(at)) continue;
 		let run = runs.get(invocation);
@@ -320,6 +320,21 @@ export async function readJournalEvents(
 		'-g',
 		pattern
 	]);
+	return { events: parseEvents(out, until), cursor };
+}
+
+/**
+ * A MESSAGE field: text, or - for a line with control characters, like the
+ * colour codes modern Forge prints - an array of its bytes.
+ */
+function messageOf(field: unknown): string {
+	if (typeof field === 'string') return field;
+	if (Array.isArray(field) && field.every((b) => typeof b === 'number')) return Buffer.from(field).toString('utf8');
+	return '';
+}
+
+/** `journalctl -o json` output as events, oldest first; none after `until` (µs) if given. */
+function parseEvents(out: string, until = Infinity): JournalEvent[] {
 	const events: JournalEvent[] = [];
 	for (const line of out.split('\n')) {
 		if (!line.trim()) continue;
@@ -331,12 +346,11 @@ export async function readJournalEvents(
 		}
 		const at = Number(entry.__REALTIME_TIMESTAMP);
 		if (!Number.isFinite(at) || at > until) continue;
-		const message = typeof entry.MESSAGE === 'string' ? entry.MESSAGE : '';
+		const message = messageOf(entry.MESSAGE);
 		const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
 			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
 		);
 		events.push({ at: Math.floor(at / 1000), message, invocation: invocation ?? null });
 	}
-	events.sort((a, b) => a.at - b.at);
-	return { events, cursor };
+	return events.sort((a, b) => a.at - b.at);
 }
