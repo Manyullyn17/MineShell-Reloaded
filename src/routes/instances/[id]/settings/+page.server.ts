@@ -26,6 +26,7 @@ import {
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
+import { formInt } from '#lib/server/formvalues.js';
 import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
 import {
 	decideSnapshot,
@@ -238,11 +239,6 @@ function restartSettingsOf(instance: ServerInstance): RestartSettings {
 	};
 }
 
-function int(form: FormData, key: string, fallback: number): number {
-	const value = Number(form.get(key));
-	return Number.isFinite(value) ? Math.round(value) : fallback;
-}
-
 export const actions: Actions = {
 	general: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
@@ -316,8 +312,8 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 
-		const maxMb = int(form, 'memoryMaxMb', instance.memoryMaxMb ?? 4096);
-		const minMb = int(form, 'memoryMinMb', instance.memoryMinMb ?? 1024);
+		const maxMb = formInt(form, 'memoryMaxMb', instance.memoryMaxMb ?? 4096);
+		const minMb = formInt(form, 'memoryMinMb', instance.memoryMinMb ?? 1024);
 		if (minMb > maxMb) {
 			return fail(400, { ok: false, message: 'Starting memory cannot exceed the maximum.' });
 		}
@@ -426,9 +422,12 @@ export const actions: Actions = {
 	network: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const serverPort = int(form, 'serverPort', instance.serverPort);
-		const rconPort = int(form, 'rconPort', instance.rconPort);
+		const serverPort = formInt(form, 'serverPort', instance.serverPort);
+		const rconPort = formInt(form, 'rconPort', instance.rconPort);
 
+		if (![serverPort, rconPort].every((p) => Number.isInteger(p) && p >= 1 && p <= 65535)) {
+			return fail(400, { ok: false, message: 'Ports go from 1 to 65535.' });
+		}
 		if (serverPort === rconPort) {
 			return fail(400, { ok: false, message: 'The game port and RCON port must differ.' });
 		}
