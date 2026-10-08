@@ -416,6 +416,8 @@ pack; the preview could point out non-pack files in those folders.
 
 ### Item icons in the player editor
 
+**Next up** (user's call, 2026-10-08), before GT New Horizons.
+
 Slots show item names, not pictures. Minecraft's textures are Mojang's, so MineShell cannot
 ship them; they can come from the user's own machine instead. Mod jars in `mods/` carry their
 textures (`assets/<mod>/textures/item/...`); vanilla ones are in the *client* jar, which
@@ -425,6 +427,29 @@ id to a picture: flat items are one texture via their item model (`models/item/<
 `items/<id>.json` from 1.21.4), block items are 3D models needing a small isometric render,
 and leather, potions or grass need tinting. Something decent for most items is reachable;
 perfect for every model is not.
+
+### A map of the world
+
+Wanted (2026-10-08): seeing the world from the browser, modded worlds included, preferably
+without adding a mod to each server. Not decided yet; what was looked at:
+
+- **BlueMap as a standalone renderer** (the recommendation). Its CLI jar renders a world from
+  the files alone, no server mod, into a static web map (3D, three.js) that MineShell could
+  serve under the server's pages. It reads mod jars and data packs from the server files for
+  modded blocks' models and textures; blocks it cannot resolve that way may need a config
+  ([Configuring mods](https://bluemap.bluecolored.de/wiki/customization/Mods.html)). Java 21
+  for current releases; an older BlueMap for worlds the current one does not read. Vanilla
+  textures come from the client jar, so it asks for the EULA first, like item icons would.
+  Open questions: the oldest world format it renders (MeatballCraft is 1.12.2 and likely out
+  of reach), render time and disk on a big pack, and rendering while the server runs
+  (region files change under it; a snapshot, or save-off as the world download does).
+- **A map mod on the server** (BlueMap, Dynmap, squaremap as mods): live updates and player
+  markers, but one more mod per server, per loader and version.
+- **MineShell's own top-down renderer**: the region and NBT reading exist already (chunk
+  pruning, the player editor), and colours could come from block textures in the jars.
+  Works for every version including 1.12, flat only, and a lot to build well.
+- Shared with item icons: fetching Minecraft's client jar for the server's version (with the
+  EULA question) and reading textures out of mod jars - worth building once for both.
 
 ### Item and enchantment names in the player editor
 
