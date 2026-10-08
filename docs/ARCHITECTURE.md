@@ -227,6 +227,23 @@ analyzer once (a few per pass) and its verdict kept on the run. From it:
 today's peak and time online (overview), playtime and last seen (Players), start times
 (overview against the median of the five before, and per run in Logs).
 
+**Heap and memory advice.** The cgroup's memory says nothing about the Java heap: the JVM
+keeps heap it took, all of it at start with `-Xms` = `-Xmx`. `heap.ts` asks the JVM itself,
+once a minute, over its attach socket as `jcmd <pid> GC.heap_info` does - without a JDK and
+without flags (the hsperfdata file `jstat` reads is off under Aikar's
+`-XX:+PerfDisableSharedMem`). A `.attach_pid<pid>` file in the server's folder plus SIGQUIT
+makes the JVM open `/tmp/.java_pid<pid>`, read through `/proc/<pid>/root` because of
+`PrivateTmp`; it then answers `VM.flags` (MaxHeapSize, once) and `GC.heap_info` (used, parsed for
+G1, Parallel, Serial, ZGC and Shenandoah; Java 8 to 25). An unhandled SIGQUIT ends a process,
+so it is never sent with `-Xrs`, `-XX:+ReduceSignalUsage` or attach disabled, to a JVM under a
+minute old, or twice to one that did not answer. Samples (`heap_samples`) are kept 3 days.
+`memoryadvice.ts` takes the highest hourly low (close to what survives a collection; G1
+lets the heap fill before collecting, so peaks say little) as what a server needs: more when
+that is over 70% of the heap or the journal has an `OutOfMemoryError` since the memory was last
+changed (`memory.changedAt:<id>` in settings), less when the heap is over five times it
+(suggesting three times, whole GB, at least 2 GB, leaving the machine 2 GB). Advice only: the
+overview links to Settings, where "Use N GB" fills the field.
+
 ---
 
 ## Mods and packs

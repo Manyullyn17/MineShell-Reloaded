@@ -160,6 +160,23 @@ export const resourceSamples = sqliteTable(
 	})
 );
 
+/** Java heap use of running servers, once a minute (heap.ts), for memory advice. */
+export const heapSamples = sqliteTable(
+	'heap_samples',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		timestamp: integer('timestamp').notNull(),
+		usedBytes: integer('used_bytes').notNull(),
+		maxBytes: integer('max_bytes').notNull()
+	},
+	(t) => ({
+		byInstanceTime: index('heap_samples_instance_time_idx').on(t.instanceId, t.timestamp)
+	})
+);
+
 /** Discovered (or manually registered) JDKs. */
 export const javaRuntimes = sqliteTable('java_runtimes', {
 	path: text('path').primaryKey(),

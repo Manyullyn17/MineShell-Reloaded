@@ -25,6 +25,7 @@ import {
 } from '#lib/server/instances.js';
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
+import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
 import {
 	decideSnapshot,
 	getSnapshotPolicy,
@@ -105,6 +106,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		minecraftVersions,
 		loaderVersions,
 		jvmPresets: listPresets(),
+		// Streamed: it may search the journal for an out-of-memory crash.
+		memoryAdvice: memoryAdvice(instance).catch(() => null),
 		settings: {
 			name: instance.name,
 			minecraftVersion: instance.minecraftVersion,
@@ -326,6 +329,7 @@ export const actions: Actions = {
 			: stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
 		const jvmArgs = composeJvmArgs(body, minMb, maxMb);
 
+		if (maxMb !== instance.memoryMaxMb) markMemoryChanged(instance.id);
 		db.update(serverInstances)
 			.set({
 				memoryMaxMb: maxMb,

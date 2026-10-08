@@ -2,6 +2,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
+	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
@@ -214,7 +215,24 @@
 					tone="info"
 					format={(v) => formatBytes(v)}
 				/>
+				{#if data.heap.length > 1 && data.heapMaxBytes}
+					<Sparkline
+						points={data.heap}
+						label="Java heap in use · of {formatBytes(data.heapMaxBytes)}"
+						max={data.heapMaxBytes}
+						windowMs={data.rangeMs}
+						tone="info"
+						format={(v) => formatBytes(v)}
+					/>
+				{/if}
 			</div>
+			{#await data.memoryAdvice then advice}
+				{#if advice}
+					<div class="memory-advice">
+						<MemoryAdvice {advice} settingsHref="/instances/{data.instance.id}/settings?tab=java" />
+					</div>
+				{/if}
+			{/await}
 		</section>
 
 		{#if data.running}
@@ -702,5 +720,8 @@
 
 	.warn-text {
 		color: var(--warning);
+	}
+	.memory-advice {
+		margin-top: var(--space-3);
 	}
 </style>

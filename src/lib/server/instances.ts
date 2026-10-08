@@ -53,6 +53,7 @@ import {
 } from './operations';
 import { canUseCleanroom, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
+import { deleteMemorySettings } from './memoryadvice';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
@@ -1345,6 +1346,7 @@ export async function deleteInstance(
 	deleteMacros(instance.id);
 	deleteChunkySettings(instance.id);
 	deleteServerSnapshotOverrides(instance.id);
+	deleteMemorySettings(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'

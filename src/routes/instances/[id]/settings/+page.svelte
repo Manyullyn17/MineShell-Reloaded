@@ -14,6 +14,7 @@
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
+	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
@@ -880,6 +881,20 @@
 					<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={sv.memoryMinMb} />
 				</div>
 			</div>
+			{#await data.memoryAdvice then advice}
+				{#if advice}
+					<div class="memory-advice">
+						<MemoryAdvice
+							{advice}
+							all
+							onUse={(mb) => {
+								sv.memoryMaxMb = mb;
+								if ((sv.memoryMinMb ?? 0) > mb) sv.memoryMinMb = mb;
+							}}
+						/>
+					</div>
+				{/if}
+			{/await}
 		</SettingsSection>
 
 		<SettingsSection tab="java" title="JVM flags" dirty={dirtyIds.has('runtime')}>
@@ -1583,5 +1598,8 @@
 			grid-row: auto;
 			justify-self: start;
 		}
+	}
+	.memory-advice {
+		margin-top: var(--space-3);
 	}
 </style>

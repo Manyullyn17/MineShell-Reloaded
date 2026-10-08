@@ -15,6 +15,8 @@ import {
 	summarise
 } from '#lib/server/instances.js';
 import { bucketSamples, recentSamples } from '#lib/server/monitor.js';
+import { heapSamplesSince } from '#lib/server/heap.js';
+import { memoryAdvice } from '#lib/server/memoryadvice.js';
 import { resolveJava } from '#lib/server/java.js';
 import { cpus } from 'node:os';
 import { primaryLanAddress } from '#lib/server/network.js';
@@ -68,6 +70,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const requested = url.searchParams.get('range');
 	const range: Range = requested && requested in RANGES ? (requested as Range) : '1h';
 	const samples = bucketSamples(recentSamples(instance.id, RANGES[range]));
+	const heap = heapSamplesSince(instance.id, Date.now() - RANGES[range]);
 	// Shown only when the last run ended badly, so a crash is not silent.
 	const crash = await lastCrash(summary);
 	// Both over RCON; side by side, so a slow answer is waited for once.
@@ -157,6 +160,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		rangeMs: RANGES[range],
 		cpu: samples.map((s) => ({ timestamp: s.timestamp, value: s.cpuPercent })),
 		memory: samples.map((s) => ({ timestamp: s.timestamp, value: s.memoryBytes })),
+		/** Java heap in use, once a minute (heap.ts); empty until the server has run a minute. */
+		heap: heap.map((s) => ({ timestamp: s.timestamp, value: s.usedBytes })),
+		heapMaxBytes: heap.at(-1)?.maxBytes ?? null,
+		// Streamed: it may search the journal for an out-of-memory crash.
+		memoryAdvice: memoryAdvice(instance).catch(() => null),
 		crashTail: crash ? crash.log.split('\n').slice(-40).join('\n') : null,
 		// Streamed: indexing a big pack's mods takes a moment the first time.
 		diagnosis: crash?.diagnosis ?? null

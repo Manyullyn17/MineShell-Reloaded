@@ -211,7 +211,8 @@ Suggested after the client pack export and reboot handling; all wanted.
   crash with its diagnosis (culprit, cause line) and date, and list them, so a pattern
   shows ("every few days, always the same mod"). A small table, filled when the monitor
   sees a crash, rather than re-diagnosing old runs from the journal each time.
-- **Memory advice**: an `OutOfMemoryError` in a run, or memory sitting near the heap limit
+- **Memory advice**: built (2026-10-08, `heap.ts`, `memoryadvice.ts`): the heap read over the
+  JVM's attach socket, since the cgroup's memory cannot tell. An `OutOfMemoryError` in a run, or memory sitting near the heap limit
   (the overview's samples), suggests more heap; a heap never half used suggests less.
   Shown on the overview and next to Java & memory in Settings. Advice only, never changes
   the setting by itself. Related: the RAM guard and the resource cap above.

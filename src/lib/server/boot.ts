@@ -1,5 +1,6 @@
 import { startServersAfterBoot } from './bootstart';
 import { startMonitor } from './monitor';
+import { startHeapSampling } from './heap';
 import { startHistory } from './history';
 import { startScheduler } from './scheduler';
 import { learnJavaRequirement, scanJavaRuntimes } from './java';
@@ -36,6 +37,7 @@ export function boot(): void {
 		.catch((err) => console.warn('[mineshell] refreshing the template unit failed:', err instanceof Error ? err.message : err));
 
 	startMonitor();
+	startHeapSampling();
 	startScheduler();
 	startHistory();
 
