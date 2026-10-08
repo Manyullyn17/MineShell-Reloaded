@@ -4,11 +4,27 @@
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import NbtNode from '#lib/components/NbtNode.svelte';
+	import ItemIcon from '#lib/components/ItemIcon.svelte';
+	import { iconKey, iconLoader } from '#lib/shared/itemicon.svelte.js';
 	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
 	import { toast } from '#lib/shared/toasts.svelte.js';
 
 	let { data } = $props();
+
+	// Item pictures (lib/server/itemicons.ts): drawn once per item, the name kept as text where there is none.
+	// svelte-ignore state_referenced_locally
+	const icons = iconLoader(data.instance.id);
+	let pictured = $state<Record<string, boolean>>({});
+
+	async function acceptIconEula() {
+		const res = await fetch('?/iconEula', { method: 'POST', headers: { 'x-sveltekit-action': 'true' }, body: new FormData() });
+		if (res.ok) {
+			pictured = {};
+			icons.reset();
+			await refreshAll();
+		}
+	}
 
 	type Item = (typeof data.view.items)[number];
 	type Container = Item['containers'][number];
@@ -383,7 +399,8 @@
 		onclick={() => pick(loc, nested)}
 	>
 		{#if item}
-			<span class="item-name">{item.name ?? short(item.id)}</span>
+			<ItemIcon loader={icons} id={item.id} damage={item.damage} size={32} onresult={(shown) => (pictured[iconKey(item.id, item.damage)] = shown)} />
+			{#if !pictured[iconKey(item.id, item.damage)]}<span class="item-name">{item.name ?? short(item.id)}</span>{/if}
 			{#if item.count > 1}<span class="count">{item.count}</span>{/if}
 			{#if item.containers.length}<span class="holds" aria-label="holds items">▣</span>
 			{:else if item.hasData}<span class="data-dot" aria-label="has extra data"></span>{/if}
@@ -626,6 +643,13 @@
 <section class="panel">
 	<div class="inv-head">
 		<p class="small faint">▣ marks an item that holds items; pick it to open what is inside.</p>
+		{#if !data.iconsEula}
+			<p class="small muted icon-eula">
+				Pictures of Minecraft's own items come from its client, which means accepting the
+				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab).
+				<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and show them</button>
+			</p>
+		{/if}
 	</div>
 
 	<div class="inv-layout">
@@ -662,7 +686,10 @@
 				<div class="item-main">
 				<div class="field">
 					<label for="item-id">Item id</label>
-					<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+					<div class="id-row">
+						{#if itemId}<ItemIcon loader={icons} id={itemId} damage={itemDamage === '' || itemDamage === null ? null : Number(itemDamage)} size={40} />{/if}
+						<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+					</div>
 				</div>
 				<div class="item-row">
 					<div class="field narrow">
@@ -1171,6 +1198,21 @@
 		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	.id-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.id-row input {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.icon-eula {
+		margin: var(--space-1) 0 0;
 	}
 
 	.slot-label {

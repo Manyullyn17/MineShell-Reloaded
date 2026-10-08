@@ -418,17 +418,18 @@ pack; the preview could point out non-pack files in those folders.
 
 ### Item icons in the player editor
 
-**Next up** (user's call, 2026-10-08), before GT New Horizons.
-
-Slots show item names, not pictures. Minecraft's textures are Mojang's, so MineShell cannot
-ship them; they can come from the user's own machine instead. Mod jars in `mods/` carry their
-textures (`assets/<mod>/textures/item/...`); vanilla ones are in the *client* jar, which
-MineShell would download from Mojang for the server's version and keep locally (map renderers
-like BlueMap do the same and ask the user to accept the EULA first). The work is mapping an item
-id to a picture: flat items are one texture via their item model (`models/item/<id>.json`, or
-`items/<id>.json` from 1.21.4), block items are 3D models needing a small isometric render,
-and leather, potions or grass need tinting. Something decent for most items is reachable;
-perfect for every model is not.
+**Built (2026-10-09)** (`itemicons.ts`, `lib/shared/itemicon.svelte.ts`). Textures and
+models are read from the server's mod jars and from the Minecraft client jar (downloaded once
+per version into `$DATA/cache/minecraft-client/`, only after the per-server EULA answer shared
+with the Map tab; mods' own items get pictures without it). Items resolve as the game does:
+1.21.4's `items/` definitions (with tints), else item models up their parent chain; flat
+items as layers, blocks as their boxes, drawn in the browser turned by the model's own GUI
+rotation (blocks 225, stairs 135). What the game draws in code (chests, shulker boxes, heads,
+Tinkers' tools, Chisel's connected textures) keeps its name as text. 1.12 damage variants:
+vanilla from a table; mods by their usual model names and Forge blockstate variants - a
+variant picked for a damage value is flagged as a guess (user's call), a plain item model with
+damage is taken as wear. On a copy of the user's MeatballCraft inventory: 408 of 508 items
+pictured, 84 flagged. Next: the item picker.
 
 ### A map of the world
 

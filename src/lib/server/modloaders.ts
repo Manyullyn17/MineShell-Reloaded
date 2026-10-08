@@ -92,6 +92,15 @@ export async function minecraftJavaMajor(minecraftVersion: string): Promise<numb
 	return detail.javaVersion?.majorVersion ?? null;
 }
 
+/** Where Mojang serves a version's client jar (textures and models, for item icons), or null if unknown. */
+export async function minecraftClientDownload(minecraftVersion: string): Promise<{ url: string; sha1: string } | null> {
+	const manifest = await mojangManifest();
+	const entry = manifest.versions.find((v) => v.id === minecraftVersion);
+	if (!entry) return null;
+	const detail = await fetchJson<{ downloads?: { client?: { url: string; sha1: string } } }>(entry.url);
+	return detail.downloads?.client ?? null;
+}
+
 export async function listReleaseVersions(): Promise<string[]> {
 	const manifest = await mojangManifest();
 	return manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);

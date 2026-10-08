@@ -146,6 +146,10 @@ the mods' own models. Updated when you ask or on a schedule; shown behind MineSh
 Forge 1.12.2 servers get a live map from Dynmap and DynmapBlockScan, installed from the Map
 tab; on 1.13+ the BlueMap mod can be added for a live map with players on it.
 
+**Player editor item pictures.** Inventories show the items' real icons, read from the server's
+mod jars and Minecraft's own client (after the EULA answer shared with the Map tab), 3D for
+blocks; on 1.12 packs a variant MineShell had to guess is marked.
+
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all
 confined to the instance directory. A disk usage page shows where the space goes. Every

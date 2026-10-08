@@ -2,6 +2,7 @@ import path from 'node:path';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
+import { getMapSettings, saveMapSettings } from '#lib/server/worldmap.js';
 import {
 	listBackups,
 	onlinePlayerIds,
@@ -42,6 +43,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		backups: await listBackups(instance, uuid),
 		file: await playerFileInfo(instance, uuid),
 		online: online?.has(uuid) ?? false,
+		/** Mojang's EULA answered yes for this server (shared with the Map tab): vanilla item pictures. */
+		iconsEula: getMapSettings(instance.id).eulaAccepted,
 		// Why it cannot be edited right now, if it cannot.
 		locked:
 			online === null
@@ -66,6 +69,13 @@ function refused(err: unknown) {
 }
 
 export const actions: Actions = {
+	/** Item pictures need Minecraft's client jar: the same per-server EULA answer as the Map tab. */
+	iconEula: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		saveMapSettings(instance.id, { eulaAccepted: true });
+		return { ok: true };
+	},
+
 	edit: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
