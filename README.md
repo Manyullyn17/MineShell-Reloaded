@@ -95,7 +95,8 @@ it, with a one-click disable. With Spark installed, timed profiles uploaded for 
 
 **Console and logs.** Live output streamed from the journal, commands sent over RCON.
 Filter by level, search, stack traces folded under their error, players joining and leaving
-marked, command history and saved commands. The Logs tab has earlier runs and the server's
+marked, command history and saved commands. A chat view shows only what players say (and
+`say` broadcasts), and a chat mode answers them with `say`. The Logs tab has earlier runs and the server's
 own log files and crash reports.
 
 **Settings.** One page per server, in tabs (general, gameplay, players, network,

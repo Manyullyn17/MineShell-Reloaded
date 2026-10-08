@@ -114,6 +114,30 @@ describe('console lines', () => {
 		expect(shown(['info'], true)).toBe(3);
 	});
 
+	it('knows chat lines: players, /me and say, in every loader\'s format', () => {
+		const chat = [
+			'[20:01:22] [Server thread/INFO]: <Steve> hello there',
+			'[20:01:22] [Server thread/INFO]: [Not Secure] <Steve> hi',
+			'\x1b[32m[20:01:22] [Server thread/INFO] [minecraft/MinecraftServer]: <[Admin] Alex> ok\x1b[0m',
+			'[20:01:22] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer]: [Server] restarting soon',
+			'[20:01:22] [Server thread/INFO]: [Rcon] from MineShell',
+			'[20:01:22] [Server thread/INFO]: * Steve waves'
+		];
+		const not = [
+			'[20:29:38] [Server thread/INFO]: [Rcon: Banned Notch: griefing]',
+			'[20:01:22] [Server thread/INFO]: Steve joined the game',
+			'[20:01:22] [Server thread/INFO]: Loading thing ]: [Server] x',
+			'[20:01:22] [Server thread/WARN]: <Steve> moved too quickly'
+		];
+		expect(feed(chat).map((e) => e.chat)).toEqual(chat.map(() => true));
+		expect(feed(not).map((e) => e.chat)).toEqual(not.map(() => false));
+		const entries = feed([...chat.slice(0, 2), not[1]]);
+		const shown = (f: Partial<{ playersOnly: boolean; chatOnly: boolean }>) =>
+			entries.filter((e) => matchesFilter(e, { levels: new Set(), search: '', playersOnly: false, rconConnections: false, ...f })).length;
+		expect(shown({ chatOnly: true })).toBe(2);
+		expect(shown({ chatOnly: true, playersOnly: true })).toBe(3);
+	});
+
 	it('filters by level, players and search; unlevelled lines only answer to the search', () => {
 		const entries = feed([
 			...FORGE_1_12_ERROR,

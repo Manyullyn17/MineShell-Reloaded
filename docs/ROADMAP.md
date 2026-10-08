@@ -231,7 +231,7 @@ Suggested after the client pack export and reboot handling; all wanted.
     gap, which either cuts the copy short or keeps the server down longer than needed.
   A stopped server is snapshotted as it is either way. Shown as a task in the notification
   center; a failed copy still restarts the server (and says the snapshot failed).
-- **Chat in the console**: a filter showing only player chat (`<name> message` lines and
+- **Chat in the console**: built (2026-10-08): a Chat chip and a chat send mode. A filter showing only player chat (`<name> message` lines and
   `[Server]` messages), and sending as the server with `say`. The console already sorts
   lines by kind (`consolelines.ts`), so it is a new kind plus a send mode.
 - **Log search**: the Logs tab (past runs and log files) cannot search; only the live

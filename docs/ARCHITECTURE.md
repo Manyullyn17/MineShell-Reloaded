@@ -154,7 +154,10 @@ never written to the journal, which stays a faithful log of the server.
 The view itself (`lib/shared/consolelines.ts`) sorts lines by level, folds stack traces
 under the error that logged them, strips the ANSI colours modern Forge prints, and hides
 the server's own lines about RCON connections by default — MineShell's polling opens
-several a minute. Saved commands are kept per server in the database (`macros.ts`); command
+several a minute. Chat lines (`<name> text`, `[Not Secure] <name> text`, `* name`,
+`[Server]`/`[Rcon]` from `say`) are recognised only right after the line's
+"[time] [thread/LEVEL]" prefix, so a message cannot fake one; the console's chat mode sends
+with `say`, which players see as `[Rcon]`. Saved commands are kept per server in the database (`macros.ts`); command
 history stays in the browser.
 
 ---

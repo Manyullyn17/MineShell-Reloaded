@@ -46,27 +46,32 @@
 		{ id: 'debug', label: 'Debug' }
 	];
 	const counts = $derived.by(() => {
-		const n: Record<Level | 'player' | 'rcon', number> = { error: 0, warn: 0, info: 0, debug: 0, player: 0, rcon: 0 };
+		const n: Record<Level | 'player' | 'rcon' | 'chat', number> = { error: 0, warn: 0, info: 0, debug: 0, player: 0, rcon: 0, chat: 0 };
 		for (const line of lines) {
 			if (line.rconConnection) n.rcon++;
 			else if (line.level) n[line.level]++;
 			if (line.player) n.player++;
+			if (line.chat) n.chat++;
 		}
 		return n;
 	});
 	let below: HTMLElement | null = $state(null);
 	let shownLevels = $state<Record<Level, boolean>>({ error: true, warn: true, info: true, debug: true });
 	let playersOnly = $state(false);
+	let chatOnly = $state(false);
+	/** Chat mode sends what is typed with `say`, to everyone online. */
+	let chatMode = $state(false);
 	let search = $state('');
 	// Off by default: MineShell's own polling opens an RCON connection several times a minute.
 	let rconConnections = $state(false);
 	const filter = $derived({
 		levels: new Set(LEVELS.filter((l) => shownLevels[l.id]).map((l) => l.id)),
 		playersOnly,
+		chatOnly,
 		search,
 		rconConnections
 	});
-	const filtering = $derived(filter.levels.size < LEVELS.length || playersOnly || search.trim() !== '');
+	const filtering = $derived(filter.levels.size < LEVELS.length || playersOnly || chatOnly || search.trim() !== '');
 	const visible = $derived(lines.filter((entry) => matchesFilter(entry, filter)));
 	/** Entries whose stack trace is unfolded. */
 	let open = $state<Record<number, boolean>>({});
@@ -186,13 +191,14 @@
 		const text = command.trim();
 		if (!text || sending) return;
 		sending = true;
-		remember(text);
+		// History is for commands; a chat line is not worth recalling with ↑.
+		if (!chatMode) remember(text);
 		command = '';
 		try {
 			const res = await fetch(`/api/instances/${instanceId}/command`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ command: text })
+				body: JSON.stringify({ command: chatMode ? `say ${text}` : text })
 			});
 			const data = await res.json();
 			if (!res.ok) {
@@ -213,12 +219,12 @@
 			void send();
 			return;
 		}
-		if (event.key === 'ArrowUp' && history.length) {
+		if (event.key === 'ArrowUp' && history.length && !chatMode) {
 			event.preventDefault();
 			historyIndex = Math.min(historyIndex + 1, history.length - 1);
 			command = history[historyIndex];
 		}
-		if (event.key === 'ArrowDown') {
+		if (event.key === 'ArrowDown' && !chatMode) {
 			event.preventDefault();
 			historyIndex = Math.max(historyIndex - 1, -1);
 			command = historyIndex === -1 ? '' : history[historyIndex];
@@ -257,6 +263,12 @@
 	function splitTime(text: string): { time: string; rest: string } {
 		const m = text.match(/^\[(\d\d:\d\d:\d\d)(?:\.\d+)?\] ?/);
 		return m ? { time: m[1], rest: text.slice(m[0].length) } : { time: '', rest: text };
+	}
+
+	/** "[Server thread/INFO] [logger]: " and the message after it, so chat reads as chat. */
+	function splitPrefix(text: string): { prefix: string; message: string } | null {
+		const m = text.match(/^\[[^\]]*\](?: \[[^\]]*\])?: /);
+		return m ? { prefix: m[0], message: text.slice(m[0].length) } : null;
 	}
 
 	/** Splits text around the search so matches can be marked. */
@@ -338,6 +350,20 @@
 		<button
 			type="button"
 			class="chip"
+			data-level="chat"
+			aria-pressed={chatOnly}
+			title="Show only chat: players talking, /me and say"
+			onclick={() => {
+				chatOnly = !chatOnly;
+				// Reading chat is usually followed by answering it.
+				chatMode = chatOnly;
+			}}
+		>
+			<span class="swatch"></span>Chat<span class="count">{counts.chat}</span>
+		</button>
+		<button
+			type="button"
+			class="chip"
 			data-level="rcon"
 			aria-pressed={rconConnections}
 			title="The server logs every RCON connection; MineShell opens several a minute"
@@ -383,10 +409,11 @@
 		{:else}
 			{#each visible as line (line.id)}
 				{@const split = splitTime(line.text)}
+				{@const said = line.chat ? splitPrefix(split.rest) : null}
 				<div class="entry">
 					<span class="time">{split.time}</span>
 					<div>
-						<div class="line" data-tone={line.tone}>{#each segments(split.rest, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
+						<div class="line" data-tone={line.tone}>{#if said}<span class="said-prefix">{#each segments(said.prefix, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</span>{/if}{#each segments(said ? said.message : split.rest, search) as part, i (i)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</div>
 						{#if line.trace.length}
 							<button type="button" class="trace-toggle" onclick={() => (open[line.id] = !open[line.id])} aria-expanded={!!open[line.id]}>
 								{open[line.id] ? '▾ hide the stack trace' : `▸ ${line.trace.length} more line${line.trace.length === 1 ? '' : 's'}`}
@@ -430,27 +457,43 @@
 				void send();
 			}}
 		>
-			<span class="prompt" aria-hidden="true">&gt;</span>
+			<button
+				type="button"
+				class="mode"
+				class:chat={chatMode}
+				aria-pressed={chatMode}
+				title={chatMode ? 'Sending chat with say. Click to send commands' : 'Sending commands. Click to chat with everyone online'}
+				onclick={() => {
+					chatMode = !chatMode;
+					input?.focus();
+				}}>{chatMode ? 'Chat' : '>'}</button
+			>
 			<input
 				type="text"
 				bind:this={input}
-				placeholder={canSend ? 'Type a server command, e.g. say hello   ·   ↑ for history' : 'Start the server to send commands'}
+				placeholder={!canSend
+					? 'Start the server to send commands'
+					: chatMode
+						? 'Say something to everyone online (shows as [Rcon] in game)'
+						: 'Type a server command, e.g. say hello   ·   ↑ for history'}
 				bind:value={command}
 				onkeydown={onKeydown}
 				disabled={!canSend || sending}
 				autocomplete="off"
 				spellcheck="false"
-				aria-label="Server command"
+				aria-label={chatMode ? 'Chat message' : 'Server command'}
 			/>
-			<button
-				class="button-quiet"
-				type="button"
-				onclick={() => saveMacros([...macroList, command.trim()])}
-				disabled={!command.trim() || macroList.includes(command.trim()) || macroList.length >= 20}
-				title="Keep this command as a button above the command line"
-			>
-				Save
-			</button>
+			{#if !chatMode}
+				<button
+					class="button-quiet"
+					type="button"
+					onclick={() => saveMacros([...macroList, command.trim()])}
+					disabled={!command.trim() || macroList.includes(command.trim()) || macroList.length >= 20}
+					title="Keep this command as a button above the command line"
+				>
+					Save
+				</button>
+			{/if}
 			<button class="button-primary" type="submit" disabled={!canSend || sending || !command.trim()}>
 				Send
 			</button>
@@ -529,6 +572,9 @@
 	}
 	.chip[data-level='rcon'] {
 		--swatch: var(--info);
+	}
+	.chip[data-level='chat'] {
+		--swatch: var(--text);
 	}
 
 	.swatch {
@@ -612,6 +658,14 @@
 	.line[data-tone='player'] {
 		color: var(--accent-hover);
 	}
+	.line[data-tone='chat'] {
+		color: var(--text);
+		font-weight: 500;
+	}
+	.said-prefix {
+		color: var(--text-faint);
+		font-weight: 400;
+	}
 
 	.trace {
 		padding-left: 0.9rem;
@@ -684,12 +738,29 @@
 		background: var(--bg-sunken);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius-lg);
-		padding: 4px 4px 4px 0.75rem;
+		padding: 4px 4px 4px 0.3rem;
 	}
 
-	.prompt {
+	.mode {
+		min-width: 0;
+		padding: 0.15rem 0.45rem;
+		border: 1px solid transparent;
+		background: none;
 		font-family: var(--font-mono);
+		font-weight: 400;
 		color: var(--accent);
+	}
+
+	.mode:hover {
+		border-color: var(--line-strong);
+	}
+
+	.mode.chat {
+		border-color: var(--line-strong);
+		background: var(--panel);
+		color: var(--text);
+		font-family: inherit;
+		font-size: 0.82rem;
 	}
 
 	.input-row input {
