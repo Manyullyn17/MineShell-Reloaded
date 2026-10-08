@@ -94,6 +94,17 @@ export type Journal =
 			loaderBefore: string[] | null;
 			/** The world: its datapacks/ folder and what was in it, and world files the change creates. */
 			world?: { datapacks: string; datapacksBefore: string[]; added: string[] };
+	  }
+	| {
+			/** A move to another Minecraft version and/or loader (migrate.ts). */
+			kind: 'migrate';
+			/** Holds `mods/` (replaced and disabled jars) and `loader/` (the previous install). */
+			staging: string;
+			modsBefore: string[];
+			/** The server's instance_mods rows before, written back on rollback. */
+			rowsBefore: Record<string, unknown>[];
+			/** Set just before the loader step starts; null while it has not. */
+			loaderBefore: string[] | null;
 	  };
 
 /**

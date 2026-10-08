@@ -8,6 +8,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '#lib/components/PackChangePanel.svelte';
+	import MigratePanel from '#lib/components/MigratePanel.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import RestartFields from '#lib/components/RestartFields.svelte';
@@ -207,7 +208,7 @@
 
 	type Section = { id: string; tab: string; label: string; restart: boolean; dirty: () => boolean };
 	const SECTIONS: Section[] = [
-		{ id: 'identity', tab: 'general', label: 'Identity', restart: false, dirty: () => svChanged('name', 'minecraftVersion') },
+		{ id: 'identity', tab: 'general', label: 'Identity', restart: false, dirty: () => svChanged('name') },
 		{ id: 'motd', tab: 'general', label: 'Server description', restart: true, dirty: () => PROPERTY_SECTIONS.motd.some(changedProperty) },
 		{ id: 'rules', tab: 'gameplay', label: 'Rules', restart: true, dirty: () => PROPERTY_SECTIONS.rules.some(changedProperty) },
 		{ id: 'world', tab: 'gameplay', label: 'World', restart: true, dirty: () => PROPERTY_SECTIONS.world.some(changedProperty) },
@@ -483,25 +484,6 @@
 				<label for="name">Display name</label>
 				<input id="name" name="name" bind:value={sv.name} required />
 			</div>
-			<div class="field">
-				<label for="minecraftVersion">Minecraft version</label>
-				{#if !minecraftVersions || minecraftVersions.length}
-					<select id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion} aria-busy={!minecraftVersions}>
-						{#if !minecraftVersions?.includes(sv.minecraftVersion)}
-							<option value={sv.minecraftVersion}>{sv.minecraftVersion} (installed)</option>
-						{/if}
-						{#each minecraftVersions ?? [] as version (version)}
-							<option value={version}>{version}</option>
-						{/each}
-					</select>
-				{:else}
-					<input id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion} />
-				{/if}
-				<p class="hint">
-					Records what is installed, to choose Java and filter mod searches. Changing it does not reinstall anything.
-					{#if minecraftVersions && !minecraftVersions.length}Mojang's version list was unreachable, so this is a plain field.{/if}
-				</p>
-			</div>
 		</form>
 		{@render propertyForm('motd')}
 	</SettingsSection>
@@ -534,6 +516,27 @@
 			<div class="embedded">
 				<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
 			</div>
+		</SettingsSection>
+	{/if}
+
+	<!-- Pack servers move with their pack; Cleanroom has its own section below. -->
+	{#if !data.pack && data.settings.modloader !== 'cleanroom'}
+		<SettingsSection tab="general" title="Minecraft version and loader">
+			{#snippet description()}
+				Runs <strong>{data.instance.modloaderLabel}{data.settings.modloader === 'vanilla' ? '' : ` ${data.settings.modloaderVersion ?? ''}`}</strong> on
+				Minecraft <strong>{data.settings.minecraftVersion}</strong>. Moving to a newer Minecraft or another loader reinstalls the
+				loader and moves every mod MineShell can look up to a build for it; mods without one are disabled. Configs and the world
+				stay.
+			{/snippet}
+			<MigratePanel
+				instanceId={data.instance.id}
+				current={{ minecraft: data.settings.minecraftVersion, loader: data.settings.modloader, loaderVersion: data.settings.modloaderVersion }}
+				{minecraftVersions}
+				loaders={data.loaders}
+				running={data.running}
+				snapshotPrompt={data.snapshotPrompt}
+				{form}
+			/>
 		</SettingsSection>
 	{/if}
 

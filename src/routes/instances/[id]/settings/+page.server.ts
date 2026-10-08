@@ -26,6 +26,7 @@ import {
 } from '#lib/server/instances.js';
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
+import { applyMigration } from '#lib/server/migrate.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
 import { formInt } from '#lib/server/formvalues.js';
 import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
@@ -63,7 +64,7 @@ import {
 } from '#lib/server/properties.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
-import { LOADER_LIST, pickerLoaderVersions, pickerReleaseVersions } from '#lib/server/modloaders.js';
+import { LOADER_LIST, LOADERS, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	composeJvmArgs,
 	deleteCustomPreset,
@@ -246,25 +247,36 @@ export const actions: Actions = {
 		const name = String(form.get('name') ?? '').trim();
 		if (!name) return fail(400, { ok: false, message: 'The server needs a name.' });
 
-		const minecraftVersion = String(
-			form.get('minecraftVersion') ?? instance.minecraftVersion
-		).trim();
-
+		// The Minecraft version is not edited here: it only relabelled the server.
+		// `migrate` moves it for real, a pack server moves with its pack.
 		db.update(serverInstances)
-			.set({ name, minecraftVersion, updatedAt: Date.now() })
+			.set({ name, updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
+		return { ok: true, message: 'Saved.' };
+	},
 
-		// The Minecraft version only relabels the instance - nothing here swaps
-		// the server jar - so say so plainly. The loader version has its own
-		// action below that really reinstalls.
-		return {
-			ok: true,
-			message:
-				minecraftVersion !== instance.minecraftVersion
-					? 'Saved. Note this only updates the recorded Minecraft version - the installed server files are unchanged.'
-					: 'Saved.'
-		};
+	/** To another Minecraft version and/or loader, mods moved along (migrate.ts). */
+	migrate: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const minecraft = String(form.get('minecraft') ?? '').trim();
+		const loader = String(form.get('loader') ?? '');
+		if (!minecraft || !(loader in LOADERS)) return fail(400, { ok: false, message: 'Pick a Minecraft version and a loader.' });
+		try {
+			await applyMigration(
+				instance,
+				{ minecraft, loader: loader as ModloaderId, loaderVersion: String(form.get('loaderVersion') ?? '').trim() || null },
+				{
+					confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
+					snapshot: await decideSnapshot(instance, form.get('snapshot')),
+					downloadJava: downloadJavaFrom(form)
+				}
+			);
+			return { ok: true, message: 'Moving the server. Follow it in Tasks; it stays stopped until it finishes.' };
+		} catch (err) {
+			return refused(err, 'migrate') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not move the server.' });
+		}
 	},
 
 	changePack: async ({ request, params }) => {

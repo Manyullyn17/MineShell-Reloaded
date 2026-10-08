@@ -18,6 +18,7 @@ import { removePartialSnapshots } from './snapshots';
 import { recoverScheduledSnapshot } from './snapshotschedule';
 import { restoreWorldChange } from './world';
 import { restoreModUpdate } from './modupdates';
+import { restoreMigration } from './migrate';
 import { syncMods } from './mods';
 import { endOperation, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
 
@@ -53,6 +54,7 @@ const MESSAGES: Record<Journal['kind'], string> = {
 		'MineShell stopped during a scheduled snapshot; the unfinished snapshot was removed and the server put back as it was (saving on, started again if it was stopped for it).',
 	'world-change': 'MineShell stopped while changing the world; the previous world was put back.',
 	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.',
+	migrate: 'MineShell stopped while moving this server to another Minecraft version; it was put back as it was.',
 	bisect: 'MineShell stopped while searching for the mod behind a crash; the mods, world and configs were put back.'
 };
 
@@ -74,6 +76,9 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			break;
 		case 'mod-update':
 			await restoreModUpdate(instance.id, root, journal);
+			break;
+		case 'migrate':
+			await restoreMigration(instance.id, root, journal);
 			break;
 		case 'bisect':
 			await restoreBisect(instance, journal);
@@ -125,7 +130,7 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	let removed = false;
 	for (const name of await fs.readdir(internal).catch(() => [] as string[])) {
 		if (
-			/^(pack-change|loader-previous|world-previous|world-incoming|mod-update)-\d+$/.test(name) ||
+			/^(pack-change|loader-previous|world-previous|world-incoming|mod-update|migrate)-\d+$/.test(name) ||
 			/installer\.jar(\.log|\.part)?$/.test(name)
 		) {
 			await fs.rm(path.join(internal, name), { recursive: true, force: true });

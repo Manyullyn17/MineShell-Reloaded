@@ -74,6 +74,8 @@ Tests never touch real data; see [tests/README.md](tests/README.md).
 mods and can untick client-only ones. Each instance gets its own directory, port pair (the game
 port can be picked), RCON password and systemd unit. Later you can change the pack version (picked from the
 provider, or by uploading the new version's file - the way to update a pack installed from an upload) or the loader version,
+move a server that is not from a pack to a newer Minecraft or another loader (1.20.1 Forge to 1.21.1 NeoForge: every mod
+MineShell can look up moves to a build for it, the rest are disabled and listed first),
 migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try
 something on the copy first. Those operations are journalled: a crash halfway through is
 rolled back at the next start. A server installed from a pack takes the pack's icon as its

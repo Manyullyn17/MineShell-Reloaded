@@ -70,9 +70,10 @@ export async function syncInstanceMods(instance: ServerInstance): Promise<string
 	return parts.length ? parts.join(', ') : null;
 }
 
-type Filter = { minecraftVersion: string; loaders: string[] };
+export type Filter = { minecraftVersion: string; loaders: string[] };
 
-function filterFor(instance: ServerInstance): Filter {
+/** What a mod build must support to run on `instance` (or on what a migration moves it to). */
+export function filterFor(instance: Pick<ServerInstance, 'modloader' | 'minecraftVersion'>): Filter {
 	const loader = getLoader(instance.modloader);
 	const catalog = loader.catalogLoader ?? loader.id;
 	return {
@@ -145,7 +146,7 @@ export type UpdateCheck = {
 
 const LOOKUP_CONCURRENCY = 6;
 
-async function eachLimited<T>(items: T[], run: (item: T) => Promise<void>): Promise<void> {
+export async function eachLimited<T>(items: T[], run: (item: T) => Promise<void>): Promise<void> {
 	const queue = [...items];
 	await Promise.all(
 		Array.from({ length: Math.min(LOOKUP_CONCURRENCY, queue.length) }, async () => {
@@ -154,7 +155,7 @@ async function eachLimited<T>(items: T[], run: (item: T) => Promise<void>): Prom
 	);
 }
 
-function trackable(row: ModRow): boolean {
+export function trackable(row: ModRow): boolean {
 	return (row.source === 'modrinth' || row.source === 'curseforge') && !!row.slug && !row.missing;
 }
 
@@ -227,7 +228,7 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 }
 
 /** Every version of a project that runs on this server, newest first, across the loaders it accepts. */
-async function compatibleVersions(source: string, projectId: string, filter: Filter): Promise<ProjectVersion[]> {
+export async function compatibleVersions(source: string, projectId: string, filter: Filter): Promise<ProjectVersion[]> {
 	const provider = getModProvider(source);
 	const seen = new Map<string, ProjectVersion>();
 	for (const loader of filter.loaders) {
@@ -261,7 +262,7 @@ export async function listModVersions(instance: ServerInstance, fileName: string
 
 // --------------------------------------------------------- dependencies ---
 
-type Target = { source: string; name: string; slug: string; version: ProjectVersion };
+export type Target = { source: string; name: string; slug: string; version: ProjectVersion };
 
 export type DependencyPlan = {
 	/** Required dependencies that are not installed, and the version that would be. */
@@ -270,7 +271,7 @@ export type DependencyPlan = {
 	unresolved: { name: string; neededBy: string[]; reason: string }[];
 };
 
-type ResolvedDependency = {
+export type ResolvedDependency = {
 	source: string;
 	project: { id: string; slug: string; name: string; projectUrl: string | null; iconUrl: string | null };
 	version: ProjectVersion;
@@ -287,14 +288,16 @@ const DEPENDENCY_DEPTH = 4;
  * id) or has the same name, so one installed from the other platform is not
  * installed twice; mods that are themselves being changed count as present.
  */
-async function resolveDependencies(
+export async function resolveDependencies(
 	instance: ServerInstance,
-	targets: Target[]
+	targets: Target[],
+	/** A migration resolves for its target, and mods it disables do not count as present. */
+	opts: { filter?: Filter; ignore?: Set<string> } = {}
 ): Promise<{ plan: DependencyPlan; resolved: ResolvedDependency[] }> {
-	const filter = filterFor(instance);
+	const filter = opts.filter ?? filterFor(instance);
 	const installed = new Set<string>();
 	for (const row of await listInstanceMods(instance)) {
-		if (row.missing) continue;
+		if (row.missing || opts.ignore?.has(row.fileName)) continue;
 		installed.add(row.name.toLowerCase());
 		if (row.slug) installed.add(`${row.source}:${row.slug.toLowerCase()}`);
 	}

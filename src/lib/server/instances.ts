@@ -349,7 +349,7 @@ export async function obtainJava(plan: JavaPlan, target: JavaTarget, task: TaskH
 	return java.path;
 }
 
-function javaTarget(instance: Pick<ServerInstance, 'minecraftVersion' | 'modloader' | 'modloaderVersion' | 'javaPath'>): JavaTarget {
+export function javaTarget(instance: Pick<ServerInstance, 'minecraftVersion' | 'modloader' | 'modloaderVersion' | 'javaPath'>): JavaTarget {
 	return {
 		minecraftVersion: instance.minecraftVersion,
 		modloader: instance.modloader,

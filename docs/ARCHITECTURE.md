@@ -295,7 +295,8 @@ Details worth keeping:
   whose rows all live in `mods/`.
 
 Operations that rework an instance's files - pack version change, loader version change,
-Cleanroom migration and revert, mod updates, first install, world changes and snapshots -
+moving to another Minecraft version or loader (`migrate.ts`), Cleanroom migration and
+revert, mod updates, first install, world changes and snapshots -
 are journalled in the `operations` table (`operations.ts`). The journal row records what
 was there before; every file move is a rename into the operation's own folder, so what
 already moved is read from disk; and the operation's result is written to
