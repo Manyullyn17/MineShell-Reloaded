@@ -57,11 +57,19 @@ function prepared(img: HTMLImageElement, tint: string | null): HTMLCanvasElement
 type Point = { x: number; y: number; depth: number };
 type View = { yaw: number; pitch: number };
 
-/** A full block fills most of the icon. */
-const SCALE = (SIZE * 0.92) / (16 * Math.SQRT2);
+/**
+ * Room around the picture, as a slot leaves it in the game: a flat item
+ * fills 7/8 of the icon, a full block about 4/5 of its width.
+ */
+const FLAT_INSET = SIZE / 16;
+const SCALE = (SIZE * 0.8) / (16 * Math.SQRT2);
 
-/** The game turns models the other way round from this projection's angles. */
-const viewOf = (rotation: [number, number, number]): View => ({ yaw: (-rotation[1] * Math.PI) / 180, pitch: (rotation[0] * Math.PI) / 180 });
+/**
+ * The game's y rotation is a quarter turn off this projection's: a block's
+ * 225 shows its north face (a furnace's front) on the left, stairs' 135 put
+ * their tall half at the back right - as the inventory does.
+ */
+const viewOf = (rotation: [number, number, number]): View => ({ yaw: ((rotation[1] - 90) * Math.PI) / 180, pitch: (rotation[0] * Math.PI) / 180 });
 
 function turn(view: View, x: number, y: number, z: number): [number, number, number] {
 	const x1 = x * Math.cos(view.yaw) + z * Math.sin(view.yaw);
@@ -71,7 +79,7 @@ function turn(view: View, x: number, y: number, z: number): [number, number, num
 
 function project(view: View, x: number, y: number, z: number): Point {
 	const [x2, y2, z2] = turn(view, x - 8, y - 8, z - 8);
-	return { x: SIZE / 2 + x2 * SCALE, y: SIZE / 2 - y2 * SCALE + SIZE * 0.02, depth: z2 };
+	return { x: SIZE / 2 + x2 * SCALE, y: SIZE / 2 - y2 * SCALE, depth: z2 };
 }
 
 const NORMAL: Record<Side, [number, number, number]> = {
@@ -152,7 +160,7 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 	if (spec.kind === 'flat') {
 		for (const layer of spec.layers) {
 			const img = images.get(layer.texture);
-			if (img) ctx.drawImage(prepared(img, layer.tint), 0, 0, SIZE, SIZE);
+			if (img) ctx.drawImage(prepared(img, layer.tint), FLAT_INSET, FLAT_INSET, SIZE - 2 * FLAT_INSET, SIZE - 2 * FLAT_INSET);
 		}
 	} else {
 		const view = viewOf(spec.rotation);

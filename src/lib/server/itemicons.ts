@@ -7,6 +7,9 @@ import { minecraftClientDownload } from './modloaders';
 import { DISABLED_SUFFIX, modsDir } from './mods';
 import { getMapSettings } from './worldmap';
 import { openZipFile, type ZipEntry, type ZipFile } from './zip';
+import { child, parseNbt, str } from './nbt';
+import { compareVersions } from './java';
+import { serverWorldName } from './packworld';
 
 /**
  * Item icons for the player editor (ROADMAP, "Item icons in the player
@@ -67,9 +70,11 @@ export class Resources {
 			if (!zip) continue;
 			const entries = new Map<string, ZipEntry>();
 			for (const entry of zip.entries) {
-				const m = entry.name.match(/^assets\/([^/]+)\/((?:models|items|textures|blockstates)\/.+\.(?:json|png))$/);
+				const m =
+					entry.name.match(/^assets\/([^/]+)\/((?:models|items|textures|blockstates)\/.+\.(?:json|png))$/) ??
+					entry.name.match(/^assets\/([^/]+)\/(lang\/en_us\.(?:json|lang))$/i);
 				if (!m) continue;
-				const key = `${m[1]}/${m[2]}`;
+				const key = `${m[1]}/${m[2].toLowerCase().startsWith('lang/') ? m[2].toLowerCase() : m[2]}`;
 				entries.set(key, entry);
 			}
 			const source = { jar, zip, entries };
@@ -98,14 +103,44 @@ export class Resources {
 		}
 	}
 
-	/** Item ids that have an item model or definition, for the picker: `ns:path`. */
+	/**
+	 * Item ids for the picker, `ns:path`: a namespace's 1.21.4+ item
+	 * definitions where it has them (exactly the items), else its item models
+	 * minus the shared bases models are built on.
+	 */
 	itemNames(): string[] {
-		const out = new Set<string>();
+		const defined = new Set<string>();
+		const modelled = new Set<string>();
 		for (const key of this.files.keys()) {
-			const m = key.match(/^([^/]+)\/(?:models\/item|items)\/([^.]+)\.json$/);
-			if (m && !m[2].includes('/')) out.add(`${m[1]}:${m[2]}`);
+			const def = key.match(/^([^/]+)\/items\/([^/.]+)\.json$/);
+			if (def) defined.add(`${def[1]}:${def[2]}`);
+			const model = key.match(/^([^/]+)\/models\/item\/([^/.]+)\.json$/);
+			if (model && !/^(generated|handheld|handheld_rod|template_.*|.*_template)$/.test(model[2])) modelled.add(`${model[1]}:${model[2]}`);
 		}
-		return [...out].sort();
+		const withDefinitions = new Set([...defined].map((id) => id.split(':')[0]));
+		return [...defined, ...[...modelled].filter((id) => !withDefinitions.has(id.split(':')[0]))].sort();
+	}
+
+	/** Every en_us line of every jar: 1.13+'s JSON and 1.12's .lang. The first jar to set a key wins. */
+	async lang(): Promise<Map<string, string>> {
+		const out = new Map<string, string>();
+		for (const key of this.files.keys()) {
+			if (!/\/lang\/en_us\.(json|lang)$/.test(key)) continue;
+			const text = (await this.read(key))?.toString('utf8').replace(/^\uFEFF/, '') ?? '';
+			if (key.endsWith('.json')) {
+				try {
+					for (const [k, v] of Object.entries(JSON.parse(text) as Record<string, unknown>)) if (typeof v === 'string' && !out.has(k)) out.set(k, v);
+				} catch {
+					/* not JSON after all */
+				}
+			} else {
+				for (const line of text.split(/\r?\n/)) {
+					const at = line.indexOf('=');
+					if (at > 0 && !line.startsWith('#') && !out.has(line.slice(0, at).trim())) out.set(line.slice(0, at).trim(), line.slice(at + 1).trim());
+				}
+			}
+		}
+		return out;
 	}
 }
 
@@ -499,5 +534,71 @@ export async function iconTexture(instance: ServerInstance, ref: string): Promis
 	if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(ref) || ref.includes('..')) return null;
 	const [ns, p] = split(ref);
 	return (await serverResources(instance)).read(`${ns}/textures/${p}.png`);
+}
+
+// ------------------------------------------------------------ the picker ---
+
+export type ItemChoice = { id: string; name: string };
+
+/**
+ * Forge's registry in level.dat (FML > Registries > minecraft:items > ids):
+ * on 1.12 and older every item id the world knows, the most exact list
+ * there is. Null without it (vanilla, 1.13+).
+ */
+async function registryItems(worldDir: string): Promise<string[] | null> {
+	try {
+		const level = parseNbt(await fs.readFile(path.join(worldDir, 'level.dat')));
+		const ids = child(child(child(child(level.root, 'FML'), 'Registries'), 'minecraft:items'), 'ids');
+		if (ids?.type !== 'list') return null;
+		const out = ids.value.map((e) => str(child(e, 'K'))).filter((k): k is string => !!k);
+		return out.length ? out.sort() : null;
+	} catch {
+		return null;
+	}
+}
+
+const camel = (s: string) => s.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
+
+/** "chest_sack" -> "Chest Sack". */
+const humanize = (p: string) =>
+	p
+		.split('/')
+		.pop()!
+		.split(/[_\s]+/)
+		.filter(Boolean)
+		.map((w) => w[0].toUpperCase() + w.slice(1))
+		.join(' ');
+
+/** An item's English name: the keys the game uses (1.13+), the ones 1.12 mods usually use, else its id tidied up. */
+export function itemName(id: string, lang: Map<string, string>): string {
+	const [ns, p] = split(id);
+	const keys = [
+		`item.${ns}.${p}`,
+		`block.${ns}.${p}`,
+		...[p, camel(p), `${ns}.${p}`, `${ns}:${p}`, `${ns}.${camel(p)}`].flatMap((n) => [`item.${n}.name`, `tile.${n}.name`])
+	];
+	for (const key of keys) {
+		const found = lang.get(key);
+		if (found) return found;
+	}
+	return humanize(p);
+}
+
+const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();
+
+/** Every item the server knows, with its name, for the picker. */
+export async function itemChoices(instance: ServerInstance): Promise<ItemChoice[]> {
+	const res = await serverResources(instance);
+	let hit = choicesCache.get(res);
+	if (!hit) {
+		hit = (async () => {
+			const registry = compareVersions(instance.minecraftVersion, '1.13') < 0 ? await registryItems(path.join(instance.path, await serverWorldName(instance.path))) : null;
+			const ids = registry ?? res.itemNames();
+			const lang = await res.lang();
+			return ids.map((id) => ({ id, name: itemName(id, lang) }));
+		})();
+		choicesCache.set(res, hit);
+	}
+	return hit;
 }
 

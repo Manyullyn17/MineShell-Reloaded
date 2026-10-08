@@ -17,6 +17,23 @@
 	const icons = iconLoader(data.instance.id);
 	let pictured = $state<Record<string, boolean>>({});
 
+	// The item picker: every item the server knows, loaded the first time it is used.
+	let allItems = $state.raw<{ id: string; name: string }[] | null>(null);
+	let findQuery = $state('');
+	async function loadItems() {
+		if (allItems) return;
+		const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/item-icons/items`);
+		allItems = res.ok ? (await res.json()).items : [];
+	}
+	const found = $derived.by(() => {
+		const q = findQuery.trim().toLowerCase();
+		if (q.length < 2 || !allItems) return [];
+		const hits = allItems.filter((i) => i.name.toLowerCase().includes(q) || i.id.includes(q));
+		// Names that start with what was typed first, then the rest, each alphabetical.
+		const starts = (i: { name: string }) => (i.name.toLowerCase().startsWith(q) ? 0 : 1);
+		return hits.sort((a, b) => starts(a) - starts(b) || a.name.localeCompare(b.name)).slice(0, 40);
+	});
+
 	async function acceptIconEula() {
 		const res = await fetch('?/iconEula', { method: 'POST', headers: { 'x-sveltekit-action': 'true' }, body: new FormData() });
 		if (res.ok) {
@@ -690,6 +707,42 @@
 						{#if itemId}<ItemIcon loader={icons} id={itemId} damage={itemDamage === '' || itemDamage === null ? null : Number(itemDamage)} size={40} />{/if}
 						<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
 					</div>
+					{#if !locked}
+						<input
+							type="search"
+							class="find"
+							placeholder="Find an item by name"
+							aria-label="Find an item by name"
+							bind:value={findQuery}
+							onfocus={loadItems}
+						/>
+						{#if findQuery.trim().length >= 2}
+							<ul class="found" role="listbox" aria-label="Items">
+								{#if !allItems}
+									<li class="muted small">Reading the server's items.</li>
+								{:else if !found.length}
+									<li class="muted small">No item matches.</li>
+								{/if}
+								{#each found as choice (choice.id)}
+									<li>
+										<button
+											type="button"
+											role="option"
+											aria-selected={choice.id === itemId}
+											onclick={() => {
+												itemId = choice.id;
+												findQuery = '';
+											}}
+										>
+											<span class="found-icon"><ItemIcon loader={icons} id={choice.id} size={24} /></span>
+											<span class="found-name">{choice.name}</span>
+											<span class="mono faint found-id">{choice.id}</span>
+										</button>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					{/if}
 				</div>
 				<div class="item-row">
 					<div class="field narrow">
@@ -1209,6 +1262,68 @@
 	.id-row input {
 		flex: 1;
 		min-width: 0;
+	}
+
+	.find {
+		margin-top: var(--space-1);
+		width: 100%;
+	}
+
+	.found {
+		list-style: none;
+		margin: var(--space-1) 0 0;
+		padding: 2px;
+		max-height: 18rem;
+		overflow-y: auto;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--bg-sunken);
+	}
+
+	.found li.muted {
+		padding: 0.4rem 0.6rem;
+	}
+
+	.found button {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		padding: 0.25rem 0.5rem;
+		border: 0;
+		border-radius: var(--radius);
+		background: transparent;
+		color: var(--text);
+		font-weight: 400;
+		text-align: left;
+	}
+
+	.found button:hover,
+	.found button[aria-selected='true'] {
+		background: var(--panel);
+	}
+
+	.found-icon {
+		width: 24px;
+		height: 24px;
+		flex: none;
+	}
+
+	.found-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.found-id {
+		font-size: 0.72rem;
+		flex: none;
+		max-width: 45%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.icon-eula {

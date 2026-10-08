@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
  * game reads them. The jars are built here, small; the logic is real.
  */
 
-const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, CLIENT_DIR } = await import('#lib/server/itemicons.js');
+const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, itemChoices, itemName, CLIENT_DIR } = await import('#lib/server/itemicons.js');
+const { writeNbt } = await import('#lib/server/nbt.js');
 const { saveMapSettings } = await import('#lib/server/worldmap.js');
 const { createInstance } = await import('../helpers/instances');
 const { zipBuffer } = await import('../helpers/fs');
@@ -155,4 +156,60 @@ describe('item icons', () => {
 		expect(await iconTexture(instance, 'gems:../../../etc/passwd')).toBeNull();
 		expect(await iconTexture(instance, '/etc/passwd')).toBeNull();
 	});
+
+	it('names items from the language files, by the keys the game and 1.12 mods use', () => {
+		const lang = new Map([
+			['item.minecraft.diamond', 'Diamond'],
+			['block.mymod.marble', 'Marble'],
+			['item.chestSack.name', 'Sack of Holding'],
+			['tile.thermalfoundation.ore.name', 'Ore']
+		]);
+		expect(itemName('minecraft:diamond', lang)).toBe('Diamond');
+		expect(itemName('mymod:marble', lang)).toBe('Marble');
+		expect(itemName('cyclicmagic:chest_sack', lang)).toBe('Sack of Holding');
+		expect(itemName('thermalfoundation:ore', lang)).toBe('Ore');
+		// Nothing found: the id, tidied up.
+		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
+	});
+
+	it('lists every item: 1.12 from the world\'s registry, newer ones from item definitions or models', async () => {
+		const tag = (type: string, value: unknown) => ({ type, value }) as never;
+		const compound = (entries: [string, unknown][]) => tag('compound', entries);
+		const entry = (id: string, n: number) => compound([['K', tag('string', id)], ['V', tag('int', n)]]);
+		const ids = { type: 'list', itemType: 'compound', value: [entry('minecraft:stone', 1), entry('gems:ruby', 4096)] } as never;
+		const items = compound([['ids', ids]]);
+		const registries = compound([['minecraft:items', items]]);
+		const registry = writeNbt({ name: '', gzipped: true, root: compound([['FML', compound([['Registries', registries]])]]) });
+		const old = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.12.2' },
+			{
+				'server.properties': 'level-name=world\n',
+				'world/level.dat': registry,
+				'mods/gems.jar': zipBuffer({ 'assets/gems/lang/en_US.lang': 'item.ruby.name=Ruby\n', 'assets/gems/models/item/ruby.json': '{}' })
+			}
+		);
+		expect(await itemChoices(old)).toEqual([
+			{ id: 'gems:ruby', name: 'Ruby' },
+			{ id: 'minecraft:stone', name: 'Stone' }
+		]);
+
+		const modern = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.21.4' },
+			{
+				'mods/a.jar': zipBuffer({
+					'assets/a/items/wand.json': '{}',
+					'assets/a/models/item/wand.json': '{}',
+					'assets/a/models/item/wand_charged.json': '{}',
+					'assets/a/lang/en_us.json': JSON.stringify({ 'item.a.wand': 'Wand' })
+				}),
+				'mods/b.jar': zipBuffer({ 'assets/b/models/item/gear.json': '{}', 'assets/b/models/item/generated.json': '{}' })
+			}
+		);
+		// a has 1.21.4 definitions: exactly those; b only models, its own base model left out.
+		expect(await itemChoices(modern)).toEqual([
+			{ id: 'a:wand', name: 'Wand' },
+			{ id: 'b:gear', name: 'Gear' }
+		]);
+	});
 });
+

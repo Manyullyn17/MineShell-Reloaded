@@ -429,7 +429,9 @@ Tinkers' tools, Chisel's connected textures) keeps its name as text. 1.12 damage
 vanilla from a table; mods by their usual model names and Forge blockstate variants - a
 variant picked for a damage value is flagged as a guess (user's call), a plain item model with
 damage is taken as wear. On a copy of the user's MeatballCraft inventory: 408 of 508 items
-pictured, 84 flagged. Next: the item picker.
+pictured, 84 flagged. The item picker is built too: every item the server knows (1.12: Forge's
+registry in level.dat; newer: 1.21.4 item definitions, else item models), named from the
+language files, searchable by name or id, with icons.
 
 ### A map of the world
 
