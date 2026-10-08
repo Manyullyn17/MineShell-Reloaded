@@ -175,3 +175,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Mods disabled for Cleanroom showed no reason in the Mods list | `src/lib/server/cleanroom.test.ts` |
 | NeoForge's RCON connection lines slipped past the console filter | `src/lib/shared/consolelines.test.ts` |
 | A form on a page with a query (Files `?path=`) went to the page without it | `src/lib/shared/forms.test.ts` |
+| ATM10's 42 Curios lists showed as identically named open lists | `src/lib/server/playeritems.test.ts` |

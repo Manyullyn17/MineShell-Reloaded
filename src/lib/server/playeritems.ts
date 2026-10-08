@@ -50,6 +50,12 @@ export type ContainerView = {
 	/** The list holding the items. */
 	path: Path;
 	label: string;
+	/**
+	 * Lists inside the entries of one list (Curios: one entry per slot type,
+	 * each with Stacks and Cosmetics) belong together; `label` is then the
+	 * part after the group's.
+	 */
+	group: { id: string; label: string } | null;
 	/** Slots to show; null for a container without slots (a bundle: just a sequence). */
 	size: number | null;
 	items: ItemView[];
@@ -332,31 +338,45 @@ function containerSize(itemId: string, slots: number[], sizeTag: Tag | undefined
  */
 export function findContainers(tag: Compound, at: Path, style: Style, itemId: string, depth: number, skip: Set<string> = new Set()): ContainerView[] {
 	const found: ContainerView[] = [];
-	const walk = (node: Tag, path: Path, level: number) => {
+	/** Where a container is, in words: keys, and list entries by their own name when they have one. */
+	type Place = { names: string[]; group: { id: string; label: string; from: number } | null };
+	const walk = (node: Tag, path: Path, place: Place, level: number) => {
 		if (level > 8) return;
 		if (node.type === 'compound') {
 			for (const [key, value] of node.value) {
 				if (level === 0 && skip.has(key)) continue;
 				const p = [...path, key];
+				const here = { ...place, names: [...place.names, key] };
 				if (value.type === 'list' && isItemList(value, node, key)) {
-					found.push(container(value, node, p, key, level));
+					found.push(container(value, node, p, key, here, level));
 				} else if (keyedItems(value)) {
-					found.push(keyedContainer(value, node, p, key, level));
+					found.push(keyedContainer(value, node, p, key, here, level));
 				} else if (!itemLike(value)) {
 					// An item's own contents belong to that item, shown when it is opened.
-					walk(value, p, level + 1);
+					walk(value, p, here, level + 1);
 				}
 			}
 		} else if (node.type === 'list' && node.itemType === 'compound') {
 			// Lists of compounds that are not item lists can still hold some (a list of pages, each with Items).
-			node.value.forEach((v, i) => !itemLike(v) && walk(v, [...path, i], level + 1));
+			// Named by the list's own key ("Curios"), not the whole way there.
+			const group = place.group ?? { id: JSON.stringify(path), label: labelOf(place.names).split(' › ').pop() || 'Items', from: place.names.length };
+			node.value.forEach((v, i) => {
+				if (itemLike(v)) return;
+				const name = entryName(v);
+				walk(v, [...path, i], { names: name ? [...place.names, name] : place.names, group }, level + 1);
+			});
 		}
+	};
+	const placed = (key: string, place: Place, level: number) => {
+		const { group } = place;
+		if (!group) return { label: containerLabel(key, place.names, level), group: null };
+		return { label: labelOf(place.names.slice(group.from)) || group.label, group: { id: group.id, label: group.label } };
 	};
 	const isItemList = (list: Extract<Tag, { type: 'list' }>, parent: Compound, key: string) =>
 		list.value.length > 0
 			? list.itemType === 'compound' && list.value.every(itemLike)
 			: key === 'minecraft:container' || key === 'minecraft:bundle_contents' || (key === 'Items' && !!child(parent, 'Size'));
-	const container = (list: Extract<Tag, { type: 'list' }>, parent: Compound, path: Path, key: string, level: number): ContainerView => {
+	const container = (list: Extract<Tag, { type: 'list' }>, parent: Compound, path: Path, key: string, place: Place, level: number): ContainerView => {
 		const shape = shapeOf(list, path, style, parent);
 		const items: ItemView[] = [];
 		list.value.forEach((entry, i) => {
@@ -368,33 +388,52 @@ export function findContainers(tag: Compound, at: Path, style: Style, itemId: st
 		});
 		return {
 			path,
-			label: containerLabel(key, path.slice(at.length), level),
+			...placed(key, place, level),
 			size: shape.slotKey ? containerSize(itemId, items.map((i) => i.slot), child(parent, 'Size')) : null,
 			items
 		};
 	};
-	const keyedContainer = (items: Compound, parent: Compound, path: Path, key: string, level: number): ContainerView => {
+	const keyedContainer = (items: Compound, parent: Compound, path: Path, key: string, place: Place, level: number): ContainerView => {
 		const views = items.value
 			.map(([k, v]) => describeItem(v, 'container', Number(k.match(SLOT_KEY)![2]), [...path, k], style, depth + 1))
 			.filter((v): v is ItemView => !!v);
 		return {
 			path,
-			label: containerLabel(key, path.slice(at.length), level),
+			...placed(key, place, level),
 			size: containerSize(itemId, views.map((v) => v.slot), child(parent, 'Size') ?? child(items, 'Size')),
 			items: views
 		};
 	};
-	walk(tag, at, 0);
+	walk(tag, at, { names: [], group: null }, 0);
 	return found;
 }
 
-function containerLabel(key: string, path: Path, level: number): string {
-	if (key === 'minecraft:container' || (key === 'Items' && path.includes('BlockEntityTag'))) return 'Contents';
-	if (key === 'minecraft:bundle_contents' || (key === 'Items' && level === 0)) return 'Contents';
-	const parts = path.filter((p): p is string => typeof p === 'string' && !['tag', 'components'].includes(p));
-	// "... › necklace › Items": the last part says nothing.
-	if (parts.length > 1 && parts.at(-1) === 'Items') parts.pop();
+/** A list entry's own name: Curios' `Identifier: "ring"`, or an id or name. */
+function entryName(entry: Tag): string | null {
+	for (const key of ['Identifier', 'identifier', 'id', 'Id', 'name', 'Name', 'key']) {
+		const tag = child(entry, key);
+		if (tag?.type === 'string' && tag.value) return tag.value;
+	}
+	return null;
+}
+
+/**
+ * Wrappers that say where mods keep data, not what it is: Forge's capabilities,
+ * NeoForge's attachments, an item's tag/components, Curios' handler.
+ */
+const WRAPPERS = new Set(['tag', 'components', 'ForgeCaps', 'neoforge:attachments', 'StacksHandler']);
+
+function labelOf(names: string[]): string {
+	const parts = names.filter((p) => !WRAPPERS.has(p));
+	// "... › necklace › Items" (Curios: "ring › Stacks › Items"): the last parts say nothing.
+	while (parts.length > 1 && (parts.at(-1) === 'Items' || parts.at(-1) === 'Stacks')) parts.pop();
 	return parts.join(' › ');
+}
+
+function containerLabel(key: string, names: string[], level: number): string {
+	if (key === 'minecraft:container' || (key === 'Items' && names.includes('BlockEntityTag'))) return 'Contents';
+	if (key === 'minecraft:bundle_contents' || (key === 'Items' && level === 0)) return 'Contents';
+	return labelOf(names);
 }
 
 export function describeItem(item: Tag, section: Section, slot: number, at: Path, style: Style, depth = 0): ItemView | null {

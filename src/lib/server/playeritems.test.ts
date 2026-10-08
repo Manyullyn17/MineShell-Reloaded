@@ -120,6 +120,20 @@ describe('containers', () => {
 		expect(containers.map((c) => c.label)).toEqual(['cardinal_components › trinkets:trinkets › head › hat']);
 	});
 
+	it("groups Curios' lists and names each by its slot type", () => {
+		const slot = (id: string, items: string) =>
+			`{Identifier:"${id}",StacksHandler:{Stacks:{Size:2,Items:[${items}]},Cosmetics:{Size:2,Items:[]},Renders:{Size:2,Renders:[{Render:1b,Slot:0}]}}}`;
+		const root = snbt(`{"neoforge:attachments":{"curios:inventory":{Curios:[${slot('ring', '{Slot:0,id:"minecraft:gold_ingot",count:1}')},${slot('belt', '')}]}}}`);
+		const containers = findContainers(root, [], COMPONENTS, '', 0);
+		expect(containers.map((c) => [c.group?.label, c.label, c.items.length])).toEqual([
+			['Curios', 'ring', 1],
+			['Curios', 'ring › Cosmetics', 0],
+			['Curios', 'belt', 0],
+			['Curios', 'belt › Cosmetics', 0]
+		]);
+		expect(new Set(containers.map((c) => c.group?.id)).size).toBe(1);
+	});
+
 	it('puts items into each kind of container in its own shape, and takes them out', () => {
 		const put = (text: string, at: string[], slot: number, style = COMPONENTS) => {
 			const parent = snbt(text);

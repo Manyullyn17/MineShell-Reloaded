@@ -247,28 +247,21 @@ Suggested after the client pack export and reboot handling; all wanted.
 
 ---
 
-## Known bugs, not yet looked at
+## Reported bugs, October 2026 (fixed)
 
-Reported 2026-10-07; diagnose and fix when asked.
+Reported 2026-10-07 and 08; all fixed 2026-10-08.
 
-- **Console page froze on a starting ATM10 server**: the whole page stopped responding while
-  watching the console of an All the Mods 10 server that was starting (a big NeoForge pack,
-  so a very fast, long stream of lines).
-- **The "RCON connections" console filter does nothing**: lines like
-  `[RCON Listener #1/INFO] [minecraft/GenericThread]: Thread RCON Client /127.0.0.1 started` and
-  `[RCON Client /127.0.0.1 #2/INFO] [minecraft/RconClient]: Thread RCON Client /127.0.0.1 shutting down`
-  show whatever the filter is set to, and with only that filter on nothing shows. Seen on
-  the same ATM10 server (NeoForge's log format, with a `[minecraft/...]` logger tag).
-- **Uploading in Files jumps back to the server's root folder**: after an upload the file
-  browser shows the top folder instead of the one the file went into. (Reported 2026-10-08.)
-- **Player editor on ATM10: many `neoforge:attachments > curios:inventory > Curios >
-  StackHandler` lists**, each shown as its own open fold-out under the inventory. Curios
-  keeps one item handler per slot type, so a big pack has dozens; they should be grouped
-  (one Curios section), mostly closed, or empty ones hidden. (Reported 2026-10-08.)
-
-Wanted (2026-10-08), with the above:
-- **Drag and drop in Files**: drop files onto the browser window to upload them into the
-  folder being shown.
+- **Built: console page froze on a starting ATM10 server.** Every line re-filtered and
+  re-rendered the whole buffer; lines now go in every 50 ms as one batch.
+- **Built: the "RCON connections" console filter did nothing** on NeoForge, whose lines carry
+  a `[minecraft/GenericThread]` logger tag; the chip now also shows them with the level
+  chips off.
+- **Built: uploading in Files jumped back to the server's root folder.** SvelteKit 3 forms
+  posting `?/x` dropped the page's query; every page now uses `#lib/shared/forms.ts`.
+- **Built: ATM10's Curios lists in the player editor** (one Stacks and one Cosmetics list per
+  slot type, 42 in all, all labelled alike): one closed Curios section, rows named by slot
+  type, empty ones behind a checkbox.
+- **Built: drag and drop in Files**, files and whole folders, into the folder being shown.
 
 ## Later
 

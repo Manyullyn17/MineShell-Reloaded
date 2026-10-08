@@ -344,6 +344,30 @@
 
 	/** A container without slots (a bundle) shows its items plus one empty place to add to. */
 	const containerSlots = (c: Container) => (c.size === null ? range(0, c.items.length) : range(0, c.size - 1));
+
+	type Group = { id: string; label: string; containers: Container[] };
+	/** Containers in file order, those of one group (Curios' slot types) together at the first one's place. */
+	function arrange(containers: Container[]): (Container | Group)[] {
+		const out: (Container | Group)[] = [];
+		const groups = new Map<string, Group>();
+		for (const c of containers) {
+			if (!c.group) {
+				out.push(c);
+				continue;
+			}
+			let g = groups.get(c.group.id);
+			if (!g) {
+				g = { id: c.group.id, label: c.group.label, containers: [] };
+				groups.set(g.id, g);
+				out.push(g);
+			}
+			g.containers.push(c);
+		}
+		return out;
+	}
+	const isGroup = (x: Container | Group): x is Group => 'containers' in x;
+	/** Groups showing their empty lists too (Curios: mostly cosmetic slots nobody uses). */
+	let showEmpty = $state<Record<string, boolean>>({});
 </script>
 
 <svelte:head><title>{data.name ?? data.uuid} - Players - MineShell</title></svelte:head>
@@ -391,6 +415,42 @@
 			{/each}
 		</div>
 	</details>
+{/snippet}
+
+{#snippet containerGroup(g: Group, nested: boolean)}
+	{@const filled = g.containers.filter((c) => c.items.length)}
+	{@const items = filled.reduce((n, c) => n + c.items.length, 0)}
+	{@const empty = g.containers.length - filled.length}
+	{@const shown = showEmpty[g.id] ? g.containers : filled}
+	<details class="container group">
+		<summary class="small">
+			<span class="container-label">{g.label}</span>
+			<span class="faint">· {items} item{items === 1 ? '' : 's'} in {g.containers.length} list{g.containers.length === 1 ? '' : 's'}</span>
+		</summary>
+		{#if empty}
+			<label class="check small faint show-empty">
+				<input type="checkbox" bind:checked={showEmpty[g.id]} /> Show the {empty} empty one{empty === 1 ? '' : 's'}
+			</label>
+		{/if}
+		{#each shown as c (JSON.stringify(c.path))}
+			{#if c.items.length > 54}
+				{@render containerGrid(c, nested)}
+			{:else}
+				<div class="group-row">
+					<span class="small muted group-label" title={c.label}>{c.label.replace(/_/g, ' ')}</span>
+					<div class="grid wide">
+						{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}{/each}
+					</div>
+				</div>
+			{/if}
+		{/each}
+	</details>
+{/snippet}
+
+{#snippet containers(list: Container[], nested: boolean)}
+	{#each arrange(list) as x (isGroup(x) ? x.id : JSON.stringify(x.path))}
+		{#if isGroup(x)}{@render containerGroup(x, nested)}{:else}{@render containerGrid(x, nested)}{/if}
+	{/each}
 {/snippet}
 
 {#snippet input(f: Field)}
@@ -578,9 +638,7 @@
 				</div>
 				<div class="grid">{#each range(9, 35) as slot (slot)}{@render cell({ kind: 'slot', section: 'main', slot })}{/each}</div>
 				<div class="grid hotbar">{#each range(0, 8) as slot (slot)}{@render cell({ kind: 'slot', section: 'main', slot })}{/each}</div>
-				{#each data.view.containers as c (JSON.stringify(c.path))}
-					{@render containerGrid(c, false)}
-				{/each}
+				{@render containers(data.view.containers, false)}
 			{:else}
 				<div class="grid">{#each range(0, 26) as slot (slot)}{@render cell({ kind: 'slot', section: 'ender', slot })}{/each}</div>
 			{/if}
@@ -672,9 +730,7 @@
 
 				{#if selectedItem}
 					<div class="item-side">
-					{#each selectedItem.containers as c (JSON.stringify(c.path))}
-						{@render containerGrid(c, true)}
-					{/each}
+					{@render containers(selectedItem.containers, true)}
 					{#if subtree(selectedItem.path)}
 						{@const tree = subtree(selectedItem.path)!}
 						<details class="item-data" open={selectedItem.containers.length === 0}>
@@ -1031,6 +1087,33 @@
 
 	.container-label {
 		color: var(--text-muted);
+	}
+
+	.show-empty {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin-bottom: var(--space-2);
+	}
+
+	.group-row {
+		display: grid;
+		grid-template-columns: 9rem minmax(0, 1fr);
+		gap: var(--space-2);
+		align-items: center;
+		margin-bottom: 3px;
+	}
+
+	.group-label {
+		overflow-wrap: anywhere;
+	}
+
+	@media (max-width: 60rem) {
+		.group-row {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 2px;
+			margin-bottom: var(--space-2);
+		}
 	}
 
 	.container-filter {
