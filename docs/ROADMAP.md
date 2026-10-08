@@ -463,7 +463,9 @@ offered as an extra where it adds something. Not built; checked 2026-10-08:
 schedule, and the mod maps (Dynmap + DynmapBlockScan on 1.12.2, the BlueMap mod offered on
 1.13+), passed through MineShell (user's calls: behind its login, the EULA asked per server,
 updates by button plus an optional schedule). Not built: GT New Horizons' map (with its install
-option), player markers for the rendered map, a map for other pre-1.13 versions.
+option), a map for other pre-1.13 versions. Rejected (user, 2026-10-09): players on the
+rendered map (MineShell writing BlueMap's `live/players.json` from RCON) - the BlueMap mod
+shows live players already, and installing it is the answer for anyone who wants them.
 
 **Decided (user, 2026-10-08):**
 - 1.13 and newer: BlueMap's CLI is the default (no mod); the Map page offers installing the
