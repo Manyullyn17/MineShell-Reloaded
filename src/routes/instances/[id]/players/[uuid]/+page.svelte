@@ -25,14 +25,67 @@
 		const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/item-icons/items`);
 		allItems = res.ok ? (await res.json()).items : [];
 	}
+	const FOUND_SHOWN = 60;
+	/**
+	 * Every word typed anywhere in the name or id ("copper ingot" finds Ingot
+	 * Copper and thermalfoundation's ingot_copper). Ranked, not cut by rank:
+	 * the name starting with it, a word of it starting with it, then the rest.
+	 */
 	const found = $derived.by(() => {
 		const q = findQuery.trim().toLowerCase();
-		if (q.length < 2 || !allItems) return [];
-		const hits = allItems.filter((i) => i.name.toLowerCase().includes(q) || i.id.includes(q));
-		// Names that start with what was typed first, then the rest, each alphabetical.
-		const starts = (i: { name: string }) => (i.name.toLowerCase().startsWith(q) ? 0 : 1);
-		return hits.sort((a, b) => starts(a) - starts(b) || a.name.localeCompare(b.name)).slice(0, 40);
+		if (q.length < 2 || !allItems) return { items: [], total: 0 };
+		const words = q.split(/\s+/);
+		const hits = allItems.filter((i) => {
+			const text = `${i.name} ${i.id}`.toLowerCase();
+			return words.every((w) => text.includes(w));
+		});
+		const rank = (i: { name: string; id: string }) => {
+			const name = i.name.toLowerCase();
+			if (name.startsWith(q)) return 0;
+			if (words.every((w) => new RegExp(`(^|[\\s:_./-])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(`${name} ${i.id}`))) return 1;
+			return 2;
+		};
+		const sorted = hits.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+		return { items: sorted.slice(0, FOUND_SHOWN), total: sorted.length };
 	});
+
+	// ---- the tooltip, on hover (desktop): as the game shows it, with the id as F3+H does.
+	type Hovered = { item: NonNullable<ReturnType<typeof itemAt>>; x: number; y: number; variant: boolean };
+	// Raw: the item is compared by identity, which a deep proxy would break.
+	let hovered = $state.raw<Hovered | null>(null);
+	const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+	const itemNames = $derived(new Map((allItems ?? []).map((i) => [i.id, i.name])));
+	$effect(() => {
+		// The names the tooltip shows come with the picker's list.
+		if (canHover) void loadItems();
+	});
+	function hover(event: MouseEvent, loc: Loc) {
+		const item = itemAt(loc);
+		if (!canHover || !item) {
+			hovered = null;
+			return;
+		}
+		const at = { x: event.clientX, y: event.clientY };
+		if (hovered?.item === item) {
+			hovered = { ...hovered, ...at };
+			return;
+		}
+		hovered = { item, ...at, variant: false };
+		void icons.icon(item.id, item.damage).then((icon) => {
+			if (hovered?.item === item) hovered = { ...hovered, variant: icon.variant };
+		});
+	}
+	const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+	const enchantLine = (e: { id: string; level: number }) => {
+		const name = legacy ? (LEGACY_NAMES[Number(e.id)]?.name ?? `Enchantment ${e.id}`) : short(e.id).replace(/\b\w/g, (c) => c.toUpperCase());
+		return `${name} ${ROMAN[e.level] ?? e.level}`;
+	};
+	const durabilityLine = (h: Hovered) => {
+		const used = legacy ? h.item.damage : h.item.fields.damage;
+		if (h.item.maxDamage) return `Durability: ${h.item.maxDamage - (used ?? 0)} / ${h.item.maxDamage}`;
+		if (!used) return null;
+		return legacy && h.variant ? `Variant ${used}` : `Damage ${used}`;
+	};
 
 	async function acceptIconEula() {
 		const res = await fetch('?/iconEula', { method: 'POST', headers: { 'x-sveltekit-action': 'true' }, body: new FormData() });
@@ -405,19 +458,40 @@
 
 <svelte:head><title>{data.name ?? data.uuid} - Players - MineShell</title></svelte:head>
 
-{#snippet cell(loc: Loc, label: string | null = null, nested = false)}
+{#if hovered}
+	{@const h = hovered}
+	<div class="tooltip" role="tooltip" style:left="{h.x + 14}px" style:top="{h.y + 14}px">
+		<div class="tip-name" class:custom={!!h.item.name}>{h.item.name ?? itemNames.get(h.item.id) ?? short(h.item.id)}</div>
+		{#each h.item.fields.enchantments as e, i (i)}<div class="tip-enchant">{enchantLine(e)}</div>{/each}
+		{#each h.item.fields.lore as line, i (i)}<div class="tip-lore">{line}</div>{/each}
+		{#if h.item.fields.unbreakable}<div class="tip-blue">Unbreakable</div>{/if}
+		{#if durabilityLine(h)}<div>{durabilityLine(h)}</div>{/if}
+		{#if h.item.energy !== null}<div>Energy: {h.item.energy.toLocaleString()} FE</div>{/if}
+		{#if h.item.count > 1}<div class="tip-dim">Count: {h.item.count}</div>{/if}
+		<div class="tip-id">{h.item.id}{legacy && h.item.damage ? `:${h.item.damage}` : ''}</div>
+	</div>
+{/if}
+
+{#snippet cell(loc: Loc, label: string | null = null, nested = false, wide = false)}
 	{@const item = itemAt(loc)}
 	<button
 		type="button"
 		class="slot"
 		class:filled={!!item}
 		aria-pressed={sameLoc(current, loc)}
-		title={item ? `${item.id}${item.name ? ` "${item.name}"` : ''}${item.count > 1 ? ` x${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
+		title={canHover && item ? undefined : item ? `${item.id}${item.name ? ` "${item.name}"` : ''}${item.count > 1 ? ` x${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
+		aria-label={item ? `${item.name ?? itemNames.get(item.id) ?? short(item.id)}${item.count > 1 ? `, ${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
 		onclick={() => pick(loc, nested)}
+		onmouseenter={(e) => hover(e, loc)}
+		onmousemove={(e) => hover(e, loc)}
+		onmouseleave={() => (hovered = null)}
 	>
 		{#if item}
 			<ItemIcon loader={icons} id={item.id} damage={item.damage} size={32} onresult={(shown) => (pictured[iconKey(item.id, item.damage)] = shown)} />
-			{#if !pictured[iconKey(item.id, item.damage)]}<span class="item-name">{item.name ?? short(item.id)}</span>{/if}
+			<!-- In a list (wide on a phone) the name goes next to the picture; elsewhere only without one. -->
+			{#if wide || !pictured[iconKey(item.id, item.damage)]}
+				<span class="item-name" class:beside={wide && pictured[iconKey(item.id, item.damage)]}>{item.name ?? itemNames.get(item.id) ?? short(item.id)}</span>
+			{/if}
 			{#if item.count > 1}<span class="count">{item.count}</span>{/if}
 			{#if item.containers.length}<span class="holds" aria-label="holds items">▣</span>
 			{:else if item.hasData}<span class="data-dot" aria-label="has extra data"></span>{/if}
@@ -444,7 +518,7 @@
 			{#each containerSlots(c) as slot (slot)}
 				{@const item = itemAt({ kind: 'container', list: c.path, slot })}
 				{#if !filter || (item && `${item.id} ${item.name ?? ''}`.toLowerCase().includes(filter))}
-					{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}
+					{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}
 				{/if}
 			{/each}
 		</div>
@@ -473,7 +547,7 @@
 				<div class="group-row">
 					<span class="small muted group-label" title={c.label}>{c.label.replace(/_/g, ' ')}</span>
 					<div class="grid wide">
-						{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested)}{/each}
+						{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}{/each}
 					</div>
 				</div>
 			{/if}
@@ -720,10 +794,10 @@
 							<ul class="found" role="listbox" aria-label="Items">
 								{#if !allItems}
 									<li class="muted small">Reading the server's items.</li>
-								{:else if !found.length}
+								{:else if !found.total}
 									<li class="muted small">No item matches.</li>
 								{/if}
-								{#each found as choice (choice.id)}
+								{#each found.items as choice (choice.id)}
 									<li>
 										<button
 											type="button"
@@ -740,6 +814,9 @@
 										</button>
 									</li>
 								{/each}
+								{#if found.total > found.items.length}
+									<li class="muted small">{found.total - found.items.length} more; type more to narrow it down.</li>
+								{/if}
 							</ul>
 						{/if}
 					{/if}
@@ -1210,10 +1287,15 @@
 		width: auto;
 		height: 3rem;
 		padding: 2px 6px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 0.4rem;
 	}
 
 	.grid.wide .item-name {
 		font-size: 0.74rem;
+		text-align: left;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
 	}
@@ -1229,6 +1311,84 @@
 		font-weight: normal;
 		white-space: normal;
 		overflow: hidden;
+	}
+
+	/* As the game draws it: dark, a purple edge, the name on top, the id faint at the bottom. */
+	.tooltip {
+		position: fixed;
+		z-index: 60;
+		max-width: 22rem;
+		padding: 0.35rem 0.55rem;
+		background: rgb(16 0 16 / 0.94);
+		border: 2px solid #2d0d63;
+		outline: 1px solid rgb(16 0 16 / 0.94);
+		border-radius: 3px;
+		color: #fff;
+		font-size: 0.82rem;
+		line-height: 1.35;
+		pointer-events: none;
+		overflow-wrap: anywhere;
+	}
+
+	.tip-name {
+		margin-bottom: 0.15rem;
+	}
+
+	.tip-name.custom {
+		font-style: italic;
+		color: #55ffff;
+	}
+
+	.tip-enchant,
+	.tip-dim {
+		color: #aaaaaa;
+	}
+
+	.tip-lore {
+		color: #aa00aa;
+		font-style: italic;
+	}
+
+	.tip-blue {
+		color: #5555ff;
+	}
+
+	.tip-id {
+		margin-top: 0.15rem;
+		color: #555555;
+		font-family: var(--font-mono);
+		font-size: 0.74rem;
+	}
+
+	/*
+	 * Item lists: wide cells with the name next to the picture on a phone; on a
+	 * desktop, inventory-sized slots like the inventory, the name in the tooltip.
+	 */
+	@media (hover: hover) and (pointer: fine) {
+		.grid.wide {
+			grid-template-columns: repeat(auto-fill, 3.75rem);
+		}
+
+		.grid.wide .slot {
+			width: 3.75rem;
+			height: 3.75rem;
+			padding: 2px;
+			display: grid;
+			/* place-content too: the phone layout's flex-start would push the grid's one column to the left. */
+			place-content: center;
+			place-items: center;
+		}
+
+		.grid.wide .item-name {
+			text-align: center;
+			font-size: 0.62rem;
+			-webkit-line-clamp: 3;
+			line-clamp: 3;
+		}
+
+		.grid.wide .item-name.beside {
+			display: none;
+		}
 	}
 
 	.slot.filled {

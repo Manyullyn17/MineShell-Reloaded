@@ -157,3 +157,17 @@ describe('containers', () => {
 		expect(() => put('{Items:[],Size:9}', ['Items'], 9, FLAT)).toThrow(/slots 0 to 8/);
 	});
 });
+
+describe('what the tooltip shows about an item', () => {
+	it('knows vanilla durability, a 1.20.5 max_damage component, and stored energy', () => {
+		const item = (snbt: string, style = LEGACY) => describeItem(parseSnbt(snbt), 'main', 0, [], style)!;
+		expect(item('{id:"minecraft:diamond_pickaxe",Count:1b,Damage:100s}').maxDamage).toBe(1561);
+		expect(item('{id:"minecraft:golden_helmet",Count:1b,Damage:3s}').maxDamage).toBe(77);
+		// A mod's tool: its maximum is in its code.
+		expect(item('{id:"tconstruct:pickaxe",Count:1b,Damage:5s}').maxDamage).toBeNull();
+		expect(item('{id:"mymod:drill",count:1,components:{"minecraft:max_damage":900,"minecraft:damage":20}}', COMPONENTS).maxDamage).toBe(900);
+		expect(item('{id:"thermalexpansion:capacitor",Count:1b,tag:{Energy:80000}}').energy).toBe(80000);
+		expect(item('{id:"mekanism:energy_tablet",Count:1b,tag:{mekData:{energyStored:1200.5d}}}').energy).toBe(1200.5);
+		expect(item('{id:"minecraft:stone",Count:1b}').energy).toBeNull();
+	});
+});

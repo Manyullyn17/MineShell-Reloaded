@@ -149,7 +149,9 @@ tab; on 1.13+ the BlueMap mod can be added for a live map with players on it.
 **Player editor item pictures.** Inventories show the items' real icons, read from the server's
 mod jars and Minecraft's own client (after the EULA answer shared with the Map tab), 3D for
 blocks; on 1.12 packs a variant MineShell had to guess is marked. Items can be picked by name
-from everything the server has (vanilla and every mod) instead of typing their id.
+from everything the server has (vanilla and every mod) instead of typing their id. On a
+desktop, hovering an item shows a tooltip like the game's (name, enchantments, durability,
+energy, id).
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all

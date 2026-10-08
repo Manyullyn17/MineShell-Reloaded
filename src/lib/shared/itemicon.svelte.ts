@@ -17,7 +17,7 @@ export type ElementSpec = {
 export type IconSpec =
 	| { kind: 'flat'; layers: { texture: string; tint: string | null }[] }
 	| { kind: 'block'; elements: ElementSpec[]; rotation: [number, number, number] };
-export type ItemIcon = { spec: IconSpec | null; exact: boolean };
+export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean };
 
 export const iconKey = (id: string, damage: number | null) => (damage ? `${id}@${damage}` : id);
 
@@ -190,7 +190,7 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 export function iconLoader(instanceId: string) {
 	const base = `/api/instances/${encodeURIComponent(instanceId)}/item-icons`;
 	const textureUrl = (ref: string) => `${base}/texture?ref=${encodeURIComponent(ref)}`;
-	const drawn = new Map<string, Promise<{ url: string | null; exact: boolean }>>();
+	const drawn = new Map<string, Promise<{ url: string | null; exact: boolean; variant: boolean }>>();
 	let pending: { id: string; damage: number | null; resolve: (icon: ItemIcon | null) => void }[] = [];
 	let vanilla = $state.raw<boolean | null>(null);
 	let version = $state(0);
@@ -212,7 +212,7 @@ export function iconLoader(instanceId: string) {
 		get vanilla() {
 			return vanilla;
 		},
-		icon(id: string, damage: number | null): Promise<{ url: string | null; exact: boolean }> {
+		icon(id: string, damage: number | null): Promise<{ url: string | null; exact: boolean; variant: boolean }> {
 			const key = iconKey(id, damage);
 			let hit = drawn.get(key);
 			if (!hit) {
@@ -221,7 +221,8 @@ export function iconLoader(instanceId: string) {
 					pending.push({ id, damage, resolve });
 				}).then(async (icon) => ({
 					url: icon?.spec ? await renderIcon(icon.spec, textureUrl).catch(() => null) : null,
-					exact: icon?.exact ?? true
+					exact: icon?.exact ?? true,
+					variant: icon?.variant ?? false
 				}));
 				drawn.set(key, hit);
 			}

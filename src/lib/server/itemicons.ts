@@ -46,7 +46,12 @@ export type IconSpec =
 
 /** Minecraft's block/block.json: how blocks are turned in the inventory, unless a model says otherwise (stairs: 135). */
 const GUI_ROTATION: [number, number, number] = [30, 225, 0];
-export type ItemIcon = { spec: IconSpec | null; exact: boolean };
+/**
+ * `exact`: false when the picture is a guess. `variant`: the 1.12 damage value
+ * picks a variant (vanilla's table, a mod's variant model), rather than being
+ * wear - what the tooltip calls it.
+ */
+export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean };
 
 // ------------------------------------------------------------- resources ---
 
@@ -348,11 +353,12 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		const spec = specOf(loaded, [], legacyTint(itemPath));
 		// Vanilla is known: its table, or damage that is wear (tools, armour). A
 		// mod's damage may be a variant whose model only its code knows: a guess.
-		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1) };
+		const variant = !!damage && (ns === 'minecraft' ? !!VANILLA_112[itemPath] : candidates.length > 1);
+		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant };
 	}
 	if (ns !== 'minecraft') {
 		const fromState = await blockstateIcon(res, ns, itemPath, damage ?? 0, legacyTint(itemPath));
-		if (fromState) return fromState;
+		if (fromState) return { ...fromState, variant: !!damage && !fromState.exact };
 		if (res.has(`${ns}/models/item/${itemPath}.json`)) {
 			// A plain item model and a damage value is nearly always wear (tools,
 			// armour): not flagged, or every worn tool would carry the mark.

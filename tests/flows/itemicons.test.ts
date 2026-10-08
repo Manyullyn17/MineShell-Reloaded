@@ -50,7 +50,7 @@ const vanilla = () =>
 describe('item icons', () => {
 	it('reads 1.12-style models: flat items, blocks with their faces, nothing for what the game draws in code', async () => {
 		const res = await Resources.load([], await vanilla());
-		expect(await resolveIcon(res, 'minecraft:diamond')).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'minecraft:items/diamond', tint: null }] }, exact: true });
+		expect(await resolveIcon(res, 'minecraft:diamond')).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'minecraft:items/diamond', tint: null }] }, exact: true, variant: false });
 		const wool = await resolveIcon(res, 'minecraft:wool', 14);
 		expect(wool).toMatchObject({ exact: true, spec: { kind: 'block' } });
 		const faces = (wool.spec as { elements: { faces: Record<string, { texture: string; uv: number[] }> }[] }).elements[0].faces;
@@ -60,10 +60,10 @@ describe('item icons', () => {
 		// Stairs turn their own way in the inventory (block/stairs.json says 135), inherited by every stair.
 		expect(await resolveIcon(res, 'minecraft:oak_stairs')).toMatchObject({ spec: { kind: 'block', rotation: [30, 135, 0] } });
 		expect(faces.up).toMatchObject({ texture: 'minecraft:blocks/wool_colored_red', uv: [0, 0, 16, 16] });
-		expect(await resolveIcon(res, 'minecraft:dye', 4)).toMatchObject({ spec: { layers: [{ texture: 'minecraft:items/dye_powder_blue' }] }, exact: true });
-		// Damage on a tool is wear.
-		expect(await resolveIcon(res, 'minecraft:diamond_pickaxe', 120)).toMatchObject({ spec: { kind: 'flat' }, exact: true });
-		expect(await resolveIcon(res, 'minecraft:chest')).toEqual({ spec: null, exact: true });
+		// Dye's damage picks a variant (the tooltip says so); a tool's is wear.
+		expect(await resolveIcon(res, 'minecraft:dye', 4)).toMatchObject({ spec: { layers: [{ texture: 'minecraft:items/dye_powder_blue' }] }, exact: true, variant: true });
+		expect(await resolveIcon(res, 'minecraft:diamond_pickaxe', 120)).toMatchObject({ spec: { kind: 'flat' }, exact: true, variant: false });
+		expect(await resolveIcon(res, 'minecraft:chest')).toMatchObject({ spec: null, exact: true });
 		expect(await resolveIcon(res, 'minecraft:nothing')).toEqual({ spec: null, exact: true });
 	});
 
@@ -109,7 +109,8 @@ describe('item icons', () => {
 		);
 		expect(await resolveIcon(res, 'thermalfoundation:material', 1)).toEqual({
 			spec: { kind: 'flat', layers: [{ texture: 'thermalfoundation:items/material/dust_gold', tint: null }] },
-			exact: false
+			exact: false,
+			variant: true
 		});
 		// One variant only: not a guess. Its model "cube_all" is Minecraft's.
 		expect(await resolveIcon(res, 'thermalfoundation:ore', 0)).toMatchObject({ spec: { kind: 'block' }, exact: true });

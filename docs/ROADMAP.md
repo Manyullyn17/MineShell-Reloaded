@@ -431,7 +431,12 @@ variant picked for a damage value is flagged as a guess (user's call), a plain i
 damage is taken as wear. On a copy of the user's MeatballCraft inventory: 408 of 508 items
 pictured, 84 flagged. The item picker is built too: every item the server knows (1.12: Forge's
 registry in level.dat; newer: 1.21.4 item definitions, else item models), named from the
-language files, searchable by name or id, with icons.
+language files, searchable by name or id (every word anywhere, ranked), with icons. Desktop:
+a game-style tooltip on hover (name or custom name, enchantments, lore, unbreakable,
+durability - vanilla's maximum from a table, 1.20.5's max_damage component; 1.12's damage
+called a variant or damage - energy by the usual NBT keys, the id) and item lists (Baubles,
+Curios, backpacks) as inventory-sized slots; phones keep wide cells with icon and name (the
+user's call, 2026-10-09).
 
 ### A map of the world
 

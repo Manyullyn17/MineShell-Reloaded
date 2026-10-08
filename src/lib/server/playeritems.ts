@@ -76,7 +76,45 @@ export type ItemView = {
 	path: Path;
 	fields: ItemFields;
 	containers: ContainerView[];
+	/** Energy it stores (mods' FE/RF), found by the usual key names; null when none. */
+	energy: number | null;
+	/** Durability it can take: vanilla's table, or 1.20.5's max_damage component; null when unknown. */
+	maxDamage: number | null;
 };
+
+/** Vanilla's tools and armour: the durability their code gives them (same ids since 1.13; golden_ was gold_ before). */
+const VANILLA_DURABILITY: Record<string, number> = (() => {
+	const out: Record<string, number> = {
+		bow: 384, crossbow: 465, trident: 250, shield: 336, elytra: 432, fishing_rod: 64, flint_and_steel: 64, shears: 238,
+		carrot_on_a_stick: 25, warped_fungus_on_a_stick: 100, mace: 500, brush: 64, turtle_helmet: 275, wolf_armor: 64
+	};
+	const tiers: Record<string, number> = { wooden: 59, stone: 131, iron: 250, golden: 32, gold: 32, diamond: 1561, netherite: 2031 };
+	for (const [tier, max] of Object.entries(tiers)) for (const tool of ['sword', 'shovel', 'pickaxe', 'axe', 'hoe']) out[`${tier}_${tool}`] = max;
+	const armour: Record<string, number[]> = {
+		leather: [55, 80, 75, 65], chainmail: [165, 240, 225, 195], iron: [165, 240, 225, 195], golden: [77, 112, 105, 91],
+		gold: [77, 112, 105, 91], diamond: [363, 528, 495, 429], netherite: [407, 592, 555, 481]
+	};
+	for (const [tier, [helmet, chestplate, leggings, boots]] of Object.entries(armour)) {
+		Object.assign(out, { [`${tier}_helmet`]: helmet, [`${tier}_chestplate`]: chestplate, [`${tier}_leggings`]: leggings, [`${tier}_boots`]: boots });
+	}
+	return out;
+})();
+
+/** Energy a mod keeps in the item's data: the first number under a usual key, a few levels down. */
+function storedEnergy(tag: Tag | undefined, depth = 0): number | null {
+	if (!tag || tag.type !== 'compound' || depth > 3) return null;
+	for (const [key, value] of tag.value) {
+		if (/^(energy|energystored|storedenergy|currentenergy|stored_energy|energy_stored)$/i.test(key.replace(/^[a-z0-9_]+:/, ''))) {
+			const n = num(value);
+			if (n !== null) return n;
+		}
+	}
+	for (const [, value] of tag.value) {
+		const found = storedEnergy(value, depth + 1);
+		if (found !== null) return found;
+	}
+	return null;
+}
 
 // ------------------------------------------------------------------- text ---
 
@@ -453,7 +491,11 @@ export function describeItem(item: Tag, section: Section, slot: number, at: Path
 		path: at,
 		fields,
 		// Containers in containers in containers: enough is enough.
-		containers: data?.type === 'compound' && depth < 4 ? findContainers(data, [...at, data === child(item, 'tag') ? 'tag' : 'components'], style, id, depth) : []
+		containers: data?.type === 'compound' && depth < 4 ? findContainers(data, [...at, data === child(item, 'tag') ? 'tag' : 'components'], style, id, depth) : [],
+		energy: storedEnergy(data),
+		maxDamage:
+			num(child(child(item, 'components'), 'minecraft:max_damage')) ??
+			(id.startsWith('minecraft:') || !id.includes(':') ? (VANILLA_DURABILITY[id.replace(/^minecraft:/, '')] ?? null) : null)
 	};
 }
 
