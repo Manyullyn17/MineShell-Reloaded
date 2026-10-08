@@ -1389,6 +1389,36 @@
 		.grid.wide .item-name.beside {
 			display: none;
 		}
+
+		.grid.wide .slot {
+			container-type: size;
+		}
+
+		.grid.wide .slot :global(.icon) {
+			width: max(32px, calc(100cqw + 4px)) !important;
+			height: max(32px, calc(100cqw + 4px)) !important;
+		}
+	}
+
+	/*
+	 * Square slots: the picture fills the slot inside its border, as on a phone,
+	 * where the slot is 32px and so is the picture; a desktop's 60px slot gets a
+	 * 58px one. Phone list cells (wide) keep 32px next to the name.
+	 */
+	.grid:not(.wide) .slot,
+	.equip .slot {
+		container-type: size;
+	}
+
+	.grid:not(.wide) .slot :global(.icon),
+	.equip .slot :global(.icon) {
+		width: max(32px, calc(100cqw + 4px)) !important;
+		height: max(32px, calc(100cqw + 4px)) !important;
+	}
+
+	.slot :global(.icon img) {
+		width: 100%;
+		height: 100%;
 	}
 
 	.slot.filled {
