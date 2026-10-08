@@ -108,6 +108,26 @@ describe('crash history', () => {
 		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
 	});
 
+	it('ends runs whose only end line is systemd\'s "Consumed"', async () => {
+		// systemd 255 (Ubuntu 24.04) logs no "Deactivated successfully" for a clean exit.
+		const s = await server();
+		const at = (h: number) => T0 + h * 60 * MIN;
+		applyEvents(s.id, [
+			// 1: stopped over RCON after Done.
+			ev(at(0), 'Started x.service', 1),
+			ev(at(0) + MIN, line('Done (5.0s)!'), 1),
+			ev(at(1), 'x.service: Consumed 12min 5.431s CPU time, 22.8G memory peak.', 1),
+			// 2: a startup crash the loader caught, exit 0.
+			ev(at(2), 'Started x.service', 2),
+			ev(at(2) + MIN, 'x.service: Consumed 1min 2.000s CPU time.', 2)
+		]);
+		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(2)]);
+		const { serverRuns } = await import('#lib/server/db/schema.js');
+		const { eq } = await import('drizzle-orm');
+		const runs = db.select().from(serverRuns).where(eq(serverRuns.instanceId, s.id)).all();
+		expect(runs.every((r) => r.endedAt !== null)).toBe(true);
+	});
+
 	it("leaves the bisect assistant's test runs out of crashes and start times", async () => {
 		const s = await server();
 		db.insert(bisectSessions).values({ instanceId: s.id, startedAt: T0 + 10 * MIN, endedAt: T0 + 60 * MIN }).run();

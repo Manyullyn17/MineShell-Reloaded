@@ -27,10 +27,16 @@ import { playerEventWithName } from '#lib/shared/consolelines.js';
 
 const POLL_MS = 30_000;
 const PATTERN =
-	'joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result';
+	'joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed ';
 
 const isStart = (m: string) => /^Started /.test(m);
-const isEnd = (m: string) => /^Stopped |Main process exited|Deactivated successfully|Failed with result/.test(m);
+/**
+ * systemd's lines at the end of a run. A clean exit (an RCON stop, a loader
+ * exiting 0 after a startup crash) is only "Consumed ... CPU time" on some
+ * systemd versions, without "Deactivated successfully": those runs never
+ * ended, and such startup crashes were never counted.
+ */
+const isEnd = (m: string) => /^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed /.test(m);
 const isDone = (m: string) => /\]: Done \(/.test(m);
 
 function closeSessions(instanceId: string, at: number, player?: string): void {

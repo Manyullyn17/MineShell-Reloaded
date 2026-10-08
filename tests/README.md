@@ -187,3 +187,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | CurseForge's client-only file tags were ignored (uploaded zips, tags only on the newest file) | `flows/client-only.test.ts` |
 | A dependency only the old mod version needed stayed; declared incompatibilities went unmentioned | `flows/mod-updates.test.ts` |
 | A pack update replaced the user's config edits (kept only in old-configs) | `flows/pack-change.test.ts`, `src/lib/server/configmerge.test.ts` |
+| Runs that exited cleanly never ended in the history on systemd 255 (only "Consumed" logged), so exit-0 startup crashes went uncounted | `flows/history.test.ts` |
