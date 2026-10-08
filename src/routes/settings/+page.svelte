@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import PathText from '#lib/components/PathText.svelte';
 	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';

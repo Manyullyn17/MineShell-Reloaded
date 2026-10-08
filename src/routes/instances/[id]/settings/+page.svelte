@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { deserialize, enhance } from '$app/forms';
+	import { deserialize } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import { applyPackIcon, toServerIcon } from '#lib/shared/servericon.js';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';

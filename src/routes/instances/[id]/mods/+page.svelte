@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { enhance, type SubmitFunction } from '$app/forms';
+	import type { SubmitFunction } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';

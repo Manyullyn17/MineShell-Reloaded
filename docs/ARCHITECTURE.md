@@ -399,6 +399,9 @@ commands, copy and delete) keep their own buttons.
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page
 would navigate there, so the header applies the result itself and reloads in place.
+Kit 3 counts the query as part of the page, so `action="?/x"` also lands somewhere else
+on a page with one (`?path=`, `?tab=`, `?range=`): every page imports `enhance` from
+`#lib/shared/forms.js`, which keeps a form posting to its own path on the current URL.
 
 **The notification center** (top bar, `NotificationCenter.svelte`) follows the task stream
 (`/api/tasks?stream=1&brief=1`, without logs) on every page: running tasks with progress

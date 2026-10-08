@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import { avatarTone } from '#lib/shared/avatar.js';
 	import { formatDuration, formatRelative } from '#lib/shared/format.js';

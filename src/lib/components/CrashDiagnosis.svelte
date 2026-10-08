@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 
 	/**
 	 * What crash diagnosis (crashdiag.ts) made of a run: the fatal causes with

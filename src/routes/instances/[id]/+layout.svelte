@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { enhance, type SubmitFunction } from '$app/forms';
+	import type { SubmitFunction } from '$app/forms';
+	import { enhance } from '#lib/shared/forms.js';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import StatusPill from '#lib/components/StatusPill.svelte';
