@@ -259,6 +259,16 @@ Reported 2026-10-07; diagnose and fix when asked.
   `[RCON Client /127.0.0.1 #2/INFO] [minecraft/RconClient]: Thread RCON Client /127.0.0.1 shutting down`
   show whatever the filter is set to, and with only that filter on nothing shows. Seen on
   the same ATM10 server (NeoForge's log format, with a `[minecraft/...]` logger tag).
+- **Uploading in Files jumps back to the server's root folder**: after an upload the file
+  browser shows the top folder instead of the one the file went into. (Reported 2026-10-08.)
+- **Player editor on ATM10: many `neoforge:attachments > curios:inventory > Curios >
+  StackHandler` lists**, each shown as its own open fold-out under the inventory. Curios
+  keeps one item handler per slot type, so a big pack has dozens; they should be grouped
+  (one Curios section), mostly closed, or empty ones hidden. (Reported 2026-10-08.)
+
+Wanted (2026-10-08), with the above:
+- **Drag and drop in Files**: drop files onto the browser window to upload them into the
+  folder being shown.
 
 ## Later
 
