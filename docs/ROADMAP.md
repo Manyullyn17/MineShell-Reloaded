@@ -431,25 +431,37 @@ perfect for every model is not.
 ### A map of the world
 
 Wanted (2026-10-08): seeing the world from the browser, modded worlds included, preferably
-without adding a mod to each server. Not decided yet; what was looked at:
+without adding a mod to each server; a mod is acceptable where nothing else works, and
+offered as an extra where it adds something. Not built; checked 2026-10-08:
 
-- **BlueMap as a standalone renderer** (the recommendation). Its CLI jar renders a world from
-  the files alone, no server mod, into a static web map (3D, three.js) that MineShell could
-  serve under the server's pages. It reads mod jars and data packs from the server files for
-  modded blocks' models and textures; blocks it cannot resolve that way may need a config
-  ([Configuring mods](https://bluemap.bluecolored.de/wiki/customization/Mods.html)). Java 21
-  for current releases; an older BlueMap for worlds the current one does not read. Vanilla
-  textures come from the client jar, so it asks for the EULA first, like item icons would.
-  Open questions: the oldest world format it renders (MeatballCraft is 1.12.2 and likely out
-  of reach), render time and disk on a big pack, and rendering while the server runs
-  (region files change under it; a snapshot, or save-off as the world download does).
-- **A map mod on the server** (BlueMap, Dynmap, squaremap as mods): live updates and player
-  markers, but one more mod per server, per loader and version.
-- **MineShell's own top-down renderer**: the region and NBT reading exist already (chunk
-  pruning, the player editor), and colours could come from block textures in the jars.
-  Works for every version including 1.12, flat only, and a lot to build well.
-- Shared with item icons: fetching Minecraft's client jar for the server's version (with the
-  EULA question) and reading textures out of mod jars - worth building once for both.
+- **BlueMap's CLI** (no mod; 3D web map, three.js). Renders from the world files and reads mod
+  jars and data packs found in the server files for modded blocks; some modded blocks need a
+  config the CLI cannot work out without the running game
+  ([Configuring mods](https://bluemap.bluecolored.de/wiki/customization/Mods.html)). Worlds
+  **1.13 and newer only** (1.12.2 support was dropped long ago). Java 21 for 5.4+. Vanilla
+  textures need the client jar (EULA question).
+- **BlueMap as a mod** (1.13+): what it adds over the CLI is the running game - the map
+  updates as chunks change, live player markers, and the game's own registries for modded
+  blocks. Worth offering as an option for modern servers.
+- **uNmINeD's CLI** (no mod; flat 2D web map). Java Edition **1.0 to current**, so 1.7.10 and
+  1.12.2 too. Since 0.19.58-dev (March 2026) it reads block metadata from mods and colours
+  modded blocks from their averaged textures (needs the client jar). Incremental: re-running
+  renders only changed regions. Builds for Linux glibc/musl x64 and arm64. Caveats: closed
+  source, free for personal use, "do not distribute" - MineShell can only fetch it from
+  unmined.net when asked (the licence says nothing about other programs running it); only
+  dev-channel builds are listed; untested whether its mod support covers pre-1.13 worlds,
+  whose block ids are numbers mapped in level.dat (Forge's FML registries).
+- **Map mods for old versions**, if nothing standalone works: Dynmap for Forge 1.12.2, and
+  for 1.7.10 the GTNH Web Map (GT New Horizons' Dynmap fork, tuned for 1.7.10 mods) - which
+  fits the GT New Horizons install option.
+- **MineShell's own top-down renderer** (region and NBT reading exist): every version, flat
+  only, a lot to build well. Kept as the fallback idea.
+
+Suggested shape: a Map tab with BlueMap's CLI for 1.13+, uNmINeD's for anything older (or as
+a 2D option everywhere), and "install a map mod" offered where it adds live updates. First
+step: try uNmINeD's CLI on a copy of MeatballCraft's world (1.12.2 Cleanroom) to see what it
+makes of modded blocks there. Shared with item icons: the client jar download and reading
+textures out of mod jars.
 
 ### Item and enchantment names in the player editor
 
