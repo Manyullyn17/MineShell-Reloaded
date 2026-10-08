@@ -429,8 +429,17 @@ would: a file, else its `.gz` with `Content-Encoding: gzip` (tiles and textures 
 compressed), else 204 for tiles and live data. A render is a task (one per server; a running
 server is told to `save-all` first) and only redraws what changed unless forced. An optional
 schedule per server (off, every N hours, daily at a time; in the `map:<id>` settings row) is
-checked on the scheduler's tick; slots missed while MineShell was down move forward. Older
-worlds have no map yet (1.12.2: Dynmap + DynmapBlockScan, next).
+checked on the scheduler's tick; slots missed while MineShell was down move forward.
+
+Map mods: Forge/Cleanroom 1.12.2 is mapped by Dynmap with DynmapBlockScan (no standalone
+renderer reads RoughlyEnoughIDs/JEID worlds; without BlockScan modded blocks are black), and
+1.13+ can add the BlueMap mod for a live map. MineShell installs them (Dynmap's newest
+1.12.2 build from CurseForge, BlockScan from dynmap.us, BlueMap from Modrinth), gives each
+server one port of its own for the mod's web server (`modPort`, from 8123, not another
+server's), and writes it with a localhost-only bind into the mod's config before every start
+(`applyMapModConfig`; the files exist only after the mod's first start, which uses its
+default port). `/instances/<id>/map/live/` passes requests through to that port behind
+MineShell's login - bodies streamed, MineShell's own cookies and auth headers not passed on.
 
 ## Safety and confinement
 

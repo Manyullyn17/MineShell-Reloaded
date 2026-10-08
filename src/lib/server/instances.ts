@@ -44,7 +44,7 @@ import { applyCleanroomModFixes } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
-import { deleteMapData } from './worldmap';
+import { applyMapModConfig, deleteMapData } from './worldmap';
 import {
 	beginOperation,
 	commitOperation,
@@ -1163,6 +1163,8 @@ export async function start(instance: ServerInstance, opts: { internal?: boolean
 		};
 	}
 	clearStopIntent(instance.id);
+	// A map mod's web server on its own port, localhost only (MineShell passes it through).
+	await applyMapModConfig(instance).catch(() => undefined);
 	const sync = await syncUnit(instance);
 	await resetFailed(instance.id);
 	const res = await startUnit(instance.id);

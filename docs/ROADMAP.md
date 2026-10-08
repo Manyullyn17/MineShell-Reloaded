@@ -459,10 +459,11 @@ offered as an extra where it adds something. Not built; checked 2026-10-08:
 - **MineShell's own top-down renderer** (region and NBT reading exist): every version, flat
   only, a lot to build well. Kept as the fallback idea.
 
-**Built (2026-10-09), parts 1 and 2:** BlueMap's CLI for 1.13+ (`worldmap.ts`, the Map
-tab) and its update schedule. Still to build: the mod maps (Dynmap + DynmapBlockScan on 1.12.2,
-the BlueMap mod offered on 1.13+), passed through MineShell (user's call: behind its login,
-the EULA asked per server, updates by button plus an optional schedule).
+**Built (2026-10-09):** BlueMap's CLI for 1.13+ (`worldmap.ts`, the Map tab), its update
+schedule, and the mod maps (Dynmap + DynmapBlockScan on 1.12.2, the BlueMap mod offered on
+1.13+), passed through MineShell (user's calls: behind its login, the EULA asked per server,
+updates by button plus an optional schedule). Not built: GT New Horizons' map (with its install
+option), player markers for the rendered map, a map for other pre-1.13 versions.
 
 **Decided (user, 2026-10-08):**
 - 1.13 and newer: BlueMap's CLI is the default (no mod); the Map page offers installing the

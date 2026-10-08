@@ -143,6 +143,8 @@ by name from the world's own table, mod enchantments included.
 **Map.** A 3D map of the world in the browser, rendered by BlueMap from the world files
 for Minecraft 1.13 and newer - nothing is added to the server, modded blocks are drawn from
 the mods' own models. Updated when you ask or on a schedule; shown behind MineShell's login.
+Forge 1.12.2 servers get a live map from Dynmap and DynmapBlockScan, installed from the Map
+tab; on 1.13+ the BlueMap mod can be added for a live map with players on it.
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all

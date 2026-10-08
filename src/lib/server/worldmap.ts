@@ -12,7 +12,9 @@ import { directorySize } from './files';
 import { compareVersions, listJavaRuntimes, scanJavaRuntimes } from './java';
 import { installJava, type JavaVendor } from './javadownload';
 import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
-import { modsDir } from './mods';
+import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods } from './mods';
+import { compatibleVersions, filterFor } from './modupdates';
+import { allocatePort } from './ports';
 import { nextSnapshotAt } from './snapshotschedule';
 import { startTask, type TaskHandle } from './tasks';
 
@@ -58,6 +60,8 @@ export type MapSettings = {
 	schedule: MapSchedule;
 	/** When the schedule updates the map next; null when it is off. */
 	nextAt: number | null;
+	/** The port given to a map mod's web server (Dynmap, the BlueMap mod); MineShell passes it through. */
+	modPort: number | null;
 };
 
 const OFF: MapSchedule = { every: 'off', dailyTime: '05:00', intervalHours: 6 };
@@ -73,7 +77,7 @@ export function validMapSchedule(raw: Record<string, unknown> | undefined): MapS
 }
 
 const KEY = (id: string) => `map:${id}`;
-const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null };
+const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null, modPort: null };
 
 export function getMapSettings(instanceId: string): MapSettings {
 	const raw = db.select().from(settings).where(eq(settings.key, KEY(instanceId))).get()?.value;
@@ -83,7 +87,8 @@ export function getMapSettings(instanceId: string): MapSettings {
 			eulaAccepted: parsed.eulaAccepted === true,
 			lastRenderAt: typeof parsed.lastRenderAt === 'number' ? parsed.lastRenderAt : null,
 			schedule: validMapSchedule(parsed.schedule as Record<string, unknown> | undefined),
-			nextAt: typeof parsed.nextAt === 'number' ? parsed.nextAt : null
+			nextAt: typeof parsed.nextAt === 'number' ? parsed.nextAt : null,
+			modPort: Number.isInteger(parsed.modPort) ? (parsed.modPort as number) : null
 		};
 	} catch {
 		return { ...DEFAULTS };
@@ -149,24 +154,30 @@ export function rollForwardMaps(now = Date.now()): void {
 // ------------------------------------------------------------------ support ---
 
 export type MapSupport =
+	/** BlueMap's CLI renders it; the BlueMap mod can be added for a live map. */
 	| { engine: 'bluemap' }
+	/** Only a mod can draw it: Dynmap, with DynmapBlockScan for modded blocks (1.12.2 Forge/Cleanroom). */
+	| { engine: 'dynmap' }
 	| { engine: null; reason: string };
 
-/** Which way this server can have a map. Mod maps (Dynmap on 1.12.2, the BlueMap mod) come next. */
+/**
+ * Which way this server can have a map. BlueMap reads 1.13 and newer worlds;
+ * 1.12.2 needs Dynmap inside the game (big packs raise the block id limit
+ * with RoughlyEnoughIDs/JEID, which no standalone renderer reads).
+ */
 export function mapSupport(instance: Pick<ServerInstance, 'minecraftVersion' | 'modloader'>): MapSupport {
 	if (compareVersions(instance.minecraftVersion, '1.13') >= 0) return { engine: 'bluemap' };
-	if (instance.minecraftVersion === '1.12.2' && (instance.modloader === 'forge' || instance.modloader === 'cleanroom')) {
-		return {
-			engine: null,
-			reason: 'Minecraft 1.12.2 gets its map from the Dynmap and DynmapBlockScan mods; installing them from here is coming next.'
-		};
-	}
-	return { engine: null, reason: `There is no map for Minecraft ${instance.minecraftVersion} yet: BlueMap reads 1.13 and newer worlds.` };
+	if (DYNMAP[instance.minecraftVersion] && (instance.modloader === 'forge' || instance.modloader === 'cleanroom')) return { engine: 'dynmap' };
+	return { engine: null, reason: `There is no map for Minecraft ${instance.minecraftVersion} yet: BlueMap reads 1.13 and newer worlds, Dynmap is set up here for Forge 1.12.2.` };
 }
 
 export type MapStatus = {
 	support: MapSupport;
 	settings: MapSettings;
+	/** Map mods on the server (enabled jars). */
+	mods: MapMods;
+	/** The server runs, so a mod's map can be shown. */
+	running: boolean;
 	/** A map has been rendered and can be shown. */
 	ready: boolean;
 	sizeBytes: number;
@@ -182,6 +193,8 @@ export async function mapStatus(instance: ServerInstance): Promise<MapStatus> {
 	return {
 		support: mapSupport(instance),
 		settings: getMapSettings(instance.id),
+		mods: await mapMods(instance),
+		running: (await summarise(instance)).running,
 		ready,
 		sizeBytes: ready ? await directorySize(mapDir(instance.id)).catch(() => 0) : 0,
 		taskId: rendering.get(instance.id) ?? null
@@ -335,7 +348,8 @@ const rendering = new Map<string, string>();
  */
 export async function renderMap(instance: ServerInstance, opts: { force?: boolean; downloadJava?: JavaVendor } = {}): Promise<string> {
 	const support = mapSupport(instance);
-	if (support.engine !== 'bluemap') throw new InstanceError(support.reason);
+	if (support.engine === null) throw new InstanceError(support.reason);
+	if (support.engine === 'dynmap') throw new InstanceError('This server’s map is drawn by Dynmap while it runs; there is nothing to render.');
 	if (!getMapSettings(instance.id).eulaAccepted) {
 		throw new InstanceError('Accept Mojang’s EULA for the map first: BlueMap needs the Minecraft client for textures.');
 	}
@@ -453,3 +467,132 @@ export async function resolveMapFile(instanceId: string, rel: string): Promise<M
 	if (/\/(tiles|live)\//.test(clean)) return { empty: true };
 	return null;
 }
+
+// ---------------------------------------------------------------- mod maps ---
+
+/** Dynmap's CurseForge project, and DynmapBlockScan's build per Minecraft version (dynmap.us only). */
+const DYNMAP_PROJECT = '59433';
+const DYNMAP: Record<string, { blockScan: string }> = {
+	'1.12.2': { blockScan: 'https://dynmap.us/builds/DynmapBlockScan/DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar' }
+};
+const BLUEMAP_PROJECT = 'bluemap';
+/** Where map mods' web servers get their ports from; the same range Dynmap uses by default. */
+const MOD_PORT_START = 8123;
+
+export type MapMods = { dynmap: boolean; blockScan: boolean; blueMap: boolean };
+
+export async function mapMods(instance: ServerInstance): Promise<MapMods> {
+	const [dynmap, blockScan, blueMap] = await Promise.all(
+		['dynmap', 'dynmapblockscan', 'bluemap'].map((id) => hasEnabledMod(instance.path, id).catch(() => false))
+	);
+	return { dynmap, blockScan, blueMap };
+}
+
+/** The server's map-mod port, given once: not another server's, nor any port in use now. */
+async function modPort(instance: ServerInstance): Promise<number> {
+	const current = getMapSettings(instance.id).modPort;
+	if (current) return current;
+	const taken = new Set(
+		db
+			.select()
+			.from(settings)
+			.all()
+			.filter((r) => r.key.startsWith('map:') && r.key !== KEY(instance.id))
+			.map((r) => getMapSettings(r.key.slice('map:'.length)).modPort)
+	);
+	let port = await allocatePort(MOD_PORT_START, instance.id);
+	while (taken.has(port)) port = await allocatePort(port + 1, instance.id);
+	saveMapSettings(instance.id, { modPort: port });
+	return port;
+}
+
+/** Sets `key: value` in a YAML/HOCON-ish config, over the line or its commented-out form, else appended. */
+export function setConfigLine(text: string, key: string, value: string): string {
+	const line = new RegExp(`^[ \\t]*#?[ \\t]*${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[ \\t]*:.*$`, 'm');
+	return line.test(text) ? text.replace(line, `${key}: ${value}`) : `${text.replace(/\n?$/, '\n')}${key}: ${value}\n`;
+}
+
+/**
+ * Points the map mods' web servers at the server's own port, on localhost
+ * only (MineShell passes them through, behind its login), and gives the
+ * BlueMap mod the EULA answer. Their config files exist only once the mod
+ * has started once, so this runs before every start and after an install;
+ * a first start uses the mod's default port. Returns what it changed.
+ */
+export async function applyMapModConfig(instance: ServerInstance): Promise<string[]> {
+	const mods = await mapMods(instance);
+	if (!mods.dynmap && !mods.blueMap) return [];
+	const port = await modPort(instance);
+	const changed: string[] = [];
+	const edit = async (rel: string, apply: (text: string) => string) => {
+		const file = path.join(instance.path, rel);
+		const text = await fs.readFile(file, 'utf8').catch(() => null);
+		if (text === null) return;
+		const next = apply(text);
+		if (next !== text) {
+			await fs.writeFile(file, next);
+			changed.push(rel);
+		}
+	};
+	if (mods.dynmap) {
+		await edit('dynmap/configuration.txt', (t) => setConfigLine(setConfigLine(t, 'webserver-port', String(port)), 'webserver-bindaddress', '127.0.0.1'));
+	}
+	if (mods.blueMap) {
+		await edit('config/bluemap/webserver.conf', (t) => setConfigLine(setConfigLine(t, 'port', String(port)), 'ip', '"127.0.0.1"'));
+		await edit('config/bluemap/core.conf', (t) => setConfigLine(t, 'accept-download', String(getMapSettings(instance.id).eulaAccepted)));
+	}
+	return changed;
+}
+
+/**
+ * Installs the map mod this server's version takes, as a task: Dynmap and
+ * DynmapBlockScan on 1.12.2 (Dynmap alone draws modded blocks black), the
+ * BlueMap mod on 1.13+ (live updates and player markers). Mods load on the
+ * next start.
+ */
+export async function installMapMod(instance: ServerInstance): Promise<string> {
+	const support = mapSupport(instance);
+	if (support.engine === null) throw new InstanceError(support.reason);
+	const mods = await mapMods(instance);
+	if (support.engine === 'dynmap' && mods.dynmap && mods.blockScan) throw new InstanceError('Dynmap and DynmapBlockScan are installed already.');
+	if (support.engine === 'bluemap' && mods.blueMap) throw new InstanceError('The BlueMap mod is installed already.');
+	return startTask({ label: `Install the map mod on ${instance.name}`, instanceId: instance.id }, async (task) => {
+		if (support.engine === 'dynmap') {
+			if (!mods.dynmap) {
+				task.setProgress(null, 'Installing Dynmap');
+				const versions = await getModProvider('curseforge').listVersions(DYNMAP_PROJECT, { minecraftVersion: instance.minecraftVersion, loader: 'forge' });
+				// Its 1.12.2 builds after 3.6 are betas: the newest of any channel.
+				const newest = [...versions].sort((a, b) => Date.parse(b.datePublished ?? '') - Date.parse(a.datePublished ?? ''))[0];
+				if (!newest) throw new InstanceError(`No Dynmap build for Forge ${instance.minecraftVersion}.`);
+				await installModVersion(instance, 'curseforge', { id: DYNMAP_PROJECT, slug: DYNMAP_PROJECT, name: 'Dynmap', projectUrl: null, iconUrl: null }, newest);
+				task.log(`Installed Dynmap ${newest.versionNumber}.`);
+			}
+			if (!mods.blockScan) {
+				task.setProgress(null, 'Installing DynmapBlockScan');
+				const url = DYNMAP[instance.minecraftVersion].blockScan;
+				await downloadFile(url, path.join(modsDir(instance.path), path.posix.basename(url)));
+				task.log(`Installed ${path.posix.basename(url)} (from dynmap.us; it reads the mods' block models so Dynmap can draw modded blocks).`);
+			}
+		} else {
+			task.setProgress(null, 'Installing the BlueMap mod');
+			const best = bestVersion(await compatibleVersions('modrinth', BLUEMAP_PROJECT, filterFor(instance)));
+			if (!best) throw new InstanceError(`No BlueMap mod for ${instance.modloader} ${instance.minecraftVersion}.`);
+			await installModVersion(instance, 'modrinth', { id: BLUEMAP_PROJECT, slug: BLUEMAP_PROJECT, name: 'BlueMap', projectUrl: null, iconUrl: null }, best);
+			task.log(`Installed BlueMap ${best.versionNumber}.`);
+		}
+		await syncMods(instance).catch(() => undefined);
+		await applyMapModConfig(instance);
+		task.setProgress(100, 'Installed; the map starts with the server');
+	});
+}
+
+/** Where a request under the live map goes: the mod's web server, on localhost. Null without one. */
+export async function liveMapTarget(instance: ServerInstance, rel: string, search: string): Promise<string | null> {
+	const port = getMapSettings(instance.id).modPort;
+	const mods = await mapMods(instance);
+	if (!port || (!mods.dynmap && !mods.blueMap)) return null;
+	const clean = path.posix.normalize(`/${rel}`);
+	if (clean.startsWith('/..')) return null;
+	return `http://127.0.0.1:${port}${clean}${search}`;
+}
+

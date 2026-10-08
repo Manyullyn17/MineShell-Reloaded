@@ -2,7 +2,9 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, JavaMissingError, requireInstance } from '#lib/server/instances.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
-import { deleteMapData, mapStatus, renderMap, saveMapSchedule, saveMapSettings, validMapSchedule } from '#lib/server/worldmap.js';
+import { deleteMapData, installMapMod, mapStatus, renderMap, saveMapSchedule, saveMapSettings, validMapSchedule } from '#lib/server/worldmap.js';
+import { serverWorldName } from '#lib/server/packworld.js';
+import { sendCommand, summarise } from '#lib/server/instances.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
@@ -38,6 +40,29 @@ export const actions: Actions = {
 			return { ok: true, message: 'Updating the map. Follow it in Tasks.' };
 		} catch (err) {
 			return refused(err, 'render');
+		}
+	},
+
+	/** Dynmap and DynmapBlockScan (1.12.2), or the BlueMap mod (1.13+). */
+	installMod: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		try {
+			await installMapMod(instance);
+			return { ok: true, message: 'Installing. The map mod loads the next time the server starts.' };
+		} catch (err) {
+			return refused(err, 'installMod');
+		}
+	},
+
+	/** Dynmap draws chunks as they change; this has it draw the whole world once. */
+	dynmapRender: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		if (!(await summarise(instance)).running) return fail(400, { ok: false, message: 'Start the server first: Dynmap renders inside it.' });
+		try {
+			const answer = await sendCommand(instance, `dynmap fullrender ${await serverWorldName(instance.path)}`);
+			return { ok: true, message: answer.trim() || 'Dynmap is rendering the world; tiles fill in as it goes.' };
+		} catch (err) {
+			return refused(err, 'dynmapRender');
 		}
 	},
 

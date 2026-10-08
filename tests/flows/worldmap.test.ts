@@ -9,12 +9,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
  * BlueMap are fakes; the files written and served are real.
  */
 
-const { deleteMapData, evaluateMapSchedule, getMapSettings, mapStatus, mapSupport, renderMap, resolveMapFile, rollForwardMaps, saveMapSchedule, saveMapSettings, validMapSchedule, writeBlueMapConfig, mapDir } =
+const { applyMapModConfig, installMapMod, liveMapTarget, setConfigLine, deleteMapData, evaluateMapSchedule, getMapSettings, mapStatus, mapSupport, renderMap, resolveMapFile, rollForwardMaps, saveMapSchedule, saveMapSettings, validMapSchedule, writeBlueMapConfig, mapDir } =
 	await import('#lib/server/worldmap.js');
 const { addJava, clearJava, createInstance, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { useRecordedHttp } = await import('../helpers/http');
+const { zipBuffer } = await import('../helpers/fs');
 
 const JAR = Buffer.from('bluemap cli');
 const RELEASE = 'https://api.github.com/repos/BlueMap-Minecraft/BlueMap/releases/latest';
@@ -29,7 +30,20 @@ useRecordedHttp('none', {
 					{ name: 'bluemap-5.28-cli.jar', browser_download_url: JAR_URL, digest: `sha256:${crypto.createHash('sha256').update(JAR).digest('hex')}` }
 				]
 			}),
-		[JAR_URL]: () => new Response(new Uint8Array(JAR))
+		[JAR_URL]: () => new Response(new Uint8Array(JAR)),
+		// Dynmap's 1.12.2 files on the mirror: a beta newer than the last release.
+		'https://api.modpacks.ch/public/mod/59433/versions/1.12.2/forge': () =>
+			Response.json({
+				versions: [
+					{ id: 4632192, name: 'Dynmap-3.6-forge-1.12.2.jar', type: 'release', updated: 100, url: 'https://cdn.test/dynmap-3.6.jar' },
+					{ id: 5442794, name: 'Dynmap-3.7-beta-6-forge-1.12.2.jar', type: 'beta', updated: 200, url: 'https://cdn.test/dynmap-3.7.jar' }
+				],
+				page: 1,
+				pages: 1
+			}),
+		'https://cdn.test/dynmap-3.7.jar': () => new Response(new Uint8Array(zipBuffer({ 'mcmod.info': '[{"modid":"dynmap","name":"Dynmap"}]' }))),
+		'https://dynmap.us/builds/DynmapBlockScan/DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar': () =>
+			new Response(new Uint8Array(zipBuffer({ 'mcmod.info': '[{"modid":"dynmapblockscan","name":"DynmapBlockScan"}]' })))
 	}
 });
 
@@ -65,10 +79,11 @@ describe('the world map', () => {
 		blueMapRuns();
 	});
 
-	it('is BlueMap for 1.13 and newer, nothing yet for older worlds', () => {
+	it('is BlueMap for 1.13 and newer, Dynmap on Forge 1.12.2, nothing for other old worlds', () => {
 		expect(mapSupport({ minecraftVersion: '1.21.1', modloader: 'neoforge' })).toEqual({ engine: 'bluemap' });
 		expect(mapSupport({ minecraftVersion: '1.13', modloader: 'vanilla' })).toEqual({ engine: 'bluemap' });
-		expect(mapSupport({ minecraftVersion: '1.12.2', modloader: 'cleanroom' })).toMatchObject({ engine: null, reason: expect.stringMatching(/Dynmap/) });
+		expect(mapSupport({ minecraftVersion: '1.12.2', modloader: 'cleanroom' })).toEqual({ engine: 'dynmap' });
+		expect(mapSupport({ minecraftVersion: '1.12.2', modloader: 'vanilla' })).toMatchObject({ engine: null });
 		expect(mapSupport({ minecraftVersion: '1.7.10', modloader: 'forge' })).toMatchObject({ engine: null });
 	});
 
@@ -189,5 +204,46 @@ describe('the world map', () => {
 	it('keeps schedules sane whatever is sent', () => {
 		expect(validMapSchedule({ every: 'hourly', intervalHours: '0', dailyTime: '25:00' })).toEqual({ every: 'off', intervalHours: 6, dailyTime: '05:00' });
 		expect(validMapSchedule({ every: 'daily', dailyTime: '23:30' })).toMatchObject({ every: 'daily', dailyTime: '23:30' });
+	});
+
+	it('sets a config line over its commented-out form, or adds it', () => {
+		expect(setConfigLine('a: 1\n#webserver-bindaddress: 0.0.0.0\nb: 2\n', 'webserver-bindaddress', '127.0.0.1')).toBe('a: 1\nwebserver-bindaddress: 127.0.0.1\nb: 2\n');
+		expect(setConfigLine('port: 8100\n', 'port', '8124')).toBe('port: 8124\n');
+		expect(setConfigLine('a: 1', 'ip', '"127.0.0.1"')).toBe('a: 1\nip: "127.0.0.1"\n');
+	});
+});
+
+describe('map mods', () => {
+	beforeEach(() => blueMapRuns());
+
+	const forge1122 = (files: Record<string, string | Buffer> = {}) =>
+		createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2' }, { 'server.properties': 'level-name=world\n', ...files });
+
+	it('installs Dynmap (its newest build) and DynmapBlockScan, then gives Dynmap its own local port', async () => {
+		const instance = await forge1122();
+		expect((await waitForTask(await installMapMod(instance))).state).toBe('done');
+		expect((await fs.readdir(path.join(instance.path, 'mods'))).sort()).toEqual(['Dynmap-3.7-beta-6-forge-1.12.2.jar', 'DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar']);
+		await expect(installMapMod(instance)).rejects.toThrow(/installed already/);
+
+		// Dynmap writes its config on its first start; from then on MineShell sets the port before each start.
+		expect(await applyMapModConfig(instance)).toEqual([]);
+		await fs.mkdir(path.join(instance.path, 'dynmap'));
+		await fs.writeFile(path.join(instance.path, 'dynmap/configuration.txt'), '#webserver-bindaddress: 0.0.0.0\nwebserver-port: 8123\n');
+		expect(await applyMapModConfig(instance)).toEqual(['dynmap/configuration.txt']);
+		const port = getMapSettings(instance.id).modPort!;
+		expect(await fs.readFile(path.join(instance.path, 'dynmap/configuration.txt'), 'utf8')).toBe(`webserver-bindaddress: 127.0.0.1\nwebserver-port: ${port}\n`);
+		expect(await applyMapModConfig(instance)).toEqual([]);
+		expect(await liveMapTarget(instance, 'up/configuration', '?x=1')).toBe(`http://127.0.0.1:${port}/up/configuration?x=1`);
+		expect(await liveMapTarget(instance, '../../etc', '')).toBe(`http://127.0.0.1:${port}/etc`);
+
+		// Another server with a map mod gets another port.
+		const second = await forge1122({ 'mods/dynmap.jar': zipBuffer({ 'mcmod.info': '[{"modid":"dynmap"}]' }), 'dynmap/configuration.txt': 'webserver-port: 8123\n' });
+		await applyMapModConfig(second);
+		expect(getMapSettings(second.id).modPort).not.toBe(port);
+	});
+
+	it('has no live map without a map mod', async () => {
+		const instance = await forge1122();
+		expect(await liveMapTarget(instance, '', '')).toBeNull();
 	});
 });
