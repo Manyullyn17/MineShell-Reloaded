@@ -462,7 +462,16 @@ offered as an extra where it adds something. Not built; checked 2026-10-08:
   BlueMap mod for what it adds (live updates, player markers, modded blocks from the game).
 - GT New Horizons: its own GTNH Web Map, when the GTNH install option is built.
 - 1.12.2: Dynmap (mod) or uNmINeD's CLI (no mod), to be decided by testing both on a
-  copy of MeatballCraft's world. Shared with item icons: the client jar download and reading
+  copy of MeatballCraft's world.
+
+Tested 2026-10-08: uNmINeD 0.20.11-dev on a copy of MeatballCraft's overworld (1.12.2,
+Cleanroom) failed on every chunk ("Cannot use BeginChildren() on tag type IntArray").
+MeatballCraft runs RoughlyEnoughIDs, whose chunks store `Biomes` as an int array and give
+each section a `Palette` (int array) of extended block ids next to `Blocks`/`Data`; JEID did
+the same before it. uNmINeD reads only the vanilla 1.12 layout, so it cannot map big 1.12.2
+packs that raise the id limit. Dynmap runs inside the game, after RoughlyEnoughIDs has
+patched it, so it is the option for 1.12.2 (untested yet: needs the mod on the server and a
+run). A renderer of MineShell's own would have to decode the RoughlyEnoughIDs palette too. Shared with item icons: the client jar download and reading
 textures out of mod jars.
 
 ### Item and enchantment names in the player editor
