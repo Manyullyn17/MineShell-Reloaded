@@ -189,9 +189,7 @@
 				<form method="POST" action="?/mclogsAnalyse" use:enhance={busy('analyse')}>
 					<input type="hidden" name="kind" value={data.view.kind} />
 					<input type="hidden" name="key" value={data.view.key} />
-					<button class="button-quiet" type="submit" disabled={asking !== null}>
-						{asking === 'analyse' ? 'Asking mclo.gs…' : 'Second opinion from mclo.gs'}
-					</button>
+					<button class="button-quiet" type="submit" disabled={asking !== null} aria-busy={asking === 'analyse'}>Analyse with mclo.gs</button>
 				</form>
 				{#if data.share}
 					<span>Shared: <a href={data.share.url} target="_blank" rel="noreferrer">{data.share.url}</a></span>
@@ -214,11 +212,15 @@
 					>
 						<input type="hidden" name="kind" value={data.view.kind} />
 						<input type="hidden" name="key" value={data.view.key} />
-						<button class="button-quiet" type="submit" disabled={asking !== null}>{asking === 'share' ? 'Sharing…' : 'Share on mclo.gs'}</button>
+						<button class="button-quiet" type="submit" disabled={asking !== null} aria-busy={asking === 'share'}>Share on mclo.gs</button>
 					</form>
 				{/if}
-				<span class="faint mclogs-note">A second opinion sends the log to mclo.gs to be read, not kept.</span>
+				<span class="faint mclogs-note">Analysing sends the log to mclo.gs to be read, not kept.</span>
 			</div>
+			<!-- Beside the buttons, not in them: a label changing length moved them while mclo.gs answered. -->
+			{#if asking}
+				<p class="small muted asking" role="status">{asking === 'analyse' ? 'Asking mclo.gs…' : 'Putting the log on mclo.gs…'}</p>
+			{/if}
 			{#if form && !form.ok && form.message}
 				<Flash {form} />
 			{/if}
@@ -586,6 +588,21 @@
 
 	.mclogs a {
 		overflow-wrap: anywhere;
+	}
+
+	.mclogs button[aria-busy='true'] {
+		cursor: progress;
+		animation: busy 1.2s ease-in-out infinite;
+	}
+
+	@keyframes busy {
+		50% {
+			opacity: 0.45;
+		}
+	}
+
+	.asking {
+		margin: -0.25rem 0 0.6rem;
 	}
 
 	.mclogs-result {

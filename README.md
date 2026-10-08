@@ -99,7 +99,7 @@ Filter by level, search, stack traces folded under their error, players joining 
 marked, command history and saved commands. A chat view shows only what players say (and
 `say` broadcasts), and a chat mode answers them with `say`. The Logs tab has earlier runs and the server's
 own log files and crash reports, searchable all at once (archived logs included). Any log
-can get a second opinion from mclo.gs (read there, not kept) or be shared there at a link
+can be analysed by mclo.gs as a second opinion (read there, not kept) or be shared there at a link
 that MineShell can delete again.
 
 **Settings.** One page per server, in tabs (general, gameplay, players, network,
