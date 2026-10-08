@@ -496,6 +496,29 @@ MineShell's own diagnosis, with the link to share; id, url and token kept on the
 already strips IPv4/IPv6 addresses (it may), else MineShell masks them before sending.
 Useful mostly where `crashdiag.ts` recognises nothing ("Cause not recognised").
 
+### Plugin servers (Paper, Purpur)
+
+Asked about 2026-10-08; written up rather than built (user's call). What it would take:
+
+- **Server types**: Paper and Purpur as entries in `modloaders.ts`, installed as one jar
+  (`-jar server.jar`, like vanilla). Paper's builds come from PaperMC's download API (Fill,
+  `fill.papermc.io/v3`; the old `api.papermc.io/v2` is being retired), Purpur's from
+  `api.purpurmc.org/v2/purpur/<mc>`. Both to be checked against the live APIs when built.
+- **A Plugins tab** instead of Mods: `plugins/` with enable/disable (`.disabled`, which
+  Paper ignores like Forge does), install and update from Modrinth (loaders `paper`,
+  `purpur`, `spigot`, `bukkit`, `folia`) and Hangar (PaperMC's own repository). SpigotMC
+  (through Spiget) is the biggest catalog but many downloads are external links or paid:
+  later, if at all.
+- **What already works on them**: RCON, the console, players, history, snapshots and the
+  World tab (Bukkit keeps `world_nether`/`world_the_end` as siblings; `dimensions.ts` and
+  snapshots already handle that), scheduled restarts, the Java table (same as vanilla).
+- **What needs work**: TPS (Paper has `tps`, not `tick query` on older versions), crash
+  diagnosis (plugin stack traces name plugins, not mods; crashdiag only knows mod jars),
+  the pack install form (no plugin packs), the migration (a plugin server moves by
+  swapping the jar; plugins mostly survive a Minecraft update).
+- **Not planned**: hybrids that load Forge/NeoForge mods and plugins together (Mohist,
+  Arclight, Youer): fragile with big packs, and every crash becomes "is it the hybrid".
+
 ### GT New Horizons as its own install option
 
 Agreed (2026-10-07), not started. GTNH's own docs say to take server files only from
