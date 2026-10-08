@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
  * BlueMap are fakes; the files written and served are real.
  */
 
-const { deleteMapData, getMapSettings, mapStatus, mapSupport, renderMap, resolveMapFile, saveMapSettings, writeBlueMapConfig, mapDir } =
+const { deleteMapData, evaluateMapSchedule, getMapSettings, mapStatus, mapSupport, renderMap, resolveMapFile, rollForwardMaps, saveMapSchedule, saveMapSettings, validMapSchedule, writeBlueMapConfig, mapDir } =
 	await import('#lib/server/worldmap.js');
 const { addJava, clearJava, createInstance, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
@@ -158,5 +158,36 @@ describe('the world map', () => {
 		expect(await mapStatus(instance)).toMatchObject({ ready: true, support: { engine: 'bluemap' } });
 		await deleteMapData(instance.id, { keepSettings: true });
 		expect(await mapStatus(instance)).toMatchObject({ ready: false });
+	});
+
+	it('updates on its schedule, and only then', async () => {
+		addJava(21);
+		const instance = await server();
+		saveMapSettings(instance.id, { eulaAccepted: true });
+		// Off: never.
+		expect(await evaluateMapSchedule(instance)).toBeNull();
+
+		saveMapSchedule(instance.id, validMapSchedule({ every: 'interval', intervalHours: '6' }));
+		const { nextAt } = getMapSettings(instance.id);
+		expect(nextAt).toBeGreaterThan(Date.now() + 5.9 * 3_600_000);
+		expect(await evaluateMapSchedule(instance)).toBeNull();
+
+		// The slot has come: one update, and the next slot set.
+		const taskId = await evaluateMapSchedule(instance, nextAt! + 1000);
+		expect(taskId).toEqual(expect.any(String));
+		expect((await waitForTask(taskId!)).state).toBe('done');
+		expect(getMapSettings(instance.id).nextAt).toBeGreaterThan(nextAt!);
+	});
+
+	it('moves a slot missed while MineShell was down to the next one instead of firing it', async () => {
+		const instance = await server();
+		saveMapSettings(instance.id, { eulaAccepted: true, schedule: validMapSchedule({ every: 'daily', dailyTime: '05:00' }), nextAt: Date.now() - 3_600_000 });
+		rollForwardMaps();
+		expect(getMapSettings(instance.id).nextAt).toBeGreaterThan(Date.now());
+	});
+
+	it('keeps schedules sane whatever is sent', () => {
+		expect(validMapSchedule({ every: 'hourly', intervalHours: '0', dailyTime: '25:00' })).toEqual({ every: 'off', intervalHours: 6, dailyTime: '05:00' });
+		expect(validMapSchedule({ every: 'daily', dailyTime: '23:30' })).toMatchObject({ every: 'daily', dailyTime: '23:30' });
 	});
 });

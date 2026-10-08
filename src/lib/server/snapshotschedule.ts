@@ -91,7 +91,7 @@ export function copySnapshotSchedule(fromId: string, toId: string): void {
 	if (raw) saveSnapshotSchedule(toId, getSnapshotSchedule(fromId));
 }
 
-export function nextSnapshotAt(schedule: SnapshotSchedule, from = Date.now()): number | null {
+export function nextSnapshotAt(schedule: Pick<SnapshotSchedule, 'every' | 'intervalHours' | 'dailyTime'>, from = Date.now()): number | null {
 	if (schedule.every === 'interval') return from + schedule.intervalHours * 3_600_000;
 	if (schedule.every === 'daily') {
 		const [hour, minute] = schedule.dailyTime.split(':').map(Number);

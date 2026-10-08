@@ -11,6 +11,21 @@
 	const viewUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/view/`);
 	/** Reloaded after each update, so the frame shows the new tiles. */
 	const frameKey = $derived(map.settings.lastRenderAt ?? 0);
+
+	// The schedule form, re-synced when the saved one changes.
+	let every = $state<'off' | 'interval' | 'daily'>('off');
+	let intervalHours = $state(6);
+	let dailyTime = $state('05:00');
+	$effect(() => {
+		every = map.settings.schedule.every;
+		intervalHours = map.settings.schedule.intervalHours;
+		dailyTime = map.settings.schedule.dailyTime;
+	});
+	const scheduleChanged = $derived(
+		every !== map.settings.schedule.every ||
+			(every === 'interval' && intervalHours !== map.settings.schedule.intervalHours) ||
+			(every === 'daily' && dailyTime !== map.settings.schedule.dailyTime)
+	);
 </script>
 
 <Flash {form} />
@@ -72,6 +87,24 @@
 		</div>
 	</div>
 
+	<form method="POST" action="?/schedule" use:enhance={() => async ({ update }) => update({ reset: false })} class="schedule small">
+		<label for="map-every">Update automatically</label>
+		<select id="map-every" name="every" bind:value={every}>
+			<option value="off">No, only when I ask</option>
+			<option value="interval">Every few hours</option>
+			<option value="daily">Daily</option>
+		</select>
+		{#if every === 'interval'}
+			<label class="inline">every <input name="intervalHours" type="number" min="1" max="168" bind:value={intervalHours} class="hours" /> h</label>
+		{:else if every === 'daily'}
+			<label class="inline">at <input name="dailyTime" type="time" bind:value={dailyTime} /></label>
+		{/if}
+		{#if scheduleChanged}<button type="submit" class="button-quiet">Save</button>{/if}
+		{#if map.settings.schedule.every !== 'off' && map.settings.nextAt && !scheduleChanged}
+			<span class="muted">next {formatRelative(map.settings.nextAt)}</span>
+		{/if}
+	</form>
+
 	{#if map.ready}
 		{#key frameKey}
 			<iframe class="map" src={viewUrl} title="Map of {data.instance.name}" use:fitToViewport></iframe>
@@ -116,6 +149,25 @@
 	}
 
 	/* As tall as the screen; fitToViewport's max-height trims it to the room left. */
+	.schedule {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-3);
+	}
+
+	.schedule .inline {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin: 0;
+	}
+
+	.hours {
+		width: 4.5rem;
+	}
+
 	.map {
 		display: block;
 		width: 100%;

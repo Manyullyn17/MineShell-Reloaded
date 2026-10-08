@@ -427,7 +427,9 @@ render: one map per dimension with a namespaced id, BlueMap's own web server off
 `web/` itself under `/instances/<id>/map/view/`, behind its login, the way BlueMap's server
 would: a file, else its `.gz` with `Content-Encoding: gzip` (tiles and textures are stored
 compressed), else 204 for tiles and live data. A render is a task (one per server; a running
-server is told to `save-all` first) and only redraws what changed unless forced. Older
+server is told to `save-all` first) and only redraws what changed unless forced. An optional
+schedule per server (off, every N hours, daily at a time; in the `map:<id>` settings row) is
+checked on the scheduler's tick; slots missed while MineShell was down move forward. Older
 worlds have no map yet (1.12.2: Dynmap + DynmapBlockScan, next).
 
 ## Safety and confinement

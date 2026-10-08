@@ -11,8 +11,9 @@ import { listDimensions } from './dimensions';
 import { directorySize } from './files';
 import { compareVersions, listJavaRuntimes, scanJavaRuntimes } from './java';
 import { installJava, type JavaVendor } from './javadownload';
-import { InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
+import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
 import { modsDir } from './mods';
+import { nextSnapshotAt } from './snapshotschedule';
 import { startTask, type TaskHandle } from './tasks';
 
 /**
@@ -42,14 +43,37 @@ const webRoot = (instanceId: string) => path.join(mapDir(instanceId), 'web');
 
 // ----------------------------------------------------------------- settings ---
 
+export type MapSchedule = {
+	every: 'off' | 'interval' | 'daily';
+	/** For 'daily', "HH:MM" local time. */
+	dailyTime: string;
+	/** For 'interval'. */
+	intervalHours: number;
+};
+
 export type MapSettings = {
 	/** Mojang's EULA accepted for this server's map (BlueMap downloads the client jar). */
 	eulaAccepted: boolean;
 	lastRenderAt: number | null;
+	schedule: MapSchedule;
+	/** When the schedule updates the map next; null when it is off. */
+	nextAt: number | null;
 };
 
+const OFF: MapSchedule = { every: 'off', dailyTime: '05:00', intervalHours: 6 };
+
+/** Anything stored or sent, made into a schedule: unknown or out-of-range values fall back. */
+export function validMapSchedule(raw: Record<string, unknown> | undefined): MapSchedule {
+	const hours = Number(raw?.intervalHours);
+	return {
+		every: raw?.every === 'interval' || raw?.every === 'daily' ? raw.every : 'off',
+		dailyTime: typeof raw?.dailyTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(raw.dailyTime) ? raw.dailyTime : OFF.dailyTime,
+		intervalHours: Number.isInteger(hours) && hours >= 1 && hours <= 24 * 7 ? hours : OFF.intervalHours
+	};
+}
+
 const KEY = (id: string) => `map:${id}`;
-const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null };
+const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null };
 
 export function getMapSettings(instanceId: string): MapSettings {
 	const raw = db.select().from(settings).where(eq(settings.key, KEY(instanceId))).get()?.value;
@@ -57,7 +81,9 @@ export function getMapSettings(instanceId: string): MapSettings {
 		const parsed = raw ? (JSON.parse(raw) as Partial<MapSettings>) : {};
 		return {
 			eulaAccepted: parsed.eulaAccepted === true,
-			lastRenderAt: typeof parsed.lastRenderAt === 'number' ? parsed.lastRenderAt : null
+			lastRenderAt: typeof parsed.lastRenderAt === 'number' ? parsed.lastRenderAt : null,
+			schedule: validMapSchedule(parsed.schedule as Record<string, unknown> | undefined),
+			nextAt: typeof parsed.nextAt === 'number' ? parsed.nextAt : null
 		};
 	} catch {
 		return { ...DEFAULTS };
@@ -77,6 +103,47 @@ export async function deleteMapData(instanceId: string, opts: { keepSettings?: b
 	await fs.rm(mapDir(instanceId), { recursive: true, force: true });
 	if (!opts.keepSettings) db.delete(settings).where(eq(settings.key, KEY(instanceId))).run();
 	else saveMapSettings(instanceId, { lastRenderAt: null });
+}
+
+/** Sets the schedule; its first update is the next slot from now. */
+export function saveMapSchedule(instanceId: string, schedule: MapSchedule): MapSettings {
+	return saveMapSettings(instanceId, { schedule, nextAt: nextSnapshotAt(schedule) });
+}
+
+/**
+ * From the scheduler's tick: updates the map when its slot has come. A slot
+ * that passed while MineShell was down moves to the next one (rollForwardMaps)
+ * rather than firing at once; a map already updating, a server without the
+ * EULA answer or a world that is not there yet skips the slot.
+ */
+export async function evaluateMapSchedule(instance: ServerInstance, now = Date.now()): Promise<string | null> {
+	const current = getMapSettings(instance.id);
+	if (current.schedule.every === 'off' || !current.eulaAccepted || mapSupport(instance).engine !== 'bluemap') return null;
+	if (current.nextAt === null) {
+		saveMapSettings(instance.id, { nextAt: nextSnapshotAt(current.schedule, now) });
+		return null;
+	}
+	if (current.nextAt > now) return null;
+	saveMapSettings(instance.id, { nextAt: nextSnapshotAt(current.schedule, now) });
+	if (rendering.has(instance.id)) return null;
+	try {
+		return await renderMap(instance);
+	} catch (err) {
+		audit('scheduler.map_skipped', { instanceId: instance.id, detail: err instanceof Error ? err.message : 'failed', actor: 'scheduler' });
+		return null;
+	}
+}
+
+/** At MineShell's start: slots that passed while it was down move to the next one. */
+export function rollForwardMaps(now = Date.now()): void {
+	for (const row of db.select().from(settings).all()) {
+		if (!row.key.startsWith('map:')) continue;
+		const id = row.key.slice('map:'.length);
+		const current = getMapSettings(id);
+		if (current.schedule.every !== 'off' && (current.nextAt === null || current.nextAt < now)) {
+			saveMapSettings(id, { nextAt: nextSnapshotAt(current.schedule, now) });
+		}
+	}
 }
 
 // ------------------------------------------------------------------ support ---

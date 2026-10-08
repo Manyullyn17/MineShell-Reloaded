@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, JavaMissingError, requireInstance } from '#lib/server/instances.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
-import { deleteMapData, mapStatus, renderMap, saveMapSettings } from '#lib/server/worldmap.js';
+import { deleteMapData, mapStatus, renderMap, saveMapSchedule, saveMapSettings, validMapSchedule } from '#lib/server/worldmap.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
@@ -39,6 +39,14 @@ export const actions: Actions = {
 		} catch (err) {
 			return refused(err, 'render');
 		}
+	},
+
+	schedule: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const schedule = validMapSchedule(Object.fromEntries(form));
+		saveMapSchedule(instance.id, schedule);
+		return { ok: true, message: schedule.every === 'off' ? 'The map updates only when you ask.' : 'Saved the schedule.' };
 	},
 
 	delete: async ({ params }) => {
