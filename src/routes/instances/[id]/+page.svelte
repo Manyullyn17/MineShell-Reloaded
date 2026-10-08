@@ -64,6 +64,14 @@
 
 	const latestCpu = $derived(data.cpu.length ? data.cpu[data.cpu.length - 1].value : null);
 	const latestMemory = $derived(data.memory.length ? data.memory[data.memory.length - 1].value : null);
+	/**
+	 * What the server holds is the heap plus Java's own memory (classes, compiled
+	 * code, threads), so it runs above the heap size; with AlwaysPreTouch the whole
+	 * heap counts from the start. The chart's top is the heap size or the highest
+	 * value shown, whichever is more - it clipped everything above the heap.
+	 */
+	const heapBytes = $derived((data.detail.memoryMaxMb ?? 4096) * 1024 * 1024);
+	const memoryCeiling = $derived(Math.max(heapBytes, ...data.memory.map((p) => p.value * 1.1)));
 
 
 	let copied = $state(false);
@@ -176,7 +184,7 @@
 	<div>
 		<dt>Memory</dt>
 		<dd class="mono">{data.running && latestMemory !== null ? formatBytes(latestMemory) : '-'}</dd>
-		<dd class="sub">of {formatBytes((data.detail.memoryMaxMb ?? 0) * 1024 * 1024)} heap</dd>
+		<dd class="sub">heap up to {formatBytes((data.detail.memoryMaxMb ?? 0) * 1024 * 1024)}</dd>
 	</div>
 	<div>
 		<dt>CPU</dt>
@@ -219,8 +227,8 @@
 				/>
 				<Sparkline
 					points={data.memory}
-					label="Memory · {data.detail.memoryMaxMb} MB heap allocated"
-					max={(data.detail.memoryMaxMb ?? 4096) * 1024 * 1024}
+					label="Memory held · heap up to {formatBytes(heapBytes)}, plus Java's own"
+					max={memoryCeiling}
 					windowMs={data.rangeMs}
 					tone="info"
 					format={(v) => formatBytes(v)}

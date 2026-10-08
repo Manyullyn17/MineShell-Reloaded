@@ -237,6 +237,7 @@ const SHOW_PROPS = [
 	'ActiveEnterTimestampMonotonic',
 	'CPUUsageNSec',
 	'MemoryCurrent',
+	'ControlGroup',
 	'MainPID',
 	'NRestarts',
 	'Result'
@@ -271,6 +272,19 @@ export function invalidateUnitState(id?: string): void {
 	else stateCache.clear();
 }
 
+/**
+ * A unit's memory as its working set: systemd's MemoryCurrent counts the
+ * page cache of every file the server read (region files, mod jars), which
+ * the kernel drops whenever memory is wanted - a render that read the world
+ * showed gigabytes the server did not hold. The inactive part of that cache
+ * comes off, as Docker and Kubernetes report it. `stat` is the cgroup's
+ * memory.stat; without it MemoryCurrent stands.
+ */
+export function workingSet(current: number, stat: string | null): number {
+	const inactive = Number(stat?.match(/^inactive_file (\d+)$/m)?.[1] ?? 0);
+	return Math.max(0, current - inactive);
+}
+
 async function readUnitState(id: string): Promise<UnitState> {
 	const res = await systemctl('show', unitName(id), ...SHOW_PROPS.map((p) => `-p${p}`));
 	if (res.code !== 0 && !res.stdout) return { ...UNKNOWN_STATE };
@@ -282,7 +296,12 @@ async function readUnitState(id: string): Promise<UnitState> {
 		sub: props.SubState || 'unknown',
 		activeEnterTimestamp: monotonic > 0 ? systemBootTimeMs() + monotonic / 1000 : 0,
 		cpuUsageNsec: num(props.CPUUsageNSec),
-		memoryBytes: num(props.MemoryCurrent),
+		memoryBytes: workingSet(
+			num(props.MemoryCurrent),
+			props.ControlGroup?.startsWith('/') && !props.ControlGroup.includes('..')
+				? await fs.readFile(path.join('/sys/fs/cgroup', props.ControlGroup, 'memory.stat'), 'utf8').catch(() => null)
+				: null
+		),
 		mainPid: num(props.MainPID),
 		nRestarts: num(props.NRestarts),
 		result: props.Result || 'unknown'

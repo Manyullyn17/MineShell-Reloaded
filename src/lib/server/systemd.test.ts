@@ -168,3 +168,14 @@ describe('unit files', () => {
 		expect(unit).toMatch(/WorkingDirectory=.*%i/);
 	});
 });
+
+describe('a unit’s memory', () => {
+	it('leaves out the page cache the kernel can drop', async () => {
+		const { workingSet } = await import('./systemd');
+		// A render read gigabytes of region files: cached, not held.
+		const stat = 'anon 1922000000\nfile 17900000000\ninactive_file 4000000000\nactive_file 20000000\nshmem 17179869184\n';
+		expect(workingSet(23_000_000_000, stat)).toBe(19_000_000_000);
+		expect(workingSet(5_000_000_000, null)).toBe(5_000_000_000);
+		expect(workingSet(1000, 'inactive_file 5000\n')).toBe(0);
+	});
+});
