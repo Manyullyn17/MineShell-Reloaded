@@ -156,8 +156,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		autoJava: instance.javaPath ? resolveJava({ ...instance, explicitPath: null }) : java,
 		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label })),
 		running,
+		// An uploaded pack has no project: it is updated by uploading the next version's file.
 		pack:
-			instance.packSource && instance.packProjectId
+			instance.packSource
 				? {
 						source: instance.packSource,
 						projectId: instance.packProjectId,

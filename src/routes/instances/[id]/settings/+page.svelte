@@ -522,7 +522,7 @@
 					{hasIcon ? 'Replace' : 'Choose an image'}
 					<input type="file" accept="image/*" class="visually-hidden" onchange={pickIcon} />
 				</label>
-				{#if data.pack}<button class="button-quiet" type="button" onclick={usePackIcon}>Use the pack's icon</button>{/if}
+				{#if data.pack?.projectId}<button class="button-quiet" type="button" onclick={usePackIcon}>Use the pack's icon</button>{/if}
 				{#if hasIcon}<button class="button-quiet" type="button" onclick={removeIcon}>Remove</button>{/if}
 			</div>
 		</div>

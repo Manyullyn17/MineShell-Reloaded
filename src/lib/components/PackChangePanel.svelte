@@ -5,7 +5,9 @@
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
-	 * Move an installed pack to another version (or reinstall the current one).
+	 * Move an installed pack to another version (or reinstall the current one),
+	 * picked from the provider or uploaded as a file. A pack installed from an
+	 * uploaded file has no project to list versions from: it has only the upload.
 	 * The preview is fetched separately because resolving a CurseForge version
 	 * downloads its overrides archive, which can take a while.
 	 */
@@ -17,7 +19,7 @@
 		form
 	}: {
 		instanceId: string;
-		pack: { source: string; projectId: string; name: string | null; versionId: string | null; versionName: string | null };
+		pack: { source: string; projectId: string | null; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
 		snapshotPrompt: SnapshotPromptView;
 		/** The page's action result, for the missing-Java prompt. */
@@ -38,6 +40,8 @@
 	type Plan = {
 		versionId: string;
 		sameVersion: boolean;
+		uploaded: boolean;
+		otherPack: boolean;
 		current: { minecraft: string; loader: string; loaderVersion: string | null };
 		target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 		minecraftChange: boolean;
@@ -65,6 +69,7 @@
 	let submitting = $state(false);
 
 	$effect(() => {
+		if (!pack.projectId) return;
 		const params = new URLSearchParams({ source: pack.source, id: pack.projectId });
 		fetch(`/api/packs/versions?${params}`)
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error('lookup failed'))))
@@ -104,6 +109,26 @@
 		}
 	}
 
+	let uploading = $state(false);
+	let uploadInput: HTMLInputElement | null = $state(null);
+
+	/** A pack file instead of a listed version: sent whole, previewed like one. */
+	async function previewUpload(file: File) {
+		uploading = true;
+		planError = '';
+		plan = null;
+		try {
+			const res = await fetch(`/api/instances/${encodeURIComponent(instanceId)}/pack-change`, { method: 'PUT', body: file });
+			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Could not read that pack file.');
+			plan = (await res.json()).plan;
+		} catch (err) {
+			planError = err instanceof Error ? err.message : 'Could not read that pack file.';
+		} finally {
+			uploading = false;
+			if (uploadInput) uploadInput.value = '';
+		}
+	}
+
 	let blockingMods = $derived(plan?.manual.filter((m) => m.blocking) ?? []);
 	const datapackChanges = $derived(
 		!!plan && plan.world.datapacks.add.length + plan.world.datapacks.update.length + plan.world.datapacks.remove.length > 0
@@ -116,14 +141,22 @@
 		<div>
 			<h2>Modpack version</h2>
 			<p>
-				{pack.name ?? 'This pack'} is on <strong>{currentLabel}</strong>. Pick another version to update or
-				downgrade, or the same one to reinstall the pack's own files. Folders the pack ships (configs, scripts
+				{pack.name ?? 'This pack'} is on <strong>{currentLabel}</strong>.
+				{#if pack.projectId}
+					Pick another version to update or downgrade, or the same one to reinstall the pack's own files; or upload
+					a pack file (a build the list does not have).
+				{:else}
+					It was installed from an uploaded file, so upload the new version's file (<code>.mrpack</code> or CurseForge
+					zip) to move to it.
+				{/if}
+				Folders the pack ships (configs, scripts
 				and so on) are moved to <code>old-configs/</code> first, never deleted, and your
 				<code>server.properties</code>, world and mods you added yourself are left alone.
 			</p>
 		</div>
 	</div>
 
+	{#if pack.projectId}
 	<div class="field">
 		<label for="pack-version">Version</label>
 		{#if versionsError}
@@ -140,12 +173,33 @@
 		{/if}
 	</div>
 
-	<button type="button" onclick={preview} disabled={!versionId || planning}>
+	<button type="button" onclick={preview} disabled={!versionId || planning || uploading}>
 		{planning ? 'Looking up the version' : 'Preview changes'}
 	</button>
 	{#if planning}
 		<p class="hint">CurseForge packs download their configs archive for this, which can take a minute.</p>
 	{/if}
+	{/if}
+
+	<div class="upload">
+		<label class="button" class:button-quiet={!!pack.projectId} aria-disabled={uploading || planning}>
+			{uploading ? 'Reading the pack file' : 'Upload a pack file'}
+			<input
+				bind:this={uploadInput}
+				type="file"
+				accept=".mrpack,.zip"
+				class="visually-hidden"
+				disabled={uploading || planning}
+				onchange={(e) => {
+					const file = e.currentTarget.files?.[0];
+					if (file) void previewUpload(file);
+				}}
+			/>
+		</label>
+		{#if uploading}
+			<p class="hint">A CurseForge zip lists its mods by id, so each one is looked up first; a big pack takes a minute.</p>
+		{/if}
+	</div>
 	{#if planError}
 		<p class="hint warn-text">{planError}</p>
 	{/if}
@@ -167,6 +221,13 @@
 		>
 			<input type="hidden" name="versionId" value={plan.versionId} />
 
+			{#if plan.otherPack}
+				<p class="notice warning small">
+					This file is <strong>{plan.target.name}</strong>, not {pack.name}. If it is another pack, its mods replace this
+					one's; mods you added yourself still stay.
+				</p>
+			{/if}
+
 			{#if plan.minecraftChange}
 				<div class="danger">
 					<strong>Minecraft {plan.current.minecraft} → {plan.target.minecraft}</strong>
@@ -184,7 +245,9 @@
 
 			<ul class="summary">
 				<li>
-					{plan.sameVersion ? 'Reinstalls' : 'Moves to'} <strong>{plan.target.name} {plan.target.version ?? ''}</strong>
+					{plan.sameVersion ? 'Reinstalls' : 'Moves to'} <strong>{plan.target.name} {plan.target.version ?? ''}</strong>{plan.uploaded
+						? ' (uploaded file)'
+						: ''}
 				</li>
 				{#if plan.loaderChange}
 					<li>
@@ -289,6 +352,15 @@
 <style>
 	.plan {
 		margin-top: var(--space-3);
+	}
+
+	.upload {
+		margin-top: var(--space-3);
+	}
+
+	.upload label[aria-disabled='true'] {
+		opacity: 0.6;
+		pointer-events: none;
 	}
 
 	.danger {

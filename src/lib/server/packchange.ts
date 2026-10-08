@@ -15,7 +15,7 @@ import {
 } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep } from './snapshots';
-import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, type ParsedPack } from './packs';
+import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type ParsedPack } from './packs';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
@@ -103,7 +103,30 @@ function packRef(instance: ServerInstance): { source: string; projectId: string 
 	return { source: instance.packSource, projectId: instance.packProjectId };
 }
 
+/** An uploaded pack file stands in for a provider version as `upload:<token>`. */
+const UPLOAD_PREFIX = 'upload:';
+export const isUploadedVersion = (versionId: string) => versionId.startsWith(UPLOAD_PREFIX);
+
+/**
+ * A new version of the pack as a file (.mrpack or CurseForge zip) - the only
+ * way to update a server installed from an uploaded file, which has no
+ * project to fetch versions from, and a way to install a build a provider
+ * does not list. Kept like a looked-up version, for the preview and the apply.
+ */
+export async function prepareUploadedPack(instance: ServerInstance, buffer: Buffer): Promise<string> {
+	const pack = parsePack(buffer);
+	await resolvePackTargets(pack);
+	const versionId = `${UPLOAD_PREFIX}${crypto.randomUUID()}`;
+	prepared.set(instance.id, { key: versionId, pack, at: Date.now() });
+	return versionId;
+}
+
 async function preparePack(instance: ServerInstance, versionId: string, task?: TaskHandle): Promise<ParsedPack> {
+	if (isUploadedVersion(versionId)) {
+		const hit = prepared.get(instance.id);
+		if (hit?.key === versionId && Date.now() - hit.at < PREPARED_TTL) return hit.pack;
+		throw new InstanceError('That uploaded pack file is no longer kept; upload it again.');
+	}
 	const { source, projectId } = packRef(instance);
 	const key = `${source}:${projectId}:${versionId}`;
 	const hit = prepared.get(instance.id);
@@ -218,6 +241,10 @@ export type ManualModCheck = {
 export type PackChangePlan = {
 	versionId: string;
 	sameVersion: boolean;
+	/** The target is an uploaded file, not a version looked up from the provider. */
+	uploaded: boolean;
+	/** An uploaded file whose pack name differs from the installed pack's. */
+	otherPack: boolean;
 	current: { minecraft: string; loader: string; loaderVersion: string | null };
 	target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 	minecraftChange: boolean;
@@ -343,6 +370,7 @@ export async function changedPackMods(root: string, pack: ParsedPack, packFiles:
 }
 
 async function buildPlan(instance: ServerInstance, versionId: string, pack: ParsedPack): Promise<PackChangePlan> {
+	const uploaded = isUploadedVersion(versionId);
 	const target = targetLoaderFor(instance, pack);
 	const minecraftChange = pack.minecraftVersion !== instance.minecraftVersion;
 	const loaderChange =
@@ -388,7 +416,12 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 
 	return {
 		versionId,
-		sameVersion: versionId === instance.packVersionId,
+		sameVersion: uploaded
+			? pack.name === instance.packName && pack.version !== null && pack.version === instance.packVersionName
+			: versionId === instance.packVersionId,
+		uploaded,
+		// A file names its pack; one with another name may be another pack altogether.
+		otherPack: uploaded && !!instance.packName && pack.name.trim().toLowerCase() !== instance.packName.trim().toLowerCase(),
 		current: {
 			minecraft: instance.minecraftVersion,
 			loader: instance.modloader,
@@ -654,8 +687,10 @@ export async function applyPackChange(
 				modloader: plan.target.loader,
 				modloaderVersion: loaderVersion,
 				launchArgs,
-				packVersionId: versionId,
+				// An uploaded file is no provider version: the server is no longer on one it can name.
+				packVersionId: plan.uploaded ? null : versionId,
 				packVersionName: pack.version,
+				...(plan.uploaded ? { packName: pack.name } : {}),
 				packDatapacks: JSON.stringify([...plan.world.datapacks.add, ...plan.world.datapacks.update].sort())
 			});
 		} catch (err) {
@@ -701,7 +736,7 @@ export async function applyPackChange(
 		setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
 		audit('instance.pack_changed', {
 			instanceId: instance.id,
-			detail: `${instance.packVersionId ?? '?'} -> ${versionId}`
+			detail: `${instance.packVersionName ?? instance.packVersionId ?? '?'} -> ${plan.uploaded ? `${label} (uploaded file)` : versionId}`
 		});
 		task.setProgress(100, 'Ready');
 	});

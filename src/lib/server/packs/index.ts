@@ -267,6 +267,39 @@ export async function resolveCurseforgeDownload(
 	}
 }
 
+/**
+ * Looks up every CurseForge entry a manifest.json pack lists by id only, so
+ * its file names are known before anything is downloaded: a pack change
+ * diffs by file name. One request per mod; throws when any cannot be
+ * resolved, since an entry without a name would read as a mod the pack dropped.
+ */
+export async function resolvePackTargets(pack: ParsedPack, onProgress?: (done: number, total: number) => void, concurrency = 8): Promise<void> {
+	const open = pack.downloads.filter((d) => d.curseforge && !d.urls.length);
+	let done = 0;
+	const failed: number[] = [];
+	const queue = [...open];
+	const worker = async () => {
+		for (let item = queue.shift(); item; item = queue.shift()) {
+			const { projectId, fileId } = item.curseforge!;
+			try {
+				const resolved = await resolveCurseforgeDownload(projectId, fileId, pack.minecraftVersion);
+				item.target = path.posix.join('mods', resolved.filename);
+				item.urls = [resolved.url];
+				item.hash = resolved.sha1 ? { algo: 'sha1', value: resolved.sha1 } : null;
+			} catch {
+				failed.push(fileId);
+			}
+			onProgress?.(++done, open.length);
+		}
+	};
+	await Promise.all(Array.from({ length: Math.min(concurrency, open.length) }, worker));
+	if (failed.length) {
+		throw new Error(
+			`Could not look up ${failed.length} of the pack's ${open.length} CurseForge files (file ${failed.slice(0, 3).join(', ')}${failed.length > 3 ? ', ...' : ''}). Try again, or add a CurseForge API key in Settings.`
+		);
+	}
+}
+
 /** CurseForge's CDN serves every file at a path made from its id and name. */
 export function curseforgeCdnUrl(fileId: number, fileName: string): string {
 	return `https://edge.forgecdn.net/files/${Math.floor(fileId / 1000)}/${fileId % 1000}/${encodeURIComponent(fileName)}`;

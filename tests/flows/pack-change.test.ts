@@ -54,8 +54,8 @@ vi.mock('#lib/server/mods/index.js', async (importOriginal) => {
 	};
 });
 
-const { createFromPack } = await import('#lib/server/instances.js');
-const { planPackChange, applyPackChange } = await import('#lib/server/packchange.js');
+const { createFromArchive, createFromPack } = await import('#lib/server/instances.js');
+const { planPackChange, applyPackChange, prepareUploadedPack } = await import('#lib/server/packchange.js');
 const { recoverInterruptedOperations } = await import('#lib/server/recovery.js');
 const { listOperations } = await import('#lib/server/operations.js');
 const { db } = await import('#lib/server/db/index.js');
@@ -493,5 +493,81 @@ describe('changing the pack version', () => {
 			expect(Object.keys(files).some((f) => f.startsWith('world/'))).toBe(false);
 			expect(JSON.parse(reload(instance.id).packDatapacks!)).toEqual(['quests.zip']);
 		});
+	});
+});
+
+describe('changing to an uploaded pack file', () => {
+	beforeEach(() => {
+		systemdStopped();
+		clearJava();
+		addJava(17);
+		vi.spyOn(LOADERS.fabric, 'install').mockImplementation(async (ctx) => {
+			await fs.writeFile(path.join(ctx.dir, 'server.jar'), `fabric for ${ctx.minecraftVersion}`);
+			return { launchArgs: '-jar server.jar nogui', loaderVersion: '0.16.0' };
+		});
+	});
+	afterEach(() => vi.restoreAllMocks());
+
+	/** A .mrpack as someone would upload it. */
+	function mrpack(version: string, mods: string[], overrides: Record<string, string>, name = 'Uploaded Pack'): Buffer {
+		const files = mods.map((m) => {
+			const url = `https://cdn.test/${version}/${m}`;
+			served[url] = () => new Response(`${m} from ${version}`);
+			return { path: `mods/${m}`, hashes: { sha1: sha1(`${m} from ${version}`) }, downloads: [url] };
+		});
+		const index = { formatVersion: 1, game: 'minecraft', versionId: version, name, dependencies: { minecraft: '1.20.1', 'fabric-loader': '0.16.0' }, files };
+		return zipBuffer({
+			'modrinth.index.json': JSON.stringify(index),
+			...Object.fromEntries(Object.entries(overrides).map(([k, v]) => [`overrides/${k}`, v]))
+		});
+	}
+
+	it('updates a server installed from an uploaded file with the next version’s file', async () => {
+		// Such a server has no project to look versions up in: the pack change refused it.
+		const { instance, taskId } = await createFromArchive('Uploaded', mrpack('1.0', ['a.jar', 'b.jar'], { 'config/pack.cfg': '1.0' }));
+		expect((await waitForTask(taskId)).state).toBe('done');
+		await fs.writeFile(path.join(instance.path, 'mods/homemade.jar'), 'homemade');
+
+		const versionId = await prepareUploadedPack(reload(instance.id), mrpack('1.1', ['a.jar', 'c.jar'], { 'config/pack.cfg': '1.1' }));
+		const plan = await planPackChange(reload(instance.id), versionId);
+		expect(plan).toMatchObject({
+			uploaded: true,
+			otherPack: false,
+			sameVersion: false,
+			target: { version: '1.1' },
+			mods: { add: ['c.jar'], update: ['a.jar'], remove: ['b.jar'] }
+		});
+
+		const task = await waitForTask(await applyPackChange(reload(instance.id), versionId, { updateMods: [], confirmMinecraftChange: false }));
+		expect(task.state).toBe('done');
+		const files = await tree(instance.path, /^(\.mineshell|old-configs)\//);
+		expect(files).toMatchObject({ 'mods/a.jar': 'a.jar from 1.1', 'mods/c.jar': 'c.jar from 1.1', 'mods/homemade.jar': 'homemade', 'config/pack.cfg': '1.1' });
+		expect(Object.keys(files)).not.toContain('mods/b.jar');
+		expect(reload(instance.id)).toMatchObject({ packVersionId: null, packVersionName: '1.1', packName: 'Uploaded Pack', status: 'ready' });
+
+		// The file is not kept past the change it was used for.
+		await expect(planPackChange(reload(instance.id), versionId)).rejects.toThrow(/upload it again/);
+	});
+
+	it('says so when the file is another pack', async () => {
+		const { instance, taskId } = await createFromArchive('Uploaded', mrpack('1.0', ['a.jar'], {}));
+		await waitForTask(taskId);
+		const versionId = await prepareUploadedPack(reload(instance.id), mrpack('2.0', ['a.jar'], {}, 'Some Other Pack'));
+		expect(await planPackChange(reload(instance.id), versionId)).toMatchObject({ uploaded: true, otherPack: true });
+	});
+
+	it('refuses a CurseForge zip whose mods cannot all be looked up', async () => {
+		// A file without a name would read as a pack mod the new version dropped, and be removed.
+		const { instance, taskId } = await createFromArchive('Uploaded', mrpack('1.0', ['a.jar'], {}));
+		await waitForTask(taskId);
+		const manifest = {
+			minecraft: { version: '1.20.1', modLoaders: [{ id: 'fabric-0.16.0', primary: true }] },
+			name: 'Uploaded Pack',
+			version: '1.1',
+			files: [{ projectID: 1, fileID: 2, required: true }]
+		};
+		await expect(prepareUploadedPack(reload(instance.id), zipBuffer({ 'manifest.json': JSON.stringify(manifest) }))).rejects.toThrow(
+			/Could not look up 1 of the pack's 1 CurseForge files/
+		);
 	});
 });
