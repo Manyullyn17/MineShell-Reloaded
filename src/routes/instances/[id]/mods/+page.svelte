@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
@@ -42,6 +43,7 @@
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention'>('all');
 	let showFilters = $state(false);
 	let uploadForm = $state<HTMLFormElement | null>(null);
+	let jarInput = $state<HTMLInputElement | null>(null);
 	let pendingDelete = $state<string | null>(null);
 	// A pack's first sync looks up every jar on CurseForge, which takes half a
 	// minute on a big pack; without this the button looked like it did nothing.
@@ -512,6 +514,7 @@
 			<label class="button upload">
 				Upload jars
 				<input
+					bind:this={jarInput}
 					type="file"
 					name="jars"
 					accept=".jar"
@@ -700,6 +703,7 @@
 		{/if}
 	</div>
 
+	<div use:dropzone={{ input: jarInput, label: 'Drop .jar files to add them' }}>
 	{#if visible.length === 0}
 		<div class="empty">
 			<p>
@@ -867,6 +871,7 @@
 			</table>
 		</div>
 	{/if}
+	</div>
 	<p class="faint small foot">
 		{data.counts.enabled} of {data.counts.total} enabled. Disabling renames the file to <code>.jar.disabled</code>, which is
 		what the loader looks at.

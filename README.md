@@ -141,8 +141,10 @@ Curios and Trinkets slots, grouped and named by slot); on 1.12 and older, enchan
 by name from the world's own table, mod enchantments included.
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
-the page), download, rename, delete, and edit text files in place, all
-confined to the instance directory. A disk usage page shows where the space goes.
+the file list), download, rename, delete, and edit text files in place, all
+confined to the instance directory. A disk usage page shows where the space goes. Every
+other upload (a world zip, a pack file, mod jars, the server icon) takes a drop onto its own
+section too.
 
 **Java.** Runtimes are found on the system or downloaded, matched per server, with a
 default per Java version when several are installed.

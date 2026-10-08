@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
@@ -136,7 +137,7 @@
 	let canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
 
-<section class="panel">
+<section class="panel" use:dropzone={{ input: uploadInput, disabled: uploading || planning, label: 'Drop the new version’s pack file (.mrpack or .zip)' }}>
 	<div class="panel-head">
 		<div>
 			<h2>Modpack version</h2>

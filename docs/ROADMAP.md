@@ -273,6 +273,8 @@ Reported 2026-10-07 and 08; all fixed 2026-10-08.
   slot type, 42 in all, all labelled alike): one closed Curios section, rows named by slot
   type, empty ones behind a checkbox.
 - **Built: drag and drop in Files**, files and whole folders, into the folder being shown.
+  Since 2026-10-08 on every upload (world zip, pack file, new-server pack, mod jars, icon),
+  each onto its own section rather than the whole window (`lib/shared/dropzone.ts`).
 
 ## Later
 

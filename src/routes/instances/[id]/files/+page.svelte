@@ -2,6 +2,7 @@
 	import { applyAction, deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
@@ -72,35 +73,10 @@
 		renameValue = name;
 	}
 
-	// ---- uploads: the button, or files and folders dropped anywhere on the page.
+	// ---- uploads: the button, or files and folders dropped onto the file list (use:dropzone).
 	let uploading = $state<number | null>(null);
-	/** dragenter/dragleave fire for every element crossed: count them. */
-	let dragDepth = $state(0);
-	const dropping = $derived(dragDepth > 0 && !data.editing);
-
-	const isFileDrag = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
-
-	function onDragEnter(event: DragEvent) {
-		if (!isFileDrag(event)) return;
-		event.preventDefault();
-		dragDepth++;
-	}
-
-	function onDragOver(event: DragEvent) {
-		if (!isFileDrag(event)) return;
-		// Without this the browser opens the file instead of dropping it here.
-		event.preventDefault();
-		if (event.dataTransfer) event.dataTransfer.dropEffect = data.editing ? 'none' : 'copy';
-	}
-
-	function onDragLeave(event: DragEvent) {
-		if (isFileDrag(event)) dragDepth = Math.max(0, dragDepth - 1);
-	}
 
 	function onDrop(event: DragEvent) {
-		if (!isFileDrag(event)) return;
-		event.preventDefault();
-		dragDepth = 0;
 		if (data.editing || !event.dataTransfer) return;
 		// Entries must be taken now: the drop's items are gone after the first await.
 		const entries = [...event.dataTransfer.items].map((item) => item.webkitGetAsEntry?.()).filter((e) => e != null);
@@ -153,8 +129,6 @@
 		}
 	}
 </script>
-
-<svelte:window ondragenter={onDragEnter} ondragover={onDragOver} ondragleave={onDragLeave} ondrop={onDrop} />
 
 {#snippet entryRows(entries: typeof data.entries, depth: number)}
 	{#each entries as entry (entry.relPath)}
@@ -228,12 +202,6 @@
 {/snippet}
 
 <Flash {form} />
-
-{#if dropping}
-	<div class="drop-overlay" aria-hidden="true">
-		<p>Drop to upload into <span class="mono">{data.instance.id}/{data.dir}</span></p>
-	</div>
-{/if}
 
 {#if data.listError}
 	<div class="notice error"><p>{data.listError}</p></div>
@@ -314,7 +282,7 @@
 				bind:this={uploadForm}
 			>
 				<input type="hidden" name="dir" value={data.dir} />
-				<label class="button upload" title="Or drop files and folders anywhere on the page">
+				<label class="button upload" title="Or drop files and folders onto the list">
 					{uploading === null ? 'Upload here' : `Uploading ${uploading} file${uploading === 1 ? '' : 's'}…`}
 					<input
 						type="file"
@@ -335,6 +303,7 @@
 			</form>
 		{/if}
 
+		<div class="listing" use:dropzone={{ onDrop, disabled: !!data.editing, label: `Drop to upload into ${data.instance.id}/${data.dir}` }}>
 		{#if data.entries.length === 0}
 			<div class="empty"><p>This folder is empty.</p></div>
 		{:else}
@@ -354,6 +323,7 @@
 			</table>
 			</div>
 		{/if}
+		</div>
 	</section>
 {/if}
 
@@ -546,29 +516,5 @@
 
 	.file-title {
 		overflow-wrap: anywhere;
-	}
-
-	.drop-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 50;
-		display: grid;
-		place-items: center;
-		padding: var(--space-4);
-		background: color-mix(in srgb, var(--bg) 75%, transparent);
-		border: 2px dashed var(--accent);
-		pointer-events: none;
-	}
-
-	.drop-overlay p {
-		margin: 0;
-		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		background: var(--panel-raised);
-		color: var(--text);
-		font-size: 1.05rem;
-		overflow-wrap: anywhere;
-		text-align: center;
 	}
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
@@ -581,7 +582,7 @@
 				MineShell reads Modrinth <code>.mrpack</code> files and CurseForge server pack zips. Use this when a pack is not
 				listed, or for a custom export.
 			</p>
-			<label class="drop">
+			<label class="drop" use:dropzone={{ label: 'Drop the .mrpack or .zip here' }}>
 				<input
 					name="archive"
 					type="file"

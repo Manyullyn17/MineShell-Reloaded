@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
@@ -567,7 +568,7 @@
 {/if}
 {:else}
 <div class="cards">
-<section class="panel">
+<section class="panel" use:dropzone={{ disabled: data.running || busy || uploadPercent !== null, label: 'Drop the world zip here' }}>
 	<h2>Replace the world</h2>
 	<p class="muted">
 		Upload a zipped world, e.g. a singleplayer save. The folder holding <code>level.dat</code> becomes

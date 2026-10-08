@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { deserialize } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
+	import { dropzone } from '#lib/shared/dropzone.js';
 	import { applyPackIcon, toServerIcon } from '#lib/shared/servericon.js';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -490,7 +491,7 @@
 	</SettingsSection>
 
 	<SettingsSection tab="general" title="Server icon" description="Shown next to the server in players' server lists.">
-		<div class="block icon-block">
+		<div class="block icon-block" use:dropzone={{ label: 'Drop an image to use as the icon' }}>
 			{#if hasIcon}
 				<img src="{iconUrl}?v={iconVersion}" alt="Server icon" width="64" height="64" />
 			{:else}
