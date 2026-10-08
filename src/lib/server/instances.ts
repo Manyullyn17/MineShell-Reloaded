@@ -43,6 +43,7 @@ import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
+import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
 import {
 	beginOperation,
 	commitOperation,
@@ -471,6 +472,14 @@ function provisionFromPack(
 
 			const copied = await applyOverrides(pack, instance.path, toWorld);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
+			// The pack's originals, the base the next pack change merges the user's config edits against.
+			await writeBase(
+				packFiles(pack, new Set(['world', packWorld.split('/')[0], serverWorld.split('/')[0]])),
+				path.join(instance.path, BASE_FILE),
+				baseTag(instance)
+			).catch((err) =>
+				task.log(`Could not keep the pack's original configs: ${err instanceof Error ? err.message : 'unknown error'}.`)
+			);
 
 			// A pack's own server.properties (if its overrides shipped one) fully
 			// replaced the file written at creation, since applyOverrides is a raw

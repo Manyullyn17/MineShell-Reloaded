@@ -152,8 +152,11 @@ re-proposed or built twice.
 
 ### Later
 
-- **Three-way config diffs on pack update**: the old pack config, the user's edited copy
-  (now moved to `old-configs/`) and the new pack config.
+- **Three-way config diffs on pack update**: built (2026-10-08, `configmerge.ts`). Decided:
+  clean merges apply on their own; overlapping changes take the pack's lines and are listed
+  for review (Settings > Modpack: compare, use mine / the pack's); the user's own files in
+  pack folders are carried over; a server without saved originals reads its installed
+  version once.
 - **World tools**: dimension reset is built (World tab; `dimensions.ts`, `resetDimension`).
   The overworld means its terrain (region, entities, poi); level.dat, player data and the
   world's data stay. Chunk pruning is built too (`chunkprune.ts`, World tab): chunks whose

@@ -55,6 +55,7 @@ vi.mock('#lib/server/mods/index.js', async (importOriginal) => {
 });
 
 const { createFromArchive, createFromPack } = await import('#lib/server/instances.js');
+const { latestMergeReport, mergeView, resolveMerge, BASE_FILE } = await import('#lib/server/configmerge.js');
 const { planPackChange, applyPackChange, prepareUploadedPack } = await import('#lib/server/packchange.js');
 const { recoverInterruptedOperations } = await import('#lib/server/recovery.js');
 const { listOperations } = await import('#lib/server/operations.js');
@@ -186,7 +187,9 @@ describe('changing the pack version', () => {
 		});
 		expect((await readProperties(instance.path)).values.motd).toBe('My server');
 		expect(install).toHaveBeenCalledTimes(1); // only the original install; same loader and Minecraft
-		expect(reload(instance.id)).toMatchObject({ packVersionId: 'v2', packVersionName: 'Test Pack v2.zip', status: 'ready', statusMessage: null });
+		expect(reload(instance.id)).toMatchObject({ packVersionId: 'v2', packVersionName: 'Test Pack v2.zip', status: 'ready' });
+		// The user and the pack both changed pack.cfg's one line: the pack's is in place, flagged for review.
+		expect(reload(instance.id).statusMessage).toMatch(/^1 config file\(s\) were changed by both you and the pack/);
 	});
 
 	it('needs confirmation to change the Minecraft version, and flags mods that will break', async () => {
@@ -569,5 +572,111 @@ describe('changing to an uploaded pack file', () => {
 		await expect(prepareUploadedPack(reload(instance.id), zipBuffer({ 'manifest.json': JSON.stringify(manifest) }))).rejects.toThrow(
 			/Could not look up 1 of the pack's 1 CurseForge files/
 		);
+	});
+});
+
+describe('your config edits across a pack change', () => {
+	beforeEach(() => {
+		systemdStopped();
+		clearJava();
+		addJava(17);
+		vi.spyOn(LOADERS.fabric, 'install').mockImplementation(async (ctx) => {
+			await fs.writeFile(path.join(ctx.dir, 'server.jar'), 'fabric');
+			return { launchArgs: '-jar server.jar nogui', loaderVersion: '0.16.0' };
+		});
+	});
+	afterEach(() => vi.restoreAllMocks());
+
+	const lines = (...l: string[]) => l.map((x) => `${x}\n`).join('');
+	// cfg1 -> cfg2: a.cfg untouched by the pack, b.cfg and c.cfg changed on their last line, kubejs changed.
+	definePack('cfg1', '1.20.1', ['a.jar'], {
+		'config/a.cfg': lines('a1', 'a2', 'a3'),
+		'config/b.cfg': lines('b1', 'b2', 'b3', 'b4'),
+		'config/c.cfg': lines('cfg1', 'cfg2'),
+		'kubejs/x.js': 'x v1'
+	});
+	definePack('cfg2', '1.20.1', ['a.jar'], {
+		'config/a.cfg': lines('a1', 'a2', 'a3'),
+		'config/b.cfg': lines('b1', 'b2', 'b3', 'b4 from the pack'),
+		'config/c.cfg': lines('cfg1', 'c2 from the pack'),
+		'kubejs/x.js': 'x v2'
+	});
+
+	/** cfg1 installed, then configs edited and files added the way a player would. */
+	async function edited() {
+		const { instance, taskId } = await createFromPack('Configs', PACKS.cfg1(), { source: 'modrinth', projectId: 'p', versionId: 'cfg1' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		const dir = instance.path;
+		await fs.writeFile(path.join(dir, 'config/a.cfg'), lines('a1', 'a2 mine', 'a3'));
+		await fs.writeFile(path.join(dir, 'config/b.cfg'), lines('b1', 'b2 mine', 'b3', 'b4'));
+		await fs.writeFile(path.join(dir, 'config/c.cfg'), lines('cfg1', 'c2 mine'));
+		await fs.writeFile(path.join(dir, 'config/mine.cfg'), 'only mine');
+		await fs.mkdir(path.join(dir, 'kubejs'), { recursive: true });
+		await fs.writeFile(path.join(dir, 'kubejs/mine.js'), 'my script');
+		return reload(instance.id);
+	}
+
+	it('keeps, merges or flags each edited file, and brings back the user’s own', async () => {
+		const instance = await edited();
+		const task = await waitForTask(await applyPackChange(instance, 'cfg2', { updateMods: [], confirmMinecraftChange: false }));
+		expect(task.state).toBe('done');
+		const files = await tree(instance.path, /^(\.mineshell|old-configs)\//);
+		expect(files).toMatchObject({
+			'config/a.cfg': lines('a1', 'a2 mine', 'a3'),
+			'config/b.cfg': lines('b1', 'b2 mine', 'b3', 'b4 from the pack'),
+			'config/c.cfg': lines('cfg1', 'c2 from the pack'),
+			'config/mine.cfg': 'only mine',
+			'kubejs/mine.js': 'my script',
+			'kubejs/x.js': 'x v2'
+		});
+		const report = (await latestMergeReport(instance.path))!;
+		expect(Object.fromEntries(report.entries.map((e) => [e.path, e.outcome]))).toEqual({
+			'config/a.cfg': 'kept',
+			'config/b.cfg': 'merged',
+			'config/c.cfg': 'conflict',
+			'config/mine.cfg': 'carried',
+			'kubejs/mine.js': 'carried'
+		});
+		expect(reload(instance.id).statusMessage).toMatch(/1 config file\(s\) were changed by both/);
+
+		// The review: all three sides, then the user's side put back.
+		expect(await mergeView(instance.path, report.stamp, 'config/c.cfg')).toMatchObject({
+			base: lines('cfg1', 'cfg2'),
+			mine: lines('cfg1', 'c2 mine'),
+			pack: lines('cfg1', 'c2 from the pack'),
+			current: lines('cfg1', 'c2 from the pack')
+		});
+		expect(await resolveMerge(instance.path, report.stamp, 'config/c.cfg', 'mine')).toBe(true);
+		expect(await fs.readFile(path.join(instance.path, 'config/c.cfg'), 'utf8')).toBe(lines('cfg1', 'c2 mine'));
+		expect((await latestMergeReport(instance.path))!.entries.find((e) => e.path === 'config/c.cfg')!.resolved).toBe('mine');
+		// The pack's side of a carried file is no file.
+		await resolveMerge(instance.path, report.stamp, 'config/mine.cfg', 'pack');
+		expect(await fs.readFile(path.join(instance.path, 'config/mine.cfg')).catch(() => null)).toBeNull();
+		// Path tricks go nowhere.
+		expect(await mergeView(instance.path, report.stamp, '../../etc/passwd')).toBeNull();
+		expect(await mergeView(instance.path, '../x', 'config/c.cfg')).toBeNull();
+	});
+
+	it('reads the installed version’s originals once when a server has none saved', async () => {
+		// Installed before MineShell kept them.
+		const instance = await edited();
+		await fs.rm(path.join(instance.path, BASE_FILE));
+		await waitForTask(await applyPackChange(instance, 'cfg2', { updateMods: [], confirmMinecraftChange: false }));
+		expect(await fs.readFile(path.join(instance.path, 'config/a.cfg'), 'utf8')).toBe(lines('a1', 'a2 mine', 'a3'));
+	});
+
+	it('takes back the merge, its report and the saved originals when the change fails', async () => {
+		const instance = await edited();
+		const before = await tree(instance.path);
+		const base = await fs.readFile(path.join(instance.path, BASE_FILE));
+		vi.spyOn(LOADERS.fabric, 'install').mockRejectedValue(new Error('broken installer'));
+		addJava(21);
+		// A Minecraft change makes the loader step (and its failure) part of it.
+		definePack('cfg3', '1.21.1', ['a.jar'], { 'config/b.cfg': lines('b1', 'b2', 'b3', 'b4 from the pack') });
+		const task = await waitForTask(await applyPackChange(instance, 'cfg3', { updateMods: [], confirmMinecraftChange: true }));
+		expect(task.state).toBe('failed');
+		expect(await tree(instance.path)).toEqual(before);
+		expect(await latestMergeReport(instance.path)).toBeNull();
+		expect((await fs.readFile(path.join(instance.path, BASE_FILE))).equals(base)).toBe(true);
 	});
 });

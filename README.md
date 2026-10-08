@@ -73,7 +73,8 @@ Tests never touch real data; see [tests/README.md](tests/README.md).
 (vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom). Before a pack installs you see its
 mods and can untick client-only ones. Each instance gets its own directory, port pair (the game
 port can be picked), RCON password and systemd unit. Later you can change the pack version (picked from the
-provider, or by uploading the new version's file - the way to update a pack installed from an upload) or the loader version,
+provider, or by uploading the new version's file - the way to update a pack installed from an upload; your config edits
+are carried over or merged, and where you and the pack changed the same lines you get a side-by-side review) or the loader version,
 move a server that is not from a pack to a newer Minecraft or another loader (1.20.1 Forge to 1.21.1 NeoForge: every mod
 MineShell can look up moves to a build for it, the rest are disabled and listed first),
 migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try

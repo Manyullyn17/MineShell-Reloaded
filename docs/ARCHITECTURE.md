@@ -307,6 +307,20 @@ rolls back any operation a previous MineShell process left unfinished (the same 
 code as a failure while running), marks interrupted first installs failed, and releases
 servers whose operation had committed.
 
+**Config edits across a pack change** (`configmerge.ts`). A pack change moves every folder
+the new version ships to `old-configs/<date>-<version>/` and writes the pack's fresh. The
+pack's own copies of what it ships outside `mods/` and the world are kept as
+`.mineshell/pack-base.zip` (written at install and at every change, tagged with the pack
+version the row records, so a base left by a change that rolled back is not used; files over
+4 MB by hash only). With that base each moved file is sorted: unedited (the new pack's
+stands), edited and unchanged by the pack (the user's comes back), changed by both (a line
+merge; where both changed the same lines the pack's are used, so the server starts as the
+pack intends, and the file is listed), and files the pack never had (carried back unless the
+new version ships one there). A server without a base reads its installed version's
+overrides once. The merge runs inside the journalled change; its report, with the base and
+pack sides of every file a review needs, goes to `.mineshell/config-merges/<stamp>/`, and
+the Modpack settings show it with a compare view and "use mine / use the pack's".
+
 Mods are always downloaded fresh per instance. No shared cache, no symlinks. This is
 deliberate: modpacks sometimes ship a patched jar under the same version label as the
 upstream one, and a shared cache would serve the wrong file with no way to tell. Disk is

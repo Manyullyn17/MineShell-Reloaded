@@ -27,6 +27,7 @@ import {
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
 import { applyMigration } from '#lib/server/migrate.js';
+import { latestMergeReport, resolveMerge } from '#lib/server/configmerge.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
 import { formInt } from '#lib/server/formvalues.js';
 import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
@@ -168,6 +169,8 @@ export const load: PageServerLoad = async ({ params }) => {
 						versionName: instance.packVersionName
 					}
 				: null,
+		/** The last pack change's config merge, for the review under Modpack. */
+		configMerge: instance.packSource ? await latestMergeReport(instance.path) : null,
 		cleanroom: cleanroomRelevant
 			? {
 					onCleanroom: instance.modloader === 'cleanroom',
@@ -254,6 +257,17 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Saved.' };
+	},
+
+	/** A config file from the last pack change's merge: the user's side or the pack's. */
+	resolveConfig: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const use = form.get('use') === 'mine' ? 'mine' : 'pack';
+		const rel = String(form.get('path') ?? '');
+		const done = await resolveMerge(instance.path, String(form.get('stamp') ?? ''), rel, use);
+		if (!done) return fail(404, { ok: false, message: 'That file is no longer in the merge report.' });
+		return { ok: true, message: `${rel}: ${use === 'mine' ? 'your version' : 'the pack’s version'} is in place.` };
 	},
 
 	/** To another Minecraft version and/or loader, mods moved along (migrate.ts). */

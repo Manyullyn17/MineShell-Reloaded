@@ -15,6 +15,7 @@ import {
 } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep } from './snapshots';
+import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, writeBase, type Base } from './configmerge';
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type ParsedPack } from './packs';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
@@ -69,21 +70,6 @@ import type { JavaVendor } from './javadownload';
  *   configs, mods and the loader back exactly as they were.
  */
 
-/** Never moved to old-configs and never overwritten by a pack's overrides. */
-const PROTECTED = new Set([
-	'mods',
-	'server.properties',
-	'eula.txt',
-	'ops.json',
-	'whitelist.json',
-	'banned-players.json',
-	'banned-ips.json',
-	'usercache.json',
-	'logs',
-	'crash-reports',
-	'old-configs',
-	'.mineshell'
-]);
 
 // ---------------------------------------------------------------- preparing ---
 
@@ -471,6 +457,28 @@ export async function planPackChange(instance: ServerInstance, versionId: string
 
 // ----------------------------------------------------------------- applying ---
 
+/**
+ * The installed version's own files, which the user's copies are compared
+ * against: saved at install or the last change, else (servers from before
+ * that) read once from the installed version itself - its overrides download
+ * again. Null when neither is possible (an uploaded pack without a saved base).
+ */
+async function mergeBase(instance: ServerInstance, task: TaskHandle): Promise<Base | null> {
+	const saved = await readBase(instance.path);
+	if (saved?.tag === baseTag(instance)) return saved;
+	if (!instance.packSource || !instance.packProjectId || !instance.packVersionId) return null;
+	try {
+		task.setProgress(null, 'Reading the installed version’s original configs');
+		const { pack } = await resolveProviderPack(instance.packSource, instance.packProjectId, instance.packVersionId);
+		await loadOverridesArchive(pack, task);
+		const world = await serverWorldName(instance.path);
+		return baseFromFiles(packFiles(pack, worldTopsFor(world, packWorldName(pack))));
+	} catch (err) {
+		task.log(`Could not read the installed version’s original configs: ${err instanceof Error ? err.message : 'unknown error'}.`);
+		return null;
+	}
+}
+
 function stampFor(label: string | null): string {
 	const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
 	const version = (label ?? 'unknown')
@@ -557,6 +565,8 @@ export async function applyPackChange(
 				await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);
 			}
 			await fs.mkdir(path.join(staging, 'mods'), { recursive: true });
+			// The installed version's originals, to tell the user's config edits from the pack's.
+			const base = configsBefore.size ? await mergeBase(instance, task) : null;
 
 			// 1. Configs and other pack-shipped folders go to old-configs, whole.
 			task.setProgress(null, 'Moving current configs to old-configs');
@@ -641,6 +651,38 @@ export async function applyPackChange(
 				await fs.rename(path.join(mods, name), path.join(mods, `${name}${DISABLED_SUFFIX}`)).catch(() => undefined);
 			}
 
+			// 5b. The user's config edits come back into the new pack's files
+			// (configmerge.ts); old-configs keeps their copies either way.
+			if (base && movedConfigs.length) {
+				task.setProgress(null, 'Bringing back your config edits');
+				const report = await mergeConfigs(root, oldConfigs, movedConfigs, base, path.join(staging, 'config-merge'), path.basename(journal.oldConfigs));
+				const count = (o: string) => report.entries.filter((e) => e.outcome === o).length;
+				const parts = [
+					[count('kept') + count('carried'), 'kept as you had them'],
+					[count('merged'), 'merged with the pack’s changes'],
+					[count('conflict') + count('both-added'), 'changed by both: the pack’s lines are in place, review them in Settings']
+				].filter(([n]) => n);
+				if (parts.length) task.log(`Your config edits: ${parts.map(([n, what]) => `${n} ${what}`).join(', ')}.`);
+				if (count('conflict') + count('both-added')) {
+					problems.push(`${count('conflict') + count('both-added')} config file(s) were changed by both you and the pack; review them under Settings > Modpack.`);
+				}
+			} else if (movedConfigs.length) {
+				task.log('No record of the installed pack version’s own configs, so your edits stay in old-configs/ only.');
+			}
+			// This version's originals, the base for the next change, tagged with
+			// the version the commit records (a rollback leaves a base whose tag no
+			// longer matches, which is then not used), and the merge's report.
+			const committed = plan.uploaded
+				? { packVersionId: null, packName: pack.name, packVersionName: pack.version }
+				: { packVersionId: versionId, packName: instance.packName, packVersionName: pack.version };
+			// The old one is staged, so a rollback puts it back (an uploaded pack cannot fetch it again).
+			await fs.rename(path.join(root, BASE_FILE), path.join(staging, 'pack-base.zip')).catch(() => undefined);
+			await writeBase(packFiles(pack, worldTops), path.join(root, BASE_FILE), baseTag({ ...instance, ...committed }));
+			if (await exists(path.join(staging, 'config-merge', 'report.json'))) {
+				await fs.mkdir(path.join(root, REPORTS_DIR), { recursive: true });
+				await fs.rename(path.join(staging, 'config-merge'), path.join(root, REPORTS_DIR, path.basename(journal.oldConfigs)));
+			}
+
 			// 6. User mods the user chose to update.
 			for (const fileName of opts.updateMods) {
 				const update = plan.updates?.get(fileName);
@@ -688,9 +730,7 @@ export async function applyPackChange(
 				modloaderVersion: loaderVersion,
 				launchArgs,
 				// An uploaded file is no provider version: the server is no longer on one it can name.
-				packVersionId: plan.uploaded ? null : versionId,
-				packVersionName: pack.version,
-				...(plan.uploaded ? { packName: pack.name } : {}),
+				...committed,
 				packDatapacks: JSON.stringify([...plan.world.datapacks.add, ...plan.world.datapacks.update].sort())
 			});
 		} catch (err) {
@@ -798,5 +838,11 @@ export async function restorePackChange(root: string, journal: PackChangeJournal
 	}
 	await fs.rm(oldConfigs, { recursive: true, force: true });
 	await fs.rmdir(path.dirname(oldConfigs)).catch(() => undefined);
+	// The installed version's saved originals, if the change had moved them aside.
+	if (await exists(path.join(staging, 'pack-base.zip'))) {
+		await fs.rename(path.join(staging, 'pack-base.zip'), path.join(root, BASE_FILE));
+	}
+	// The config merge's report describes files just put back.
+	await fs.rm(path.join(root, REPORTS_DIR, path.basename(journal.oldConfigs)), { recursive: true, force: true });
 	await fs.rm(staging, { recursive: true, force: true });
 }
