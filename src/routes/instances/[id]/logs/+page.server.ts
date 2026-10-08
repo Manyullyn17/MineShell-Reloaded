@@ -5,6 +5,7 @@ import { bisectRuns, crashCausesByRun, startTimesByRun } from '#lib/server/histo
 import { listLogFiles, readLogFile } from '#lib/server/logfiles.js';
 import { diagnoseRun, type Diagnosis } from '#lib/server/crashdiag.js';
 import { modsDir } from '#lib/server/mods/index.js';
+import { matchesIn, searchLogs } from '#lib/server/logsearch.js';
 
 /**
  * Earlier runs (from the journal, as long as it keeps them) and the server's
@@ -16,8 +17,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const [runs, files] = await Promise.all([listRuns(instance.id, instance.createdAt), listLogFiles(instance.path)]);
 
 	const filePath = url.searchParams.get('file');
-	// With nothing picked, the newest run is shown (one run reads by invocation id, which is quick).
-	const runId = url.searchParams.get('run') ?? (filePath ? null : (runs[0]?.invocation ?? null));
+	const query = url.searchParams.get('q')?.trim() ?? '';
+	// With nothing picked, the newest run is shown (one run reads by invocation id, which is quick);
+	// a search shows its results first.
+	const runId = url.searchParams.get('run') ?? (filePath || query ? null : (runs[0]?.invocation ?? null));
 	let view: { kind: 'run' | 'file'; key: string; text: string; truncated: boolean; failed: boolean } | null = null;
 
 	if (runId) {
@@ -44,6 +47,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		bisectRuns: bisectRuns(instance.id),
 		files,
 		view,
+		query,
+		// Streamed: the journal and every log file are read.
+		search: query ? searchLogs(instance, query) : null,
+		// The open log's matching lines from all of it, not just the end shown.
+		inLog: query && view ? matchesIn(instance, view.kind, view.key, query).catch(() => []) : null,
 		// Streamed: indexing a big pack's mods takes a moment. Against the mods
 		// installed now, which may have changed since that run.
 		diagnosis: view?.failed ? diagnoseRun(view.text, modsDir(instance.path)).catch(() => [] as Diagnosis[]) : null

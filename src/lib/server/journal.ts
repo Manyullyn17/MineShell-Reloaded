@@ -354,3 +354,26 @@ function parseEvents(out: string, until = Infinity): JournalEvent[] {
 	}
 	return events.sort((a, b) => a.at - b.at);
 }
+
+/** One run's lines containing `text`, in any case, oldest first (the newest `limit`). */
+export async function searchRun(invocation: string, text: string, since = 0, limit = 5000): Promise<string[]> {
+	if (!/^[0-9a-f]{32}$/.test(invocation)) return [];
+	const out = await journalctl([...runMatch(invocation), '-o', 'cat', '-g', grepPattern(text), '--case-sensitive=false', '-n', String(limit), sinceArg(since)]);
+	return out.split('\n').filter((line) => line.length > 0);
+}
+
+/** journalctl -g takes a regular expression: the text, escaped. */
+function grepPattern(text: string): string {
+	return text.replace(/[\\^$.*+?()[\]{}|/]/g, '\\$&');
+}
+
+/**
+ * The unit's lines containing `text`, in any case: the newest `limit` of them,
+ * oldest first. journalctl -g takes a regular expression, so the text is
+ * escaped; it walks the whole journal (~0.5 s for a big pack's), which is
+ * fine for a search someone asked for, never for anything polled.
+ */
+export async function searchJournal(id: string, text: string, since = 0, limit = 2000): Promise<JournalEvent[]> {
+	const out = await journalctl([...unitMatch(id), '-o', 'json', '-g', grepPattern(text), '--case-sensitive=false', '-n', String(limit), sinceArg(since)]);
+	return parseEvents(out);
+}

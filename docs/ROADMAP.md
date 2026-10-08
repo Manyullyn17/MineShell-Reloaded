@@ -131,7 +131,7 @@ re-proposed or built twice.
   (MineShell's own polling floods them), command history kept per server in the browser,
   and saved commands per server (`macros.ts`, copied with a server copy). Autocomplete was
   left out: RCON cannot ask Brigadier for completions, and a fixed list would not know mod
-  commands. The Logs tab still has no search ("Log search" under Agreed for later).
+  commands. The Logs tab's search is "Log search" under Agreed for later (built).
 - **Ban UI, the rest**: built. Ban reasons, IP bans (`banned-ips.json`; by address while
   stopped, by online player while running), Ban / Ban IP next to Kick, operator levels and
   player-limit bypass (picked and changed only while stopped: vanilla has no command for
@@ -234,7 +234,9 @@ Suggested after the client pack export and reboot handling; all wanted.
 - **Chat in the console**: built (2026-10-08): a Chat chip and a chat send mode. A filter showing only player chat (`<name> message` lines and
   `[Server]` messages), and sending as the server with `say`. The console already sorts
   lines by kind (`consolelines.ts`), so it is a new kind plus a send mode.
-- **Log search**: the Logs tab (past runs and log files) cannot search; only the live
+- **Log search**: built (2026-10-08, `logsearch.ts`): one search over every run in the
+  journal (`journalctl -g`, escaped, any case) and every log file, archives included; the
+  open log lists its matching lines from all of it, not only the end shown. The Logs tab (past runs and log files) cannot search; only the live
   console can. Searching a run reads it from the journal by invocation; log files and
   gzipped archives are read from disk.
 

@@ -160,6 +160,14 @@ several a minute. Chat lines (`<name> text`, `[Not Secure] <name> text`, `* name
 with `say`, which players see as `[Rcon]`. Saved commands are kept per server in the database (`macros.ts`); command
 history stays in the browser.
 
+**Log search** (`logsearch.ts`) looks through every run the journal still holds
+(`journalctl -g` with the text escaped and `--case-sensitive=false`, the newest 5000
+matching lines, ~0.5 s for a big pack's journal) and every file in `logs/` and
+`crash-reports/`, `.log.gz` unpacked (up to 64 MB each, 8 s for all files). The open log
+lists its matching lines from all of it (`matchesIn`: one run by invocation, one file
+whole), since the viewer shows only a long log's end. `journalctl -o json` gives a MESSAGE
+with control characters (Forge's colour codes) as a byte array; `messageOf` decodes it.
+
 ---
 
 ## Data

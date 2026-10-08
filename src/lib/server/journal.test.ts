@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listRuns, readJournalEvents, readLastRun, runFinishedStarting } from './journal';
+import { listRuns, readJournalEvents, readLastRun, runFinishedStarting, searchJournal } from './journal';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const INVOCATION = '05cab01dbf7f460a8c7facc67e5cd7d5';
@@ -102,5 +102,16 @@ describe('journal lines with colour codes', () => {
 		fakeProcesses(() => ({ stdout: JSON.stringify(entry) + '\n' }));
 		const { events } = await readJournalEvents('colour-a', 'joined', { afterCursor: null, since: 0 });
 		expect(events.map((e) => e.message)).toEqual([coloured]);
+	});
+});
+
+describe('searchJournal', () => {
+	it('looks for the text as typed, in any case', async () => {
+		fakeProcesses(() => ({ stdout: JSON.stringify({ __REALTIME_TIMESTAMP: '2000', MESSAGE: 'x', _SYSTEMD_INVOCATION_ID: INVOCATION }) + '\n' }));
+		const found = await searchJournal('search-a', 'Done (12.3s) [x]|y', 0, 50);
+		expect(found).toEqual([{ at: 2, message: 'x', invocation: INVOCATION }]);
+		const args = spawnCalls.at(-1)!.args;
+		expect(args[args.indexOf('-g') + 1]).toBe('Done \\(12\\.3s\\) \\[x\\]\\|y');
+		expect(args).toEqual(expect.arrayContaining(['--case-sensitive=false', '-n', '50']));
 	});
 });
