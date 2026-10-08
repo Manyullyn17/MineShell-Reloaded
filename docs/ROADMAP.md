@@ -472,8 +472,20 @@ MeatballCraft runs RoughlyEnoughIDs, whose chunks store `Biomes` as an int array
 each section a `Palette` (int array) of extended block ids next to `Blocks`/`Data`; JEID did
 the same before it. uNmINeD reads only the vanilla 1.12 layout, so it cannot map big 1.12.2
 packs that raise the id limit. Dynmap runs inside the game, after RoughlyEnoughIDs has
-patched it, so it is the option for 1.12.2 (untested yet: needs the mod on the server and a
-run). A renderer of MineShell's own would have to decode the RoughlyEnoughIDs palette too. Shared with item icons: the client jar download and reading
+patched it, so it is the option for 1.12.2. A renderer of MineShell's own would have to
+decode the RoughlyEnoughIDs palette too.
+
+Tested 2026-10-08 on meatballcraft-cleanroom (Cleanroom 0.5.17, Java 25): Dynmap
+3.7-beta-6 for Forge 1.12.2 loads, finds the overworld and every modded dimension, and
+renders with textures (`dynmap radiusrender world x z r` over RCON: 300 blocks around spawn,
+then 200 around the base in 3.6 min). Only warnings: vanilla crop/cake states. Web server on
+8123. To check with the user: a few untextured-looking (plain white, black) spots in the base.
+
+Found on the way: a world from an older pack version stops at Forge's "missing registry
+entries ... /fml confirm" prompt before RCON is up, so MineShell's console cannot answer and
+the server sits "starting" (the 10-minute stuck warning fires). Worth recognising that line
+in the journal and offering "Confirm and start" (a one-off start with
+`-Dfml.queryResult=confirm`) or cancel. Shared with item icons: the client jar download and reading
 textures out of mod jars.
 
 ### Item and enchantment names in the player editor
