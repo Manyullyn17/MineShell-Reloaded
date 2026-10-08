@@ -457,10 +457,12 @@ offered as an extra where it adds something. Not built; checked 2026-10-08:
 - **MineShell's own top-down renderer** (region and NBT reading exist): every version, flat
   only, a lot to build well. Kept as the fallback idea.
 
-Suggested shape: a Map tab with BlueMap's CLI for 1.13+, uNmINeD's for anything older (or as
-a 2D option everywhere), and "install a map mod" offered where it adds live updates. First
-step: try uNmINeD's CLI on a copy of MeatballCraft's world (1.12.2 Cleanroom) to see what it
-makes of modded blocks there. Shared with item icons: the client jar download and reading
+**Decided (user, 2026-10-08):**
+- 1.13 and newer: BlueMap's CLI is the default (no mod); the Map page offers installing the
+  BlueMap mod for what it adds (live updates, player markers, modded blocks from the game).
+- GT New Horizons: its own GTNH Web Map, when the GTNH install option is built.
+- 1.12.2: Dynmap (mod) or uNmINeD's CLI (no mod), to be decided by testing both on a
+  copy of MeatballCraft's world. Shared with item icons: the client jar download and reading
 textures out of mod jars.
 
 ### Item and enchantment names in the player editor
