@@ -24,7 +24,11 @@
 		macros?: string[];
 	} = $props();
 
-	let lines = $state<ConsoleEntry[]>([]);
+	// Raw state, replaced whole once per batch: a deep proxy re-filtered and
+	// re-rendered the buffer for every line, and a full buffer shifted every
+	// index signal per line - a big pack starting (thousands of lines a second)
+	// froze the page.
+	let lines = $state.raw<ConsoleEntry[]>([]);
 	let connected = $state(false);
 	let error = $state('');
 	let command = $state('');
@@ -96,11 +100,32 @@
 		}
 	}
 
+	/** Lines that arrived since the last flush; the view takes them in batches. */
+	let pending: string[] = [];
+	let flushTimer: ReturnType<typeof setTimeout> | null = null;
+	const FLUSH_MS = 50;
+
 	function push(text: string) {
-		appendLine(lines, text, nextId++);
-		if (lines.length > bufferLines) {
-			lines.splice(0, lines.length - bufferLines);
-		}
+		pending.push(text);
+		flushTimer ??= setTimeout(flush, FLUSH_MS);
+	}
+
+	function flush() {
+		flushTimer = null;
+		if (pending.length === 0) return;
+		const next = lines.slice();
+		// The last entry can get stack-trace lines folded in: a copy, so the view sees it change.
+		const last = next.length - 1;
+		if (last >= 0) next[last] = { ...next[last], trace: [...next[last].trace] };
+		for (const text of pending) appendLine(next, text, nextId++);
+		pending = [];
+		lines = next.length > bufferLines ? next.slice(-bufferLines) : next;
+	}
+
+	function clearView() {
+		pending = [];
+		lines = [];
+		open = {};
 	}
 
 	function connect() {
@@ -123,8 +148,7 @@
 	$effect(() => {
 		// Re-subscribe when the instance changes.
 		const id = instanceId;
-		lines = [];
-		open = {};
+		clearView();
 		nextId = 0;
 		loadHistory(id);
 		connect();
@@ -149,8 +173,7 @@
 		// resetKey as soon as the unit starts leaving "running", so the view
 		// is already clear by the time the new process's lines arrive.
 		resetKey;
-		lines = [];
-		open = {};
+		clearView();
 	});
 
 	function onScroll() {
@@ -278,7 +301,10 @@
 		setTimeout(() => (copied = false), 1500);
 	}
 
-	onDestroy(() => source?.close());
+	onDestroy(() => {
+		source?.close();
+		if (flushTimer) clearTimeout(flushTimer);
+	});
 </script>
 
 <div class="console">
@@ -333,7 +359,7 @@
 		<button class="button-quiet" type="button" onclick={copyAll} disabled={visible.length === 0}>
 			{copied ? 'Copied' : filtering ? 'Copy shown' : 'Copy'}
 		</button>
-		<button class="button-quiet" type="button" onclick={() => ((lines = []), (open = {}))}>Clear view</button>
+		<button class="button-quiet" type="button" onclick={clearView}>Clear view</button>
 	</div>
 
 	{#if error}
