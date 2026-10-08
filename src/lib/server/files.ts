@@ -119,6 +119,17 @@ export async function renameEntry(root: string, from: string, to: string): Promi
 	await fs.rename(source, target);
 }
 
+/**
+ * Where an uploaded file goes inside `dir`. A file picked with the button is
+ * named by its own name; one from a dropped folder (`withFolders`) keeps the
+ * folders it was in, but never "." or ".." steps out of them.
+ */
+export function uploadPath(dir: string, name: string, withFolders: boolean): string {
+	const parts = name.split(/[/\\]+/).filter((p) => p !== '' && p !== '.');
+	if (!parts.length || parts.includes('..')) throw new Error(`${name} is not a file name.`);
+	return path.posix.join(dir, ...(withFolders ? parts : parts.slice(-1)));
+}
+
 export async function saveUpload(root: string, relative: string, file: File): Promise<void> {
 	const target = safeJoin(root, relative);
 	await fs.mkdir(path.dirname(target), { recursive: true });

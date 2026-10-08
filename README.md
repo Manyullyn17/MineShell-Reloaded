@@ -127,7 +127,8 @@ Names resolve to UUIDs through Mojang. A player data editor changes inventories,
 and other saved data of players who are offline; on 1.12 and older, enchantments are picked
 by name from the world's own table, mod enchantments included.
 
-**Files.** Browse, upload, download, rename, delete, and edit text files in place, all
+**Files.** Browse, upload (with the button, or by dropping files and whole folders on
+the page), download, rename, delete, and edit text files in place, all
 confined to the instance directory. A disk usage page shows where the space goes.
 
 **Java.** Runtimes are found on the system or downloaded, matched per server, with a

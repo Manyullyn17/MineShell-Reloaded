@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { applyAction, deserialize } from '$app/forms';
+	import { refreshAll } from '$app/navigation';
 	import { enhance } from '#lib/shared/forms.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
@@ -69,7 +71,90 @@
 		renaming = relPath;
 		renameValue = name;
 	}
+
+	// ---- uploads: the button, or files and folders dropped anywhere on the page.
+	let uploading = $state<number | null>(null);
+	/** dragenter/dragleave fire for every element crossed: count them. */
+	let dragDepth = $state(0);
+	const dropping = $derived(dragDepth > 0 && !data.editing);
+
+	const isFileDrag = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
+
+	function onDragEnter(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		event.preventDefault();
+		dragDepth++;
+	}
+
+	function onDragOver(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		// Without this the browser opens the file instead of dropping it here.
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = data.editing ? 'none' : 'copy';
+	}
+
+	function onDragLeave(event: DragEvent) {
+		if (isFileDrag(event)) dragDepth = Math.max(0, dragDepth - 1);
+	}
+
+	function onDrop(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		event.preventDefault();
+		dragDepth = 0;
+		if (data.editing || !event.dataTransfer) return;
+		// Entries must be taken now: the drop's items are gone after the first await.
+		const entries = [...event.dataTransfer.items].map((item) => item.webkitGetAsEntry?.()).filter((e) => e != null);
+		const plain = [...event.dataTransfer.files];
+		void (async () => {
+			const files = entries.length ? (await Promise.all(entries.map((e) => filesIn(e, '')))).flat() : plain.map((file) => ({ file, path: file.name }));
+			await upload(files);
+		})();
+	}
+
+	/** A dropped file, or every file inside a dropped folder with its path from there. */
+	async function filesIn(entry: FileSystemEntry, prefix: string): Promise<{ file: File; path: string }[]> {
+		const at = prefix + entry.name;
+		if (entry.isFile) {
+			const file = await new Promise<File>((resolve, reject) => (entry as FileSystemFileEntry).file(resolve, reject));
+			return [{ file, path: at }];
+		}
+		const reader = (entry as FileSystemDirectoryEntry).createReader();
+		const children: FileSystemEntry[] = [];
+		// readEntries hands them over in batches (100 in Chrome) until an empty one.
+		for (;;) {
+			const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
+			if (!batch.length) break;
+			children.push(...batch);
+		}
+		return (await Promise.all(children.map((child) => filesIn(child, `${at}/`)))).flat();
+	}
+
+	/** Posts to the same action as the button, with each file named by its path. */
+	async function upload(files: { file: File; path: string }[]) {
+		if (!files.length || uploading !== null) return;
+		const body = new FormData();
+		body.set('dir', data.dir);
+		body.set('withFolders', '1');
+		for (const { file, path } of files) body.append('files', file, path);
+		uploading = files.length;
+		try {
+			const res = await fetch(`${location.pathname}${location.search ? `${location.search}&` : '?'}/upload`, {
+				method: 'POST',
+				headers: { accept: 'application/json', 'x-sveltekit-action': 'true' },
+				body
+			});
+			const result = deserialize(await res.text());
+			if (result.type === 'success') await refreshAll();
+			await applyAction(result);
+		} catch {
+			await applyAction({ type: 'failure', status: 500, location: location.href, data: { ok: false, message: 'The upload did not reach MineShell.' } });
+		} finally {
+			uploading = null;
+		}
+	}
 </script>
+
+<svelte:window ondragenter={onDragEnter} ondragover={onDragOver} ondragleave={onDragLeave} ondrop={onDrop} />
 
 {#snippet entryRows(entries: typeof data.entries, depth: number)}
 	{#each entries as entry (entry.relPath)}
@@ -144,6 +229,12 @@
 
 <Flash {form} />
 
+{#if dropping}
+	<div class="drop-overlay" aria-hidden="true">
+		<p>Drop to upload into <span class="mono">{data.instance.id}/{data.dir}</span></p>
+	</div>
+{/if}
+
 {#if data.listError}
 	<div class="notice error"><p>{data.listError}</p></div>
 {/if}
@@ -209,10 +300,22 @@
 				<a class="button button-quiet" href={href(data.parentDir)}>Up one level</a>
 			{/if}
 			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>New folder</button>
-			<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance bind:this={uploadForm}>
+			<form
+				method="POST"
+				action="?/upload"
+				enctype="multipart/form-data"
+				use:enhance={({ formData }) => {
+					uploading = formData.getAll('files').length;
+					return async ({ update }) => {
+						await update();
+						uploading = null;
+					};
+				}}
+				bind:this={uploadForm}
+			>
 				<input type="hidden" name="dir" value={data.dir} />
-				<label class="button upload">
-					Upload here
+				<label class="button upload" title="Or drop files and folders anywhere on the page">
+					{uploading === null ? 'Upload here' : `Uploading ${uploading} file${uploading === 1 ? '' : 's'}…`}
 					<input
 						type="file"
 						name="files"
@@ -443,5 +546,29 @@
 
 	.file-title {
 		overflow-wrap: anywhere;
+	}
+
+	.drop-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 50;
+		display: grid;
+		place-items: center;
+		padding: var(--space-4);
+		background: color-mix(in srgb, var(--bg) 75%, transparent);
+		border: 2px dashed var(--accent);
+		pointer-events: none;
+	}
+
+	.drop-overlay p {
+		margin: 0;
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-lg);
+		background: var(--panel-raised);
+		color: var(--text);
+		font-size: 1.05rem;
+		overflow-wrap: anywhere;
+		text-align: center;
 	}
 </style>

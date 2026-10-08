@@ -347,7 +347,8 @@ The server is stopped for all of this; only downloading a running world does `sa
 
 **Path traversal.** Every file operation goes through `safeJoin()` in `files.ts`, which
 resolves the result and verifies it is still inside the instance directory. The file
-browser, uploads, mod deletion and the text editor all use it. Deletion additionally
+browser, uploads, mod deletion and the text editor all use it. A dropped folder's files
+keep their paths inside it (`uploadPath`, which refuses `..` steps). Deletion additionally
 refuses to operate outside `INSTANCES_DIR`, so a corrupt database row cannot point
 `rm -rf` at something interesting.
 

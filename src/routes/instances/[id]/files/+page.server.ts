@@ -8,6 +8,7 @@ import {
 	readTextFile,
 	renameEntry,
 	saveUpload,
+	uploadPath,
 	writeTextFile,
 	type DirEntry
 } from '#lib/server/files.js';
@@ -78,11 +79,13 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const dir = String(form.get('dir') ?? '');
+		// Dropped folders send each file's path inside them as its name.
+		const withFolders = form.get('withFolders') === '1';
 		const files = form.getAll('files').filter((f): f is File => f instanceof File && f.size > 0);
 		if (!files.length) return fail(400, { ok: false, message: 'Choose at least one file.' });
 		try {
 			for (const file of files) {
-				await saveUpload(instance.path, path.posix.join(dir, path.basename(file.name)), file);
+				await saveUpload(instance.path, uploadPath(dir, file.name, withFolders), file);
 			}
 			return { ok: true, message: `Uploaded ${files.length} file${files.length === 1 ? '' : 's'}.` };
 		} catch (err) {
