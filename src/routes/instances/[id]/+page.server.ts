@@ -72,7 +72,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const samples = bucketSamples(recentSamples(instance.id, RANGES[range]));
 	const heap = heapSamplesSince(instance.id, Date.now() - RANGES[range]);
 	// Shown only when the last run ended badly, so a crash is not silent.
-	const crash = await lastCrash(summary);
+	// Streamed: the first read of a big pack's last run takes 1-2 s.
+	const crash = lastCrash(summary).catch(() => null);
 	// Both over RCON; side by side, so a slow answer is waited for once.
 	const [players, tick] = summary.running
 		? await Promise.all([onlinePlayers(instance), tickStats(instance)])
@@ -87,13 +88,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		modloaderVersion: instance.modloaderVersion
 	});
 
-	const spark = (await hasSpark(instance.path))
-		? {
-				active: activeProfile(instance.id),
-				durations: PROFILE_SECONDS,
-				uploads: (await sparkUploads(instance.path)).slice(0, 5)
-			}
-		: null;
+	// Streamed: the first look opens every mod jar.
+	const spark = hasSpark(instance.path).then(async (has) =>
+		has
+			? {
+					active: activeProfile(instance.id),
+					durations: PROFILE_SECONDS,
+					uploads: (await sparkUploads(instance.path)).slice(0, 5)
+				}
+			: null
+	);
 
 	return {
 		summary: {
@@ -149,10 +153,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
-		...(await recentDiskBreakdown(instance).then(
+		// Streamed: the first walk of a big pack takes seconds.
+		disk: recentDiskBreakdown(instance).then(
 			(b) => ({ diskBytes: b.total, worldBytes: b.groups.find((g) => g.id === 'world')?.bytes ?? 0 }),
 			() => ({ diskBytes: 0, worldBytes: 0 })
-		)),
+		),
 		// CPU is measured across all cores, so the chart needs the core count to
 		// show a meaningful ceiling instead of an unexplained 400%.
 		cpuCores: cpus().length || 1,
@@ -165,9 +170,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		heapMaxBytes: heap.at(-1)?.maxBytes ?? null,
 		// Streamed: it may search the journal for an out-of-memory crash.
 		memoryAdvice: memoryAdvice(instance).catch(() => null),
-		crashTail: crash ? crash.log.split('\n').slice(-40).join('\n') : null,
-		// Streamed: indexing a big pack's mods takes a moment the first time.
-		diagnosis: crash?.diagnosis ?? null
+		crashTail: crash.then((c) => (c ? c.log.split('\n').slice(-40).join('\n') : null)),
+		// Indexing a big pack's mods takes a moment the first time.
+		diagnosis: crash.then((c) => c?.diagnosis ?? null)
 	};
 };
 

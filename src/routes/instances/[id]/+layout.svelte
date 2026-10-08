@@ -5,8 +5,13 @@
 	import { page } from '$app/state';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, children } = $props();
+
+	// Streamed: whether Spark is installed (the first look opens every mod jar).
+	const sparkInfo = streamed(() => data.spark, () => data.instance.id);
+	const spark = $derived(sparkInfo.ready ? sparkInfo.value : null);
 
 	const tabs = [
 		{ slug: '', label: 'Overview' },
@@ -154,7 +159,7 @@
 						<button type="submit" role="menuitem" formaction={actionUrl('pin')}>
 							<span>{data.instance.pinned ? 'Unpin from the top of the list' : 'Pin to top of list'}</span>
 						</button>
-						{#if data.spark && data.running && !data.spark.active}
+						{#if spark && data.running && !spark.active}
 							<button type="submit" role="menuitem" formaction={actionUrl('profile')} name="seconds" value="60">
 								<span>Start a Spark profile</span><span class="hint">60 s</span>
 							</button>

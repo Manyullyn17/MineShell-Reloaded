@@ -37,7 +37,8 @@ export const load: LayoutServerLoad = async ({ params, url }) => {
 		// The header's actions work from every tab, so what they need is here.
 		countdown: getCountdown(instance.id),
 		address: `${primaryLanAddress()}:${instance.serverPort}`,
-		spark: (await hasSpark(instance.path)) ? { active: activeProfile(instance.id) !== null } : null,
+		// Streamed: the first look opens every mod jar (0.2-0.7 s on a big pack), and every tab loads this.
+		spark: hasSpark(instance.path).then((has) => (has ? { active: activeProfile(instance.id) !== null } : null)),
 		section: url.pathname.split('/')[3] ?? 'overview'
 	};
 };

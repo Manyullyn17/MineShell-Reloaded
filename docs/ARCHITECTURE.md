@@ -459,7 +459,8 @@ on a page with one (`?path=`, `?tab=`, `?range=`): every page imports `enhance` 
 `#lib/shared/forms.js`, which keeps a form posting to its own path on the current URL.
 
 **Slow data is streamed**: a `load` returns what takes long (journal reads, version lists
-fetched from the loaders' servers, a mod scan) as an unawaited promise, so the tab opens at
+fetched from the loaders' servers, a mod scan, the overview's disk walk and last-run crash
+check, the Spark check every tab's header makes) as an unawaited promise, so the tab opens at
 once with a placeholder. A plain `{#await}` shows its placeholder again on every reload
 (a form action, the header's `invalidateAll`), which blanked the Logs viewer and lost its
 scroll; `streamed()` (`lib/shared/streamed.svelte.ts`) keeps the last value while the next

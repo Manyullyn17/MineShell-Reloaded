@@ -8,8 +8,18 @@
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import { avatarTone } from '#lib/shared/avatar.js';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+
+	// Streamed: slow the first time on a big pack (the last run's journal, a walk of the
+	// folder, every mod jar opened). Kept between the 5 s refreshes, so nothing flickers.
+	const key = () => data.instance.id;
+	const crashTail = streamed(() => data.crashTail, key);
+	const diagnosis = streamed(() => data.diagnosis, key);
+	const disk = streamed(() => data.disk, key);
+	const sparkInfo = streamed(() => data.spark, key);
+	const spark = $derived(sparkInfo.ready ? sparkInfo.value : null);
 
 	// A server installed from a pack gets the pack's icon (what Prism shows), the first time
 	// it is opened without one; scaled here, since the browser decodes every format.
@@ -27,7 +37,7 @@
 	// Ticks a running profile between polls.
 	let now = $state(Date.now());
 	$effect(() => {
-		if (!data.spark?.active) return;
+		if (!spark?.active) return;
 		const tick = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(tick);
 	});
@@ -114,7 +124,7 @@
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}
 
-{#if data.crashTail}
+{#if crashTail.ready && crashTail.value}
 	<section class="panel">
 		<div class="panel-head">
 			<div>
@@ -123,12 +133,12 @@
 			</div>
 			<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>
 		</div>
-		{#await data.diagnosis}
+		{#if !diagnosis.ready}
 			<p class="muted small">Working out what went wrong.</p>
-		{:then diagnosis}
-			<CrashDiagnosis {diagnosis} fixAction={data.running ? null : '?/modFix'} />
-		{/await}
-		<pre class="crash">{data.crashTail}</pre>
+		{:else if diagnosis.value}
+			<CrashDiagnosis diagnosis={diagnosis.value} fixAction={data.running ? null : '?/modFix'} />
+		{/if}
+		<pre class="crash">{crashTail.value}</pre>
 	</section>
 {/if}
 
@@ -175,9 +185,9 @@
 	</div>
 	<div>
 		<dt>Disk</dt>
-		<dd class="mono">{formatBytes(data.diskBytes)}</dd>
+		<dd class="mono">{disk.ready && disk.value ? formatBytes(disk.value.diskBytes) : '…'}</dd>
 		<dd class="sub">
-			<a href="/instances/{data.instance.id}/files/usage">{data.worldBytes ? `world ${formatBytes(data.worldBytes)}` : 'where it goes'}</a>
+			<a href="/instances/{data.instance.id}/files/usage">{disk.ready && disk.value?.worldBytes ? `world ${formatBytes(disk.value.worldBytes)}` : 'where it goes'}</a>
 		</dd>
 	</div>
 </dl>
@@ -293,7 +303,7 @@
 			</section>
 		{/if}
 
-		{#if data.spark}
+		{#if spark}
 			<section class="panel">
 				<div class="panel-head">
 					<div>
@@ -304,11 +314,11 @@
 						</p>
 					</div>
 				</div>
-				{#if data.spark.active}
+				{#if spark.active}
 					<form method="POST" use:enhance class="profiling">
 						<span>
-							{#if data.spark.active.endsAt > now}
-								Profiling, <strong class="mono">{clock(data.spark.active.endsAt - now)}</strong> left
+							{#if spark.active.endsAt > now}
+								Profiling, <strong class="mono">{clock(spark.active.endsAt - now)}</strong> left
 							{:else}
 								Waiting for Spark to upload the result
 							{/if}
@@ -319,7 +329,7 @@
 				{:else if data.running}
 					<form method="POST" action="?/profile" use:enhance class="row">
 						<select name="seconds" aria-label="How long to profile" class="duration">
-							{#each data.spark.durations as seconds (seconds)}
+							{#each spark.durations as seconds (seconds)}
 								<option value={seconds} selected={seconds === 60}>{durationLabel(seconds)}</option>
 							{/each}
 						</select>
@@ -329,13 +339,13 @@
 					<p class="muted small">Start the server to profile it.</p>
 				{/if}
 		
-				{#if data.spark.uploads.length}
+				{#if spark.uploads.length}
 					<table class="uploads">
 						<thead>
 							<tr><th>When</th><th>What</th><th>Started by</th><th></th></tr>
 						</thead>
 						<tbody>
-							{#each data.spark.uploads as upload (upload.time)}
+							{#each spark.uploads as upload (upload.time)}
 								<tr>
 									<td title={formatDateTime(upload.time)}>{formatRelative(upload.time)}</td>
 									<td>{upload.type}</td>
