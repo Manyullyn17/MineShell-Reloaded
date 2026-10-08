@@ -240,6 +240,10 @@
 		</div>
 		<button class="button-primary" type="submit">Save &amp; test</button>
 	</form>
+	<p class="muted small">
+		Get one free at <a href="https://console.curseforge.com/" target="_blank" rel="noreferrer">console.curseforge.com</a>
+		(sign in, then API keys).
+	</p>
 	{#if data.curseforge.source === 'saved'}
 		<form method="POST" action="?/removeCurseforgeKey" use:enhance class="inline-form">
 			<button class="button-quiet" type="submit">Remove saved key</button>
