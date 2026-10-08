@@ -1,44 +1,32 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
-import { listRuns, readRun } from '#lib/server/journal.js';
+import { listRuns, readRun, type RunSummary } from '#lib/server/journal.js';
 import { bisectRuns, crashCausesByRun, startTimesByRun } from '#lib/server/history.js';
 import { listLogFiles, readLogFile } from '#lib/server/logfiles.js';
 import { diagnoseRun, type Diagnosis } from '#lib/server/crashdiag.js';
 import { modsDir } from '#lib/server/mods/index.js';
 import { matchesIn, searchLogs } from '#lib/server/logsearch.js';
-import { analyseLog, shareLog, shareOf, unshareLog } from '#lib/server/mclogs.js';
+import { analyseLog, shareLog, shareOf, unshareLog, type LogShare } from '#lib/server/mclogs.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 
 /**
  * Earlier runs (from the journal, as long as it keeps them) and the server's
  * own crash reports and log files, with a crash diagnosis for a run that
  * ended badly or a crash report. The overview only looks at the last run.
+ *
+ * The journal reads take seconds on a big pack the first time (journal.ts
+ * keeps them after that), so the runs and the open log are streamed: the
+ * page opens at once with placeholders.
  */
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
-	const [runs, files] = await Promise.all([listRuns(instance.id, instance.createdAt), listLogFiles(instance.path)]);
+	const runs = listRuns(instance.id, instance.createdAt);
+	const files = await listLogFiles(instance.path);
 
 	const filePath = url.searchParams.get('file');
 	const query = url.searchParams.get('q')?.trim() ?? '';
-	// With nothing picked, the newest run is shown (one run reads by invocation id, which is quick);
-	// a search shows its results first.
-	const runId = url.searchParams.get('run') ?? (filePath || query ? null : (runs[0]?.invocation ?? null));
-	let view: { kind: 'run' | 'file'; key: string; text: string; truncated: boolean; failed: boolean } | null = null;
-
-	if (runId) {
-		const run = runs.find((r) => r.invocation === runId);
-		if (run) {
-			const text = await readRun(run.invocation, instance.createdAt);
-			const started = /\]: Done \(/.test(text);
-			// 143 is Java answering SIGTERM: a stop, not a crash.
-			const failed = (!!run.failure && !/status=143\b/.test(run.exit ?? '')) || (run.endedAt !== null && !started);
-			view = { kind: 'run', key: run.invocation, text, truncated: text.split('\n').length >= 20000, failed };
-		}
-	} else if (filePath) {
-		const read = await readLogFile(instance.path, filePath);
-		if (read) view = { kind: 'file', key: filePath, ...read, failed: filePath.startsWith('crash-reports/') };
-	}
+	const view = openLog(instance, runs, url.searchParams.get('run'), filePath, query);
 
 	return {
 		runs,
@@ -53,15 +41,52 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		query,
 		// Streamed: the journal and every log file are read.
 		search: query ? searchLogs(instance, query) : null,
-		/** The open log's link on mclo.gs, if it was shared. */
-		share: view ? shareOf(instance.id, view.kind, view.key) : null,
 		// The open log's matching lines from all of it, not just the end shown.
-		inLog: query && view ? matchesIn(instance, view.kind, view.key, query).catch(() => []) : null,
-		// Streamed: indexing a big pack's mods takes a moment. Against the mods
-		// installed now, which may have changed since that run.
-		diagnosis: view?.failed ? diagnoseRun(view.text, modsDir(instance.path)).catch(() => [] as Diagnosis[]) : null
+		inLog: view.then((v) => (query && v ? matchesIn(instance, v.kind, v.key, query).catch(() => []) : null)),
+		// Indexing a big pack's mods takes a moment. Against the mods installed
+		// now, which may have changed since that run.
+		diagnosis: view.then((v) => (v?.failed ? diagnoseRun(v.text, modsDir(instance.path)).catch(() => [] as Diagnosis[]) : null))
 	};
 };
+
+type OpenLog = {
+	kind: 'run' | 'file';
+	key: string;
+	text: string;
+	truncated: boolean;
+	failed: boolean;
+	/** The run shown, for its heading. */
+	run: RunSummary | null;
+	/** The log's link on mclo.gs, if it was shared. */
+	share: LogShare | null;
+};
+
+/** The log the page shows: the one picked, or with nothing picked the newest run (a search shows its results first). */
+async function openLog(
+	instance: ServerInstance,
+	runs: Promise<RunSummary[]>,
+	runParam: string | null,
+	filePath: string | null,
+	query: string
+): Promise<OpenLog | null> {
+	let view: Omit<OpenLog, 'share'> | null = null;
+	if (runParam || !(filePath || query)) {
+		const list = await runs;
+		const run = list.find((r) => r.invocation === (runParam ?? list[0]?.invocation));
+		if (run) {
+			// One run reads by invocation id, which is quick.
+			const text = await readRun(run.invocation, instance.createdAt);
+			const started = /\]: Done \(/.test(text);
+			// 143 is Java answering SIGTERM: a stop, not a crash.
+			const failed = (!!run.failure && !/status=143\b/.test(run.exit ?? '')) || (run.endedAt !== null && !started);
+			view = { kind: 'run', key: run.invocation, text, truncated: text.split('\n').length >= 20000, failed, run };
+		}
+	} else if (filePath) {
+		const read = await readLogFile(instance.path, filePath);
+		if (read) view = { kind: 'file', key: filePath, ...read, failed: filePath.startsWith('crash-reports/'), run: null };
+	}
+	return view && { ...view, share: shareOf(instance.id, view.kind, view.key) };
+}
 
 /** The log a form names, as the page shows it: a run's newest lines, a file's end. */
 async function logText(instance: ServerInstance, form: FormData): Promise<{ kind: 'run' | 'file'; key: string; text: string } | null> {

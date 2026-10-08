@@ -7,8 +7,20 @@
 	import { segments } from '#lib/shared/highlight.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { formatBytes, formatDateTime, formatRelative, formatSeconds } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+
+	// Streamed: the journal reads take seconds the first time on a big pack.
+	const runs = streamed(() => data.runs, () => data.instance.id);
+	const logKey = () => `${data.instance.id}${page.url.search}`;
+	const view = streamed(() => data.view, logKey);
+	const inLog = streamed(() => data.inLog, logKey);
+	const diagnosis = streamed(() => data.diagnosis, logKey);
+	/** The open log, once it is read; null while another one loads. */
+	const shown = $derived(view.ready ? (view.value ?? null) : null);
+	/** The log picked, or the one shown by default. */
+	const currentKey = $derived(page.url.searchParams.get('run') ?? page.url.searchParams.get('file') ?? shown?.key);
 
 	let asking = $state<'analyse' | 'share' | null>(null);
 	/** Shows the button busy while mclo.gs answers. */
@@ -19,12 +31,12 @@
 			asking = null;
 		};
 	};
-	const analysis = $derived(form && 'mclogs' in form && form.mclogs && form.mclogs.key === data.view?.key ? form.mclogs : null);
+	const analysis = $derived(form && 'mclogs' in form && form.mclogs && form.mclogs.key === shown?.key ? form.mclogs : null);
 
 	let list = $state<'runs' | 'files'>('runs');
 	// Opening a file from the URL shows the file list.
 	$effect(() => {
-		if (data.view?.kind === 'file') list = 'files';
+		if (shown?.kind === 'file') list = 'files';
 	});
 
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}/logs`);
@@ -49,10 +61,10 @@
 	const needle = $derived(data.query.toLowerCase());
 	/** Matching lines of the part shown, with the index of each one's first mark. */
 	const shownMatches = $derived.by(() => {
-		if (!needle || !data.view) return [];
+		if (!needle || !shown) return [];
 		const out: { first: number }[] = [];
 		let hits = 0;
-		for (const text of data.view.text.split('\n')) {
+		for (const text of shown.text.split('\n')) {
 			const lower = text.toLowerCase();
 			let n = 0;
 			for (let at = lower.indexOf(needle); at !== -1; at = lower.indexOf(needle, at + needle.length)) n++;
@@ -104,7 +116,7 @@
 				<ul class="results" use:fitToViewport>
 					{#each [...found.runs, ...found.files] as hit (hit.kind + hit.key)}
 						<li>
-							<a href={open(hit.kind, hit.key)} class:current={data.view?.key === hit.key}>
+							<a href={open(hit.kind, hit.key)} class:current={currentKey === hit.key}>
 								<span class="item">
 									<span class:mono={hit.kind === 'file'} class="path">
 										{hit.kind === 'run' ? formatDateTime(hit.at) : hit.key}
@@ -121,15 +133,17 @@
 			{/await}
 		{:else}
 		<div class="switcher">
-			<button class:active={list === 'runs'} onclick={() => (list = 'runs')}>Runs ({data.runs.length})</button>
+			<button class:active={list === 'runs'} onclick={() => (list = 'runs')}>Runs ({runs.ready ? runs.value?.length : '…'})</button>
 			<button class:active={list === 'files'} onclick={() => (list = 'files')}>Files ({data.files.length})</button>
 		</div>
 		<ul use:fitToViewport>
-			{#if list === 'runs'}
-				{#each data.runs as run, i (run.invocation)}
+			{#if list === 'runs' && !runs.ready}
+				<li class="muted small">Reading the journal…</li>
+			{:else if list === 'runs'}
+				{#each runs.value ?? [] as run, i (run.invocation)}
 					{@const end = outcome(run, i === 0)}
 					<li>
-						<a href="{base}?run={run.invocation}" class:current={data.view?.key === run.invocation}>
+						<a href="{base}?run={run.invocation}" class:current={currentKey === run.invocation}>
 							<span class="dot" class:running={end.tone === 'running'} class:failed={end.tone === 'bad'}></span>
 							<span class="item">
 								<span>{formatDateTime(run.startedAt)}{#if data.bisectRuns.includes(run.invocation)} <span class="tag">bisect test</span>{/if}</span>
@@ -148,7 +162,7 @@
 			{:else}
 				{#each data.files as file (file.path)}
 					<li>
-						<a href="{base}?file={encodeURIComponent(file.path)}" class:current={data.view?.key === file.path}>
+						<a href="{base}?file={encodeURIComponent(file.path)}" class:current={currentKey === file.path}>
 							<span class="dot" class:failed={file.path.startsWith('crash-reports/')}></span>
 							<span class="item">
 								<span class="mono path">{file.path}</span>
@@ -165,9 +179,9 @@
 	</section>
 
 	<section class="viewer">
-		{#if data.view}
-			{@const run = data.runs.find((r) => r.invocation === data.view?.key)}
-			{@const file = data.files.find((f) => f.path === data.view?.key)}
+		{#if shown}
+			{@const run = shown.run}
+			{@const file = shown.kind === 'file' ? data.files.find((f) => f.path === shown.key) : undefined}
 			<a class="back small" href={listHref}>← All runs and files</a>
 			<div class="viewer-head">
 				<h2 class:mono={!!file}>{run ? formatDateTime(run.startedAt) : (file?.path ?? '')}</h2>
@@ -175,27 +189,27 @@
 					{#if run}started {formatRelative(run.startedAt)}{:else if file}{formatBytes(file.size)}{/if}
 				</span>
 			</div>
-			{#if data.diagnosis}
-				{#await data.diagnosis}
+			{#if shown.failed}
+				{#if !diagnosis.ready}
 					<p class="muted small">Working out what went wrong.</p>
-				{:then diagnosis}
-					{#if diagnosis.length}
+				{:else if diagnosis.value}
+					{#if diagnosis.value.length}
 						<p class="small muted">Diagnosed against the mods installed now, which may differ from that run's.</p>
 					{/if}
-					<CrashDiagnosis {diagnosis} fixAction={`/instances/${encodeURIComponent(data.instance.id)}?/modFix`} />
-				{/await}
+					<CrashDiagnosis diagnosis={diagnosis.value} fixAction={`/instances/${encodeURIComponent(data.instance.id)}?/modFix`} />
+				{/if}
 			{/if}
 			<div class="mclogs small">
 				<form method="POST" action="?/mclogsAnalyse" use:enhance={busy('analyse')}>
-					<input type="hidden" name="kind" value={data.view.kind} />
-					<input type="hidden" name="key" value={data.view.key} />
+					<input type="hidden" name="kind" value={shown.kind} />
+					<input type="hidden" name="key" value={shown.key} />
 					<button class="button-quiet" type="submit" disabled={asking !== null} aria-busy={asking === 'analyse'}>Analyse with mclo.gs</button>
 				</form>
-				{#if data.share}
-					<span>Shared: <a href={data.share.url} target="_blank" rel="noreferrer">{data.share.url}</a></span>
+				{#if shown.share}
+					<span>Shared: <a href={shown.share.url} target="_blank" rel="noreferrer">{shown.share.url}</a></span>
 					<form method="POST" action="?/mclogsUnshare" use:enhance>
-						<input type="hidden" name="kind" value={data.view.kind} />
-						<input type="hidden" name="key" value={data.view.key} />
+						<input type="hidden" name="kind" value={shown.kind} />
+						<input type="hidden" name="key" value={shown.key} />
 						<button class="button-quiet button-danger" type="submit">Delete from mclo.gs</button>
 					</form>
 				{:else}
@@ -210,8 +224,8 @@
 							return busy('share')();
 						}}
 					>
-						<input type="hidden" name="kind" value={data.view.kind} />
-						<input type="hidden" name="key" value={data.view.key} />
+						<input type="hidden" name="kind" value={shown.kind} />
+						<input type="hidden" name="key" value={shown.key} />
 						<button class="button-quiet" type="submit" disabled={asking !== null} aria-busy={asking === 'share'}>Share on mclo.gs</button>
 					</form>
 				{/if}
@@ -244,13 +258,13 @@
 					{/if}
 				</section>
 			{/if}
-			{#if data.view.truncated}
-				<p class="hint">Long log: only its end is shown{data.view.kind === 'file' ? '; download the whole file from Files' : ''}.</p>
+			{#if shown.truncated}
+				<p class="hint">Long log: only its end is shown{shown.kind === 'file' ? '; download the whole file from Files' : ''}.</p>
 			{/if}
-			{#await data.inLog}
+			{#if needle && !inLog.ready}
 				<p class="muted small">Finding the lines with “{data.query}”.</p>
-			{:then found}
-				{@const all = found ?? []}
+			{:else}
+				{@const all = inLog.value ?? []}
 				{#if needle}
 					<div class="in-log small">
 						<span class="muted">
@@ -278,11 +292,13 @@
 						{/each}
 					</div>
 				{:else if needle}
-					<pre class="mono" bind:this={viewerPre} use:fitToViewport>{#each segments(data.view.text, data.query) as part, j (j)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</pre>
+					<pre class="mono" bind:this={viewerPre} use:fitToViewport>{#each segments(shown.text, data.query) as part, j (j)}{#if part.hit}<mark>{part.text}</mark>{:else}{part.text}{/if}{/each}</pre>
 				{:else}
-					<pre class="mono" use:fitToViewport>{data.view.text || '(empty)'}</pre>
+					<pre class="mono" use:fitToViewport>{shown.text || '(empty)'}</pre>
 				{/if}
-			{/await}
+			{/if}
+		{:else if !view.ready}
+			<p class="muted small">Reading the log…</p>
 		{:else}
 			<div class="empty">
 				<p>

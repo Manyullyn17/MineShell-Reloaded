@@ -163,8 +163,8 @@ history stays in the browser.
 **Logs tab**: the run list (`listRuns`, systemd's start/stop lines found with `journalctl -g`)
 and a run's text (`readRun`, its last 20000 lines) take journalctl 1-3 s each on a big pack.
 Both are kept in memory with the cursor of the newest entry read; later reads take only what
-came after it (`--after-cursor`), so only the first open after MineShell starts waits. The
-newest 8 runs' text is kept.
+came after it (`--after-cursor`), so only the first read after MineShell starts is slow. The
+newest 8 runs' text is kept. Both are streamed to the page (Frontend), so it opens at once.
 
 **Log search** (`logsearch.ts`) looks through every run the journal still holds
 (`journalctl -g` with the text escaped and `--case-sensitive=false`, the newest 5000
@@ -457,6 +457,14 @@ would navigate there, so the header applies the result itself and reloads in pla
 Kit 3 counts the query as part of the page, so `action="?/x"` also lands somewhere else
 on a page with one (`?path=`, `?tab=`, `?range=`): every page imports `enhance` from
 `#lib/shared/forms.js`, which keeps a form posting to its own path on the current URL.
+
+**Slow data is streamed**: a `load` returns what takes long (journal reads, version lists
+fetched from the loaders' servers, a mod scan) as an unawaited promise, so the tab opens at
+once with a placeholder. A plain `{#await}` shows its placeholder again on every reload
+(a form action, the header's `invalidateAll`), which blanked the Logs viewer and lost its
+scroll; `streamed()` (`lib/shared/streamed.svelte.ts`) keeps the last value while the next
+one loads and shows the placeholder only when it was loaded for something else (another
+log picked).
 
 **The notification center** (top bar, `NotificationCenter.svelte`) follows the task stream
 (`/api/tasks?stream=1&brief=1`, without logs) on every page: running tasks with progress

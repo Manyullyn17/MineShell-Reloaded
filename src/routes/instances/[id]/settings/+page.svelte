@@ -19,8 +19,15 @@
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+
+	// Streamed: fetched from Mojang and the loader's servers the first time.
+	// Until they arrive, the pickers hold only the installed version.
+	const versions = streamed(() => data.versions, () => data.instance.id);
+	const minecraftVersions = $derived(versions.ready ? versions.value?.minecraft : undefined);
+	const loaderVersions = $derived(versions.ready ? versions.value?.loader : undefined);
 
 	// ---- tabs and search
 
@@ -478,12 +485,12 @@
 			</div>
 			<div class="field">
 				<label for="minecraftVersion">Minecraft version</label>
-				{#if data.minecraftVersions.length}
-					<select id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion}>
-						{#if !data.minecraftVersions.includes(sv.minecraftVersion)}
+				{#if !minecraftVersions || minecraftVersions.length}
+					<select id="minecraftVersion" name="minecraftVersion" bind:value={sv.minecraftVersion} aria-busy={!minecraftVersions}>
+						{#if !minecraftVersions?.includes(sv.minecraftVersion)}
 							<option value={sv.minecraftVersion}>{sv.minecraftVersion} (installed)</option>
 						{/if}
-						{#each data.minecraftVersions as version (version)}
+						{#each minecraftVersions ?? [] as version (version)}
 							<option value={version}>{version}</option>
 						{/each}
 					</select>
@@ -492,7 +499,7 @@
 				{/if}
 				<p class="hint">
 					Records what is installed, to choose Java and filter mod searches. Changing it does not reinstall anything.
-					{#if !data.minecraftVersions.length}Mojang's version list was unreachable, so this is a plain field.{/if}
+					{#if minecraftVersions && !minecraftVersions.length}Mojang's version list was unreachable, so this is a plain field.{/if}
 				</p>
 			</div>
 		</form>
@@ -538,12 +545,18 @@
 			{/snippet}
 			<form method="POST" action="?/loaderVersion" use:enhance={keepValues} class="block">
 				<div class="inline-row">
-					{#if data.loaderVersions.length}
-						<select id="modloaderVersion" name="modloaderVersion" bind:value={sv.modloaderVersion} aria-label="Version to install">
-							{#if sv.modloaderVersion && !data.loaderVersions.includes(sv.modloaderVersion)}
+					{#if !loaderVersions || loaderVersions.length}
+						<select
+							id="modloaderVersion"
+							name="modloaderVersion"
+							bind:value={sv.modloaderVersion}
+							aria-label="Version to install"
+							aria-busy={!loaderVersions}
+						>
+							{#if sv.modloaderVersion && !loaderVersions?.includes(sv.modloaderVersion)}
 								<option value={sv.modloaderVersion}>{sv.modloaderVersion} (installed)</option>
 							{/if}
-							{#each data.loaderVersions.slice(0, 60) as version (version)}
+							{#each (loaderVersions ?? []).slice(0, 60) as version (version)}
 								<option value={version}>{version}{version === data.settings.modloaderVersion ? ' (installed)' : ''}</option>
 							{/each}
 						</select>

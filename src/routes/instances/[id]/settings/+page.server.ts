@@ -97,15 +97,15 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	// Version pickers, so these are not free-text fields where a typo silently
 	// mislabels the instance. Both lists are best-effort: if the metadata
-	// servers are unreachable the page falls back to a text input.
-	const [minecraftVersions, loaderVersions] = await Promise.all([
+	// servers are unreachable the page falls back to a text input. Streamed:
+	// the first fetch takes up to 0.6 s (Forge's), after that they are kept.
+	const versions = Promise.all([
 		pickerReleaseVersions().catch(() => [] as string[]),
 		pickerLoaderVersions(instance.modloader, instance.minecraftVersion).catch(() => [] as string[])
-	]);
+	]).then(([minecraft, loader]) => ({ minecraft, loader }));
 
 	return {
-		minecraftVersions,
-		loaderVersions,
+		versions,
 		jvmPresets: listPresets(),
 		// Streamed: it may search the journal for an out-of-memory crash.
 		memoryAdvice: memoryAdvice(instance).catch(() => null),
