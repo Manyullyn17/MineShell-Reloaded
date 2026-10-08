@@ -7,6 +7,7 @@ import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
+import { evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -149,6 +150,9 @@ async function checkAll(): Promise<void> {
 		await autoPauseForPlayers(instance).catch((err) =>
 			console.error(`[mineshell] Chunky auto-pause failed for ${instance.id}:`, err)
 		);
+		await evaluateSnapshotSchedule(instance).catch((err) =>
+			console.error(`[mineshell] scheduled snapshot failed for ${instance.id}:`, err)
+		);
 	}
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 }
@@ -165,6 +169,7 @@ export function startScheduler(): void {
 		}
 	}
 	rollForwardMissed();
+	rollForwardSnapshots();
 	timer = setInterval(() => void checkAll(), CHECK_INTERVAL_MS);
 	timer.unref?.();
 }

@@ -364,6 +364,19 @@ replace, restore, reset or restore one dimension, prune chunks - instead move wh
 replace into the snapshot, so keeping the old world costs no copy; they share one journalled
 shape (`world-change` in `world.ts`), which a crash rolls back.
 
+**Scheduled snapshots** (`snapshotschedule.ts`, run from the scheduler's 30 s tick): per
+server, daily at a time or every N hours (`snapshots.schedule:<id>`, the next slot in
+`snapshots.next:<id>`; a slot missed while MineShell was down moves on, it is not fired at
+start). A stopped server is copied as it is. A running one is either copied live -
+`save-off` and `save-all flush` over RCON, then waiting until no world file changed for 5 s
+(at most 2 min: 1.12 Forge writes chunks on its own thread after `save-all` answers, and
+mods can write late), the copy, `save-on` in a `finally` - or warned at 15/10/5/1 minutes,
+stopped, copied (the server marked busy, so nothing starts it mid-copy) and started again
+whether or not the copy worked. Both run as a task under a `scheduled-snapshot` journal;
+recovery sends `save-on` to a server left with saving paused and starts one left stopped.
+Retention is the ordinary policy, so frequent scheduled snapshots push out older
+pre-operation ones once over the limits (pin one to keep it).
+
 Dimensions are found on disk (`dimensions.ts`): a folder holding `region/` or `entities/`.
 The overworld is the level folder's own `region/`, `entities/` and `poi/`, so resetting it
 keeps `level.dat` and player data. A snapshot of only some folders is marked `partial` and

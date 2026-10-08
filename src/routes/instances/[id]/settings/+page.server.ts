@@ -26,6 +26,7 @@ import {
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
+import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
 import {
 	decideSnapshot,
 	getSnapshotPolicy,
@@ -132,8 +133,20 @@ export const load: PageServerLoad = async ({ params }) => {
 			consoleBacklogLines: instance.consoleBacklogLines,
 			consoleBufferLines: instance.consoleBufferLines,
 			limitMemoryMb: instance.limitMemoryMb,
-			limitCpuPercent: instance.limitCpuPercent
+			limitCpuPercent: instance.limitCpuPercent,
+			...(() => {
+				const schedule = getSnapshotSchedule(instance.id);
+				return {
+					snapshotEvery: schedule.every,
+					snapshotDailyTime: schedule.dailyTime,
+					snapshotIntervalHours: schedule.intervalHours,
+					snapshotWhileRunning: schedule.whileRunning,
+					snapshotWarnMinutes: schedule.warnMinutes
+				};
+			})()
 		},
+		/** When the next scheduled snapshot is due, if one is set. */
+		snapshotNextAt: scheduledSnapshotAt(instance.id),
 		cpuCores: cpus().length || 1,
 		rconPassword: rconPassword(instance),
 		javaRuntimes: listJavaRuntimes(),
@@ -491,6 +504,24 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: 'Console preferences saved.' };
+	},
+
+	snapshotSchedule: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const time = String(form.get('snapshotDailyTime') ?? '');
+		if (form.get('snapshotEvery') === 'daily' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+			return fail(400, { ok: false, message: 'Give the snapshot time as HH:MM.' });
+		}
+		const schedule = validSchedule({
+			every: form.get('snapshotEvery'),
+			dailyTime: time,
+			intervalHours: Number(form.get('snapshotIntervalHours')),
+			whileRunning: form.get('snapshotWhileRunning'),
+			warnMinutes: Number(form.get('snapshotWarnMinutes'))
+		});
+		saveSnapshotSchedule(instance.id, schedule);
+		return { ok: true, message: schedule.every === 'off' ? 'Scheduled snapshots turned off.' : 'Snapshot schedule saved.' };
 	},
 
 	snapshotPolicy: async ({ request, params }) => {

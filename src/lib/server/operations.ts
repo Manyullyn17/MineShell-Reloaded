@@ -50,6 +50,12 @@ export type Journal =
 	  }
 	/** A snapshot taken on request; a copy cut short is a `.partial` folder that recovery deletes. */
 	| { kind: 'snapshot' }
+	/**
+	 * A scheduled snapshot (snapshotschedule.ts): `live` paused saving, which
+	 * recovery turns back on; `stop` stopped the server, which recovery starts
+	 * again (`restart`).
+	 */
+	| { kind: 'scheduled-snapshot'; mode: 'stopped' | 'live' | 'stop'; restart: boolean }
 	| {
 			/** Reset, replace or restore the world, or one dimension of it (world.ts). */
 			kind: 'world-change';

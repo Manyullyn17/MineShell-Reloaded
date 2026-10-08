@@ -39,7 +39,8 @@ export type SnapshotReason =
 	| 'world-restore-dimension'
 	| 'world-prune'
 	| 'mod-update'
-	| 'manual';
+	| 'manual'
+	| 'scheduled';
 
 export type Snapshot = {
 	id: string;

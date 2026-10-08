@@ -216,7 +216,8 @@ Suggested after the client pack export and reboot handling; all wanted.
   (the overview's samples), suggests more heap; a heap never half used suggests less.
   Shown on the overview and next to Java & memory in Settings. Advice only, never changes
   the setting by itself. Related: the RAM guard and the resource cap above.
-- **Scheduled snapshots**: a world snapshot on a schedule ("nightly at 4:00"), kept by the
+- **Scheduled snapshots**: built (2026-10-08, `snapshotschedule.ts`), both modes, with the
+  file-quiet wait below for old Forge. A world snapshot on a schedule ("nightly at 4:00"), kept by the
   existing retention policy. The narrow case of "World backups" above, still local only.
   Snapshots today are only taken with the server stopped. Two modes, per schedule:
   - *While running* (default): the consistency dance that section describes (`save-off`,

@@ -54,6 +54,7 @@ import {
 import { canUseCleanroom, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
+import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
@@ -1347,6 +1348,7 @@ export async function deleteInstance(
 	deleteChunkySettings(instance.id);
 	deleteServerSnapshotOverrides(instance.id);
 	deleteMemorySettings(instance.id);
+	deleteSnapshotSchedule(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'
@@ -1458,6 +1460,7 @@ export async function cloneInstance(
 				setMacros(id, getMacros(source.id));
 				copyDatapackRows(source.id, id);
 				copyServerSnapshotOverrides(source.id, id);
+				copySnapshotSchedule(source.id, id);
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

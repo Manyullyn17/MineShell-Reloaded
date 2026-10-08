@@ -120,7 +120,9 @@ on a throwaway world, and puts everything back afterwards. Export a client pack 
 (all of them by default) and, for a server installed from a pack, the pack's
 client-side files the server never needed.
 
-**World.** Snapshots before risky operations and on request, kept by count and by storage
+**World.** Snapshots before risky operations, on request and on a schedule (daily or every
+few hours; a running server is copied with saving paused, or stopped for it and started
+again), kept by count and by storage
 per server. Reset, replace with an uploaded world, restore a snapshot or download as a zip;
 reset or restore one dimension; prune chunks nobody really visited. With Chunky installed,
 pre-generate terrain with live progress.
@@ -141,9 +143,8 @@ default per Java version when several are installed.
 
 ## What it does not do
 
-General world backups (scheduled copies of a running world) are deliberately not
-implemented; the snapshots above are taken while the server is stopped, around MineShell's
-own operations or on request. See [docs/ROADMAP.md](docs/ROADMAP.md) for the reasoning and
+Backups elsewhere (another disk, another machine, the cloud) are not implemented: every
+snapshot, scheduled ones included, stays inside the server's folder on the same disk. See [docs/ROADMAP.md](docs/ROADMAP.md) for the reasoning and
 the rest of the deferred list.
 
 ---

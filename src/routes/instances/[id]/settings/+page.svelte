@@ -16,7 +16,7 @@
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
-	import { formatBytes } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
 
 	let { data, form } = $props();
@@ -83,7 +83,12 @@
 			consoleBacklogLines: d.consoleBacklogLines,
 			consoleBufferLines: d.consoleBufferLines,
 			limitMemoryMb: (d.limitMemoryMb ?? '') as number | string,
-			limitCpuPercent: (d.limitCpuPercent ?? '') as number | string
+			limitCpuPercent: (d.limitCpuPercent ?? '') as number | string,
+			snapshotEvery: d.snapshotEvery as string,
+			snapshotDailyTime: d.snapshotDailyTime,
+			snapshotIntervalHours: d.snapshotIntervalHours,
+			snapshotWhileRunning: d.snapshotWhileRunning as string,
+			snapshotWarnMinutes: d.snapshotWarnMinutes
 		};
 	}
 	function propertyValues() {
@@ -230,6 +235,13 @@
 					'restartSkipIfPlayers',
 					'bootStart'
 				)
+		},
+		{
+			id: 'snapshotSchedule',
+			tab: 'snapshots',
+			label: 'Scheduled snapshots',
+			restart: false,
+			dirty: () => svChanged('snapshotEvery', 'snapshotDailyTime', 'snapshotIntervalHours', 'snapshotWhileRunning', 'snapshotWarnMinutes')
 		},
 		{
 			id: 'snapshots',
@@ -1040,6 +1052,72 @@
 	</SettingsSection>
 
 	<!-- ========================================================== Snapshots -->
+
+	<SettingsSection
+		tab="snapshots"
+		title="Scheduled snapshots"
+		description="A copy of the world on a schedule, kept by the settings below like every other snapshot."
+		dirty={dirtyIds.has('snapshotSchedule')}
+	>
+		<form method="POST" action="?/snapshotSchedule" class="rows" bind:this={forms.snapshotSchedule} onsubmit={onSectionSubmit}>
+			<div class="field">
+				<label for="snapshotEvery">Take one</label>
+				<select id="snapshotEvery" name="snapshotEvery" bind:value={sv.snapshotEvery}>
+					<option value="off">Never</option>
+					<option value="daily">At a fixed time each day</option>
+					<option value="interval">Every few hours</option>
+				</select>
+				{#if sv.snapshotEvery !== 'off' && data.snapshotNextAt && !dirtyIds.has('snapshotSchedule')}
+					<p class="hint">Next: {formatDateTime(data.snapshotNextAt)}.</p>
+				{/if}
+			</div>
+			{#if sv.snapshotEvery === 'daily'}
+				<div class="field">
+					<label for="snapshotDailyTime">At</label>
+					<input id="snapshotDailyTime" name="snapshotDailyTime" type="time" bind:value={sv.snapshotDailyTime} />
+				</div>
+			{:else}
+				<input type="hidden" name="snapshotDailyTime" value={sv.snapshotDailyTime} />
+			{/if}
+			{#if sv.snapshotEvery === 'interval'}
+				<div class="field">
+					<label for="snapshotIntervalHours">Every (hours)</label>
+					<input id="snapshotIntervalHours" name="snapshotIntervalHours" type="number" min="1" max="168" bind:value={sv.snapshotIntervalHours} />
+				</div>
+			{:else}
+				<input type="hidden" name="snapshotIntervalHours" value={sv.snapshotIntervalHours} />
+			{/if}
+			{#if sv.snapshotEvery !== 'off'}
+				<div class="field">
+					<label for="snapshotWhileRunning">When the server is running</label>
+					<select id="snapshotWhileRunning" name="snapshotWhileRunning" bind:value={sv.snapshotWhileRunning}>
+						<option value="live">Copy it while it runs</option>
+						<option value="stop">Stop it, copy, start it again</option>
+					</select>
+					<p class="hint">
+						{#if sv.snapshotWhileRunning === 'live'}
+							Saving is paused for the copy (save-off, save-all), then turned back on; players keep playing. A mod that
+							writes its own files outside the world's saves can still be caught mid-write.
+						{:else}
+							Players are warned first, like a scheduled restart. It starts again as soon as the copy is done, also if the
+							copy failed. A stopped server is copied as it is either way.
+						{/if}
+					</p>
+				</div>
+				{#if sv.snapshotWhileRunning === 'stop'}
+					<div class="field">
+						<label for="snapshotWarnMinutes">Warn players (minutes before)</label>
+						<input id="snapshotWarnMinutes" name="snapshotWarnMinutes" type="number" min="0" max="15" bind:value={sv.snapshotWarnMinutes} />
+					</div>
+				{:else}
+					<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
+				{/if}
+			{:else}
+				<input type="hidden" name="snapshotWhileRunning" value={sv.snapshotWhileRunning} />
+				<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
+			{/if}
+		</form>
+	</SettingsSection>
 
 	<SettingsSection tab="snapshots" title="World snapshots" dirty={dirtyIds.has('snapshots')}>
 		{#snippet description()}

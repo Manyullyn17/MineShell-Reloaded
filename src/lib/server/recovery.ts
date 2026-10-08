@@ -10,10 +10,12 @@ import {
 	listInstances,
 	restoreAside,
 	setStatus,
+	start,
 	syncUnit
 } from './instances';
 import { restorePackChange } from './packchange';
 import { removePartialSnapshots } from './snapshots';
+import { recoverScheduledSnapshot } from './snapshotschedule';
 import { restoreWorldChange } from './world';
 import { restoreModUpdate } from './modupdates';
 import { syncMods } from './mods';
@@ -47,6 +49,8 @@ const MESSAGES: Record<Journal['kind'], string> = {
 		'MineShell stopped while reverting to Forge. Run "Revert to Forge" again; it continues where it stopped.',
 	'pack-change': 'MineShell stopped while changing the pack version; the server was put back as it was.',
 	snapshot: 'MineShell stopped while snapshotting the world; the unfinished snapshot was removed.',
+	'scheduled-snapshot':
+		'MineShell stopped during a scheduled snapshot; the unfinished snapshot was removed and the server put back as it was (saving on, started again if it was stopped for it).',
 	'world-change': 'MineShell stopped while changing the world; the previous world was put back.',
 	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.',
 	bisect: 'MineShell stopped while searching for the mod behind a crash; the mods, world and configs were put back.'
@@ -74,6 +78,9 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 		case 'bisect':
 			await restoreBisect(instance, journal);
 			break;
+		case 'scheduled-snapshot':
+			await recoverScheduledSnapshot(instance, journal);
+			break;
 		case 'create':
 		case 'cleanroom-revert':
 		case 'snapshot':
@@ -99,6 +106,11 @@ async function recoverOne(instance: ServerInstance, op: RecordedOperation): Prom
 	const message = MESSAGES[journal.kind];
 	setStatus(instance.id, FAILED_STATUS.includes(journal.kind) ? 'failed' : 'ready', message);
 	await syncUnit(instance).catch(() => undefined);
+	// Stopped for a scheduled snapshot: it was running, so it runs again.
+	if (journal.kind === 'scheduled-snapshot' && journal.restart) {
+		const fresh = getInstance(instance.id);
+		if (fresh) await start(fresh, { internal: true }).catch(() => undefined);
+	}
 	audit('instance.recovered', { instanceId: instance.id, detail: journal.kind, actor: 'system' });
 	return { instanceId: instance.id, kind: journal.kind, message };
 }
