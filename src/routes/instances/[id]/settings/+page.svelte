@@ -1190,9 +1190,10 @@
 </div>
 
 <div class="savebar" class:dirty={dirty.length > 0}>
-	<span>
+	<span class="summary">
 		{#if dirty.length}
-			{dirty.length} section{dirty.length === 1 ? '' : 's'} changed across {dirtyTabs.size} tab{dirtyTabs.size === 1 ? '' : 's'}
+			<span class="wide">{dirty.length} section{dirty.length === 1 ? '' : 's'} changed across {dirtyTabs.size} tab{dirtyTabs.size === 1 ? '' : 's'}</span>
+			<span class="narrow">{dirty.length} change{dirty.length === 1 ? '' : 's'}</span>
 			{#if needsRestart}<span class="muted">· needs a restart</span>{/if}
 		{:else}
 			No unsaved changes
@@ -1202,7 +1203,7 @@
 		<div class="button-row">
 			<button type="button" class="button-quiet" onclick={discard} disabled={saving}>Discard</button>
 			{#if needsRestart}
-				<button type="button" onclick={() => save(false)} disabled={saving}>Save, restart later</button>
+				<button type="button" onclick={() => save(false)} disabled={saving}><span class="wide">Save, restart later</span><span class="narrow">Save only</span></button>
 				<button type="button" class="button-primary" onclick={() => save(true)} disabled={saving}>
 					{saving ? 'Saving' : 'Save and restart'}
 				</button>
@@ -1664,10 +1665,49 @@
 		background: color-mix(in srgb, var(--warning) 7%, var(--bg));
 	}
 
+	.savebar .narrow {
+		display: none;
+	}
+
 	@media (max-width: 60rem) {
+		/* One short line, then the buttons side by side across the width. */
 		.savebar {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			min-height: 0;
 			margin: 0 calc(var(--space-4) * -1) calc(var(--space-4) * -1);
-			padding: 0.75rem var(--space-4);
+			padding: 0.6rem var(--space-4) calc(0.6rem + env(safe-area-inset-bottom));
+			font-size: 0.85rem;
+		}
+
+		/* Nothing to save: no bar taking room at the bottom of a phone. */
+		.savebar:not(.dirty) {
+			display: none;
+		}
+
+		.savebar .summary {
+			width: 100%;
+		}
+
+		.savebar .wide {
+			display: none;
+		}
+
+		.savebar .narrow {
+			display: inline;
+		}
+
+		.savebar .button-row {
+			display: grid;
+			grid-auto-flow: column;
+			grid-auto-columns: minmax(0, 1fr);
+			gap: 0.5rem;
+			width: 100%;
+		}
+
+		.savebar .button-row button {
+			width: 100%;
+			margin: 0;
 		}
 
 		.rows :global(.field) {
