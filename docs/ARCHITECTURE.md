@@ -414,6 +414,22 @@ The server is stopped for all of this; only downloading a running world does `sa
 
 ---
 
+### The world map
+
+`worldmap.ts`, the server's Map tab. For Minecraft 1.13 and newer MineShell runs BlueMap's
+standalone CLI (downloaded from its GitHub releases into `$DATA/tools/bluemap/`, SHA-256
+checked, on the newest installed Java 21+): it reads the region files and the server's mod
+jars (`-n mods/`, for modded blocks' models and textures) and writes a static web map.
+Everything per server is in `$DATA/maps/<id>/` - `config/` (written fresh before each
+render: one map per dimension with a namespaced id, BlueMap's own web server off),
+`data/` (caches and the Minecraft client jar BlueMap downloads, only with
+`accept-download`, which follows the per-server EULA answer), `web/`. MineShell serves
+`web/` itself under `/instances/<id>/map/view/`, behind its login, the way BlueMap's server
+would: a file, else its `.gz` with `Content-Encoding: gzip` (tiles and textures are stored
+compressed), else 204 for tiles and live data. A render is a task (one per server; a running
+server is told to `save-all` first) and only redraws what changed unless forced. Older
+worlds have no map yet (1.12.2: Dynmap + DynmapBlockScan, next).
+
 ## Safety and confinement
 
 **Path traversal.** Every file operation goes through `safeJoin()` in `files.ts`, which

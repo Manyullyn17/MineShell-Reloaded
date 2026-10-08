@@ -44,6 +44,7 @@ import { applyCleanroomModFixes } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
+import { deleteMapData } from './worldmap';
 import {
 	beginOperation,
 	commitOperation,
@@ -1356,6 +1357,7 @@ export async function deleteInstance(
 	deleteServerSnapshotOverrides(instance.id);
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
+	await deleteMapData(instance.id).catch(() => undefined);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'

@@ -19,6 +19,7 @@
 		{ slug: 'logs', label: 'Logs' },
 		{ slug: 'mods', label: 'Mods' },
 		{ slug: 'world', label: 'World' },
+		{ slug: 'map', label: 'Map' },
 		{ slug: 'players', label: 'Players' },
 		{ slug: 'files', label: 'Files' },
 		{ slug: 'settings', label: 'Settings' }
