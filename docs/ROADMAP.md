@@ -478,8 +478,12 @@ decode the RoughlyEnoughIDs palette too.
 Tested 2026-10-08 on meatballcraft-cleanroom (Cleanroom 0.5.17, Java 25): Dynmap
 3.7-beta-6 for Forge 1.12.2 loads, finds the overworld and every modded dimension, and
 renders with textures (`dynmap radiusrender world x z r` over RCON: 300 blocks around spawn,
-then 200 around the base in 3.6 min). Only warnings: vanilla crop/cake states. Web server on
-8123. To check with the user: a few untextured-looking (plain white, black) spots in the base.
+then 200 around the base in 3.6 min). Web server on 8123. But on its own it only knows vanilla
+and a few built-in mods: most modded blocks rendered black (the user checked against the real
+base). **DynmapBlockScan** (dynmap.us/builds/DynmapBlockScan, 3.4-beta-1 for 1.12.2) fixes
+that: it reads the mods' block states and JSON models at startup and generates Dynmap's render
+data; after it, builds, modded trees and machines showed. It skips 3D `.obj` models (Blood
+Magic's routing nodes logged so). So 1.12.2 = two mods, Dynmap + DynmapBlockScan.
 
 Found on the way: a world from an older pack version stops at Forge's "missing registry
 entries ... /fml confirm" prompt before RCON is up, so MineShell's console cannot answer and
