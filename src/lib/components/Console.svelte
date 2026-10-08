@@ -65,6 +65,11 @@
 	let search = $state('');
 	// Off by default: MineShell's own polling opens an RCON connection several times a minute.
 	let rconConnections = $state(false);
+	/** Phones: the chips and buttons are folded away behind "Filters". */
+	let filtersOpen = $state(false);
+	const activeFilters = $derived(
+		LEVELS.filter((l) => !shownLevels[l.id]).length + Number(playersOnly) + Number(chatOnly) + Number(rconConnections)
+	);
 	const filter = $derived({
 		levels: new Set(LEVELS.filter((l) => shownLevels[l.id]).map((l) => l.id)),
 		playersOnly,
@@ -306,11 +311,16 @@
 
 <div class="console">
 	<div class="bar">
-		<span class="stream" class:connected>
+		<span class="stream" class:connected title={connected ? 'Streaming from the journal' : 'Not connected'}>
 			<span class="dot" class:running={connected} class:failed={!connected}></span>
-			{connected ? 'Streaming from the journal' : 'Not connected'}
+			<span class="stream-label">{connected ? 'Streaming from the journal' : 'Not connected'}</span>
 		</span>
 		<span class="divider" aria-hidden="true"></span>
+		<!-- On a phone the chips and buttons fold behind "Filters"; elsewhere these wrappers do not exist for layout. -->
+		<button type="button" class="button-quiet filters-toggle" aria-expanded={filtersOpen} onclick={() => (filtersOpen = !filtersOpen)}>
+			Filters{activeFilters ? ` (${activeFilters})` : ''}
+		</button>
+		<div class="folding" class:open={filtersOpen}>
 		{#each LEVELS as level (level.id)}
 			<button
 				type="button"
@@ -356,14 +366,16 @@
 		>
 			<span class="swatch"></span>RCON connections<span class="count">{counts.rcon}</span>
 		</button>
+		</div>
 		<span class="spacer"></span>
 		<span class="search">
 			<span aria-hidden="true">⌕</span>
 			<input type="search" bind:value={search} placeholder="Search the output" aria-label="Search the output" />
 		</span>
 		{#if filtering}
-			<span class="faint small">{visible.length} of {lines.length}</span>
+			<span class="faint small shown-count">{visible.length} of {lines.length}</span>
 		{/if}
+		<div class="folding actions" class:open={filtersOpen}>
 		<button class="button-quiet" type="button" aria-pressed={autoscroll} onclick={() => (autoscroll = !autoscroll)}>
 			{autoscroll ? 'Following' : 'Follow output'}
 		</button>
@@ -371,6 +383,7 @@
 			{copied ? 'Copied' : filtering ? 'Copy shown' : 'Copy'}
 		</button>
 		<button class="button-quiet" type="button" onclick={clearView}>Clear view</button>
+		</div>
 	</div>
 
 	{#if error}
@@ -598,6 +611,14 @@
 		outline: none;
 	}
 
+	.filters-toggle {
+		display: none;
+	}
+
+	.folding {
+		display: contents;
+	}
+
 	.viewport {
 		background: var(--bg-sunken);
 		border: 1px solid var(--line);
@@ -756,5 +777,55 @@
 		font-family: var(--font-mono);
 		font-size: 0.88rem;
 		outline: none;
+	}
+	@media (max-width: 60rem) {
+		/* One row - status dot, search, Filters - so the output gets the screen. */
+		.stream-label,
+		.divider,
+		.spacer {
+			display: none;
+		}
+
+		.search {
+			flex: 1;
+			width: auto;
+			min-width: 0;
+		}
+
+		.filters-toggle {
+			display: inline-flex;
+			flex: none;
+		}
+
+		.shown-count {
+			order: 1;
+		}
+
+		.folding {
+			display: none;
+		}
+
+		.folding.open {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.4rem;
+			width: 100%;
+			order: 2;
+		}
+
+		.entry {
+			grid-template-columns: auto minmax(0, 1fr);
+			gap: 0.5rem;
+		}
+
+		.time {
+			font-size: 0.68rem;
+			line-height: 1.95;
+		}
+
+		.viewport {
+			padding: 0.5rem 0.6rem;
+			font-size: 0.76rem;
+		}
 	}
 </style>
