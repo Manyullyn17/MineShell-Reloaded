@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 const { disableClientOnlyMods, describeClientOnlyResult } = await import('#lib/server/clientonly.js');
-const { listInstanceMods, syncMods } = await import('#lib/server/mods/index.js');
+const { listInstanceMods, recordInstanceMod, syncMods, upsertMod } = await import('#lib/server/mods/index.js');
 const { createInstance, tree } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
@@ -28,9 +28,29 @@ const modrinthVersion = (projectId: string) => ({
 	dependencies: []
 });
 
+// CurseForge projects, as the mirror lists their files for Forge 1.12.2 (newest first).
+const cfFile = (id: number, updated: number, clientonly?: boolean) => ({
+	id, name: `file-${id}.jar`, type: 'release', updated, url: `https://cdn.test/${id}.jar`, ...(clientonly ? { clientonly } : {})
+});
+const CF_FILES: Record<string, ReturnType<typeof cfFile>[]> = {
+	// Only the newest file was tagged, later (Mouse Tweaks for 1.12.2).
+	'111': [cfFile(12, 200, true), cfFile(11, 100)],
+	// The installed file itself is tagged.
+	'222': [cfFile(21, 100, true)],
+	// A content mod: nothing tagged.
+	'333': [cfFile(32, 200), cfFile(31, 100)]
+};
+
 const modrinthDown = { fail: false };
 useRecordedHttp('none', {
 	extra: {
+		...Object.fromEntries(
+			Object.entries(CF_FILES).map(([id, versions]) => [
+				`https://api.modpacks.ch/public/mod/${id}/versions/1.12.2/forge`,
+				() => Response.json({ versions, page: 1, pages: 1 })
+			])
+		),
+		'https://api.modpacks.ch/public/mod/444/versions/1.12.2/forge': () => new Response('down', { status: 503 }),
 		'https://api.modrinth.com/v2/version_files': () =>
 			modrinthDown.fail
 				? new Response('down', { status: 503 })
@@ -164,5 +184,31 @@ describe('client-only mods in a server install', () => {
 		await syncMods(instance, { fromPack: true });
 		const result = await disableClientOnlyMods(instance, ['checker.jar']);
 		expect(result.disabled.map((d) => d.fileName)).toEqual(['checker.jar']);
+	});
+
+	it('disables CurseForge mods CurseForge tags as client-only, or whose newest file it tags', async () => {
+		// The mirror's pack file lists leave tagged files out, but uploaded zips
+		// and older files (tagged only on the newest) got through.
+		const jars = { 'mousetweaks.jar': '111/11', 'betterfoliage.jar': '222/21', 'content.jar': '333/31', 'unknown.jar': '444/41' };
+		const instance = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.12.2' },
+			Object.fromEntries(Object.keys(jars).map((f) => [`mods/${f}`, zipBuffer({ 'mcmod.info': `[{"modid":"${f}","name":"${f}"}]` })]))
+		);
+		for (const [fileName, ref] of Object.entries(jars)) {
+			const [project, file] = ref.split('/');
+			const modId = upsertMod({ source: 'curseforge', slug: project, name: fileName });
+			recordInstanceMod({ instanceId: instance.id, modId, version: file, versionId: file, filePath: `mods/${fileName}`, hash: null, hashAlgo: null, fromPack: true });
+		}
+		const result = await disableClientOnlyMods(instance, Object.keys(jars));
+		expect(result.disabled.map((d) => [d.fileName, d.reason]).sort()).toEqual([
+			['betterfoliage.jar', 'CurseForge tags it as client-only'],
+			['mousetweaks.jar', 'CurseForge tags its newest file for 1.12.2 as client-only']
+		]);
+		expect(Object.keys(await tree(instance.path)).sort()).toEqual([
+			'mods/betterfoliage.jar.disabled',
+			'mods/content.jar',
+			'mods/mousetweaks.jar.disabled',
+			'mods/unknown.jar'
+		]);
 	});
 });

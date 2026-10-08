@@ -5,12 +5,14 @@ import { hashFile } from './download';
 import { safeJoin } from './files';
 import {
 	DISABLED_SUFFIX,
+	getModProvider,
 	listInstanceMods,
 	markClientOnly,
 	modsDir,
 	setModEnabled
 } from './mods';
 import { projectsByIds, versionsFromHashes } from './mods/modrinth';
+import { getLoader } from './modloaders';
 
 /**
  * Client-only mods in a server install. Packs bring them in because their
@@ -20,8 +22,9 @@ import { projectsByIds, versionsFromHashes } from './mods/modrinth';
  *
  * A jar counts as client-only when Modrinth lists its project as
  * `client_only` (looked up by hash, so it works for CurseForge-tracked and
- * manual jars too), when its mod record is already flagged, or when the jar
- * itself declares a client environment (Fabric/Quilt).
+ * manual jars too), when its mod record is already flagged, when the jar
+ * itself declares a client environment (Fabric/Quilt), or, for a jar tracked
+ * as CurseForge, when CurseForge tags it so (see curseforgeClientOnly).
  *
  * Only jars an install just added are looked at, so a mod someone turned
  * back on stays on. One that an enabled mod declares as required is kept:
@@ -29,7 +32,10 @@ import { projectsByIds, versionsFromHashes } from './mods/modrinth';
  */
 
 /** Why an already-flagged mod is client-only; other sources' flags may come from any check. */
-const FLAGGED_BY: Record<string, string> = { modrinth: 'Modrinth lists it as client-only' };
+const FLAGGED_BY: Record<string, string> = {
+	modrinth: 'Modrinth lists it as client-only',
+	curseforge: 'CurseForge tags it as client-only'
+};
 
 export type ClientOnlyResult = {
 	/** File names as they were (enabled), now renamed to .disabled. */
@@ -71,6 +77,12 @@ export async function disableClientOnlyMods(
 			reasons.set(hashes.get(hash)!, 'Modrinth lists it as client-only');
 		}
 	}
+	for (const [fileName, reason] of await curseforgeClientOnly(
+		instance,
+		rows.filter((r) => !reasons.has(r.fileName))
+	)) {
+		reasons.set(fileName, reason);
+	}
 	if (reasons.size === 0) return result;
 
 	// Keep any that a mod staying enabled requires - repeated, since keeping
@@ -105,6 +117,39 @@ export async function disableClientOnlyMods(
 		task?.log(`Disabled ${row.name} (${row.fileName}${DISABLED_SUFFIX}): ${reason}.`);
 	}
 	return result;
+}
+
+/**
+ * CurseForge's Client/Server file tags (the mirror's `clientonly`), for jars
+ * tracked as CurseForge: one file list per project, for the server's
+ * Minecraft version and loader. The jar's own file tagged counts; so does
+ * the newest file for that version being tagged, because authors often tag
+ * only their newest file, later (Mouse Tweaks and Better Foliage for 1.12.2:
+ * nothing else). A lookup that fails says nothing.
+ */
+async function curseforgeClientOnly(
+	instance: ServerInstance,
+	rows: Awaited<ReturnType<typeof listInstanceMods>>
+): Promise<Map<string, string>> {
+	const found = new Map<string, string>();
+	const queue = rows.filter((r) => r.source === 'curseforge' && r.slug);
+	const loader = getLoader(instance.modloader);
+	const filter = { minecraftVersion: instance.minecraftVersion, loader: loader.catalogLoader ?? loader.id };
+	const worker = async () => {
+		for (let row = queue.shift(); row; row = queue.shift()) {
+			const files = await getModProvider('curseforge')
+				.listVersions(row.slug!, filter)
+				.catch(() => []);
+			const own = files.find((f) => f.id === row.versionId);
+			const newest = [...files].sort((a, b) => (Date.parse(b.datePublished ?? '') || 0) - (Date.parse(a.datePublished ?? '') || 0))[0];
+			if (own?.clientOnly) found.set(row.fileName, 'CurseForge tags it as client-only');
+			else if (newest?.clientOnly) {
+				found.set(row.fileName, `CurseForge tags its newest file for ${instance.minecraftVersion} as client-only`);
+			}
+		}
+	};
+	await Promise.all(Array.from({ length: Math.min(6, queue.length) }, worker));
+	return found;
 }
 
 /** One status line for an install's summary, or null when nothing happened. */

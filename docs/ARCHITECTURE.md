@@ -285,8 +285,10 @@ Details worth keeping:
   modpacks.ch file lists flag `clientonly` files, which are skipped the same way.
 - CurseForge manifests say nothing about sides and pack metadata can be wrong, so after a
   pack install or version change the jars it added are checked (`clientonly.ts`): Modrinth
-  lists the project as `client_only` (looked up by hash, whatever the source), or the jar
-  declares a client environment. Those are disabled, not deleted, unless an enabled mod
+  lists the project as `client_only` (looked up by hash, whatever the source), the jar
+  declares a client environment, or, for a jar tracked as CurseForge, CurseForge tags its
+  file client-only - or tags the newest file for that Minecraft version and loader so,
+  since authors often tag only their newest file (one file list per project). Those are disabled, not deleted, unless an enabled mod
   requires them, and the install's status says which. Jars that were already there are
   left alone, so a mod someone re-enabled stays enabled.
 - `overrides/` and `server-overrides/` both get applied, with server-overrides winning.
