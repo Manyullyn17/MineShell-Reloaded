@@ -185,21 +185,35 @@ first: their template unit is `~/.config/systemd/user/mineshell@.service`.
 
 ### Publishing a release
 
-Bump `version` in `package.json`, commit, then tag and push:
+On `main`, with everything committed and CI green:
 
 ```sh
-git tag -a v<version> -m "MineShell <version>" -m "Optional intro for the release notes."
-git push origin main v<version>
+npm run release                          # or: npm run release -- -m "Intro for the notes"
+git push origin main v<version>          # the command it prints
 ```
 
-The Release workflow runs the CI checks, builds the archive (`scripts/package.sh`), starts
-it once on a throwaway data directory (`scripts/smoke.sh`) and publishes it with its
-checksum and `install.sh`. CI packs and smoke-tests on every push too.
+`scripts/release.sh` picks the version from the commits since the last tag, bumps
+`package.json`, commits `chore: version <version>`, tags it and shows the release notes; it
+pushes nothing. The rules:
+
+| Since the last release | Before 1.0 | From 1.0 on |
+| --- | --- | --- |
+| only `fix:` | patch (0.3.0 -> 0.3.1) | patch |
+| any `feat:` | minor (0.3.1 -> 0.4.0) | minor |
+| a breaking change, marked `feat!:` or `fix!:` (a manual step, renamed settings, an older Node dropped) | minor, with a "Before updating" note in the intro | major |
+| nothing but `docs:`, `test:`, `ci:`, `chore:` | no release | no release |
+
+`npm run release -- patch|minor|major|<x.y.z>` overrides it. 1.0 is a decision, not a rule:
+the first version to recommend to other people as stable.
+
+The pushed tag starts the Release workflow: the CI checks, the archive
+(`scripts/package.sh`), one start of it on a throwaway data directory (`scripts/smoke.sh`),
+then the release with its checksum and `install.sh`. CI packs and smoke-tests on every push too.
 
 The release notes (`scripts/release-notes.sh`, also shown on Settings > Updates before
 updating) are the tag message after its first line, then the commits since the previous
 tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `ci:` and
-`chore:` are left out. Preview them with `scripts/release-notes.sh v<version>` once tagged.
+`chore:` are left out.
 
 ---
 

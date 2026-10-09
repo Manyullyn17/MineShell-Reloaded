@@ -16,6 +16,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "setup": "node scripts/setup.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "release": "scripts/release.sh",
     "db:generate": "drizzle-kit generate",
     "test": "vitest run",
     "test:watch": "vitest"
