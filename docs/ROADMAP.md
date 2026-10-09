@@ -220,7 +220,9 @@ Suggested after the client pack export and reboot handling; all wanted.
   sees a crash, rather than re-diagnosing old runs from the journal each time.
 - **Memory advice**: built (2026-10-08, `heap.ts`, `memoryadvice.ts`): the heap read over the
   JVM's attach socket, since the cgroup's memory cannot tell. An `OutOfMemoryError` in a run, or memory sitting near the heap limit
-  (the overview's samples), suggests more heap; a heap never half used suggests less.
+  (the overview's samples), suggests more heap; a heap never half used suggests less, judged
+  only from hours with players online (2026-10-10, the user: an idle server's 2 GB says
+  nothing when players take it to 8).
   Shown on the overview and next to Java & memory in Settings. Advice only, never changes
   the setting by itself. Related: the RAM guard and the resource cap above.
 - **Scheduled snapshots**: built (2026-10-08, `snapshotschedule.ts`), both modes, with the

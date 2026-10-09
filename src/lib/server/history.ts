@@ -291,6 +291,25 @@ export function peakPlayers(instanceId: string, from = startOfToday(), now = Dat
 	return peak;
 }
 
+/** The stretches since `from` when at least one player was online, oldest first, each [start, end]. */
+export function playedIntervals(instanceId: string, from: number, now = Date.now()): [number, number][] {
+	const sessions = db
+		.select()
+		.from(playerSessions)
+		.where(and(eq(playerSessions.instanceId, instanceId), or(isNull(playerSessions.leftAt), gt(playerSessions.leftAt, from))))
+		.all()
+		.map((s): [number, number] => [Math.max(s.joinedAt, from), Math.min(s.leftAt ?? now, now)])
+		.filter(([start, end]) => end > start)
+		.sort((a, b) => a[0] - b[0]);
+	const out: [number, number][] = [];
+	for (const [start, end] of sessions) {
+		const last = out.at(-1);
+		if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+		else out.push([start, end]);
+	}
+	return out;
+}
+
 export type Playtime = { totalMs: number; lastSeen: number; online: boolean };
 
 /** Per player: time on this server in total, and when last seen (now, while online). */

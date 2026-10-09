@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 const { markMemoryChanged, memoryAdvice } = await import('#lib/server/memoryadvice.js');
 const { db } = await import('#lib/server/db/index.js');
-const { heapSamples } = await import('#lib/server/db/schema.js');
+const { heapSamples, playerSessions } = await import('#lib/server/db/schema.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 
@@ -15,6 +15,9 @@ describe('memory advice for a server', () => {
 		const now = Date.now();
 		const rows = Array.from({ length: 8 * 60 }, (_, m) => ({ instanceId: s.id, timestamp: now - m * 60_000, usedBytes: (1 + (m % 10) * 1.3) * GB, maxBytes: 16 * GB }));
 		db.insert(heapSamples).values(rows).run();
+		// Nobody online yet: an empty server's heap does not show what it needs.
+		expect(await memoryAdvice(reload(s.id))).toMatchObject({ kind: 'unknown', hours: 8, playedHours: 0 });
+		db.insert(playerSessions).values({ instanceId: s.id, player: 'Steve', joinedAt: now - 8 * 3_600_000, leftAt: null }).run();
 		expect(await memoryAdvice(reload(s.id))).toMatchObject({ kind: 'less', currentMb: 16384, suggestedMb: 3072 });
 	});
 

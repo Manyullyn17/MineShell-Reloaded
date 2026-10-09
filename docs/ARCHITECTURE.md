@@ -275,7 +275,9 @@ minute old, or twice to one that did not answer. Samples (`heap_samples`) are ke
 lets the heap fill before collecting, so peaks say little) as what a server needs: more when
 that is over 70% of the heap or the journal has an `OutOfMemoryError` since the memory was last
 changed (`memory.changedAt:<id>` in settings), less when the heap is over five times it
-(suggesting three times, whole GB, at least 2 GB, leaving the machine 2 GB). Advice only: the
+(suggesting three times, whole GB, at least 2 GB, leaving the machine 2 GB). Less needs 3
+hours with players online (`player_sessions`): an empty server holds far less than a busy
+one, so idle hours alone say nothing about what it needs, though they can show it short. Advice only: the
 overview links to Settings, where "Use N GB" fills the field.
 
 ---

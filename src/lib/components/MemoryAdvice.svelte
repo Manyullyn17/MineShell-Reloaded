@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { MemoryAdvice } from '#lib/shared/memoryadvice.js';
 	import { formatDateTime } from '#lib/shared/format.js';
+	import { MIN_HOURS, MIN_PLAYED_HOURS } from '#lib/shared/memoryadvice.js';
 
 	/**
 	 * Memory advice (memoryadvice.ts) in words. `onUse` adds a button that puts
@@ -21,7 +22,10 @@
 {#if advice.kind === 'more' || advice.kind === 'less' || all}
 	<div class="advice" data-kind={advice.kind}>
 		<p>
-			{#if advice.kind === 'unknown'}
+			{#if advice.kind === 'unknown' && advice.hours >= MIN_HOURS}
+				Memory advice needs about {MIN_PLAYED_HOURS} hours with players online, since an empty server holds far less than a busy one
+				({advice.playedHours} hour{advice.playedHours === 1 ? '' : 's'} so far). It is not short on memory.
+			{:else if advice.kind === 'unknown'}
 				Memory advice comes after about 6 hours of this server running; MineShell reads how much of its heap Java uses
 				once a minute ({advice.hours} hour{advice.hours === 1 ? '' : 's'} so far).
 			{:else if advice.kind === 'ok'}

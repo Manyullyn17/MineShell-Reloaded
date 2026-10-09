@@ -219,3 +219,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Two servers with Simple Voice Chat on the default UDP port: the second stopped itself at start | `flows/voicechat.test.ts` |
 | (feature) playit.gg: voice chat's UDP tunnel, voice_host written, both taken away when private | `flows/playit.test.ts` |
 | The Map tab walked every tile for the map's size on each look; MineShell's render was missing from the disk usage | `flows/disk-usage.test.ts` |
+| Memory advice suggested less from an idle server (2 GB of 10 empty says nothing when players take it to 8) | `memoryadvice.test.ts`, `flows/memory-advice.test.ts` |
