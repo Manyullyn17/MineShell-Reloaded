@@ -159,7 +159,9 @@ connects through can be picked on any plan, and the agent's playit.gg page is a 
 
 **Player editor item pictures.** Inventories show the items' real icons, read from the server's
 mod jars and Minecraft's own client (after the EULA answer shared with the Map tab), 3D for
-blocks; on 1.12 packs a variant MineShell had to guess is marked. Items can be picked by name
+blocks; what the game draws in code is drawn from its models too (chests, shulker boxes, beds,
+plain banners, heads, the shield, the conduit, decorated pots, copper golem statues); on 1.12
+packs a variant MineShell had to guess is marked. Items can be picked by name
 from everything the server has (vanilla and every mod) instead of typing their id. On a
 desktop, hovering an item shows a tooltip like the game's (name, enchantments, durability,
 energy, id).

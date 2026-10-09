@@ -210,3 +210,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | 26.x item models with `{ sprite }` textures (all glass) crashed the icon resolver | `flows/itemicons.test.ts` |
 | (feature) Shulker boxes, and the trident's inventory model on 1.21.4+ | `flows/itemicons.test.ts` |
 | (feature) The shield (plain), from both texture places | `flows/itemicons.test.ts` |
+| Chest latch under the lid's seam (faces drawn by their own middle); chests now from the game's chest models | `flows/itemicons.test.ts` |
+| (feature) Heads, plain banners, beds, conduit, decorated pot, copper golem statues, by definition, id and 1.12 damage | `flows/itemicons.test.ts` |
+| (feature) Model parts to faces: Cube's texture corners, mirroring, nested parts | `src/lib/server/entityicons.test.ts` |

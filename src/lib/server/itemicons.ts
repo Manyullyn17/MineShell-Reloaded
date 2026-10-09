@@ -10,6 +10,7 @@ import { openZipFile } from './zip';
 import { child, parseNbt, str } from './nbt';
 import { compareVersions } from './java';
 import { serverWorldName } from './packworld';
+import { bannerIcon, bedIcon, chestIcon, conduitIcon, decoratedPotIcon, headIcon, statueIcon, type HeadKind } from './entityicons';
 
 /**
  * Item icons for the player editor (ROADMAP, "Item icons in the player
@@ -32,55 +33,44 @@ import { serverWorldName } from './packworld';
 export const CLIENT_DIR = path.join(CACHE_DIR, 'minecraft-client');
 
 export type FaceSpec = { texture: string; uv: [number, number, number, number]; tint: string | null };
-export type Side = 'up' | 'north' | 'south' | 'east' | 'west';
+export type Side = 'up' | 'down' | 'north' | 'south' | 'east' | 'west';
+/** The sides block models are drawn with: the bottom never shows from above. */
+type ModelSide = Exclude<Side, 'down'>;
 export type ElementSpec = {
 	from: [number, number, number];
 	to: [number, number, number];
-	/** Every side but the bottom; which ones show depends on the rotation. */
+	/** Which ones show depends on the rotation (block models leave the bottom out: it never does). */
 	faces: Partial<Record<Side, FaceSpec>>;
+};
+/**
+ * One face of a model the game draws in code (entityicons.ts), placed: the
+ * corners its texture's top left, top right and bottom left go on, and which
+ * way it faces.
+ */
+export type Quad = {
+	corners: [[number, number, number], [number, number, number], [number, number, number]];
+	normal: [number, number, number];
+	face: FaceSpec;
+	/** The box it belongs to: boxes are drawn back to front as wholes. */
+	group: number;
 };
 export type IconSpec =
 	| { kind: 'flat'; layers: { texture: string; tint: string | null }[] }
-	/** `rotation`: the model's inventory view, degrees about x, y, z as the game applies them. */
-	| { kind: 'block'; elements: ElementSpec[]; rotation: [number, number, number] };
+	/**
+	 * `rotation`: the model's inventory view, degrees about x, y, z as the game applies them;
+	 * `scale`: the size against a block's (1); `center`: the point drawn in the middle (8, 8, 8).
+	 */
+	| {
+			kind: 'block';
+			elements: ElementSpec[];
+			quads?: Quad[];
+			rotation: [number, number, number];
+			scale?: number;
+			center?: [number, number, number];
+	  };
 
 /** Minecraft's block/block.json: how blocks are turned in the inventory, unless a model says otherwise (stairs: 135). */
 const GUI_ROTATION: [number, number, number] = [30, 225, 0];
-
-/**
- * Chests are drawn in the game's code (builtin/entity; 1.21.4's "special"
- * chest model) from a 64x64 entity texture, so their shape is written here:
- * the base, the lid and the latch, with each box's faces where the game's
- * box layout puts them (top at (u+d, v), sides in a row below: west, front,
- * east, back). 1.15 flipped the textures upside down (top and bottom swap,
- * the sides read bottom up); its jars split double chests into _left/_right.
- * The item is turned 45, front (the latch) to the left.
- */
-function chestSpec(texture: string, flipped: boolean): IconSpec {
-	const box = (from: [number, number, number], to: [number, number, number], u: number, v: number): ElementSpec => {
-		const [w, h, d] = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
-		// Pixels of the 64-wide texture to the 0-16 units faces use.
-		const uv = (u1: number, v1: number, u2: number, v2: number): [number, number, number, number] =>
-			(flipped ? [u1, v2, u2, v1] : [u1, v1, u2, v2]).map((n) => n / 4) as [number, number, number, number];
-		const face = (r: [number, number, number, number]): FaceSpec => ({ texture, uv: r, tint: null });
-		return {
-			from,
-			to,
-			faces: {
-				up: face(flipped ? uv(u + d + w, v, u + d + 2 * w, v + d) : uv(u + d, v, u + d + w, v + d)),
-				west: face(uv(u, v + d, u + d, v + d + h)),
-				south: face(uv(u + d, v + d, u + d + w, v + d + h)),
-				east: face(uv(u + d + w, v + d, u + 2 * d + w, v + d + h)),
-				north: face(uv(u + 2 * d + w, v + d, u + 2 * d + 2 * w, v + d + h))
-			}
-		};
-	};
-	return {
-		kind: 'block',
-		elements: [box([1, 0, 1], [15, 10, 15], 0, 19), box([1, 9, 1], [15, 14, 15], 0, 0), box([7, 7, 15], [9, 11, 16], 0, 0)],
-		rotation: [30, 45, 0]
-	};
-}
 
 /**
  * Shulker boxes are drawn in code too (ShulkerModel, the same box layout as
@@ -148,12 +138,57 @@ function vanillaShield(res: Resources): IconSpec | null {
 	return null;
 }
 
+/** 1.12's numbered variants of code-drawn items: skulls by kind, banners by dye number (black first), beds by colour (white first). */
+const SKULLS_112: HeadKind[] = ['skeleton', 'wither_skeleton', 'zombie', 'player', 'creeper', 'dragon'];
+const COLOURS = ['white', 'orange', 'magenta', 'light_blue', 'yellow', 'lime', 'pink', 'gray', 'light_gray', 'cyan', 'purple', 'blue', 'brown', 'green', 'red', 'black'];
+const HEAD_ITEMS: Record<string, HeadKind> = {
+	skeleton_skull: 'skeleton',
+	wither_skeleton_skull: 'wither_skeleton',
+	zombie_head: 'zombie',
+	player_head: 'player',
+	creeper_head: 'creeper',
+	piglin_head: 'piglin',
+	dragon_head: 'dragon'
+};
+
+/**
+ * Vanilla items drawn in code from entity models (entityicons.ts), by their
+ * 1.21.4+ special model or, before item definitions, by id and 1.12 damage.
+ */
+function entityItem(res: Resources, special: Record<string, unknown> | null, itemPath: string, damage: number | null): IconSpec | null | undefined {
+	const has = (texture: string) => res.has(`minecraft/textures/${texture}.png`);
+	// 1.12 calls light gray silver.
+	const colourTexture = (dir: string, colour: string) => (has(`${dir}/${colour}`) || colour !== 'light_gray' ? colour : 'silver');
+	if (special) {
+		const type = String(special.type).replace(/^minecraft:/, '');
+		const field = (key: string) => (typeof special[key] === 'string' ? split(special[key] as string)[1] : '');
+		if (type === 'head') return headIcon(field('kind') as HeadKind, has);
+		if (type === 'player_head') return headIcon('player', has);
+		if (type === 'banner') return bannerIcon(field('color'), has);
+		if (type === 'bed') return bedIcon(field('texture'), has);
+		if (type === 'conduit') return conduitIcon(has);
+		if (type === 'decorated_pot') return decoratedPotIcon(has);
+		if (type === 'copper_golem_statue') return statueIcon(field('texture').replace(/^textures\//, '').replace(/\.png$/, ''), has);
+		return undefined;
+	}
+	if (HEAD_ITEMS[itemPath]) return headIcon(HEAD_ITEMS[itemPath], has);
+	if (itemPath === 'skull') return headIcon(SKULLS_112[damage ?? 0] ?? 'skeleton', has);
+	if (itemPath === 'conduit') return conduitIcon(has);
+	if (itemPath === 'decorated_pot') return decoratedPotIcon(has);
+	const banner = itemPath === 'banner' ? [...COLOURS].reverse()[damage ?? 0] : itemPath.match(/^(\w+)_banner$/)?.[1];
+	if (banner && DYE_NAMES.has(banner)) return bannerIcon(banner, has);
+	const bed = itemPath === 'bed' ? COLOURS[damage ?? 0] : itemPath.match(/^(\w+)_bed$/)?.[1];
+	if (bed && DYE_NAMES.has(bed)) return bedIcon(colourTexture('entity/bed', bed), has);
+	return undefined;
+}
+const DYE_NAMES = new Set(COLOURS);
+
 /** Vanilla's code-drawn chests before 1.21.4's item definitions, by their entity texture. */
 const CHESTS: Record<string, string> = { chest: 'normal', trapped_chest: 'trapped', ender_chest: 'ender' };
 
 function vanillaChest(res: Resources, texture: string): IconSpec | null {
 	if (!res.has(`minecraft/textures/entity/chest/${texture}.png`)) return null;
-	return chestSpec(`minecraft:entity/chest/${texture}`, res.has('minecraft/textures/entity/chest/normal_left.png'));
+	return chestIcon(`minecraft:entity/chest/${texture}`, res.has('minecraft/textures/entity/chest/normal_left.png'));
 }
 /**
  * `exact`: false when the picture is a guess. `variant`: the 1.12 damage value
@@ -391,7 +426,7 @@ type Model = {
 	gui: [number, number, number] | null;
 };
 
-const cube = (faces: Record<Side, string>) => ({
+const cube = (faces: Record<ModelSide, string>) => ({
 	elements: [{ from: [0, 0, 0], to: [16, 16, 16], faces: Object.fromEntries(Object.entries(faces).map(([side, t]) => [side, { texture: t }])) }]
 });
 
@@ -470,7 +505,7 @@ function legacyTint(itemPath: string): string | null {
 }
 
 /** The game's default uv for a face, from the element's box. */
-const UV: Record<Side, (f: number[], t: number[]) => [number, number, number, number]> = {
+const UV: Record<ModelSide, (f: number[], t: number[]) => [number, number, number, number]> = {
 	up: (f, t) => [f[0], f[2], t[0], t[2]],
 	north: (f, t) => [16 - t[0], 16 - t[1], 16 - f[0], 16 - f[1]],
 	south: (f, t) => [f[0], 16 - t[1], t[0], 16 - f[1]],
@@ -545,6 +580,8 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 			return { spec: vanillaShulker(res, split(special!.texture)[1]), exact: true };
 		}
 		if (specialType === 'shield') return { spec: vanillaShield(res), exact: true };
+		const drawn = special ? entityItem(res, special, itemPath, null) : undefined;
+		if (drawn !== undefined) return { spec: drawn, exact: true };
 		if (!model || typeof model.model !== 'string') return { spec: null, exact: true };
 		const loaded = await loadModel(res, model.model);
 		return { spec: loaded ? specOf(loaded, tintsOf(model), null) : null, exact: true };
@@ -552,6 +589,10 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	if (ns === 'minecraft' && CHESTS[itemPath]) {
 		const chest = vanillaChest(res, CHESTS[itemPath]);
 		if (chest) return { spec: chest, exact: true };
+	}
+	if (ns === 'minecraft') {
+		const drawn = entityItem(res, null, itemPath, damage);
+		if (drawn) return { spec: drawn, exact: true, variant: !!damage && ['skull', 'banner', 'bed'].includes(itemPath) };
 	}
 	if (ns === 'minecraft' && itemPath === 'shield') {
 		const shield = vanillaShield(res);

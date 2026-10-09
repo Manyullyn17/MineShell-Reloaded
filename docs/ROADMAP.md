@@ -493,7 +493,10 @@ and 26.x's `{ sprite }` textures with them). A survey of every vanilla item (1.1
 models), banners (16; patterns come from the item's data), heads and skulls (7; a player head
 would want the skin from its profile), the shield, the conduit, the decorated pot (1.20+), and
 the copper golem statues (1.21.9+). The shield built the same day (plain; a shield's banner
-pattern is not drawn).
+pattern is not drawn), then all the rest (`entityicons.ts`): every vanilla item of the four
+versions now has a picture. Banners are plain, in their colour (patterns: the user's call, not
+for now); a player head shows Steve, not the skin its profile names. Not built: banner patterns
+on banners and shields, player heads' own skins.
 
 ### A map of the world
 

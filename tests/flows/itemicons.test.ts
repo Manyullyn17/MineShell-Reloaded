@@ -195,23 +195,30 @@ describe('item icons', () => {
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
 	});
 
-	it('draws the chests the game draws in code, in both texture layouts', async () => {
-		const old = await Resources.load([], await jar('c.jar', { 'assets/minecraft/textures/entity/chest/ender.png': PNG }));
-		const spec = (await resolveIcon(old, 'minecraft:ender_chest')).spec as { kind: string; rotation: number[]; elements: { from: number[]; faces: Record<string, { texture: string; uv: number[] }> }[] };
-		expect(spec).toMatchObject({ kind: 'block', rotation: [30, 45, 0] });
-		// Base, lid, latch; the base's top where the game's box layout puts it (14,19 in the 64px texture).
-		expect(spec.elements.map((e) => e.from)).toEqual([[1, 0, 1], [1, 9, 1], [7, 7, 15]]);
-		expect(spec.elements[0].faces.up).toEqual({ texture: 'minecraft:entity/chest/ender', uv: [3.5, 4.75, 7, 8.25], tint: null });
-		expect(spec.elements[0].faces.south.uv).toEqual([3.5, 8.25, 7, 10.75]);
+	it('draws the chests the game draws in code from its chest models, in both texture layouts', async () => {
+		type Spec = { kind: string; rotation: number[]; quads: { corners: number[][]; face: { texture: string; uv: number[] } }[] };
+		// The latch's front: the face at the chest's front (z 16) between x 7 and 9.
+		const latch = (spec: Spec) =>
+			spec.quads.find((q) => q.corners.every((c) => Math.abs(c[2] - 16) < 1e-6 && c[0] > 6.9 && c[0] < 9.1))!;
+		const ys = (q: Spec['quads'][number]) => q.corners.map((c) => Math.round(c[1] * 1000) / 1000);
 
-		// 1.15+ (split double chests): flipped, so the top comes from the bottom's square and sides read bottom up.
+		// Before 1.15: ModelChest, built upside down and turned over, textures the right way up.
+		const old = await Resources.load([], await jar('c.jar', { 'assets/minecraft/textures/entity/chest/ender.png': PNG }));
+		const before = (await resolveIcon(old, 'minecraft:ender_chest')).spec as Spec;
+		expect(before).toMatchObject({ kind: 'block', rotation: [30, 45, 0] });
+		expect(Math.min(...ys(latch(before)))).toBe(7);
+		expect(Math.max(...ys(latch(before)))).toBe(11);
+		expect(latch(before).face).toEqual({ texture: 'minecraft:entity/chest/ender', uv: [0.25, 0.25, 0.75, 1.25], tint: null });
+
+		// 1.15+ (split double chests): the upright ChestModel, its textures drawn upside down.
 		const modern = await Resources.load(
 			[],
 			await jar('c.jar', { 'assets/minecraft/textures/entity/chest/normal.png': PNG, 'assets/minecraft/textures/entity/chest/normal_left.png': PNG })
 		);
-		const flipped = (await resolveIcon(modern, 'minecraft:chest')).spec as typeof spec;
-		expect(flipped.elements[0].faces.up.uv).toEqual([7, 8.25, 10.5, 4.75]);
-		expect(flipped.elements[0].faces.south.uv).toEqual([3.5, 10.75, 7, 8.25]);
+		const after = (await resolveIcon(modern, 'minecraft:chest')).spec as Spec;
+		expect(Math.min(...ys(latch(after)))).toBe(7);
+		expect(Math.max(...ys(latch(after)))).toBe(11);
+		expect(latch(after).face.uv).toEqual([1, 0.25, 1.5, 1.25]);
 
 		// 1.21.4: the item definition names a special chest model and its texture.
 		const definitions = await Resources.load(
@@ -224,7 +231,8 @@ describe('item icons', () => {
 				'assets/minecraft/textures/entity/chest/normal_left.png': PNG
 			})
 		);
-		expect((await resolveIcon(definitions, 'minecraft:trapped_chest')).spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'minecraft:entity/chest/trapped' } } }, {}, {}] });
+		const trapped = (await resolveIcon(definitions, 'minecraft:trapped_chest')).spec as Spec;
+		expect(new Set(trapped.quads.map((q) => q.face.texture))).toEqual(new Set(['minecraft:entity/chest/trapped']));
 	});
 
 	it('draws shulker boxes the game draws in code, by every name the versions give them', async () => {
@@ -290,6 +298,62 @@ describe('item icons', () => {
 			})
 		);
 		expect((await resolveIcon(definitions, 'minecraft:shield')).spec).toMatchObject({ kind: 'block' });
+	});
+
+	it('draws heads, banners, beds, the conduit, the decorated pot and copper golem statues the game draws in code', async () => {
+		type Spec = { kind: string; quads: { face: { texture: string; tint: string | null } }[]; scale: number } | null;
+		const textures = (spec: Spec) => new Set(spec?.quads.map((q) => q.face.texture + (q.face.tint ? ` ${q.face.tint}` : '')));
+		const files = (paths: string[]) => Object.fromEntries(paths.map((p) => [`assets/minecraft/textures/${p}.png`, PNG]));
+
+		// Before item definitions: by id, from the version's own texture places.
+		const legacy = await Resources.load(
+			[],
+			await jar('c.jar', files(['entity/skeleton/skeleton', 'entity/player/wide/steve', 'entity/banner_base', 'entity/banner/base', 'entity/bed/red', 'entity/conduit/base', 'entity/decorated_pot/decorated_pot_base', 'entity/decorated_pot/decorated_pot_side']))
+		);
+		const icon = async (id: string, damage: number | null = null) => (await resolveIcon(legacy, `minecraft:${id}`, damage)).spec as Spec;
+		expect(textures(await icon('skeleton_skull'))).toEqual(new Set(['minecraft:entity/skeleton/skeleton']));
+		expect(textures(await icon('player_head'))).toEqual(new Set(['minecraft:entity/player/wide/steve']));
+		// A plain banner: the pole, bar and cloth, and the base layer tinted in the banner's colour.
+		expect(textures(await icon('red_banner'))).toEqual(new Set(['minecraft:entity/banner_base', 'minecraft:entity/banner/base #b02e26']));
+		expect(textures(await icon('red_bed'))).toEqual(new Set(['minecraft:entity/bed/red']));
+		expect(textures(await icon('conduit'))).toEqual(new Set(['minecraft:entity/conduit/base']));
+		expect(textures(await icon('decorated_pot'))).toEqual(
+			new Set(['minecraft:entity/decorated_pot/decorated_pot_base', 'minecraft:entity/decorated_pot/decorated_pot_side'])
+		);
+		// Sized as each item model shows it, against a block's 0.625.
+		expect((await icon('skeleton_skull'))?.scale).toBeCloseTo(1.6);
+		expect(await icon('zombie_head')).toBeNull();
+
+		// 1.12: one id each, the damage picks the kind or colour (banners count from black, beds from white; light gray is silver).
+		const old = await Resources.load([], await jar('c.jar', files(['entity/creeper/creeper', 'entity/banner_base', 'entity/banner/base', 'entity/bed/silver'])));
+		const oldIcon = async (id: string, damage: number) => (await resolveIcon(old, `minecraft:${id}`, damage)).spec as Spec;
+		expect(textures(await oldIcon('skull', 4))).toEqual(new Set(['minecraft:entity/creeper/creeper']));
+		expect(textures(await oldIcon('banner', 1))).toContain('minecraft:entity/banner/base #b02e26');
+		expect(textures(await oldIcon('bed', 8))).toEqual(new Set(['minecraft:entity/bed/silver']));
+
+		// 1.21.4+: the item definition's special model says what to draw.
+		const definitions = await Resources.load(
+			[],
+			await jar('c.jar', {
+				...files(['entity/piglin/piglin', 'entity/bed/blue', 'entity/copper_golem/oxidized_copper_golem', 'entity/banner/banner_base', 'entity/banner/base']),
+				'assets/minecraft/items/piglin_head.json': json({ model: { type: 'minecraft:special', base: 'minecraft:item/template_skull', model: { type: 'minecraft:head', kind: 'piglin' } } }),
+				'assets/minecraft/items/blue_bed.json': json({ model: { type: 'minecraft:special', base: 'minecraft:item/blue_bed', model: { type: 'minecraft:bed', texture: 'minecraft:blue' } } }),
+				'assets/minecraft/items/blue_banner.json': json({ model: { type: 'minecraft:special', base: 'minecraft:item/template_banner', model: { type: 'minecraft:banner', color: 'blue' } } }),
+				'assets/minecraft/items/oxidized_copper_golem_statue.json': json({
+					model: {
+						type: 'minecraft:select',
+						block_state_property: 'copper_golem_pose',
+						cases: [{ when: 'sitting', model: { type: 'minecraft:special', base: 'x', model: { type: 'minecraft:copper_golem_statue', pose: 'sitting', texture: 'minecraft:textures/entity/copper_golem/oxidized_copper_golem.png' } } }],
+						fallback: { type: 'minecraft:special', base: 'x', model: { type: 'minecraft:copper_golem_statue', pose: 'standing', texture: 'minecraft:textures/entity/copper_golem/oxidized_copper_golem.png' } }
+					}
+				})
+			})
+		);
+		const def = async (id: string) => (await resolveIcon(definitions, `minecraft:${id}`)).spec as Spec;
+		expect(textures(await def('piglin_head'))).toEqual(new Set(['minecraft:entity/piglin/piglin']));
+		expect(textures(await def('blue_bed'))).toEqual(new Set(['minecraft:entity/bed/blue']));
+		expect(textures(await def('blue_banner'))).toEqual(new Set(['minecraft:entity/banner/banner_base', 'minecraft:entity/banner/base #3c44aa']));
+		expect(textures(await def('oxidized_copper_golem_statue'))).toEqual(new Set(['minecraft:entity/copper_golem/oxidized_copper_golem']));
 	});
 
 	it("takes the trident's inventory model over its 3D one", async () => {
