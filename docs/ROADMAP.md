@@ -487,6 +487,13 @@ hanging fruit"). Left for another pass: names a mod links to its id only in code
 (Actually Additions crystals, Mekanism basic blocks), shulker boxes, heads, banners' patterns,
 templates' filled-in text.
 
+Shulker boxes built 2026-10-09 (all versions; the trident's flat inventory picture on 1.21.4+
+and 26.x's `{ sprite }` textures with them). A survey of every vanilla item (1.12.2, 1.21.1,
+1.21.11, 26.3) left only what the game draws in code: beds (before 26.x, which made them
+models), banners (16; patterns come from the item's data), heads and skulls (7; a player head
+would want the skin from its profile), the shield, the conduit, the decorated pot (1.20+), and
+the copper golem statues (1.21.9+).
+
 ### A map of the world
 
 Wanted (2026-10-08): seeing the world from the browser, modded worlds included, preferably

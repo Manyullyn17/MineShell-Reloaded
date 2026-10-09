@@ -82,6 +82,36 @@ function chestSpec(texture: string, flipped: boolean): IconSpec {
 	};
 }
 
+/**
+ * Shulker boxes are drawn in code too (ShulkerModel, the same box layout as
+ * the chests): a 16x12x16 lid at texture (0,0) over a 16x8x16 base at (0,28),
+ * the base's top half inside the lid. The lid's lowest rows have holes the
+ * base shows through, so the base is the whole 8 high box, set back a hair so
+ * the lid's faces are in front of it. Turned as the item's model says (30, 45).
+ */
+function shulkerSpec(texture: string): IconSpec {
+	const face = (u1: number, v1: number, u2: number, v2: number): FaceSpec => ({ texture, uv: [u1 / 4, v1 / 4, u2 / 4, v2 / 4], tint: null });
+	const sides = (top: number, bottom: number) => ({
+		west: face(0, top, 16, bottom),
+		south: face(16, top, 32, bottom),
+		east: face(32, top, 48, bottom),
+		north: face(48, top, 64, bottom)
+	});
+	return {
+		kind: 'block',
+		elements: [
+			{ from: [0.05, 0, 0.05], to: [15.95, 8, 15.95], faces: sides(44, 52) },
+			{ from: [0, 4, 0], to: [16, 16, 16], faces: { up: face(16, 0, 32, 16), ...sides(16, 28) } }
+		],
+		rotation: [30, 45, 0]
+	};
+}
+
+/** A shulker box by its entity texture (shulker_red; the undyed one is shulker, 1.12's light gray shulker_silver). */
+function vanillaShulker(res: Resources, texture: string): IconSpec | null {
+	return res.has(`minecraft/textures/entity/shulker/${texture}.png`) ? shulkerSpec(`minecraft:entity/shulker/${texture}`) : null;
+}
+
 /** Vanilla's code-drawn chests before 1.21.4's item definitions, by their entity texture. */
 const CHESTS: Record<string, string> = { chest: 'normal', trapped_chest: 'trapped', ender_chest: 'ender' };
 
@@ -452,6 +482,12 @@ function definitionModel(def: Record<string, unknown> | undefined, depth = 0): R
 	if (type === 'model' || type === 'special') return def;
 	if (type === 'composite') return definitionModel((def.models as Record<string, unknown>[] | undefined)?.[0], depth + 1);
 	if (type === 'condition') return definitionModel((def.on_false ?? def.on_true) as Record<string, unknown>, depth + 1);
+	// By where it is shown (the trident: a flat picture in the inventory, the 3D one in hand): the inventory's.
+	const cases = def.cases as { when?: unknown; model?: Record<string, unknown> }[] | undefined;
+	if (type === 'select' && Array.isArray(cases)) {
+		const gui = cases.find((c) => (Array.isArray(c.when) ? c.when : [c.when]).includes('gui'));
+		if (gui?.model) return definitionModel(gui.model, depth + 1);
+	}
 	const nested = (def.fallback ?? (def.cases as { model: Record<string, unknown> }[] | undefined)?.[0]?.model ?? (def.entries as { model: Record<string, unknown> }[] | undefined)?.[0]?.model) as
 		| Record<string, unknown>
 		| undefined;
@@ -465,8 +501,12 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	if (definition) {
 		const model = definitionModel(definition.model as Record<string, unknown>);
 		const special = model?.type === 'minecraft:special' || model?.type === 'special' ? (model.model as Record<string, unknown> | undefined) : null;
-		if (special && String(special.type).replace(/^minecraft:/, '') === 'chest' && typeof special.texture === 'string') {
-			return { spec: vanillaChest(res, split(special.texture)[1]), exact: true };
+		const specialType = special ? String(special.type).replace(/^minecraft:/, '') : null;
+		if (specialType === 'chest' && typeof special!.texture === 'string') {
+			return { spec: vanillaChest(res, split(special!.texture)[1]), exact: true };
+		}
+		if (specialType === 'shulker_box' && typeof special!.texture === 'string') {
+			return { spec: vanillaShulker(res, split(special!.texture)[1]), exact: true };
 		}
 		if (!model || typeof model.model !== 'string') return { spec: null, exact: true };
 		const loaded = await loadModel(res, model.model);
@@ -475,6 +515,11 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	if (ns === 'minecraft' && CHESTS[itemPath]) {
 		const chest = vanillaChest(res, CHESTS[itemPath]);
 		if (chest) return { spec: chest, exact: true };
+	}
+	const shulker = ns === 'minecraft' ? itemPath.match(/^(?:(\w+)_)?shulker_box$/) : null;
+	if (shulker) {
+		const box = vanillaShulker(res, shulker[1] ? `shulker_${shulker[1]}` : 'shulker');
+		if (box) return { spec: box, exact: true };
 	}
 	const candidates = variantModels(ns, itemPath, damage);
 	// A mod's own name pattern for the variant, before its blockstate file and the base model.

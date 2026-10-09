@@ -227,6 +227,34 @@ describe('item icons', () => {
 		expect((await resolveIcon(definitions, 'minecraft:trapped_chest')).spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'minecraft:entity/chest/trapped' } } }, {}, {}] });
 	});
 
+	it('draws shulker boxes the game draws in code, by every name the versions give them', async () => {
+		const textures = Object.fromEntries(['shulker', 'shulker_red', 'shulker_silver'].map((t) => [`assets/minecraft/textures/entity/shulker/${t}.png`, PNG]));
+		const res = await Resources.load(
+			[],
+			await jar('c.jar', {
+				...textures,
+				// 1.21.4+: the item definition names the texture.
+				'assets/minecraft/items/black_shulker_box.json': json({
+					model: { type: 'minecraft:special', base: 'minecraft:item/black_shulker_box', model: { type: 'minecraft:shulker_box', texture: 'minecraft:shulker_red' } }
+				})
+			})
+		);
+		const spec = (await resolveIcon(res, 'minecraft:red_shulker_box')).spec as { kind: string; rotation: number[]; elements: { from: number[]; to: number[]; faces: Record<string, { texture: string; uv: number[] }> }[] };
+		expect(spec).toMatchObject({ kind: 'block', rotation: [30, 45, 0] });
+		// The base inside the lid, set back so the lid's faces (with holes) are in front of it.
+		expect(spec.elements.map((e) => [e.from, e.to])).toEqual([
+			[[0.05, 0, 0.05], [15.95, 8, 15.95]],
+			[[0, 4, 0], [16, 16, 16]]
+		]);
+		expect(spec.elements[1].faces.up).toEqual({ texture: 'minecraft:entity/shulker/shulker_red', uv: [4, 0, 8, 4], tint: null });
+		expect(spec.elements[0].faces.south.uv).toEqual([4, 11, 8, 13]);
+		const texture = async (id: string) => ((await resolveIcon(res, id)).spec as typeof spec | null)?.elements[1].faces.up.texture;
+		expect(await texture('minecraft:shulker_box')).toBe('minecraft:entity/shulker/shulker');
+		expect(await texture('minecraft:silver_shulker_box')).toBe('minecraft:entity/shulker/shulker_silver');
+		expect(await texture('minecraft:black_shulker_box')).toBe('minecraft:entity/shulker/shulker_red');
+		expect((await resolveIcon(res, 'minecraft:green_shulker_box')).spec).toBeNull();
+	});
+
 	it('reads 26.x textures given as { sprite }', async () => {
 		const res = await Resources.load(
 			[],
@@ -237,6 +265,24 @@ describe('item icons', () => {
 		);
 		const glass = (await resolveIcon(res, 'minecraft:glass')).spec as { elements: { faces: Record<string, { texture: string }> }[] };
 		expect(glass.elements[0].faces.up.texture).toBe('minecraft:block/glass');
+	});
+
+	it("takes the trident's inventory model over its 3D one", async () => {
+		const res = await Resources.load(
+			[],
+			await jar('c.jar', {
+				'assets/minecraft/items/trident.json': json({
+					model: {
+						type: 'minecraft:select',
+						property: 'minecraft:display_context',
+						cases: [{ when: ['gui', 'ground', 'fixed'], model: { type: 'minecraft:model', model: 'minecraft:item/trident' } }],
+						fallback: { type: 'minecraft:special', base: 'minecraft:item/trident_in_hand', model: { type: 'minecraft:trident' } }
+					}
+				}),
+				'assets/minecraft/models/item/trident.json': json({ parent: 'minecraft:item/generated', textures: { layer0: 'minecraft:item/trident' } })
+			})
+		);
+		expect((await resolveIcon(res, 'minecraft:trident')).spec).toEqual({ kind: 'flat', layers: [{ texture: 'minecraft:item/trident', tint: null }] });
 	});
 
 	it('falls back to a texture numbered by damage when the models are picked in code', async () => {
