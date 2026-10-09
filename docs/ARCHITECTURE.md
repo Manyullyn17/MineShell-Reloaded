@@ -499,6 +499,13 @@ pointed at the current port with `/tunnels/update` (same tunnel, same address; a
 only applies on restart); one that is gone from the account (`/tunnels/list`, not the run
 data, which lists new tunnels a moment late) is forgotten. Deleted with the server, when
 switched off, and on unlink (the agent stays on the account: the API cannot delete it).
+A server with Simple Voice Chat gets a second, UDP tunnel (`tunnel_type` null) to its voice
+chat port, `voiceTunnelId` in the same row (`syncVoiceTunnel`: made when it goes public and
+before every start if missing, pointed at the current voice port, deleted once the mod is
+gone): voice chat clients connect to it directly, not through the game's tunnel, and the mod
+sends them to `voice_host`, which gets the tunnel's `host:port` address once playit has one
+(at the latest on the next start). Going private deletes both and clears voice_host if it is
+still the address MineShell wrote (`voiceHost`).
 The run data (tunnels, `display_address`, Premium) is kept 15 s and streamed to pages.
 Where the agent connects out ("Connects through", free) is separate from a tunnel's region
 (where players connect, Premium): `/agents/routing/set` with `Automatic` or a location from

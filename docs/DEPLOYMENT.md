@@ -253,7 +253,10 @@ Integrations) and make the server public in its settings: playit's agent runs as
 `<prefix>-playit.service` next to the servers (`journalctl --user -u <prefix>-playit` for its
 log), only connecting out. A free account takes two agents and four ports (premium: ten and
 sixteen): with old agents filling the limit, remove one on playit.gg, or the new one is turned
-away until you do.
+away until you do. A server with Simple Voice Chat takes two of the ports: the game's, and a
+UDP one for voice chat, whose address MineShell writes into the mod's `voice_host` (applies
+on the next restart). Without playit, the voice chat port is opened and forwarded like the game
+port, as UDP (`sudo ufw allow <port>/udp`; the server's overview names it).
 
 Never expose an RCON port. It is plaintext and only weakly authenticated, and only MineShell
 on the same machine needs it. Minecraft listens for RCON on every interface unless

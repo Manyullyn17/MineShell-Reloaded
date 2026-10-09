@@ -872,6 +872,16 @@
 					{:else}
 						<p class="hint">playit.gg is still setting up the address; it shows up here in a moment.</p>
 					{/if}
+					{#if data.voice}
+						<p class="hint">
+							{#if playit?.address?.voice}
+								Voice chat: <code class="mono">{playit.address.voice}</code> (its own UDP tunnel), written into the mod's
+								voice_host{data.voice.host === playit.address.voice ? '' : '; applies on the next restart'}.
+							{:else}
+								Voice chat gets its own UDP tunnel, and the mod is told its address when the server next starts.
+							{/if}
+						</p>
+					{/if}
 					{#if playit && !playit.running}
 						<p class="hint warn-text">The playit agent is not running or not connected, so the address does not answer; see MineShell settings, Integrations.</p>
 					{/if}

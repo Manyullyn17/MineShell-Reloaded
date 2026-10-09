@@ -53,7 +53,7 @@ import {
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portConflict } from '#lib/server/ports.js';
-import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel } from '#lib/server/playit.js';
+import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel, syncVoiceTunnel } from '#lib/server/playit.js';
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
 	PROPERTY_SCHEMA,
@@ -528,7 +528,17 @@ export const actions: Actions = {
 			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
-		return { ok: true, message: 'Public through playit.gg. The address shows up here and in the header in a moment.' };
+		// Simple Voice Chat: its own UDP tunnel. The server is public either way.
+		const voice = await syncVoiceTunnel(instance).then(
+			() => null,
+			(err) => (err instanceof Error ? err.message : String(err))
+		);
+		return {
+			ok: true,
+			message: `Public through playit.gg. The address shows up here and in the header in a moment.${
+				voice ? ` Voice chat's tunnel was not made: ${voice}` : ''
+			}`
+		};
 	},
 
 	playitPrivate: async ({ params }) => {

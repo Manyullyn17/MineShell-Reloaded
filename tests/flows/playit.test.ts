@@ -39,7 +39,7 @@ function route(name: string, answer: (body: Record<string, unknown>) => Response
 	] as const;
 }
 
-const { AGENT_BINARIES, AGENT_UNIT, agentProblem, setRouting, AGENT_VERSION, PLAYIT_DIR, claimState, linkedAgent, makePrivate, makePublic, playitStatus, publicAddress, serverTunnel, startLink, syncTunnel, timing, unlink } =
+const { AGENT_BINARIES, AGENT_UNIT, agentProblem, setRouting, AGENT_VERSION, PLAYIT_DIR, claimState, linkedAgent, makePrivate, makePublic, playitStatus, publicAddress, serverTunnel, startLink, syncTunnel, syncTunnels, syncVoiceTunnel, timing, unlink } =
 	await import('#lib/server/playit.js');
 const { systemdUnitDir } = await import('#lib/server/config.js');
 const { deleteInstance } = await import('#lib/server/instances.js');
@@ -60,11 +60,13 @@ useRecordedHttp('playit', {
 			if ((body.alloc as { details?: { region?: string } } | null)?.details?.region) return json('fail', 'RequiresPlayitPremium');
 			const id = crypto.randomUUID();
 			const origin = (body.origin as { data: { local_ip: string; local_port: number } }).data;
+			const udp = body.port_type === 'udp';
 			fake.tunnels.push({
 				id,
 				name: String(body.name),
-				display_address: `tunnel-${fake.tunnels.length}.tun.ply.gg`,
-				tunnel_type: 'minecraft-java',
+				// A UDP tunnel's address names its port (as playit shows one); a Minecraft one works on the default.
+				display_address: udp ? `udp-${fake.tunnels.length}.ply.gg:${40000 + fake.tunnels.length}` : `tunnel-${fake.tunnels.length}.tun.ply.gg`,
+				tunnel_type: body.tunnel_type as string,
 				agent_config: { fields: [{ name: 'local_ip', value: origin.local_ip }, { name: 'local_port', value: String(origin.local_port) }] },
 				disabled_reason: null
 			});
@@ -164,7 +166,7 @@ describe('playit.gg', () => {
 			alloc: null
 		});
 		expect(serverTunnel(instance.id)).toEqual(tunnel);
-		expect(publicAddress(instance.id, await playitStatus({ fresh: true }))).toEqual({ address: expect.stringMatching(/\.tun\.ply\.gg$/), pending: false });
+		expect(publicAddress(instance.id, await playitStatus({ fresh: true }))).toEqual({ address: expect.stringMatching(/\.tun\.ply\.gg$/), pending: false, voice: null });
 
 		// A fixed region on a free account.
 		const other = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', serverPort: 25602 }, {});
@@ -202,6 +204,36 @@ describe('playit.gg', () => {
 		await makePrivate(instance.id);
 		expect(serverTunnel(instance.id)).toBeNull();
 		expect(fake.tunnels).toHaveLength(0);
+	});
+
+	it("gives Simple Voice Chat its own UDP tunnel and the mod its address, and takes both away again", async () => {
+		if (!linkedAgent().agentId) await link();
+		fakeSystemctl();
+		agentActive = true;
+		const config = 'config/voicechat/voicechat-server.properties';
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.21.1', serverPort: 25604 },
+			{ [config]: '# Simple Voice Chat\nport=24461\nvoice_host=\n' }
+		);
+		await makePublic(instance);
+		await syncVoiceTunnel(instance);
+		const voiceId = serverTunnel(instance.id)?.voiceTunnelId;
+		expect(voiceId).toBeTruthy();
+		const created = fake.calls.filter((c) => c.route === '/tunnels/create').at(-1)!;
+		expect(created.body).toMatchObject({ port_type: 'udp', tunnel_type: null, origin: { data: { local_port: 24461 } } });
+		const address = fake.tunnels.find((t) => t.id === voiceId)!.display_address;
+		const text = () => fs.readFile(path.join(instance.path, config), 'utf8');
+		expect(await text()).toContain(`voice_host=${address}`);
+		expect(publicAddress(instance.id, await playitStatus({ fresh: true }))?.voice).toBe(address);
+
+		// The voice chat port changed: before the start, its tunnel follows.
+		await fs.writeFile(path.join(instance.path, config), `port=24462\nvoice_host=${address}\n`);
+		await syncTunnels(instance);
+		expect(fake.tunnels.find((t) => t.id === voiceId)?.agent_config.fields).toContainEqual({ name: 'local_port', value: '24462' });
+
+		await makePrivate(instance.id);
+		expect(fake.tunnels.some((t) => t.id === voiceId)).toBe(false);
+		expect(await text()).toContain('voice_host=\n');
 	});
 
 	it("explains playit turning a second agent away on a free account, until it connects", async () => {

@@ -4,10 +4,11 @@ import path from 'node:path';
 import { eq, like } from 'drizzle-orm';
 import { DATA_DIR, UNIT_PREFIX, systemdUnitDir } from './config';
 import { db } from './db/index';
-import { settings, type ServerInstance } from './db/schema';
+import { serverInstances, settings, type ServerInstance } from './db/schema';
 import { downloadFile } from './download';
 import { readProperties } from './properties';
 import { run, systemctl } from './systemd';
+import { setVoiceConfig, voiceChat } from './voicechat';
 
 /**
  * playit.gg tunnels: players reach a server without port forwarding.
@@ -85,7 +86,13 @@ export async function playitApi<T>(route: string, body: unknown, key?: string | 
 /** `routing`: where the agent connects out ('Automatic' or a playit location, e.g. 'Germany'). */
 type Linked = { agentId: string | null; linkedAt: number | null; routing?: string };
 /** Per server: the tunnel MineShell made for it. */
-export type ServerTunnel = { tunnelId: string; region: string };
+/**
+ * A public server's tunnels: the Minecraft one, and with Simple Voice Chat a
+ * UDP one to its voice chat port (`voiceTunnelId`), whose address MineShell
+ * wrote into the mod's voice_host (`voiceHost`, so going private only clears
+ * what it wrote).
+ */
+export type ServerTunnel = { tunnelId: string; region: string; voiceTunnelId?: string; voiceHost?: string };
 
 const GLOBAL_KEY = 'playit';
 const SERVER_KEY = (id: string) => `playit:${id}`;
@@ -120,7 +127,13 @@ export const agentPage = (agentId: string) => `${DASHBOARD}/${agentId}`;
 
 export function serverTunnel(instanceId: string): ServerTunnel | null {
 	const raw = readJson<ServerTunnel>(SERVER_KEY(instanceId));
-	return typeof raw?.tunnelId === 'string' ? { tunnelId: raw.tunnelId, region: typeof raw.region === 'string' ? raw.region : 'global' } : null;
+	if (typeof raw?.tunnelId !== 'string') return null;
+	return {
+		tunnelId: raw.tunnelId,
+		region: typeof raw.region === 'string' ? raw.region : 'global',
+		...(typeof raw.voiceTunnelId === 'string' ? { voiceTunnelId: raw.voiceTunnelId } : {}),
+		...(typeof raw.voiceHost === 'string' ? { voiceHost: raw.voiceHost } : {})
+	};
 }
 
 function allServerTunnels(): Map<string, ServerTunnel> {
@@ -396,17 +409,21 @@ export async function playitStatus(opts: { fresh?: boolean } = {}): Promise<Play
 
 const field = (t: AgentTunnel, name: string) => t.agent_config.fields.find((f) => f.name === name)?.value ?? null;
 
-/** What players type for a server, when it is public and playit has given it an address. */
-export function publicAddress(instanceId: string, status: PlayitStatus): { address: string | null; pending: boolean } | null {
+/** What players type for a server, when it is public and playit has given it an address; and its voice chat's. */
+export function publicAddress(
+	instanceId: string,
+	status: PlayitStatus
+): { address: string | null; pending: boolean; voice: string | null } | null {
 	const mine = serverTunnel(instanceId);
 	if (!mine || !status.linked) return null;
 	const tunnel = status.tunnels.find((t) => t.id === mine.tunnelId);
-	return { address: tunnel?.display_address || null, pending: !tunnel?.display_address };
+	const voice = mine.voiceTunnelId ? status.tunnels.find((t) => t.id === mine.voiceTunnelId) : undefined;
+	return { address: tunnel?.display_address || null, pending: !tunnel?.display_address, voice: voice?.display_address || null };
 }
 
 /** Tunnels on this agent that MineShell did not make (made on playit's dashboard). */
 export function otherTunnels(status: PlayitStatus): (AgentTunnel & { localPort: number | null })[] {
-	const ours = new Set([...allServerTunnels().values()].map((t) => t.tunnelId));
+	const ours = new Set([...allServerTunnels().values()].flatMap((t) => [t.tunnelId, t.voiceTunnelId ?? '']));
 	return status.tunnels.filter((t) => !ours.has(t.id)).map((t) => ({ ...t, localPort: Number(field(t, 'local_port')) || null }));
 }
 
@@ -447,30 +464,93 @@ export async function makePublic(instance: ServerInstance, region = 'global'): P
 	const key = await requireKey();
 	const existing = serverTunnel(instance.id);
 	if (existing) return existing;
-	const { agentId } = linkedAgent();
 	const local = await localAddress(instance);
-	const body = (name: string) => ({
-		name,
-		tunnel_type: 'minecraft-java',
-		port_type: 'tcp',
-		port_count: 1,
-		origin: { type: 'agent', data: { agent_id: agentId, local_ip: local.ip, local_port: local.port } },
-		enabled: true,
-		alloc: region === 'global' ? null : { type: 'region', details: { region } },
-		firewall_id: null,
-		proxy_protocol: null
-	});
-	let made = await playitApi<{ id: string }>('/tunnels/create', body(tunnelName(instance)), key);
-	for (let i = 0; i < 15 && !made.ok && made.error === 'AgentVersionTooOld'; i++) {
-		await sleep(timing.pollMs);
-		made = await playitApi<{ id: string }>('/tunnels/create', body(tunnelName(instance)), key);
-	}
-	if (!made.ok && made.error === 'InvalidTunnelName') made = await playitApi<{ id: string }>('/tunnels/create', body(`mineshell-${instance.id}`.slice(0, 40)), key);
-	if (!made.ok) throw new PlayitError(explain(made.error));
-	const tunnel: ServerTunnel = { tunnelId: made.data.id, region };
+	const id = await createTunnel(key, instance, { type: 'minecraft-java', portType: 'tcp', ip: local.ip, port: local.port, region });
+	const tunnel: ServerTunnel = { tunnelId: id, region };
 	writeJson(SERVER_KEY(instance.id), tunnel);
 	statusCache = null;
 	return tunnel;
+}
+
+/**
+ * A tunnel from playit to a local port. Right after linking playit refuses
+ * until the agent has connected once (AgentVersionTooOld), so that answer is
+ * retried for a while; a name playit does not take falls back to the id.
+ */
+async function createTunnel(
+	key: string,
+	instance: ServerInstance,
+	t: { type: string | null; portType: 'tcp' | 'udp'; ip: string; port: number; region: string; suffix?: string }
+): Promise<string> {
+	const body = (name: string) => ({
+		name,
+		tunnel_type: t.type,
+		port_type: t.portType,
+		port_count: 1,
+		origin: { type: 'agent', data: { agent_id: linkedAgent().agentId, local_ip: t.ip, local_port: t.port } },
+		enabled: true,
+		alloc: t.region === 'global' ? null : { type: 'region', details: { region: t.region } },
+		firewall_id: null,
+		proxy_protocol: null
+	});
+	const name = (base: string) => (t.suffix ? `${base.slice(0, 39 - t.suffix.length)} ${t.suffix}` : base);
+	let made = await playitApi<{ id: string }>('/tunnels/create', body(name(tunnelName(instance))), key);
+	for (let i = 0; i < 15 && !made.ok && made.error === 'AgentVersionTooOld'; i++) {
+		await sleep(timing.pollMs);
+		made = await playitApi<{ id: string }>('/tunnels/create', body(name(tunnelName(instance))), key);
+	}
+	if (!made.ok && made.error === 'InvalidTunnelName') made = await playitApi<{ id: string }>('/tunnels/create', body(name(`mineshell-${instance.id}`.slice(0, 40))), key);
+	if (!made.ok) throw new PlayitError(explain(made.error));
+	return made.data.id;
+}
+
+/**
+ * Simple Voice Chat on a public server: its own UDP tunnel to the voice chat
+ * port (clients reach voice chat directly, not through the game's tunnel), and
+ * that tunnel's address written into the mod's voice_host, which is where the
+ * mod sends players' clients. playit gives a new tunnel its address after a
+ * moment: voice_host is written once it has one, at the latest on the next
+ * start. Without the mod (removed since), its tunnel goes.
+ */
+export async function syncVoiceTunnel(instance: ServerInstance): Promise<void> {
+	const tunnel = serverTunnel(instance.id);
+	if (!tunnel) return;
+	const key = await readKey();
+	if (!key) return;
+	const voice = await voiceChat(instance);
+	if (!voice) {
+		if (tunnel.voiceTunnelId) {
+			const done = await playitApi('/tunnels/delete', { tunnel_id: tunnel.voiceTunnelId }, key);
+			if (!done.ok && done.error !== 'TunnelNotFound') throw new PlayitError(explain(done.error));
+			writeJson(SERVER_KEY(instance.id), { ...tunnel, voiceTunnelId: undefined, voiceHost: undefined });
+			statusCache = null;
+		}
+		return;
+	}
+	const local = await localAddress(instance);
+	let voiceTunnelId = tunnel.voiceTunnelId;
+	const status = await playitStatus({ fresh: true });
+	let current = voiceTunnelId ? status.tunnels.find((t) => t.id === voiceTunnelId) : undefined;
+	if (voiceTunnelId && !current && !status.error) {
+		// Not in the run data: just made, or deleted on playit's side (then made again).
+		const listed = await playitApi<{ tunnels: { id: string }[] }>('/tunnels/list', { tunnel_id: voiceTunnelId, agent_id: null }, key);
+		if (listed.ok && !listed.data.tunnels.some((t) => t.id === voiceTunnelId)) voiceTunnelId = undefined;
+	}
+	if (!voiceTunnelId) {
+		voiceTunnelId = await createTunnel(key, instance, { type: null, portType: 'udp', ip: local.ip, port: voice.port, region: tunnel.region, suffix: 'voice' });
+		writeJson(SERVER_KEY(instance.id), { ...tunnel, voiceTunnelId });
+		statusCache = null;
+		current = (await playitStatus({ fresh: true })).tunnels.find((t) => t.id === voiceTunnelId);
+	} else if (current && field(current, 'local_port') !== String(voice.port)) {
+		const done = await playitApi('/tunnels/update', { tunnel_id: voiceTunnelId, local_ip: local.ip, local_port: voice.port, agent_id: linkedAgent().agentId, enabled: true }, key);
+		if (!done.ok) throw new PlayitError(explain(done.error));
+		statusCache = null;
+	}
+	const address = current?.display_address;
+	if (address && voice.host !== address) {
+		await setVoiceConfig(instance, { host: address });
+		writeJson(SERVER_KEY(instance.id), { ...(serverTunnel(instance.id) ?? tunnel), voiceTunnelId, voiceHost: address });
+	}
 }
 
 /** Back to local only: the tunnel deleted. One playit no longer has counts as gone. */
@@ -479,9 +559,15 @@ export async function makePrivate(instanceId: string): Promise<void> {
 	if (!tunnel) return;
 	const key = await readKey();
 	if (key) {
-		const done = await playitApi('/tunnels/delete', { tunnel_id: tunnel.tunnelId }, key);
-		if (!done.ok && done.error !== 'TunnelNotFound') throw new PlayitError(explain(done.error));
+		for (const id of [tunnel.tunnelId, tunnel.voiceTunnelId]) {
+			if (!id) continue;
+			const done = await playitApi('/tunnels/delete', { tunnel_id: id }, key);
+			if (!done.ok && done.error !== 'TunnelNotFound') throw new PlayitError(explain(done.error));
+		}
 	}
+	// voice_host back to the server's own address, if it is still the one MineShell wrote.
+	const instance = db.select().from(serverInstances).where(eq(serverInstances.id, instanceId)).get();
+	if (instance && tunnel.voiceHost && (await voiceChat(instance))?.host === tunnel.voiceHost) await setVoiceConfig(instance, { host: '' });
 	db.delete(settings).where(eq(settings.key, SERVER_KEY(instanceId))).run();
 	statusCache = null;
 }
@@ -519,6 +605,12 @@ export async function syncTunnel(instance: ServerInstance): Promise<void> {
 	const done = await playitApi('/tunnels/update', { tunnel_id: tunnel.tunnelId, local_ip: local.ip, local_port: local.port, agent_id: linkedAgent().agentId, enabled: true }, key);
 	if (!done.ok) throw new PlayitError(explain(done.error));
 	statusCache = null;
+}
+
+/** Before a start: the server's tunnels follow its ports, voice chat's included. */
+export async function syncTunnels(instance: ServerInstance): Promise<void> {
+	await syncTunnel(instance);
+	await syncVoiceTunnel(instance);
 }
 
 /** With the server: its tunnel deleted (best effort; the server goes either way). */
