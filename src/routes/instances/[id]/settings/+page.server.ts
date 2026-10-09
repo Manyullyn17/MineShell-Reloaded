@@ -158,7 +158,8 @@ export const load: PageServerLoad = async ({ params }) => {
 					snapshotDailyTime: schedule.dailyTime,
 					snapshotIntervalHours: schedule.intervalHours,
 					snapshotWhileRunning: schedule.whileRunning,
-					snapshotWarnMinutes: schedule.warnMinutes
+					snapshotWarnMinutes: schedule.warnMinutes,
+					snapshotSkipIdle: schedule.skipIdle
 				};
 			})()
 		},
@@ -603,7 +604,8 @@ export const actions: Actions = {
 			dailyTime: time,
 			intervalHours: Number(form.get('snapshotIntervalHours')),
 			whileRunning: form.get('snapshotWhileRunning'),
-			warnMinutes: Number(form.get('snapshotWarnMinutes'))
+			warnMinutes: Number(form.get('snapshotWarnMinutes')),
+			skipIdle: form.get('snapshotSkipIdle') === 'on'
 		});
 		saveSnapshotSchedule(instance.id, schedule);
 		return { ok: true, message: schedule.every === 'off' ? 'Scheduled snapshots turned off.' : 'Snapshot schedule saved.' };

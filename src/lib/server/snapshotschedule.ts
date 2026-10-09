@@ -1,14 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
+import { and, eq, gt, isNull, or } from 'drizzle-orm';
 import { db } from './db';
-import { settings, type ServerInstance } from './db/schema';
+import { playerSessions, settings, type ServerInstance } from './db/schema';
 import { beginOperation, endOperation, listOperations } from './operations';
-import { audit, getInstance, rconPassword, setStatus, start, stop } from './instances';
+import { audit, getInstance, onlinePlayers, rconPassword, setStatus, start, stop } from './instances';
+import { runFinishedStarting } from './journal';
+import { getCountdown } from './countdown';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { startTask, type TaskHandle } from './tasks';
-import { getSnapshotPolicy, pruneSnapshots, takeSnapshot, worldFolders } from './snapshots';
+import { getSnapshotPolicy, listSnapshots, pruneSnapshots, takeSnapshot, worldFolders } from './snapshots';
 import { formatBytes } from '#lib/shared/format.js';
 
 /**
@@ -22,6 +24,13 @@ import { formatBytes } from '#lib/shared/format.js';
  *   soon as the copy is done - also when it failed.
  * Both are journalled (`scheduled-snapshot`): if MineShell dies in the
  * middle, recovery turns saving back on, or starts the server it stopped.
+ *
+ * "Every N hours" falls on the clock: multiples of N from midnight (every
+ * hour at :00). A slot nobody played in since the last full snapshot is
+ * skipped unless turned off (`skipIdle`, on by default: the user's call). A
+ * slot that comes while the server is stopping, starting, about to restart or
+ * not done loading waits for it (at most WAIT_MAX_MS); a scheduled restart in
+ * turn waits for a snapshot under way (scheduler.ts).
  */
 
 export type SnapshotSchedule = {
@@ -34,9 +43,14 @@ export type SnapshotSchedule = {
 	whileRunning: 'live' | 'stop';
 	/** Warnings before a stop (stop mode), in minutes; 0 for none. */
 	warnMinutes: number;
+	/** Skip a slot when nobody was online since the last full snapshot. */
+	skipIdle: boolean;
 };
 
-export const DEFAULT_SCHEDULE: SnapshotSchedule = { every: 'off', dailyTime: '04:00', intervalHours: 24, whileRunning: 'live', warnMinutes: 5 };
+export const DEFAULT_SCHEDULE: SnapshotSchedule = { every: 'off', dailyTime: '04:00', intervalHours: 24, whileRunning: 'live', warnMinutes: 5, skipIdle: true };
+
+/** How long a due slot waits for the server to be ready before it is let go. */
+const WAIT_MAX_MS = 30 * 60_000;
 
 const KEY = (id: string) => `snapshots.schedule:${id}`;
 const NEXT = (id: string) => `snapshots.next:${id}`;
@@ -71,7 +85,8 @@ export function validSchedule(raw: Record<string, unknown>): SnapshotSchedule {
 		dailyTime: time,
 		intervalHours: Number.isInteger(hours) && hours >= 1 && hours <= 24 * 7 ? hours : DEFAULT_SCHEDULE.intervalHours,
 		whileRunning: raw.whileRunning === 'stop' ? 'stop' : 'live',
-		warnMinutes: Number.isInteger(warn) && warn >= 0 && warn <= 15 ? warn : DEFAULT_SCHEDULE.warnMinutes
+		warnMinutes: Number.isInteger(warn) && warn >= 0 && warn <= 15 ? warn : DEFAULT_SCHEDULE.warnMinutes,
+		skipIdle: raw.skipIdle !== false
 	};
 }
 
@@ -92,7 +107,7 @@ export function copySnapshotSchedule(fromId: string, toId: string): void {
 }
 
 export function nextSnapshotAt(schedule: Pick<SnapshotSchedule, 'every' | 'intervalHours' | 'dailyTime'>, from = Date.now()): number | null {
-	if (schedule.every === 'interval') return from + schedule.intervalHours * 3_600_000;
+	if (schedule.every === 'interval') return clockSlot(schedule.intervalHours, from);
 	if (schedule.every === 'daily') {
 		const [hour, minute] = schedule.dailyTime.split(':').map(Number);
 		const next = new Date(from);
@@ -104,12 +119,39 @@ export function nextSnapshotAt(schedule: Pick<SnapshotSchedule, 'every' | 'inter
 	return null;
 }
 
-/** At MineShell's start: slots that passed while it was down move to the next one, not fired at once. */
+/**
+ * The next slot after `from` for "every N hours", on the clock: up to a day,
+ * the hours of each day that are multiples of N (every 5: 0, 5, 10, 15, 20,
+ * then 0 again); whole days, every N/24 days at midnight, counted from a
+ * fixed day; anything else, N hours on.
+ */
+export function clockSlot(hours: number, from: number): number {
+	const next = new Date(from);
+	next.setMinutes(0, 0, 0);
+	if (hours <= 24) {
+		for (let i = 0; i <= 48; i++, next.setHours(next.getHours() + 1)) {
+			if (next.getTime() > from && next.getHours() % hours === 0) return next.getTime();
+		}
+	} else if (hours % 24 === 0) {
+		next.setHours(0);
+		for (let i = 0; i <= hours / 24 + 1; i++, next.setDate(next.getDate() + 1)) {
+			const day = Math.round(Date.UTC(next.getFullYear(), next.getMonth(), next.getDate()) / 86_400_000);
+			if (next.getTime() > from && day % (hours / 24) === 0) return next.getTime();
+		}
+	}
+	return from + hours * 3_600_000;
+}
+
+/**
+ * At MineShell's start, every server's next slot is worked out again: slots
+ * that passed while it was down are not fired at once, and slots set before
+ * "every N hours" fell on the clock move onto it.
+ */
 export function rollForwardSnapshots(now = Date.now()): void {
 	for (const row of db.select().from(settings).all()) {
 		if (!row.key.startsWith('snapshots.next:')) continue;
 		const id = row.key.slice('snapshots.next:'.length);
-		if (Number(row.value) < now) write(row.key, String(nextSnapshotAt(getSnapshotSchedule(id), now) ?? ''));
+		write(row.key, String(nextSnapshotAt(getSnapshotSchedule(id), now) ?? ''));
 	}
 }
 
@@ -119,7 +161,12 @@ export function scheduledSnapshotAt(instanceId: string): number | null {
 
 export function describeSnapshotSchedule(schedule: SnapshotSchedule): string {
 	if (schedule.every === 'off') return 'Off';
-	const when = schedule.every === 'daily' ? `Daily at ${schedule.dailyTime}` : `Every ${schedule.intervalHours} hour${schedule.intervalHours === 1 ? '' : 's'}`;
+	const when =
+		schedule.every === 'daily'
+			? `Daily at ${schedule.dailyTime}`
+			: schedule.intervalHours === 1
+				? 'Every hour, on the hour'
+				: `Every ${schedule.intervalHours} hours${schedule.intervalHours <= 24 || schedule.intervalHours % 24 === 0 ? ', from midnight' : ''}`;
 	return `${when}, ${schedule.whileRunning === 'live' ? 'while running' : 'stopping the server'}`;
 }
 
@@ -127,6 +174,8 @@ export function describeSnapshotSchedule(schedule: SnapshotSchedule): string {
 
 /** Warning marks already sent for the coming snapshot, per server. */
 const warned = new Map<string, Set<number>>();
+/** Since when a due slot has been waiting for the server to be ready, per server. */
+const waitingSince = new Map<string, number>();
 /** Servers whose scheduled snapshot is under way. */
 const running = new Set<string>();
 
@@ -157,15 +206,68 @@ export async function evaluateSnapshotSchedule(instance: ServerInstance, now = D
 		}
 	}
 	if (nextAt > now) return null;
-	write(NEXT(instance.id), String(nextSnapshotAt(schedule, now)));
-	warned.delete(instance.id);
+	const notReady = await waitReason(instance, state.active, now);
+	if (notReady) {
+		const since = waitingSince.get(instance.id) ?? now;
+		waitingSince.set(instance.id, since);
+		if (now - since < WAIT_MAX_MS) return null;
+		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail: `waited ${WAIT_MAX_MS / 60_000} minutes: ${notReady}`, actor: 'scheduler' });
+		return moveOn(instance, schedule, now);
+	}
 	if (listOperations().some((o) => o.instanceId === instance.id)) {
 		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail: 'another operation was running', actor: 'scheduler' });
-		return null;
+		return moveOn(instance, schedule, now);
 	}
-	if (!(await worldFolders(instance.path)).length) return null;
+	if (!(await worldFolders(instance.path)).length) return moveOn(instance, schedule, now);
+	if (schedule.skipIdle && !(await playedSinceLastSnapshot(instance, active))) {
+		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail: 'nobody was online since the last snapshot', actor: 'scheduler' });
+		return moveOn(instance, schedule, now);
+	}
+	moveOn(instance, schedule, now);
 	const mode = !active ? 'stopped' : schedule.whileRunning;
 	return scheduledSnapshot(instance, mode);
+}
+
+function moveOn(instance: ServerInstance, schedule: SnapshotSchedule, now: number): null {
+	write(NEXT(instance.id), String(nextSnapshotAt(schedule, now)));
+	warned.delete(instance.id);
+	waitingSince.delete(instance.id);
+	return null;
+}
+
+/**
+ * Why a due slot should wait, or null: the server is stopping or starting, a
+ * restart is coming within its warning time (or a countdown runs), or it has
+ * not finished loading - copying then would catch the world mid-write, or the
+ * live copy's save-off would not be answered.
+ */
+async function waitReason(instance: ServerInstance, activeState: string, now: number): Promise<string | null> {
+	if (activeState === 'activating' || activeState === 'deactivating' || activeState === 'reloading') return 'the server was starting or stopping';
+	if (activeState !== 'active') return null;
+	if (getCountdown(instance.id)) return 'a stop or restart countdown was running';
+	const restartAt = instance.restartSchedule !== 'none' ? instance.restartNextAt : null;
+	if (restartAt && restartAt - now <= Math.max(instance.restartWarnMinutes ?? 0, 1) * 60_000) return 'a scheduled restart was due';
+	if (!(await runFinishedStarting(instance.id, instance.createdAt).catch(() => true))) return 'the server had not finished starting';
+	return null;
+}
+
+/**
+ * Whether anyone was online since the newest full snapshot (any kind: one
+ * taken before a pack change counts): the player sessions MineShell reads
+ * from the log, and who is online now. No snapshot yet counts as played.
+ */
+async function playedSinceLastSnapshot(instance: ServerInstance, active: boolean): Promise<boolean> {
+	const last = Math.max(0, ...(await listSnapshots(instance.path)).filter((s) => !s.partial).map((s) => s.createdAt));
+	if (!last) return true;
+	const session = db
+		.select()
+		.from(playerSessions)
+		.where(and(eq(playerSessions.instanceId, instance.id), or(isNull(playerSessions.leftAt), gt(playerSessions.leftAt, last))))
+		.get();
+	if (session) return true;
+	if (!active) return false;
+	const players = await onlinePlayers(instance).catch(() => null);
+	return !!players && players.online > 0;
 }
 
 async function say(instance: ServerInstance, text: string): Promise<void> {
@@ -208,6 +310,8 @@ async function liveSnapshot(instance: ServerInstance, task: TaskHandle): Promise
 	const password = rconPassword(instance);
 	if (!password) throw new Error('RCON is not set up for this server, so saving cannot be paused for a copy while it runs.');
 	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
+	// Which run of the server saving is paused in: one started since saves as usual.
+	const run = (await unitState(instance.id, { fresh: true }).catch(() => null))?.activeEnterTimestamp ?? null;
 	task.setProgress(null, 'Pausing saving');
 	try {
 		await rcon(['save-off', 'save-all flush']);
@@ -228,8 +332,14 @@ async function liveSnapshot(instance: ServerInstance, task: TaskHandle): Promise
 			await rcon(['save-on']);
 			task.log('Saving turned back on (save-on).');
 		} catch {
-			setStatus(instance.id, 'ready', 'Saving was paused for a scheduled snapshot and could not be turned back on. Run "save-on" in the console.');
-			task.log('Could not turn saving back on: run "save-on" in the console.');
+			const now = await unitState(instance.id, { fresh: true }).catch(() => null);
+			if (now?.active === 'active' && now.activeEnterTimestamp === run) {
+				setStatus(instance.id, 'ready', 'Saving was paused for a scheduled snapshot and could not be turned back on. Run "save-on" in the console.');
+				task.log('Could not turn saving back on: run "save-on" in the console.');
+			} else {
+				// Stopped or started again meanwhile: a server always starts with saving on.
+				task.log('The server stopped or restarted during the copy; it saves as usual again.');
+			}
 		}
 	}
 }

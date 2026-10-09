@@ -422,6 +422,18 @@ recovery sends `save-on` to a server left with saving paused and starts one left
 Retention is the ordinary policy, so frequent scheduled snapshots push out older
 pre-operation ones once over the limits (pin one to keep it).
 
+"Every N hours" falls on the clock (`clockSlot`: multiples of N from midnight up to a day,
+whole days at midnight; the world map's schedule uses it too), and the next slots are worked
+out again at every start. A slot is skipped, unless turned off (`skipIdle`, on by default),
+when nobody was online since the newest full snapshot: the player sessions read from the log,
+and RCON's `list` for who is on now. Not by file times: a running server rewrites its spawn
+area with nobody on. A due slot waits while the server is starting or stopping, has not
+logged `Done (` (`runFinishedStarting`), counts down, or has a scheduled restart within its
+warning time; after 30 minutes the slot is let go. The scheduled restart in turn waits while
+the server has a journalled operation (a snapshot under way): a restart during a live copy
+caught the world mid-write. A failed `save-on` is only reported when the same run of the
+server is still going (`activeEnterTimestamp`): a restarted server saves anyway.
+
 Dimensions are found on disk (`dimensions.ts`): a folder holding `region/` or `entities/`.
 The overworld is the level folder's own `region/`, `entities/` and `poi/`, so resetting it
 keeps `level.dat` and player data. A snapshot of only some folders is marked `partial` and

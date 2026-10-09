@@ -74,7 +74,8 @@ async function warnPlayers(instance: ServerInstance, minutesLeft: number): Promi
 	}
 }
 
-async function evaluate(instance: ServerInstance): Promise<void> {
+/** One server's scheduled restart, at one tick (exported for tests). */
+export async function evaluateRestart(instance: ServerInstance): Promise<void> {
 	if (instance.restartSchedule === 'none') return;
 
 	let nextAt = instance.restartNextAt;
@@ -111,6 +112,10 @@ async function evaluate(instance: ServerInstance): Promise<void> {
 
 	if (msUntil > 0) return;
 
+	// A scheduled snapshot (or any other journalled change) under way: restarting would cut
+	// a live copy short and leave it half-written. Wait for it; the next tick checks again.
+	if (listOperations().some((o) => o.instanceId === instance.id)) return;
+
 	if (instance.restartSkipIfPlayers) {
 		const players = await onlinePlayers(instance);
 		if (players && players.online > 0) {
@@ -144,7 +149,7 @@ async function checkAll(): Promise<void> {
 		// The mod bisect assistant owns the server while it searches: no restarts or Chunky pausing.
 		if (bisecting.has(instance.id)) continue;
 		try {
-			await evaluate(instance);
+			await evaluateRestart(instance);
 		} catch (err) {
 			console.error(`[mineshell] scheduler error for ${instance.id}:`, err);
 		}

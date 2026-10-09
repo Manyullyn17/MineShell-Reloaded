@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const rcon = vi.hoisted(() => ({ commands: [] as string[], failOn: null as string | null, onStop: () => {} }));
+const rcon = vi.hoisted(() => ({ commands: [] as string[], failOn: null as string | null, onStop: () => {}, replies: {} as Record<string, string> }));
 vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
@@ -11,7 +11,7 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 			rcon.commands.push(c);
 			if (c === 'stop') rcon.onStop();
 		}
-		return commands.map(() => '');
+		return commands.map((c) => rcon.replies[c] ?? '');
 	})
 }));
 
@@ -23,17 +23,27 @@ const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 const { restartMineShell } = await import('../helpers/crash');
+const { evaluateRestart } = await import('#lib/server/scheduler.js');
+const { db } = await import('#lib/server/db/index.js');
+const { playerSessions, serverInstances } = await import('#lib/server/db/schema.js');
+const { eq } = await import('drizzle-orm');
 
 sched.scheduleTiming.pollMs = 5;
 sched.scheduleTiming.quietMs = 50;
 sched.scheduleTiming.quietMaxMs = 300;
 
 let active = true;
+/** Whether the run has logged "Done (": the journal the fake answers with. */
+let started = true;
+let enteredAt = 1000;
 function fakeUnit() {
 	invalidateUnitState();
 	fakeProcesses((cmd, args) => {
+		if (cmd === 'journalctl') return { stdout: started ? '[12:00:00] [Server thread/INFO]: Done (3.1s)! For help, type "help"\n' : '' };
 		if (cmd !== 'systemctl') return {};
-		if (args.includes('show')) return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\n` };
+		if (args.includes('show'))
+			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\nActiveEnterTimestampMonotonic=${enteredAt}\n` };
+		if (args.includes('restart')) enteredAt += 1000;
 		if (args.includes('start')) active = true;
 		if (args.includes('stop')) active = false;
 		invalidateUnitState();
@@ -57,6 +67,8 @@ async function server() {
 beforeEach(() => {
 	rcon.commands = [];
 	rcon.failOn = null;
+	rcon.replies = {};
+	started = true;
 	rcon.onStop = () => {
 		active = false;
 		invalidateUnitState();
@@ -70,8 +82,25 @@ describe('scheduled snapshots', () => {
 		const from = new Date(2026, 9, 8, 5, 0).getTime();
 		const daily = sched.validSchedule({ every: 'daily', dailyTime: '04:00' });
 		expect(new Date(sched.nextSnapshotAt(daily, from)!).toString()).toBe(new Date(2026, 9, 9, 4, 0).toString());
-		expect(sched.nextSnapshotAt(sched.validSchedule({ every: 'interval', intervalHours: 12 }), from)).toBe(from + 12 * 3_600_000);
+		expect(new Date(sched.nextSnapshotAt(sched.validSchedule({ every: 'interval', intervalHours: 12 }), from)!).toString()).toBe(
+			new Date(2026, 9, 8, 12, 0).toString()
+		);
 		expect(sched.validSchedule({ every: 'weekly', dailyTime: '25:00', intervalHours: 0, warnMinutes: 99 })).toEqual(sched.DEFAULT_SCHEDULE);
+	});
+
+	it('puts "every N hours" on the clock', () => {
+		const at = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m).getTime();
+		expect(sched.clockSlot(1, at(8, 5, 20))).toBe(at(8, 6));
+		expect(sched.clockSlot(1, at(8, 6))).toBe(at(8, 7));
+		// Every 5: 0, 5, 10, 15, 20, then midnight again.
+		expect(sched.clockSlot(5, at(8, 21))).toBe(at(9, 0));
+		expect(sched.clockSlot(6, at(8, 13, 59))).toBe(at(8, 18));
+		// Whole days fall on midnight, the same days whenever it is asked.
+		const twoDays = sched.clockSlot(48, at(8, 10));
+		expect(new Date(twoDays).getHours()).toBe(0);
+		expect(sched.clockSlot(48, at(8, 23))).toBe(twoDays);
+		expect(sched.clockSlot(30, at(8, 10))).toBe(at(8, 10) + 30 * 3_600_000);
+		expect(sched.describeSnapshotSchedule(sched.validSchedule({ every: 'interval', intervalHours: 1 }))).toBe('Every hour, on the hour, while running');
 	});
 
 	it('copies a running world with saving paused, and turns it back on', async () => {
@@ -119,7 +148,7 @@ describe('scheduled snapshots', () => {
 
 	it('warns before a stop, then fires once the time comes, moving to the next slot', async () => {
 		const s = await server();
-		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'interval', intervalHours: 6, whileRunning: 'stop', warnMinutes: 5 }));
+		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'interval', intervalHours: 6, whileRunning: 'stop', warnMinutes: 5, skipIdle: false }));
 		const at = sched.scheduledSnapshotAt(s.id)!;
 		expect(await sched.evaluateSnapshotSchedule(s, at - 4 * 60_000)).toBeNull();
 		expect(rcon.commands).toEqual(['say The server stops for a world backup in 5 minutes; back right after.']);
@@ -128,14 +157,14 @@ describe('scheduled snapshots', () => {
 		const taskId = await sched.evaluateSnapshotSchedule(s, at + 1000);
 		expect(taskId).toBeTruthy();
 		await waitForTask(taskId!, 8000);
-		expect(sched.scheduledSnapshotAt(s.id)).toBe(at + 1000 + 6 * 3_600_000);
+		expect(sched.scheduledSnapshotAt(s.id)).toBe(sched.clockSlot(6, at + 1000));
 	});
 
 	it('copies a stopped server as it is', async () => {
 		const s = await server();
 		active = false;
 		fakeUnit();
-		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'daily', dailyTime: '04:00' }));
+		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'daily', dailyTime: '04:00', skipIdle: false }));
 		const taskId = await sched.evaluateSnapshotSchedule(s, sched.scheduledSnapshotAt(s.id)! + 1);
 		await waitForTask(taskId!);
 		expect(rcon.commands).toEqual([]);
@@ -156,5 +185,90 @@ describe('scheduled snapshots', () => {
 		await restartMineShell();
 		expect(active).toBe(true);
 		expect(listOperations()).toEqual([]);
+	});
+
+	it('skips a slot nobody played in since the last snapshot, unless someone was on or is on now', async () => {
+		const s = await server();
+		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'interval', intervalHours: 1 }));
+		// The first one is always taken: there is no snapshot to compare with.
+		const first = await sched.evaluateSnapshotSchedule(s, sched.scheduledSnapshotAt(s.id)! + 1);
+		await waitForTask(first!);
+		expect(await listSnapshots(s.path)).toHaveLength(1);
+
+		// Nobody since: skipped, the next slot set.
+		const due = sched.scheduledSnapshotAt(s.id)! + 1;
+		expect(await sched.evaluateSnapshotSchedule(s, due)).toBeNull();
+		expect(await listSnapshots(s.path)).toHaveLength(1);
+		expect(sched.scheduledSnapshotAt(s.id)).toBe(sched.clockSlot(1, due));
+
+		// Someone online right now (RCON's list) counts.
+		rcon.replies.list = 'There are 1 of a max of 20 players online: Steve';
+		await waitForTask((await sched.evaluateSnapshotSchedule(s, sched.scheduledSnapshotAt(s.id)! + 1))!);
+		expect(await listSnapshots(s.path)).toHaveLength(2);
+
+		// So does a session the log recorded since the last snapshot, ended or not.
+		rcon.replies = {};
+		db.insert(playerSessions).values({ instanceId: s.id, player: 'Alex', joinedAt: Date.now() - 1000, leftAt: Date.now() + 1000 }).run();
+		await waitForTask((await sched.evaluateSnapshotSchedule(s, sched.scheduledSnapshotAt(s.id)! + 1))!);
+		expect(await listSnapshots(s.path)).toHaveLength(3);
+	});
+
+	it('waits while the server has not finished starting or a restart is due, and lets the slot go after 30 minutes', async () => {
+		const s = await server();
+		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'interval', intervalHours: 1, skipIdle: false }));
+		const at = sched.scheduledSnapshotAt(s.id)!;
+
+		started = false;
+		fakeUnit();
+		expect(await sched.evaluateSnapshotSchedule(s, at + 1)).toBeNull();
+		expect(sched.scheduledSnapshotAt(s.id)).toBe(at);
+		started = true;
+		fakeUnit();
+
+		// A scheduled restart within its warning time: wait for it too.
+		db.update(serverInstances).set({ restartSchedule: 'daily', restartDailyTime: '05:00', restartWarnMinutes: 5, restartNextAt: at + 2 * 60_000 }).where(eq(serverInstances.id, s.id)).run();
+		expect(await sched.evaluateSnapshotSchedule(reload(s.id), at + 2)).toBeNull();
+		expect(sched.scheduledSnapshotAt(s.id)).toBe(at);
+
+		// Still not ready half an hour on: that slot is let go.
+		expect(await sched.evaluateSnapshotSchedule(reload(s.id), at + 31 * 60_000)).toBeNull();
+		expect(sched.scheduledSnapshotAt(s.id)).toBe(sched.clockSlot(1, at + 31 * 60_000));
+		expect(await listSnapshots(s.path)).toEqual([]);
+
+		// Ready (restart moved away): taken.
+		db.update(serverInstances).set({ restartNextAt: Date.now() + 10 * 3_600_000 }).where(eq(serverInstances.id, s.id)).run();
+		const next = sched.scheduledSnapshotAt(s.id)!;
+		await waitForTask((await sched.evaluateSnapshotSchedule(reload(s.id), next + 1))!);
+		expect(await listSnapshots(s.path)).toHaveLength(1);
+	});
+
+	it('holds a scheduled restart while a snapshot is under way', async () => {
+		const s = await server();
+		db.update(serverInstances).set({ restartSchedule: 'daily', restartDailyTime: '05:00', restartWarnMinutes: 0, restartNextAt: Date.now() - 1000 }).where(eq(serverInstances.id, s.id)).run();
+		beginOperation(s.id, { kind: 'scheduled-snapshot', mode: 'live', restart: false });
+		spawnCalls.length = 0;
+		await evaluateRestart(reload(s.id));
+		expect(spawnCalls.some((c) => c.args.includes('restart'))).toBe(false);
+		expect(reload(s.id).restartNextAt).toBeLessThan(Date.now());
+
+		const { endOperation } = await import('#lib/server/operations.js');
+		endOperation(s.id);
+		await evaluateRestart(reload(s.id));
+		expect(spawnCalls.some((c) => c.args.includes('restart'))).toBe(true);
+	});
+
+	it('does not claim saving stayed off when the server restarted during the copy', async () => {
+		const s = await server();
+		rcon.failOn = 'save-on';
+		const task = sched.scheduledSnapshot(s, 'live');
+		enteredAt += 5000;
+		fakeUnit();
+		await waitForTask(task);
+		expect(reload(s.id).statusMessage).toBeNull();
+
+		// The same run still going: it does say so.
+		const again = await waitForTask(sched.scheduledSnapshot(s, 'live'));
+		expect(again.log.join('\n')).toMatch(/run "save-on"/);
+		expect(reload(s.id).statusMessage).toMatch(/save-on/);
 	});
 });

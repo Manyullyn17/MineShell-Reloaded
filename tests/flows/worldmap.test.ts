@@ -184,7 +184,9 @@ describe('the world map', () => {
 
 		saveMapSchedule(instance.id, validMapSchedule({ every: 'interval', intervalHours: '6' }));
 		const { nextAt } = getMapSettings(instance.id);
-		expect(nextAt).toBeGreaterThan(Date.now() + 5.9 * 3_600_000);
+		// On the clock, like scheduled snapshots: the next of 0:00, 6:00, 12:00, 18:00.
+		expect(new Date(nextAt!).getHours() % 6).toBe(0);
+		expect(nextAt! - Date.now()).toBeLessThanOrEqual(6 * 3_600_000);
 		expect(await evaluateMapSchedule(instance)).toBeNull();
 
 		// The slot has come: one update, and the next slot set.

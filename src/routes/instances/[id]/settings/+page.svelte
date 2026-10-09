@@ -99,7 +99,8 @@
 			snapshotDailyTime: d.snapshotDailyTime,
 			snapshotIntervalHours: d.snapshotIntervalHours,
 			snapshotWhileRunning: d.snapshotWhileRunning as string,
-			snapshotWarnMinutes: d.snapshotWarnMinutes
+			snapshotWarnMinutes: d.snapshotWarnMinutes,
+			snapshotSkipIdle: d.snapshotSkipIdle as boolean
 		};
 	}
 	function propertyValues() {
@@ -255,7 +256,7 @@
 			tab: 'snapshots',
 			label: 'Scheduled snapshots',
 			restart: false,
-			dirty: () => svChanged('snapshotEvery', 'snapshotDailyTime', 'snapshotIntervalHours', 'snapshotWhileRunning', 'snapshotWarnMinutes')
+			dirty: () => svChanged('snapshotEvery', 'snapshotDailyTime', 'snapshotIntervalHours', 'snapshotWhileRunning', 'snapshotWarnMinutes', 'snapshotSkipIdle')
 		},
 		{
 			id: 'snapshots',
@@ -1179,6 +1180,7 @@
 				<div class="field">
 					<label for="snapshotIntervalHours">Every (hours)</label>
 					<input id="snapshotIntervalHours" name="snapshotIntervalHours" type="number" min="1" max="168" bind:value={sv.snapshotIntervalHours} />
+					<p class="hint">On the clock: every hour at :00; every 6 hours at 0:00, 6:00, 12:00 and 18:00.</p>
 				</div>
 			{:else}
 				<input type="hidden" name="snapshotIntervalHours" value={sv.snapshotIntervalHours} />
@@ -1208,9 +1210,20 @@
 				{:else}
 					<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
 				{/if}
+				<div class="check field">
+					<input id="snapshotSkipIdle" name="snapshotSkipIdle" type="checkbox" bind:checked={sv.snapshotSkipIdle} />
+					<label for="snapshotSkipIdle">Skip when nobody was online since the last snapshot</label>
+				</div>
+				<div class="field">
+					<p class="hint">
+						Saves space: an empty server's world rarely changes. But chunk loaders keep farms and machines running
+						with nobody on, and those changes then wait for the next snapshot someone played before.
+					</p>
+				</div>
 			{:else}
 				<input type="hidden" name="snapshotWhileRunning" value={sv.snapshotWhileRunning} />
 				<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
+				{#if sv.snapshotSkipIdle}<input type="hidden" name="snapshotSkipIdle" value="on" />{/if}
 			{/if}
 		</form>
 	</SettingsSection>
