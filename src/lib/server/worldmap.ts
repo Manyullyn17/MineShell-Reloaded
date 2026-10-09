@@ -62,6 +62,11 @@ export type MapSettings = {
 	nextAt: number | null;
 	/** The port given to a map mod's web server (Dynmap, the BlueMap mod); MineShell passes it through. */
 	modPort: number | null;
+	/**
+	 * The rendered map's size on disk, measured when a render ends: walking a big
+	 * map (100k+ tiles) took seconds on every look at the Map tab. Null until measured.
+	 */
+	sizeBytes: number | null;
 };
 
 const OFF: MapSchedule = { every: 'off', dailyTime: '05:00', intervalHours: 6 };
@@ -77,7 +82,7 @@ export function validMapSchedule(raw: Record<string, unknown> | undefined): MapS
 }
 
 const KEY = (id: string) => `map:${id}`;
-const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null, modPort: null };
+const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null, modPort: null, sizeBytes: null };
 
 export function getMapSettings(instanceId: string): MapSettings {
 	const raw = db.select().from(settings).where(eq(settings.key, KEY(instanceId))).get()?.value;
@@ -88,7 +93,8 @@ export function getMapSettings(instanceId: string): MapSettings {
 			lastRenderAt: typeof parsed.lastRenderAt === 'number' ? parsed.lastRenderAt : null,
 			schedule: validMapSchedule(parsed.schedule as Record<string, unknown> | undefined),
 			nextAt: typeof parsed.nextAt === 'number' ? parsed.nextAt : null,
-			modPort: Number.isInteger(parsed.modPort) ? (parsed.modPort as number) : null
+			modPort: Number.isInteger(parsed.modPort) ? (parsed.modPort as number) : null,
+			sizeBytes: typeof parsed.sizeBytes === 'number' ? parsed.sizeBytes : null
 		};
 	} catch {
 		return { ...DEFAULTS };
@@ -107,7 +113,22 @@ export async function deleteMapData(instanceId: string, opts: { keepSettings?: b
 	if (rendering.has(instanceId)) throw new InstanceError('The map is being updated; wait for it to finish or cancel it.');
 	await fs.rm(mapDir(instanceId), { recursive: true, force: true });
 	if (!opts.keepSettings) db.delete(settings).where(eq(settings.key, KEY(instanceId))).run();
-	else saveMapSettings(instanceId, { lastRenderAt: null });
+	else saveMapSettings(instanceId, { lastRenderAt: null, sizeBytes: null });
+}
+
+/**
+ * The rendered map's size (MineShell's own render, in $DATA/maps: outside the
+ * server folder): as measured when the last render ended, else measured now
+ * once and kept (renders from before it was kept).
+ */
+export async function mapDataSize(instanceId: string): Promise<number> {
+	const ready = await fs.access(path.join(webRoot(instanceId), 'index.html')).then(() => true, () => false);
+	if (!ready) return 0;
+	const kept = getMapSettings(instanceId).sizeBytes;
+	if (kept !== null) return kept;
+	const measured = await directorySize(mapDir(instanceId)).catch(() => 0);
+	saveMapSettings(instanceId, { sizeBytes: measured });
+	return measured;
 }
 
 /** Sets the schedule; its first update is the next slot from now. */
@@ -196,7 +217,7 @@ export async function mapStatus(instance: ServerInstance): Promise<MapStatus> {
 		mods: await mapMods(instance),
 		running: (await summarise(instance)).running,
 		ready,
-		sizeBytes: ready ? await directorySize(mapDir(instance.id)).catch(() => 0) : 0,
+		sizeBytes: ready ? await mapDataSize(instance.id) : 0,
 		taskId: rendering.get(instance.id) ?? null
 	};
 }
@@ -374,7 +395,7 @@ export async function renderMap(instance: ServerInstance, opts: { force?: boolea
 			if (opts.force) args.push('-f');
 			task.setProgress(null, `Rendering ${maps.length} map${maps.length === 1 ? '' : 's'}`);
 			await runBlueMap(java, args, mapDir(instance.id), task);
-			saveMapSettings(instance.id, { lastRenderAt: Date.now() });
+			saveMapSettings(instance.id, { lastRenderAt: Date.now(), sizeBytes: await directorySize(mapDir(instance.id)).catch(() => null) });
 			task.setProgress(100, 'Map updated');
 		} finally {
 			rendering.delete(instance.id);

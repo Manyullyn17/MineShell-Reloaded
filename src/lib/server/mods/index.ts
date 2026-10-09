@@ -67,20 +67,27 @@ export function modsDir(instancePath: string): string {
 	return path.join(instancePath, 'mods');
 }
 
-/** Mods folder mtime + mod id -> installed; pages that ask on every poll (Spark, Chunky) stay cheap. */
-const installedCache = new Map<string, { mtimeMs: number; installed: boolean }>();
+/**
+ * Mods folder -> the ids its enabled jars declare, kept while the folder's mtime
+ * is the same: pages that ask on every poll (Spark, Chunky) stay cheap, and the
+ * Map tab's three questions (Dynmap, BlockScan, BlueMap) read the jars once,
+ * not once each - on a 200-mod pack that was seconds.
+ */
+const enabledIds = new Map<string, { mtimeMs: number; ids: Promise<Set<string>> }>();
 
 /** Whether an enabled jar in mods/ declares this mod id (fabric.mod.json, mods.toml, mcmod.info). */
 export async function hasEnabledMod(instancePath: string, modId: string): Promise<boolean> {
 	const dir = modsDir(instancePath);
 	const stat = await fs.stat(dir).catch(() => null);
 	if (!stat) return false;
-	const key = `${dir}\0${modId}`;
-	const hit = installedCache.get(key);
-	if (hit && hit.mtimeMs === stat.mtimeMs) return hit.installed;
-	const installed = (await indexMods(dir)).some((jar) => jar.enabled && jar.ids.includes(modId));
-	installedCache.set(key, { mtimeMs: stat.mtimeMs, installed });
-	return installed;
+	let hit = enabledIds.get(dir);
+	if (!hit || hit.mtimeMs !== stat.mtimeMs) {
+		const ids = indexMods(dir).then((jars) => new Set(jars.filter((jar) => jar.enabled).flatMap((jar) => jar.ids)));
+		hit = { mtimeMs: stat.mtimeMs, ids };
+		enabledIds.set(dir, hit);
+		ids.catch(() => enabledIds.delete(dir));
+	}
+	return (await hit.ids).has(modId);
 }
 
 export type ModRow = {
