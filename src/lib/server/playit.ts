@@ -198,8 +198,8 @@ export async function agentRunning(): Promise<boolean> {
 
 /**
  * What only the agent's own log says: playit refusing it. A free account
- * takes one agent; a second one (an old one left on the account) is turned
- * away with AgentDisabledOverLimit until the other is removed. Read from the
+ * takes two agents (premium ten); one more (old ones left on the account) is
+ * turned away with AgentDisabledOverLimit until one is removed. Read from the
  * last lines, so a refusal followed by a connection counts as fixed.
  */
 export async function agentProblem(): Promise<string | null> {

@@ -495,8 +495,8 @@ Where the agent connects out ("Connects through", free) is separate from a tunne
 (where players connect, Premium): `/agents/routing/set` with `Automatic` or a location from
 `/info/pops` (`{type: "Pop", details}`); the running agent moves over by itself, and
 `/agents/routing/get` answers only the resulting addresses, so the choice is kept in the
-`playit` settings row. playit refusing the agent is only in its log (`AgentDisabledOverLimit`: a free account takes
-one agent), so the status reads the last lines.
+`playit` settings row. playit refusing the agent is only in its log (`AgentDisabledOverLimit`: over the account's
+agents, two on a free one), so the status reads the last lines.
 
 ## Safety and confinement
 

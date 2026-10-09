@@ -353,7 +353,8 @@
 			<p class="muted small">
 				You approve MineShell on playit.gg; no password or account key passes through MineShell. Needs a
 				free account at <a href="https://playit.gg" target="_blank" rel="noreferrer">playit.gg</a>. A free account
-				takes one agent: remove old ones under <a href={data.playit.dashboard} target="_blank" rel="noreferrer">Agents on playit.gg</a>
+				takes two agents and four ports (premium: ten and sixteen): an account already at its limit turns the new agent
+				away, so remove old ones under <a href={data.playit.dashboard} target="_blank" rel="noreferrer">Agents on playit.gg</a>
 				first.
 			</p>
 		{/if}

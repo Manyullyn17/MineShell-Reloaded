@@ -251,8 +251,9 @@ marks the login cookie `Secure` when the browser used https.
 For players outside your network without opening ports, link playit.gg (MineShell settings,
 Integrations) and make the server public in its settings: playit's agent runs as the user unit
 `<prefix>-playit.service` next to the servers (`journalctl --user -u <prefix>-playit` for its
-log), only connecting out. A free account takes one agent: remove old ones on playit.gg, or
-the new one is turned away until you do.
+log), only connecting out. A free account takes two agents and four ports (premium: ten and
+sixteen): with old agents filling the limit, remove one on playit.gg, or the new one is turned
+away until you do.
 
 Never expose an RCON port. It is plaintext and only weakly authenticated, and only MineShell
 on the same machine needs it. Minecraft listens for RCON on every interface unless

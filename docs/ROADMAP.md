@@ -383,7 +383,8 @@ claim page itself says the agent can create tunnels):
   match the published client there, so the old endpoint is the one.
 - `/tunnels/list {tunnel_id, agent_id}` has the allocation (shared IP, port, region
   "global", `assigned_domain`) and `tcp_alloc {allowed: 4, claimed, desired}` /
-  `udp_alloc` - the free plan's 4 TCP ports. rundata's `display_address` is a hostname
+  `udp_alloc` - the free plan's ports (4; 16 with premium, the user's reading of the site,
+  2026-10-09; whether TCP and UDP count separately is still to see). rundata's `display_address` is a hostname
   (`fried-ministries.tun.ply.gg`) that works on the default port: a Minecraft handshake to it
   reached a local listener through the running agent and the reply came back. No SRV record.
 - Running the agent: `playit-linux-amd64 --secret-path <file> --socket-path <path>
