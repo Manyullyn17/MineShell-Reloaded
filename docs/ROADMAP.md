@@ -595,6 +595,16 @@ Ports are allocated automatically and conflicts are detected, but there is no vi
 what is bound where across all instances. Cosmetic until you are running enough servers to
 lose track.
 
+### Installing without building
+
+Built (October 2026): GitHub releases carry a ready-to-run archive (built, with runtime
+`node_modules`) and `install.sh`, which installs it as the `mineshell` user service and
+updates it when run again (`curl .../releases/latest/download/install.sh | bash`). Chosen
+over an npm package (publishing to npm, still needs a global install) and Docker or
+distribution packages (systemd user units and the journal do not fit a container; packages
+are upkeep). Not built: an update button inside MineShell; installing Node for the user
+(the installer says how to get it).
+
 ### Start servers at boot
 
 Built (October 2026; `bootstart.ts`, ARCHITECTURE "Servers after a reboot"). Decided: MineShell

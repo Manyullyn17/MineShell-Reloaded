@@ -192,6 +192,15 @@ Migrations are plain `.sql` files in `migrations/`, inlined at build time by
 that records what it has done in a `_migrations` table. This means the production bundle
 has no migration tooling in it and no filesystem dependency on the source tree —
 `drizzle-kit` is a development convenience for authoring, never a runtime dependency.
+`vite build` loads the server modules to analyse the routes; while it does (`building` from
+`$app/env`) the database is in memory and no data directory is created, so a build never
+touches the data `.env` points at (CI checks it).
+
+The release archive (`scripts/package.sh`) is that bundle plus its runtime `node_modules`
+(better-sqlite3 carries prebuilt binaries for every platform, so it needs no compiler and
+no npm), `setup.mjs`/`doctor.mjs` and `unit-template.js` for them. `scripts/install.sh`
+unpacks it into `releases/<version>/` and swaps a `current` link, so an update is one
+rename and the running process keeps its open files; DEPLOYMENT.md has the rest.
 
 Tables: `server_instances`, `mods`, `instance_mods`, `instance_datapacks`,
 `resource_samples`, `java_runtimes`, `settings`, `scheduled_commands`, `operations`,

@@ -1,0 +1,54 @@
+# Publishes a release when a version tag is pushed (git tag v0.2.0 && git push origin
+# v0.2.0): the same checks as CI, then the archive scripts/install.sh installs,
+# its checksum and install.sh itself, so .../releases/latest/download/install.sh
+# is always the newest installer.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "Tag $GITHUB_REF_NAME, package.json $version"; exit 1; }
+
+      - name: Install
+        run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: |
+          MINESHELL_DATA="$RUNNER_TEMP/build-data" npm run build
+          test ! -e "$RUNNER_TEMP/build-data"
+
+      - name: Package and smoke test
+        run: |
+          scripts/package.sh
+          scripts/smoke.sh dist/mineshell-*.tar.gz
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/mineshell-*.tar.gz dist/mineshell-*.tar.gz.sha256 scripts/install.sh \
+            --title "MineShell $GITHUB_REF_NAME" --generate-notes

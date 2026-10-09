@@ -21,7 +21,8 @@ const run = promisify(execFile);
  * directory while everything looks like it worked.
  */
 function loadDotenv(dir = process.cwd()) {
-	const file = path.join(dir, '.env');
+	// MINESHELL_ENV_FILE: an installed MineShell's config (the installer sets it).
+	const file = process.env.MINESHELL_ENV_FILE || path.join(dir, '.env');
 	let text;
 	try {
 		text = readFileSync(file, 'utf8');

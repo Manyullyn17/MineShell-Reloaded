@@ -24,10 +24,26 @@ multi-tenant and does not try to be a hosting panel.
 ## Install
 
 ```sh
-npm install
+curl -fsSL https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest/download/install.sh | bash
+```
+
+As the account that should run the servers, not root. It installs the newest release into
+`~/mineshell`, writes its settings to `~/.config/mineshell/mineshell.env` (once; never
+overwritten), sets it up as the systemd user service `mineshell` that starts at boot, and
+starts it on port 3000. Run it again to update. Options, the layout and uninstalling:
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Open the app, set an admin password on first visit, and add a server.
+
+## Run from a checkout
+
+```sh
+npm ci
 cp .env.example .env      # edit if you want a different data directory
 npm run setup             # creates directories, installs the systemd template unit
 npm run doctor            # checks the things that silently break a setup
+npm run dev               # development server
+npm run build && npm start   # production, honours PORT and HOST from .env
 ```
 
 If `doctor` mentions lingering, run it once so your servers keep going after you log out:
@@ -36,24 +52,8 @@ If `doctor` mentions lingering, run it once so your servers keep going after you
 loginctl enable-linger $USER
 ```
 
-## Run
-
-Development:
-
-```sh
-npm run dev
-```
-
-Production:
-
-```sh
-npm run build
-npm start                 # honours PORT and HOST from .env
-```
-
-Open the app, set an admin password on first visit, and add a server.
-
-To have MineShell itself start at boot, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+A checkout you develop in should not share its data directory with a MineShell that runs
+for real: give it its own `MINESHELL_DATA` and `MINESHELL_UNIT_PREFIX`.
 
 Tests:
 
@@ -197,16 +197,16 @@ places this deviates from the original design notes.
 
 ## Configuration
 
-Everything is environment variables; see `.env.example` for the annotated list. The ones
+Everything is environment variables (an installed MineShell reads them from its settings file); see `.env.example` for the annotated list. The ones
 worth knowing:
 
 | Variable | Default | Why you would change it |
 | --- | --- | --- |
 | `MINESHELL_DATA` | `~/.local/share/mineshell` | Put instances on a bigger disk |
 | `MINESHELL_AUTH` | `on` | `off` only on a network you fully trust |
-| `MINESHELL_UNIT_PREFIX` | `minecraft` | Units are `<prefix>@<id>.service`; change to run a second MineShell |
+| `MINESHELL_UNIT_PREFIX` | `minecraft` (the installer writes `mineshell`) | Units are `<prefix>@<id>.service`; change to run a second MineShell |
 | `CURSEFORGE_API_KEY` | unset | Better CurseForge metadata; can also be set in Settings |
-| `BODY_SIZE_LIMIT` | `Infinity` in `.env.example` | Production refuses uploads over 512 KB without it |
+| `BODY_SIZE_LIMIT` | `Infinity` in `.env.example` and the installer's settings | Production refuses uploads over 512 KB without it |
 
 ## Theming
 

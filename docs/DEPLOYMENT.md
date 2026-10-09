@@ -7,17 +7,18 @@ no root, nothing written to `/etc`, and a bug in MineShell cannot touch anything
 account cannot already touch. (A system-scope mode with sudo rules existed until October
 2026; it ran every server as root and was removed.)
 
-One decision is left: whether MineShell itself should start at boot (below). Servers come
-back after a reboot only if it does: MineShell starts them itself once it is up (each
-server's "When the computer starts" setting), and a server's Settings say so while
-MineShell is not running as a systemd service.
+Servers come back after a reboot only if MineShell itself starts at boot: it starts them
+once it is up (each server's "When the computer starts" setting), and a server's Settings
+say so while MineShell is not running as a systemd service. The installer (below) sets that
+up; with a git checkout it is a unit file you write.
 
 ---
 
 ## Lingering
 
 User services stop when the account's last session ends, and do not start at boot before
-someone logs in. Lingering fixes both. Run it once:
+someone logs in. Lingering fixes both. The installer turns it on when the system lets an
+account do that for itself; otherwise, or with a git checkout, run it once:
 
 ```sh
 loginctl enable-linger $USER
@@ -52,42 +53,63 @@ sudo machinectl shell mineshell@     # a full session as that user; install and 
 ## Installing
 
 ```sh
-git clone <your repo> /srv/mineshell
-cd /srv/mineshell
-npm install
+curl -fsSL https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest/download/install.sh | bash
 ```
 
-Create `.env` from `.env.example`. On a server you will usually want:
+Run it as the account MineShell should run as (not root). It needs Node.js 22.12 or newer,
+`curl`, `tar` and `sha256sum`. A distribution's own Node package is often older (Ubuntu
+24.04 ships 18): NodeSource's packages or nvm give a current one. The installer:
 
-```
-MINESHELL_DATA=/srv/mineshell-data
-MINESHELL_AUTH=on
-PORT=3000
-HOST=0.0.0.0
-```
+- downloads the newest release (a ready-built archive with its runtime `node_modules`, so no
+  npm and no compiler) and checks its SHA-256;
+- puts it in `~/mineshell/releases/<version>/`, with `~/mineshell/current` pointing at the
+  one that runs;
+- writes the settings file `~/.config/mineshell/mineshell.env` if there is none (data in
+  `~/.local/share/mineshell`, server units `mineshell@<id>`, port 3000, sign-in on) - it
+  never changes an existing one;
+- installs the template unit for the servers, and the user service `mineshell.service`,
+  enabled so it starts at boot;
+- turns on lingering if it can (otherwise it says to run `sudo loginctl enable-linger $USER`);
+- starts MineShell and waits until it answers.
 
-Put `MINESHELL_DATA` on whatever disk has room. Modpack instances are several gigabytes
-each and worlds grow.
+Open `http://<server-ip>:3000`, set an admin password, add a server.
 
-Then:
+It refuses, before changing anything, when `~/mineshell` or `mineshell.service` exist and
+were not made by it. Options are environment variables on the `bash` side of the pipe, e.g.
+`curl ... | MINESHELL_DATA=/srv/mineshell-data PORT=8080 bash`:
+
+| Variable | Default | |
+| --- | --- | --- |
+| `MINESHELL_VERSION` | the latest | A release tag, e.g. `v0.2.0` (also for going back) |
+| `MINESHELL_HOME` | `~/mineshell` | Where the program goes |
+| `MINESHELL_CONFIG` | `~/.config/mineshell/mineshell.env` | The settings file |
+| `MINESHELL_SERVICE` | `mineshell` | The user service's name |
+| `MINESHELL_NODE` | `node` on `PATH` | The Node binary the service runs |
+| `MINESHELL_DATA`, `MINESHELL_UNIT_PREFIX`, `PORT` | see above | First install only: written into the new settings file |
+
+The service runs the Node binary the installer found, by its full path. With nvm, that path
+names one Node version: after removing it, run the installer again.
+
+Settings are the variables in `.env.example` (in the release folder). Put `MINESHELL_DATA`
+on whatever disk has room: modpack instances are several gigabytes each and worlds grow.
+After editing the settings file, `systemctl --user restart mineshell`.
+
+### From a git checkout instead
+
+For development, or to run unreleased code:
 
 ```sh
-npm run setup     # directories + template unit + daemon-reload
-npm run doctor    # verifies systemd, journal, lingering, Java, permissions
+git clone https://github.com/Manyullyn17/MineShell-Reloaded.git ~/mineshell-src
+cd ~/mineshell-src
+npm ci
+cp .env.example .env      # MINESHELL_DATA, PORT, HOST, BODY_SIZE_LIMIT=Infinity
+npm run setup             # directories + template unit + daemon-reload
+npm run doctor            # verifies systemd, journal, lingering, Java, permissions
 npm run build
 npm start
 ```
 
-Open `http://<server-ip>:3000`, set an admin password, add a server.
-
----
-
-## Starting MineShell at boot
-
-MineShell manages your Minecraft servers; something has to manage MineShell. A user
-service is the simplest answer.
-
-`~/.config/systemd/user/mineshell.service`:
+To start it at boot, write `~/.config/systemd/user/mineshell.service` by hand:
 
 ```ini
 [Unit]
@@ -97,8 +119,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/mineshell
-EnvironmentFile=/srv/mineshell/.env
+WorkingDirectory=/home/you/mineshell-src
+EnvironmentFile=/home/you/mineshell-src/.env
 ExecStart=/usr/bin/node build/index.js
 Restart=on-failure
 RestartSec=10
@@ -107,36 +129,35 @@ RestartSec=10
 WantedBy=default.target
 ```
 
-`/usr/bin/node` has to be Node.js 22.12 or newer, which a distribution's own package often is
-not (Ubuntu 24.04 ships 18). With Node from NodeSource it is; with nvm, put the full path
-`which node` prints into `ExecStart` instead. `npm run doctor` reports the version it ran with.
+`ExecStart` needs the full path `which node` prints (the service does not see nvm). Then
+`systemctl --user daemon-reload && systemctl --user enable --now mineshell`. The `.env`
+needs `BODY_SIZE_LIMIT=Infinity`: the production server's default request limit of 512 KB
+refuses mod jar, modpack and world uploads (a body is only read once the request has passed
+the sign-in check). Keep a checkout that runs as a service apart from one you develop in, with
+its own data directory and unit prefix: two MineShells on one data directory roll back each
+other's operations at startup and both run the scheduler.
 
-```sh
-systemctl --user daemon-reload
-systemctl --user enable --now mineshell
-systemctl --user status mineshell
-```
+---
 
-Lingering (above) is what makes this survive logout.
+## Starting at boot, and what survives a stop
 
-The `.env` needs `BODY_SIZE_LIMIT=Infinity` (in `.env.example`): the production server's
-default request limit of 512 KB refuses mod jar, modpack and world uploads. A body is only
-read once the request has passed the sign-in check.
+The installer's `mineshell.service` is enabled, and lingering starts the account's user
+manager at boot without a login, so MineShell comes up with the machine; it then starts the
+servers whose "When the computer starts" setting says so. `npm run doctor` (in the release
+folder: `MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/doctor.mjs`) checks
+lingering and the rest.
 
-If MineShell is stopped, your Minecraft servers keep running — they are independent
+If MineShell is stopped, your Minecraft servers keep running: they are independent
 systemd units, not children of the panel. That is the point of the design.
 
 ---
 
 ## Upgrading
 
-```sh
-cd /srv/mineshell
-git pull
-npm install
-npm run build
-systemctl --user restart mineshell
-```
+Run the installer again. It installs the newest release next to the running one, switches
+`current` over, rewrites `mineshell.service` and restarts it; the settings file and the data
+are left alone, and the two previous releases stay in `releases/`. To go back, run it with
+`MINESHELL_VERSION=v<older>`. Restarting MineShell does not touch running servers.
 
 Database migrations run automatically at startup. Back up
 `$MINESHELL_DATA/mineshell.db` first if you want to be careful; it is a single file.
@@ -145,6 +166,21 @@ The template unit does not need reinstalling: at startup MineShell rewrites an i
 template that an older MineShell wrote. Reinstalling it is safe anyway — the Settings page
 has a button for it, and it re-syncs every instance's environment file and drop-ins
 afterwards. `npm run setup` writes the same template.
+
+From a git checkout: `git pull && npm ci && npm run build && systemctl --user restart mineshell`.
+
+### Uninstalling
+
+`systemctl --user disable --now mineshell`, then remove `~/.config/systemd/user/mineshell.service`,
+`~/mineshell` and, if you want, the settings file and the data directory. Stop the servers
+first: their template unit is `~/.config/systemd/user/mineshell@.service`.
+
+### Publishing a release
+
+Bump `version` in `package.json`, commit, then `git tag v<version> && git push origin
+v<version>`. The Release workflow runs the CI checks, builds the archive
+(`scripts/package.sh`), starts it once on a throwaway data directory (`scripts/smoke.sh`) and
+publishes it with its checksum and `install.sh`. CI packs and smoke-tests on every push too.
 
 ---
 

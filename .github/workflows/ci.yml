@@ -46,3 +46,10 @@ jobs:
         run: |
           MINESHELL_DATA="$RUNNER_TEMP/build-data" npm run build
           test ! -e "$RUNNER_TEMP/build-data"
+
+      # What a release publishes, unpacked and started on its own (Release workflow).
+      - name: Package and smoke test
+        if: matrix.node == 24
+        run: |
+          scripts/package.sh
+          scripts/smoke.sh dist/mineshell-*.tar.gz

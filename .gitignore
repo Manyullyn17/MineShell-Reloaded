@@ -9,3 +9,4 @@ data/
 *.db-shm
 *.db-wal
 CLAUDE.md
+dist/
