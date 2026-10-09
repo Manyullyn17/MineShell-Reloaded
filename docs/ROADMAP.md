@@ -424,8 +424,9 @@ per version into `$DATA/cache/minecraft-client/`, only after the per-server EULA
 with the Map tab; mods' own items get pictures without it). Items resolve as the game does:
 1.21.4's `items/` definitions (with tints), else item models up their parent chain; flat
 items as layers, blocks as their boxes, drawn in the browser turned by the model's own GUI
-rotation (blocks 225, stairs 135). What the game draws in code (chests, shulker boxes, heads,
-Tinkers' tools, Chisel's connected textures) keeps its name as text. 1.12 damage variants:
+rotation (blocks 225, stairs 135). Vanilla chests are drawn from their entity texture; other
+things the game draws in code (shulker boxes, heads, Tinkers' tools, Chisel's connected
+textures) keep their name as text. 1.12 damage variants:
 vanilla from a table; mods by their usual model names and Forge blockstate variants - a
 variant picked for a damage value is flagged as a guess (user's call), a plain item model with
 damage is taken as wear. On a copy of the user's MeatballCraft inventory: 408 of 508 items
@@ -437,6 +438,18 @@ durability - vanilla's maximum from a table, 1.20.5's max_damage component; 1.12
 called a variant or damage - energy by the usual NBT keys, the id) and item lists (Baubles,
 Curios, backpacks) as inventory-sized slots; phones keep wide cells with icon and name (the
 user's call, 2026-10-09).
+
+Names and icons pass of 2026-10-09 (the user's reports on MeatballCraft and ATM10): a pack's
+own `resources/` and `kubejs/assets/`; case-insensitive and escaped-colon lang keys; mod keys
+before vanilla's bare ones; 1.12 variants named (mods by the picked variant, vanilla by a key
+table); models in subfolders; textures numbered by damage; lang templates ("%1$s Dust") with
+their gaps marked; icons fill the slot on a desktop; requests batched (500) and closed
+sections loaded on opening. MeatballCraft (20494 items): named from the id 16089 -> ~13350,
+without a picture at damage 0 4792 -> 3518. Paused there (user's call, "most of the low
+hanging fruit"). Left for another pass: names a mod links to its id only in code
+(advancedrocketry:advrocketmotor is tile.advRocket), variants that exist only in code
+(Actually Additions crystals, Mekanism basic blocks), shulker boxes, heads, banners' patterns,
+templates' filled-in text.
 
 ### A map of the world
 
