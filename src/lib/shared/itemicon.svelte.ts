@@ -17,7 +17,9 @@ export type ElementSpec = {
 export type IconSpec =
 	| { kind: 'flat'; layers: { texture: string; tint: string | null }[] }
 	| { kind: 'block'; elements: ElementSpec[]; rotation: [number, number, number] };
-export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean };
+export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean; name?: string };
+/** A drawn icon; `name` is a 1.12 variant's own name (itemicons.ts withVariantName). */
+export type DrawnIcon = { url: string | null; exact: boolean; variant: boolean; name: string | null };
 
 export const iconKey = (id: string, damage: number | null) => (damage ? `${id}@${damage}` : id);
 
@@ -190,7 +192,7 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 export function iconLoader(instanceId: string) {
 	const base = `/api/instances/${encodeURIComponent(instanceId)}/item-icons`;
 	const textureUrl = (ref: string) => `${base}/texture?ref=${encodeURIComponent(ref)}`;
-	const drawn = new Map<string, Promise<{ url: string | null; exact: boolean; variant: boolean }>>();
+	const drawn = new Map<string, Promise<DrawnIcon>>();
 	let pending: { id: string; damage: number | null; resolve: (icon: ItemIcon | null) => void }[] = [];
 	let vanilla = $state.raw<boolean | null>(null);
 	let version = $state(0);
@@ -212,7 +214,7 @@ export function iconLoader(instanceId: string) {
 		get vanilla() {
 			return vanilla;
 		},
-		icon(id: string, damage: number | null): Promise<{ url: string | null; exact: boolean; variant: boolean }> {
+		icon(id: string, damage: number | null): Promise<DrawnIcon> {
 			const key = iconKey(id, damage);
 			let hit = drawn.get(key);
 			if (!hit) {
@@ -222,7 +224,8 @@ export function iconLoader(instanceId: string) {
 				}).then(async (icon) => ({
 					url: icon?.spec ? await renderIcon(icon.spec, textureUrl).catch(() => null) : null,
 					exact: icon?.exact ?? true,
-					variant: icon?.variant ?? false
+					variant: icon?.variant ?? false,
+					name: icon?.name ?? null
 				}));
 				drawn.set(key, hit);
 			}

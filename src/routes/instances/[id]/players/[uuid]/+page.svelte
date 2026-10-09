@@ -16,6 +16,8 @@
 	// svelte-ignore state_referenced_locally
 	const icons = iconLoader(data.instance.id);
 	let pictured = $state<Record<string, boolean>>({});
+	// 1.12 items whose damage picks a variant, by the variant's name (enderutilities:storage_0@7 = Junk Storage Unit).
+	let variantNames = $state<Record<string, string>>({});
 
 	// The item picker: every item the server knows, loaded the first time it is used.
 	let allItems = $state.raw<{ id: string; name: string }[] | null>(null);
@@ -418,9 +420,9 @@
 			.sort((a, b) => a.label.localeCompare(b.label))
 	);
 	const short = (id: string) => (id.split(':').pop() ?? id).replace(/_/g, ' ');
-	/** Custom name, else the language files' (itemicons.ts itemName), else the id as it would make it until those load. */
-	const nameOf = (item: { id: string; name: string | null }) =>
-		item.name ?? itemNames.get(item.id) ?? short(item.id).replace(/(^|\s)(\S)/g, (_m, s: string, c: string) => s + c.toUpperCase());
+	/** Custom name, else the language files' (the variant's, then the id's: itemicons.ts), else the id as it would make it until those load. */
+	const nameOf = (item: { id: string; name: string | null; damage: number | null }) =>
+		item.name ?? variantNames[iconKey(item.id, item.damage)] ?? itemNames.get(item.id) ?? short(item.id).replace(/(^|\s)(\S)/g, (_m, s: string, c: string) => s + c.toUpperCase());
 	const SLOT_LABELS: Record<number, string> = { 103: 'Head', 102: 'Chest', 101: 'Legs', 100: 'Feet', [-106]: 'Offhand' };
 	const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 	const FORMAT_LABEL = { legacy: 'Minecraft 1.12 and older', flat: 'Minecraft 1.13 to 1.20.4', components: 'Minecraft 1.20.5 and newer' };
@@ -491,7 +493,10 @@
 		onmouseleave={() => (hovered = null)}
 	>
 		{#if item}
-			<ItemIcon loader={icons} id={item.id} damage={item.damage} size={32} onresult={(shown) => (pictured[iconKey(item.id, item.damage)] = shown)} />
+			<ItemIcon loader={icons} id={item.id} damage={item.damage} size={32} onresult={(shown, name) => {
+					pictured[iconKey(item.id, item.damage)] = shown;
+					if (name) variantNames[iconKey(item.id, item.damage)] = name;
+				}} />
 			<!-- In a list (wide on a phone) the name goes next to the picture; elsewhere only without one. -->
 			{#if wide || !pictured[iconKey(item.id, item.damage)]}
 				<span class="item-name" class:beside={wide && pictured[iconKey(item.id, item.damage)]}>{nameOf(item)}</span>

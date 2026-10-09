@@ -110,7 +110,8 @@ describe('item icons', () => {
 		expect(await resolveIcon(res, 'thermalfoundation:material', 1)).toEqual({
 			spec: { kind: 'flat', layers: [{ texture: 'thermalfoundation:items/material/dust_gold', tint: null }] },
 			exact: false,
-			variant: true
+			variant: true,
+			variantOf: 'dustgold'
 		});
 		// One variant only: not a guess. Its model "cube_all" is Minecraft's.
 		expect(await resolveIcon(res, 'thermalfoundation:ore', 0)).toMatchObject({ spec: { kind: 'block' }, exact: true });
@@ -178,6 +179,37 @@ describe('item icons', () => {
 		expect(itemName('projecte:item.pe_unknown_thing', lang)).toBe('Pe Unknown Thing');
 		// Nothing found: the id, tidied up.
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
+	});
+
+	it('names a 1.12 variant by its own lang key, from the blockstate the damage picks', async () => {
+		const model = json({ parent: 'block/cube_all', textures: { all: 'eu:blocks/chest' } });
+		const instance = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.12.2' },
+			{
+				'mods/eu.jar': zipBuffer({
+					'assets/eu/blockstates/storage_0.json': json({
+						forge_marker: 1,
+						defaults: { model: 'eu:chest' },
+						variants: { type: { memory_chest_0: {}, handy_chest_0: {}, jsu: {}, unnamed: {} }, facing: { north: {}, south: {} } }
+					}),
+					'assets/eu/models/block/chest.json': model,
+					'assets/eu/lang/en_us.lang': 'tile.eu.jsu.name=Junk Storage Unit\ntile.eu.memory_chest_0.name=Small Memory Chest\ntile.eu.storage_0.Handy_Chest_0.name=Handy Chest\n'
+				})
+			}
+		);
+		const { icons } = await iconsFor(instance, [
+			{ id: 'eu:storage_0', damage: 2 },
+			{ id: 'eu:storage_0', damage: 0 },
+			{ id: 'eu:storage_0', damage: 1 },
+			{ id: 'eu:storage_0', damage: 3 }
+		]);
+		expect(icons['eu:storage_0@2']).toMatchObject({ variantOf: 'jsu', name: 'Junk Storage Unit', variant: true });
+		// Damage 0 is the first variant (iconKey leaves 0 out).
+		expect(icons['eu:storage_0']).toMatchObject({ variantOf: 'memory_chest_0', name: 'Small Memory Chest' });
+		// Under the id, as Thermal does (item.thermalfoundation.material.dustPetrotheum.name).
+		expect(icons['eu:storage_0@1']).toMatchObject({ variantOf: 'handy_chest_0', name: 'Handy Chest' });
+		// No lang line for it: no name, so the page keeps the id's.
+		expect(icons['eu:storage_0@3'].name).toBeUndefined();
 	});
 
 	it('lists every item: 1.12 from the world\'s registry, newer ones from item definitions or models', async () => {

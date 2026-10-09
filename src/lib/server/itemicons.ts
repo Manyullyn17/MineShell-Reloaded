@@ -51,7 +51,12 @@ const GUI_ROTATION: [number, number, number] = [30, 225, 0];
  * picks a variant (vanilla's table, a mod's variant model), rather than being
  * wear - what the tooltip calls it.
  */
-export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean };
+/**
+ * `variantOf`: the 1.12 variant the damage picked, by its own name (a
+ * blockstate's `type` value like `jsu`, or the model's name); `name`: that
+ * variant's English name, when the lang files have it (iconsFor).
+ */
+export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean; variantOf?: string; name?: string };
 
 // ------------------------------------------------------------- resources ---
 
@@ -379,7 +384,7 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		// Vanilla is known: its table, or damage that is wear (tools, armour). A
 		// mod's damage may be a variant whose model only its code knows: a guess.
 		const variant = !!damage && (ns === 'minecraft' ? !!VANILLA_112[itemPath] : candidates.length > 1);
-		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant };
+		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant, ...(name !== itemPath ? { variantOf: name } : {}) };
 	}
 	if (ns !== 'minecraft') {
 		const fromState = await blockstateIcon(res, ns, itemPath, damage ?? 0, legacyTint(itemPath));
@@ -412,6 +417,7 @@ async function blockstateIcon(res: Resources, ns: string, itemPath: string, dama
 	const defaults = (state.defaults ?? {}) as Variant;
 	let chosen: Variant | null = null;
 	let exact = true;
+	let variantOf: string | undefined;
 	const named = first(variants.inventory) ?? first(variants.normal);
 	if (named) chosen = named;
 	else if (state.forge_marker) {
@@ -420,20 +426,24 @@ async function blockstateIcon(res: Resources, ns: string, itemPath: string, dama
 		const isDefinition = (v: unknown) => Array.isArray(v) || (!!v && typeof v === 'object' && ('model' in v || 'textures' in v));
 		const entries = Object.values(variants);
 		const property = entries.find((v) => v && typeof v === 'object' && !isDefinition(v)) as Record<string, unknown> | undefined;
+		const names = property ? Object.keys(property) : Object.keys(variants).filter((k) => isDefinition(variants[k]));
 		const values = property ? Object.values(property) : entries.filter(isDefinition);
 		chosen = first(values[damage] ?? values[0]);
 		exact = values.length <= 1;
+		if (values.length > 1) variantOf = names[damage] ?? names[0];
 	} else {
 		const keys = Object.keys(variants);
 		chosen = first(variants[keys[damage] ?? keys[0]]);
 		exact = keys.length <= 1;
+		// "type=oak,axis=y": the first property's value.
+		if (keys.length > 1) variantOf = (keys[damage] ?? keys[0]).split(',')[0].split('=').pop();
 	}
 	const model = chosen?.model ?? defaults.model;
 	if (!model) return null;
 	const loaded = await loadBlockstateModel(res, ns, model);
 	if (!loaded) return null;
 	loaded.textures = { ...loaded.textures, ...(defaults.textures ?? {}), ...(chosen?.textures ?? {}) };
-	return { spec: specOf(loaded, [], fallbackTint), exact };
+	return { spec: specOf(loaded, [], fallbackTint), exact, ...(variantOf ? { variantOf } : {}) };
 }
 
 /**
@@ -541,6 +551,21 @@ const resolved = new WeakMap<Resources, Map<string, Promise<ItemIcon>>>();
  * textures are there (the EULA question answered yes); without them only
  * mods' items get pictures.
  */
+/**
+ * A 1.12 item whose damage picks a variant is named by that variant, when the
+ * lang files have it: by the variant alone (enderutilities:storage_0 damage 7
+ * is jsu, tile.enderutilities.jsu.name) or under the id
+ * (item.thermalfoundation.material.dustPetrotheum.name). Otherwise the id's
+ * name stays.
+ */
+async function withVariantName(res: Resources, id: string, damage: number | null, icon: ItemIcon): Promise<ItemIcon> {
+	const [ns, itemPath] = split(id);
+	if (damage === null || !icon.variantOf || ns === 'minecraft') return icon;
+	const lang = await res.lang();
+	const name = langName(`${ns}:${icon.variantOf}`, lang) ?? langName(`${ns}:${itemPath}.${icon.variantOf}`, lang);
+	return name ? { ...icon, name } : icon;
+}
+
 export async function iconsFor(
 	instance: ServerInstance,
 	items: { id: string; damage: number | null }[]
@@ -552,7 +577,7 @@ export async function iconsFor(
 	for (const { id, damage } of items.slice(0, 500)) {
 		if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) continue;
 		const key = iconKey(id, damage);
-		if (!memo.has(key)) memo.set(key, resolveIcon(res, id, damage).catch(() => ({ spec: null, exact: true })));
+		if (!memo.has(key)) memo.set(key, resolveIcon(res, id, damage).then((icon) => withVariantName(res, id, damage, icon)).catch(() => ({ spec: null, exact: true })));
 		icons[key] = await memo.get(key)!;
 	}
 	return { icons, vanilla: res.hasVanilla };
@@ -610,6 +635,11 @@ const lowerCased = new WeakMap<Map<string, string>, Map<string, string>>();
  * already start with item. (projecte:item.pe_life_stone: item.pe_life_stone.name).
  */
 export function itemName(id: string, lang: Map<string, string>): string {
+	return langName(id, lang) ?? humanize(split(id)[1].replace(/^(item|tile)\./, ''));
+}
+
+/** itemName's lookup alone: null when the lang files do not have it. */
+function langName(id: string, lang: Map<string, string>): string | null {
 	const [ns, p] = split(id);
 	const keys = [
 		`item.${ns}.${p}`,
@@ -631,7 +661,7 @@ export function itemName(id: string, lang: Map<string, string>): string {
 		const found = lower.get(key.toLowerCase());
 		if (found) return found;
 	}
-	return humanize(p.replace(/^(item|tile)\./, ''));
+	return null;
 }
 
 const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();

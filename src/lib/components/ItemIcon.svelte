@@ -17,8 +17,8 @@
 		id: string;
 		damage?: number | null;
 		size?: number;
-		/** Whether a picture is shown, so the caller can hide its text. */
-		onresult?: (shown: boolean) => void;
+		/** Whether a picture is shown, so the caller can hide its text; a 1.12 variant's own name if known. */
+		onresult?: (shown: boolean, name: string | null) => void;
 	} = $props();
 
 	let url = $state<string | null>(null);
@@ -33,7 +33,7 @@
 			if (!live || `${id}@${damage}` !== key) return;
 			url = icon.url;
 			exact = icon.exact;
-			onresult?.(!!icon.url);
+			onresult?.(!!icon.url, icon.name);
 		});
 		return () => {
 			live = false;
