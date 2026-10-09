@@ -12,13 +12,23 @@ import {
 } from '#lib/server/players.js';
 import { onlinePlayers } from '#lib/server/instances.js';
 import { listPlayerData } from '#lib/server/playerdata.js';
+import { lookUpProfileNames } from '#lib/server/profiles.js';
 import { playtimes } from '#lib/server/history.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const lists = await loadPlayerLists(instance);
 	const online = lists.serverRunning ? await onlinePlayers(instance) : null;
-	return { lists, online, playerFiles: await listPlayerData(instance), playtimes: playtimes(instance.id) };
+	const playerFiles = await listPlayerData(instance);
+	const unnamed = playerFiles.filter((f) => !f.name && !f.offline).map((f) => f.uuid);
+	return {
+		lists,
+		online,
+		playerFiles,
+		// Streamed: names Mojang gives for player files the server has none for (an imported world).
+		lookedUpNames: unnamed.length ? lookUpProfileNames(unnamed).then((names) => Object.fromEntries(names)) : {},
+		playtimes: playtimes(instance.id)
+	};
 };
 
 function listFrom(form: FormData): ListName {

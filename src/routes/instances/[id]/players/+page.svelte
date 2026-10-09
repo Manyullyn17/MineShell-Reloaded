@@ -3,6 +3,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import { avatarTone } from '#lib/shared/avatar.js';
 	import { formatDuration, formatRelative } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
 
@@ -28,8 +29,16 @@
 		op: { level?: number; bypassesPlayerLimit?: boolean; key: string } | null;
 		ban: { reason?: string; created?: string; source?: string; key: string } | null;
 		online: boolean;
-		file: { uuid: string; modifiedAt: number } | null;
+		file: { uuid: string; modifiedAt: number; fromMojang: boolean } | null;
 	};
+	// Names Mojang gives for files the server has none for, once they arrive.
+	const lookedUp = streamed(() => data.lookedUpNames);
+	const playerFiles = $derived(
+		data.playerFiles.map((f) => {
+			const name = f.name ? null : lookedUp.ready ? (lookedUp.value as Record<string, string>)[f.uuid] : null;
+			return name ? { ...f, name, nameFrom: 'mojang' as const } : f;
+		})
+	);
 	const people = $derived.by(() => {
 		const byName = new Map<string, Person>();
 		const get = (name: string, uuid: string | null = null) => {
@@ -48,16 +57,16 @@
 		for (const e of data.lists.bans)
 			get(e.name, e.uuid).ban = { reason: e.reason, created: e.created, source: e.source, key: e.key };
 		for (const name of data.online?.names ?? []) get(name).online = true;
-		for (const f of data.playerFiles) {
+		for (const f of playerFiles) {
 			if (!f.name) continue;
-			get(f.name, f.uuid).file = { uuid: f.uuid, modifiedAt: f.modifiedAt };
+			get(f.name, f.uuid).file = { uuid: f.uuid, modifiedAt: f.modifiedAt, fromMojang: f.nameFrom === 'mojang' };
 		}
 		return [...byName.values()].sort(
 			(a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name)
 		);
 	});
 	/** Player data files whose owner's name is not known. */
-	const unnamedFiles = $derived(data.playerFiles.filter((f) => !f.name));
+	const unnamedFiles = $derived(playerFiles.filter((f) => !f.name));
 
 	const FILTERS = [
 		{ id: 'all', label: 'All', test: () => true },
@@ -171,6 +180,11 @@
 											? ` · ${person.uuid}`
 											: ''}
 									</div>
+									{#if person.file?.fromMojang}
+										<div class="faint small" title="This server's files do not name this player; Mojang gave the account's current name.">
+											name from Mojang
+										</div>
+									{/if}
 									{#if person.ban?.reason}
 										<div class="small ban-reason">Banned: {person.ban.reason}</div>
 									{/if}
@@ -307,7 +321,11 @@
 			{#each unnamedFiles as file (file.uuid)}
 				<li>
 					<a class="mono small" href={playerUrl(file.uuid)}>{file.uuid}</a>
-					<span class="faint small">last saved {formatRelative(file.modifiedAt)}</span>
+					<span class="faint small">
+						last saved {formatRelative(file.modifiedAt)}{#if file.offline}
+							· offline-mode player: the name cannot be looked up{:else if !lookedUp.ready}
+							· asking Mojang for the name{/if}
+					</span>
 				</li>
 			{/each}
 		</ul>

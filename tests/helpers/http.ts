@@ -29,6 +29,8 @@ function keyFor(method: string, url: string, body: unknown): string {
 	return `${method} ${url} #${digest}`;
 }
 
+const noBody = (status: number) => status === 204 || status === 205 || status === 304;
+
 export function useRecordedHttp(
 	name: string,
 	opts: { extra?: Record<string, (init?: RequestInit) => Response | Promise<Response>> } = {}
@@ -62,7 +64,7 @@ export function useRecordedHttp(
 				json = undefined;
 			}
 			store[key] = json === undefined ? { status: res.status, contentType, body: text } : { status: res.status, contentType, json };
-			return new Response(text, { status: res.status, headers: contentType ? { 'content-type': contentType } : {} });
+			return new Response(noBody(res.status) ? null : text, { status: res.status, headers: contentType ? { 'content-type': contentType } : {} });
 		}
 
 		const rec = store[key];
@@ -72,7 +74,8 @@ export function useRecordedHttp(
 			);
 		}
 		const body = rec.json !== undefined ? JSON.stringify(rec.json) : (rec.body ?? '');
-		return new Response(body, {
+		// 204 and friends cannot have a body, not even an empty one.
+		return new Response(noBody(rec.status) ? null : body, {
 			status: rec.status,
 			headers: rec.contentType ? { 'content-type': rec.contentType } : {}
 		});

@@ -32,6 +32,7 @@ export type { Path, TreeTag };
 import { rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
+import { cachedProfileNames, isOfflineUuid, lookUpProfileNames } from './profiles';
 
 /**
  * Player data: `<world>/playerdata/<uuid>.dat`, one NBT file per player who
@@ -81,18 +82,40 @@ function checkUuid(uuid: string): string {
 const backupDir = (instance: ServerInstance, uuid: string) =>
 	path.join(instance.path, '.mineshell', 'playerdata-backups', uuid);
 
-/** Names from the server's usercache.json, by lower-case UUID. */
+/**
+ * Names the server's own files give, by lower-case UUID: usercache.json, then
+ * the whitelist, operator and ban lists (an imported world often comes
+ * without the usercache, sometimes with the lists).
+ */
 async function knownNames(instance: ServerInstance): Promise<Map<string, string>> {
-	try {
-		const cache = JSON.parse(await fs.readFile(path.join(instance.path, 'usercache.json'), 'utf8')) as { uuid: string; name: string }[];
-		return new Map(cache.filter((e) => e?.uuid && e?.name).map((e) => [e.uuid.toLowerCase(), e.name]));
-	} catch {
-		return new Map();
+	const names = new Map<string, string>();
+	for (const file of ['usercache.json', 'whitelist.json', 'ops.json', 'banned-players.json']) {
+		try {
+			const entries = JSON.parse(await fs.readFile(path.join(instance.path, file), 'utf8')) as { uuid?: unknown; name?: unknown }[];
+			for (const e of Array.isArray(entries) ? entries : []) {
+				if (typeof e?.uuid !== 'string' || typeof e?.name !== 'string' || !e.name) continue;
+				const uuid = e.uuid.toLowerCase();
+				if (!names.has(uuid)) names.set(uuid, e.name);
+			}
+		} catch {
+			/* missing or unreadable */
+		}
 	}
+	return names;
 }
 
-export type PlayerFile = { uuid: string; name: string | null; modifiedAt: number; size: number };
+export type PlayerFile = {
+	uuid: string;
+	name: string | null;
+	/** Where the name is from: the server's own files, or Mojang (the account's current name). */
+	nameFrom: 'server' | 'mojang' | null;
+	/** An offline-mode UUID: made from the name, which nothing can look up. */
+	offline: boolean;
+	modifiedAt: number;
+	size: number;
+};
 
+/** The world's player files, named from the server's files and earlier Mojang lookups (lookUpProfileNames asks for the rest). */
 export async function listPlayerData(instance: ServerInstance): Promise<PlayerFile[]> {
 	const dir = await playerDir(instance);
 	const names = await knownNames(instance);
@@ -101,7 +124,15 @@ export async function listPlayerData(instance: ServerInstance): Promise<PlayerFi
 		const uuid = entry.replace(/\.dat$/, '').toLowerCase();
 		if (!entry.endsWith('.dat') || !UUID.test(uuid)) continue;
 		const stat = await fs.stat(path.join(dir, entry)).catch(() => null);
-		if (stat?.isFile()) found.push({ uuid, name: names.get(uuid) ?? null, modifiedAt: stat.mtimeMs, size: stat.size });
+		if (!stat?.isFile()) continue;
+		const name = names.get(uuid) ?? null;
+		found.push({ uuid, name, nameFrom: name ? 'server' : null, offline: isOfflineUuid(uuid), modifiedAt: stat.mtimeMs, size: stat.size });
+	}
+	const looked = await cachedProfileNames(found.filter((f) => !f.name).map((f) => f.uuid));
+	for (const f of found) {
+		if (f.name || !looked.has(f.uuid)) continue;
+		f.name = looked.get(f.uuid)!;
+		f.nameFrom = 'mojang';
 	}
 	return found.sort((a, b) => b.modifiedAt - a.modifiedAt);
 }
@@ -149,7 +180,8 @@ export async function readPlayerData(
 	const bytes = await fs.readFile(path.join(await playerDir(instance), `${id}.dat`)).catch(() => null);
 	if (!bytes) throw new PlayerDataError('This server has no saved data for that player.');
 	try {
-		return { file: parseNbt(bytes), version: versionOf(bytes), name: (await knownNames(instance)).get(id) ?? null };
+		const name = (await knownNames(instance)).get(id) ?? (await lookUpProfileNames([id])).get(id) ?? null;
+		return { file: parseNbt(bytes), version: versionOf(bytes), name };
 	} catch (err) {
 		throw new PlayerDataError(`The player file could not be read: ${err instanceof Error ? err.message : 'unknown error'}`);
 	}

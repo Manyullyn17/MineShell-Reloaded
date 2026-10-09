@@ -7,7 +7,7 @@ import path from 'node:path';
 
 /** Small wrappers around fetch that every provider and installer shares. */
 
-const USER_AGENT = 'MineShell/0.1 (self-hosted Minecraft server manager)';
+export const USER_AGENT = 'MineShell/0.1 (self-hosted Minecraft server manager)';
 
 export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
 	const res = await fetch(url, {

@@ -202,3 +202,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Tooltip facts: vanilla max durability, 1.20.5 max_damage, stored energy | `src/lib/server/playeritems.test.ts` |
 | The EULA ticked on the new-server form was written only at the end, so the server's page asked for it while it installed | `flows/instance-defaults.test.ts` |
 | (feature) Self-update: check, verified download, installer as its own unit, refusals, result after the restart | `src/lib/server/selfupdate.test.ts` |
+| Player data from an imported world had no names: names from the server's lists, then Mojang (cached, misses too; offline-mode UUIDs never asked; a refused request asked again) | `src/lib/server/profiles.test.ts` |
+| The recorded-HTTP helper could not replay a 204 (a Response with that status cannot have a body) | `src/lib/server/profiles.test.ts` |
