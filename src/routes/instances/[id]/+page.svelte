@@ -212,7 +212,7 @@
 						<a
 							href="?range={value}"
 							aria-current={data.range === value ? 'true' : undefined}
-							data-sveltekit-noscroll
+							data-sveltekit-reset="false"
 							data-sveltekit-replacestate>{text}</a
 						>
 					{/each}
