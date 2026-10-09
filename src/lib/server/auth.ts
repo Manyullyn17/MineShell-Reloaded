@@ -20,14 +20,21 @@ const PASSWORD_KEY = 'auth.password_hash';
  * Session cookie settings. Secure when the browser used https - directly, or
  * as reported by a TLS-terminating reverse proxy (X-Forwarded-Proto), where the
  * app itself only sees http.
+ *
+ * "Directly" is the scheme in the browser's Origin header (sent with every form
+ * post), not `url.protocol`: adapter-node cannot see the scheme and reports
+ * https unless told otherwise, so a production MineShell on plain http set a
+ * Secure cookie the browser dropped, and signing in did nothing.
  */
 export function sessionCookieOptions(request: Request, url: URL) {
 	const forwarded = request.headers.get('x-forwarded-proto')?.split(',')[0].trim().toLowerCase();
+	const origin = request.headers.get('origin');
+	const browserProtocol = origin && origin !== 'null' ? URL.parse(origin)?.protocol : url.protocol;
 	return {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax' as const,
-		secure: url.protocol === 'https:' || forwarded === 'https',
+		secure: browserProtocol === 'https:' || forwarded === 'https',
 		maxAge: SESSION_TTL_MS / 1000
 	};
 }
