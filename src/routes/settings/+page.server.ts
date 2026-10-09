@@ -10,14 +10,18 @@ import {
 import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '#lib/server/curseforge.js';
 import {
 	AGENT_UNIT,
+	agentPage,
 	cancelLink,
+	DASHBOARD,
 	claimState,
 	linkedAgent,
 	otherTunnels,
+	playitLocations,
 	playitStatus,
 	PlayitError,
 	publicAddress,
 	serverTunnel,
+	setRouting,
 	startLink,
 	unlink
 } from '#lib/server/playit.js';
@@ -101,6 +105,11 @@ export const load: PageServerLoad = async () => {
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
 		playit: {
 			linked: linkedAgent().agentId !== null,
+			dashboard: DASHBOARD,
+			agentPage: linkedAgent().agentId ? agentPage(linkedAgent().agentId!) : null,
+			routing: linkedAgent().routing,
+			// Streamed: playit's list of locations.
+			locations: linkedAgent().agentId ? playitLocations() : null,
 			claim: claimState() ? { ...claimState()! } : null,
 			unit: AGENT_UNIT,
 			// Streamed: it asks playit's API.
@@ -259,6 +268,16 @@ export const actions: Actions = {
 			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
+	},
+
+	playitRouting: async ({ request }) => {
+		try {
+			await setRouting(String((await request.formData()).get('routing') ?? 'Automatic'));
+		} catch (err) {
+			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Saved. The agent moves over by itself within a few seconds.' };
 	},
 
 	playitCancel: async () => {

@@ -151,7 +151,8 @@ link a playit.gg account (free works) in MineShell settings, Integrations - you 
 playit.gg, no password passes through MineShell - and switch a server public in its settings,
 Network. MineShell runs playit's agent as a user unit, makes the server's tunnel, keeps it on
 the server's port and deletes it with the server; the address players type is in the header.
-Premium regions are offered when the account has Premium.
+Premium regions are offered when the account has Premium; which playit location the agent
+connects through can be picked on any plan, and the agent's playit.gg page is a click away.
 
 **Player editor item pictures.** Inventories show the items' real icons, read from the server's
 mod jars and Minecraft's own client (after the EULA answer shared with the Map tab), 3D for

@@ -39,7 +39,7 @@ function route(name: string, answer: (body: Record<string, unknown>) => Response
 	] as const;
 }
 
-const { AGENT_BINARIES, AGENT_UNIT, agentProblem, AGENT_VERSION, PLAYIT_DIR, claimState, linkedAgent, makePrivate, makePublic, playitStatus, publicAddress, serverTunnel, startLink, syncTunnel, timing, unlink } =
+const { AGENT_BINARIES, AGENT_UNIT, agentProblem, setRouting, AGENT_VERSION, PLAYIT_DIR, claimState, linkedAgent, makePrivate, makePublic, playitStatus, publicAddress, serverTunnel, startLink, syncTunnel, timing, unlink } =
 	await import('#lib/server/playit.js');
 const { systemdUnitDir } = await import('#lib/server/config.js');
 const { deleteInstance } = await import('#lib/server/instances.js');
@@ -86,6 +86,15 @@ useRecordedHttp('playit', {
 					})
 			})
 		),
+		route('/info/pops', () =>
+			json('success', {
+				pops: [
+					{ pop: 'Germany', name: 'Germany', region: 'germany', online: true, ip4_premium: false },
+					{ pop: 'Sydney', name: 'Sydney', region: 'australia', online: true, ip4_premium: false }
+				]
+			})
+		),
+		route('/agents/routing/set', () => json('success', null)),
 		route('/tunnels/delete', (body) => {
 			const before = fake.tunnels.length;
 			fake.tunnels = fake.tunnels.filter((t) => t.id !== body.tunnel_id);
@@ -204,6 +213,20 @@ describe('playit.gg', () => {
 		// The old one removed on playit.gg: it connects by itself.
 		log += 'INFO playitd::daemon: playit connected; tunnels loaded agent_id=x tunnel_count=0\n';
 		expect(await agentProblem()).toBeNull();
+	});
+
+	it("sets where the agent connects through: a playit location or automatic", async () => {
+		if (!linkedAgent().agentId) await link();
+		await setRouting('Germany');
+		expect(fake.calls.filter((c) => c.route === '/agents/routing/set').at(-1)).toMatchObject({
+			key: 'secret-agent-key',
+			body: { agent_id: AGENT_ID, routing: { type: 'Pop', details: 'Germany' } }
+		});
+		expect(linkedAgent().routing).toBe('Germany');
+		await setRouting('Automatic');
+		expect(fake.calls.filter((c) => c.route === '/agents/routing/set').at(-1)?.body.routing).toEqual({ type: 'Automatic' });
+		await expect(setRouting('Atlantis')).rejects.toThrow('Unknown playit location.');
+		expect(linkedAgent().routing).toBe('Automatic');
 	});
 
 	it('unlinks: tunnels deleted, agent stopped and removed, key gone', async () => {

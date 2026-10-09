@@ -327,8 +327,12 @@ dev server: linked, Flicker made public, started, and a server-list ping through
 `fried-saturn.tun.ply.gg` answered from the server. Found doing so: a second agent on a free
 account is refused (`AgentDisabledOverLimit`), shown from the agent's log; a new tunnel is in
 the account's list before the agent's run data (the first version forgot it on start); a new
-hostname can take minutes to resolve. Not built: dedicated IPs and custom domains (set up on
-playit.gg), the agent's routing choice, adopting dashboard-made tunnels (listed, left alone).
+hostname can take minutes to resolve. Later the same day (the user's ask): the agent's routing
+("Connects through": automatic or one of playit's locations from `/info/pops`; free, set with
+the agent key by `/agents/routing/set`, the running agent moves by itself) and links to the
+agent's page and the agent list on playit.gg (managing or removing agents). Not built:
+dedicated IPs and custom domains (set up on playit.gg), adopting dashboard-made tunnels
+(listed, left alone).
 
 Connect MineShell to a playit.gg account and let it manage tunnels for servers, so a
 server can be reached from outside without port forwarding. Different job from "Remote

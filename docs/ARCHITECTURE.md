@@ -457,7 +457,11 @@ only applies on restart); one that is gone from the account (`/tunnels/list`, no
 data, which lists new tunnels a moment late) is forgotten. Deleted with the server, when
 switched off, and on unlink (the agent stays on the account: the API cannot delete it).
 The run data (tunnels, `display_address`, Premium) is kept 15 s and streamed to pages.
-playit refusing the agent is only in its log (`AgentDisabledOverLimit`: a free account takes
+Where the agent connects out ("Connects through", free) is separate from a tunnel's region
+(where players connect, Premium): `/agents/routing/set` with `Automatic` or a location from
+`/info/pops` (`{type: "Pop", details}`); the running agent moves over by itself, and
+`/agents/routing/get` answers only the resulting addresses, so the choice is kept in the
+`playit` settings row. playit refusing the agent is only in its log (`AgentDisabledOverLimit`: a free account takes
 one agent), so the status reads the last lines.
 
 ## Safety and confinement

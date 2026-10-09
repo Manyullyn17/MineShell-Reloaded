@@ -22,6 +22,8 @@
 
 	const playitInfo = streamed(() => data.playit.status);
 	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
+	const locationsInfo = streamed(() => data.playit.locations);
+	const locations = $derived(locationsInfo.ready ? (locationsInfo.value ?? []) : []);
 	// While a link waits for its approval on playit.gg, look again every 2 s.
 	const claiming = $derived(!!data.playit.claim && ['waiting', 'visited', 'finishing'].includes(data.playit.claim.state));
 	$effect(() => {
@@ -303,7 +305,9 @@
 			</form>
 			<p class="muted small">
 				You approve MineShell on playit.gg; no password or account key passes through MineShell. Needs a
-				free account at <a href="https://playit.gg" target="_blank" rel="noreferrer">playit.gg</a>.
+				free account at <a href="https://playit.gg" target="_blank" rel="noreferrer">playit.gg</a>. A free account
+				takes one agent: remove old ones under <a href={data.playit.dashboard} target="_blank" rel="noreferrer">Agents on playit.gg</a>
+				first.
 			</p>
 		{/if}
 	{:else if !playit}
@@ -322,6 +326,27 @@
 				{/if}
 			</p>
 		</div>
+		<p class="small">
+			<a href={data.playit.agentPage} target="_blank" rel="noreferrer">This agent on playit.gg</a> ·
+			<a href={data.playit.dashboard} target="_blank" rel="noreferrer">All agents</a>
+			<span class="muted">(rename, remove, see its tunnels)</span>
+		</p>
+		<form method="POST" action="?/playitRouting" use:enhance={() => async ({ update }) => update({ reset: false })} class="inline-form">
+			<div class="field grow">
+				<label for="playit-routing">Connects through</label>
+				<select id="playit-routing" name="routing" value={data.playit.routing}>
+					<option value="Automatic">Automatic (nearest playit location)</option>
+					{#each locations as location (location.pop)}
+						<option value={location.pop} disabled={!location.online}>{location.name}{location.online ? '' : ' (offline)'}</option>
+					{/each}
+				</select>
+			</div>
+			<button type="submit">Save</button>
+		</form>
+		<p class="muted small">
+			Which playit location this machine's agent connects out through; free on every plan. Where players
+			connect (a server's region) is set per server and is Premium.
+		</p>
 		{#if playit.servers.length}
 			<h3>Public servers</h3>
 			<ul class="plain-list">

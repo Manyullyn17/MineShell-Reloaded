@@ -82,7 +82,8 @@ export async function playitApi<T>(route: string, body: unknown, key?: string | 
 
 // ------------------------------------------------------------------ settings ---
 
-type Linked = { agentId: string | null; linkedAt: number | null };
+/** `routing`: where the agent connects out ('Automatic' or a playit location, e.g. 'Germany'). */
+type Linked = { agentId: string | null; linkedAt: number | null; routing?: string };
 /** Per server: the tunnel MineShell made for it. */
 export type ServerTunnel = { tunnelId: string; region: string };
 
@@ -104,10 +105,18 @@ function writeJson(key: string, value: unknown): void {
 	db.insert(settings).values({ key, value: json }).onConflictDoUpdate({ target: settings.key, set: { value: json } }).run();
 }
 
-export function linkedAgent(): Linked {
+export function linkedAgent(): Linked & { routing: string } {
 	const raw = readJson<Linked>(GLOBAL_KEY);
-	return { agentId: typeof raw?.agentId === 'string' ? raw.agentId : null, linkedAt: typeof raw?.linkedAt === 'number' ? raw.linkedAt : null };
+	return {
+		agentId: typeof raw?.agentId === 'string' ? raw.agentId : null,
+		linkedAt: typeof raw?.linkedAt === 'number' ? raw.linkedAt : null,
+		routing: typeof raw?.routing === 'string' ? raw.routing : 'Automatic'
+	};
 }
+
+/** The agent's page on playit.gg (rename, delete, its tunnels), and the account's agent list. */
+export const DASHBOARD = 'https://playit.gg/account/agents';
+export const agentPage = (agentId: string) => `${DASHBOARD}/${agentId}`;
 
 export function serverTunnel(instanceId: string): ServerTunnel | null {
 	const raw = readJson<ServerTunnel>(SERVER_KEY(instanceId));
@@ -197,7 +206,7 @@ export async function agentProblem(): Promise<string | null> {
 	const log = (await run(['journalctl', '--user', `--user-unit=${AGENT_UNIT}`, '-n', '40', '-o', 'cat', '--no-pager'])).stdout;
 	const refused = log.lastIndexOf('AgentDisabledOverLimit');
 	if (refused < 0 || refused < log.lastIndexOf('playit connected')) return null;
-	return 'playit.gg turned the agent away: the account has more agents than its plan allows (one on the free plan). Remove the other agents on playit.gg; this one then connects by itself.';
+	return 'playit.gg turned the agent away: the account has more agents than its plan allows (one on the free plan). Remove the other agents on playit.gg (link below); this one then connects by itself.';
 }
 
 // ---------------------------------------------------------------- linking ---
@@ -296,6 +305,36 @@ export async function unlink(): Promise<void> {
 	db.delete(settings).where(eq(settings.key, GLOBAL_KEY)).run();
 	claim = null;
 	statusCache = null;
+}
+
+// ---------------------------------------------------------------- routing ---
+
+export type PlayitLocation = { pop: string; name: string; online: boolean };
+let locationsCache: { at: number; value: PlayitLocation[] } | null = null;
+
+/** playit's locations an agent can connect through (kept an hour; empty when playit cannot be asked). */
+export async function playitLocations(): Promise<PlayitLocation[]> {
+	if (locationsCache && Date.now() - locationsCache.at < 3_600_000) return locationsCache.value;
+	const answer = await playitApi<{ pops: { pop: string; name: string; online: boolean }[] }>('/info/pops', {});
+	if (!answer.ok) return locationsCache?.value ?? [];
+	const value = answer.data.pops.map((p) => ({ pop: p.pop, name: p.name, online: p.online })).sort((a, b) => a.name.localeCompare(b.name));
+	locationsCache = { at: Date.now(), value };
+	return value;
+}
+
+/**
+ * Where the agent connects out: automatic (playit picks the nearest) or one
+ * location. Not the tunnels' region (where players connect, Premium): this
+ * one is free. The running agent moves by itself within seconds.
+ */
+export async function setRouting(target: string): Promise<void> {
+	const key = await requireKey();
+	const linked = linkedAgent();
+	if (target !== 'Automatic' && !(await playitLocations()).some((l) => l.pop === target)) throw new PlayitError('Unknown playit location.');
+	const routing = target === 'Automatic' ? { type: 'Automatic' } : { type: 'Pop', details: target };
+	const done = await playitApi('/agents/routing/set', { agent_id: linked.agentId, routing, disable_ip6: false }, key);
+	if (!done.ok) throw new PlayitError(explain(done.error === 'RequiresPremium' ? 'RequiresPlayitPremium' : done.error));
+	writeJson(GLOBAL_KEY, { agentId: linked.agentId, linkedAt: linked.linkedAt, routing: target } satisfies Linked);
 }
 
 // ----------------------------------------------------------------- status ---
