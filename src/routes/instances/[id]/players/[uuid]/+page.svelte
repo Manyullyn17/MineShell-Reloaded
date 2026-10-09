@@ -497,7 +497,7 @@
 				<span class="item-name" class:beside={wide && pictured[iconKey(item.id, item.damage)]}>{nameOf(item)}</span>
 			{/if}
 			{#if item.count > 1}<span class="count">{item.count}</span>{/if}
-			{#if item.containers.length}<span class="holds" aria-label="holds items">▣</span>
+			{#if item.containers.length}<span class="holds" aria-label="holds items"></span>
 			{:else if item.hasData}<span class="data-dot" aria-label="has extra data"></span>{/if}
 		{:else if label}
 			<span class="slot-label">{label}</span>
@@ -737,7 +737,7 @@
 {:else if view === 'inventory' || view === 'ender'}
 <section class="panel">
 	<div class="inv-head">
-		<p class="small faint">▣ marks an item that holds items; pick it to open what is inside.</p>
+		<p class="small faint"><span class="holds-key" aria-hidden="true"></span> in a corner marks an item that holds items; pick it to open what is inside.</p>
 		{#if !data.iconsEula}
 			<p class="small muted icon-eula">
 				Pictures of Minecraft's own items come from its client, which means accepting the
@@ -1538,22 +1538,32 @@
 		font-family: var(--font-mono);
 	}
 
-	.data-dot {
+	/* Corner marks, both in the same spot in the corner, clear of the picture: extra data a dot, held items a box. */
+	.data-dot,
+	.holds {
 		position: absolute;
-		top: 3px;
-		right: 3px;
-		width: 5px;
-		height: 5px;
+		top: 2px;
+		right: 2px;
+		width: 6px;
+		height: 6px;
+	}
+
+	.data-dot {
 		border-radius: 50%;
 		background: var(--accent);
 	}
 
-	.holds {
-		position: absolute;
-		top: 0;
-		right: 3px;
-		font-size: 0.65rem;
-		color: var(--accent);
+	.holds,
+	.holds-key {
+		border: 1.5px solid var(--accent);
+		border-radius: 1px;
+	}
+
+	.holds-key {
+		display: inline-block;
+		width: 7px;
+		height: 7px;
+		vertical-align: baseline;
 	}
 
 	.inv-layout {
