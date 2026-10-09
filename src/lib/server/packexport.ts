@@ -172,7 +172,8 @@ export async function planExport(instance: ServerInstance): Promise<ExportPlan> 
 		folders,
 		pack: pack ? { name: instance.packName ?? instance.name, version: instance.packVersionName } : null,
 		defaultName: instance.packName ?? instance.name,
-		defaultVersion: instance.packVersionName ?? new Date().toISOString().slice(0, 10),
+		// CurseForge version names are often the file's name (`Pack-1.2.zip`).
+		defaultVersion: instance.packVersionName?.replace(/\.(zip|mrpack)$/i, '') ?? new Date().toISOString().slice(0, 10),
 		loaderNotes
 	};
 }

@@ -148,6 +148,11 @@ describe('client pack export', () => {
 		]);
 	});
 
+	it("defaults the version to the pack's, without a file extension", async () => {
+		const plan = await planExport(await server({ packName: 'Pack', packVersionName: 'Pack-prerelease-0.18.zip' }));
+		expect(plan.defaultVersion).toBe('Pack-prerelease-0.18');
+	});
+
 	it('Modrinth: links Modrinth files, bundles the rest, keeps disabled mods disabled', async () => {
 		const { zip, names } = await exported(await server(), 'mrpack');
 		const index = JSON.parse(zip.readText('modrinth.index.json')!);

@@ -358,7 +358,8 @@ from coming back.
 
 **Client pack export** (`packexport.ts`, the server's Export page) builds a pack for
 players' launchers: a Modrinth `.mrpack`, a CurseForge zip or a Prism Launcher instance,
-as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour.
+as a task whose result is downloaded from `/api/instances/[id]/export?task=` for an hour
+(the page starts that download itself when the task finishes; files are in `$DATA/tmp/exports/<task>/`).
 In it: the mods ticked on the form (all by default: server-only ones do nothing on a
 client, and a singleplayer test world then matches the server), each as on the server except client-only
 ones, which come back enabled; the folders ticked; and for a server installed from a

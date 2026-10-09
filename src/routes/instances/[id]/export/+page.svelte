@@ -57,6 +57,14 @@
 	});
 
 	const download = $derived(task?.state === 'done' && taskId ? `/api/instances/${encodeURIComponent(data.instance.id)}/export?task=${taskId}` : null);
+
+	// The browser saves it as soon as it is built (the response is an attachment, so the page stays); the button is for another copy.
+	let fetched: string | null = null;
+	$effect(() => {
+		if (!download || fetched === taskId) return;
+		fetched = taskId;
+		location.assign(download);
+	});
 </script>
 
 <svelte:head><title>Export - {data.instance.name} - MineShell</title></svelte:head>
@@ -215,7 +223,7 @@
 						</div>
 					{:else if download}
 						<a class="button" href={download} download>Download the pack</a>
-						<span class="small faint">Kept for an hour.</span>
+						<span class="small faint">Downloading; kept here for an hour.</span>
 					{:else if task.state === 'failed'}
 						<p class="notice error">{task.error ?? 'The export failed.'}</p>
 					{:else}
