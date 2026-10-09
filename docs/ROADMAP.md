@@ -492,7 +492,8 @@ and 26.x's `{ sprite }` textures with them). A survey of every vanilla item (1.1
 1.21.11, 26.3) left only what the game draws in code: beds (before 26.x, which made them
 models), banners (16; patterns come from the item's data), heads and skulls (7; a player head
 would want the skin from its profile), the shield, the conduit, the decorated pot (1.20+), and
-the copper golem statues (1.21.9+).
+the copper golem statues (1.21.9+). The shield built the same day (plain; a shield's banner
+pattern is not drawn).
 
 ### A map of the world
 

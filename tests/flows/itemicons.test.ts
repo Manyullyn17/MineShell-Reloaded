@@ -267,6 +267,31 @@ describe('item icons', () => {
 		expect(glass.elements[0].faces.up.texture).toBe('minecraft:block/glass');
 	});
 
+	it('draws the shield the game draws in code, from either place its texture has been', async () => {
+		for (const texture of ['entity/shield_base_nopattern', 'entity/shield/shield_base_nopattern']) {
+			const res = await Resources.load([], await jar('c.jar', { [`assets/minecraft/textures/${texture}.png`]: PNG }));
+			const spec = (await resolveIcon(res, 'minecraft:shield')).spec as { rotation: number[]; elements: { from: number[]; to: number[]; faces: Record<string, { texture: string; uv: number[] }> }[] };
+			// The handle behind the 12x22x1 plate, whose front is the texture's (1,1) square.
+			expect(spec.elements.map((e) => [e.from, e.to])).toEqual([
+				[[7, 5, 7], [9, 11, 13]],
+				[[2, -3, 6], [14, 19, 7]]
+			]);
+			expect(spec.elements[1].faces.north).toEqual({ texture: `minecraft:${texture}`, uv: [0.25, 0.25, 3.25, 5.75], tint: null });
+			expect(spec.rotation).toEqual([15, 220, 0]);
+		}
+		// 1.21.4+: the item definition names the special shield model.
+		const definitions = await Resources.load(
+			[],
+			await jar('c.jar', {
+				'assets/minecraft/items/shield.json': json({
+					model: { type: 'minecraft:condition', property: 'minecraft:using_item', on_false: { type: 'minecraft:special', base: 'minecraft:item/shield', model: { type: 'minecraft:shield' } } }
+				}),
+				'assets/minecraft/textures/entity/shield/shield_base_nopattern.png': PNG
+			})
+		);
+		expect((await resolveIcon(definitions, 'minecraft:shield')).spec).toMatchObject({ kind: 'block' });
+	});
+
 	it("takes the trident's inventory model over its 3D one", async () => {
 		const res = await Resources.load(
 			[],

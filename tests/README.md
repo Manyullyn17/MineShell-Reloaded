@@ -209,3 +209,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Server initials and colour | `src/lib/shared/servertile.test.ts` |
 | 26.x item models with `{ sprite }` textures (all glass) crashed the icon resolver | `flows/itemicons.test.ts` |
 | (feature) Shulker boxes, and the trident's inventory model on 1.21.4+ | `flows/itemicons.test.ts` |
+| (feature) The shield (plain), from both texture places | `flows/itemicons.test.ts` |

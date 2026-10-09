@@ -112,6 +112,42 @@ function vanillaShulker(res: Resources, texture: string): IconSpec | null {
 	return res.has(`minecraft/textures/entity/shulker/${texture}.png`) ? shulkerSpec(`minecraft:entity/shulker/${texture}`) : null;
 }
 
+/**
+ * The shield, drawn in code as well (ShieldModel): a 12x22x1 plate at texture
+ * (0,0) and a 2x6x6 handle at (26,0) behind it, in the same box layout; the
+ * front is the plate's (1,1) square. The item's view is (15, -25, -5); the
+ * turn here (220: the front turned about 50 degrees, its edge and the handle
+ * showing on the right) was matched to the game's icon by eye (the user's
+ * screenshot, 2026-10-09), as the -5 about z is left out.
+ */
+function shieldSpec(texture: string): IconSpec {
+	const face = (u1: number, v1: number, u2: number, v2: number): FaceSpec => ({ texture, uv: [u1 / 4, v1 / 4, u2 / 4, v2 / 4], tint: null });
+	return {
+		kind: 'block',
+		elements: [
+			{
+				from: [7, 5, 7],
+				to: [9, 11, 13],
+				faces: { up: face(32, 0, 34, 6), east: face(26, 6, 32, 12), north: face(32, 6, 34, 12), west: face(34, 6, 40, 12), south: face(40, 6, 42, 12) }
+			},
+			{
+				from: [2, -3, 6],
+				to: [14, 19, 7],
+				faces: { up: face(1, 0, 13, 1), east: face(0, 1, 1, 23), north: face(1, 1, 13, 23), west: face(13, 1, 14, 23), south: face(14, 1, 26, 23) }
+			}
+		],
+		rotation: [15, 220, 0]
+	};
+}
+
+/** The plain shield's texture: entity/ before 26.x, entity/shield/ since. */
+function vanillaShield(res: Resources): IconSpec | null {
+	for (const texture of ['entity/shield/shield_base_nopattern', 'entity/shield_base_nopattern']) {
+		if (res.has(`minecraft/textures/${texture}.png`)) return shieldSpec(`minecraft:${texture}`);
+	}
+	return null;
+}
+
 /** Vanilla's code-drawn chests before 1.21.4's item definitions, by their entity texture. */
 const CHESTS: Record<string, string> = { chest: 'normal', trapped_chest: 'trapped', ender_chest: 'ender' };
 
@@ -508,6 +544,7 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		if (specialType === 'shulker_box' && typeof special!.texture === 'string') {
 			return { spec: vanillaShulker(res, split(special!.texture)[1]), exact: true };
 		}
+		if (specialType === 'shield') return { spec: vanillaShield(res), exact: true };
 		if (!model || typeof model.model !== 'string') return { spec: null, exact: true };
 		const loaded = await loadModel(res, model.model);
 		return { spec: loaded ? specOf(loaded, tintsOf(model), null) : null, exact: true };
@@ -515,6 +552,10 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	if (ns === 'minecraft' && CHESTS[itemPath]) {
 		const chest = vanillaChest(res, CHESTS[itemPath]);
 		if (chest) return { spec: chest, exact: true };
+	}
+	if (ns === 'minecraft' && itemPath === 'shield') {
+		const shield = vanillaShield(res);
+		if (shield) return { spec: shield, exact: true };
 	}
 	const shulker = ns === 'minecraft' ? itemPath.match(/^(?:(\w+)_)?shulker_box$/) : null;
 	if (shulker) {
