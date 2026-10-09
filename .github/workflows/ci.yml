@@ -40,5 +40,9 @@ jobs:
       - name: Tests
         run: npm test
 
+      # The build runs the server code to analyse it; it must leave the data
+      # directory alone (it used to create it and migrate the database there).
       - name: Build
-        run: npm run build
+        run: |
+          MINESHELL_DATA="$RUNNER_TEMP/build-data" npm run build
+          test ! -e "$RUNNER_TEMP/build-data"
