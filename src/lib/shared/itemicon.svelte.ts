@@ -118,9 +118,11 @@ function shadeOf(view: View, side: Side): number {
 function drawFace(ctx: CanvasRenderingContext2D, view: View, tex: HTMLCanvasElement, face: FaceSpec, side: Side, el: ElementSpec) {
 	const [a, b, c] = corners(side, el.from, el.to).map(([x, y, z]) => project(view, x, y, z));
 	const unit = tex.width / 16;
-	// A mirrored uv is drawn unmirrored: rare, and hardly visible at this size.
-	const [u1, u2] = face.uv[0] <= face.uv[2] ? [face.uv[0], face.uv[2]] : [face.uv[2], face.uv[0]];
-	const [v1, v2] = face.uv[1] <= face.uv[3] ? [face.uv[1], face.uv[3]] : [face.uv[3], face.uv[1]];
+	// A uv given backwards mirrors the texture (1.15+ chests read their sides bottom up).
+	const flipU = face.uv[0] > face.uv[2];
+	const flipV = face.uv[1] > face.uv[3];
+	const [u1, u2] = flipU ? [face.uv[2], face.uv[0]] : [face.uv[0], face.uv[2]];
+	const [v1, v2] = flipV ? [face.uv[3], face.uv[1]] : [face.uv[1], face.uv[3]];
 	const sw = Math.max(1, (u2 - u1) * unit);
 	const sh = Math.max(1, (v2 - v1) * unit);
 	const d = { x: b.x + (c.x - a.x), y: b.y + (c.y - a.y) };
@@ -133,6 +135,7 @@ function drawFace(ctx: CanvasRenderingContext2D, view: View, tex: HTMLCanvasElem
 	ctx.closePath();
 	ctx.clip();
 	ctx.setTransform(b.x - a.x, b.y - a.y, c.x - a.x, c.y - a.y, a.x, a.y);
+	if (flipU || flipV) ctx.transform(flipU ? -1 : 1, 0, 0, flipV ? -1 : 1, flipU ? 1 : 0, flipV ? 1 : 0);
 	// A hair larger than the face, so neighbouring faces meet without seams.
 	ctx.drawImage(tex, u1 * unit, v1 * unit, sw, sh, -0.01, -0.01, 1.02, 1.02);
 	ctx.setTransform(1, 0, 0, 1, 0, 0);

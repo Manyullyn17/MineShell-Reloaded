@@ -46,6 +46,49 @@ export type IconSpec =
 
 /** Minecraft's block/block.json: how blocks are turned in the inventory, unless a model says otherwise (stairs: 135). */
 const GUI_ROTATION: [number, number, number] = [30, 225, 0];
+
+/**
+ * Chests are drawn in the game's code (builtin/entity; 1.21.4's "special"
+ * chest model) from a 64x64 entity texture, so their shape is written here:
+ * the base, the lid and the latch, with each box's faces where the game's
+ * box layout puts them (top at (u+d, v), sides in a row below: west, front,
+ * east, back). 1.15 flipped the textures upside down (top and bottom swap,
+ * the sides read bottom up); its jars split double chests into _left/_right.
+ * The item is turned 45, front (the latch) to the left.
+ */
+function chestSpec(texture: string, flipped: boolean): IconSpec {
+	const box = (from: [number, number, number], to: [number, number, number], u: number, v: number): ElementSpec => {
+		const [w, h, d] = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
+		// Pixels of the 64-wide texture to the 0-16 units faces use.
+		const uv = (u1: number, v1: number, u2: number, v2: number): [number, number, number, number] =>
+			(flipped ? [u1, v2, u2, v1] : [u1, v1, u2, v2]).map((n) => n / 4) as [number, number, number, number];
+		const face = (r: [number, number, number, number]): FaceSpec => ({ texture, uv: r, tint: null });
+		return {
+			from,
+			to,
+			faces: {
+				up: face(flipped ? uv(u + d + w, v, u + d + 2 * w, v + d) : uv(u + d, v, u + d + w, v + d)),
+				west: face(uv(u, v + d, u + d, v + d + h)),
+				south: face(uv(u + d, v + d, u + d + w, v + d + h)),
+				east: face(uv(u + d + w, v + d, u + 2 * d + w, v + d + h)),
+				north: face(uv(u + 2 * d + w, v + d, u + 2 * d + 2 * w, v + d + h))
+			}
+		};
+	};
+	return {
+		kind: 'block',
+		elements: [box([1, 0, 1], [15, 10, 15], 0, 19), box([1, 9, 1], [15, 14, 15], 0, 0), box([7, 7, 15], [9, 11, 16], 0, 0)],
+		rotation: [30, 45, 0]
+	};
+}
+
+/** Vanilla's code-drawn chests before 1.21.4's item definitions, by their entity texture. */
+const CHESTS: Record<string, string> = { chest: 'normal', trapped_chest: 'trapped', ender_chest: 'ender' };
+
+function vanillaChest(res: Resources, texture: string): IconSpec | null {
+	if (!res.has(`minecraft/textures/entity/chest/${texture}.png`)) return null;
+	return chestSpec(`minecraft:entity/chest/${texture}`, res.has('minecraft/textures/entity/chest/normal_left.png'));
+}
 /**
  * `exact`: false when the picture is a guess. `variant`: the 1.12 damage value
  * picks a variant (vanilla's table, a mod's variant model), rather than being
@@ -356,12 +399,11 @@ function specOf(model: Model, tints: Tints, fallbackTint: string | null): IconSp
 	return elements.length ? { kind: 'block', elements, rotation: model.gui ?? GUI_ROTATION } : null;
 }
 
-/** The model a 1.21.4+ item definition names: a plain model, or the fallback / first case of the rest. */
+/** The model a 1.21.4+ item definition names: a plain or special model, or the fallback / first case of the rest. */
 function definitionModel(def: Record<string, unknown> | undefined, depth = 0): Record<string, unknown> | null {
 	if (!def || depth > 6) return null;
 	const type = String(def.type ?? '').replace(/^minecraft:/, '');
-	if (type === 'model') return def;
-	if (type === 'special') return null;
+	if (type === 'model' || type === 'special') return def;
 	if (type === 'composite') return definitionModel((def.models as Record<string, unknown>[] | undefined)?.[0], depth + 1);
 	if (type === 'condition') return definitionModel((def.on_false ?? def.on_true) as Record<string, unknown>, depth + 1);
 	const nested = (def.fallback ?? (def.cases as { model: Record<string, unknown> }[] | undefined)?.[0]?.model ?? (def.entries as { model: Record<string, unknown> }[] | undefined)?.[0]?.model) as
@@ -376,9 +418,17 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	const definition = await res.json(`${ns}/items/${itemPath}.json`);
 	if (definition) {
 		const model = definitionModel(definition.model as Record<string, unknown>);
+		const special = model?.type === 'minecraft:special' || model?.type === 'special' ? (model.model as Record<string, unknown> | undefined) : null;
+		if (special && String(special.type).replace(/^minecraft:/, '') === 'chest' && typeof special.texture === 'string') {
+			return { spec: vanillaChest(res, split(special.texture)[1]), exact: true };
+		}
 		if (!model || typeof model.model !== 'string') return { spec: null, exact: true };
 		const loaded = await loadModel(res, model.model);
 		return { spec: loaded ? specOf(loaded, tintsOf(model), null) : null, exact: true };
+	}
+	if (ns === 'minecraft' && CHESTS[itemPath]) {
+		const chest = vanillaChest(res, CHESTS[itemPath]);
+		if (chest) return { spec: chest, exact: true };
 	}
 	const candidates = variantModels(ns, itemPath, damage);
 	// A mod's own name pattern for the variant, before its blockstate file and the base model.
@@ -649,13 +699,22 @@ export function itemName(id: string, lang: Map<string, string>): string {
 	return langName(id, lang) ?? humanize(split(id)[1].replace(/^(item|tile)\./, ''));
 }
 
+/**
+ * 1.12 vanilla ids whose key is another item's: tile.stonebrick.name is
+ * Cobblestone (cobblestone's key); Stone Bricks are stonebricksmooth.
+ */
+const VANILLA_112_KEYS: Record<string, string> = { stonebrick: 'stonebricksmooth' };
+
 /** itemName's lookup alone: null when the lang files do not have it. */
 function langName(id: string, lang: Map<string, string>): string | null {
-	const [ns, p] = split(id);
+	const [ns, path] = split(id);
+	const p = (ns === 'minecraft' && lang.has(`tile.${VANILLA_112_KEYS[path]}.name`) && VANILLA_112_KEYS[path]) || path;
 	const keys = [
 		`item.${ns}.${p}`,
 		`block.${ns}.${p}`,
-		...[p, camel(p), `${ns}.${p}`, `${ns}:${p}`, `${ns}.${camel(p)}`].flatMap((n) => [`item.${n}.name`, `tile.${n}.name`]),
+		// The mod's own keys before bare ones: appliedenergistics2:chest is tile.appliedenergistics2.chest.name
+		// ("ME Chest"), while tile.chest.name is vanilla's chest.
+		...[`${ns}.${p}`, `${ns}:${p}`, `${ns}.${camel(p)}`, p, camel(p)].flatMap((n) => [`item.${n}.name`, `tile.${n}.name`]),
 		`${p}.name`
 	];
 	for (const key of keys) {

@@ -166,7 +166,11 @@ describe('item icons', () => {
 			['item.chestSack.name', 'Sack of Holding'],
 			['tile.thermalfoundation.ore.name', 'Ore'],
 			['item.botania:manaRingGreater.name', 'Greater Band of Mana'],
-			['item.pe_life_stone.name', 'Life Stone']
+			['item.pe_life_stone.name', 'Life Stone'],
+			['tile.chest.name', 'Chest'],
+			['tile.appliedenergistics2.chest.name', 'ME Chest'],
+			['tile.stonebrick.name', 'Cobblestone'],
+			['tile.stonebricksmooth.name', 'Stone Bricks']
 		]);
 		expect(itemName('minecraft:diamond', lang)).toBe('Diamond');
 		expect(itemName('mymod:marble', lang)).toBe('Marble');
@@ -177,8 +181,45 @@ describe('item icons', () => {
 		// The id already starts with item.
 		expect(itemName('projecte:item.pe_life_stone', lang)).toBe('Life Stone');
 		expect(itemName('projecte:item.pe_unknown_thing', lang)).toBe('Pe Unknown Thing');
+		// The mod's own key before the bare one, which is vanilla's chest.
+		expect(itemName('appliedenergistics2:chest', lang)).toBe('ME Chest');
+		expect(itemName('minecraft:chest', lang)).toBe('Chest');
+		// 1.12's tile.stonebrick is cobblestone's key.
+		expect(itemName('minecraft:stonebrick', lang)).toBe('Stone Bricks');
 		// Nothing found: the id, tidied up.
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
+	});
+
+	it('draws the chests the game draws in code, in both texture layouts', async () => {
+		const old = await Resources.load([], await jar('c.jar', { 'assets/minecraft/textures/entity/chest/ender.png': PNG }));
+		const spec = (await resolveIcon(old, 'minecraft:ender_chest')).spec as { kind: string; rotation: number[]; elements: { from: number[]; faces: Record<string, { texture: string; uv: number[] }> }[] };
+		expect(spec).toMatchObject({ kind: 'block', rotation: [30, 45, 0] });
+		// Base, lid, latch; the base's top where the game's box layout puts it (14,19 in the 64px texture).
+		expect(spec.elements.map((e) => e.from)).toEqual([[1, 0, 1], [1, 9, 1], [7, 7, 15]]);
+		expect(spec.elements[0].faces.up).toEqual({ texture: 'minecraft:entity/chest/ender', uv: [3.5, 4.75, 7, 8.25], tint: null });
+		expect(spec.elements[0].faces.south.uv).toEqual([3.5, 8.25, 7, 10.75]);
+
+		// 1.15+ (split double chests): flipped, so the top comes from the bottom's square and sides read bottom up.
+		const modern = await Resources.load(
+			[],
+			await jar('c.jar', { 'assets/minecraft/textures/entity/chest/normal.png': PNG, 'assets/minecraft/textures/entity/chest/normal_left.png': PNG })
+		);
+		const flipped = (await resolveIcon(modern, 'minecraft:chest')).spec as typeof spec;
+		expect(flipped.elements[0].faces.up.uv).toEqual([7, 8.25, 10.5, 4.75]);
+		expect(flipped.elements[0].faces.south.uv).toEqual([3.5, 10.75, 7, 8.25]);
+
+		// 1.21.4: the item definition names a special chest model and its texture.
+		const definitions = await Resources.load(
+			[],
+			await jar('c.jar', {
+				'assets/minecraft/items/trapped_chest.json': json({
+					model: { type: 'minecraft:select', cases: [], fallback: { type: 'minecraft:special', base: 'minecraft:item/trapped_chest', model: { type: 'minecraft:chest', texture: 'minecraft:trapped' } } }
+				}),
+				'assets/minecraft/textures/entity/chest/trapped.png': PNG,
+				'assets/minecraft/textures/entity/chest/normal_left.png': PNG
+			})
+		);
+		expect((await resolveIcon(definitions, 'minecraft:trapped_chest')).spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'minecraft:entity/chest/trapped' } } }, {}, {}] });
 	});
 
 	it('reads the lang files once per set of resources', async () => {
