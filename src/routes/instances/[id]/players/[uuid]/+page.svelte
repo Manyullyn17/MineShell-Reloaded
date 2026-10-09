@@ -56,8 +56,9 @@
 	const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 	const itemNames = $derived(new Map((allItems ?? []).map((i) => [i.id, i.name])));
 	$effect(() => {
-		// The names the tooltip shows come with the picker's list.
-		if (canHover) void loadItems();
+		// Item names (language files) come with the picker's list: the tooltip shows them,
+		// and so do phone list cells and slots without a picture.
+		void loadItems();
 	});
 	function hover(event: MouseEvent, loc: Loc) {
 		const item = itemAt(loc);
@@ -417,6 +418,9 @@
 			.sort((a, b) => a.label.localeCompare(b.label))
 	);
 	const short = (id: string) => (id.split(':').pop() ?? id).replace(/_/g, ' ');
+	/** Custom name, else the language files' (itemicons.ts itemName), else the id as it would make it until those load. */
+	const nameOf = (item: { id: string; name: string | null }) =>
+		item.name ?? itemNames.get(item.id) ?? short(item.id).replace(/(^|\s)(\S)/g, (_m, s: string, c: string) => s + c.toUpperCase());
 	const SLOT_LABELS: Record<number, string> = { 103: 'Head', 102: 'Chest', 101: 'Legs', 100: 'Feet', [-106]: 'Offhand' };
 	const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 	const FORMAT_LABEL = { legacy: 'Minecraft 1.12 and older', flat: 'Minecraft 1.13 to 1.20.4', components: 'Minecraft 1.20.5 and newer' };
@@ -461,7 +465,7 @@
 {#if hovered}
 	{@const h = hovered}
 	<div class="tooltip" role="tooltip" style:left="{h.x + 14}px" style:top="{h.y + 14}px">
-		<div class="tip-name" class:custom={!!h.item.name}>{h.item.name ?? itemNames.get(h.item.id) ?? short(h.item.id)}</div>
+		<div class="tip-name" class:custom={!!h.item.name}>{nameOf(h.item)}</div>
 		{#each h.item.fields.enchantments as e, i (i)}<div class="tip-enchant">{enchantLine(e)}</div>{/each}
 		{#each h.item.fields.lore as line, i (i)}<div class="tip-lore">{line}</div>{/each}
 		{#if h.item.fields.unbreakable}<div class="tip-blue">Unbreakable</div>{/if}
@@ -480,7 +484,7 @@
 		class:filled={!!item}
 		aria-pressed={sameLoc(current, loc)}
 		title={canHover && item ? undefined : item ? `${item.id}${item.name ? ` "${item.name}"` : ''}${item.count > 1 ? ` x${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
-		aria-label={item ? `${item.name ?? itemNames.get(item.id) ?? short(item.id)}${item.count > 1 ? `, ${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
+		aria-label={item ? `${nameOf(item)}${item.count > 1 ? `, ${item.count}` : ''}` : `Empty${label ? ` (${label})` : ''}`}
 		onclick={() => pick(loc, nested)}
 		onmouseenter={(e) => hover(e, loc)}
 		onmousemove={(e) => hover(e, loc)}
@@ -490,7 +494,7 @@
 			<ItemIcon loader={icons} id={item.id} damage={item.damage} size={32} onresult={(shown) => (pictured[iconKey(item.id, item.damage)] = shown)} />
 			<!-- In a list (wide on a phone) the name goes next to the picture; elsewhere only without one. -->
 			{#if wide || !pictured[iconKey(item.id, item.damage)]}
-				<span class="item-name" class:beside={wide && pictured[iconKey(item.id, item.damage)]}>{item.name ?? itemNames.get(item.id) ?? short(item.id)}</span>
+				<span class="item-name" class:beside={wide && pictured[iconKey(item.id, item.damage)]}>{nameOf(item)}</span>
 			{/if}
 			{#if item.count > 1}<span class="count">{item.count}</span>{/if}
 			{#if item.containers.length}<span class="holds" aria-label="holds items">▣</span>
