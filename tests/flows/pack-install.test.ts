@@ -317,7 +317,8 @@ describe('installing a pack', () => {
 		fakeInstall('fabric');
 		const { instance, taskId } = await createFromPack('Not Started', pack({ missing: true }), { source: 'curseforge' }, { startWhenReady: true });
 		expect((await waitForTask(taskId)).log.join('\n')).toMatch(/Not starting the server: some mods could not be downloaded/);
-		expect(Object.keys(await tree(instance.path))).not.toContain('eula.txt');
+		// "& start" says it accepts the EULA, and does so at once (the page does not ask while it installs).
+		expect(Object.keys(await tree(instance.path))).toContain('eula.txt');
 		expect(spawnCalls.some((c) => c.args.includes('start') && c.args.some((a) => a.includes(instance.id)))).toBe(false);
 	});
 });

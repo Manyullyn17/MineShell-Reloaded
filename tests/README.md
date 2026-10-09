@@ -200,3 +200,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | playit.gg: link by claim, unit, tunnels per server (AgentVersionTooOld retried, Premium refused, port followed, deleted with the server), a just-made tunnel kept on start, agent turned away over the limit, unlink | `flows/playit.test.ts` |
 | No icons past the 500th item (a player's Baubles after 450 ProjectE knowledge entries): the page asked for all in one request | `src/lib/shared/itemicon.test.ts` |
 | (feature) Tooltip facts: vanilla max durability, 1.20.5 max_damage, stored energy | `src/lib/server/playeritems.test.ts` |
+| The EULA ticked on the new-server form was written only at the end, so the server's page asked for it while it installed | `flows/instance-defaults.test.ts` |
+| (feature) Self-update: check, verified download, installer as its own unit, refusals, result after the restart | `src/lib/server/selfupdate.test.ts` |

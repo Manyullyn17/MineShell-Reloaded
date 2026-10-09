@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createFromLoader, createFromPack } = await import('#lib/server/instances.js');
+const { createFromLoader, createFromPack, eulaIsAccepted } = await import('#lib/server/instances.js');
 const { LOADERS } = await import('#lib/server/modloaders.js');
 const { packFromFileList } = await import('#lib/server/packs/index.js');
 const { readProperties } = await import('#lib/server/properties.js');
@@ -177,9 +177,24 @@ describe('choices made when adding a server', () => {
 		expect((await fs.readdir(path.dirname(instance.path))).length).toBe(before);
 	});
 
-	it('accepts the EULA once installed without starting the server', async () => {
+	it('accepts the EULA ticked on the form at once, so the page does not ask while it installs', async () => {
 		const { instance, taskId } = await createFromLoader({ name: 'Eula', minecraftVersion: '1.21.1', modloader: 'fabric', acceptEula: true });
+		expect(await eulaIsAccepted(instance)).toBe(true);
+		expect(reload(instance.id).eulaAccepted).toBe(true);
 		expect((await waitForTask(taskId)).state).toBe('done');
 		expect(await fs.readFile(path.join(instance.path, 'eula.txt'), 'utf8')).toMatch(/eula=true/);
+	});
+
+	it("accepts it for a pack too, and again after the pack's own eula.txt", async () => {
+		served['https://files.test/eula/overrides.zip'] = () =>
+			new Response(new Uint8Array(zipBuffer({ 'overrides/eula.txt': 'eula=false\n' })));
+		const pack = packFromFileList({
+			name: 'P', version: '1', minecraftVersion: '1.21.1', modloader: 'fabric', modloaderVersion: null,
+			files: [{ path: './', name: 'overrides.zip', url: 'https://files.test/eula/overrides.zip' }]
+		});
+		const { instance, taskId } = await createFromPack('Eula pack', pack, { source: 'curseforge' }, { acceptEula: true });
+		expect(await eulaIsAccepted(instance)).toBe(true);
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(await eulaIsAccepted(instance)).toBe(true);
 	});
 });

@@ -275,6 +275,11 @@ async function insertInstanceRow(
 		})
 	);
 
+	// Accepted on the form: written now, so the server's page does not ask again
+	// while it installs. The install checks it again at the end (a pack can ship
+	// its own eula.txt).
+	if (input.acceptEula || input.startWhenReady) await acceptEula(requireInstance(id));
+
 	return requireInstance(id);
 }
 
@@ -403,7 +408,7 @@ export async function createFromLoader(input: CreateInstanceInput): Promise<{ in
 				commitOperation(instance.id, { status: 'ready', statusMessage: null });
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
 				if (input.startWhenReady) await startWhenInstalled(instance.id, task);
-				else if (input.acceptEula) await acceptEula(requireInstance(instance.id));
+				else if (input.acceptEula && !(await eulaIsAccepted(requireInstance(instance.id)))) await acceptEula(requireInstance(instance.id));
 				task.setProgress(100, 'Ready');
 			})
 		);
@@ -650,7 +655,9 @@ export async function createFromPack(
 		packName: pack.name,
 		packProjectId: meta.projectId ?? null,
 		packVersionId: meta.versionId ?? pack.version,
-		packVersionName: pack.version
+		packVersionName: pack.version,
+		acceptEula: overrides.acceptEula,
+		startWhenReady: overrides.startWhenReady
 	});
 
 	const taskId = provisionFromPack(instance, pack, java, notes, {

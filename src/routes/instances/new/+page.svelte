@@ -724,7 +724,7 @@
 			<input type="checkbox" name="acceptEula" />
 			<span>
 				<strong>I agree to the <a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a></strong>
-				<span class="small muted">Writes eula=true once installed, so the server can start. "Create &amp; start" accepts it too; you can also accept later.</span>
+				<span class="small muted">Writes eula=true, so the server can start once installed. "Create &amp; start" accepts it too; you can also accept later.</span>
 			</span>
 		</label>
 
