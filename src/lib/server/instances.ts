@@ -45,6 +45,7 @@ import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
 import { applyMapModConfig, deleteMapData } from './worldmap';
+import { deletePlayitData, syncTunnel } from './playit';
 import {
 	beginOperation,
 	commitOperation,
@@ -1165,6 +1166,8 @@ export async function start(instance: ServerInstance, opts: { internal?: boolean
 	clearStopIntent(instance.id);
 	// A map mod's web server on its own port, localhost only (MineShell passes it through).
 	await applyMapModConfig(instance).catch(() => undefined);
+	// A public server's playit tunnel follows its port, which changes only on a (re)start.
+	await syncTunnel(instance).catch((err) => console.warn(`playit tunnel for ${instance.id} not updated:`, err));
 	const sync = await syncUnit(instance);
 	await resetFailed(instance.id);
 	const res = await startUnit(instance.id);
@@ -1360,6 +1363,7 @@ export async function deleteInstance(
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
+	await deletePlayitData(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,
 		detail: opts.deleteFiles ? 'files removed' : 'files kept'

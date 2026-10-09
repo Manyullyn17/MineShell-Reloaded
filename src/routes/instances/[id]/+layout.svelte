@@ -12,6 +12,8 @@
 	// Streamed: whether Spark is installed (the first look opens every mod jar).
 	const sparkInfo = streamed(() => data.spark, () => data.instance.id);
 	const spark = $derived(sparkInfo.ready ? sparkInfo.value : null);
+	const publicInfo = streamed(() => data.publicAddress, () => data.instance.id);
+	const publicAddress = $derived(publicInfo.ready ? (publicInfo.value?.address ?? null) : null);
 
 	const tabs = [
 		{ slug: '', label: 'Overview' },
@@ -59,9 +61,9 @@
 		};
 	};
 
-	async function copyAddress() {
-		await navigator.clipboard?.writeText(data.address).catch(() => undefined);
-		message = { ok: true, message: `Copied ${data.address}.` };
+	async function copyAddress(address = data.address) {
+		await navigator.clipboard?.writeText(address).catch(() => undefined);
+		message = { ok: true, message: `Copied ${address}.` };
 		menuOpen = false;
 	}
 
@@ -98,6 +100,11 @@
 						: ''}
 				</span>
 				<span class="tag">:{data.instance.serverPort}</span>
+				{#if publicAddress}
+					<button type="button" class="tag public-tag" title="Public through playit.gg: what players type. Click to copy." onclick={() => copyAddress(publicAddress)}>
+						{publicAddress}
+					</button>
+				{/if}
 				{#if data.instance.packName}
 					<span class="tag">
 						{data.instance.packName}{data.instance.packVersionName ? ` · ${data.instance.packVersionName}` : ''}
@@ -154,9 +161,14 @@
 							{/each}
 						{/if}
 						<div class="menu-head">Server</div>
-						<button type="button" role="menuitem" onclick={copyAddress}>
+						<button type="button" role="menuitem" onclick={() => copyAddress()}>
 							<span>Copy address</span><span class="hint mono">{data.address}</span>
 						</button>
+						{#if publicAddress}
+							<button type="button" role="menuitem" onclick={() => copyAddress(publicAddress)}>
+								<span>Copy public address</span><span class="hint mono">{publicAddress}</span>
+							</button>
+						{/if}
 						<button type="submit" role="menuitem" formaction={actionUrl('pin')}>
 							<span>{data.instance.pinned ? 'Unpin from the top of the list' : 'Pin to top of list'}</span>
 						</button>
@@ -249,6 +261,15 @@
 		display: flex;
 		gap: 0.4rem;
 		flex-wrap: wrap;
+	}
+
+	/* The public address, a tag that copies itself. */
+	.public-tag {
+		background: none;
+		color: var(--accent-hover);
+		border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+		cursor: pointer;
+		font-weight: normal;
 	}
 
 	.actions {

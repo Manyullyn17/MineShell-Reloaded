@@ -5,6 +5,7 @@ import { getCountdown } from '#lib/server/countdown.js';
 import { activeProfile, hasSpark } from '#lib/server/spark.js';
 import { primaryLanAddress } from '#lib/server/network.js';
 import { LOADERS } from '#lib/server/modloaders.js';
+import { playitStatus, publicAddress, serverTunnel } from '#lib/server/playit.js';
 import type { ModloaderId } from '#lib/server/modloaders.js';
 
 export const load: LayoutServerLoad = async ({ params, url }) => {
@@ -39,6 +40,8 @@ export const load: LayoutServerLoad = async ({ params, url }) => {
 		address: `${primaryLanAddress()}:${instance.serverPort}`,
 		// Streamed: the first look opens every mod jar (0.2-0.7 s on a big pack), and every tab loads this.
 		spark: hasSpark(instance.path).then((has) => (has ? { active: activeProfile(instance.id) !== null } : null)),
+		// Public through playit.gg: what players type. Streamed, as it asks playit's API (kept 15 s).
+		publicAddress: serverTunnel(instance.id) ? playitStatus().then((status) => publicAddress(instance.id, status)) : null,
 		section: url.pathname.split('/')[3] ?? 'overview'
 	};
 };

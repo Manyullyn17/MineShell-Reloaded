@@ -146,6 +146,13 @@ the mods' own models. Updated when you ask or on a schedule; shown behind MineSh
 Forge 1.12.2 servers get a live map from Dynmap and DynmapBlockScan, installed from the Map
 tab; on 1.13+ the BlueMap mod can be added for a live map with players on it.
 
+**Public address (playit.gg).** Players outside your network join without port forwarding:
+link a playit.gg account (free works) in MineShell settings, Integrations - you approve it on
+playit.gg, no password passes through MineShell - and switch a server public in its settings,
+Network. MineShell runs playit's agent as a user unit, makes the server's tunnel, keeps it on
+the server's port and deletes it with the server; the address players type is in the header.
+Premium regions are offered when the account has Premium.
+
 **Player editor item pictures.** Inventories show the items' real icons, read from the server's
 mod jars and Minecraft's own client (after the EULA answer shared with the Map tab), 3D for
 blocks; on 1.12 packs a variant MineShell had to guess is marked. Items can be picked by name

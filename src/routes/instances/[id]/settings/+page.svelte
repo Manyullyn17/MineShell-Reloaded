@@ -164,6 +164,9 @@
 
 	let rotateRcon = $state(false);
 	let showRcon = $state(false);
+	const playitInfo = streamed(() => data.playit.status, () => data.instance.id);
+	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
+	let playitRegion = $state('global');
 	let presetToApply = $state('');
 	let presetName = $state('');
 	let showSavePreset = $state(false);
@@ -818,6 +821,72 @@
 		</form>
 	</SettingsSection>
 
+	<SettingsSection
+		tab="network"
+		title="Public address (playit.gg)"
+		description="Players outside your network join through playit.gg, without port forwarding."
+	>
+		{#if !data.playit.linked}
+			<p class="hint">
+				Link playit.gg first, in <a href="/settings?tab=integrations">MineShell settings, Integrations</a>.
+			</p>
+		{:else if data.playit.tunnel}
+			<div class="rows">
+				<div class="field">
+					<span class="label">Address players type</span>
+					{#if !playit}
+						<p class="hint">Asking playit.gg...</p>
+					{:else if playit.address?.address}
+						<code class="public-address">{playit.address.address}</code>
+						<p class="hint">
+							Through playit.gg to port {data.settings.serverPort}{data.playit.tunnel.region !== 'global'
+								? `, region ${data.playit.regions.find((r) => r.id === data.playit.tunnel?.region)?.label ?? data.playit.tunnel.region}`
+								: ''}. Follows the game port when the server starts. A new address can take a few minutes before it
+							works everywhere.
+						</p>
+					{:else}
+						<p class="hint">playit.gg is still setting up the address; it shows up here in a moment.</p>
+					{/if}
+					{#if playit && !playit.running}
+						<p class="hint warn-text">The playit agent is not running or not connected, so the address does not answer; see MineShell settings, Integrations.</p>
+					{/if}
+				</div>
+			</div>
+			<form
+				method="POST"
+				action="?/playitPrivate"
+				use:enhance
+				class="button-row"
+				onsubmit={(e) => {
+					if (!confirm('Stop being public? The tunnel is deleted; switching on again gives a new address.')) e.preventDefault();
+				}}
+			>
+				<button class="button-quiet" type="submit">Stop being public</button>
+			</form>
+		{:else}
+			<form method="POST" action="?/playitPublic" use:enhance class="rows">
+				<div class="field">
+					<label for="playit-region">Region</label>
+					<select id="playit-region" name="region" bind:value={playitRegion}>
+						{#each data.playit.regions as region (region.id)}
+							<option value={region.id} disabled={region.premium && !playit?.premium}>
+								{region.label}{region.premium && !playit?.premium ? ' (needs playit Premium)' : ''}
+							</option>
+						{/each}
+					</select>
+					<p class="hint">
+						Where the public address lives. Global picks the nearest playit location for each player; a fixed
+						region, a dedicated IP and your own domain are playit Premium (dedicated IPs and domains are set up on
+						playit.gg).
+					</p>
+				</div>
+				<div class="button-row">
+					<button class="button-primary" type="submit">Make public</button>
+				</div>
+			</form>
+		{/if}
+	</SettingsSection>
+
 	<!-- ======================================================== Performance -->
 
 	<SettingsSection tab="performance" title="Distances" description="The biggest lever on CPU and memory use." dirty={dirtyIds.has('distances')}>
@@ -1236,6 +1305,11 @@
 </div>
 
 <style>
+	.public-address {
+		font-size: 1rem;
+		user-select: all;
+	}
+
 	.subhead {
 		flex-wrap: nowrap;
 	}

@@ -179,6 +179,12 @@ Keep both `Host` and `X-Forwarded-Proto`: MineShell refuses form submissions who
 `X-Forwarded-Host` if your proxy sets it), which stops other sites driving your panel, and
 marks the login cookie `Secure` when the browser used https.
 
+For players outside your network without opening ports, link playit.gg (MineShell settings,
+Integrations) and make the server public in its settings: playit's agent runs as the user unit
+`<prefix>-playit.service` next to the servers (`journalctl --user -u <prefix>-playit` for its
+log), only connecting out. A free account takes one agent: remove old ones on playit.gg, or
+the new one is turned away until you do.
+
 Never expose an RCON port. It is plaintext and only weakly authenticated, and only MineShell
 on the same machine needs it. Minecraft listens for RCON on every interface unless
 `server-ip` is set (which binds the game port to that address too), so keep the RCON ports

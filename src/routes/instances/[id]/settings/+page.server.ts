@@ -53,6 +53,7 @@ import {
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portConflict } from '#lib/server/ports.js';
+import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel } from '#lib/server/playit.js';
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
 	PROPERTY_SCHEMA,
@@ -111,6 +112,20 @@ export const load: PageServerLoad = async ({ params }) => {
 		jvmPresets: listPresets(),
 		// Streamed: it may search the journal for an out-of-memory crash.
 		memoryAdvice: memoryAdvice(instance).catch(() => null),
+		playit: {
+			linked: linkedAgent().agentId !== null,
+			tunnel: serverTunnel(instance.id),
+			regions: REGIONS,
+			// Streamed: it asks playit's API.
+			status: linkedAgent().agentId
+				? playitStatus().then((status) => ({
+						address: publicAddress(instance.id, status),
+						premium: status.premium,
+						running: status.running && !status.problem,
+						error: status.error
+					}))
+				: null
+		},
 		settings: {
 			name: instance.name,
 			minecraftVersion: instance.minecraftVersion,
@@ -495,6 +510,30 @@ export const actions: Actions = {
 
 		await syncPortsToProperties(requireInstance(instance.id));
 		return { ok: true, message: ['Saved and written to server.properties. Restart to apply.', ...moved].join(' '), notes: moved };
+	},
+
+	playitPublic: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const region = String((await request.formData()).get('region') ?? 'global');
+		if (!REGIONS.some((r) => r.id === region)) return fail(400, { ok: false, message: 'Unknown region.' });
+		try {
+			await makePublic(instance, region);
+		} catch (err) {
+			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Public through playit.gg. The address shows up here and in the header in a moment.' };
+	},
+
+	playitPrivate: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		try {
+			await makePrivate(instance.id);
+		} catch (err) {
+			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'No longer public: the playit tunnel and its address are deleted.' };
 	},
 
 	addCommand: async ({ request, params }) => {

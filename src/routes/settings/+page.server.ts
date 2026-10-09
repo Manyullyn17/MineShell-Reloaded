@@ -9,6 +9,19 @@ import {
 } from '#lib/server/config.js';
 import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '#lib/server/curseforge.js';
 import {
+	AGENT_UNIT,
+	cancelLink,
+	claimState,
+	linkedAgent,
+	otherTunnels,
+	playitStatus,
+	PlayitError,
+	publicAddress,
+	serverTunnel,
+	startLink,
+	unlink
+} from '#lib/server/playit.js';
+import {
 	installTemplateUnit,
 	probeSystemd,
 	renderTemplateUnit,
@@ -48,6 +61,28 @@ import {
 } from '#lib/server/snapshots.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 
+/** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
+async function playitOverview() {
+	const status = await playitStatus();
+	return {
+		running: status.running,
+		error: status.error,
+		problem: status.problem,
+		premium: status.premium,
+		accountStatus: status.accountStatus,
+		servers: listInstances()
+			.filter((i) => serverTunnel(i.id))
+			.map((i) => ({ id: i.id, name: i.name, port: i.serverPort, ...publicAddress(i.id, status) })),
+		others: otherTunnels(status).map((t) => ({
+			id: t.id,
+			name: t.name,
+			address: t.display_address,
+			localPort: t.localPort,
+			server: listInstances().find((i) => i.serverPort === t.localPort)?.name ?? null
+		}))
+	};
+}
+
 export const load: PageServerLoad = async () => {
 	const systemd = await probeSystemd();
 	return {
@@ -64,6 +99,13 @@ export const load: PageServerLoad = async () => {
 		javaDownloads: javaDownloads(),
 		authEnabled: authEnabled(),
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
+		playit: {
+			linked: linkedAgent().agentId !== null,
+			claim: claimState() ? { ...claimState()! } : null,
+			unit: AGENT_UNIT,
+			// Streamed: it asks playit's API.
+			status: linkedAgent().agentId ? playitOverview() : null
+		},
 		snapshots: policyFormValues(getSnapshotPolicy()),
 		snapshotUsage: await Promise.all(
 			listInstances().map(async (i) => ({
@@ -207,6 +249,29 @@ export const actions: Actions = {
 		if (!apiKey) return fail(400, { ok: false, message: 'Enter a key, or use "Remove" to clear it.' });
 		const result = await setCurseforgeApiKey(apiKey);
 		return { ok: result.ok, message: result.message };
+	},
+
+	playitLink: async () => {
+		try {
+			startLink();
+			return { ok: true, message: 'Open the link and approve MineShell on playit.gg.' };
+		} catch (err) {
+			if (err instanceof PlayitError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	playitCancel: async () => {
+		cancelLink();
+		return { ok: true, message: 'Linking cancelled.' };
+	},
+
+	playitUnlink: async () => {
+		await unlink();
+		return {
+			ok: true,
+			message: "Unlinked: MineShell's tunnels are deleted and the agent is stopped. The agent stays listed on playit.gg until you remove it there."
+		};
 	},
 
 	removeCurseforgeKey: async () => {

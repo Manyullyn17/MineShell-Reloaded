@@ -441,6 +441,25 @@ server's), and writes it with a localhost-only bind into the mod's config before
 default port). `/instances/<id>/map/live/` passes requests through to that port behind
 MineShell's login - bodies streamed, MineShell's own cookies and auth headers not passed on.
 
+### playit.gg tunnels
+
+`playit.ts`. One playit agent per machine, a user unit `<prefix>-playit.service` (enabled,
+`Restart=always`, logs to the journal) running the pinned release
+(`$DATA/playit/playit-<version>`, SHA-256 from GitHub's release digests) with its key in
+`$DATA/playit/agent.key` (0600) and its IPC socket in `%t` - a path under `$DATA` can exceed
+a socket's 108-byte limit. Linking is playit's claim flow (`/claim/setup` until the user
+approves `https://playit.gg/claim/<code>`, then `/claim/exchange` for the key), claimed as a
+`self-managed` agent, which may create tunnels. Each public server has one Minecraft Java
+tunnel (`/tunnels/create`; the v1 endpoint rejects every body) to `server-ip` or 127.0.0.1 on
+its game port, remembered in the `playit:<id>` settings row. Before every start the tunnel is
+pointed at the current port with `/tunnels/update` (same tunnel, same address; a changed port
+only applies on restart); one that is gone from the account (`/tunnels/list`, not the run
+data, which lists new tunnels a moment late) is forgotten. Deleted with the server, when
+switched off, and on unlink (the agent stays on the account: the API cannot delete it).
+The run data (tunnels, `display_address`, Premium) is kept 15 s and streamed to pages.
+playit refusing the agent is only in its log (`AgentDisabledOverLimit`: a free account takes
+one agent), so the status reads the last lines.
+
 ## Safety and confinement
 
 **Path traversal.** Every file operation goes through `safeJoin()` in `files.ts`, which

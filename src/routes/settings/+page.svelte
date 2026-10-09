@@ -5,6 +5,8 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data, form } = $props();
 
@@ -17,6 +19,25 @@
 	$effect(() => {
 		snap = { ...data.snapshots };
 	});
+
+	const playitInfo = streamed(() => data.playit.status);
+	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
+	// While a link waits for its approval on playit.gg, look again every 2 s.
+	const claiming = $derived(!!data.playit.claim && ['waiting', 'visited', 'finishing'].includes(data.playit.claim.state));
+	$effect(() => {
+		if (!claiming) return;
+		const timer = setInterval(() => void invalidateAll(), 2000);
+		return () => clearInterval(timer);
+	});
+	const CLAIM_TEXT: Record<string, string> = {
+		waiting: 'Waiting for you to open the link.',
+		visited: 'Waiting for you to approve it on playit.gg.',
+		finishing: 'Approved. Downloading and starting the agent...',
+		linked: 'Linked.',
+		rejected: 'Not approved on playit.gg.',
+		expired: 'The link expired (10 minutes); start again.',
+		failed: 'Linking failed.'
+	};
 </script>
 
 <svelte:head><title>MineShell settings - MineShell</title></svelte:head>
@@ -250,6 +271,100 @@
 		</form>
 	{/if}
 </section>
+<section class="panel">
+	<h2>playit.gg</h2>
+	<p>
+		Lets players reach a server from outside without port forwarding: playit gives it a public
+		address and passes the connections through a small program (the playit agent) that MineShell
+		runs next to the servers. Free accounts work; each server is made public in its own
+		settings (Network).
+	</p>
+
+	{#if !data.playit.linked}
+		{#if data.playit.claim && claiming}
+			<div class="notice">
+				<p>
+					Open <a href={data.playit.claim.url} target="_blank" rel="noreferrer">{data.playit.claim.url}</a> while signed in to
+					playit.gg and approve it.
+				</p>
+				<p class="small muted">{CLAIM_TEXT[data.playit.claim.state]}</p>
+			</div>
+			<form method="POST" action="?/playitCancel" use:enhance class="inline-form">
+				<button class="button-quiet" type="submit" disabled={data.playit.claim.state === 'finishing'}>Cancel</button>
+			</form>
+		{:else}
+			{#if data.playit.claim && data.playit.claim.state !== 'linked'}
+				<div class="notice warning">
+					<p>{CLAIM_TEXT[data.playit.claim.state]}{data.playit.claim.message ? ` ${data.playit.claim.message}` : ''}</p>
+				</div>
+			{/if}
+			<form method="POST" action="?/playitLink" use:enhance class="inline-form">
+				<button class="button-primary" type="submit">Link playit.gg</button>
+			</form>
+			<p class="muted small">
+				You approve MineShell on playit.gg; no password or account key passes through MineShell. Needs a
+				free account at <a href="https://playit.gg" target="_blank" rel="noreferrer">playit.gg</a>.
+			</p>
+		{/if}
+	{:else if !playit}
+		<p class="muted small">Asking playit.gg...</p>
+	{:else}
+		<div class="notice {playit.running && !playit.error && !playit.problem ? 'success' : 'warning'}">
+			<p>
+				{#if playit.error}
+					{playit.error}
+				{:else if playit.problem}
+					{playit.problem}
+				{:else if !playit.running}
+					Linked, but the agent is not running (unit <code>{data.playit.unit}</code>); public servers cannot be reached.
+				{:else}
+					Linked; the agent is running. {playit.premium ? 'playit Premium.' : 'Free plan.'}
+				{/if}
+			</p>
+		</div>
+		{#if playit.servers.length}
+			<h3>Public servers</h3>
+			<ul class="plain-list">
+				{#each playit.servers as server (server.id)}
+					<li>
+						<a href="/instances/{server.id}/settings?tab=network">{server.name}</a>
+						<span class="mono">{server.address ?? 'getting an address...'}</span>
+						<span class="faint small">to port {server.port}</span>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="muted small">No server is public yet: switch it on in a server's settings, Network.</p>
+		{/if}
+		{#if playit.others.length}
+			<h3>Other tunnels on this agent</h3>
+			<p class="muted small">Made on playit.gg, not by MineShell; they keep working, MineShell leaves them alone.</p>
+			<ul class="plain-list">
+				{#each playit.others as tunnel (tunnel.id)}
+					<li>
+						<span>{tunnel.name}</span>
+						<span class="mono">{tunnel.address}</span>
+						<span class="faint small">
+							to port {tunnel.localPort ?? '?'}{tunnel.server ? ` (${tunnel.server})` : ''}
+						</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<form
+			method="POST"
+			action="?/playitUnlink"
+			use:enhance
+			class="inline-form"
+			onsubmit={(e) => {
+				if (!confirm("Unlink playit.gg? MineShell's tunnels are deleted (their addresses are gone for good) and the agent stops.")) e.preventDefault();
+			}}
+		>
+			<button class="button-danger" type="submit">Unlink</button>
+		</form>
+		<p class="muted small">The agent stays listed on playit.gg after unlinking; remove it there if you like.</p>
+	{/if}
+</section>
 {:else if tab === 'security'}
 {#if data.authEnabled}
 	<section class="panel">
@@ -368,6 +483,21 @@
 </div>
 
 <style>
+	.plain-list {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-3);
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.plain-list li {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem 0.8rem;
+		align-items: baseline;
+	}
+
 	.usage-heading {
 		margin-top: var(--space-5);
 	}

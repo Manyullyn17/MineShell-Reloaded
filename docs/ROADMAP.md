@@ -318,6 +318,18 @@ reverse proxy — is where this should land unless there is a specific reason ot
 
 ### playit.gg tunnels
 
+**Built (2026-10-09)** (`playit.ts`; ARCHITECTURE, "playit.gg tunnels"). The user's calls: a
+per-server public switch (Settings, Network) with the address in the header; the agent runs
+while linked; Premium-only regions shown greyed out on free (the API refuses them:
+`RequiresPlayitPremium`; the website's free location choice is the agent's routing); linking
+from MineShell's own button. Tried live on the user's free account through the throwaway
+dev server: linked, Flicker made public, started, and a server-list ping through
+`fried-saturn.tun.ply.gg` answered from the server. Found doing so: a second agent on a free
+account is refused (`AgentDisabledOverLimit`), shown from the agent's log; a new tunnel is in
+the account's list before the agent's run data (the first version forgot it on start); a new
+hostname can take minutes to resolve. Not built: dedicated IPs and custom domains (set up on
+playit.gg), the agent's routing choice, adopting dashboard-made tunnels (listed, left alone).
+
 Connect MineShell to a playit.gg account and let it manage tunnels for servers, so a
 server can be reached from outside without port forwarding. Different job from "Remote
 access" above: that is reaching MineShell, this is players reaching the game. Requested
