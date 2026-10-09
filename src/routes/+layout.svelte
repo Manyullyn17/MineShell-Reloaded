@@ -5,6 +5,7 @@
 	import { describeState } from '#lib/shared/format.js';
 	import NotificationCenter from '#lib/components/NotificationCenter.svelte';
 	import LogoMark from '#lib/components/LogoMark.svelte';
+	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import TapTips from '#lib/components/TapTips.svelte';
 
 	let { data, children } = $props();
@@ -89,7 +90,10 @@
 									href="/instances/{instance.id}"
 									onclick={() => (railOpen = false)}
 								>
-									<span class="dot {state.tone}"></span>
+									<span class="rail-icon">
+										<ServerIcon id={instance.id} name={instance.name} iconVersion={instance.iconVersion} size={32} />
+										<span class="dot {state.tone}"></span>
+									</span>
 									<span class="rail-instance-text">
 										<span class="rail-instance-name">{instance.name}</span>
 										<span class="rail-instance-sub">
@@ -323,10 +327,30 @@
 		background: var(--panel);
 	}
 
+	.rail-instance {
+		--row-bg: var(--bg-sunken);
+	}
+	.rail-instance:hover {
+		--row-bg: color-mix(in srgb, var(--panel) 60%, var(--bg-sunken));
+	}
+	.rail-instance.current {
+		--row-bg: var(--panel);
+	}
+
+	/* The status dot sits on the icon's corner, ringed in the row's colour. */
+	.rail-icon {
+		position: relative;
+		display: inline-flex;
+		flex: none;
+	}
+
 	.rail-instance .dot {
-		width: 9px;
-		height: 9px;
-		flex-basis: 9px;
+		position: absolute;
+		right: -3px;
+		bottom: -3px;
+		width: 11px;
+		height: 11px;
+		box-shadow: 0 0 0 2px var(--row-bg);
 	}
 
 	.rail-instance-text {

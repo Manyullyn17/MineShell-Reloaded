@@ -1386,6 +1386,8 @@ export type InstanceSummary = {
 	uptimeMs: number;
 	javaWarning: string | null;
 	eulaAccepted: boolean;
+	/** server-icon.png's modification time (for the icon's address), null without one. */
+	iconVersion: number | null;
 };
 
 // -------------------------------------------------------------------- clone ---
@@ -1509,8 +1511,14 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 		running,
 		uptimeMs: running && state.activeEnterTimestamp ? Date.now() - state.activeEnterTimestamp : 0,
 		javaWarning: java.warning,
-		eulaAccepted: await eulaIsAccepted(instance)
+		eulaAccepted: await eulaIsAccepted(instance),
+		iconVersion: await iconVersion(instance)
 	};
+}
+
+export async function iconVersion(instance: ServerInstance): Promise<number | null> {
+	const stat = await fs.stat(path.join(instance.path, 'server-icon.png')).catch(() => null);
+	return stat?.isFile() ? Math.round(stat.mtimeMs) : null;
 }
 
 export async function summariseAll(): Promise<InstanceSummary[]> {

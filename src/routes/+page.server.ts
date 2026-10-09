@@ -41,6 +41,7 @@ export const load: PageServerLoad = async () => {
 				gaveUpAfter: gaveUpAfter(summary.state.active, summary.state.result, summary.instance.crashRestartLimit),
 				uptimeMs: summary.uptimeMs,
 				eulaAccepted: summary.eulaAccepted,
+				iconVersion: summary.iconVersion,
 				javaWarning: summary.javaWarning,
 				schedule: describeSchedule(summary.instance),
 				nextRestartAt: summary.instance.restartNextAt,

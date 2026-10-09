@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
 	import { invalidateAll } from '$app/navigation';
@@ -89,6 +90,7 @@
 	<header class="instance-head">
 		<div class="identity">
 			<div class="title">
+				<ServerIcon id={data.instance.id} name={data.instance.name} iconVersion={data.iconVersion} size={40} />
 				<h1>{data.instance.name}</h1>
 				<StatusPill active={data.state.active} sub={data.state.sub} />
 			</div>

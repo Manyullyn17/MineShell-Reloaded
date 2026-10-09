@@ -19,6 +19,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			summaries.map(async (s) => ({
 				id: s.instance.id,
 				name: s.instance.name,
+				iconVersion: s.iconVersion,
 				active: s.state.active,
 				sub: s.state.sub,
 				pinned: s.instance.pinned,

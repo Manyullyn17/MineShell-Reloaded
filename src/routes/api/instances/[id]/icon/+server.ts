@@ -30,7 +30,9 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 	}
 	const bytes = await fs.readFile(path.join(instance.path, ICON)).catch(() => null);
 	if (!bytes) error(404, 'No icon.');
-	return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' } });
+	// ?v=<modification time> (sidebar, header): a changed icon has another address, so this one can be kept.
+	const cache = url.searchParams.has('v') ? 'private, max-age=31536000, immutable' : 'no-store';
+	return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png', 'Cache-Control': cache } });
 };
 
 /** Raw PNG body; the page scales whatever was picked to 64x64 first. */

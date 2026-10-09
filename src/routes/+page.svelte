@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
 	import StatusPill from '#lib/components/StatusPill.svelte';
@@ -101,6 +102,7 @@
 			<article class="panel card" data-tone={tone}>
 				<div class="card-head">
 					<div class="title">
+						<ServerIcon id={instance.id} name={instance.name} iconVersion={instance.iconVersion} size={32} />
 						<a href="/instances/{instance.id}"><h2>{instance.name}</h2></a>
 					</div>
 					<div class="status">
@@ -328,22 +330,31 @@
 		color: var(--accent);
 	}
 
+	/* The status goes under the name when the name's longest word and it do not fit side by side. */
 	.card-head {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
 		align-items: flex-start;
 		gap: 0.4rem 0.6rem;
 	}
 
 	.title {
 		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+		align-items: center;
+		gap: 0.6rem;
+		flex: 1 1 min-content;
+		min-width: 0;
+	}
+
+	.title a {
 		min-width: 0;
 	}
 
 	.title h2 {
 		font-size: 1.1rem;
+		/* Only a word wider than the whole card breaks. */
+		overflow-wrap: break-word;
 	}
 
 	.status {
@@ -351,6 +362,7 @@
 		align-items: center;
 		gap: var(--space-1);
 		flex: none;
+		margin-left: auto;
 	}
 
 	.title a {

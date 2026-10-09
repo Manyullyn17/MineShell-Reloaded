@@ -20,6 +20,7 @@ const summary = (instance: Instance, active: string, running = false): Summary =
 	uptimeMs: 0,
 	javaWarning: null,
 	eulaAccepted: true,
+	iconVersion: null,
 	state: { active, sub: active === 'failed' ? 'failed' : 'running', result: 'exit-code', activeEnterTimestamp: 0, cpuUsageNsec: 0, memoryBytes: 0, mainPid: 0, nRestarts: 0 } as Summary['state']
 });
 
