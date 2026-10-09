@@ -189,6 +189,9 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
  * Icons for one server, fetched in batches: every icon asked for in the same
  * tick goes in one request, and each is drawn once.
  */
+/** The most icons one request asks for: what iconsFor answers. */
+export const ICON_BATCH = 500;
+
 export function iconLoader(instanceId: string) {
 	const base = `/api/instances/${encodeURIComponent(instanceId)}/item-icons`;
 	const textureUrl = (ref: string) => `${base}/texture?ref=${encodeURIComponent(ref)}`;
@@ -198,8 +201,14 @@ export function iconLoader(instanceId: string) {
 	let version = $state(0);
 
 	function flush() {
-		const batch = pending;
+		const all = pending;
 		pending = [];
+		// The server answers at most ICON_BATCH per request (itemicons.ts iconsFor); a big
+		// inventory (ProjectE knowledge alone can be hundreds) goes in several.
+		for (let i = 0; i < all.length; i += ICON_BATCH) send(all.slice(i, i + ICON_BATCH));
+	}
+
+	function send(batch: typeof pending) {
 		fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: batch.map(({ id, damage }) => ({ id, damage })) }) })
 			.then((r) => (r.ok ? r.json() : null))
 			.then((body: { icons: Record<string, ItemIcon>; vanilla: boolean } | null) => {

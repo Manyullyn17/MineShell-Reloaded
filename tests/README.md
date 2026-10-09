@@ -191,4 +191,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) The world map: BlueMap config per dimension, the EULA gate, serving rules and confinement | `flows/worldmap.test.ts` |
 | (feature) Item icons: 1.21.4 definitions, 1.12 parent chains, variant table, Forge blockstates, guesses flagged, EULA gate, confinement | `flows/itemicons.test.ts` |
 | Inventory blocks turned the wrong way (furnace front, stairs): the model's GUI rotation was ignored and turned backwards | `flows/itemicons.test.ts` |
+| Item names from the id: camel-case keys, escaped colons, ids starting with item., a pack's resources/ and kubejs/assets/, lang files merged key by key, 1.12 variants by their own name | `flows/itemicons.test.ts` |
+| No icons past the 500th item (a player's Baubles after 450 ProjectE knowledge entries): the page asked for all in one request | `src/lib/shared/itemicon.test.ts` |
 | (feature) Tooltip facts: vanilla max durability, 1.20.5 max_damage, stored energy | `src/lib/server/playeritems.test.ts` |

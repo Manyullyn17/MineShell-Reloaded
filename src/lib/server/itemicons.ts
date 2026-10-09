@@ -574,6 +574,7 @@ export async function iconsFor(
 	let memo = resolved.get(res);
 	if (!memo) resolved.set(res, (memo = new Map()));
 	const icons: Record<string, ItemIcon> = {};
+	// The page sends at most ICON_BATCH (lib/shared/itemicon.svelte.ts) per request.
 	for (const { id, damage } of items.slice(0, 500)) {
 		if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) continue;
 		const key = iconKey(id, damage);
