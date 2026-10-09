@@ -109,7 +109,7 @@
 				{/each}
 			</div>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="plot" onpointermove={onMove} onpointerleave={() => (hover = null)}>
+			<div class="plot" onpointerdown={onMove} onpointermove={onMove} onpointerleave={() => (hover = null)}>
 				<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" aria-label={label}>
 					<path d={grid} class="grid" />
 					<path d={area} class="fill" />
@@ -208,6 +208,9 @@
 
 	.plot {
 		position: relative;
+		/* A finger moved sideways reads the chart; only an up or down swipe scrolls the page.
+		   Otherwise the browser took the touch over for scrolling once it moved and the reading went. */
+		touch-action: pan-y;
 		background: var(--bg-sunken);
 		border: 1px solid var(--line);
 		border-radius: var(--radius);
