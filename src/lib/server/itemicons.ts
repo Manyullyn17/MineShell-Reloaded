@@ -148,7 +148,14 @@ export class Resources {
 	}
 
 	/** Every en_us line of every jar and asset folder: 1.13+'s JSON and 1.12's .lang. The first to set a key wins. */
-	async lang(): Promise<Map<string, string>> {
+	lang(): Promise<Map<string, string>> {
+		// Read once: every variant's name looks in it, and a big pack has ~100k lines.
+		return (this.langRead ??= this.readLang());
+	}
+
+	private langRead: Promise<Map<string, string>> | undefined;
+
+	private async readLang(): Promise<Map<string, string>> {
 		const out = new Map<string, string>();
 		for (const { json, read } of this.langs) {
 			const text = (await read())?.toString('utf8').replace(/^\uFEFF/, '') ?? '';
@@ -574,13 +581,16 @@ export async function iconsFor(
 	let memo = resolved.get(res);
 	if (!memo) resolved.set(res, (memo = new Map()));
 	const icons: Record<string, ItemIcon> = {};
-	// The page sends at most ICON_BATCH (lib/shared/itemicon.svelte.ts) per request.
-	for (const { id, damage } of items.slice(0, 500)) {
-		if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) continue;
-		const key = iconKey(id, damage);
-		if (!memo.has(key)) memo.set(key, resolveIcon(res, id, damage).then((icon) => withVariantName(res, id, damage, icon)).catch(() => ({ spec: null, exact: true })));
-		icons[key] = await memo.get(key)!;
-	}
+	// The page sends at most ICON_BATCH (lib/shared/itemicon.svelte.ts) per request,
+	// resolved side by side: one after another, 500 took 20 s on a big pack.
+	await Promise.all(
+		items.slice(0, 500).map(async ({ id, damage }) => {
+			if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) return;
+			const key = iconKey(id, damage);
+			if (!memo.has(key)) memo.set(key, resolveIcon(res, id, damage).then((icon) => withVariantName(res, id, damage, icon)).catch(() => ({ spec: null, exact: true })));
+			icons[key] = await memo.get(key)!;
+		})
+	);
 	return { icons, vanilla: res.hasVanilla };
 }
 

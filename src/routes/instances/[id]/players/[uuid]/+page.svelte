@@ -18,6 +18,9 @@
 	let pictured = $state<Record<string, boolean>>({});
 	// 1.12 items whose damage picks a variant, by the variant's name (enderutilities:storage_0@7 = Junk Storage Unit).
 	let variantNames = $state<Record<string, string>>({});
+	// Closed sections render their slots (and ask for their icons) once first opened:
+	// 450 ProjectE knowledge entries held up the icons of everything shown.
+	let opened = $state<Record<string, boolean>>({});
 
 	// The item picker: every item the server knows, loaded the first time it is used.
 	let allItems = $state.raw<{ id: string; name: string }[] | null>(null);
@@ -513,24 +516,26 @@
 {#snippet containerGrid(c: Container, nested: boolean)}
 	{@const key = JSON.stringify(c.path)}
 	{@const filter = (containerFilter[key] ?? '').trim().toLowerCase()}
-	<details class="container" open={startsOpen(c, nested)}>
+	<details class="container" open={startsOpen(c, nested)} ontoggle={(e) => e.currentTarget.open && (opened[key] = true)}>
 		<summary class="small">
 			<span class="container-label">{c.label}</span>
 			<span class="faint">
 				· {c.items.length} item{c.items.length === 1 ? '' : 's'}{c.size === null ? ', no fixed slots' : ` in ${c.size} slots`}
 			</span>
 		</summary>
-		{#if c.items.length > 54}
-			<input class="container-filter" type="search" placeholder="Filter by name or id" bind:value={containerFilter[key]} />
+		{#if opened[key] || startsOpen(c, nested)}
+			{#if c.items.length > 54}
+				<input class="container-filter" type="search" placeholder="Filter by name or id" bind:value={containerFilter[key]} />
+			{/if}
+			<div class="grid wide">
+				{#each containerSlots(c) as slot (slot)}
+					{@const item = itemAt({ kind: 'container', list: c.path, slot })}
+					{#if !filter || (item && `${item.id} ${item.name ?? ''}`.toLowerCase().includes(filter))}
+						{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}
+					{/if}
+				{/each}
+			</div>
 		{/if}
-		<div class="grid wide">
-			{#each containerSlots(c) as slot (slot)}
-				{@const item = itemAt({ kind: 'container', list: c.path, slot })}
-				{#if !filter || (item && `${item.id} ${item.name ?? ''}`.toLowerCase().includes(filter))}
-					{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}
-				{/if}
-			{/each}
-		</div>
 	</details>
 {/snippet}
 
@@ -539,28 +544,30 @@
 	{@const items = filled.reduce((n, c) => n + c.items.length, 0)}
 	{@const empty = g.containers.length - filled.length}
 	{@const shown = showEmpty[g.id] ? g.containers : filled}
-	<details class="container group">
+	<details class="container group" ontoggle={(e) => e.currentTarget.open && (opened[g.id] = true)}>
 		<summary class="small">
 			<span class="container-label">{g.label}</span>
 			<span class="faint">· {items} item{items === 1 ? '' : 's'} in {g.containers.length} list{g.containers.length === 1 ? '' : 's'}</span>
 		</summary>
-		{#if empty}
-			<label class="check small faint show-empty">
-				<input type="checkbox" bind:checked={showEmpty[g.id]} /> Show the {empty} empty one{empty === 1 ? '' : 's'}
-			</label>
-		{/if}
-		{#each shown as c (JSON.stringify(c.path))}
-			{#if c.items.length > 54}
-				{@render containerGrid(c, nested)}
-			{:else}
-				<div class="group-row">
-					<span class="small muted group-label" title={c.label}>{c.label.replace(/_/g, ' ')}</span>
-					<div class="grid wide">
-						{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}{/each}
-					</div>
-				</div>
+		{#if opened[g.id]}
+			{#if empty}
+				<label class="check small faint show-empty">
+					<input type="checkbox" bind:checked={showEmpty[g.id]} /> Show the {empty} empty one{empty === 1 ? '' : 's'}
+				</label>
 			{/if}
-		{/each}
+			{#each shown as c (JSON.stringify(c.path))}
+				{#if c.items.length > 54}
+					{@render containerGrid(c, nested)}
+				{:else}
+					<div class="group-row">
+						<span class="small muted group-label" title={c.label}>{c.label.replace(/_/g, ' ')}</span>
+						<div class="grid wide">
+							{#each containerSlots(c) as slot (slot)}{@render cell({ kind: 'container', list: c.path, slot }, null, nested, true)}{/each}
+						</div>
+					</div>
+				{/if}
+			{/each}
+		{/if}
 	</details>
 {/snippet}
 

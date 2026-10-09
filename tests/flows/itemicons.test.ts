@@ -181,6 +181,13 @@ describe('item icons', () => {
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
 	});
 
+	it('reads the lang files once per set of resources', async () => {
+		// Every variant's name looks in them: read per item, a big pack's ~100k lines made
+		// 500 icons take 20 s, and side by side they ran the server out of memory.
+		const res = await Resources.load([await jar('a.jar', { 'assets/a/lang/en_us.lang': 'item.a.name=A\n' })], null);
+		expect(await res.lang()).toBe(await res.lang());
+	});
+
 	it('names a 1.12 variant by its own lang key, from the blockstate the damage picks', async () => {
 		const model = json({ parent: 'block/cube_all', textures: { all: 'eu:blocks/chest' } });
 		const instance = await createInstance(
