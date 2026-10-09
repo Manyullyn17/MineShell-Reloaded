@@ -682,6 +682,59 @@ const resolved = new WeakMap<Resources, Map<string, Promise<ItemIcon>>>();
  * textures are there (the EULA question answered yes); without them only
  * mods' items get pictures.
  */
+/** 1.12's lang names for the sixteen colours, by wool's damage order (white first). */
+const LANG_COLORS = ['white', 'orange', 'magenta', 'lightBlue', 'yellow', 'lime', 'pink', 'gray', 'silver', 'cyan', 'purple', 'blue', 'brown', 'green', 'red', 'black'];
+const WOOD_KEYS = ['oak', 'spruce', 'birch', 'jungle', 'acacia', 'big_oak'];
+const pick = (prefix: string, names: string[]) => (d: number) => (names[d] ? `${prefix}.${names[d]}` : null);
+
+/**
+ * Vanilla 1.12's lang key (without .name) for an item's damage: the keys
+ * follow the game's code, not the ids (minecraft:stone damage 1 is
+ * tile.stone.granite, planks are tile.wood.*, wool tile.cloth.*). Dye and
+ * banners count colours from black.
+ */
+const VANILLA_112_NAMES: Record<string, (d: number) => string | null> = {
+	stone: pick('tile.stone', ['stone', 'granite', 'graniteSmooth', 'diorite', 'dioriteSmooth', 'andesite', 'andesiteSmooth']),
+	dirt: pick('tile.dirt', ['default', 'coarse', 'podzol']),
+	planks: pick('tile.wood', WOOD_KEYS),
+	sapling: pick('tile.sapling', WOOD_KEYS),
+	sand: pick('tile.sand', ['default', 'red']),
+	log: pick('tile.log', WOOD_KEYS.slice(0, 4)),
+	log2: pick('tile.log', WOOD_KEYS.slice(4)),
+	leaves: pick('tile.leaves', WOOD_KEYS.slice(0, 4)),
+	leaves2: pick('tile.leaves', WOOD_KEYS.slice(4)),
+	wooden_slab: pick('tile.woodSlab', WOOD_KEYS),
+	sponge: pick('tile.sponge', ['dry', 'wet']),
+	sandstone: pick('tile.sandStone', ['default', 'chiseled', 'smooth']),
+	red_sandstone: pick('tile.redSandStone', ['default', 'chiseled', 'smooth']),
+	tallgrass: pick('tile.tallgrass', ['shrub', 'grass', 'fern']),
+	yellow_flower: pick('tile.flower1', ['dandelion']),
+	red_flower: pick('tile.flower2', ['poppy', 'blueOrchid', 'allium', 'houstonia', 'tulipRed', 'tulipOrange', 'tulipWhite', 'tulipPink', 'oxeyeDaisy']),
+	double_plant: pick('tile.doublePlant', ['sunflower', 'syringa', 'grass', 'fern', 'rose', 'paeonia']),
+	stone_slab: pick('tile.stoneSlab', ['stone', 'sand', 'wood', 'cobble', 'brick', 'smoothStoneBrick', 'netherBrick', 'quartz']),
+	stone_slab2: pick('tile.stoneSlab2', ['red_sandstone']),
+	stonebrick: pick('tile.stonebricksmooth', ['default', 'mossy', 'cracked', 'chiseled']),
+	monster_egg: pick('tile.monsterStoneEgg', ['stone', 'cobble', 'brick', 'mossybrick', 'crackedbrick', 'chiseledbrick']),
+	cobblestone_wall: pick('tile.cobbleWall', ['normal', 'mossy']),
+	quartz_block: pick('tile.quartzBlock', ['default', 'chiseled', 'lines']),
+	prismarine: pick('tile.prismarine', ['rough', 'bricks', 'dark']),
+	anvil: pick('tile.anvil', ['intact', 'slightlyDamaged', 'veryDamaged']),
+	wool: pick('tile.cloth', LANG_COLORS),
+	carpet: pick('tile.woolCarpet', LANG_COLORS),
+	stained_hardened_clay: pick('tile.clayHardenedStained', LANG_COLORS),
+	stained_glass: pick('tile.stainedGlass', LANG_COLORS),
+	stained_glass_pane: pick('tile.thinStainedGlass', LANG_COLORS),
+	concrete: pick('tile.concrete', LANG_COLORS),
+	concrete_powder: pick('tile.concretePowder', LANG_COLORS),
+	bed: pick('item.bed', LANG_COLORS),
+	dye: pick('item.dyePowder', [...LANG_COLORS].reverse()),
+	banner: pick('item.banner', [...LANG_COLORS].reverse()),
+	skull: pick('item.skull', ['skeleton', 'wither', 'zombie', 'char', 'creeper', 'dragon']),
+	coal: (d) => (d === 1 ? 'item.charcoal' : null),
+	fish: (d) => (['cod', 'salmon', 'clownfish', 'pufferfish'][d] ? `item.fish.${['cod', 'salmon', 'clownfish', 'pufferfish'][d]}.raw` : null),
+	cooked_fish: (d) => (['cod', 'salmon'][d] ? `item.fish.${['cod', 'salmon'][d]}.cooked` : null)
+};
+
 /**
  * A 1.12 item whose damage picks a variant is named by that variant, when the
  * lang files have it: by the variant alone (enderutilities:storage_0 damage 7
@@ -691,7 +744,13 @@ const resolved = new WeakMap<Resources, Map<string, Promise<ItemIcon>>>();
  */
 async function withVariantName(res: Resources, id: string, damage: number | null, icon: ItemIcon): Promise<ItemIcon> {
 	const [ns, itemPath] = split(id);
-	if (damage === null || !icon.variantOf || ns === 'minecraft') return icon;
+	if (damage === null) return icon;
+	if (ns === 'minecraft') {
+		const key = VANILLA_112_NAMES[itemPath]?.(damage);
+		const name = key ? (await res.lang()).get(`${key}.name`) : undefined;
+		return name ? { ...icon, name } : icon;
+	}
+	if (!icon.variantOf) return icon;
 	const lang = await res.lang();
 	const name = langName(`${ns}:${icon.variantOf}`, lang) ?? langName(`${ns}:${itemPath}.${icon.variantOf}`, lang);
 	return name ? { ...icon, name } : icon;

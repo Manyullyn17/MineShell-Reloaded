@@ -267,6 +267,48 @@ describe('item icons', () => {
 		expect(icons['enderutilities:handybag@7'].spec).toBeNull();
 	});
 
+	it('names vanilla 1.12 variants by the keys the game uses for them', async () => {
+		const instance = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, {});
+		saveMapSettings(instance.id, { eulaAccepted: true });
+		await fs.mkdir(CLIENT_DIR, { recursive: true });
+		await fs.writeFile(
+			path.join(CLIENT_DIR, '1.12.2.jar'),
+			zipBuffer({
+				'assets/minecraft/lang/en_us.lang': [
+					'tile.stone.stone.name=Stone',
+					'tile.stone.granite.name=Granite',
+					'tile.wood.spruce.name=Spruce Wood Planks',
+					'tile.cloth.lightBlue.name=Light Blue Wool',
+					'tile.flower2.blueOrchid.name=Blue Orchid',
+					'item.dyePowder.blue.name=Lapis Lazuli',
+					'item.fish.salmon.cooked.name=Cooked Salmon'
+				].join('\n')
+			})
+		);
+		const { icons } = await iconsFor(instance, [
+			{ id: 'minecraft:stone', damage: 0 },
+			{ id: 'minecraft:stone', damage: 1 },
+			{ id: 'minecraft:planks', damage: 1 },
+			{ id: 'minecraft:wool', damage: 3 },
+			{ id: 'minecraft:red_flower', damage: 1 },
+			// Dye counts from black: 4 is blue.
+			{ id: 'minecraft:dye', damage: 4 },
+			{ id: 'minecraft:cooked_fish', damage: 1 },
+			// Wear, not a variant: no name of its own.
+			{ id: 'minecraft:diamond_pickaxe', damage: 30 }
+		]);
+		expect(Object.fromEntries(Object.entries(icons).map(([k, v]) => [k, v.name]))).toEqual({
+			'minecraft:stone': 'Stone',
+			'minecraft:stone@1': 'Granite',
+			'minecraft:planks@1': 'Spruce Wood Planks',
+			'minecraft:wool@3': 'Light Blue Wool',
+			'minecraft:red_flower@1': 'Blue Orchid',
+			'minecraft:dye@4': 'Lapis Lazuli',
+			'minecraft:cooked_fish@1': 'Cooked Salmon',
+			'minecraft:diamond_pickaxe@30': undefined
+		});
+	});
+
 	it('reads the lang files once per set of resources', async () => {
 		// Every variant's name looks in them: read per item, a big pack's ~100k lines made
 		// 500 icons take 20 s, and side by side they ran the server out of memory.

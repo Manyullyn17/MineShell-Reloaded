@@ -195,5 +195,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Icons slow on a big pack (20 s per 500), out of memory once side by side: the lang files were read again for every variant's name | `flows/itemicons.test.ts` |
 | Vanilla chests without an icon (drawn in code); AE2's ME Chest named "Chest" (bare key before the mod's) | `flows/itemicons.test.ts` |
 | No icon for mod items whose models are picked in code (Klein Star, Handy Bag, AoA's bows in a subfolder) | `flows/itemicons.test.ts` |
+| 1.12 vanilla variants named as their base (Granite as "Stone", every wool "Wool") | `flows/itemicons.test.ts` |
 | No icons past the 500th item (a player's Baubles after 450 ProjectE knowledge entries): the page asked for all in one request | `src/lib/shared/itemicon.test.ts` |
 | (feature) Tooltip facts: vanilla max durability, 1.20.5 max_damage, stored energy | `src/lib/server/playeritems.test.ts` |
