@@ -36,9 +36,12 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
 
 /**
  * One texture's first frame (animated ones are a vertical strip), tinted:
- * multiplied by the colour, keeping the texture's own transparency.
+ * multiplied by the colour, keeping the texture's own transparency; and
+ * shaded for the side it is on. Shading here touches only the texture's own
+ * pixels: shading the face's outline on the icon darkened whatever showed
+ * through its holes a second time (a shulker box's base under the lid).
  */
-function prepared(img: HTMLImageElement, tint: string | null): HTMLCanvasElement {
+function prepared(img: HTMLImageElement, tint: string | null, shade = 1): HTMLCanvasElement {
 	const size = img.width;
 	const canvas = document.createElement('canvas');
 	canvas.width = size;
@@ -52,6 +55,11 @@ function prepared(img: HTMLImageElement, tint: string | null): HTMLCanvasElement
 		ctx.fillRect(0, 0, size, size);
 		ctx.globalCompositeOperation = 'destination-in';
 		ctx.drawImage(img, 0, 0, size, size, 0, 0, size, size);
+	}
+	if (shade < 1) {
+		ctx.globalCompositeOperation = 'source-atop';
+		ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
+		ctx.fillRect(0, 0, size, size);
 	}
 	return canvas;
 }
@@ -139,13 +147,6 @@ function drawFace(ctx: CanvasRenderingContext2D, view: View, tex: HTMLCanvasElem
 	// A hair larger than the face, so neighbouring faces meet without seams.
 	ctx.drawImage(tex, u1 * unit, v1 * unit, sw, sh, -0.01, -0.01, 1.02, 1.02);
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	const shade = shadeOf(view, side);
-	if (shade < 1) {
-		ctx.globalCompositeOperation = 'source-atop';
-		ctx.fillStyle = `rgba(0, 0, 0, ${1 - shade})`;
-		ctx.fill();
-		ctx.globalCompositeOperation = 'source-over';
-	}
 	ctx.restore();
 }
 
@@ -182,7 +183,7 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 		for (const { el, side } of faces.sort((p, q) => p.depth - q.depth)) {
 			const face = el.faces[side]!;
 			const img = images.get(face.texture);
-			if (img) drawFace(ctx, view, prepared(img, face.tint), face, side, el);
+			if (img) drawFace(ctx, view, prepared(img, face.tint, shadeOf(view, side)), face, side, el);
 		}
 	}
 	return canvas.toDataURL('image/png');
