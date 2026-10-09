@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * game reads them. The jars are built here, small; the logic is real.
  */
 
-const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, itemChoices, itemName, CLIENT_DIR } = await import('#lib/server/itemicons.js');
+const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, itemChoices, itemName, itemIconsEnabled, setItemIcons, CLIENT_DIR } = await import('#lib/server/itemicons.js');
 const { writeNbt } = await import('#lib/server/nbt.js');
 const { saveMapSettings } = await import('#lib/server/worldmap.js');
 const { createInstance } = await import('../helpers/instances');
@@ -354,6 +354,14 @@ describe('item icons', () => {
 		expect(textures(await def('blue_bed'))).toEqual(new Set(['minecraft:entity/bed/blue']));
 		expect(textures(await def('blue_banner'))).toEqual(new Set(['minecraft:entity/banner/banner_base', 'minecraft:entity/banner/base #3c44aa']));
 		expect(textures(await def('oxidized_copper_golem_statue'))).toEqual(new Set(['minecraft:entity/copper_golem/oxidized_copper_golem']));
+	});
+
+	it('turns item pictures off and on (MineShell settings)', () => {
+		expect(itemIconsEnabled()).toBe(true);
+		setItemIcons(false);
+		expect(itemIconsEnabled()).toBe(false);
+		setItemIcons(true);
+		expect(itemIconsEnabled()).toBe(true);
 	});
 
 	it("takes the trident's inventory model over its 3D one", async () => {

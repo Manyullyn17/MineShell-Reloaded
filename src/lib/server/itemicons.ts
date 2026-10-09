@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { ServerInstance } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { db } from './db';
+import { settings, type ServerInstance } from './db/schema';
 import { CACHE_DIR } from './config';
 import { downloadFile } from './download';
 import { minecraftClientDownload } from './modloaders';
@@ -31,6 +33,22 @@ import { bannerIcon, bedIcon, chestIcon, conduitIcon, decoratedPotIcon, headIcon
  */
 
 export const CLIENT_DIR = path.join(CACHE_DIR, 'minecraft-client');
+
+const ICONS_KEY = 'itemicons.enabled';
+
+/**
+ * Item pictures in the player editor, on unless turned off in MineShell's
+ * settings (the user's call, 2026-10-09: reading big packs' jars and drawing
+ * thousands of icons costs memory and time some machines would rather keep).
+ */
+export function itemIconsEnabled(): boolean {
+	return db.select().from(settings).where(eq(settings.key, ICONS_KEY)).get()?.value !== 'false';
+}
+
+export function setItemIcons(on: boolean): void {
+	const value = on ? 'true' : 'false';
+	db.insert(settings).values({ key: ICONS_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
 
 export type FaceSpec = { texture: string; uv: [number, number, number, number]; tint: string | null };
 export type Side = 'up' | 'down' | 'north' | 'south' | 'east' | 'west';

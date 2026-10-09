@@ -16,7 +16,7 @@
 
 	// Item pictures (lib/server/itemicons.ts): drawn once per item, the name kept as text where there is none.
 	// svelte-ignore state_referenced_locally
-	const icons = iconLoader(data.instance.id);
+	const icons = iconLoader(data.instance.id, data.icons);
 	let pictured = $state<Record<string, boolean>>({});
 	// 1.12 items whose damage picks a variant, by the variant's name (enderutilities:storage_0@7 = Junk Storage Unit).
 	let variantNames = $state<Record<string, string>>({});
@@ -752,7 +752,7 @@
 <section class="panel">
 	<div class="inv-head">
 		<p class="small faint"><span class="holds-key" aria-hidden="true"></span> in a corner marks an item that holds items; pick it to open what is inside.</p>
-		{#if !data.iconsEula}
+		{#if data.icons && !data.iconsEula}
 			<p class="small muted icon-eula">
 				Pictures of Minecraft's own items come from its client, which means accepting the
 				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab).

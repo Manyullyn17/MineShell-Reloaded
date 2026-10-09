@@ -78,6 +78,7 @@ import {
 	UPDATE_REPO
 } from '#lib/server/selfupdate.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
+import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
 
 /** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
 async function playitOverview() {
@@ -140,6 +141,7 @@ export const load: PageServerLoad = async () => {
 		),
 		freeBytes: await freeSpace(INSTANCES_DIR),
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
+		itemIcons: itemIconsEnabled(),
 		update: {
 			current: currentVersion(),
 			installed: installInfo() !== null,
@@ -320,6 +322,12 @@ export const actions: Actions = {
 	removeCurseforgeKey: async () => {
 		const result = await setCurseforgeApiKey('');
 		return { ok: result.ok, message: result.message };
+	},
+
+	itemIcons: async ({ request }) => {
+		const form = await request.formData();
+		setItemIcons(form.get('itemIcons') === 'on');
+		return { ok: true, message: 'Saved.' };
 	},
 
 	checkUpdate: async () => {

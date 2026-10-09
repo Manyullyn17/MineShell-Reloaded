@@ -34,6 +34,12 @@
 		const timer = setInterval(() => void invalidateAll(), 2000);
 		return () => clearInterval(timer);
 	});
+	// svelte-ignore state_referenced_locally
+	let itemIcons = $state(data.itemIcons);
+	$effect(() => {
+		itemIcons = data.itemIcons;
+	});
+
 	// Updates. Re-synced after a save, like the snapshot fields.
 	// svelte-ignore state_referenced_locally
 	let autoCheck = $state(data.update.autoCheck);
@@ -618,6 +624,21 @@
 	{#if showUnit}
 		<pre class="unit">{data.unitPreview}</pre>
 	{/if}
+</section>
+
+<section class="panel">
+	<h2>Player editor</h2>
+	<form method="POST" action="?/itemIcons" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="check field">
+			<input id="itemIcons" name="itemIcons" type="checkbox" bind:checked={itemIcons} />
+			<label for="itemIcons">Show item pictures</label>
+		</div>
+		<p class="small muted">
+			Inventories show each item's picture, read from the server's mod jars and Minecraft's client and drawn in the
+			browser. Off, they show names only: nothing is read or drawn, which spares memory and time on big packs.
+		</p>
+		<button class="button" type="submit">Save</button>
+	</form>
 </section>
 
 <section class="panel">

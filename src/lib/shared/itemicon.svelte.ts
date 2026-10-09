@@ -226,7 +226,8 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 /** The most icons one request asks for: what iconsFor answers. */
 export const ICON_BATCH = 500;
 
-export function iconLoader(instanceId: string) {
+/** `enabled`: false when item pictures are turned off (MineShell settings): every icon is none, nothing is asked. */
+export function iconLoader(instanceId: string, enabled = true) {
 	const base = `/api/instances/${encodeURIComponent(instanceId)}/item-icons`;
 	const textureUrl = (ref: string) => `${base}/texture?ref=${encodeURIComponent(ref)}`;
 	const drawn = new Map<string, Promise<DrawnIcon>>();
@@ -258,6 +259,7 @@ export function iconLoader(instanceId: string) {
 			return vanilla;
 		},
 		icon(id: string, damage: number | null): Promise<DrawnIcon> {
+			if (!enabled) return Promise.resolve({ url: null, exact: true, variant: false, name: null });
 			const key = iconKey(id, damage);
 			let hit = drawn.get(key);
 			if (!hit) {

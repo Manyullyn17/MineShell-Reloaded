@@ -164,7 +164,8 @@ plain banners, heads, the shield, the conduit, decorated pots, copper golem stat
 packs a variant MineShell had to guess is marked. Items can be picked by name
 from everything the server has (vanilla and every mod) instead of typing their id. On a
 desktop, hovering an item shows a tooltip like the game's (name, enchantments, durability,
-energy, id).
+energy, id). The pictures can be turned off in MineShell's settings (names only, nothing read or
+drawn).
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all
