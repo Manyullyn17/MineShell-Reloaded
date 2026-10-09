@@ -838,6 +838,19 @@ export function itemName(id: string, lang: Map<string, string>): string {
  */
 const VANILLA_112_KEYS: Record<string, string> = { stonebrick: 'stonebricksmooth' };
 
+/**
+ * A lang value as a name. Some are templates the mod fills in its code
+ * ("%1$s Dust", "Vial of %s (%s)"): the gaps show as "…". One that is only
+ * gaps (crafting_on_a_stick's "%1$s%2$s%3$s") says nothing: null.
+ */
+function filled(value: string | undefined): string | null {
+	if (!value) return null;
+	const gap = /%(\d+\$)?[sd]/g;
+	if (!gap.test(value)) return value;
+	if (!/[\p{L}\p{N}]/u.test(value.replace(gap, ''))) return null;
+	return value.replace(gap, '…').replace(/%%/g, '%');
+}
+
 /** itemName's lookup alone: null when the lang files do not have it. */
 function langName(id: string, lang: Map<string, string>): string | null {
 	const [ns, path] = split(id);
@@ -851,7 +864,7 @@ function langName(id: string, lang: Map<string, string>): string | null {
 		`${p}.name`
 	];
 	for (const key of keys) {
-		const found = lang.get(key);
+		const found = filled(lang.get(key));
 		if (found) return found;
 	}
 	let lower = lowerCased.get(lang);
@@ -861,7 +874,7 @@ function langName(id: string, lang: Map<string, string>): string | null {
 		lowerCased.set(lang, lower);
 	}
 	for (const key of keys) {
-		const found = lower.get(key.toLowerCase());
+		const found = filled(lower.get(key.toLowerCase()));
 		if (found) return found;
 	}
 	return null;

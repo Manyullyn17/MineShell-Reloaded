@@ -170,7 +170,9 @@ describe('item icons', () => {
 			['tile.chest.name', 'Chest'],
 			['tile.appliedenergistics2.chest.name', 'ME Chest'],
 			['tile.stonebrick.name', 'Cobblestone'],
-			['tile.stonebricksmooth.name', 'Stone Bricks']
+			['tile.stonebricksmooth.name', 'Stone Bricks'],
+			['item.IC2Dust.name', '%1$s Dust'],
+			['item.cos.crafting_table', '%1$s%2$s%3$s']
 		]);
 		expect(itemName('minecraft:diamond', lang)).toBe('Diamond');
 		expect(itemName('mymod:marble', lang)).toBe('Marble');
@@ -186,6 +188,9 @@ describe('item icons', () => {
 		expect(itemName('minecraft:chest', lang)).toBe('Chest');
 		// 1.12's tile.stonebrick is cobblestone's key.
 		expect(itemName('minecraft:stonebrick', lang)).toBe('Stone Bricks');
+		// Templates the mod fills in its code: the gaps marked; only gaps, the id's name.
+		expect(itemName('ic2:IC2Dust', lang)).toBe('… Dust');
+		expect(itemName('cos:crafting_table', lang)).toBe('Crafting Table');
 		// Nothing found: the id, tidied up.
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
 	});
