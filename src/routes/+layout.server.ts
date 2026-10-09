@@ -1,6 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { recentPlayerCount, summariseAll } from '#lib/server/instances.js';
 import { listTasks } from '#lib/server/tasks.js';
+import { availableUpdate } from '#lib/server/selfupdate.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
@@ -13,6 +14,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		authRequired: locals.authRequired,
 		path: url.pathname,
 		runningTasks: listTasks().filter((t) => t.state === 'running').length,
+		updateAvailable: availableUpdate()?.version ?? null,
 		railInstances: await Promise.all(
 			summaries.map(async (s) => ({
 				id: s.instance.id,

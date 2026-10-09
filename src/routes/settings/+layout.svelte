@@ -11,6 +11,7 @@
 		{ id: 'defaults', label: 'New server defaults', href: '/settings/defaults' },
 		{ id: 'integrations', label: 'Integrations' },
 		{ id: 'security', label: 'Security' },
+		{ id: 'updates', label: 'Updates' },
 		{ id: 'activity', label: 'Activity' }
 	];
 	const current = $derived(
@@ -27,6 +28,9 @@
 				{tab.label}
 				{#if tab.id === 'integrations' && data.integrationsWarning}
 					<span class="warn-dot" title="Not set up or not working"></span>
+				{/if}
+				{#if tab.id === 'updates' && data.updateAvailable}
+					<span class="warn-dot" title="A new version is available"></span>
 				{/if}
 			</a>
 		{/each}

@@ -9,6 +9,7 @@ import { stopAllTails } from './journal';
 import { recoverInterruptedOperations } from './recovery';
 import { removePartialJava } from './javadownload';
 import { refreshTemplateUnit } from './systemd';
+import { startUpdateChecks } from './selfupdate';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
@@ -40,6 +41,7 @@ export function boot(): void {
 	startHeapSampling();
 	startScheduler();
 	startHistory();
+	startUpdateChecks();
 
 	// Non-blocking: the first instance creation triggers a rescan anyway. A
 	// Java download cut short leaves a .partial folder, removed first.

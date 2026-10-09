@@ -14,5 +14,9 @@ export const variables = defineEnvVars({
 	MINESHELL_AUTH: optional,
 	CURSEFORGE_API_KEY: optional,
 	XDG_DATA_HOME: optional,
-	XDG_CONFIG_HOME: optional
+	XDG_CONFIG_HOME: optional,
+	// Written into mineshell.service by scripts/install.sh, so MineShell can update itself.
+	MINESHELL_INSTALL_HOME: optional,
+	MINESHELL_INSTALL_CONFIG: optional,
+	MINESHELL_INSTALL_SERVICE: optional
 });

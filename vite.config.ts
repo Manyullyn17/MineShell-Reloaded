@@ -38,7 +38,11 @@ const outDir = testing
     ? `.svelte-kit-${createHash('sha256').update(path.resolve(explicitData)).digest('hex').slice(0, 8)}`
     : '.svelte-kit';
 
+// MineShell's own version, for the update check (src/lib/server/selfupdate.ts).
+const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version as string;
+
 export default defineConfig({
+  define: { __MINESHELL_VERSION__: JSON.stringify(version) },
   plugins: [
     // SvelteKit 3 takes its configuration here; svelte.config.js is no longer read.
     sveltekit({

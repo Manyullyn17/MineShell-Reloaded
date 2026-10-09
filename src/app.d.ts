@@ -1,4 +1,7 @@
 declare global {
+	/** package.json's version, set by vite.config.ts. */
+	const __MINESHELL_VERSION__: string;
+
 	namespace App {
 		interface Locals {
 			authenticated: boolean;

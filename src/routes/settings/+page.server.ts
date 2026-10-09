@@ -63,6 +63,20 @@ import {
 	serverSnapshotOverrides,
 	snapshotUsage
 } from '#lib/server/snapshots.js';
+import {
+	availableUpdate,
+	autoCheckEnabled,
+	checkForUpdate,
+	currentVersion,
+	installInfo,
+	lastCheck,
+	setAutoCheck,
+	startUpdate,
+	UpdateRefused,
+	updateBlocker,
+	updateRunState,
+	UPDATE_REPO
+} from '#lib/server/selfupdate.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 
 /** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
@@ -125,7 +139,17 @@ export const load: PageServerLoad = async () => {
 			}))
 		),
 		freeBytes: await freeSpace(INSTANCES_DIR),
-		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all()
+		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
+		update: {
+			current: currentVersion(),
+			installed: installInfo() !== null,
+			repo: UPDATE_REPO,
+			autoCheck: autoCheckEnabled(),
+			check: lastCheck(),
+			available: availableUpdate(),
+			run: await updateRunState(),
+			blocker: updateBlocker()
+		}
 	};
 };
 
@@ -296,6 +320,28 @@ export const actions: Actions = {
 	removeCurseforgeKey: async () => {
 		const result = await setCurseforgeApiKey('');
 		return { ok: result.ok, message: result.message };
+	},
+
+	checkUpdate: async () => {
+		const result = await checkForUpdate();
+		if (result.error) return fail(502, { ok: false, message: `Could not ask GitHub: ${result.error}` });
+		const newer = availableUpdate();
+		return { ok: true, message: newer ? `MineShell ${newer.version} is available.` : `${currentVersion()} is the newest version.` };
+	},
+
+	updateAuto: async ({ request }) => {
+		const form = await request.formData();
+		setAutoCheck(form.get('autoCheck') === 'on');
+		return { ok: true, message: 'Saved.' };
+	},
+
+	update: async () => {
+		try {
+			return { ok: true, updateTask: startUpdate() };
+		} catch (err) {
+			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	password: async ({ request }) => {

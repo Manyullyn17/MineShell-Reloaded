@@ -170,6 +170,10 @@ section too.
 **Java.** Runtimes are found on the system or downloaded, matched per server, with a
 default per Java version when several are installed.
 
+**Updates.** An installed MineShell looks for a new release every 12 hours (or on request)
+and shows it in the top bar; Settings > Updates has the release notes and installs it in
+place. MineShell restarts; the servers keep running.
+
 ## What it does not do
 
 Backups elsewhere (another disk, another machine, the cloud) are not implemented: every

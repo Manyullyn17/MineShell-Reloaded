@@ -52,6 +52,11 @@
 			</button>
 			<a class="wordmark" href="/"><LogoMark size={26} /><span>Mine<span class="wordmark-accent">Shell</span></span></a>
 			<div class="topbar-right">
+				{#if data.updateAvailable}
+					<a class="tag accent update-link" href="/settings?tab=updates" title="MineShell {data.updateAvailable} is available">
+						Update {data.updateAvailable}
+					</a>
+				{/if}
 				<NotificationCenter running={data.runningTasks} />
 				<span class="topbar-theme">
 					<label class="visually-hidden" for="theme-select">Theme</label>
@@ -198,6 +203,11 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+
+	.update-link {
+		text-decoration: none;
+		white-space: nowrap;
 	}
 
 	.rail-theme {

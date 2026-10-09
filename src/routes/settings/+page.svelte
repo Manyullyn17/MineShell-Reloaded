@@ -7,6 +7,9 @@
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { invalidateAll } from '$app/navigation';
+	import { browser } from '$app/env';
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify';
 
 	let { data, form } = $props();
 
@@ -31,6 +34,44 @@
 		const timer = setInterval(() => void invalidateAll(), 2000);
 		return () => clearInterval(timer);
 	});
+	// Updates. Re-synced after a save, like the snapshot fields.
+	// svelte-ignore state_referenced_locally
+	let autoCheck = $state(data.update.autoCheck);
+	$effect(() => {
+		autoCheck = data.update.autoCheck;
+	});
+	const updateTask = $derived((form as { updateTask?: string } | null)?.updateTask ?? null);
+	const updateRun = $derived(data.update.run);
+	const releaseNotes = $derived.by(() => {
+		const notes = data.update.available?.notes;
+		if (!browser || !notes) return '';
+		return DOMPurify.sanitize(marked.parse(notes, { async: false }) as string);
+	});
+	let updateSlow = $state(false);
+	// The installer restarts MineShell: ask until the server answers with another
+	// version (or says the update failed), then load the page afresh from the new one.
+	$effect(() => {
+		if (!updateTask && updateRun?.outcome !== 'running') return;
+		const from = data.update.current;
+		const started = Date.now();
+		updateSlow = false;
+		const timer = setInterval(async () => {
+			if (Date.now() - started > 5 * 60_000) updateSlow = true;
+			try {
+				const res = await fetch('/api/update');
+				if (!res.ok) return;
+				const state = (await res.json()) as { current: string; run: { outcome: string } | null };
+				if (state.current !== from || state.run?.outcome === 'failed') {
+					clearInterval(timer);
+					location.assign('/settings?tab=updates');
+				}
+			} catch {
+				/* restarting */
+			}
+		}, 2000);
+		return () => clearInterval(timer);
+	});
+
 	const CLAIM_TEXT: Record<string, string> = {
 		waiting: 'Waiting for you to open the link.',
 		visited: 'Waiting for you to approve it on playit.gg.',
@@ -423,6 +464,89 @@
 		</div>
 	</section>
 {/if}
+{:else if tab === 'updates'}
+{@const u = data.update}
+<section class="panel">
+	<h2>MineShell version</h2>
+	<p>
+		Running <strong>{u.current}</strong>{#if !u.installed}
+			from a source checkout{/if}.
+	</p>
+
+	{#if updateTask || updateRun?.outcome === 'running'}
+		<div class="notice info">
+			<p>
+				Updating to {updateRun?.to ?? u.available?.version}. MineShell restarts on its own; this page loads again when it
+				is back. Your servers keep running.
+			</p>
+			{#if updateSlow}
+				<p>
+					This is taking long. The installer's log: <code>journalctl --user -u {updateRun?.unit ?? 'mineshell-update-*'}</code>
+				</p>
+			{/if}
+		</div>
+	{:else if updateRun?.outcome === 'failed'}
+		<div class="notice error">
+			<p>The update from {updateRun.from} to {updateRun.to} failed ({formatDateTime(updateRun.finishedAt)}); {u.current} is still running.</p>
+			{#if updateRun.log.length}<pre class="update-log">{updateRun.log.join('\n')}</pre>{/if}
+		</div>
+	{:else if updateRun?.outcome === 'done' && updateRun.to === u.current}
+		<p class="small muted">Updated from {updateRun.from} on {formatDateTime(updateRun.finishedAt)}.</p>
+	{/if}
+
+	{#if u.available}
+		<div class="release">
+			<h3>
+				{u.available.name}
+				<span class="small muted">published {formatDateTime(Date.parse(u.available.publishedAt))}</span>
+			</h3>
+			{#if releaseNotes}
+				<div class="release-notes">{@html releaseNotes}</div>
+			{/if}
+			<p class="small"><a href={u.available.url} target="_blank" rel="noreferrer">On GitHub</a></p>
+		</div>
+		{#if u.installed}
+			<form method="POST" action="?/update" use:enhance={() => async ({ update }) => update({ reset: false })}>
+				<button class="button-primary" type="submit" disabled={!!u.blocker || !!updateTask}>Update to {u.available.version}</button>
+				{#if u.blocker}<p class="small muted">{u.blocker}</p>{/if}
+			</form>
+		{:else}
+			<p class="small muted">
+				A source checkout updates with git: <code>git pull && npm ci && npm run build</code>, then restart it. An installed
+				MineShell (<a href="https://github.com/{u.repo}#install" target="_blank" rel="noreferrer">installer</a>) updates
+				here.
+			</p>
+		{/if}
+	{:else if u.check?.latest}
+		<p class="muted">This is the newest version.</p>
+	{/if}
+
+	<form method="POST" action="?/checkUpdate" use:enhance class="check-row">
+		<button class="button" type="submit">Check now</button>
+		<span class="small muted">
+			{#if u.check}
+				Last checked {formatDateTime(u.check.checkedAt)}{#if u.check.error}: <span class="error-text">{u.check.error}</span>{/if}
+			{:else}
+				Not checked yet.
+			{/if}
+		</span>
+	</form>
+</section>
+
+<section class="panel">
+	<h2>Automatic checks</h2>
+	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="check field">
+			<input id="autoCheck" name="autoCheck" type="checkbox" bind:checked={autoCheck} />
+			<label for="autoCheck">Look for a new version every 12 hours</label>
+		</div>
+		<p class="small muted">
+			It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is installed
+			until you press Update.
+		</p>
+		<button class="button" type="submit">Save</button>
+	</form>
+</section>
 {:else if tab === 'activity'}
 <section class="panel">
 	<h2>Recent actions</h2>
@@ -508,6 +632,50 @@
 </div>
 
 <style>
+	.release {
+		margin: var(--space-3) 0;
+		padding: var(--space-3);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+	}
+
+	.release h3 {
+		margin: 0 0 var(--space-2);
+		font-size: 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem 0.8rem;
+		align-items: baseline;
+	}
+
+	.release-notes {
+		font-size: 0.92rem;
+		overflow-wrap: anywhere;
+	}
+
+	.release-notes :global(h2) {
+		font-size: 0.95rem;
+	}
+
+	.update-log {
+		max-height: 16rem;
+		overflow: auto;
+		font-size: 0.8rem;
+		white-space: pre-wrap;
+	}
+
+	.check-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin-top: var(--space-3);
+	}
+
+	.error-text {
+		color: var(--error);
+	}
+
 	.plain-list {
 		list-style: none;
 		padding: 0;

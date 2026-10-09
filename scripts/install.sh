@@ -149,6 +149,8 @@ main() {
 		Type=simple
 		WorkingDirectory=$home_dir/current
 		EnvironmentFile=$config
+		# How MineShell updates itself (Settings > Updates): it runs this installer again.
+		Environment="MINESHELL_INSTALL_HOME=$home_dir" "MINESHELL_INSTALL_CONFIG=$config" "MINESHELL_INSTALL_SERVICE=$service"
 		ExecStart="$node" "$home_dir/current/build/index.js"
 		Restart=on-failure
 		RestartSec=10

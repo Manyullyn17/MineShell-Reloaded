@@ -602,8 +602,12 @@ Built (October 2026): GitHub releases carry a ready-to-run archive (built, with 
 updates it when run again (`curl .../releases/latest/download/install.sh | bash`). Chosen
 over an npm package (publishing to npm, still needs a global install) and Docker or
 distribution packages (systemd user units and the journal do not fit a container; packages
-are upkeep). Not built: an update button inside MineShell; installing Node for the user
-(the installer says how to get it).
+are upkeep). Not built: installing Node for the user (the installer says how to get it).
+
+Updating from inside MineShell: built the same month (Settings > Updates; ARCHITECTURE,
+"Data"). A check every 12 hours, shown in the top bar; installing waits for the Update
+button. Not built: installing updates automatically, and going back to an older release from
+the page (the installer does it with `MINESHELL_VERSION`).
 
 ### Start servers at boot
 

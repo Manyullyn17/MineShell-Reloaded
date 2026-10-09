@@ -154,7 +154,15 @@ systemd units, not children of the panel. That is the point of the design.
 
 ## Upgrading
 
-Run the installer again. It installs the newest release next to the running one, switches
+Settings > Updates: MineShell checks GitHub for a new release every 12 hours (it can be
+turned off) and on "Check now", shows "Update <version>" in the top bar when there is one,
+and installs it with the Update button - the same as running the installer again, which also
+works. The update waits while a task or a server change is running (the restart would cut it
+short), and if the installer fails, the page shows its log and the old version keeps running.
+A MineShell installed with 0.1.0's installer needs one update by hand (the command below):
+that is what lets it update itself.
+
+Running the installer again: it installs the newest release next to the running one, switches
 `current` over, rewrites `mineshell.service` and restarts it; the settings file and the data
 are left alone, and the two previous releases stay in `releases/`. To go back, run it with
 `MINESHELL_VERSION=v<older>`. Restarting MineShell does not touch running servers.
