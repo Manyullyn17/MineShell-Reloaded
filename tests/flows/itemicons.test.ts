@@ -222,6 +222,51 @@ describe('item icons', () => {
 		expect((await resolveIcon(definitions, 'minecraft:trapped_chest')).spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'minecraft:entity/chest/trapped' } } }, {}, {}] });
 	});
 
+	it('falls back to a texture numbered by damage when the models are picked in code', async () => {
+		const instance = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.12.2' },
+			{
+				'mods/pe.jar': zipBuffer({
+					// A series from 1, in a subfolder; the id carries the mod's prefix.
+					...Object.fromEntries([1, 2, 3, 4, 5, 6].map((n) => [`assets/projecte/textures/items/stars/klein_star_${n}.png`, PNG])),
+					'assets/projecte/lang/en_us.lang': 'item.pe_klein_star_6.name=Klein Star Omega\n'
+				}),
+				'mods/eu.jar': zipBuffer({
+					// A series from 0.
+					'assets/enderutilities/textures/items/handybag_0.png': PNG,
+					'assets/enderutilities/textures/items/handybag_1.png': PNG,
+					'assets/enderutilities/lang/en_us.lang': 'item.enderutilities.handybag_1.name=Handy Bag (Large)\n'
+				}),
+				// A plain texture beside the numbers: those are a bow's draw frames.
+				'mods/aoa.jar': zipBuffer({
+					// The model in a subfolder, found by its file name.
+					'assets/aoa3/models/item/weapons/bows/predatious_bow.json': json({ parent: 'item/generated', textures: { layer0: 'aoa3:items/weapons/bows/predatious_bow' } }),
+					'assets/aoa3/models/item/generated.json': json({ parent: 'builtin/generated' }),
+					'assets/aoa3/textures/items/weapons/bows/deep_bow.png': PNG,
+					'assets/aoa3/textures/items/weapons/bows/deep_bow_0.png': PNG,
+					'assets/aoa3/textures/items/weapons/bows/deep_bow_1.png': PNG
+				})
+			}
+		);
+		const { icons } = await iconsFor(instance, [
+			{ id: 'projecte:item.pe_klein_star', damage: 5 },
+			{ id: 'enderutilities:handybag', damage: 1 },
+			{ id: 'enderutilities:handybag', damage: 7 },
+			{ id: 'aoa3:deep_bow', damage: 1 }
+		]);
+		const bow = await iconsFor(instance, [{ id: 'aoa3:predatious_bow', damage: 3 }]);
+		expect(bow.icons['aoa3:predatious_bow@3']).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'aoa3:items/weapons/bows/predatious_bow', tint: null }] }, exact: true });
+		expect(icons['aoa3:deep_bow@1']).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'aoa3:items/weapons/bows/deep_bow', tint: null }] }, exact: true });
+		expect(icons['projecte:item.pe_klein_star@5']).toMatchObject({
+			spec: { kind: 'flat', layers: [{ texture: 'projecte:items/stars/klein_star_6' }] },
+			exact: false,
+			name: 'Klein Star Omega'
+		});
+		expect(icons['enderutilities:handybag@1']).toMatchObject({ spec: { layers: [{ texture: 'enderutilities:items/handybag_1' }] }, name: 'Handy Bag (Large)' });
+		// No such number: nothing, rather than another variant's picture.
+		expect(icons['enderutilities:handybag@7'].spec).toBeNull();
+	});
+
 	it('reads the lang files once per set of resources', async () => {
 		// Every variant's name looks in them: read per item, a big pack's ~100k lines made
 		// 500 icons take 20 s, and side by side they ran the server out of memory.

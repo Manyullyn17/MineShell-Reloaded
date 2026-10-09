@@ -158,6 +158,46 @@ export class Resources {
 		return this.files.has(key);
 	}
 
+	private nestedIndex: Map<string, string[]> | undefined;
+
+	/**
+	 * Item models in subfolders, by `<namespace>/<file name>`
+	 * (aoa3's models/item/weapons/bows/predatious_bow): model refs. Built once.
+	 */
+	nestedItemModels(ns: string, name: string): string[] {
+		if (!this.nestedIndex) {
+			this.nestedIndex = new Map();
+			for (const key of this.files.keys()) {
+				const m = key.match(/^([^/]+)\/models\/(item\/.+\/([^/]+))\.json$/);
+				if (!m) continue;
+				const at = `${m[1]}/${m[3]}`;
+				this.nestedIndex.set(at, [...(this.nestedIndex.get(at) ?? []), `${m[1]}:${m[2]}`]);
+			}
+		}
+		return this.nestedIndex.get(`${ns}/${name}`) ?? [];
+	}
+
+	private numberedIndex: Map<string, Map<number, string>> | undefined;
+
+	/**
+	 * Item textures named with a number (`projecte/.../stars/klein_star_6`,
+	 * `enderutilities/.../handybag_1`), by `<namespace>/<name without it>`:
+	 * number -> texture ref. Built once.
+	 */
+	numbered(ns: string, name: string): Map<number, string> | undefined {
+		if (!this.numberedIndex) {
+			this.numberedIndex = new Map();
+			for (const key of this.files.keys()) {
+				const m = key.match(/^([^/]+)\/textures\/(items?\/(?:.+\/)?([^/]+)_(\d+))\.png$/);
+				if (!m) continue;
+				const at = `${m[1]}/${m[3]}`;
+				if (!this.numberedIndex.has(at)) this.numberedIndex.set(at, new Map());
+				this.numberedIndex.get(at)!.set(Number(m[4]), `${m[1]}:${m[2]}`);
+			}
+		}
+		return this.numberedIndex.get(`${ns}/${name}`);
+	}
+
 	async read(key: string): Promise<Buffer | null> {
 		return (await this.files.get(key)?.()) ?? null;
 	}
@@ -452,8 +492,42 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 			const loaded = await loadModel(res, `${ns}:item/${itemPath}`);
 			if (loaded) return { spec: specOf(loaded, [], legacyTint(itemPath)), exact: true };
 		}
+		// Models registered in code from a subfolder: by file name, when only one has it.
+		const nested = res.nestedItemModels(ns, itemPath);
+		if (nested.length === 1) {
+			const loaded = await loadModel(res, nested[0]);
+			const spec = loaded && specOf(loaded, [], legacyTint(itemPath));
+			if (spec) return { spec, exact: true };
+		}
+		const numbered = numberedTexture(res, ns, itemPath, damage ?? 0);
+		if (numbered) return numbered;
 	}
 	return { spec: null, exact: true };
+}
+
+/**
+ * The last resort for a 1.12 mod item whose models are picked in code: a
+ * texture named after it with the damage as a number - from 0, or from 1 when
+ * the series starts there (projecte:item.pe_klein_star damage 5 is
+ * klein_star_6, its name item.pe_klein_star_6.name; enderutilities:handybag
+ * damage 1 is handybag_1). A guess, flagged.
+ */
+function numberedTexture(res: Resources, ns: string, itemPath: string, damage: number): ItemIcon | null {
+	const bare = itemPath.replace(/^(item|tile)\./, '');
+	// ProjectE's ids carry the mod's prefix (pe_) that its file names drop.
+	for (const name of new Set([bare, bare.replace(/^[a-z]{1,4}_/, '')])) {
+		const series = res.numbered(ns, name);
+		if (!series) continue;
+		// A plain texture beside the series makes the numbers frames or overlays
+		// (AoA's bows: predatious_bow and predatious_bow_0..2 drawn back): that one.
+		const plain = [...series.values()][0].replace(/_\d+$/, '');
+		if (res.has(`${split(plain)[0]}/textures/${split(plain)[1]}.png`)) return { spec: { kind: 'flat', layers: [{ texture: plain, tint: null }] }, exact: true };
+		const n = series.has(0) ? damage : damage + 1;
+		const texture = series.get(n);
+		if (!texture) continue;
+		return { spec: { kind: 'flat', layers: [{ texture, tint: null }] }, exact: false, variant: series.size > 1, variantOf: `${itemPath}_${n}` };
+	}
+	return null;
 }
 
 type Variant = { model?: string; textures?: Record<string, string> };
