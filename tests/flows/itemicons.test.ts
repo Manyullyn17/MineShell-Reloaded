@@ -227,6 +227,18 @@ describe('item icons', () => {
 		expect((await resolveIcon(definitions, 'minecraft:trapped_chest')).spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'minecraft:entity/chest/trapped' } } }, {}, {}] });
 	});
 
+	it('reads 26.x textures given as { sprite }', async () => {
+		const res = await Resources.load(
+			[],
+			await jar('c.jar', {
+				'assets/minecraft/items/glass.json': json({ model: { type: 'minecraft:model', model: 'minecraft:block/glass' } }),
+				'assets/minecraft/models/block/glass.json': json({ parent: 'minecraft:block/cube_all', textures: { all: { sprite: 'minecraft:block/glass', force_translucent: true } } })
+			})
+		);
+		const glass = (await resolveIcon(res, 'minecraft:glass')).spec as { elements: { faces: Record<string, { texture: string }> }[] };
+		expect(glass.elements[0].faces.up.texture).toBe('minecraft:block/glass');
+	});
+
 	it('falls back to a texture numbered by damage when the models are picked in code', async () => {
 		const instance = await createInstance(
 			{ modloader: 'forge', minecraftVersion: '1.12.2' },

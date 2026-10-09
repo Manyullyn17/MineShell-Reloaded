@@ -207,3 +207,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Skins: texture id from the profile, re-asked for entries from before skins, downloaded once, non-PNG and odd ids refused | `src/lib/server/profiles.test.ts` |
 | (feature) Locator bar colour: the game's own ARGB output for UUIDs (online and offline mode) and names | `src/lib/shared/locatorcolor.test.ts` |
 | (feature) Server initials and colour | `src/lib/shared/servertile.test.ts` |
+| 26.x item models with `{ sprite }` textures (all glass) crashed the icon resolver | `flows/itemicons.test.ts` |

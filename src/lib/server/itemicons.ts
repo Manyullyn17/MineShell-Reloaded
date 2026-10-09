@@ -356,7 +356,13 @@ async function loadModel(res: Resources, ref: string, depth = 0): Promise<Model 
 	if (!json) return null;
 	const parent = typeof json.parent === 'string' ? await loadModel(res, json.parent, depth + 1) : null;
 	if (typeof json.parent === 'string' && !parent) return null;
-	const own = (json.textures ?? {}) as Record<string, string>;
+	// 26.x can give a texture as { sprite, force_translucent } (glass) instead of its name.
+	const own = Object.fromEntries(
+		Object.entries((json.textures ?? {}) as Record<string, unknown>).flatMap(([key, value]) => {
+			const name = typeof value === 'string' ? value : (value as { sprite?: unknown } | null)?.sprite;
+			return typeof name === 'string' ? [[key, name]] : [];
+		})
+	);
 	const textures = { ...(parent?.textures ?? {}), ...own };
 	const elements = Array.isArray(json.elements) ? json.elements : (parent?.elements ?? null);
 	const display = json.display as { gui?: { rotation?: unknown } } | undefined;
