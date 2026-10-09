@@ -163,12 +163,19 @@ describe('item icons', () => {
 			['item.minecraft.diamond', 'Diamond'],
 			['block.mymod.marble', 'Marble'],
 			['item.chestSack.name', 'Sack of Holding'],
-			['tile.thermalfoundation.ore.name', 'Ore']
+			['tile.thermalfoundation.ore.name', 'Ore'],
+			['item.botania:manaRingGreater.name', 'Greater Band of Mana'],
+			['item.pe_life_stone.name', 'Life Stone']
 		]);
 		expect(itemName('minecraft:diamond', lang)).toBe('Diamond');
 		expect(itemName('mymod:marble', lang)).toBe('Marble');
 		expect(itemName('cyclicmagic:chest_sack', lang)).toBe('Sack of Holding');
 		expect(itemName('thermalfoundation:ore', lang)).toBe('Ore');
+		// The registry lower-cases what the key keeps in camel case.
+		expect(itemName('botania:manaringgreater', lang)).toBe('Greater Band of Mana');
+		// The id already starts with item.
+		expect(itemName('projecte:item.pe_life_stone', lang)).toBe('Life Stone');
+		expect(itemName('projecte:item.pe_unknown_thing', lang)).toBe('Pe Unknown Thing');
 		// Nothing found: the id, tidied up.
 		expect(itemName('nuclearcraft:heat_exchanger_tube', lang)).toBe('Heat Exchanger Tube');
 	});
@@ -177,7 +184,7 @@ describe('item icons', () => {
 		const tag = (type: string, value: unknown) => ({ type, value }) as never;
 		const compound = (entries: [string, unknown][]) => tag('compound', entries);
 		const entry = (id: string, n: number) => compound([['K', tag('string', id)], ['V', tag('int', n)]]);
-		const ids = { type: 'list', itemType: 'compound', value: [entry('minecraft:stone', 1), entry('gems:ruby', 4096)] } as never;
+		const ids = { type: 'list', itemType: 'compound', value: [entry('minecraft:stone', 1), entry('gems:ruby', 4096), entry('wiz:charm_flight', 4097), entry('contenttweaker:core_of_undeath', 4098), entry('gems:sapphire', 4099)] } as never;
 		const items = compound([['ids', ids]]);
 		const registries = compound([['minecraft:items', items]]);
 		const registry = writeNbt({ name: '', gzipped: true, root: compound([['FML', compound([['Registries', registries]])]]) });
@@ -186,13 +193,28 @@ describe('item icons', () => {
 			{
 				'server.properties': 'level-name=world\n',
 				'world/level.dat': registry,
-				'mods/gems.jar': zipBuffer({ 'assets/gems/lang/en_US.lang': 'item.ruby.name=Ruby\n', 'assets/gems/models/item/ruby.json': '{}' })
+				'mods/gems.jar': zipBuffer({ 'assets/gems/lang/en_US.lang': 'item.ruby.name=Ruby\nitem.sapphire.name=Sapphire\n', 'assets/gems/models/item/ruby.json': '{}' }),
+				// .lang keys are properties-style: the colon is escaped.
+				'mods/wiz.jar': zipBuffer({ 'assets/wiz/lang/en_us.lang': 'item.wiz\\:charm_flight.name=Charm of Flight\n' }),
+				// A pack's own assets (ResourceLoader's resources/, ContentTweaker items): names, models and textures.
+				'resources/contenttweaker/lang/en_us.lang': 'item.contenttweaker.core_of_undeath.name=Core of Undeath\n',
+				'resources/contenttweaker/models/item/core_of_undeath.json': json({ parent: 'item/generated', textures: { layer0: 'contenttweaker:items/core_of_undeath' } }),
+				'resources/contenttweaker/textures/items/core_of_undeath.png': PNG,
+				'resources/gems/lang/en_us.lang': 'item.ruby.name=Polished Ruby\n'
 			}
 		);
 		expect(await itemChoices(old)).toEqual([
-			{ id: 'gems:ruby', name: 'Ruby' },
-			{ id: 'minecraft:stone', name: 'Stone' }
+			{ id: 'contenttweaker:core_of_undeath', name: 'Core of Undeath' },
+			// The pack's folder overrides the mod, as in the game.
+			{ id: 'gems:ruby', name: 'Polished Ruby' },
+			// Key by key: the mod's other names stay.
+			{ id: 'gems:sapphire', name: 'Sapphire' },
+			{ id: 'minecraft:stone', name: 'Stone' },
+			{ id: 'wiz:charm_flight', name: 'Charm of Flight' }
 		]);
+		const { icons } = await iconsFor(old, [{ id: 'contenttweaker:core_of_undeath', damage: null }]);
+		expect(icons['contenttweaker:core_of_undeath'].spec).toEqual({ kind: 'flat', layers: [{ texture: 'contenttweaker:items/core_of_undeath', tint: null }] });
+		expect(await iconTexture(old, 'contenttweaker:items/core_of_undeath')).toEqual(PNG);
 
 		const modern = await createInstance(
 			{ modloader: 'fabric', minecraftVersion: '1.21.4' },

@@ -6,7 +6,7 @@ import { downloadFile } from './download';
 import { minecraftClientDownload } from './modloaders';
 import { DISABLED_SUFFIX, modsDir } from './mods';
 import { getMapSettings } from './worldmap';
-import { openZipFile, type ZipEntry, type ZipFile } from './zip';
+import { openZipFile } from './zip';
 import { child, parseNbt, str } from './nbt';
 import { compareVersions } from './java';
 import { serverWorldName } from './packworld';
@@ -55,37 +55,55 @@ export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolea
 
 // ------------------------------------------------------------- resources ---
 
-type Source = { jar: string; zip: ZipFile; entries: Map<string, ZipEntry> };
+/** Reads one indexed file, from a jar or a folder. */
+type Source = () => Promise<Buffer | null>;
+
+/** `<namespace>/<path>` keys for what is indexed: models, item definitions, textures, blockstates and the English lang file. */
+function indexKey(ns: string, rest: string): string | null {
+	if (/^(?:models|items|textures|blockstates)\/.+\.(?:json|png)$/.test(rest)) return `${ns}/${rest}`;
+	if (/^lang\/en_us\.(?:json|lang)$/i.test(rest)) return `${ns}/${rest.toLowerCase()}`;
+	return null;
+}
 
 /**
  * Every model, item definition and texture the server's jars hold, by
- * `<namespace>/<kind>/<path>` (`minecraft/models/item/diamond.json`). Mods
- * first, vanilla last; the first jar to have a file wins.
+ * `<namespace>/<kind>/<path>` (`minecraft/models/item/diamond.json`). The
+ * pack's own asset folders first (they override mods in the game), then mods,
+ * vanilla last; the first to have a file wins.
  */
 export class Resources {
 	private constructor(
 		private readonly files: Map<string, Source>,
+		/** Every English lang file, in the same order: the game merges them key by key. */
+		private readonly langs: { json: boolean; read: Source }[],
 		readonly hasVanilla: boolean
 	) {}
 
-	static async load(jars: string[], clientJar: string | null): Promise<Resources> {
+	/** `dirs` hold namespace folders (`<dir>/<namespace>/textures/...`), as a pack's resources/ or kubejs/assets/ does. */
+	static async load(jars: string[], clientJar: string | null, dirs: string[] = []): Promise<Resources> {
 		const files = new Map<string, Source>();
+		const langs: { json: boolean; read: Source }[] = [];
+		const add = (key: string | null, read: Source) => {
+			if (!key) return;
+			if (/\/lang\/en_us\.(json|lang)$/.test(key)) langs.push({ json: key.endsWith('.json'), read });
+			else if (!files.has(key)) files.set(key, read);
+		};
+		for (const dir of dirs) {
+			const found = await fs.readdir(dir, { recursive: true }).catch(() => [] as string[]);
+			for (const rel of found.sort()) {
+				const [ns, ...rest] = rel.split(path.sep);
+				add(rest.length ? indexKey(ns, rest.join('/')) : null, () => fs.readFile(path.join(dir, rel)).catch(() => null));
+			}
+		}
 		for (const jar of clientJar ? [...jars, clientJar] : jars) {
 			const zip = await openZipFile(jar).catch(() => null);
 			if (!zip) continue;
-			const entries = new Map<string, ZipEntry>();
 			for (const entry of zip.entries) {
-				const m =
-					entry.name.match(/^assets\/([^/]+)\/((?:models|items|textures|blockstates)\/.+\.(?:json|png))$/) ??
-					entry.name.match(/^assets\/([^/]+)\/(lang\/en_us\.(?:json|lang))$/i);
-				if (!m) continue;
-				const key = `${m[1]}/${m[2].toLowerCase().startsWith('lang/') ? m[2].toLowerCase() : m[2]}`;
-				entries.set(key, entry);
+				const m = entry.name.match(/^assets\/([^/]+)\/(.+)$/);
+				add(m && indexKey(m[1], m[2]), () => zip.read(entry));
 			}
-			const source = { jar, zip, entries };
-			for (const key of entries.keys()) if (!files.has(key)) files.set(key, source);
 		}
-		return new Resources(files, !!clientJar);
+		return new Resources(files, langs, !!clientJar);
 	}
 
 	has(key: string): boolean {
@@ -93,9 +111,7 @@ export class Resources {
 	}
 
 	async read(key: string): Promise<Buffer | null> {
-		const source = this.files.get(key);
-		const entry = source?.entries.get(key);
-		return source && entry ? source.zip.read(entry) : null;
+		return (await this.files.get(key)?.()) ?? null;
 	}
 
 	async json(key: string): Promise<Record<string, unknown> | null> {
@@ -126,13 +142,12 @@ export class Resources {
 		return [...defined, ...[...modelled].filter((id) => !withDefinitions.has(id.split(':')[0]))].sort();
 	}
 
-	/** Every en_us line of every jar: 1.13+'s JSON and 1.12's .lang. The first jar to set a key wins. */
+	/** Every en_us line of every jar and asset folder: 1.13+'s JSON and 1.12's .lang. The first to set a key wins. */
 	async lang(): Promise<Map<string, string>> {
 		const out = new Map<string, string>();
-		for (const key of this.files.keys()) {
-			if (!/\/lang\/en_us\.(json|lang)$/.test(key)) continue;
-			const text = (await this.read(key))?.toString('utf8').replace(/^\uFEFF/, '') ?? '';
-			if (key.endsWith('.json')) {
+		for (const { json, read } of this.langs) {
+			const text = (await read())?.toString('utf8').replace(/^\uFEFF/, '') ?? '';
+			if (json) {
 				try {
 					for (const [k, v] of Object.entries(JSON.parse(text) as Record<string, unknown>)) if (typeof v === 'string' && !out.has(k)) out.set(k, v);
 				} catch {
@@ -141,7 +156,9 @@ export class Resources {
 			} else {
 				for (const line of text.split(/\r?\n/)) {
 					const at = line.indexOf('=');
-					if (at > 0 && !line.startsWith('#') && !out.has(line.slice(0, at).trim())) out.set(line.slice(0, at).trim(), line.slice(at + 1).trim());
+					// Keys are properties-style: item.ebwizardry\:charm_flight.name is item.ebwizardry:charm_flight.name.
+					const key = line.slice(0, at).trim().replace(/\\(.)/g, '$1');
+					if (at > 0 && !line.startsWith('#') && !out.has(key)) out.set(key, line.slice(at + 1).trim());
 				}
 			}
 		}
@@ -171,14 +188,22 @@ export async function clientJar(minecraftVersion: string): Promise<string | null
 const cache = new Map<string, { key: string; resources: Promise<Resources> }>();
 
 /**
- * The server's resources, kept while mods/ is unchanged. Vanilla only with
- * the EULA answered yes; mods' own textures need no download.
+ * Folders a pack puts its own assets in: resources/ (ResourceLoader, which
+ * ContentTweaker items use on 1.12) and kubejs/assets/.
+ */
+const ASSET_DIRS = ['resources', path.join('kubejs', 'assets')];
+
+/**
+ * The server's resources, kept while mods/ and the asset folders are
+ * unchanged. Vanilla only with the EULA answered yes; mods' own textures need
+ * no download.
  */
 export async function serverResources(instance: ServerInstance): Promise<Resources> {
 	const mods = modsDir(instance.path);
-	const stat = await fs.stat(mods).catch(() => null);
+	const dirs = ASSET_DIRS.map((d) => path.join(instance.path, d));
+	const stamps = await Promise.all([mods, ...dirs].map((d) => fs.stat(d).then((s) => s.mtimeMs, () => 0)));
 	const eula = getMapSettings(instance.id).eulaAccepted;
-	const key = `${stat?.mtimeMs ?? 0}:${eula}:${instance.minecraftVersion}`;
+	const key = `${stamps.join(',')}:${eula}:${instance.minecraftVersion}`;
 	const hit = cache.get(instance.id);
 	if (hit?.key === key) return hit.resources;
 	const resources = (async () => {
@@ -187,7 +212,7 @@ export async function serverResources(instance: ServerInstance): Promise<Resourc
 			.sort()
 			.map((n) => path.join(mods, n));
 		const client = eula ? await clientJar(instance.minecraftVersion).catch(() => null) : null;
-		return Resources.load(jars, client);
+		return Resources.load(jars, client, dirs);
 	})();
 	cache.set(instance.id, { key, resources });
 	resources.catch(() => cache.delete(instance.id));
@@ -575,19 +600,38 @@ const humanize = (p: string) =>
 		.map((w) => w[0].toUpperCase() + w.slice(1))
 		.join(' ');
 
-/** An item's English name: the keys the game uses (1.13+), the ones 1.12 mods usually use, else its id tidied up. */
+const lowerCased = new WeakMap<Map<string, string>, Map<string, string>>();
+
+/**
+ * An item's English name: the keys the game uses (1.13+), the ones 1.12 mods
+ * usually use, else its id tidied up. 1.12 ids are lower case while mods' keys
+ * often are not (botania:manaringgreater is item.botania:manaRingGreater.name),
+ * so a key that does not match exactly is looked up ignoring case. Some ids
+ * already start with item. (projecte:item.pe_life_stone: item.pe_life_stone.name).
+ */
 export function itemName(id: string, lang: Map<string, string>): string {
 	const [ns, p] = split(id);
 	const keys = [
 		`item.${ns}.${p}`,
 		`block.${ns}.${p}`,
-		...[p, camel(p), `${ns}.${p}`, `${ns}:${p}`, `${ns}.${camel(p)}`].flatMap((n) => [`item.${n}.name`, `tile.${n}.name`])
+		...[p, camel(p), `${ns}.${p}`, `${ns}:${p}`, `${ns}.${camel(p)}`].flatMap((n) => [`item.${n}.name`, `tile.${n}.name`]),
+		`${p}.name`
 	];
 	for (const key of keys) {
 		const found = lang.get(key);
 		if (found) return found;
 	}
-	return humanize(p);
+	let lower = lowerCased.get(lang);
+	if (!lower) {
+		lower = new Map();
+		for (const [k, v] of lang) if (!lower.has(k.toLowerCase())) lower.set(k.toLowerCase(), v);
+		lowerCased.set(lang, lower);
+	}
+	for (const key of keys) {
+		const found = lower.get(key.toLowerCase());
+		if (found) return found;
+	}
+	return humanize(p.replace(/^(item|tile)\./, ''));
 }
 
 const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();
