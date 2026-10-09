@@ -171,7 +171,8 @@ drawn).
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all
-confined to the instance directory. A disk usage page shows where the space goes. Every
+confined to the instance directory. A disk usage page shows where the space goes, the world
+map included (also the one MineShell renders outside the server folder). Every
 other upload (a world zip, a pack file, mod jars, the server icon) takes a drop onto its own
 section too.
 

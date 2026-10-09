@@ -22,7 +22,7 @@
 	<div class="panel-head">
 		<div>
 			<h2>Disk usage</h2>
-			<p>Where this server's space goes. Groups add up to the total; each row links into Files.</p>
+			<p>Where this server's space goes. Groups add up to the total; each row links into Files (the map MineShell renders, kept outside the server folder, to the Map tab).</p>
 		</div>
 		<div class="row">
 			<a class="button button-quiet" href="{base}/files">Back to files</a>
@@ -88,7 +88,7 @@
 					{#each group.items as item (item.path)}
 						<tr>
 							<td class="item">
-								<a href={filesHref(item.path)}>{item.label}</a>
+								<a href={item.outside ? `/instances/${encodeURIComponent(data.instance.id)}/map` : filesHref(item.path)}>{item.label}</a>
 								{#if item.note === 'pinned'}<span class="tag accent">pinned</span>{:else if item.note}<div class="faint small">{item.note}</div>{/if}
 							</td>
 							<td class="num mono">{formatBytes(item.bytes)}</td>

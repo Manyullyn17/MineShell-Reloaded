@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { deleteOldLogs, diskBreakdown, forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { setSnapshotPinned, takeSnapshot } from '#lib/server/snapshots.js';
 import { createInstance } from '../helpers/instances';
+import { getMapSettings, mapDataSize, mapDir, saveMapSettings } from '#lib/server/worldmap.js';
 
 const bytes = (n: number) => 'x'.repeat(n);
 
@@ -134,5 +135,28 @@ describe('recentDiskBreakdown', () => {
 			vi.restoreAllMocks();
 			forgetDiskBreakdown(instance.path);
 		}
+	});
+
+	it("counts the world map: map mods' folders, and MineShell's render kept outside the server folder", async () => {
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.21.1' },
+			{ 'server.properties': 'level-name=world\n', 'world/region/r.0.0.mca': bytes(100), 'bluemap/web/maps/world/tiles/0.png': bytes(70) }
+		);
+		// MineShell's BlueMap render: in its data folder.
+		await fs.mkdir(path.join(mapDir(instance.id), 'web', 'maps'), { recursive: true });
+		await fs.writeFile(path.join(mapDir(instance.id), 'web', 'index.html'), bytes(5));
+		await fs.writeFile(path.join(mapDir(instance.id), 'web', 'maps', 'tile.png'), bytes(45));
+
+		const usage = await diskBreakdown(instance);
+		const map = usage.groups.find((g) => g.id === 'map')!;
+		expect(map.items).toEqual([
+			expect.objectContaining({ path: 'bluemap', bytes: 70 }),
+			expect.objectContaining({ label: 'Map rendered by MineShell', bytes: 50, outside: true })
+		]);
+		expect(usage.total).toBe(usage.groups.reduce((sum, g) => sum + g.bytes, 0));
+		// Measured once and kept: the Map tab does not walk thousands of tiles on every look.
+		expect(getMapSettings(instance.id).sizeBytes).toBe(50);
+		saveMapSettings(instance.id, { sizeBytes: 12345 });
+		expect(await mapDataSize(instance.id)).toBe(12345);
 	});
 });

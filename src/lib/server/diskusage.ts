@@ -6,6 +6,7 @@ import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
 import { serverWorldName } from './packworld';
 import { listSnapshots, SNAPSHOTS_DIR, worldFolders } from './snapshots';
+import { mapDataSize } from './worldmap';
 
 /**
  * Where a server's disk space goes, for the Files tab: the world split by
@@ -20,11 +21,13 @@ export type UsageItem = {
 	path: string;
 	bytes: number;
 	note?: string;
+	/** Not in the server folder (MineShell's own map render): no Files link. */
+	outside?: boolean;
 };
 
 export type UsageGroup = { id: GroupId; label: string; bytes: number; items: UsageItem[] };
 
-type GroupId = 'world' | 'mineshell' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
+type GroupId = 'world' | 'map' | 'mineshell' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
 
 export type Suggestion = {
 	text: string;
@@ -38,6 +41,7 @@ export type DiskBreakdown = { total: number; groups: UsageGroup[]; suggestions: 
 
 const GROUP_LABELS: Record<GroupId, string> = {
 	world: 'World',
+	map: 'World map',
 	mineshell: 'Snapshots and MineShell backups',
 	'old-configs': 'Configs replaced by pack changes',
 	logs: 'Logs and crash reports',
@@ -124,6 +128,12 @@ export async function deleteOldLogs(root: string): Promise<{ files: number; byte
 	return { files: old.length, bytes: old.reduce((sum, f) => sum + f.bytes, 0) };
 }
 
+/** The folders map mods keep their tiles in, at the server's top level. */
+const MAP_MOD_FOLDERS: Record<string, string> = {
+	bluemap: "BlueMap mod's map (bluemap)",
+	dynmap: "Dynmap's map (dynmap)"
+};
+
 const MINESHELL_LABELS: Record<string, string> = {
 	'forge-backup': 'Forge kept for undoing the Cleanroom migration',
 	'playerdata-backups': 'Player data backups from the player editor'
@@ -167,6 +177,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 	const root = instance.path;
 	const items: Record<GroupId, UsageItem[]> = {
 		world: [],
+		map: [],
 		mineshell: [],
 		'old-configs': [],
 		logs: [],
@@ -213,6 +224,8 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 				const rel = path.join(name, sub.name);
 				items['old-configs'].push({ label: sub.name, path: rel, bytes: await sizeOf(path.join(root, rel)) });
 			}
+		} else if (MAP_MOD_FOLDERS[name] && entry.isDirectory()) {
+			items.map.push({ label: MAP_MOD_FOLDERS[name], path: name, bytes: await sizeOf(full) });
 		} else if (name === 'logs' || name === 'crash-reports') {
 			items.logs.push({ label: name, path: name, bytes: await sizeOf(full) });
 		} else if (name === 'mods') {
@@ -222,6 +235,18 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		} else {
 			items.other.push({ label: name, path: name, bytes: await sizeOf(full) });
 		}
+	}
+
+	// The map MineShell renders (BlueMap) is kept in its own data folder, not the server's.
+	const rendered = await mapDataSize(instance.id).catch(() => 0);
+	if (rendered) {
+		items.map.push({
+			label: 'Map rendered by MineShell',
+			path: '#map',
+			bytes: rendered,
+			note: "Kept in MineShell's data folder, not the server's; deleted with the map on the Map tab",
+			outside: true
+		});
 	}
 
 	const groups = (Object.keys(items) as GroupId[])
