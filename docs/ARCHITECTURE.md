@@ -475,6 +475,15 @@ server's), and writes it with a localhost-only bind into the mod's config before
 default port). `/instances/<id>/map/live/` passes requests through to that port behind
 MineShell's login - bodies streamed, MineShell's own cookies and auth headers not passed on.
 
+Simple Voice Chat (`voicechat.ts`) listens on a UDP port of its own (`port` in
+`config/voicechat/voicechat-server.properties`, 24454 by default; `-1` is the game port's
+number), which clients reach directly, not through the game connection. Two servers with the
+default both want 24454 and the second stops itself at start, so `start()` refuses while a
+running server with the same port, or anything else, holds it (a UDP bind test), and a copy or
+a pack install gets a free port written into the config (from 24454 up, none another server's
+or bound; before the mod's first start the file holds just that key, which the mod fills in).
+The overview's firewall hint and the server's Network settings show the port.
+
 ### playit.gg tunnels
 
 `playit.ts`. One playit agent per machine, a user unit `<prefix>-playit.service` (enabled,

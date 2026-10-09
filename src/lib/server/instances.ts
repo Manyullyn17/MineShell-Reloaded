@@ -64,6 +64,7 @@ import { copyCustomFields } from './playerfields';
 import { deleteMacros, getMacros, setMacros } from './macros';
 import { deleteChunkySettings } from './chunky';
 import { copyDatapackRows } from './mods/datapacks';
+import { claimVoicePort, voicePortProblem } from './voicechat';
 
 export class InstanceError extends Error {}
 
@@ -605,6 +606,9 @@ function provisionFromPack(
 				packDatapacks: JSON.stringify(datapackNames(packWorldFiles(pack)))
 			});
 			audit('instance.pack_imported', { instanceId: instance.id, detail: pack.name });
+			// The pack's voice chat port may be another server's already (the same pack twice).
+			const voicePort = await claimVoicePort(requireInstance(instance.id), listInstances()).catch(() => null);
+			if (voicePort) task.log(`Voice chat on UDP port ${voicePort}: another server has the pack's.`);
 			if (choices.startWhenReady) {
 				// A pack missing mods would only crash on start.
 				if (failures.length) task.log('Not starting the server: some mods could not be downloaded.');
@@ -1170,6 +1174,9 @@ export async function start(instance: ServerInstance, opts: { internal?: boolean
 			message: `RCON port ${instance.rconPort} is already in use by something else. Free it, or change this instance's port in Settings, then try again.`
 		};
 	}
+	// Simple Voice Chat's own UDP port: a second server on the same one stops itself at start.
+	const voice = await voicePortProblem(instance, listInstances(), async (id) => (await unitState(id)).active === 'active').catch(() => null);
+	if (voice) return { ok: false, message: voice };
 	clearStopIntent(instance.id);
 	// A map mod's web server on its own port, localhost only (MineShell passes it through).
 	await applyMapModConfig(instance).catch(() => undefined);
@@ -1485,6 +1492,9 @@ export async function cloneInstance(
 				copyDatapackRows(source.id, id);
 				copyServerSnapshotOverrides(source.id, id);
 				copySnapshotSchedule(source.id, id);
+				// The source's voice chat port is the source's: the copy gets its own.
+				const voicePort = await claimVoicePort(copy, listInstances()).catch(() => null);
+				if (voicePort) task.log(`Voice chat on UDP port ${voicePort} (the original keeps its own).`);
 				await syncUnit(copy);
 				commitOperation(id, { status: 'ready', statusMessage: null });
 				audit('instance.cloned', { instanceId: id, detail: source.id });

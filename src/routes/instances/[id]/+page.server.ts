@@ -39,6 +39,7 @@ import {
 	startProfile,
 	stopProfile
 } from '#lib/server/spark.js';
+import { voiceChat } from '#lib/server/voicechat.js';
 
 /**
  * A server still not "Done (" this long after starting is probably hung
@@ -124,6 +125,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			updatedAt: instance.updatedAt,
 			notes: instance.notes,
 			serverPort: instance.serverPort,
+			// Simple Voice Chat's UDP port, for the firewall hint (null without the mod, or on the game port's number).
+			voicePort: await voiceChat(instance).then((v) => (v && v.port !== instance.serverPort ? v.port : null), () => null),
 			minecraftVersion: instance.minecraftVersion,
 			modloaderVersion: instance.modloaderVersion,
 			java: {

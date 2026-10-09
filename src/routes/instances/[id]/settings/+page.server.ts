@@ -75,6 +75,7 @@ import {
 	saveCustomPreset,
 	stripMemoryFlags
 } from '#lib/server/jvm-presets.js';
+import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -86,6 +87,7 @@ const editableProperties = () => PROPERTY_SCHEMA.filter((f) => !MANAGED_KEYS.has
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
+	const voice = await voiceChat(instance);
 	const parsed = await readProperties(instance.path);
 	const cleanroomRelevant =
 		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
@@ -161,8 +163,11 @@ export const load: PageServerLoad = async ({ params }) => {
 					snapshotWarnMinutes: schedule.warnMinutes,
 					snapshotSkipIdle: schedule.skipIdle
 				};
-			})()
+			})(),
+			voicePort: voice?.port ?? null
 		},
+		/** Simple Voice Chat's port and where it sends clients, when the mod is installed. */
+		voice,
 		/** When the next scheduled snapshot is due, if one is set. */
 		snapshotNextAt: scheduledSnapshotAt(instance.id),
 		cpuCores: cpus().length || 1,
@@ -609,6 +614,15 @@ export const actions: Actions = {
 		});
 		saveSnapshotSchedule(instance.id, schedule);
 		return { ok: true, message: schedule.every === 'off' ? 'Scheduled snapshots turned off.' : 'Snapshot schedule saved.' };
+	},
+
+	voiceChat: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const port = formInt(await request.formData(), 'voicePort', 0);
+		if (!Number.isInteger(port) || port < 1 || port > 65535) return fail(400, { ok: false, message: 'Ports go from 1 to 65535.' });
+		if (port === instance.rconPort) return fail(400, { ok: false, message: "That is this server's RCON port." });
+		await setVoiceConfig(instance, { port });
+		return { ok: true, message: 'Saved to the voice chat config. Restart to apply.' };
 	},
 
 	snapshotPolicy: async ({ request, params }) => {

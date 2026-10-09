@@ -100,7 +100,8 @@
 			snapshotIntervalHours: d.snapshotIntervalHours,
 			snapshotWhileRunning: d.snapshotWhileRunning as string,
 			snapshotWarnMinutes: d.snapshotWarnMinutes,
-			snapshotSkipIdle: d.snapshotSkipIdle as boolean
+			snapshotSkipIdle: d.snapshotSkipIdle as boolean,
+			voicePort: (d.voicePort ?? '') as number | string
 		};
 	}
 	function propertyValues() {
@@ -223,6 +224,7 @@
 		{ id: 'port', tab: 'network', label: 'Game port', restart: true, dirty: () => svChanged('serverPort') },
 		{ id: 'connection', tab: 'network', label: 'Connection', restart: true, dirty: () => PROPERTY_SECTIONS.connection.some(changedProperty) },
 		{ id: 'rcon', tab: 'network', label: 'RCON', restart: true, dirty: () => svChanged('rconPort') || rotateRcon },
+		{ id: 'voice', tab: 'network', label: 'Voice chat', restart: true, dirty: () => svChanged('voicePort') },
 		{ id: 'distances', tab: 'performance', label: 'Distances', restart: true, dirty: () => PROPERTY_SECTIONS.distances.some(changedProperty) },
 		{ id: 'ticking', tab: 'performance', label: 'Ticking and disk', restart: true, dirty: () => PROPERTY_SECTIONS.ticking.some(changedProperty) },
 		{ id: 'limits', tab: 'performance', label: 'Resource limits', restart: true, dirty: () => svChanged('limitMemoryMb', 'limitCpuPercent') },
@@ -821,6 +823,28 @@
 			</div>
 		</form>
 	</SettingsSection>
+
+	{#if data.voice}
+		<SettingsSection
+			tab="network"
+			title="Voice chat"
+			description="Simple Voice Chat talks to players' clients on a UDP port of its own, not through the game port."
+			dirty={dirtyIds.has('voice')}
+		>
+			<form method="POST" action="?/voiceChat" class="rows" bind:this={forms.voice} onsubmit={onSectionSubmit}>
+				<div class="field">
+					<label for="voicePort">Voice chat port (UDP) <span class="tag warn">restart</span></label>
+					<input id="voicePort" name="voicePort" type="number" min="1" max="65535" bind:value={sv.voicePort} />
+					<p class="hint">
+						Each server on this machine needs its own; MineShell checks it before a start and gives new and copied servers
+						a free one. Players reach it like the game port: allow it through the firewall
+						(<code class="mono">sudo ufw allow {sv.voicePort}/udp</code>) and forward it as UDP for players from outside.
+						{#if data.voice.host}Clients are sent to <code class="mono">{data.voice.host}</code> (voice_host).{/if}
+					</p>
+				</div>
+			</form>
+		</SettingsSection>
+	{/if}
 
 	<SettingsSection
 		tab="network"

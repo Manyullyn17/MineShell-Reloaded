@@ -387,7 +387,7 @@
 				<button type="button" onclick={copyAddress}>{copied ? 'Copied' : 'Copy'}</button>
 			</div>
 			<p class="faint small">
-				Can't connect? Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>
+				Can't connect? Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>{#if data.detail.voicePort}, and voice chat's port: <code class="mono">sudo ufw allow {data.detail.voicePort}/udp</code>{/if}
 			</p>
 		</section>
 
