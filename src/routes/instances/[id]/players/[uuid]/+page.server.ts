@@ -17,6 +17,7 @@ import {
 import { legacyEnchantmentTable } from '#lib/server/enchantnames.js';
 import { serverWorldName } from '#lib/server/packworld.js';
 import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '#lib/server/playerfields.js';
+import { lookUpProfiles } from '#lib/server/profiles.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
@@ -43,6 +44,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		backups: await listBackups(instance, uuid),
 		file: await playerFileInfo(instance, uuid),
 		online: online?.has(uuid) ?? false,
+		// Streamed: the skin, from Mojang (cached), for the face.
+		skin: lookUpProfiles([uuid]).then((found) => found.get(uuid)?.skin ?? null),
 		/** Mojang's EULA answered yes for this server (shared with the Map tab): vanilla item pictures. */
 		iconsEula: getMapSettings(instance.id).eulaAccepted,
 		// Why it cannot be edited right now, if it cannot.

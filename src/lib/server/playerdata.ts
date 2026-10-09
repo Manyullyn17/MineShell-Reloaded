@@ -32,7 +32,7 @@ export type { Path, TreeTag };
 import { rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
-import { cachedProfileNames, isOfflineUuid, lookUpProfileNames } from './profiles';
+import { cachedProfileNames, isOfflineUuid, lookUpProfileNames, lookUpProfiles } from './profiles';
 
 /**
  * Player data: `<world>/playerdata/<uuid>.dat`, one NBT file per player who
@@ -102,6 +102,23 @@ async function knownNames(instance: ServerInstance): Promise<Map<string, string>
 		}
 	}
 	return names;
+}
+
+/**
+ * Faces for players known by name (the overview's "Online now"): the UUID the
+ * server's files give each name, and its skin from Mojang (cached). A name with
+ * no UUID is coloured by name, as the game does for a name-only waypoint.
+ */
+export async function facesByName(instance: ServerInstance, names: string[]): Promise<Record<string, { id: string; skin: string | null }>> {
+	const byName = new Map([...(await knownNames(instance))].map(([uuid, name]) => [name.toLowerCase(), uuid]));
+	const uuids = names.map((n) => byName.get(n.toLowerCase())).filter((u): u is string => !!u);
+	const profiles = await lookUpProfiles(uuids);
+	return Object.fromEntries(
+		names.map((name) => {
+			const uuid = byName.get(name.toLowerCase());
+			return [name, { id: uuid ?? name, skin: uuid ? (profiles.get(uuid)?.skin ?? null) : null }];
+		})
+	);
 }
 
 export type PlayerFile = {

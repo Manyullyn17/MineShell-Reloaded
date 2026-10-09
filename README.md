@@ -137,7 +137,8 @@ pre-generate terrain with live progress.
 **Players.** Whitelist, operators (with levels) and bans (with reasons, and IP bans),
 edited live over RCON when the server is up and directly in the JSON files when it is down.
 Names resolve to UUIDs through Mojang, and player data the server has no name for (an imported
-world) is named from the account's current name. A player data editor changes inventories, effects
+world) is named from the account's current name. Players show their skin's face, or the colour
+the game's locator bar gives them. A player data editor changes inventories, effects
 and other saved data of players who are offline, mod inventories included (backpacks,
 Curios and Trinkets slots, grouped and named by slot); on 1.12 and older, enchantments are picked
 by name from the world's own table, mod enchantments included.

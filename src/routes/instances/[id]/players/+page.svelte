@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
-	import { avatarTone } from '#lib/shared/avatar.js';
+	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { formatDuration, formatRelative } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
@@ -31,11 +31,12 @@
 		online: boolean;
 		file: { uuid: string; modifiedAt: number; fromMojang: boolean } | null;
 	};
-	// Names Mojang gives for files the server has none for, once they arrive.
-	const lookedUp = streamed(() => data.lookedUpNames);
+	// Mojang's profiles (skins, and names for files the server has none for), once they arrive.
+	const lookedUp = streamed(() => data.profiles);
+	const profiles = $derived((lookedUp.ready ? lookedUp.value : {}) as Record<string, { name: string; skin: string | null }>);
 	const playerFiles = $derived(
 		data.playerFiles.map((f) => {
-			const name = f.name ? null : lookedUp.ready ? (lookedUp.value as Record<string, string>)[f.uuid] : null;
+			const name = f.name ? null : profiles[f.uuid]?.name;
 			return name ? { ...f, name, nameFrom: 'mojang' as const } : f;
 		})
 	);
@@ -162,7 +163,7 @@
 					<tr>
 						<td>
 							<div class="who">
-								<span class="avatar" style="--hue: {avatarTone(person.name)}" aria-hidden="true"></span>
+								<PlayerFace id={person.uuid ?? person.name} skin={person.uuid ? (profiles[person.uuid.toLowerCase()]?.skin ?? null) : null} />
 								<div class="who-text">
 									<div class="who-name">
 										{person.name}
@@ -443,14 +444,6 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-	}
-
-	.avatar {
-		width: 26px;
-		height: 26px;
-		flex: none;
-		border-radius: 3px;
-		background: var(--hue);
 	}
 
 	.who-name {

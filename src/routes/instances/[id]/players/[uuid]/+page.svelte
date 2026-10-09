@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { avatarTone } from '#lib/shared/avatar.js';
+	import PlayerFace from '#lib/components/PlayerFace.svelte';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import NbtNode from '#lib/components/NbtNode.svelte';
@@ -11,6 +12,7 @@
 	import { toast } from '#lib/shared/toasts.svelte.js';
 
 	let { data } = $props();
+	const skin = streamed(() => data.skin);
 
 	// Item pictures (lib/server/itemicons.ts): drawn once per item, the name kept as text where there is none.
 	// svelte-ignore state_referenced_locally
@@ -616,7 +618,7 @@
 <div class="editor-head">
 	<a class="back" href={base}>← All players</a>
 	<header class="head">
-		<span class="avatar" style="--hue: {avatarTone(data.name ?? data.uuid)}" aria-hidden="true"></span>
+		<PlayerFace id={data.uuid} skin={(skin.ready ? skin.value : null) ?? null} size={40} />
 		<div class="who">
 			<div class="who-name">
 				<h2>{data.name ?? 'Unknown name'}</h2>
@@ -1014,14 +1016,6 @@
 		align-items: center;
 		gap: 0.9rem;
 		margin: 0.6rem 0 0.4rem;
-	}
-
-	.avatar {
-		width: 40px;
-		height: 40px;
-		flex: none;
-		border-radius: 4px;
-		background: var(--hue);
 	}
 
 	.who {

@@ -28,6 +28,7 @@ import { setModEnabled } from '#lib/server/mods/index.js';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
 import { tickStats } from '#lib/server/tps.js';
 import { kickPlayer } from '#lib/server/players.js';
+import { facesByName } from '#lib/server/playerdata.js';
 import {
 	activeProfile,
 	cancelProfile,
@@ -139,6 +140,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			host: primaryLanAddress()
 		},
 		players,
+		// Streamed: faces for who is online (skins from Mojang, cached).
+		faces: players?.names.length ? facesByName(instance, players.names) : {},
 		/** From the journal (history.ts): today's peak, since when each online player is on, start times. */
 		history: {
 			peakToday: peakPlayers(instance.id),

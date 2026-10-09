@@ -3,7 +3,7 @@ import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
-const { cachedProfileNames, isOfflineUuid, lookUpProfileNames, resetProfileCache } = await import('./profiles');
+const { cachedProfileNames, isOfflineUuid, lookUpProfileNames, lookUpProfiles, resetProfileCache, skinFile } = await import('./profiles');
 const { listPlayerData } = await import('./playerdata');
 const { createInstance } = await import('../../../tests/helpers/instances');
 const { CACHE_DIR } = await import('./config');
@@ -15,8 +15,16 @@ const OFFLINE = '5627dd98-e6be-3c21-b8a8-e92344183641';
 const LIMITED = '11111111-1111-4111-8111-111111111111';
 const profileUrl = (uuid: string) => `https://sessionserver.mojang.com/session/minecraft/profile/${uuid.replace(/-/g, '')}`;
 
+const NOTCH_SKIN = '292009a4925b58f02c77dadc3ecef07ea4c7472f64e0fdc32ce5522489362680';
+const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('skin pixels')]);
+const NOT_PNG = 'a'.repeat(64);
+
 useRecordedHttp('mojang-profiles', {
-	extra: { [profileUrl(LIMITED)]: () => new Response('{"error":"TooManyRequestsException"}', { status: 429 }) }
+	extra: {
+		[profileUrl(LIMITED)]: () => new Response('{"error":"TooManyRequestsException"}', { status: 429 }),
+		[`https://textures.minecraft.net/texture/${NOTCH_SKIN}`]: () => new Response(new Uint8Array(PNG)),
+		[`https://textures.minecraft.net/texture/${NOT_PNG}`]: () => new Response('<html>not a skin</html>')
+	}
 });
 
 beforeEach(async () => {
@@ -53,6 +61,28 @@ describe('player names from Mojang', () => {
 		await lookUpProfileNames([LIMITED]);
 		await lookUpProfileNames([LIMITED]);
 		expect(fetchCalls.filter((c) => c.url === profileUrl(LIMITED))).toHaveLength(2);
+	});
+});
+
+describe('skins', () => {
+	it("keeps the skin's texture id from the profile", async () => {
+		expect((await lookUpProfiles([NOTCH])).get(NOTCH)).toEqual({ name: 'Notch', skin: NOTCH_SKIN });
+	});
+
+	it('asks again for a profile kept from before skins were', async () => {
+		await fs.mkdir(CACHE_DIR, { recursive: true });
+		await fs.writeFile(path.join(CACHE_DIR, 'profiles.json'), JSON.stringify({ [NOTCH]: { name: 'Notch', at: Date.now() } }));
+		expect((await lookUpProfiles([NOTCH])).get(NOTCH)?.skin).toBe(NOTCH_SKIN);
+		expect(fetchCalls).toHaveLength(1);
+	});
+
+	it('downloads a skin once, and refuses what is not one', async () => {
+		await fs.rm(path.join(CACHE_DIR, 'skins'), { recursive: true, force: true });
+		expect(await skinFile(NOTCH_SKIN)).toEqual(PNG);
+		expect(await skinFile(NOTCH_SKIN)).toEqual(PNG);
+		expect(fetchCalls.filter((c) => c.url.includes(NOTCH_SKIN))).toHaveLength(1);
+		expect(await skinFile(NOT_PNG)).toBeNull();
+		expect(await skinFile('../../etc/passwd')).toBeNull();
 	});
 });
 

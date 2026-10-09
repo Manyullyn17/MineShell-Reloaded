@@ -6,7 +6,7 @@
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
-	import { avatarTone } from '#lib/shared/avatar.js';
+	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
@@ -17,6 +17,8 @@
 	const key = () => data.instance.id;
 	const crashTail = streamed(() => data.crashTail, key);
 	const diagnosis = streamed(() => data.diagnosis, key);
+	const facesInfo = streamed(() => data.faces);
+	const faces = $derived((facesInfo.ready ? facesInfo.value : {}) as Record<string, { id: string; skin: string | null }>);
 	const disk = streamed(() => data.disk, key);
 	const sparkInfo = streamed(() => data.spark, key);
 	const spark = $derived(sparkInfo.ready ? sparkInfo.value : null);
@@ -263,7 +265,7 @@
 					<ul class="online">
 						{#each data.players.names as name (name)}
 							<li>
-								<span class="avatar" style="--hue: {avatarTone(name)}" aria-hidden="true"></span>
+								<PlayerFace id={faces[name]?.id ?? name} skin={faces[name]?.skin ?? null} size={24} />
 								<span class="online-name">{name}</span>
 								{#if data.history.onlineSince[name]}
 									<span class="faint small" title="Online since {formatDateTime(data.history.onlineSince[name])}"
@@ -627,14 +629,6 @@
 		gap: var(--space-3);
 		padding: 0.4rem 0;
 		border-top: 1px solid var(--panel-raised);
-	}
-
-	.avatar {
-		width: 24px;
-		height: 24px;
-		flex: none;
-		border-radius: 3px;
-		background: var(--hue);
 	}
 
 	.online-name {
