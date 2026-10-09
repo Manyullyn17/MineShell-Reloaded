@@ -185,10 +185,21 @@ first: their template unit is `~/.config/systemd/user/mineshell@.service`.
 
 ### Publishing a release
 
-Bump `version` in `package.json`, commit, then `git tag v<version> && git push origin
-v<version>`. The Release workflow runs the CI checks, builds the archive
-(`scripts/package.sh`), starts it once on a throwaway data directory (`scripts/smoke.sh`) and
-publishes it with its checksum and `install.sh`. CI packs and smoke-tests on every push too.
+Bump `version` in `package.json`, commit, then tag and push:
+
+```sh
+git tag -a v<version> -m "MineShell <version>" -m "Optional intro for the release notes."
+git push origin main v<version>
+```
+
+The Release workflow runs the CI checks, builds the archive (`scripts/package.sh`), starts
+it once on a throwaway data directory (`scripts/smoke.sh`) and publishes it with its
+checksum and `install.sh`. CI packs and smoke-tests on every push too.
+
+The release notes (`scripts/release-notes.sh`, also shown on Settings > Updates before
+updating) are the tag message after its first line, then the commits since the previous
+tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `ci:` and
+`chore:` are left out. Preview them with `scripts/release-notes.sh v<version>` once tagged.
 
 ---
 

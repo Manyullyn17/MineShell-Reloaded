@@ -16,6 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The release notes need the commits since the previous tag.
+          fetch-depth: 0
+
+      # checkout can leave the pushed tag as a lightweight one; the notes start
+      # with its message.
+      - name: Fetch the tag with its message
+        run: git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
 
       - uses: actions/setup-node@v4
         with:
@@ -50,5 +58,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
           gh release create "$GITHUB_REF_NAME" dist/mineshell-*.tar.gz dist/mineshell-*.tar.gz.sha256 scripts/install.sh \
-            --title "MineShell $GITHUB_REF_NAME" --generate-notes
+            --title "MineShell $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
