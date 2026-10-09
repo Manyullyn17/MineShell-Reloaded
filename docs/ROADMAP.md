@@ -354,6 +354,26 @@ forwards to it. So one agent serves every MineShell server; tunnels just point a
   may manage its own tunnels. Only a real account can settle it: claim a self-managed
   agent and try `/v1/tunnels/create`.
 
+**Settled 2026-10-09 on the user's free account** (agent claimed as `self-managed`; the
+claim page itself says the agent can create tunnels):
+- `/claim/setup` + `/claim/exchange` work as above; rundata then says `is_self_managed:
+  true`, `has_premium: false`, `account_status: "verified"`.
+- **The agent key creates and deletes tunnels.** `/tunnels/create {name, tunnel_type:
+  "minecraft-java", port_type: "tcp", port_count: 1, origin: {type: "agent", data: {agent_id,
+  local_ip, local_port}}, enabled, alloc: null, firewall_id: null, proxy_protocol: null}` ->
+  `{id}`; `/tunnels/delete {tunnel_id}`. It answers `AgentVersionTooOld` until the agent
+  program has connected once (the claim's version string is not enough). `/v1/tunnels/create`
+  and `/v1/schemas/get` reject every body as "failed to parse body": the server does not
+  match the published client there, so the old endpoint is the one.
+- `/tunnels/list {tunnel_id, agent_id}` has the allocation (shared IP, port, region
+  "global", `assigned_domain`) and `tcp_alloc {allowed: 4, claimed, desired}` /
+  `udp_alloc` - the free plan's 4 TCP ports. rundata's `display_address` is a hostname
+  (`fried-ministries.tun.ply.gg`) that works on the default port: a Minecraft handshake to it
+  reached a local listener through the running agent and the reply came back. No SRV record.
+- Running the agent: `playit-linux-amd64 --secret-path <file> --socket-path <path>
+  --log-path <file>` (the secret file holds the bare key). The IPC socket path must fit
+  sun_path (108 bytes): `$XDG_RUNTIME_DIR`, not under `$DATA`.
+
 Plan that works either way: link by claim; if creating works, a per-server "Make public"
 toggle creates a `minecraft-java` tunnel to its port, updates it (`/v1/tunnels/config`)
 when the port changes and deletes it with the server. If not, the user makes tunnels on
