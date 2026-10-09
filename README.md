@@ -80,7 +80,8 @@ MineShell can look up moves to a build for it, the rest are disabled and listed 
 migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try
 something on the copy first. Those operations are journalled: a crash halfway through is
 rolled back at the next start. A server installed from a pack takes the pack's icon as its
-server icon (players see it in their server list); it can be changed in Settings. Long operations run in the background; the notification center in
+server icon (players see it in their server list, MineShell in its sidebar and headers; a
+server without one gets its initials on a colour of its own); it can be changed in Settings. Long operations run in the background; the notification center in
 the top bar shows their progress from any page and lists what finished.
 
 **Running servers.** Start, stop, restart, force stop, or stop/restart after a countdown
