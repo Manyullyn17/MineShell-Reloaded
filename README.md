@@ -79,7 +79,8 @@ provider, or by uploading the new version's file - the way to update a pack inst
 are carried over or merged, and where you and the pack changed the same lines you get a side-by-side review) or the loader version,
 move a server that is not from a pack to a newer Minecraft or another loader (1.20.1 Forge to 1.21.1 NeoForge: every mod
 MineShell can look up moves to a build for it, the rest are disabled and listed first),
-migrate a Forge 1.12.2 pack to Cleanroom (and back), or copy the whole server to try
+migrate a Forge 1.12.2 pack to Cleanroom (and back; Fugue, which Cleanroom needs, is kept at a build made for the
+installed Cleanroom version, also when a pack ships an older one), or copy the whole server to try
 something on the copy first. Those operations are journalled: a crash halfway through is
 rolled back at the next start. A server installed from a pack takes the pack's icon as its
 server icon (players see it in their server list, MineShell in its sidebar and headers; a

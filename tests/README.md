@@ -169,6 +169,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Rollback deleted originals not yet moved aside | `instances.test.ts` |
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
 | Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
+| Fugue 0.24 (needs Cleanroom 0.6.10) added to 0.5.x servers; a pack's Fugue 0.21 kept on Cleanroom 0.5.17, where it crashes | `cleanroom.test.ts`, `flows/cleanroom-fugue.test.ts` |
 | Player count 0 on Minecraft 1.12 | `rcon.test.ts` |
 | Pack update kept old jars that changed under the same name | `flows/pack-change.test.ts` |
 | Failure while moving a loader aside lost files | `flows/loader-version.test.ts` |

@@ -200,7 +200,9 @@ export const load: PageServerLoad = async ({ params }) => {
 				}
 			: null,
 		// Streamed: scanning means opening every mod jar.
-		cleanroomReport: cleanroomRelevant ? cleanroomReport(instance.path) : null,
+		cleanroomReport: cleanroomRelevant
+			? cleanroomReport(instance.path, instance.modloader === 'cleanroom' ? instance.modloaderVersion : null)
+			: null,
 		snapshotPrompt: await snapshotPrompt(instance),
 		// The server's own retention settings (blank = global), with the global values as placeholders.
 		snapshotSettings: {

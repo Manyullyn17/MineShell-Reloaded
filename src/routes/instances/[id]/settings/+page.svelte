@@ -624,7 +624,13 @@
 							<div class="report">
 								<h3>{cr.onCleanroom ? 'Still needs fixing' : 'Migrating will'}</h3>
 								<ul>
-									{#each missing as mod (mod.label)}
+									{#each report.replace as item (item.fileName)}
+										<li>
+											Replace <strong>{item.label}</strong> <code>{item.fileName}</code>
+											<span class="muted">- it does not run on this Cleanroom version. {item.reason}</span>
+										</li>
+									{/each}
+									{#each missing.filter((m) => !report.replace.some((r) => r.label === m.label)) as mod (mod.label)}
 										<li>Add <strong>{mod.label}</strong> <span class="muted">- {mod.reason}</span></li>
 									{/each}
 									{#each report.disable as item (item.fileName)}

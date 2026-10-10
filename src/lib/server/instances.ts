@@ -42,7 +42,7 @@ import {
 import { missingNotice, recordMissing } from './packs/missing';
 import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
-import { applyCleanroomModFixes } from './cleanroom';
+import { applyCleanroomModFixes, matchFugueToCleanroom } from './cleanroom';
 import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
@@ -56,7 +56,7 @@ import {
 	OperationInProgressError,
 	type Journal
 } from './operations';
-import { canUseCleanroom, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
+import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
@@ -1078,15 +1078,6 @@ export async function changeLoaderVersion(
 				});
 				await fs.rm(aside, { recursive: true, force: true });
 				task.log(`Switched ${loader.label} ${from} -> ${result.loaderVersion ?? 'latest'}.`);
-
-				if (
-					instance.modloader === 'cleanroom' &&
-					cleanroomJavaMajor(instance.modloaderVersion) !== cleanroomJavaMajor(result.loaderVersion)
-				) {
-					task.log(
-						`Cleanroom moved from Java ${cleanroomJavaMajor(instance.modloaderVersion)} to Java ${cleanroomJavaMajor(result.loaderVersion)}. Fugue builds are tied to one or the other; swap Fugue to a matching version if the server fails to start.`
-					);
-				}
 			} catch (err) {
 				task.log(`Install failed; restoring ${loader.label} ${from}.`);
 				// Whatever the failed install left behind goes, then the old files return.
@@ -1100,8 +1091,19 @@ export async function changeLoaderVersion(
 				throw err;
 			}
 
+			// Fugue builds are tied to Cleanroom versions; one made for the old
+			// version can stop the server starting. Committed by now: report, never roll back.
+			let problems: string[] = [];
+			if (instance.modloader === 'cleanroom') {
+				try {
+					problems = (await matchFugueToCleanroom(requireInstance(instance.id), task)).failures;
+				} catch (err) {
+					problems = [`Checking Fugue against the new Cleanroom failed: ${err instanceof Error ? err.message : 'unknown error'}.`];
+					task.log(problems[0]);
+				}
+			}
 			await syncUnit(requireInstance(instance.id));
-			setStatus(instance.id, 'ready', null);
+			setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
 			audit('instance.loader_version_changed', {
 				instanceId: instance.id,
 				detail: `${from} -> ${loaderVersion ?? 'latest'}`

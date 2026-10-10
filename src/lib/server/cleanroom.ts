@@ -1,9 +1,13 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { TMP_DIR } from './config';
 import type { ServerInstance } from './db/schema';
+import { downloadFile } from './download';
 import type { TaskHandle } from './tasks';
 import {
 	bestVersion,
+	compareVersionPriority,
 	DISABLED_SUFFIX,
 	getModProvider,
 	installModVersion,
@@ -145,6 +149,107 @@ const REQUIRED_MODS: RequiredMod[] = [
 	}
 ];
 
+// ---------------------------------------------------------- Fugue's fit ---
+
+/**
+ * What a Fugue jar says about the Cleanroom it runs on, read from its classes:
+ * the range its @Mod annotation requires (`cleanroom@[0.5.14-alpha,)`; Modrinth
+ * has no such field) and whether it rewrites mods' getURLs() calls into
+ * Cleanroom's ReflectionHackery.getURL, which Cleanroom 0.5.3 removed. Fugue
+ * up to 0.23.2 does that and still declares a range that 0.5.3+ satisfies,
+ * so the range alone misses it; the crash then shows only the patched mod.
+ * Measured on the release jars, 2026-10-11: 0.24.x needs 0.6.10, 0.23.6-0.23.7
+ * 0.5.14, 0.23.4 0.5.7, 0.23.3 0.4.4 (the only build for 0.5.3-0.5.6).
+ */
+export type FugueJarInfo = { range: string | null; callsGetUrl: boolean };
+
+const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
+
+export async function inspectFugueJar(file: string): Promise<FugueJarInfo> {
+	const info: FugueJarInfo = { range: null, callsGetUrl: false };
+	const zip = await openZipFile(file).catch(() => null);
+	if (!zip) return info;
+	for (const entry of zip.entries) {
+		if (!entry.name.endsWith('.class')) continue;
+		// Constant pool strings are plain bytes in the class file.
+		const text = (await zip.read(entry)).toString('latin1');
+		info.range ??= text.match(/cleanroom@([[(][^\])]*[\])])/)?.[1] ?? null;
+		if (text.includes(HACKERY) && text.includes('getURL')) info.callsGetUrl = true;
+	}
+	return info;
+}
+
+/** Whether `version` is inside a Maven-style range like `[0.5.7-alpha,)`; an unreadable range does not exclude. */
+export function inVersionRange(version: string, range: string): boolean {
+	const m = range.match(/^([[(])\s*([^,]*?)\s*,\s*([^\])]*?)\s*([\])])$/);
+	if (!m) return true;
+	const [, open, low, high, close] = m;
+	if (low && (open === '[' ? compareVersions(version, low) < 0 : compareVersions(version, low) <= 0)) return false;
+	if (high && (close === ']' ? compareVersions(version, high) > 0 : compareVersions(version, high) >= 0)) return false;
+	return true;
+}
+
+/**
+ * Whether the server's Cleanroom still has ReflectionHackery.getURL: read from
+ * its jar, else from the version it was removed in.
+ */
+export async function cleanroomHasGetUrl(instancePath: string, cleanroomVersion: string): Promise<boolean> {
+	const zip = await openZipFile(path.join(instancePath, `cleanroom-${cleanroomVersion}.jar`)).catch(() => null);
+	const entry = zip?.entries.find((e) => e.name === `${HACKERY}.class`);
+	if (!zip || !entry) return compareVersions(cleanroomVersion, '0.5.3') < 0;
+	return (await zip.read(entry)).toString('latin1').includes('getURL');
+}
+
+/** Why a Fugue does not run on this Cleanroom, or null when nothing says it will not. */
+export function fugueMismatch(info: FugueJarInfo, cleanroomVersion: string, hasGetUrl: boolean): string | null {
+	if (info.range && !inVersionRange(cleanroomVersion, info.range)) return `It needs Cleanroom ${info.range}.`;
+	if (info.callsGetUrl && !hasGetUrl) {
+		return 'It patches mods to call ReflectionHackery.getURL, which this Cleanroom no longer has (removed in 0.5.3).';
+	}
+	return null;
+}
+
+/** Fugue builds' jar info by version id: checking a candidate means downloading it. */
+const fugueInfoCache = new Map<string, FugueJarInfo>();
+
+async function fugueVersionInfo(version: ProjectVersion): Promise<FugueJarInfo> {
+	const cached = fugueInfoCache.get(version.id);
+	if (cached) return cached;
+	const file = version.files.find((f) => f.primary) ?? version.files[0];
+	if (!file) return { range: null, callsGetUrl: false };
+	const temp = path.join(TMP_DIR, `fugue-${crypto.randomUUID()}.jar`);
+	try {
+		await downloadFile(file.url, temp, { hash: file.hash });
+		const info = await inspectFugueJar(temp);
+		fugueInfoCache.set(version.id, info);
+		return info;
+	} finally {
+		await fs.rm(temp, { force: true });
+	}
+}
+
+/** Candidates checked before giving up: each one is a download. */
+const FUGUE_CANDIDATES = 12;
+
+/**
+ * The best Fugue build that runs on this Cleanroom: release first, newest
+ * first, skipping builds whose jar rules this Cleanroom out (newest Fugue
+ * needs Cleanroom 0.6.10, so "newest" alone broke every 0.5.x server).
+ */
+export async function pickFugue(
+	versions: ProjectVersion[],
+	cleanroomVersion: string,
+	hasGetUrl: boolean,
+	info: (version: ProjectVersion) => Promise<FugueJarInfo> = fugueVersionInfo
+): Promise<ProjectVersion | null> {
+	const java = cleanroomJavaMajor(cleanroomVersion);
+	const candidates = [...usableForJava(versions, FUGUE_JAVA25_FROM, java)].sort(compareVersionPriority);
+	for (const version of candidates.slice(0, FUGUE_CANDIDATES)) {
+		if (!fugueMismatch(await info(version), cleanroomVersion, hasGetUrl)) return version;
+	}
+	return null;
+}
+
 /** True for Fugue/Scalar Legacy jars, which MineShell manages for Cleanroom instances itself. */
 export function isCleanroomRequiredJar(fileName: string): boolean {
 	return REQUIRED_MODS.some((mod) => mod.file.test(fileName));
@@ -235,9 +340,12 @@ export type CleanroomReport = {
 	/** Enabled jars the guide suggests replacing; never acted on. */
 	advise: CleanroomFinding[];
 	required: { label: string; reason: string; present: boolean }[];
+	/** Enabled Fugue jars that do not run on the Cleanroom version given; replaced by a build that does. */
+	replace: CleanroomFinding[];
 };
 
-export async function cleanroomReport(instancePath: string): Promise<CleanroomReport> {
+/** `cleanroomVersion`: the Cleanroom installed (or about to be), to check Fugue against; none skips that check. */
+export async function cleanroomReport(instancePath: string, cleanroomVersion?: string | null): Promise<CleanroomReport> {
 	const jars = await scanModJars(instancePath);
 	const enabled = jars.filter((j) => j.enabled);
 	const finding = (jar: JarInfo, rule: Rule): CleanroomFinding => ({
@@ -259,14 +367,27 @@ export async function cleanroomReport(instancePath: string): Promise<CleanroomRe
 		if (hint) advise.push(finding(jar, hint));
 	}
 
+	const replace: CleanroomFinding[] = [];
+	if (cleanroomVersion) {
+		const fugue = REQUIRED_MODS.find((m) => m.label === 'Fugue')!;
+		const hasGetUrl = await cleanroomHasGetUrl(instancePath, cleanroomVersion);
+		for (const jar of enabled.filter((j) => matches(j, fugue))) {
+			const info = await inspectFugueJar(path.join(modsDir(instancePath), jar.fileName));
+			const reason = fugueMismatch(info, cleanroomVersion, hasGetUrl);
+			if (reason) replace.push({ fileName: jar.fileName, label: fugue.label, reason, replacement: null });
+		}
+	}
+
 	return {
 		disable,
 		advise,
+		// A Fugue that does not fit counts as missing: the replacement is added like a missing one.
 		required: REQUIRED_MODS.map((mod) => ({
 			label: mod.label,
 			reason: mod.reason,
-			present: enabled.some((j) => matches(j, mod))
-		}))
+			present: enabled.some((j) => matches(j, mod) && !replace.some((r) => r.fileName === j.fileName))
+		})),
+		replace
 	};
 }
 
@@ -288,19 +409,18 @@ export async function cleanroomDisabledReasons(instancePath: string): Promise<Re
 
 // --------------------------------------------------------------- applying ---
 
-/**
- * The newest suitable build of a required mod for the Cleanroom generation in
- * use: builds from `java25From` on need Java 25, which a Java 21 Cleanroom
- * (<= 0.4.x) cannot load.
- */
+/** Builds from `java25From` on need Java 25, which a Java 21 Cleanroom (<= 0.4.x) cannot load. */
+function usableForJava(versions: ProjectVersion[], java25From: string | undefined, java: number): ProjectVersion[] {
+	return java25From && java < 25 ? versions.filter((v) => compareVersions(v.versionNumber, java25From) < 0) : versions;
+}
+
+/** The newest suitable build of a required mod for the Cleanroom generation in use. */
 export function pickVersionForJava(
 	versions: ProjectVersion[],
 	java25From: string | undefined,
 	java: number
 ): ProjectVersion | null {
-	const usable =
-		java25From && java < 25 ? versions.filter((v) => compareVersions(v.versionNumber, java25From) < 0) : versions;
-	return bestVersion(usable);
+	return bestVersion(usableForJava(versions, java25From, java));
 }
 
 async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
@@ -310,8 +430,14 @@ async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): P
 		provider.listVersions(mod.projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
 	]);
 	const java = cleanroomJavaMajor(instance.modloaderVersion);
-	const version = pickVersionForJava(all, mod.java25From, java);
-	if (!version) throw new Error(`no ${CLEANROOM_MINECRAFT} build for Java ${java} found`);
+	const cleanroom = instance.modloaderVersion;
+	const version =
+		mod.label === 'Fugue' && cleanroom
+			? await pickFugue(all, cleanroom, await cleanroomHasGetUrl(instance.path, cleanroom))
+			: pickVersionForJava(all, mod.java25From, java);
+	if (!version) {
+		throw new Error(`no ${CLEANROOM_MINECRAFT} build for ${cleanroom ? `Cleanroom ${cleanroom}` : `Java ${java}`} found`);
+	}
 
 	return installModVersion(
 		instance,
@@ -337,6 +463,48 @@ export type CleanroomFixResult = {
 	advise: CleanroomFinding[];
 };
 
+/** Adds a required mod, or replaces the `outdated` jars of it with a build that runs on this Cleanroom. */
+async function addRequiredMod(
+	instance: ServerInstance,
+	mod: RequiredMod,
+	replace: CleanroomFinding[],
+	result: CleanroomFixResult,
+	task?: TaskHandle
+): Promise<void> {
+	const outdated = replace.filter((r) => r.label === mod.label);
+	try {
+		for (const item of outdated) task?.log(`${item.fileName} does not run on Cleanroom ${instance.modloaderVersion}: ${item.reason}`);
+		task?.log(outdated.length ? `Replacing ${mod.label}` : `Adding ${mod.label}`);
+		result.added.push(await installRequiredMod(instance, mod));
+	} catch (err) {
+		const message = outdated.length
+			? `Could not replace ${outdated.map((r) => r.fileName).join(', ')}, which does not run on this Cleanroom: ${err instanceof Error ? err.message : 'unknown error'}. Install a ${mod.label} version made for Cleanroom ${instance.modloaderVersion} by hand.`
+			: `Could not add ${mod.label}: ${err instanceof Error ? err.message : 'unknown error'}. Add it by hand.`;
+		result.failures.push(message);
+		task?.log(message);
+		return;
+	}
+	// Only once the replacement is in: a failed download keeps the old one.
+	for (const item of outdated) {
+		await setModEnabled(instance, item.fileName, false);
+		result.disabled.push(item.fileName);
+		task?.log(`Disabled ${item.fileName}.`);
+	}
+}
+
+/**
+ * After a Cleanroom version change: Fugue builds are tied to Cleanroom
+ * versions, so one that fitted the old version is replaced if it does not
+ * fit the new one. Nothing else from the guide is applied.
+ */
+export async function matchFugueToCleanroom(instance: ServerInstance, task?: TaskHandle): Promise<CleanroomFixResult> {
+	const report = await cleanroomReport(instance.path, instance.modloaderVersion);
+	const result: CleanroomFixResult = { disabled: [], added: [], failures: [], advise: [] };
+	const fugue = REQUIRED_MODS.find((m) => m.label === 'Fugue')!;
+	if (report.replace.length) await addRequiredMod(instance, fugue, report.replace, result, task);
+	return result;
+}
+
 /**
  * Applies the automatic part of the guide and logs the rest. Failures to add
  * a required mod are reported rather than thrown: the server may still boot,
@@ -346,7 +514,7 @@ export async function applyCleanroomModFixes(
 	instance: ServerInstance,
 	task?: TaskHandle
 ): Promise<CleanroomFixResult> {
-	const report = await cleanroomReport(instance.path);
+	const report = await cleanroomReport(instance.path, instance.modloaderVersion);
 	const result: CleanroomFixResult = { disabled: [], added: [], failures: [], advise: report.advise };
 
 	for (const item of report.disable) {
@@ -357,14 +525,7 @@ export async function applyCleanroomModFixes(
 
 	for (const mod of REQUIRED_MODS) {
 		if (report.required.find((r) => r.label === mod.label)?.present) continue;
-		try {
-			task?.log(`Adding ${mod.label}`);
-			result.added.push(await installRequiredMod(instance, mod));
-		} catch (err) {
-			const message = `Could not add ${mod.label}: ${err instanceof Error ? err.message : 'unknown error'}. Add it by hand.`;
-			result.failures.push(message);
-			task?.log(message);
-		}
+		await addRequiredMod(instance, mod, report.replace, result, task);
 	}
 
 	if (report.advise.length) {
