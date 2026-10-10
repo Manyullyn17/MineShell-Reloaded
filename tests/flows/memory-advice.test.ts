@@ -12,7 +12,9 @@ describe('memory advice for a server', () => {
 	it('reads the heap samples kept for it', async () => {
 		const s = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1', memoryMaxMb: 16384, createdAt: Date.now() - 10 * 86_400_000 });
 		fakeProcesses(() => ({ stdout: '' }));
-		const now = Date.now();
+		// The advice counts clock hours. Ending the samples just before one starts makes
+		// exactly 8 whole hours; ending them at Date.now() made 9 at minutes 19-39 of an hour.
+		const now = Math.floor(Date.now() / 3_600_000) * 3_600_000 - 1;
 		const rows = Array.from({ length: 8 * 60 }, (_, m) => ({ instanceId: s.id, timestamp: now - m * 60_000, usedBytes: (1 + (m % 10) * 1.3) * GB, maxBytes: 16 * GB }));
 		db.insert(heapSamples).values(rows).run();
 		// Nobody online yet: an empty server's heap does not show what it needs.
