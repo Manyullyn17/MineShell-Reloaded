@@ -1341,9 +1341,9 @@ const PLAYER_COUNT_TTL_MS = 15_000;
 const playerCounts = new Map<string, { at: number; players: { online: number; max: number } | null }>();
 
 /**
- * The rail shows "Running · 3/12" on every page load. Each `list` is an RCON
- * connection the server logs twice, so the rail reuses an answer for a few
- * seconds rather than asking on every navigation.
+ * The rail shows "Running · 3/12" on every page load. Each `list` waits its
+ * turn behind every other RCON command to that server, so the rail reuses an
+ * answer for a few seconds rather than asking on every navigation.
  */
 export async function recentPlayerCount(
 	instance: ServerInstance

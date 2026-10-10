@@ -147,14 +147,25 @@ protocol is a length prefix, an id, a type and two null-terminated strings, whic
 code than a dependency. Commands go out the same way an operator typing in-game would, so
 they work identically.
 
+MineShell keeps one RCON connection per server open for as long as the server keeps it
+(Minecraft never drops an idle client); the server logs every connection, and one per
+command was several a minute. Commands to one server run one after another, because
+vanilla collects every client's output in one shared buffer. The connection is given up
+after a timeout (a late answer must not become the next command's) and opened again on the
+next command; a command sent on a connection that turned out to be closed (the server
+restarted meanwhile) is sent once more on a new one. Answers over 4096 characters come in
+several packets; once a full-size one arrives, a request of an unknown type is sent, and
+its "Unknown request" answer marks the end. Only one packet is ever in flight: the server
+closes the connection when a read holds more than one.
+
 RCON answers are used for things like the online player list and kick confirmation. A
 command typed into the console shows its answer in the view, marked `[rcon]`, but it is
 never written to the journal, which stays a faithful log of the server.
 
 The view itself (`lib/shared/consolelines.ts`) sorts lines by level, folds stack traces
 under the error that logged them, strips the ANSI colours modern Forge prints, and hides
-the server's own lines about RCON connections by default — MineShell's polling opens
-several a minute. Chat lines (`<name> text`, `[Not Secure] <name> text`, `* name`,
+the server's own lines about RCON connections by default (older MineShell versions opened
+one per command, and those runs are still in the journal). Chat lines (`<name> text`, `[Not Secure] <name> text`, `* name`,
 `[Server]`/`[Rcon]` from `say`) are recognised only right after the line's
 "[time] [thread/LEVEL]" prefix, so a message cannot fake one; the console's chat mode sends
 with `say`, which players see as `[Rcon]`. Saved commands are kept per server in the database (`macros.ts`); command

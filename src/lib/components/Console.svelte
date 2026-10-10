@@ -63,7 +63,8 @@
 	/** Chat mode sends what is typed with `say`, to everyone online. */
 	let chatMode = $state(false);
 	let search = $state('');
-	// Off by default: MineShell's own polling opens an RCON connection several times a minute.
+	// Off by default: noise. Older MineShell versions opened one per command, several a minute,
+	// and those runs are still in the journal.
 	let rconConnections = $state(false);
 	/** Phones: the chips and buttons are folded away behind "Filters". */
 	let filtersOpen = $state(false);
@@ -361,7 +362,7 @@
 			class="chip"
 			data-level="rcon"
 			aria-pressed={rconConnections}
-			title="The server logs every RCON connection; MineShell opens several a minute"
+			title="The server logs every RCON connection opening and closing"
 			onclick={() => (rconConnections = !rconConnections)}
 		>
 			<span class="swatch"></span>RCON connections<span class="count">{counts.rcon}</span>

@@ -99,9 +99,10 @@ function continuesMessage(text: string): boolean {
 }
 
 /**
- * The server logging each RCON connection open and close: two lines per
- * command, and MineShell sends several a minute (player list, TPS, the
- * scheduler), so they bury everything else. Forge and NeoForge add the
+ * The server logging each RCON connection open and close. MineShell keeps
+ * one connection per server now, but used to open one per command, several a
+ * minute (player list, TPS, the scheduler), and those runs' journals are
+ * still read; other RCON tools connect per command too. Forge and NeoForge add the
  * logger's name ("[minecraft/RconClient]") before the colon.
  */
 export function isRconConnection(text: string): boolean {

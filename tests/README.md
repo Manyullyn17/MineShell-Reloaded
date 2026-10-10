@@ -159,6 +159,8 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
 | Overlapping RCON commands got each other's output (player list held the tick report) | `rcon.test.ts` |
+| A new RCON connection per command: two log lines each, several a minute | `rcon.test.ts` |
+| RCON answers over 4096 characters cut off after the first packet | `rcon.test.ts` |
 | Rollback deleted originals not yet moved aside | `instances.test.ts` |
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
 | Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
