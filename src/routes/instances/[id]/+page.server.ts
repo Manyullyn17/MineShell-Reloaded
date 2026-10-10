@@ -42,6 +42,8 @@ import {
 	stopProfile
 } from '#lib/server/spark.js';
 import { voiceChat } from '#lib/server/voicechat.js';
+import { forgetMissing, readMissing, startRetryMissing } from '#lib/server/packs/missing.js';
+import { isBisecting } from '#lib/server/bisect.js';
 
 /**
  * A server still not "Done (" this long after starting is probably hung
@@ -166,6 +168,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		forgeQuestion,
+		/** Pack files the last install or pack change could not download (packs/missing.ts). */
+		missingDownloads: await readMissing(instance.path),
 		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
 		// Streamed: the first walk of a big pack takes seconds.
 		disk: recentDiskBreakdown(instance).then(
@@ -318,6 +322,23 @@ export const actions: Actions = {
 			.set({ statusMessage: null })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
+		return { ok: true };
+	},
+
+	retryDownloads: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		if (instance.status !== 'ready') return fail(409, { ok: false, message: 'Wait for the server’s setup to finish first.' });
+		if (isBisecting(instance.id)) {
+			return fail(409, { ok: false, message: 'A search for the mod behind a crash is running. Wait for it, or cancel it, first.' });
+		}
+		if (!(await readMissing(instance.path)).length) return fail(400, { ok: false, message: 'Nothing is missing any more.' });
+		if (!startRetryMissing(instance)) return fail(409, { ok: false, message: 'Already trying again.' });
+		return { ok: true, message: 'Downloading again; the list updates when it is done.' };
+	},
+
+	forgetDownloads: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		await forgetMissing(instance.path);
 		return { ok: true };
 	},
 

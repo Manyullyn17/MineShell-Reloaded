@@ -71,7 +71,8 @@ Tests never touch real data; see [tests/README.md](tests/README.md).
 **Instances.** Create from a modpack you browse in-app (Modrinth, CurseForge, FTB), from a
 `.mrpack` or CurseForge zip you upload, or from just a loader and a Minecraft version
 (vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom). Before a pack installs you see its
-mods and can untick client-only ones. Each instance gets its own directory, port pair (the game
+mods and can untick client-only ones; files that fail to download are listed on the overview with
+links to download them by hand, and can be tried again. Each instance gets its own directory, port pair (the game
 port can be picked), RCON password and systemd unit; with Simple Voice Chat, a voice chat port of its own too
 (checked before every start). Later you can change the pack version (picked from the
 provider, or by uploading the new version's file - the way to update a pack installed from an upload; your config edits

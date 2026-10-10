@@ -363,6 +363,10 @@ Details worth keeping:
   the API hand out `edge.forgecdn.net`, which only redirects to `mediafilez.forgecdn.net`, so
   every CurseForge file gets the latter as a second, hash-checked source. A file-list entry
   without a URL is kept (looked up by its CurseForge ids, else reported), never dropped.
+  Required files that still fail are written to `.mineshell/missing-downloads.json` with a
+  CurseForge file page each (`packs/missing.ts`); the overview lists them with links and a
+  "Try again" that tracks what arrives as pack mods. A file in place drops off the list, and
+  the next install or pack change replaces it.
 - Data packs from the mod browser (Modrinth releases tagged `datapack`) go into the world's
   `datapacks/` folder and are tracked in `instance_datapacks`, apart from `instance_mods`,
   whose rows all live in `mods/`.

@@ -157,6 +157,41 @@
 	</section>
 {/if}
 
+{#if data.missingDownloads.length}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Pack files that could not be downloaded</h2>
+				<p>
+					Download each one and put it in the folder shown (mods also through the Mods tab's upload), or try
+					again. A file drops off this list once it is in place.
+				</p>
+			</div>
+		</div>
+		<ul class="missing">
+			{#each data.missingDownloads as missing (missing.download.target || missing.name)}
+				<li>
+					<div>
+						<span class="mono">{missing.name}</span>
+						<span class="faint small">
+							{#if missing.download.target}into <span class="mono">{missing.download.target.split('/').slice(0, -1).join('/') || 'the server folder'}</span>,{/if}
+							{missing.error}
+						</span>
+					</div>
+					<span class="links">
+						{#if missing.page}<a href={missing.page} target="_blank" rel="noreferrer">CurseForge page</a>{/if}
+						{#if missing.download.urls[0]}<a href={missing.download.urls[0]} target="_blank" rel="noreferrer">Direct link</a>{/if}
+					</span>
+				</li>
+			{/each}
+		</ul>
+		<form method="POST" use:enhance class="row">
+			<button type="submit" formaction="?/retryDownloads">Try again</button>
+			<button type="submit" class="button-quiet" formaction="?/forgetDownloads">Forget the list</button>
+		</form>
+	</section>
+{/if}
+
 <dl class="stats">
 	<div>
 		<dt>Uptime</dt>
@@ -476,6 +511,34 @@
 </div>
 
 <style>
+	.missing {
+		list-style: none;
+		margin: 0 0 var(--space-4);
+		padding: 0;
+	}
+
+	.missing li {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.25rem var(--space-4);
+		padding: 0.5rem 0;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.missing li > div {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.missing .links {
+		display: flex;
+		gap: var(--space-4);
+		white-space: nowrap;
+	}
+
 	.crash-list {
 		list-style: none;
 		margin: 0;

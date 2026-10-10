@@ -39,6 +39,7 @@ import {
 	parsePack,
 	type ParsedPack
 } from './packs';
+import { missingNotice, recordMissing } from './packs/missing';
 import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes } from './cleanroom';
@@ -552,11 +553,8 @@ function provisionFromPack(
 			}
 
 			const problems = [...notes];
-			if (failures.length) {
-				problems.push(
-					`${failures.length} mod${failures.length === 1 ? '' : 's'} could not be downloaded. Check the task log and add them by hand.`
-				);
-			}
+			await recordMissing(instance.path, failures);
+			if (failures.length) problems.push(missingNotice(failures.length));
 			// Mods ticked on the install form that the pack ships disabled.
 			for (const target of choices.enableMods ?? []) {
 				const fileName = path.posix.basename(target);

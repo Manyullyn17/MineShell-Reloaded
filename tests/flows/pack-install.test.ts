@@ -14,6 +14,7 @@ vi.mock('#lib/server/cleanroom.js', async (importOriginal) => {
 const { createFromPack } = await import('#lib/server/instances.js');
 const { LOADERS } = await import('#lib/server/modloaders.js');
 const { curseforgeCdnUrl, packFromFileList, parsePack } = await import('#lib/server/packs/index.js');
+const { readMissing, startRetryMissing } = await import('#lib/server/packs/missing.js');
 const { listInstanceMods, syncMods } = await import('#lib/server/mods/index.js');
 const { readProperties } = await import('#lib/server/properties.js');
 const cleanroom = await import('#lib/server/cleanroom.js');
@@ -137,11 +138,31 @@ describe('installing a pack', () => {
 		expect(mods.every((m) => m.fromPack && !m.untracked)).toBe(true);
 	});
 
-	it('reports mods that could not be downloaded', async () => {
+	it('lists mods that could not be downloaded with where to get them, and downloads them on a retry', async () => {
 		fakeInstall('fabric');
-		const { taskId, instance } = await createFromPack('Broken', pack({ missing: true }), { source: 'curseforge' });
+		mirrorProject(20, 'Mod B');
+		const broken = pack({ missing: true, curseforge: [['10', '1000'], ['20', '2000']] });
+		const { taskId, instance } = await createFromPack('Broken', broken, { source: 'curseforge' });
 		await waitForTask(taskId);
-		expect(reload(instance.id).statusMessage).toMatch(/1 mod could not be downloaded/);
+		expect(reload(instance.id).statusMessage).toMatch(/1 pack file could not be downloaded; the overview lists it with download links/);
+		const missing = await readMissing(instance.path);
+		expect(missing).toMatchObject([
+			{
+				name: 'b.jar',
+				page: 'https://www.curseforge.com/minecraft/mc-mods/20/files/2000',
+				download: { target: 'mods/b.jar', urls: [broken.downloads[1].urls[0], curseforgeCdnUrl(2000, 'b.jar', 'mediafilez.forgecdn.net')] }
+			}
+		]);
+
+		// The file is back: a retry fetches it, tracks it as the pack's and clears the notice.
+		serve(broken.downloads[1].urls[0], 'mod b');
+		const retry = startRetryMissing(reload(instance.id))!;
+		expect((await waitForTask(retry)).state).toBe('done');
+		expect((await tree(instance.path))['mods/b.jar']).toBe('mod b');
+		expect(await readMissing(instance.path)).toEqual([]);
+		expect(reload(instance.id).statusMessage).toBeNull();
+		const b = (await listInstanceMods(reload(instance.id))).find((m) => m.fileName === 'b.jar');
+		expect(b).toMatchObject({ fromPack: true, source: 'curseforge', slug: '20' });
 	});
 
 	it('reports a listed file without a download URL instead of installing without it', async () => {
@@ -160,9 +181,9 @@ describe('installing a pack', () => {
 			]
 		});
 		const { taskId, instance } = await createFromPack('No URL', listed, { source: 'curseforge' });
-		const task = await waitForTask(taskId);
-		expect(reload(instance.id).statusMessage).toMatch(/1 mod could not be downloaded/);
-		expect(task.log.join('\n')).toMatch(/Failed: mods\/nourl\.jar \(no download URL\)/);
+		await waitForTask(taskId);
+		expect(reload(instance.id).statusMessage).toMatch(/1 pack file could not be downloaded/);
+		expect(await readMissing(instance.path)).toMatchObject([{ name: 'nourl.jar', error: 'no download URL', page: null }]);
 	});
 
 	it('looks up a listed CurseForge file without a URL, keeping its folder', async () => {

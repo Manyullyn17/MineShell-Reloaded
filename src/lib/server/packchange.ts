@@ -16,7 +16,8 @@ import {
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep } from './snapshots';
 import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, writeBase, type Base } from './configmerge';
-import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type ParsedPack } from './packs';
+import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
+import { missingNotice, recordMissing } from './packs/missing';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
@@ -555,7 +556,7 @@ export async function applyPackChange(
 		const oldConfigs = path.join(root, journal.oldConfigs);
 		const modsBefore = new Set(journal.modsBefore);
 		const movedConfigs: string[] = [];
-		let downloadFailures: { file: string; error: string }[] = [];
+		let downloadFailures: FailedDownload[] = [];
 		const problems: string[] = [];
 
 		try {
@@ -749,9 +750,8 @@ export async function applyPackChange(
 		// Committed. Tidy up and re-track; problems here are reported, not rolled back.
 		await fs.rm(staging, { recursive: true, force: true });
 		prepared.delete(instance.id);
-		if (downloadFailures.length) {
-			problems.push(`${downloadFailures.length} pack file(s) could not be downloaded; see the task log.`);
-		}
+		await recordMissing(root, downloadFailures);
+		if (downloadFailures.length) problems.push(missingNotice(downloadFailures.length));
 		const blocking = plan.manual.filter((m) => m.blocking && !opts.updateMods.includes(m.fileName));
 		if (blocking.length) {
 			problems.push(`${blocking.length} of your own mod(s) have no compatible version: ${blocking.map((m) => m.name).join(', ')}.`);
