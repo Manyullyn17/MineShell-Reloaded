@@ -1,0 +1,805 @@
+OpenJDK 64-Bit Server VM warning: Ignoring option ZGenerational; support was removed in 24.0
+WARNING: A restricted method in java.lang.foreign.MemorySegment has been called
+WARNING: java.lang.foreign.MemorySegment::reinterpret has been called by org.jline.terminal.impl.ffm.FfmTerminalProvider in an unnamed module (file:<instance>/libraries/org/jline/jline/4.1.3/jline-4.1.3.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+2026-10-10T22:36:23.689859597Z main WARN Disabling terminal, you're running in an unsupported environment.
+[00:36:23] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[00:36:23] [main/INFO] [FML.TWEAK]: Initializing Mixins...
+[00:36:23] [main/INFO] [mixin]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=jar:file:<instance>/libraries/com/cleanroommc/sponge-mixin/0.20.12+mixin.0.8.7/sponge-mixin-0.20.12+mixin.0.8.7.jar!/org/spongepowered/asm/mixin/MixinEnvironment.class Service=LaunchWrapper Env=UNKNOWN
+[00:36:23] [main/INFO] [FML.TWEAK]: Initializing MixinExtras...
+[00:36:23] [main/INFO] [Foundation]: Using primary tweak name net.minecraftforge.fml.common.launcher.FMLServerTweaker
+[00:36:23] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker
+[00:36:23] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLServerTweaker@305f7627
+[00:36:23] [main/INFO] [FML.TWEAK]: Jar location: file:<instance>/cleanroom-0.5.17-alpha.jar
+[00:36:23] [main/INFO] [FML]: Forge Mod Loader version 14.23.5.2864 for Minecraft 1.12.2 loading
+[00:36:23] [main/INFO] [FML]: Cleanroom version 0.5.17-alpha
+[00:36:23] [main/INFO] [FML]: Java is OpenJDK 64-Bit Server VM, version 25.0.4.1, running on Linux:amd64:6.8.0-146-generic, installed at /usr/lib/jvm/java-25-openjdk-amd64
+[00:36:24] [main/INFO] [FML]: Searching <instance>/./mods for mods
+[00:36:24] [main/INFO] [FML]: Searching <instance>/./mods/1.12.2 for mods
+[00:36:24] [main/WARN] [FML]: The mod with loading plugin com.cleanroommc.configanytime.ConfigAnytimePlugin is in blacklist and won't be loaded. Check forge_early.cfg for more info.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from !mixinbooter-10.7.jar
+[00:36:24] [main/WARN] [FML]: The mod with loading plugin zone.rong.mixinbooter.MixinBooterPlugin is in blacklist and won't be loaded. Check forge_early.cfg for more info.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in !Red-Core-MC-1.8-1.12-0.7.jar.
+[00:36:24] [main/ERROR] [FML]: Coremod RedCorePlugin: Unable to class load the plugin dev.redstudio.redcore.RedCorePlugin
+java.lang.ClassNotFoundException: dev.redstudio.redcore.RedCorePlugin
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:262) ~[foundation-0.19.8.jar:?]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:557) ~[?:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:273) ~[foundation-0.19.8.jar:?]
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.base/java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.base/java.lang.Class.forName(Class.java:547) ~[?:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.loadCoreMod(CoreModManager.java:584) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.discoverCoreMods(CoreModManager.java:506) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.CoreModManager.handleLaunch(CoreModManager.java:275) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupHome(FMLLaunchHandler.java:114) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.setupServer(FMLLaunchHandler.java:90) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.FMLLaunchHandler.configureForServerLaunch(FMLLaunchHandler.java:51) ~[cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.common.launcher.FMLServerTweaker.injectIntoClassLoader(FMLServerTweaker.java:60) ~[cleanroom-0.5.17-alpha.jar:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:107) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.5.17-alpha.jar:?]
+Caused by: java.lang.ClassNotFoundException: dev.redstudio.redcore.RedCorePlugin
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:226) ~[foundation-0.19.8.jar:?]
+	... 18 more
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in +Fugue-0.21.0.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from `FermiumBooter-1.3.1.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in `FermiumBooter-1.3.1.jar.
+[00:36:24] [main/INFO] [FermiumBooter]: FermiumBooter beginning forced mixin config handling.
+[00:36:24] [main/INFO] [FermiumBooter]: FermiumBooter finished forced mixin config handling, enqueued 0 mixin configs, removed 0 mixin configs.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in advancedrocketry-2.2.4.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ae2-uel-v0.56.5.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ae2exttable-v1.0.8.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Alfheim-1.5.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in AppleCore-mc1.12.2-3.4.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in AquaAcrobatics-1.15.4.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Aroma1997Core-1.12.2-2.0.0.2.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in astralsorcery-1.12.2-1.10.27.jar.
+[00:36:24] [main/INFO] [Astral Core]: [AstralCore] Initialized.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from bewitchment-1.12.2-0.0.22.65.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in bewitchment-1.12.2-0.0.22.65.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in BringMeTheRings-0.4.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in BTFixes-1.12.2-1.2.0.jar.
+[00:36:24] [main/INFO] [Battle Towers Fixes]: BTFixesCore initializing...
+[00:36:24] [main/INFO] [FML]: Loading tweaker codechicken.asm.internal.Tweaker from ChickenASM-1.12-1.0.2.7.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in CTM-MC1.12.2-1.0.2.31.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in DeepBloodEvolution-1.1.6-e.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in EMCGadgets-1.1.1-universal.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in enchcontrol-1.12.2-1.1.5-0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in enchlib-1.12.2-1.2.1.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Fixeroo-2.3.6.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Fluid Craft for AE2-2.6.6-r.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in fluiddrawers-1.12.2-1.0.7.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Forgelin-Continuous-2.1.10.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in HammerLib-1.12.2-12.2.50.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in IceAndFireRotN-1.9.1-1.3.4.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in lemonskin-3.1.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in loliasm-5.31.jar.
+[00:36:24] [main/INFO] [LoliASM]: Lolis are on the server-side.
+[00:36:24] [main/INFO] [LoliASM]: Lolis are preparing and loading in mixins since Rongmario's too lazy to write pure ASM at times despite the mod being called 'LoliASM'
+[00:36:24] [main/WARN] [LoliASM]: Replacing CA Certs with an updated one...
+[00:36:24] [main/INFO] [LoliASM]: Initializing StacktraceDeobfuscator...
+[00:36:24] [main/INFO] [LoliASM]: Found MCP stable-39 method mappings: methods-stable_39.csv
+[00:36:24] [main/INFO] [LoliASM]: Initialized StacktraceDeobfuscator.
+[00:36:24] [main/INFO] [LoliASM]: Installing DeobfuscatingRewritePolicy...
+[00:36:24] [main/INFO] [LoliASM]: Installed DeobfuscatingRewritePolicy.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from LootTweaker-0.5.1+MC1.12.2-DLS0.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in mixin container LootTweaker-0.5.1+MC1.12.2-DLS0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in minieffects-2.3.2.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ModularMachinery-CE-2.2.2.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in modularui-3.1.5.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in nae2-1.6.4.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from NoiseThreader-1.1.0.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in NoiseThreader-1.1.0.jar.
+[00:36:24] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.vanilla.json" for early mixin enqueue, adding.
+[00:36:24] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.otg.json" for late mixin enqueue, adding.
+[00:36:24] [main/INFO] [FermiumRegistryAPI]: FermiumRegistryAPI supplied "mixins.noisethreader.bettercaves.json" for late mixin enqueue, adding.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in OpenBlocksReopened-1.12.2-1.8.3.1.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in OpenComputers-MC1.12.2-1.8.7+2502094.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in persistency-1.2.0.jar.
+[00:36:24] [main/INFO] [Persistency]: Loading Persistency CoreMod
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in peteams-1.12.2-1.4.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in QuantumThings-MC-1.12.2-1.0.8.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in RandomTweaker-1.4.10.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ReachFix-1.12.2-1.1.3.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from RoughlyEnoughIDs-2.2.4.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in RoughlyEnoughIDs-2.2.4.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from Sledgehammer-1.12.2-2.0.26-thin.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in Sledgehammer-1.12.2-2.0.26-thin.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from startuptimer-1.1.0.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in startuptimer-1.1.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in StellarCore-1.5.22.jar.
+[00:36:24] [main/INFO] [stellar_core]: [StellarEnvironment] Processor count: 12
+[00:36:24] [main/INFO] [stellar_core]: [StellarEnvironment] Parallel execution is enabled.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ThaumcraftFix-1.12.2-1.1.9.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ThaumicAdditions-1.12.2-12.7.9.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in ThaumicAugmentation-1.12.2-2.1.14.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in thaumictweaker-1.2.4.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in tweakedexcavation-2.0.1.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in UniDict-1.12.2-3.0.10.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in UniversalTweaks-1.12.2-1.18.0.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in vintagefix-0.6.2.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in XU2-Patcher-1.0.2.jar.
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in zenutils-1.26.5.jar.
+[00:36:24] [main/INFO] [FML]: Loading tweaker org.spongepowered.asm.launch.MixinTweaker from DaomephstaLootShared-0.0.2.jar
+[00:36:24] [main/INFO] [FML]: Found FMLCorePluginContainsFMLMod marker in mixin container DaomephstaLootShared-0.0.2.jar.
+[00:36:24] [main/INFO] [Foundation]: Calling tweak io.github.lxgaming.sledgehammer.launch.SledgehammerTweaker@633fd91
+[00:36:24] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.mixin.EnvironmentStateTweaker@3166f664
+[00:36:24] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker
+[00:36:24] [main/INFO] [Foundation]: Loading tweak name org.spongepowered.asm.launch.MixinTweaker
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/INFO] [Foundation]: Loading tweak name com.cleanroommc.fugue.common.LateBootstrapTweaker
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/INFO] [Foundation]: Loading tweak name codechicken.asm.internal.Tweaker
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.launch.MixinTweaker has already been visited -- skipping
+[00:36:24] [main/INFO] [Foundation]: Loading tweak name net.minecraftforge.fml.common.launcher.FMLDeobfTweaker
+[00:36:24] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@4f8d86e4
+[00:36:24] [main/INFO] [Foundation]: Calling tweak BTFixesCore
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Sledgehammer
+[00:36:24] [main/INFO] [Foundation]: Calling tweak UniversalTweaksCore
+[00:36:24] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLInjectionAndSortingTweaker@4f8d86e4
+[00:36:24] [main/INFO] [Foundation]: Calling tweak PatcherFMLPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak ZenUtilsPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak FMLCorePlugin
+[00:36:24] [main/INFO] [mixin]: Initialised Mixin FML Remapper Adapter with net.minecraftforge.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper@33e4b9c4
+[00:36:24] [main/INFO] [FML]: FML appears to be missing any signature data. This is expected, don't worry.
+[00:36:24] [main/INFO] [Foundation]: Calling tweak FMLForgePlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Fugue
+[00:36:24] [main/INFO] [Foundation]: Calling tweak AdvancedRocketryPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak AE2ExtendedCraftingTable-Core
+[00:36:24] [main/INFO] [Foundation]: Calling tweak AlfheimPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Aqua Acrobatics Transformer
+[00:36:24] [main/INFO] [Aqua Acrobatics Transformer]: Running in obf, thanks for playing with the mod!
+[00:36:24] [main/INFO] [Foundation]: Calling tweak CoreMod
+[00:36:24] [main/INFO] [Aroma1997Core]: Finished data injection.
+[00:36:24] [main/INFO] [Aroma1997Core]: Finished data injection.
+[00:36:24] [main/INFO] [Foundation]: Calling tweak BewitchmentFMLLoadingPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak BringMeTheRings plugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak DeepBloodEvolutionCore
+[00:36:24] [main/INFO] [Foundation]: Calling tweak EMCGadgetsCorePlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak EC Core Plugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak EnchLibEarly
+[00:36:24] [main/INFO] [Foundation]: Calling tweak FluidCraftCore
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Forgelin-Continuous
+[00:36:24] [main/INFO] [Foundation]: Calling tweak HCASM
+[00:36:24] [main/INFO] [Foundation]: Calling tweak LemonSkinPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak LoliASM
+[00:36:24] [main/INFO] [Foundation]: Calling tweak MiniEffectsEarlyMixin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak MMCEEarlyMixinLoader
+[00:36:24] [main/INFO] [Foundation]: Calling tweak NAE2-Core
+[00:36:24] [main/INFO] [Foundation]: Calling tweak NoiseThreaderPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Persistency
+[00:36:24] [main/INFO] [Foundation]: Calling tweak PETeamsCore
+[00:36:24] [main/INFO] [Foundation]: Calling tweak RandomTweaker CoreMod Boot
+[00:36:24] [main/INFO] [Foundation]: Calling tweak JustEnoughIDs Extension Plugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak ScalarLoadingPlugin
+[00:36:24] [main/INFO] [Foundation]: Calling tweak Startup Timer
+[00:36:24] [main/INFO] [Foundation]: Calling tweak StellarCoreEarlyMixinLoader
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_advancements.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_bakedmodel.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_bakedquad.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockfaceuv.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockpart.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_blockstateimpl.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_chunktecache.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_chunktemap.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_chunktequeue.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_classmultimap.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_entitytracker.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_entitytracker_y_range.json is disabled by config or mod is not loaded.
+[00:36:25] [main/WARN] [stellar_core]: ***************************************************************************
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: * CensoredASM option `delayItemStackCapabilityInit` is enabled.
+[00:36:25] [main/WARN] [stellar_core]: * This is not compatible with StellarCore's `AsyncItemStackCapabilityInit`.
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: * StellarCore now will automatic disable `AsyncItemStackCapabilityInit`.
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: ***************************************************************************
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_itemstack_cap.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_longnbtkiller.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_modelblock.json is disabled by config or mod is not loaded.
+[00:36:25] [main/WARN] [stellar_core]: ************************************************************************************************************
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: * CensoredASM option `optimizeNBTTagCompoundBackingMap` or `nbtBackingMapStringCanonicalization` is enabled.
+[00:36:25] [main/WARN] [stellar_core]: * This is not compatible with StellarCore's `NBTTagCompoundMapImprovements`.
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: * StellarCore now will automatic disable `NBTTagCompoundMapImprovements`.
+[00:36:25] [main/WARN] [stellar_core]: *
+[00:36:25] [main/WARN] [stellar_core]: ************************************************************************************************************
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_nbtmaplist.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_nbtpool.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_nethandlerplayserver.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_nnlist.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_noglerror.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_property.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_phys.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_randomtick.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_renderglobal.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_resourcelocation.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_resourcelocation_async.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_resourcepack.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_world.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_world_load.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_world_pos_judgement.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_worldclient.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_worldserver.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_minecraft_statemapperbase.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_stitcher.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_minecraft_texture_load.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_asmdatatable.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_asmmodparser.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_bakedquad.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_bakedquad_vertexdata.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_capability.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Adding mixins.stellar_core_forge_chunkmanager.json to mixin configuration.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_modelloader.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_forge_registry.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_hudcaching.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [stellar_core]: [StellarCore-MixinLoader] Mixin config mixins.stellar_core_ebwizardry_early.json is disabled by config or mod is not loaded.
+[00:36:25] [main/INFO] [Foundation]: Calling tweak TARCore
+[00:36:25] [main/INFO] [Foundation]: Calling tweak ThaumicTweakerCore
+[00:36:25] [main/INFO] [Foundation]: Calling tweak TweakedExcavationPlugin
+[00:36:25] [main/INFO] [Foundation]: Calling tweak UniDictCoreMod
+[00:36:25] [main/INFO] [Foundation]: Calling tweak VintageFix
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.esotericsoftware.kryo.unsafe.UnsafeUtil (jar:file:<instance>/./mods/vintagefix-0.6.2.jar!/com/esotericsoftware/kryo/unsafe/UnsafeUtil.class)
+WARNING: Please consider reporting this to the maintainers of class com.esotericsoftware.kryo.unsafe.UnsafeUtil
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+[00:36:25] [main/INFO] [VintageFix]: Loading JarDiscovererCache
+[00:36:25] [main/INFO] [Foundation]: Calling tweak TheBetweenlandsLoadingPlugin
+[00:36:25] [main/INFO] [Foundation]: Calling tweak org.spongepowered.asm.launch.MixinTweaker@7b3cbe6e
+[00:36:25] [main/INFO] [Foundation]: Calling tweak com.cleanroommc.fugue.common.LateBootstrapTweaker@4e4395c
+[00:36:25] [main/INFO] [Foundation]: Calling tweak codechicken.asm.internal.Tweaker@1ab53860
+[00:36:25] [main/INFO] [STDOUT]: [codechicken.asm.internal.Tweaker:injectIntoClassLoader:30]: false
+[00:36:25] [main/INFO] [Foundation]: Calling tweak MixinBooter
+[00:36:25] [main/INFO] [FML]: Loading early loader mod.acgaming.universaltweaks.core.UTLoadingPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.difficulty.multiplayer.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.buttons.snooper.server.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.ai.saddledwandering.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.chunksaving.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.itementities.server.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.leafdecay.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.spawning.husk.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.maxhealth.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.falling.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.crafteditemstatistics.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.spawning.stray.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.comparatortiming.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.hopper.boundingbox.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.entityradiuscheck.lesscollisions.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.eating.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.burning.mobs.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.miningglitch.server.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.tileentities.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.deathtime.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.tracker.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.pathfinding.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.ai.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.minecart.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.skeletonaim.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.prefixcheck.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.particlespawning.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.durabilitycap.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.recipebook.server.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.suffocation.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.items.rarity.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.misc.packetsize.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.sapling.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.sleeping.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.dyeblending.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.craftingcache.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.desync.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.attackradius.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.entitylists.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.itemframevoid.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.hopper.tile.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.lenientpaths.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.difficulty.singleplayer.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.timeouts.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.village.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/mixins.vanilla.mod.accessors.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.taming.horse.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.ladderflying.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.world.stronghold.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.entityradiuscheck.reducesearchsize.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.dimensionchange.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.destroypacket.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.horsefalling.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.misc.incurablepotions.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.witchhut.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boundingbox.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.mount.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.entities.burning.horse.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.world.chunks.gen.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.blockfire.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.saturation.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boat.breaking.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.world.portal.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.boat.offset.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.blocks.piston.tile.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.endportal.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.untippedarrowparticles.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.blocks.bedobstruction.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/bugfixes/mixins.entities.entityid.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins/tweaks/mixins.performance.advancements.triggers.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader io.github.kurrycat2004.peteams.core.PETeamsCore for its mixins.
+[00:36:25] [main/INFO] [FML]: Loading early loader youyihj.zenutils.impl.core.ZenUtilsPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.zenutils.vanilla.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.zenutils.zenbootstrap.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader mod.emt.thaumictweaker.core.EarlyMixinsTT for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.thaumictweakercore.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader com.cleanroommc.modularui.core.ModularUICore for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixin.modularui.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader org.dimdev.jeid.core.JEIDLoadingPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.jeid.core.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader ua.myxazaur.lemonskin.asm.LemonSkinPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.lemonskin.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.recipebook_fix.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader snownee.minieffects.mixin.MiniEffectsEarlyMixin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding minieffects.mixins.minecraft.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader zone.rong.loliasm.core.LoliLoadingPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.devenv.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.vfix_bugfixes.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.internal.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.vanities.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.registries.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.stripitemstack.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.lockcode.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.recipes.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.misc_fluidregistry.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.forgefixes.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.capability.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.efficienthashing.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.priorities.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.crashes.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.fix_mc129057.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader org.embeddedt.startuptimer.core.LoadingPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.startuptimer.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader mod.acgaming.btfixes.core.BTFixesLoadingPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding btfixes.vanilla.mixins.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader io.github.kurrycat2004.enchlib.core.EnchLibEarly for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.enchlib.early.optimization.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.enchlib.early.enchlevel.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader org.embeddedt.vintagefix.core.VintageFixCore for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.vintagefix.init.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Adding mixins.vintagefix.json mixin configuration.
+[00:36:25] [main/INFO] [FML]: Loading early loader dev.redstudio.alfheim.asm.AlfheimPlugin for its mixins.
+[00:36:25] [main/INFO] [FML]: Adding mixins.alfheim.json mixin configuration.
+[00:36:25] [main/INFO] [Foundation]: Calling tweak OpenModsCorePlugin
+[00:36:25] [main/INFO] [Foundation]: Calling tweak FermiumBooter
+[00:36:25] [main/INFO] [FermiumJarScanner]: FermiumJarScanner beginning jar searching.
+[00:36:25] [main/INFO] [FML]: Searching <instance>/./mods for mods
+[00:36:25] [main/INFO] [FML]: Searching <instance>/./mods/1.12.2 for mods
+[00:36:28] [main/INFO] [FermiumJarScanner]: FermiumJarScanner finished jar searching, found 378 ModIDs.
+[00:36:28] [main/INFO] [FermiumJarScanner]: FermiumMixinConfig beginning MixinConfig parsing.
+[00:36:28] [main/INFO] [FermiumJarScanner]: FermiumMixinConfig finished MixinConfig parsing, parsed 0 config options with 0 warnings
+[00:36:28] [main/INFO] [FermiumBooter]: FermiumBooter adding "mixins.noisethreader.vanilla.json" for early mixin application.
+[00:36:28] [main/INFO] [Foundation]: Calling tweak net.minecraftforge.fml.common.launcher.FMLDeobfTweaker@7439cf7a
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Loading patches...
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Initialized! Loaded 14 class patches!
+[00:36:28] [main/INFO] [Forgelin-Continuous Transformer]: Begin register to-be-transformed classes
+[00:36:28] [main/INFO] [Forgelin-Continuous Transformer]: Skipping registration...
+[00:36:28] [main/INFO] [Forgelin-Continuous Transformer]: Registration for transformation is completed
+[00:36:28] [main/INFO] [LoliASM]: The lolis are now preparing to bytecode manipulate your game.
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.util.ResourceLocation to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.util.registry.RegistrySimple to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.nbt.NBTTagString to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraftforge.fml.common.discovery.ModCandidate to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraftforge.fml.common.discovery.ASMDataTable$ASMData to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.item.crafting.FurnaceRecipes to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class hellfirepvp.astralsorcery.common.enchantment.amulet.PlayerAmuletHandler to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class mezz.jei.suffixtree.Edge to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class betterwithmods.event.BlastingOilEvent to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class betterwithmods.common.items.ItemMaterial to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class lach_01298.qmd.render.entity.BeamRenderer to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.dries007.tfc.objects.entity.EntityFallingBlockTFC to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.client.renderer.EntityRenderer to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.client.renderer.EntityRenderer to the transformation queue
+[00:36:28] [main/INFO] [LoliASM]: Adding class net.minecraft.nbt.NBTTagCompound to the transformation queue
+[00:36:28] [main/INFO] [JustEnoughIDs]: Adding class net.minecraft.item.ItemStack to the transformation queue
+[00:36:28] [main/INFO] [JustEnoughIDs]: Adding class net.minecraft.potion.PotionEffect to the transformation queue
+[00:36:28] [main/INFO] [JustEnoughIDs]: Adding class net.minecraft.world.gen.ChunkProviderServer to the transformation queue
+[00:36:28] [main/INFO] [JustEnoughIDs]: Adding class pregenerator.impl.processor.generator.ChunkHelper to the transformation queue
+[00:36:28] [main/INFO] [JustEnoughIDs]: Adding class zmaster587.advancedRocketry.util.BiomeHandler to the transformation queue
+[00:36:28] [main/WARN] [mixin]: Reference map '' for mixins.vintagefix.init.json could not be read. If this is a development environment you can ignore this message
+[00:36:28] [main/INFO] [MixinExtras|Service]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.4).
+[00:36:28] [main/INFO] [Foundation]: Calling tweak AE2ELCore
+[00:36:28] [main/INFO] [Foundation]: Calling tweak TransformerLoader
+[00:36:28] [main/INFO] [Foundation]: Calling tweak LoadingPlugin
+[00:36:28] [main/INFO] [Foundation]: Calling tweak ReachFixPlugin
+[00:36:28] [main/INFO] [Foundation]: Calling tweak IELoadingPlugin
+[00:36:28] [main/INFO] [Foundation]: Calling tweak llibrary
+[00:36:28] [main/INFO] [Foundation]: Calling tweak iceandfire
+[00:36:28] [main/INFO] [Foundation]: Calling tweak AstralCore
+[00:36:28] [main/INFO] [Foundation]: Calling tweak Thaumic Augmentation Core Plugin
+[00:36:28] [main/INFO] [Foundation]: Calling tweak AppleCore
+[00:36:28] [main/INFO] [Foundation]: Calling tweak Thaumcraft Fix Core Plugin
+[00:36:28] [main/INFO] [thaumcraftfixcore]: Using MixinBooter for late Mixin loading
+[00:36:28] [main/INFO] [thaumcraftfixcore]: Thaumcraft Fix coremod initialized
+[00:36:28] [main/INFO] [Foundation]: Calling tweak Fixeroo
+[00:36:28] [main/INFO] [Foundation]: Calling tweak FluidDrawersCoreMod
+[00:36:28] [main/INFO] [Foundation]: Calling tweak ModularUI-Core
+[00:36:28] [main/INFO] [Foundation]: Calling tweak EntryPoint
+[00:36:28] [main/INFO] [Foundation]: Calling tweak CTMCorePlugin
+[00:36:28] [main/INFO] [Foundation]: Calling tweak EnderCorePlugin
+[00:36:28] [main/WARN] [Foundation]: Tweak name org.spongepowered.asm.mixin.EnvironmentStateTweaker has already been visited -- skipping
+[00:36:28] [main/INFO] [Sledgehammer]: Successfully loaded configuration file.
+[00:36:28] [main/INFO] [Sledgehammer]: Successfully saved configuration file.
+[00:36:28] [main/INFO] [VintageFix Mixin Loader]: Found 100 mixins
+[00:36:28] [main/INFO] [VintageFix Mixin Loader]: Successfully saved config file
+[00:36:28] [main/INFO] [org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper]: A re-entrant transformer '$wrapper.youyihj.zenutils.impl.core.FMLModContainerTransformer' was detected and will no longer process meta class data
+[00:36:28] [main/INFO] [OpenComputers]: Successfully patched net/minecraft/entity/EntityLiving.recreateLeash.
+[00:36:28] [main/ERROR] [Aqua Acrobatics Transformer]: Disabling soul sand and magma mixins as requested in config.
+[00:36:28] [main/ERROR] [Aqua Acrobatics Transformer]: Disabling soul sand and magma mixins as requested in config.
+[00:36:28] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.entity.item.EntityItem (acl)...
+[00:36:28] [main/INFO] [Hammer Core [ASM]]:   -Patching EntityItem
+[00:36:28] [main/INFO] [Hammer Core [ASM]]:     -Modified method 'attackEntityFrom': added event call.
+[00:36:28] [main/INFO] [org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper]: A re-entrant transformer '$wrapper.com.zeitheron.hammercore.asm.HammerCoreTransformer' was detected and will no longer process meta class data
+[00:36:28] [main/INFO] [Fixeroo]: Transforming net.minecraft.entity.player.EntityPlayer
+[00:36:28] [main/INFO] [org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper]: A re-entrant transformer 'surreal.fixeroo.core.FixerooTransformer' was detected and will no longer process meta class data
+[00:36:28] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.entity.player.EntityPlayer
+[00:36:28] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.player.EntityPlayer finished, added func_184613_cA() overriding EntityLivingBase
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:28] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:28] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found META-INF/mixins.aquaacrobatics.json:EntityLivingBaseMixin from mod unknown-owner
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Transforming pa : net.minecraft.network.NetHandlerPlayServer with 1 patches!
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSERVEREXTENDENTITYINTERACTREACH
+[00:36:28] [main/INFO] [ASMUtil]: Transforming class net/minecraft/network/NetHandlerPlayServer
+[00:36:28] [main/INFO] [ASMUtil]: Transforming method net/minecraft/network/NetHandlerPlayServer.func_147340_a(Lnet/minecraft/network/play/client/CPacketUseEntity;)V
+[00:36:28] [main/INFO] [ASMUtil]: Transforming class net/minecraft/network/NetHandlerPlayServer
+[00:36:28] [main/INFO] [ASMUtil]: Transforming method net/minecraft/network/NetHandlerPlayServer.func_147345_a(Lnet/minecraft/network/play/client/CPacketPlayerDigging;)V
+[00:36:28] [main/WARN] [LLibrary Core]: Failed to fetch hierarchy node for net.minecraft.util.text.TextComponentTranslation. This may cause patch issues
+[00:36:28] [main/WARN] [LLibrary Core]: Failed to fetch hierarchy node for net.minecraft.util.math.BlockPos. This may cause patch issues
+[00:36:28] [main/WARN] [LLibrary Core]: Failed to fetch hierarchy node for net.minecraft.tileentity.CommandBlockBaseLogic. This may cause patch issues
+[00:36:28] [main/WARN] [LLibrary Core]: Failed to fetch hierarchy node for net.minecraft.item.ItemStack. This may cause patch issues
+[00:36:28] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.network.NetHandlerPlayServer
+[00:36:28] [main/WARN] [mixin]: Error loading class: net/minecraft/world/biome/BiomeColorHelper$3 (java.lang.ClassNotFoundException: The specified class 'net.minecraft.world.biome.BiomeColorHelper$3' was not found)
+[00:36:28] [main/WARN] [mixin]: @Mixin target net/minecraft/world/biome/BiomeColorHelper$3 was not found META-INF/mixins.aquaacrobatics.json:BiomeColorHelperMixin from mod unknown-owner
+[00:36:28] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.block.state.BlockStateContainer$StateImplementation
+[00:36:28] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[00:36:28] [main/INFO] [LoliASM]: Injecting calls in net/minecraft/util/ResourceLocation<init> to canonicalize strings
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:28] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:28] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:28] [main/WARN] [mixin]: @Mixin target net.minecraft.world.World was not found mixins.stellar_core_minecraft_world_pos_judgement.json:MixinWorld from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins/bugfixes/mixins.entities.maxhealth.json:UTMaxHealthMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins/tweaks/mixins.performance.entityradiuscheck.lesscollisions.json:UTEntityLivingBaseMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.world.World was not found mixins/tweaks/mixins.performance.entityradiuscheck.lesscollisions.json:UTWorldMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins/bugfixes/mixins.entities.deathtime.json:UTDeathTimeMixin from mod unknown-owner
+[00:36:29] [main/ERROR] [EC Core Plugin]: Minecraft <ItemStack.class> patch FAILED!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming aip : net.minecraft.item.ItemStack with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIP as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHMODIFYENCHANTMENTLEVELSTOOLTIPEVENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:53]: Patched ItemStack Count getter!
+[00:36:29] [main/INFO] [STDOUT]: [appeng.core.transformer.ItemStackPatch:patchCountGetSet:81]: Patched ItemStack Count setter!
+[00:36:29] [main/INFO] [STDOUT]: [appeng.core.transformer.AE2ELTransformer:spliceClasses:140]: Spliced in METHOD: net.minecraft.network.PacketBuffer.func_150791_c
+[00:36:29] [main/INFO] [STDOUT]: [appeng.core.transformer.AE2ELTransformer:spliceClasses:140]: Spliced in METHOD: net.minecraft.network.PacketBuffer.func_150788_a
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.world.World was not found mixins/bugfixes/mixins.entities.entitylists.json:UTWorldMixin from mod unknown-owner
+[00:36:29] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.entity.item.EntityItemFrame], Method [func_184230_a]
+[00:36:29] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.entity.item.EntityItemFrame Finished.
+[00:36:29] [main/INFO] [thaumicaugmentationcore]: Successfully transformed class net.minecraft.item.ItemSpade
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/gen/structure/StructureVillagePieces$Church (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.world.gen.structure.StructureVillagePieces$Church was not found mixins/bugfixes/mixins.world.village.json:UTVillageComponentPartsMixin from mod unknown-owner
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.block.Block was not found mixins/mixins.vanilla.mod.accessors.json:UTBlockAccessor from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins/mixins.vanilla.mod.accessors.json:UTEntityLivingBaseAccessor from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.world.World was not found mixins/tweaks/mixins.performance.entityradiuscheck.reducesearchsize.json:UTWorldMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins/tweaks/mixins.misc.incurablepotions.json:UTIncurablePotionsMixin from mod unknown-owner
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/player/InventoryPlayer (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.player.InventoryPlayer was not found mixins/tweaks/mixins.performance.advancements.triggers.json:UTInventoryPlayerMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.EntityLivingBase was not found mixins.thaumictweakercore.json:entities.EntityLivingBaseMixin from mod unknown-owner
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/client/gui/FontRenderer (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer net.minecraftforge.fml.common.asm.transformers.SideTransformer@10d18696 from coremod FMLCorePlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.client.gui.FontRenderer was not found mixin.modularui.json:minecraft.FontRendererAccessor from mod unknown-owner
+[00:36:29] [main/INFO] [EC Core Plugin]: Minecraft <EnchantmentHelper.class> patched!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming alm : net.minecraft.enchantment.EnchantmentHelper with 1 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHMODIFYENCHANTMENTLEVELS
+[00:36:29] [main/ERROR] [EC Core Plugin]: Minecraft <ItemEnchantedBook.class> patch FAILED!
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.block.Block was not found mixins.jeid.core.json:misc.MixinBlock from mod unknown-owner
+[00:36:29] [main/INFO] [STDOUT]: [com.cleanroommc.modularui.core.temp.ClassSplicer:spliceClasses:106]: Spliced in METHOD: net.minecraftforge.common.util.PacketUtil.writeItemStackFromClientToServer
+[00:36:29] [main/INFO] [modularui]: Applied net.minecraftforge.common.util.PacketUtil ASM, specific for AE2, from ModularUI
+[00:36:29] [main/INFO] [org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper]: A re-entrant transformer '$wrapper.com.cleanroommc.modularui.core.ClassTransformer' was detected and will no longer process meta class data
+[00:36:29] [main/INFO] [ThaumicAdditionsCore]: Transforming net.minecraft.util.FoodStats (afp)...
+[00:36:29] [main/INFO] [ThaumicAdditionsCore]:   -Applying org.zeith.thaumicadditions.asm.mixins.FoodStatsMixin into afp
+[00:36:29] [main/INFO] [org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper]: A re-entrant transformer '$wrapper.org.zeith.thaumicadditions.asm.TARTransformer' was detected and will no longer process meta class data
+[00:36:29] [main/INFO] [LoliASM]: Improving FurnaceRecipes. Lookups are now a lot faster.
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/player/InventoryPlayer (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.entity.player.InventoryPlayer was not found mixins.fix_mc129057.json:mc129057.InventoryPlayerMixin from mod unknown-owner
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.block.Block was not found mixins.alfheim.json:BlockMixin from mod unknown-owner
+[00:36:29] [main/INFO] [EnderCore ASM]: Transforming Class [net.minecraft.world.chunk.storage.ExtendedBlockStorage], Method [func_76663_a]
+[00:36:29] [main/INFO] [EnderCore ASM]: Transforming net.minecraft.world.chunk.storage.ExtendedBlockStorage Finished.
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.world.World was not found mixins.alfheim.json:WorldMixin from mod unknown-owner
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/World (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/gen/structure/StructureVillagePieces$Church (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/gen/structure/StructureVillagePieces$Church (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/world/gen/structure/StructureVillagePieces$Church (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/ERROR] [mixin]: mixins/bugfixes/mixins.entities.mount.json:UTMountDesyncMixin from mod unknown-owner: Super class 'net.minecraft.entity.Entity' of UTMountDesyncMixin was not found in the hierarchy of target class 'net/minecraft/entity/player/EntityPlayerMP'
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: Super class 'net.minecraft.entity.Entity' of UTMountDesyncMixin was not found in the hierarchy of target class 'net/minecraft/entity/player/EntityPlayerMP'
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$SubType$Standard.validate(MixinInfo.java:594) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$State.validate(MixinInfo.java:328) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.validate(MixinInfo.java:914) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.postInitialise(MixinConfig.java:897) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.prepareConfigs(MixinProcessor.java:618) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.select(MixinProcessor.java:512) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.checkSelect(MixinProcessor.java:488) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.lockAndSelect(MixinProcessor.java:440) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.couldTransformClass(MixinProcessor.java:400) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.couldTransformClass(MixinTransformer.java:267) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:235) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:204) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.Proxy.transform(Proxy.java:55) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at top.outlands.foundation.TransformerDelegate.lambda$fillTransformerHolder$1(TransformerDelegate.java:172) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.runTransformers(ActualClassLoader.java:338) ~[foundation-0.19.8.jar:?]
+	at net.minecraft.launchwrapper.LaunchClassLoader.runTransformers(LaunchClassLoader.java:55) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:239) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:271) ~[foundation-0.19.8.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:547) ~[?:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:118) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.5.17-alpha.jar:?]
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming vp : net.minecraft.entity.EntityLivingBase with 4 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHAPPLYPOTIONEFFECTEVENT
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHENTITYLIVINGBASEWATERSLOWDOWN
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSETPLAYERATTRIBUTE
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHUPDATEELYTRA
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/entity/EntityLivingBase (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/WARN] [VintageFix Mixin Loader]: Not applying mixin 'org.embeddedt.vintagefix.mixin.version_protest.MinecraftMixin' as 'mixin.version_protest' is disabled in config
+[00:36:29] [main/WARN] [VintageFix Mixin Loader]: Not applying mixin 'org.embeddedt.vintagefix.mixin.version_protest.FMLCommonHandlerMixin' as 'mixin.version_protest' is disabled in config
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/client/util/SearchTree (java.lang.ClassNotFoundException: The specified class 'net.minecraft.client.util.SearchTree' was not found)
+[00:36:29] [main/WARN] [mixin]: @Mixin target net.minecraft.client.util.SearchTree was not found mixins.vintagefix.json:searchtree.SearchTreeMixin from mod unknown-owner
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/ERROR] [mixin]: mixins.alfheim.json:BlockSlabMixin from mod unknown-owner: Super class 'dev.redstudio.alfheim.mixin.BlockMixin' of BlockSlabMixin was not found in the hierarchy of target class 'net/minecraft/block/BlockSlab'
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: Super class 'dev.redstudio.alfheim.mixin.BlockMixin' of BlockSlabMixin was not found in the hierarchy of target class 'net/minecraft/block/BlockSlab'
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$SubType$Standard.validate(MixinInfo.java:594) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$State.validate(MixinInfo.java:328) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.validate(MixinInfo.java:914) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.postInitialise(MixinConfig.java:897) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.prepareConfigs(MixinProcessor.java:618) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.select(MixinProcessor.java:512) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.checkSelect(MixinProcessor.java:488) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.lockAndSelect(MixinProcessor.java:440) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.couldTransformClass(MixinProcessor.java:400) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.couldTransformClass(MixinTransformer.java:267) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:235) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:204) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.Proxy.transform(Proxy.java:55) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at top.outlands.foundation.TransformerDelegate.lambda$fillTransformerHolder$1(TransformerDelegate.java:172) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.runTransformers(ActualClassLoader.java:338) ~[foundation-0.19.8.jar:?]
+	at net.minecraft.launchwrapper.LaunchClassLoader.runTransformers(LaunchClassLoader.java:55) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:239) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:271) ~[foundation-0.19.8.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:547) ~[?:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:118) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.5.17-alpha.jar:?]
+[00:36:29] [main/WARN] [mixin]: Error loading class: net/minecraft/block/Block (net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin)
+[00:36:29] [main/ERROR] [mixin]: mixins.alfheim.json:BlockStairsMixin from mod unknown-owner: Super class 'dev.redstudio.alfheim.mixin.BlockMixin' of BlockStairsMixin was not found in the hierarchy of target class 'net/minecraft/block/BlockStairs'
+org.spongepowered.asm.mixin.transformer.throwables.InvalidMixinException: Super class 'dev.redstudio.alfheim.mixin.BlockMixin' of BlockStairsMixin was not found in the hierarchy of target class 'net/minecraft/block/BlockStairs'
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$SubType$Standard.validate(MixinInfo.java:594) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo$State.validate(MixinInfo.java:328) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.validate(MixinInfo.java:914) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.postInitialise(MixinConfig.java:897) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.prepareConfigs(MixinProcessor.java:618) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.select(MixinProcessor.java:512) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.checkSelect(MixinProcessor.java:488) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.lockAndSelect(MixinProcessor.java:440) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.couldTransformClass(MixinProcessor.java:400) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.couldTransformClass(MixinTransformer.java:267) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:235) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:204) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.Proxy.transform(Proxy.java:55) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at top.outlands.foundation.TransformerDelegate.lambda$fillTransformerHolder$1(TransformerDelegate.java:172) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.runTransformers(ActualClassLoader.java:338) ~[foundation-0.19.8.jar:?]
+	at net.minecraft.launchwrapper.LaunchClassLoader.runTransformers(LaunchClassLoader.java:55) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:239) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:271) ~[foundation-0.19.8.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:547) ~[?:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:118) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.5.17-alpha.jar:?]
+[00:36:29] [main/INFO] [Hammer Core [ASM]]: Transforming net.minecraft.world.World (amu)...
+[00:36:29] [main/INFO] [Hammer Core [ASM]]:   -Patching World
+[00:36:29] [main/INFO] [Hammer Core [ASM]]:     -NOT modified method 'k', replaced nx.e()V with HC call. (disabled in hc-asm.xml)
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Transforming amu : net.minecraft.world.World with 2 patches!
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Skipping PATCHSUNBRIGHTNESSWORLDCLIENT as it can't be applied for side SERVER
+[00:36:29] [main/INFO] [Astral Core]: [AstralTransformer] Applied patch PATCHSUNBRIGHTNESSWORLDCOMMON
+[00:36:29] [main/FATAL] [Foundation]: Unable to launch
+java.lang.IllegalAccessException: no such method: net.minecraft.server.MinecraftServer.main(String[])void/invokeStatic
+	at java.lang.invoke.MemberName.makeAccessException(MemberName.java:906) ~[?:?]
+	at java.lang.invoke.MemberName$Factory.resolveOrFail(MemberName.java:989) ~[?:?]
+	at java.lang.invoke.MethodHandles$Lookup.resolveOrFail(MethodHandles.java:3591) ~[?:?]
+	at java.lang.invoke.MethodHandles$Lookup.findStatic(MethodHandles.java:2520) ~[?:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:122) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.Foundation.main(Foundation.java:43) ~[foundation-0.19.8.jar:?]
+	at jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]
+	at java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.run(ServerLaunchWrapper.java:70) [cleanroom-0.5.17-alpha.jar:?]
+	at net.minecraftforge.fml.relauncher.ServerLaunchWrapper.main(ServerLaunchWrapper.java:34) [cleanroom-0.5.17-alpha.jar:?]
+Caused by: java.lang.NoClassDefFoundError: net/minecraft/world/World
+	at java.lang.invoke.MethodHandleNatives.resolve(Native Method) ~[?:?]
+	at java.lang.invoke.MemberName$Factory.resolve(MemberName.java:957) ~[?:?]
+	at java.lang.invoke.MemberName$Factory.resolveOrFail(MemberName.java:986) ~[?:?]
+	... 8 more
+Caused by: java.lang.ClassNotFoundException: net.minecraft.world.World
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:262) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:271) ~[foundation-0.19.8.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	... 11 more
+Caused by: net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerException: Exception in class transformer lumien.randomthings.asm.ClassTransformer@615e46b9 from coremod LoadingPlugin
+	at net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerWrapper.transform(ASMTransformerWrapper.java:253) ~[cleanroom-0.5.17-alpha.jar:?]
+	at top.outlands.foundation.TransformerDelegate.lambda$fillTransformerHolder$1(TransformerDelegate.java:172) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.runTransformers(ActualClassLoader.java:338) ~[foundation-0.19.8.jar:?]
+	at net.minecraft.launchwrapper.LaunchClassLoader.runTransformers(LaunchClassLoader.java:55) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:239) ~[foundation-0.19.8.jar:?]
+	... 13 more
+Caused by: java.lang.NoClassDefFoundError: Could not initialize class lumien.randomthings.asm.CustomClassWriter
+	at lumien.randomthings.asm.ClassTransformer.patchWorldClass(ClassTransformer.java:1506) ~[ClassTransformer.class:?]
+	at lumien.randomthings.asm.ClassTransformer.transform(ClassTransformer.java:80) ~[ClassTransformer.class:?]
+	at net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerWrapper.transform(ASMTransformerWrapper.java:249) ~[cleanroom-0.5.17-alpha.jar:?]
+	... 17 more
+Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.NoSuchMethodError: 'java.net.URL[] com.cleanroommc.hackery.ReflectionHackery.getURL(java.lang.ClassLoader)' [in thread "main"]
+	at lumien.randomthings.asm.CustomClassWriter.<clinit>(CustomClassWriter.java:12) ~[CustomClassWriter.class:?]
+	at lumien.randomthings.asm.ClassTransformer.patchEntityLivingBase(ClassTransformer.java:1144) ~[ClassTransformer.class:?]
+	at lumien.randomthings.asm.ClassTransformer.transform(ClassTransformer.java:100) ~[ClassTransformer.class:?]
+	at net.minecraftforge.fml.common.asm.ASMTransformerWrapper$TransformerWrapper.transform(ASMTransformerWrapper.java:249) ~[cleanroom-0.5.17-alpha.jar:?]
+	at org.spongepowered.asm.service.mojang.LegacyTransformerHandle.transformClassBytes(LegacyTransformerHandle.java:80) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper.applyTransformers(MixinServiceLaunchWrapper.java:546) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper.getClassBytes(MixinServiceLaunchWrapper.java:512) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.service.mojang.MixinServiceLaunchWrapper.getClassNode(MixinServiceLaunchWrapper.java:617) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.ClassInfo.forName(ClassInfo.java:2106) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.getTargetClass(MixinInfo.java:1018) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.readTargetClasses(MixinInfo.java:1008) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinInfo.parseTargets(MixinInfo.java:896) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.prepareMixins(MixinConfig.java:963) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinConfig.prepare(MixinConfig.java:871) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.prepareConfigs(MixinProcessor.java:590) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.select(MixinProcessor.java:512) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.checkSelect(MixinProcessor.java:488) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.lockAndSelect(MixinProcessor.java:440) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinProcessor.couldTransformClass(MixinProcessor.java:400) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.couldTransformClass(MixinTransformer.java:267) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClass(MixinTransformer.java:235) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.MixinTransformer.transformClassBytes(MixinTransformer.java:204) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at org.spongepowered.asm.mixin.transformer.Proxy.transform(Proxy.java:55) ~[sponge-mixin-0.20.12+mixin.0.8.7.jar:0.20.12+mixin.0.8.7]
+	at top.outlands.foundation.TransformerDelegate.lambda$fillTransformerHolder$1(TransformerDelegate.java:172) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.runTransformers(ActualClassLoader.java:338) ~[foundation-0.19.8.jar:?]
+	at net.minecraft.launchwrapper.LaunchClassLoader.runTransformers(LaunchClassLoader.java:55) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.findClass(ActualClassLoader.java:239) ~[foundation-0.19.8.jar:?]
+	at top.outlands.foundation.boot.ActualClassLoader.loadClass(ActualClassLoader.java:271) ~[foundation-0.19.8.jar:?]
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:490) ~[?:?]
+	at java.lang.Class.forName0(Native Method) ~[?:?]
+	at java.lang.Class.forName(Class.java:547) ~[?:?]
+	at top.outlands.foundation.LaunchHandler.launch(LaunchHandler.java:118) ~[foundation-0.19.8.jar:?]
+	... 5 more
+mineshell@meatballcraft-dimensional-ascension.service: Main process exited, code=exited, status=1/FAILURE
+mineshell@meatballcraft-dimensional-ascension.service: Failed with result 'exit-code'.
+mineshell@meatballcraft-dimensional-ascension.service: Consumed 18.146s CPU time, 1.1G memory peak, 0B memory swap peak.

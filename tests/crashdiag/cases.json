@@ -118,6 +118,12 @@
 		"culprit": "^$"
 	},
 	{
+		"name": "real-fugue-0.21-on-cleanroom-0.5.17",
+		"kind": "loader-version",
+		"culprit": "^Fugue$",
+		"related": "Quantum Things"
+	},
+	{
 		"name": "real-fugue-0.24-on-java21",
 		"kind": "java-version",
 		"culprit": "Fugue"
@@ -131,6 +137,11 @@
 		"name": "real-meatballcraft-alfheim",
 		"kind": "mixin-failure",
 		"culprit": "Alfheim"
+	},
+	{
+		"name": "real-meatballcraft-avaritiaitem-clientmethod",
+		"kind": "client-code",
+		"culprit": "Avaritia Item"
 	},
 	{
 		"name": "real-meatballcraft-cellterminal",

@@ -34,7 +34,9 @@ The cases cover each loader's own wording, old and new:
 - Real crashes: MeatballCraft on Cleanroom (Cell Terminal version mismatch, Alfheim mixin
   failure, FermiumBooter vs CleanMix, LoliASM on the wrong Forge), Vanilla Perfected
   (simple_datapacks needs client-only Mod Menu), Better MC (missingmodschecker opens a window),
-  Cleanroom 0.6 and Fugue 0.24 on Java 21
+  Cleanroom 0.6 and Fugue 0.24 on Java 21, Fugue 0.21 on Cleanroom 0.5.17 (its patch to Quantum
+  Things calls a Cleanroom method removed in 0.5.3), AvaritiaItem calling a client-only 1.12
+  method on Cleanroom 0.5.2
 
 ## Add a case from a real crash
 

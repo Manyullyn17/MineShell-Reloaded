@@ -352,11 +352,12 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 		return frameCulprit(i, exclude);
 	}
 
-	const out: (Diagnosis & { at: number })[] = [];
+	const out: (Diagnosis & { at: number; consequence?: boolean })[] = [];
 	const seen = new Set<string>();
 	let current = 0;
 	const byKey = new Map<string, Diagnosis & { at: number }>();
-	const push = (d: Omit<Diagnosis, 'fatal'>, key: string) => {
+	/** `consequence`: ranked after the other fatal causes, which usually explain it. */
+	const push = (d: Omit<Diagnosis, 'fatal'>, key: string, consequence = false) => {
 		// The same error is often logged twice: once as an early warning and
 		// again in the block that ends the start. The latest one decides
 		// whether it was fatal.
@@ -365,7 +366,7 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 			existing.at = current;
 			return;
 		}
-		const entry = { ...d, fatal: true, at: current };
+		const entry = { ...d, fatal: true, at: current, consequence };
 		byKey.set(key, entry);
 		seen.add(key);
 		out.push(entry);
@@ -525,7 +526,8 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 						evidence: line.trim(),
 						fix: null
 					},
-					`gameclass:${cls}`
+					`gameclass:${cls}`,
+					true
 				);
 			} else if (!provider && isMinecraftClass(cls)) {
 				push(
@@ -589,9 +591,49 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 		// ---- methods/fields that do not exist in the installed version
 		if ((m = line.match(/NoSuch(Method|Field)(?:Error|Exception):\s*['"]?(?:[\w$.<>\[\]]+\s+)?([\w$./]+)[.(]/))) {
 			const owner = normaliseClass(m[2]).replace(/\.[\w$<>]+$/, (s) => (/^\.[a-z]/.test(s) ? '' : s));
+			const member = m[2].replace(/\//g, '.');
 			const ownerJar = jarForClass(owner);
 			const jar = culpritFor(i, ownerJar);
 			if (!jar) continue;
+			const fugue = jarForMod('fugue');
+			if (/^com\.cleanroommc\.(?!fugue\.)/.test(owner) && fugue?.enabled && fugue !== jar) {
+				// Fugue rewrites other mods' calls into Cleanroom helpers while
+				// loading them, so its own classes are nowhere in the stack: Fugue
+				// 0.21 calls ReflectionHackery.getURL, which Cleanroom 0.5.3 removed.
+				push(
+					{
+						kind: 'loader-version',
+						title: `${ref(fugue)!.name} does not match this Cleanroom version`,
+						detail: `${ref(jar)!.name} crashed calling ${member}, which the installed Cleanroom does not have. ${ref(fugue)!.name} patches mods to call Cleanroom's helpers, so a ${ref(fugue)!.name} built for another Cleanroom version breaks them like this. Install a ${ref(fugue)!.name} version made for this Cleanroom (Fugue 0.21, for one, needs Cleanroom 0.5.2 or older), or change Cleanroom in the server's Settings.`,
+						culprit: ref(fugue),
+						related: ref(jar),
+						evidence: line.trim(),
+						fix: null
+					},
+					`fugue:${fugue.fileName}`
+				);
+				continue;
+			}
+			if (!ownerJar && (/^net\.minecraft\.client\./.test(owner) || (isMinecraftClass(owner) && /\.func_\d+_[a-z]+$/.test(member)))) {
+				// Forge strips client-only (@SideOnly) methods from the server's
+				// classes, and 1.12 names (func_<n>_x) are the same in every
+				// version, so a missing one is client code rather than another
+				// Minecraft version.
+				const cleanroom = /cleanroom-[\d.]+-alpha\.jar|top\.outlands\./.test(rawLog);
+				push(
+					{
+						kind: 'client-code',
+						title: `${ref(jar)!.name} uses client-only game code`,
+						detail: `It calls ${member}, which only exists on the game client: servers do not have client-only methods. It is a client-side mod, or does something client-only while loading; disable it if nothing on the server needs it.${cleanroom ? ' If the pack needs it, a newer Cleanroom version may help: Cleanroom keeps some client-only methods on servers (text formatting from 0.5.4).' : ''}`,
+						culprit: ref(jar),
+						related: null,
+						evidence: line.trim(),
+						fix: disableFix(jar)
+					},
+					`client:${jar.fileName}`
+				);
+				continue;
+			}
 			const target = /^org\.spongepowered\./.test(owner)
 				? 'the Mixin library'
 				: ownerJar
@@ -605,7 +647,7 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 				{
 					kind: 'incompatible-method',
 					title: `${ref(jar)!.name} is built for a different version of ${target}`,
-					detail: `It calls ${m[2].replace(/\//g, '.')}, which the installed ${target} does not have. Use a version of ${ref(jar)!.name} made for this setup, or disable it.`,
+					detail: `It calls ${member}, which the installed ${target.replace(/^the /, '')} does not have. Use a version of ${ref(jar)!.name} made for this setup, or disable it.`,
 					culprit: ref(jar),
 					related: ref(ownerJar),
 					evidence: line.trim(),
@@ -717,8 +759,8 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 	];
 	const fatalAt = lines.findIndex((l) => FATAL.some((re) => re.test(l)));
 	const ranked = out.map((d) => ({ ...d, fatal: fatalAt < 0 || d.at >= fatalAt - 3 }));
-	ranked.sort((a, b) => Number(b.fatal) - Number(a.fatal) || a.at - b.at);
-	return ranked.map(({ at: _at, ...d }) => d);
+	ranked.sort((a, b) => Number(b.fatal) - Number(a.fatal) || Number(a.consequence) - Number(b.consequence) || a.at - b.at);
+	return ranked.map(({ at: _at, consequence: _consequence, ...d }) => d);
 }
 
 /** The output of the most recent run: everything after the last systemd "Started" line. */
