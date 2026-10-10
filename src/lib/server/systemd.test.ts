@@ -167,6 +167,17 @@ describe('unit files', () => {
 		expect(unit).toContain('$MS_JAVA');
 		expect(unit).toMatch(/WorkingDirectory=.*%i/);
 	});
+
+	// Forge 1.12's startup question is answered by -Dfml.queryResult=confirm for
+	// one start (forgequery.ts); a restart after a crash must not get it again.
+	it('takes one start’s JVM arguments from <id>.once and deletes it', () => {
+		const exec = renderTemplateUnit().match(/^ExecStart=(.*)$/m)![1];
+		expect(exec).toContain(`f="${UNITS_DIR}/%i.once"`);
+		expect(exec).toContain('a=$(cat "$f"); rm -f "$f"');
+		expect(exec).toContain('exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS');
+		// systemd substitutes ${VAR} even inside a quoted word, before the shell sees it.
+		expect(exec).not.toContain('${');
+	});
 });
 
 describe('a unit’s memory', () => {

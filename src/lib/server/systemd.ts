@@ -10,7 +10,8 @@ import {
 	ensureDirs,
 	systemdUnitDir,
 	unitEnvFile,
-	unitName
+	unitName,
+	unitOnceArgsFile
 } from './config';
 import { installedTemplateUnit, renderTemplateUnit as renderTemplate } from './unit-template.js';
 
@@ -169,6 +170,18 @@ export async function writeUnitEnv(
 	await fs.writeFile(unitEnvFile(id), lines.join('\n') + '\n', { mode: 0o600 });
 }
 
+/**
+ * JVM arguments for the next start only, or none (null): the template's start
+ * command reads <id>.once and deletes it, so a restart by systemd after a
+ * crash, or any later start, runs without them. Every start through MineShell
+ * sets this, so a file left by a start that never ran is not picked up later.
+ */
+export async function writeOnceArgs(id: string, args: string[] | null): Promise<void> {
+	ensureDirs();
+	if (args?.length) await fs.writeFile(unitOnceArgsFile(id), args.join(' ') + '\n', { mode: 0o600 });
+	else await fs.rm(unitOnceArgsFile(id), { force: true });
+}
+
 export async function writeRestartPolicy(
 	id: string,
 	enabled: boolean,
@@ -226,6 +239,7 @@ export async function removeUnitArtifacts(id: string): Promise<void> {
 		force: true
 	});
 	await fs.rm(unitEnvFile(id), { force: true });
+	await fs.rm(unitOnceArgsFile(id), { force: true });
 	await systemctl('reset-failed', unitName(id)).catch(() => undefined);
 	await systemctl('daemon-reload');
 	invalidateUnitState(id);

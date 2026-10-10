@@ -5,6 +5,7 @@
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
+	import ForgeQuestion from '#lib/components/ForgeQuestion.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
@@ -117,6 +118,10 @@
 			<button class="button-primary" type="submit">I agree to the EULA</button>
 		</form>
 	</section>
+{/if}
+
+{#if data.forgeQuestion}
+	<ForgeQuestion question={data.forgeQuestion} />
 {/if}
 
 {#if data.stuckSince}

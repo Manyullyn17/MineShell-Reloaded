@@ -277,6 +277,14 @@ Reported 2026-10-07 and 08; all fixed 2026-10-08.
 - **Built: drag and drop in Files**, files and whole folders, into the folder being shown.
   Since 2026-10-08 on every upload (world zip, pack file, new-server pack, mod jars, icon),
   each onto its own section rather than the whole window (`lib/shared/dropzone.ts`).
+- **Built 2026-10-10: Forge 1.12 waiting on "/fml confirm" at startup.** MeatballCraft
+  (Cleanroom) stopped after a pack update over 17 missing blocks/items/sounds and nothing
+  could answer: a unit has no console input and RCON is not up yet. Two ways were weighed:
+  a notice that answers by starting once with `-Dfml.queryResult=confirm`, or giving units a
+  stdin (FIFO socket unit). The user picked the notice; the snapshot before it is on by
+  default and can be unticked, and it covers all three questions Forge 1.12 asks (missing
+  registry entries, missing registries, backup level.dat). Stdin stays an option if console
+  input before RCON is wanted for its own sake.
 
 ## Later
 

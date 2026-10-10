@@ -35,7 +35,8 @@ import {
 	snapshotPrompt,
 	snapshotStep,
 	worldFolders,
-	type Snapshot
+	type Snapshot,
+	type SnapshotInput
 } from './snapshots';
 
 /**
@@ -455,8 +456,15 @@ export async function pruneChunks(
 	});
 }
 
-/** Take a snapshot now, outside any other operation. */
-export async function snapshotNow(instance: ServerInstance): Promise<string> {
+/**
+ * Take a snapshot now, outside any other operation. `then` runs in the same
+ * task once the snapshot is finished (a start after answering Forge's
+ * question); it does not run when the snapshot fails.
+ */
+export async function snapshotNow(
+	instance: ServerInstance,
+	opts: { input?: SnapshotInput; label?: string; then?: (task: TaskHandle) => Promise<void> } = {}
+): Promise<string> {
 	await requireStopped(instance);
 	if (!(await worldFolders(instance.path)).length) throw new InstanceError('There is no world to snapshot yet.');
 	const prompt = await snapshotPrompt(instance);
@@ -467,15 +475,16 @@ export async function snapshotNow(instance: ServerInstance): Promise<string> {
 	}
 	begin(instance.id, { kind: 'snapshot' });
 	setStatus(instance.id, 'provisioning', 'Snapshotting the world');
-	const taskId = startTask({ label: `Snapshot ${instance.name}`, instanceId: instance.id }, async (task) => {
+	const taskId = startTask({ label: opts.label ?? `Snapshot ${instance.name}`, instanceId: instance.id }, async (task) => {
 		try {
-			await snapshotStep(instance, { reason: 'manual', label: 'Taken by hand' }, task);
+			await snapshotStep(instance, opts.input ?? { reason: 'manual', label: 'Taken by hand' }, task);
 		} catch (err) {
 			endOperation(instance.id);
 			setStatus(instance.id, 'ready', `Snapshotting the world failed: ${err instanceof Error ? err.message : 'unknown error'}`);
 			throw err;
 		}
 		commitOperation(instance.id, { status: 'ready', statusMessage: null });
+		await opts.then?.(task);
 		task.setProgress(100, 'Ready');
 	});
 	return taskId;

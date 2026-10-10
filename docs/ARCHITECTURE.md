@@ -29,10 +29,10 @@ MS_LAUNCH_ARGS=@user_jvm_args.txt @libraries/net/neoforged/.../unix_args.txt nog
 and `ExecStart` is:
 
 ```
-ExecStart=/bin/sh -c 'exec "$MS_JAVA" $MS_JVM_ARGS $MS_LAUNCH_ARGS'
+ExecStart=/bin/sh -c 'f="<data>/units/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
 ```
 
-Three things about that line matter.
+Four things about that line matter.
 
 **`exec`.** Without it the shell stays as PID 1 of the service and Java becomes its child.
 systemd would then be watching the shell, not the server, so a crashed Java process would
@@ -44,7 +44,39 @@ split variables, so `$MS_JVM_ARGS` would arrive as one enormous argument. A shel
 splitting, then removes itself with `exec`.
 
 **Quoting.** `"$MS_JAVA"` is quoted because a path may contain spaces; the argument
-variables are deliberately unquoted because they must split.
+variables are deliberately unquoted because they must split. The line never uses `${...}`:
+systemd substitutes that form itself, even inside a quoted word, before the shell runs.
+
+**One start's arguments.** `<id>.once` holds JVM arguments for the next start only
+(`writeOnceArgs`); the start reads and deletes it, so a restart by systemd after a crash, or
+any later start, runs without them. Every start and restart through MineShell writes or
+removes it, so a file left by a start that never ran is not picked up later. The template
+is `Type=simple`, so `systemctl start` returns once systemd forks, possibly before the
+environment file is read: putting a one-off argument into `<id>.env` and taking it out again
+after the start would race.
+
+### Forge's startup questions
+
+Forge before 1.13, and Cleanroom, can stop loading a world to ask on the console: about
+registry entries (blocks, items, sounds...) no installed mod provides any more, whole
+missing registries, or a damaged level.dat whose backup it would use (`StartupQuery.confirm`;
+read from Forge 1.12.2-14.23.5.2860 and Cleanroom 0.5.17 with javap). It reads the answer
+only from the console's input (`/fml confirm`, `/fml cancel`, polled from the dedicated
+server's pending command list, which only stdin feeds); a unit has no stdin, and RCON starts
+after the world loads. So the server would wait forever. The way through is
+`-Dfml.queryResult=confirm`, which Forge takes as the answer to whatever it asks, and
+MineShell passes it for one start only: set for good, a mod gone missing by mistake would
+later have its blocks removed without anyone being asked.
+
+`forgequery.ts` watches a starting server's journal for the prompt with `journalctl -g`,
+continuing from a cursor so the overview's polls read only new lines, and stops looking
+once the run reaches `Done (`. The question's lines are one log message, which journald
+stores with one timestamp, so they are read back by that timestamp alone. The overview
+shows what is missing; confirming stops the server (the world is not loaded yet), takes a
+snapshot unless unticked, and starts it once with the answer; Stop leaves the world as it
+is. "World saved with mod X which appears to be missing" is only logged in 1.12, not asked.
+Giving units a stdin (a FIFO socket unit) was considered: it answers without a second
+start, but its buffer outlives a run, so an answer could reach the next one.
 
 ### Drop-ins
 

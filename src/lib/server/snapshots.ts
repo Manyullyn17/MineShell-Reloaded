@@ -41,7 +41,8 @@ export type SnapshotReason =
 	| 'mod-update'
 	| 'migrate'
 	| 'manual'
-	| 'scheduled';
+	| 'scheduled'
+	| 'forge-confirm';
 
 export type Snapshot = {
 	id: string;

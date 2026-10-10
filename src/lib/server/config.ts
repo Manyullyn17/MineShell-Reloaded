@@ -52,6 +52,11 @@ export function unitEnvFile(id: string): string {
 	return path.join(UNITS_DIR, `${id}.env`);
 }
 
+/** JVM arguments for the next start only; the unit's start command reads and deletes it. */
+export function unitOnceArgsFile(id: string): string {
+	return path.join(UNITS_DIR, `${id}.once`);
+}
+
 export function unitName(id: string): string {
 	return `${UNIT_PREFIX}@${id}.service`;
 }

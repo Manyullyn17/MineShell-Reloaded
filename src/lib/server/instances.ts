@@ -18,6 +18,7 @@ import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes }
 import {
 	restartUnit,
 	startUnit,
+	writeOnceArgs,
 	stopUnit,
 	unitState,
 	writeResourceLimits,
@@ -1143,7 +1144,15 @@ function bisecting(id: string): boolean {
 	return listOperations().some((o) => o.instanceId === id && o.journal.kind === 'bisect');
 }
 
-export async function start(instance: ServerInstance, opts: { internal?: boolean } = {}): Promise<{ ok: boolean; message: string }> {
+/**
+ * `onceJvmArgs`: JVM arguments for this start only (answering a Forge
+ * startup question, forgequery.ts); a later start or a restart after a crash
+ * runs without them.
+ */
+export async function start(
+	instance: ServerInstance,
+	opts: { internal?: boolean; onceJvmArgs?: string[] } = {}
+): Promise<{ ok: boolean; message: string }> {
 	if (!opts.internal && bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
 	// A stop still waiting for the old run to exit must not stop this one.
 	cancelPendingStop(instance.id);
@@ -1184,6 +1193,7 @@ export async function start(instance: ServerInstance, opts: { internal?: boolean
 	// voice chat's gets its address written into the mod's voice_host.
 	await syncTunnels(instance).catch((err) => console.warn(`playit tunnels for ${instance.id} not updated:`, err));
 	const sync = await syncUnit(instance);
+	await writeOnceArgs(instance.id, opts.onceJvmArgs ?? null);
 	await resetFailed(instance.id);
 	const res = await startUnit(instance.id);
 	if (res.code !== 0) {
@@ -1306,6 +1316,7 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 	}
 	clearStopIntent(instance.id);
 	await syncUnit(instance);
+	await writeOnceArgs(instance.id, null);
 	const res = await restartUnit(instance.id);
 	audit('instance.restart', { instanceId: instance.id });
 	if (res.code === 0) setWantedRunning(instance.id, true);

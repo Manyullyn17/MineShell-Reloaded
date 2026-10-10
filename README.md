@@ -90,7 +90,10 @@ with in-game warnings, from the header of every server tab. Stopping goes throug
 Java to exit, falling back to SIGTERM, so worlds are not cut off mid-write. Crash restarts
 are handled by systemd with a configurable attempt limit; scheduled restarts and scheduled
 console commands by MineShell, with an option to wait while players are online. Per-server
-memory and CPU limits, and a warning when a server never finishes starting. After the
+memory and CPU limits, and a warning when a server never finishes starting. When Forge 1.12
+(or Cleanroom) stops at startup to ask about blocks and items that went missing, missing
+registries or a damaged level.dat, the overview explains it, lists what is missing, and
+answers: start once with the answer given (after a world snapshot, on by default), or stop. After the
 computer restarts, MineShell starts the servers that should come back, one at a time: per
 server "if it was running before" (the default), always, or never.
 

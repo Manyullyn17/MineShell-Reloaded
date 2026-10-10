@@ -369,6 +369,19 @@ export async function readJournalEvents(
 }
 
 /**
+ * The unit's lines logged in the same millisecond as `at`, oldest first: the
+ * lines of one multi-line message, which journald stores with one timestamp.
+ * Reads only that second of the journal.
+ */
+export async function readMessageAt(id: string, at: number): Promise<string[]> {
+	const second = Math.floor(at / 1000);
+	const out = await journalctl([...unitMatch(id), '-o', 'json', `--since=@${second}`, `--until=@${second + 1}`]);
+	return parseEvents(out)
+		.filter((e) => e.at === at)
+		.map((e) => e.message);
+}
+
+/**
  * A MESSAGE field: text, or - for a line with control characters, like the
  * colour codes modern Forge prints - an array of its bytes.
  */

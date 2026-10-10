@@ -5,8 +5,10 @@ import { onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
+import { answerForgeQuestion, pendingForgeQuestion } from '#lib/server/forgequery.js';
 import {
 	acceptEula,
+	InstanceError,
 	onlinePlayers,
 	requireInstance,
 	restart,
@@ -80,7 +82,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const [players, tick] = summary.running
 		? await Promise.all([onlinePlayers(instance), tickStats(instance)])
 		: [null, null];
-	const stuck = summary.running && (await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
+	// Forge 1.12 waiting for an answer on the console; it reads its journal by cursor, so polling is cheap.
+	const forgeQuestion = summary.running
+		? await pendingForgeQuestion(instance, summary.state.activeEnterTimestamp).catch(() => null)
+		: null;
+	const stuck =
+		summary.running && !forgeQuestion && (await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
 	// Which runtime actually gets used, so the overview can name it instead of
 	// only saying that matching happens.
 	const java = resolveJava({
@@ -158,6 +165,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		tick,
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
+		forgeQuestion,
 		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
 		// Streamed: the first walk of a big pack takes seconds.
 		disk: recentDiskBreakdown(instance).then(
@@ -212,6 +220,21 @@ export const actions: Actions = {
 		return cancelCountdown(params.id)
 			? { ok: true, message: 'Countdown cancelled; players were told.' }
 			: fail(400, { ok: false, message: 'No countdown is running.' });
+	},
+
+	/** The answer to a question Forge waits on at startup (forgequery.ts). */
+	forgeAnswer: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const answer = form.get('answer');
+		if (answer !== 'confirm' && answer !== 'cancel') return fail(400, { ok: false, message: 'No answer given.' });
+		try {
+			const { message } = await answerForgeQuestion(instance, answer, { snapshot: form.get('snapshot') === 'on' });
+			return { ok: true, message };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	/** One-click fix from a crash diagnosis: disable the culprit or re-enable a dependency. */
