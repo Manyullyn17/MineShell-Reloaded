@@ -8,6 +8,7 @@ const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { unitOnceArgsFile } = await import('#lib/server/config.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
+const { testPorts } = await import('../helpers/ports');
 
 /** When Forge asked, in the journal's microseconds. */
 const ASKED_US = 1_791_600_000_123_456;
@@ -74,12 +75,10 @@ function fakeSystemd() {
 	});
 }
 
-/** start() checks the ports are free: ones of their own, not 25565 (which a real server here may hold). */
-let port = 47900 + (process.pid % 400) * 20;
 async function waitingServer() {
-	port += 2;
+	// start() checks the ports are free: ones of their own, not 25565 (which a real server here may hold).
 	const s = await createInstance(
-		{ modloader: 'cleanroom', minecraftVersion: '1.12.2', eulaAccepted: true, serverPort: port, rconPort: port + 1 },
+		{ modloader: 'cleanroom', minecraftVersion: '1.12.2', eulaAccepted: true, ...testPorts() },
 		{ 'eula.txt': 'eula=true\n', 'server.properties': 'level-name=world\n', 'world/level.dat': 'level', 'world/region/r.0.0.mca': 'chunks' }
 	);
 	instanceId = s.id;

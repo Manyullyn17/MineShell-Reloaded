@@ -13,6 +13,7 @@ const { createInstance, reload, waitForTask } = await import('../helpers/instanc
 const { fakeProcesses } = await import('../helpers/process');
 const { writeJar } = await import('../helpers/fs');
 const { restartMineShell } = await import('../helpers/crash');
+const { testPorts } = await import('../helpers/ports');
 
 bisectTiming.pollMs = 5;
 bisectTiming.textGraceMs = 20;
@@ -65,9 +66,8 @@ async function fakeServer(instance: ServerInstance) {
 const mod = (id: string, depends: string[] = []) => ({ 'fabric.mod.json': JSON.stringify({ id, depends: Object.fromEntries(depends.map((d) => [d, '*'])) }) });
 
 async function server(jars: Record<string, ReturnType<typeof mod>>, disabled: string[] = []) {
-	let port = 47600 + (process.pid % 300) * 13 + Math.floor(Math.random() * 10);
 	const instance = await createInstance(
-		{ modloader: 'fabric', minecraftVersion: '1.20.1', eulaAccepted: true, serverPort: port, rconPort: port + 1, autoRestartOnCrash: true, wantedRunning: true },
+		{ modloader: 'fabric', minecraftVersion: '1.20.1', eulaAccepted: true, ...testPorts(), autoRestartOnCrash: true, wantedRunning: true },
 		{
 			'eula.txt': 'eula=true\n',
 			'server.properties': 'level-name=world\n',

@@ -128,6 +128,10 @@ expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing le
 
 `tests/helpers/http.ts`: `useRecordedHttp(name, { extra })` and `fetchCalls`, see above.
 
+`tests/helpers/ports.ts`: `testPorts()`, a game and RCON port pair for a server a test
+starts (`start()` binds them to check they are free). Each Vitest worker gets its own block
+below the ephemeral range; never pick ports by pid or at random.
+
 `tests/helpers/instances.ts`:
 
 | Helper | Use |

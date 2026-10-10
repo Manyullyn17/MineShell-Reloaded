@@ -23,6 +23,7 @@ const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 const { restartMineShell } = await import('../helpers/crash');
+const { testPorts } = await import('../helpers/ports');
 const { evaluateRestart } = await import('#lib/server/scheduler.js');
 const { db } = await import('#lib/server/db/index.js');
 const { playerSessions, serverInstances } = await import('#lib/server/db/schema.js');
@@ -53,9 +54,8 @@ function fakeUnit() {
 
 async function server() {
 	// Ports nothing on the machine uses: a start checks them.
-	const port = 47900 + (process.pid % 300) * 13 + Math.floor(Math.random() * 10);
 	const s = await createInstance(
-		{ modloader: 'fabric', minecraftVersion: '1.21.1', serverPort: port, rconPort: port + 1, rconPasswordEnc: encryptSecret('pw'), eulaAccepted: true },
+		{ modloader: 'fabric', minecraftVersion: '1.21.1', ...testPorts(), rconPasswordEnc: encryptSecret('pw'), eulaAccepted: true },
 		{ 'eula.txt': 'eula=true\n', 'server.properties': 'level-name=world\n', 'world/level.dat': 'level', 'world/region/r.0.0.mca': 'chunks' }
 	);
 	// Written long ago: the world is quiet at once.

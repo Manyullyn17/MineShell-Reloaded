@@ -19,6 +19,7 @@ const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
+const { testPorts } = await import('../helpers/ports');
 
 /** A fake systemd: units start when asked and stay up; started ones have "Done (" in the journal. */
 let active = new Set<string>();
@@ -45,11 +46,9 @@ function fakeSystemd() {
 }
 
 /** start() checks the ports are free: ones of their own, not 25565 (which a real server here may hold). */
-let port = 47100 + (process.pid % 400) * 20;
 async function server(fields: Partial<typeof serverInstances.$inferSelect> = {}) {
-	port += 2;
 	return createInstance(
-		{ modloader: 'vanilla', minecraftVersion: '1.20.1', eulaAccepted: true, serverPort: port, rconPort: port + 1, ...fields },
+		{ modloader: 'vanilla', minecraftVersion: '1.20.1', eulaAccepted: true, ...testPorts(), ...fields },
 		{ 'eula.txt': 'eula=true\n', 'server.jar': 'jar' }
 	);
 }
