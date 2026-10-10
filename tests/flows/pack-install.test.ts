@@ -13,7 +13,7 @@ vi.mock('#lib/server/cleanroom.js', async (importOriginal) => {
 
 const { createFromPack } = await import('#lib/server/instances.js');
 const { LOADERS } = await import('#lib/server/modloaders.js');
-const { packFromFileList, parsePack } = await import('#lib/server/packs/index.js');
+const { curseforgeCdnUrl, packFromFileList, parsePack } = await import('#lib/server/packs/index.js');
 const { listInstanceMods, syncMods } = await import('#lib/server/mods/index.js');
 const { readProperties } = await import('#lib/server/properties.js');
 const cleanroom = await import('#lib/server/cleanroom.js');
@@ -142,6 +142,63 @@ describe('installing a pack', () => {
 		const { taskId, instance } = await createFromPack('Broken', pack({ missing: true }), { source: 'curseforge' });
 		await waitForTask(taskId);
 		expect(reload(instance.id).statusMessage).toMatch(/1 mod could not be downloaded/);
+	});
+
+	it('reports a listed file without a download URL instead of installing without it', async () => {
+		fakeInstall('fabric');
+		const base = `https://files.test/${++packs}`;
+		serve(`${base}/a.jar`, 'mod a');
+		const listed = packFromFileList({
+			name: 'No URL',
+			version: '1.0',
+			minecraftVersion: '1.20.1',
+			modloader: 'fabric',
+			modloaderVersion: null,
+			files: [
+				{ path: 'mods/', name: 'a.jar', url: `${base}/a.jar` },
+				{ path: 'mods/', name: 'nourl.jar', url: '' }
+			]
+		});
+		const { taskId, instance } = await createFromPack('No URL', listed, { source: 'curseforge' });
+		const task = await waitForTask(taskId);
+		expect(reload(instance.id).statusMessage).toMatch(/1 mod could not be downloaded/);
+		expect(task.log.join('\n')).toMatch(/Failed: mods\/nourl\.jar \(no download URL\)/);
+	});
+
+	it('looks up a listed CurseForge file without a URL, keeping its folder', async () => {
+		fakeInstall('fabric');
+		mirrorProject(30, 'Shaders', [{ id: 3000, name: 'shader.zip', version: '1.20.1' }]);
+		serve('https://files.test/cf/shader.zip', 'shader');
+		const listed = packFromFileList({
+			name: 'Lookup',
+			version: '1.0',
+			minecraftVersion: '1.20.1',
+			modloader: 'fabric',
+			modloaderVersion: null,
+			files: [{ path: 'shaderpacks/', name: 'shader.zip', url: null, curseforge: { projectId: '30', fileId: '3000' } }]
+		});
+		const { taskId, instance } = await createFromPack('Lookup', listed, { source: 'curseforge' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect((await tree(instance.path))['shaderpacks/shader.zip']).toBe('shader');
+		expect(reload(instance.id).statusMessage).toBeNull();
+	});
+
+	it('fetches a CurseForge file from the CDN directly when its listed URL fails', async () => {
+		fakeInstall('fabric');
+		serve(curseforgeCdnUrl(4000, 'c.jar', 'mediafilez.forgecdn.net'), 'mod c');
+		const listed = packFromFileList({
+			name: 'Fallback',
+			version: '1.0',
+			minecraftVersion: '1.20.1',
+			modloader: 'fabric',
+			modloaderVersion: null,
+			files: [{ path: 'mods/', name: 'c.jar', url: 'https://files.test/gone/c.jar', curseforge: { projectId: '40', fileId: '4000' } }]
+		});
+		const { taskId, instance } = await createFromPack('Fallback', listed, { source: 'curseforge' });
+		const task = await waitForTask(taskId);
+		expect((await tree(instance.path))['mods/c.jar']).toBe('mod c');
+		expect(task.log.join('\n')).toMatch(/c\.jar: files\.test failed .*trying mediafilez\.forgecdn\.net/);
+		expect(reload(instance.id).statusMessage).toBeNull();
 	});
 
 	it('installs a Forge 1.12.2 pack on Cleanroom when asked', async () => {

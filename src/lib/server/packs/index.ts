@@ -283,8 +283,8 @@ export async function resolvePackTargets(pack: ParsedPack, onProgress?: (done: n
 			const { projectId, fileId } = item.curseforge!;
 			try {
 				const resolved = await resolveCurseforgeDownload(projectId, fileId, pack.minecraftVersion);
-				item.target = path.posix.join('mods', resolved.filename);
-				item.urls = [resolved.url];
+				item.target ||= path.posix.join('mods', resolved.filename);
+				item.urls = curseforgeUrls(resolved.url, fileId, resolved.filename);
 				item.hash = resolved.sha1 ? { algo: 'sha1', value: resolved.sha1 } : null;
 			} catch {
 				failed.push(fileId);
@@ -301,9 +301,33 @@ export async function resolvePackTargets(pack: ParsedPack, onProgress?: (done: n
 }
 
 /** CurseForge's CDN serves every file at a path made from its id and name. */
-export function curseforgeCdnUrl(fileId: number, fileName: string): string {
-	return `https://edge.forgecdn.net/files/${Math.floor(fileId / 1000)}/${fileId % 1000}/${encodeURIComponent(fileName)}`;
+export function curseforgeCdnUrl(fileId: number, fileName: string, host = 'edge.forgecdn.net'): string {
+	return `https://${host}/files/${Math.floor(fileId / 1000)}/${fileId % 1000}/${encodeURIComponent(fileName)}`;
 }
+
+/**
+ * Where a CurseForge file can be fetched: the URL it was listed with, then
+ * the CDN directly. The mirror and the API hand out edge.forgecdn.net, which
+ * only redirects to mediafilez.forgecdn.net - the second way in when the
+ * redirector is down. Not modpacks.ch: CurseForge packs' jars never come
+ * from it, only FTB-hosted files do (and those have no CurseForge ids).
+ */
+export function curseforgeUrls(url: string | null, fileId: number, fileName: string): string[] {
+	const urls = url ? [url] : [];
+	const cdn = curseforgeCdnUrl(fileId, fileName, 'mediafilez.forgecdn.net');
+	const plain = (u: string) => {
+		try {
+			return decodeURIComponent(u);
+		} catch {
+			return u;
+		}
+	};
+	if (!urls.some((u) => plain(u) === plain(cdn))) urls.push(cdn);
+	return urls;
+}
+
+/** A required pack file that could not be fetched, with what is needed to fetch it later. */
+export type FailedDownload = { file: string; error: string; download: PackDownload };
 
 /** Fetch every file the pack lists, in small batches, into the instance. */
 export async function downloadPackFiles(
@@ -311,8 +335,8 @@ export async function downloadPackFiles(
 	instanceDir: string,
 	task?: TaskHandle,
 	concurrency = 4
-): Promise<{ installed: number; failures: { file: string; error: string }[] }> {
-	const failures: { file: string; error: string }[] = [];
+): Promise<{ installed: number; failures: FailedDownload[] }> {
+	const failures: FailedDownload[] = [];
 	let done = 0;
 	const total = pack.downloads.length;
 
@@ -334,8 +358,9 @@ export async function downloadPackFiles(
 						item.curseforge.fileId,
 						pack.minecraftVersion
 					);
-					target = path.join('mods', resolved.filename);
-					urls = [resolved.url];
+					// A file list names the file (and its folder) even without a URL.
+					target ||= path.posix.join('mods', resolved.filename);
+					urls = curseforgeUrls(resolved.url, item.curseforge.fileId, resolved.filename);
 					hash = resolved.sha1 ? { algo: 'sha1', value: resolved.sha1 } : null;
 					// Known from here on, for curseforgeOrigins().
 					item.target = target;
@@ -346,13 +371,16 @@ export async function downloadPackFiles(
 				const destination = path.join(instanceDir, target);
 				let lastError: unknown = null;
 				let ok = false;
-				for (const url of urls) {
+				for (const [i, url] of urls.entries()) {
 					try {
 						await downloadFile(url, destination, { hash });
 						ok = true;
 						break;
 					} catch (err) {
 						lastError = err;
+						if (i + 1 < urls.length) {
+							task?.log(`${path.basename(target)}: ${new URL(url).host} failed (${err instanceof Error ? err.message : String(err)}), trying ${new URL(urls[i + 1]).host}`);
+						}
 					}
 				}
 				if (!ok) throw lastError ?? new Error('all mirrors failed');
@@ -362,7 +390,7 @@ export async function downloadPackFiles(
 					? `CurseForge file ${item.curseforge.fileId}`
 					: item.target || 'unknown file';
 				const message = err instanceof Error ? err.message : String(err);
-				if (item.required) failures.push({ file: label, error: message });
+				if (item.required) failures.push({ file: label, error: message, download: item });
 				task?.log(`${item.required ? 'Failed' : 'Skipped optional'}: ${label} (${message})`);
 			} finally {
 				done += 1;
@@ -381,6 +409,10 @@ export async function downloadPackFiles(
  * archive, so this adapts that shape into the same ParsedPack the archive path
  * produces. Config files come through as ordinary entries in `files`, which is
  * why there are no overrides to apply.
+ *
+ * An entry without a URL is kept: one with CurseForge ids is looked up at
+ * download time like a manifest.json entry, and any other fails there and is
+ * reported. Dropping them made an install report success with a mod missing.
  */
 export function packFromFileList(input: {
 	name: string;
@@ -391,14 +423,12 @@ export function packFromFileList(input: {
 	files: {
 		path: string;
 		name: string;
-		url: string;
+		url?: string | null;
 		sha1?: string | null;
 		curseforge?: { projectId: string; fileId: string };
 	}[];
 }): ParsedPack {
-	const files = input.files
-		.filter((f) => Boolean(f.url))
-		.map((f) => ({ ...f, dir: f.path.replace(/^\.?\/*/, '').replace(/\/+$/, '') }));
+	const files = input.files.map((f) => ({ ...f, dir: f.path.replace(/^\.?\/*/, '').replace(/\/+$/, '') }));
 	const archive = files.find((f) => f.dir === '' && f.name.toLowerCase() === 'overrides.zip');
 	return {
 		kind: 'curseforge',
@@ -409,19 +439,22 @@ export function packFromFileList(input: {
 		modloaderVersion: input.modloaderVersion,
 		downloads: files
 			.filter((f) => f !== archive)
-			.map((f) => ({
-				target: path.posix.join(f.dir, f.name),
-				urls: [f.url],
-				hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
-				...(f.curseforge
-					? { curseforge: { projectId: Number(f.curseforge.projectId), fileId: Number(f.curseforge.fileId) } }
-					: {}),
-				required: true
-			})),
+			.map((f) => {
+				const curseforge = f.curseforge
+					? { projectId: Number(f.curseforge.projectId), fileId: Number(f.curseforge.fileId) }
+					: null;
+				return {
+					target: path.posix.join(f.dir, f.name),
+					urls: curseforge && f.url ? curseforgeUrls(f.url, curseforge.fileId, f.name) : f.url ? [f.url] : [],
+					hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
+					...(curseforge ? { curseforge } : {}),
+					required: true
+				};
+			}),
 		overrideEntries: [],
 		zip: null,
 		overridesArchive: archive
-			? { url: archive.url, hash: archive.sha1 ? { algo: 'sha1', value: archive.sha1 } : null }
+			? { url: archive.url ?? '', hash: archive.sha1 ? { algo: 'sha1', value: archive.sha1 } : null }
 			: null
 	};
 }
@@ -446,6 +479,8 @@ export function curseforgeOrigins(pack: ParsedPack): Map<string, { projectId: st
 /** Fetch and open a file-list pack's overrides.zip so applyOverrides can unpack it. */
 export async function loadOverridesArchive(pack: ParsedPack, task?: TaskHandle): Promise<void> {
 	if (!pack.overridesArchive || pack.zip) return;
+	// Without it the pack runs with none of its configs: an error, not a quiet install.
+	if (!pack.overridesArchive.url) throw new Error('The pack lists its overrides.zip (configs, scripts, bundled files) without a download URL.');
 	const file = path.join(TMP_DIR, `overrides-${Date.now()}.zip`);
 	try {
 		task?.log('Downloading the pack overrides (configs, scripts, bundled files)');

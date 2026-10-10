@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { applyOverrides, curseforgeCdnUrl, packFromFileList, parsePack } from './index';
+import { applyOverrides, curseforgeCdnUrl, curseforgeUrls, packFromFileList, parsePack } from './index';
 import { ls, tempDir, zipBuffer } from '../../../../tests/helpers/fs';
 
 describe('packFromFileList (modpacks.ch file lists)', () => {
@@ -38,6 +38,38 @@ describe('packFromFileList (modpacks.ch file lists)', () => {
 		});
 		expect(nested.overridesArchive).toBeNull();
 		expect(nested.downloads.map((d) => d.target)).toEqual(['mods/overrides.zip']);
+	});
+
+	it('keeps entries without a URL, so they are looked up or reported instead of silently dropped', () => {
+		const listed = packFromFileList({
+			...pack,
+			files: [
+				{ path: './mods/', name: 'cf.jar', url: '', curseforge: { projectId: '10', fileId: '2000' } },
+				{ path: './resourcepacks/', name: 'plain.zip', url: null }
+			]
+		});
+		expect(listed.downloads).toMatchObject([
+			{ target: 'mods/cf.jar', urls: [], curseforge: { projectId: 10, fileId: 2000 } },
+			{ target: 'resourcepacks/plain.zip', urls: [] }
+		]);
+	});
+
+	it('gives CurseForge files the CDN behind the edge redirector as a second source', () => {
+		const listed = packFromFileList({
+			...pack,
+			files: [{ path: './mods/', name: 'A B.jar', url: 'https://edge.forgecdn.net/files/3408/276/A%20B.jar', curseforge: { projectId: '1', fileId: '3408276' } }]
+		});
+		expect(listed.downloads[0].urls).toEqual([
+			'https://edge.forgecdn.net/files/3408/276/A%20B.jar',
+			'https://mediafilez.forgecdn.net/files/3408/276/A%20B.jar'
+		]);
+	});
+});
+
+describe('curseforgeUrls', () => {
+	it('does not list the CDN twice when the file is already there, however its name is escaped', () => {
+		const url = 'https://mediafilez.forgecdn.net/files/5951/859/%5bMC%5d%20Patch.jar';
+		expect(curseforgeUrls(url, 5951859, '[MC] Patch.jar')).toEqual([url]);
 	});
 });
 

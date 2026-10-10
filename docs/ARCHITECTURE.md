@@ -358,6 +358,11 @@ Details worth keeping:
   requires them, and the install's status says which. Jars that were already there are
   left alone, so a mod someone re-enabled stays enabled.
 - `overrides/` and `server-overrides/` both get applied, with server-overrides winning.
+- Downloads (`downloadPackFiles`): CurseForge jars come from CurseForge's CDN, never from
+  modpacks.ch (only FTB-hosted configs and jars do, from `dist.modpacks.ch`). The mirror and
+  the API hand out `edge.forgecdn.net`, which only redirects to `mediafilez.forgecdn.net`, so
+  every CurseForge file gets the latter as a second, hash-checked source. A file-list entry
+  without a URL is kept (looked up by its CurseForge ids, else reported), never dropped.
 - Data packs from the mod browser (Modrinth releases tagged `datapack`) go into the world's
   `datapacks/` folder and are tracked in `instance_datapacks`, apart from `instance_mods`,
   whose rows all live in `mods/`.
