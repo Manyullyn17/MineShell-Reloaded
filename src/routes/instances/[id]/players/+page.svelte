@@ -79,7 +79,61 @@
 	let filter = $state<(typeof FILTERS)[number]['id']>('all');
 	const shown = $derived(people.filter(FILTERS.find((f) => f.id === filter)!.test));
 	const playerUrl = (uuid: string) => `/instances/${encodeURIComponent(data.instance.id)}/players/${uuid}`;
+
+	/**
+	 * One "More" menu open at a time, placed with fixed coordinates: the table box
+	 * clips anything that pokes out of it, which cut off the menu on the last rows.
+	 * It opens upward when there is no room below.
+	 */
+	let menuFor = $state<string | null>(null);
+	let menuButton: HTMLElement | null = null;
+	let menuEl = $state<HTMLElement | null>(null);
+	let menuAt = $state({ top: 0, right: 0 });
+
+	function toggleMenu(key: string, event: MouseEvent) {
+		if (menuFor === key) return closeMenu();
+		menuButton = event.currentTarget as HTMLElement;
+		menuFor = key;
+		placeMenu();
+	}
+
+	function closeMenu() {
+		menuFor = null;
+		menuButton = null;
+	}
+
+	function placeMenu() {
+		if (!menuButton) return;
+		const box = menuButton.getBoundingClientRect();
+		const height = menuEl?.offsetHeight ?? 0;
+		const below = window.innerHeight - box.bottom;
+		const up = height + 8 > below && box.top > below;
+		const top = up ? box.top - 4 - height : box.bottom + 4;
+		menuAt = {
+			top: Math.max(8, Math.min(top, window.innerHeight - height - 8)),
+			right: Math.max(8, window.innerWidth - box.right)
+		};
+	}
+
+	// Measured once it is in the page, then kept by its button while anything scrolls.
+	$effect(() => {
+		if (!menuEl) return;
+		placeMenu();
+		document.addEventListener('scroll', placeMenu, true);
+		return () => document.removeEventListener('scroll', placeMenu, true);
+	});
+
+	function onWindowClick(event: MouseEvent) {
+		const target = event.target as Node;
+		if (menuFor && !menuEl?.contains(target) && !menuButton?.contains(target)) closeMenu();
+	}
 </script>
+
+<svelte:window
+	onclick={onWindowClick}
+	onresize={placeMenu}
+	onkeydown={(e) => e.key === 'Escape' && closeMenu()}
+/>
 
 <Flash {form} />
 
@@ -205,9 +259,24 @@
 							{#if person.file}
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
-							<details class="more">
-								<summary class="button button-quiet">More ▾</summary>
-								<div class="menu">
+							<button
+								type="button"
+								class="button-quiet"
+								aria-haspopup="menu"
+								aria-expanded={menuFor === person.key}
+								onclick={(e) => toggleMenu(person.key, e)}>More ▾</button
+							>
+							{#if menuFor === person.key}
+								<!-- Closed after the submit: removing the button during its click cancels it. -->
+								<div
+									class="menu"
+									role="menu"
+									tabindex="-1"
+									bind:this={menuEl}
+									style:top="{menuAt.top}px"
+									style:right="{menuAt.right}px"
+									onsubmit={() => setTimeout(closeMenu)}
+								>
 									<form method="POST" use:enhance>
 										<input type="hidden" name="name" value={person.name} />
 										{#if !person.whitelisted}
@@ -267,7 +336,7 @@
 										{/if}
 									</form>
 								</div>
-							</details>
+							{/if}
 						</td>
 					</tr>
 				{/each}
@@ -483,26 +552,13 @@
 		padding: 0.25rem 0.5rem;
 	}
 
-	.more {
-		display: inline-block;
-		position: relative;
-		text-align: left;
-	}
-
-	.more summary {
-		list-style: none;
-	}
-
-	.more summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.more .menu {
-		position: absolute;
-		right: 0;
-		top: calc(100% + 4px);
-		z-index: 10;
+	.menu {
+		position: fixed;
+		z-index: 30;
 		min-width: 13rem;
+		max-height: calc(100vh - 16px);
+		overflow-y: auto;
+		text-align: left;
 		padding: 5px;
 		background: var(--panel-raised);
 		border: 1px solid var(--line-strong);
