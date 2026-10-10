@@ -49,6 +49,20 @@
 	$effect(() => {
 		if (!pruneDimension && data.dimensions.length) pruneDimension = data.dimensions[0].key;
 	});
+	// A count shows only under the settings it was made with, and a page opened
+	// again starts from the defaults: take on each new count's settings, so one
+	// that finished while the page was left (or was counted before) shows.
+	let adoptedCount = 0;
+	$effect(() => {
+		const count = data.pruneCount;
+		if (!count || count.at === adoptedCount) return;
+		adoptedCount = count.at;
+		const dimension = data.dimensions.find((d) => d.key === count.dimension);
+		if (!dimension) return;
+		pruneDimension = count.dimension;
+		pruneTicks = count.maxTicks;
+		if (dimension.overworld) pruneKeep = count.keepAroundSpawn;
+	});
 	const pruneIsOverworld = $derived(data.dimensions.find((d) => d.key === pruneDimension)?.overworld ?? false);
 	const countMatches = $derived(
 		data.pruneCount &&
