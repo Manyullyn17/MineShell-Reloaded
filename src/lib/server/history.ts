@@ -22,12 +22,15 @@ import { playerEventWithName } from '#lib/shared/consolelines.js';
  * failure that is not an asked-for stop, or stopping on its own before
  * "Done (" (most loaders exit 0 after a startup crash). Exit status 143 is
  * SIGTERM, which only a stop MineShell asked for sends. Each crash is put
- * through the crash analyzer once, and its verdict kept.
+ * through the crash analyzer once, and its verdict kept. A run that logged a
+ * crash is one too, however it ended: the process can hang on after it (a
+ * mod's shutdown hook failing), and the Stop that ends it is an asked-for stop.
  */
 
 const POLL_MS = 30_000;
-const PATTERN =
-	'joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed ';
+/** The game's own crash lines (every loader): the server thread is gone, whether or not the process exits. */
+const CRASH_LINES = '\\]: Encountered an unexpected exception|\\]: This crash report has been saved to: ';
+const PATTERN = `joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed |${CRASH_LINES}`;
 
 const isStart = (m: string) => /^Started /.test(m);
 /**
@@ -38,6 +41,9 @@ const isStart = (m: string) => /^Started /.test(m);
  */
 const isEnd = (m: string) => /^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed /.test(m);
 const isDone = (m: string) => /\]: Done \(/.test(m);
+const crashLine = new RegExp(CRASH_LINES);
+/** A log line saying the server crashed. */
+export const isCrashLine = (m: string) => crashLine.test(m);
 
 function closeSessions(instanceId: string, at: number, player?: string): void {
 	db.update(playerSessions)
@@ -78,7 +84,8 @@ function endRun(instanceId: string, invocation: string, at: number, message: str
 	const exitStatus = status ? Number(status[1]) : run.exitStatus;
 	const failed = run.failed || /Failed with result/.test(message);
 	const askedToStop = exitStatus === STOPPED_ON_REQUEST;
-	const crashed = !askedToStop && (failed || (exitStatus !== null && exitStatus !== 0) || run.doneAt === null);
+	const crashed =
+		run.crashLoggedAt !== null || (!askedToStop && (failed || (exitStatus !== null && exitStatus !== 0) || run.doneAt === null));
 	db.update(serverRuns).set({ endedAt: at, exitStatus, failed, crashed }).where(where).run();
 }
 
@@ -98,6 +105,13 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): void {
 			db.update(serverRuns)
 				.set({ doneAt: e.at })
 				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.doneAt)))
+				.run();
+			continue;
+		}
+		if (isCrashLine(e.message) && e.invocation) {
+			db.update(serverRuns)
+				.set({ crashLoggedAt: e.at })
+				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.crashLoggedAt)))
 				.run();
 			continue;
 		}
@@ -180,6 +194,23 @@ export function startHistory(): void {
 }
 
 // ------------------------------------------------------------------ reads ---
+
+/** How long after its crash line a process still running counts as hung: saving worlds on the way out takes a moment. */
+export const HUNG_AFTER_CRASH_MS = 60_000;
+
+/**
+ * When the current run (the one systemd started at `startedAt`) logged a
+ * crash, if that is over a minute ago and the process is still there: it
+ * crashed but did not exit, so systemd does not restart it either. Null
+ * otherwise. The history is read every 30 s, so this lags by up to that.
+ */
+export function hungAfterCrash(instanceId: string, startedAt: number, now = Date.now()): number | null {
+	if (!startedAt) return null;
+	const run = db.select().from(serverRuns).where(eq(serverRuns.instanceId, instanceId)).orderBy(desc(serverRuns.startedAt)).limit(1).get();
+	// The run history may not have seen this start yet: an older run is not this one.
+	if (!run || run.endedAt !== null || run.crashLoggedAt === null || Math.abs(run.startedAt - startedAt) > 10_000) return null;
+	return now - run.crashLoggedAt >= HUNG_AFTER_CRASH_MS ? run.crashLoggedAt : null;
+}
 
 export type StartTimes = { lastMs: number; lastAt: number; usualMs: number | null; runs: number };
 

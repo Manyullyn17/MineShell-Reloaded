@@ -143,8 +143,16 @@
 	<section class="panel">
 		<div class="panel-head">
 			<div>
-				<h2>Last output before it stopped</h2>
-				<p>The server exited unexpectedly. These are the final journal lines.</p>
+				{#if data.hungSince}
+					<h2>It crashed but is still running</h2>
+					<p>
+						The server logged a crash {formatRelative(data.hungSince)}, but its process never exited, so it will not
+						restart on its own either. Stop it, and Force stop if that does not end it. These are its last journal lines.
+					</p>
+				{:else}
+					<h2>Last output before it stopped</h2>
+					<p>The server exited unexpectedly. These are the final journal lines.</p>
+				{/if}
 			</div>
 			<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>
 		</div>

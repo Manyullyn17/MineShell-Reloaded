@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const { applyEvents, crashCausesByRun, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
+const { applyEvents, crashCausesByRun, hungAfterCrash, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { db } = await import('#lib/server/db/index.js');
 const { bisectSessions } = await import('#lib/server/db/schema.js');
@@ -106,6 +106,40 @@ describe('crash history', () => {
 			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4)
 		]);
 		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
+	});
+
+	it('counts a run that logged a crash, also when its process hung and had to be stopped', async () => {
+		// Cleanroom 0.5.2 + MeatballCraft: AvaritiaItem crashed the server thread, a mod's
+		// shutdown handler then failed, and the JVM stayed up until a Stop (SIGTERM, 143).
+		const s = await server();
+		const at = (h: number) => T0 + h * 60 * MIN;
+		applyEvents(s.id, [
+			ev(at(0), 'Started x.service', 1),
+			ev(at(0) + 30_000, '[00:43:49] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception', 1),
+			ev(at(0) + 30_000, '[00:43:49] [Server thread/ERROR] [minecraft/MinecraftServer]: This crash report has been saved to: /srv/crash-reports/crash.txt', 1),
+			ev(at(0) + 6 * MIN, 'x.service: Main process exited, code=exited, status=143/n/a', 1),
+			ev(at(0) + 6 * MIN, 'Stopped x.service.', 1),
+			// 2: crashed in play after Done and exited 0 by itself.
+			ev(at(1), 'Started x.service', 2),
+			ev(at(1) + MIN, line('Done (5.0s)!'), 2),
+			ev(at(2), '[11:00:00] [Server thread/ERROR]: Encountered an unexpected exception', 2),
+			ev(at(2), 'x.service: Deactivated successfully.', 2)
+		]);
+		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(2), inv(1)]);
+	});
+
+	it('tells a process that hung on after its crash from one still saving', async () => {
+		const s = await server();
+		applyEvents(s.id, [
+			ev(T0, 'Started x.service', 1),
+			ev(T0 + 30_000, '[10:00:30] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception', 1)
+		]);
+		expect(hungAfterCrash(s.id, T0, T0 + 50_000)).toBeNull();
+		expect(hungAfterCrash(s.id, T0, T0 + 2 * MIN)).toBe(T0 + 30_000);
+		// systemd says the current run started later: the history has not seen that start yet.
+		expect(hungAfterCrash(s.id, T0 + 10 * MIN, T0 + 12 * MIN)).toBeNull();
+		applyEvents(s.id, [ev(T0 + 3 * MIN, 'Stopped x.service.', 1)]);
+		expect(hungAfterCrash(s.id, T0, T0 + 4 * MIN)).toBeNull();
 	});
 
 	it('ends runs whose only end line is systemd\'s "Consumed"', async () => {

@@ -299,8 +299,12 @@ holds. The position stored is the newest entry, read before the filtered read (m
 than it wait for the next call), so a server quiet for days is not rescanned from an old
 match each time. A run ending, or the next one starting, closes any open session. Crashes use the overview's
 rule (`lastcrash.ts`) on every run: a failure that is not exit 143 (SIGTERM, which only an
-asked-for stop sends), or stopping on its own before `Done (`; each is put through the crash
-analyzer once (a few per pass) and its verdict kept on the run. From it:
+asked-for stop sends), or stopping on its own before `Done (`, or logging the game's crash line
+("Encountered an unexpected exception", kept as `crash_logged_at`) however it ended; each is put
+through the crash analyzer once (a few per pass) and its verdict kept on the run. A process can
+hang on after its crash line (a mod's shutdown handler failing: Cleanroom 0.5.2 + MeatballCraft
+did); still running a minute after it (`hungAfterCrash`), the overview shows it as crashed, with
+the diagnosis, instead of running or "stuck starting". From it:
 today's peak and time online (overview), playtime and last seen (Players), start times
 (overview against the median of the five before, and per run in Logs).
 

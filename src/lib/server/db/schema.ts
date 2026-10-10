@@ -293,6 +293,8 @@ export const serverRuns = sqliteTable(
 		invocation: text('invocation').notNull(),
 		startedAt: integer('started_at').notNull(),
 		doneAt: integer('done_at'),
+		/** When the run logged a crash ("Encountered an unexpected exception"); the process may hang on after it. */
+		crashLoggedAt: integer('crash_logged_at'),
 		endedAt: integer('ended_at'),
 		/** The process's exit status ("Main process exited, ... status=N"); null for a clean exit or unknown. */
 		exitStatus: integer('exit_status'),

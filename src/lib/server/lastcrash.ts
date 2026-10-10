@@ -3,6 +3,7 @@ import { db } from './db';
 import { bisectSessions, serverRuns } from './db/schema';
 import { diagnoseRun, lastRun, type Diagnosis } from './crashdiag';
 import { wasStopIntentional, type InstanceSummary } from './instances';
+import { hungAfterCrash, isCrashLine } from './history';
 import { readLastRun } from './journal';
 import { modsDir } from './mods/index';
 
@@ -45,16 +46,29 @@ function startedDuringBisect(instanceId: string, startedAt: number): boolean {
  * same systemd Result as a crash, so intent is checked rather than inferred
  * from the unit state. Most loaders catch a startup crash, print it and exit
  * with code 0, so a systemd failure alone misses them: a run that stopped on
- * its own without ever reaching "Done (" counts as a crash too.
+ * its own without ever reaching "Done (" counts as a crash too. So does one
+ * that logged a crash, however it ended: a process can hang on after one
+ * (it is then still running, `hungAfterCrash`) until someone stops it.
  */
 export async function lastCrash(summary: InstanceSummary): Promise<LastCrash | null> {
 	const { instance, state } = summary;
-	if (summary.running || state.active === 'activating' || wasStopIntentional(instance.id)) return null;
+	const hung = summary.running && hungAfterCrash(instance.id, state.activeEnterTimestamp) !== null;
+	if ((summary.running && !hung) || state.active === 'activating') return null;
 	if (startedDuringBisect(instance.id, state.activeEnterTimestamp)) return null;
+	// Not read for a stop MineShell asked for unless the history saw a crash line in that run.
+	if (!hung && wasStopIntentional(instance.id) && !lastRunLoggedCrash(instance.id)) return null;
 	const log = lastRun(await readLastRun(instance.id, instance.createdAt));
 	const startedRun = /^Started \S+\.service/.test(log);
-	const crashed = state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log));
+	const loggedCrash = log.split('\n').some(isCrashLine);
+	const crashed =
+		hung || loggedCrash || (!wasStopIntentional(instance.id) && (state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log))));
 	return crashed ? { log, diagnosis: diagnoseLastRun(instance.id, instance.path, log) } : null;
+}
+
+/** The newest run in the history logged a crash. */
+function lastRunLoggedCrash(instanceId: string): boolean {
+	const newest = db.select().from(serverRuns).where(eq(serverRuns.instanceId, instanceId)).orderBy(desc(serverRuns.startedAt)).limit(1).get();
+	return newest?.crashLoggedAt != null;
 }
 
 /**

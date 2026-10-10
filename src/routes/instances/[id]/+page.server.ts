@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { packIconPending } from '#lib/server/packicon.js';
-import { onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
+import { hungAfterCrash, onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -88,8 +88,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const forgeQuestion = summary.running
 		? await pendingForgeQuestion(instance, summary.state.activeEnterTimestamp).catch(() => null)
 		: null;
+	// Crashed, but the process never exited (lastCrash then reports it too).
+	const hungSince = summary.running ? hungAfterCrash(instance.id, summary.state.activeEnterTimestamp) : null;
 	const stuck =
-		summary.running && !forgeQuestion && (await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
+		summary.running &&
+		!forgeQuestion &&
+		hungSince === null &&
+		(await stuckStarting(instance.id, instance.createdAt, summary.state.activeEnterTimestamp));
 	// Which runtime actually gets used, so the overview can name it instead of
 	// only saying that matching happens.
 	const java = resolveJava({
@@ -167,6 +172,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		tick,
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
+		hungSince,
 		forgeQuestion,
 		/** Pack files the last install or pack change could not download (packs/missing.ts). */
 		missingDownloads: await readMissing(instance.path),
