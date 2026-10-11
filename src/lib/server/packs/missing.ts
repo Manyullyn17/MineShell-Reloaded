@@ -136,7 +136,8 @@ export async function retryMissing(instance: ServerInstance, task: TaskHandle): 
 	await recordMissing(instance.path, failures);
 	if (failures.length < missing.length) {
 		task.setProgress(null, 'Identifying mods');
-		await syncMods(instance, { fromPack: true, curseforge: curseforgeOrigins(pack) });
+		const packFiles = new Set(missing.filter((m) => path.posix.dirname(m.download.target) === 'mods').map((m) => path.posix.basename(m.download.target)));
+		await syncMods(instance, { packFiles, curseforge: curseforgeOrigins(pack) });
 	}
 	task.log(
 		failures.length

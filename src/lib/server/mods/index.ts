@@ -251,11 +251,18 @@ export async function syncMods(
 	instance: ServerInstance,
 	opts: {
 		fromPack?: boolean;
+		/**
+		 * The jar names a pack change installs: only those become pack mods. A
+		 * jar someone put into mods/ by hand is theirs, tracked or not; counted
+		 * as the pack's, the next pack change removed it.
+		 */
+		packFiles?: Set<string>;
 		curseforge?: CurseforgeOrigins;
 		onProgress?: (done: number, total: number) => void;
 	} = {}
 ): Promise<SyncResult> {
 	const rows = await listInstanceMods(instance);
+	const isPackMod = (fileName: string) => (opts.packFiles ? opts.packFiles.has(stripDisabled(fileName)) : (opts.fromPack ?? true));
 
 	let removedStale = 0;
 	for (const row of rows.filter((r) => r.missing)) {
@@ -336,12 +343,12 @@ export async function syncMods(
 				filePath: path.join('mods', fileName),
 				hash,
 				hashAlgo: 'sha512',
-				fromPack: opts.fromPack ?? true,
+				fromPack: isPackMod(fileName),
 				clientOnly: project.clientOnly
 			});
 			resolved += 1;
 		} else {
-			await trackManualJar(instance, fileName, { fromPack: opts.fromPack ?? true, hash });
+			await trackManualJar(instance, fileName, { fromPack: isPackMod(fileName), hash });
 			trackedAsManual += 1;
 		}
 	}

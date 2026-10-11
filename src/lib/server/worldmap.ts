@@ -601,7 +601,8 @@ export async function installMapMod(instance: ServerInstance): Promise<string> {
 			await installModVersion(instance, 'modrinth', { id: BLUEMAP_PROJECT, slug: BLUEMAP_PROJECT, name: 'BlueMap', projectUrl: null, iconUrl: null }, best);
 			task.log(`Installed BlueMap ${best.versionNumber}.`);
 		}
-		await syncMods(instance).catch(() => undefined);
+		// Other untracked jars are the user's own, not a pack's.
+		await syncMods(instance, { fromPack: false }).catch(() => undefined);
 		await applyMapModConfig(instance);
 		task.setProgress(100, 'Installed; the map starts with the server');
 	});

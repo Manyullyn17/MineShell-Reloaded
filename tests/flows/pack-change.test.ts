@@ -192,6 +192,21 @@ describe('changing the pack version', () => {
 		expect(reload(instance.id).statusMessage).toMatch(/^1 config file\(s\) were changed by both you and the pack/);
 	});
 
+	it('keeps a jar the user put into mods/ by hand through any number of changes', async () => {
+		// homemade.jar was copied in without MineShell (Files, SFTP): untracked.
+		const instance = await installedAndUsed();
+		await waitForTask(await applyPackChange(instance, 'v2', { updateMods: [], confirmMinecraftChange: false }));
+		// The sync after the change used to count every untracked jar as the pack's...
+		const { listInstanceMods } = await import('#lib/server/mods/index.js');
+		const row = (await listInstanceMods(reload(instance.id))).find((r) => r.fileName === 'homemade.jar');
+		expect(row).toMatchObject({ fromPack: false });
+		expect((await listInstanceMods(reload(instance.id))).find((r) => r.fileName === 'c.jar')).toMatchObject({ fromPack: true });
+		// ...so the next change removed it as a pack mod the version no longer has.
+		expect((await waitForTask(await applyPackChange(reload(instance.id), 'v1', { updateMods: [], confirmMinecraftChange: false }))).state).toBe('done');
+		expect(await fs.readFile(path.join(instance.path, 'mods/homemade.jar'), 'utf8')).toBe('homemade');
+		expect(await fs.readFile(path.join(instance.path, 'mods/c.jar')).catch(() => null)).toBeNull();
+	});
+
 	it('needs confirmation to change the Minecraft version, and flags mods that will break', async () => {
 		const instance = await installedAndUsed();
 		const plan = await planPackChange(instance, 'v3');

@@ -738,7 +738,8 @@ export async function applyPackChange(
 			task.log('The change failed; putting everything back.');
 			await restorePackChange(root, journal);
 			endOperation(instance.id);
-			await syncMods(requireInstance(instance.id)).catch(() => undefined);
+			// Back as before: what is untracked now was the user's before the change too.
+			await syncMods(requireInstance(instance.id), { fromPack: false }).catch(() => undefined);
 			setStatus(
 				instance.id,
 				'ready',
@@ -758,7 +759,7 @@ export async function applyPackChange(
 		}
 		try {
 			task.setProgress(null, 'Identifying mods');
-			await syncMods(requireInstance(instance.id), { fromPack: true, curseforge: curseforgeOrigins(pack) });
+			await syncMods(requireInstance(instance.id), { packFiles: targetModNames(pack), curseforge: curseforgeOrigins(pack) });
 			// Only what this version added: a pack mod someone re-enabled stays on.
 			task.setProgress(null, 'Checking for client-only mods');
 			const clientOnly = await disableClientOnlyMods(requireInstance(instance.id), plan.mods.add, task);

@@ -69,7 +69,8 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			break;
 		case 'pack-change':
 			await restorePackChange(root, journal);
-			await syncMods(instance).catch(() => undefined);
+			// Back as before: what is untracked now was the user's before the change too.
+			await syncMods(instance, { fromPack: false }).catch(() => undefined);
 			break;
 		case 'world-change':
 			await restoreWorldChange(root, journal);
