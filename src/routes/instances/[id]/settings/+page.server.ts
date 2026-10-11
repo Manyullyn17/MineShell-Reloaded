@@ -29,6 +29,7 @@ import { applyPackChange } from '#lib/server/packchange.js';
 import { applyMigration } from '#lib/server/migrate.js';
 import { latestMergeReport, resolveMerge } from '#lib/server/configmerge.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
+import { runningHeapMb } from '#lib/server/heap.js';
 import { formInt } from '#lib/server/formvalues.js';
 import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
 import {
@@ -92,7 +93,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	const cleanroomRelevant =
 		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
 	const backup = cleanroomRelevant ? await readForgeBackup(instance) : null;
-	const running = (await summarise(instance)).running;
+	const summary = await summarise(instance);
+	const running = summary.running;
 	const java = resolveJava({
 		explicitPath: instance.javaPath,
 		minecraftVersion: instance.minecraftVersion,
@@ -179,6 +181,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		autoJava: instance.javaPath ? resolveJava({ ...instance, explicitPath: null }) : java,
 		loaders: LOADER_LIST.map((l) => ({ id: l.id, label: l.label })),
 		running,
+		/** The heap the running process started with; a saved change applies from the next start. */
+		runningMemoryMaxMb: running ? await runningHeapMb(summary.state.mainPid) : null,
 		// An uploaded pack has no project: it is updated by uploading the next version's file.
 		pack:
 			instance.packSource
@@ -426,11 +430,16 @@ export const actions: Actions = {
 		};
 		const memoryMb = optional('limitMemoryMb');
 		const cpuPercent = optional('limitCpuPercent');
-		const heap = instance.memoryMaxMb ?? 0;
+		// systemd applies a changed limit to a running server at once (daemon-reload
+		// re-applies cgroup settings), and that server has the heap it started with,
+		// which can be bigger than the saved one.
+		const summary = await summarise(instance);
+		const runningHeap = summary.running ? await runningHeapMb(summary.state.mainPid) : null;
+		const heap = Math.max(instance.memoryMaxMb ?? 0, runningHeap ?? 0);
 		if (memoryMb !== null && (!Number.isInteger(memoryMb) || memoryMb < heap + LIMIT_HEADROOM_MB)) {
 			return fail(400, {
 				ok: false,
-				message: `The memory limit has to leave Java room above its ${heap} MB heap: at least ${heap + LIMIT_HEADROOM_MB} MB, or blank for none.`
+				message: `The memory limit has to leave Java room above its ${heap} MB heap${runningHeap !== null && runningHeap > (instance.memoryMaxMb ?? 0) ? ' (what the running server started with)' : ''}: at least ${heap + LIMIT_HEADROOM_MB} MB, or blank for none.`
 			});
 		}
 		const maxCpu = (cpus().length || 1) * 100;
@@ -442,7 +451,8 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		await syncUnit(requireInstance(instance.id));
-		return { ok: true, message: memoryMb || cpuPercent ? 'Limits saved. Restart the server to apply them.' : 'Limits removed. Restart the server to apply.' };
+		const what = memoryMb || cpuPercent ? 'Limits saved' : 'Limits removed';
+		return { ok: true, message: summary.running ? `${what} and applied to the running server.` : `${what}.` };
 	},
 
 	savePreset: async ({ request, params }) => {

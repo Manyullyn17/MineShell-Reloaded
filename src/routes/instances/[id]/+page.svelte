@@ -72,8 +72,14 @@
 	 * code, threads), so it runs above the heap size; with AlwaysPreTouch the whole
 	 * heap counts from the start. The chart's top is the heap size or the highest
 	 * value shown, whichever is more - it clipped everything above the heap.
+	 * A running server has the heap it started with; a saved change waits for
+	 * the next start.
 	 */
-	const heapBytes = $derived((data.detail.memoryMaxMb ?? 4096) * 1024 * 1024);
+	const heapMb = $derived(data.detail.runningMemoryMaxMb ?? data.detail.memoryMaxMb ?? 4096);
+	const heapPending = $derived(
+		data.detail.runningMemoryMaxMb !== null && data.detail.memoryMaxMb !== null && data.detail.runningMemoryMaxMb !== data.detail.memoryMaxMb
+	);
+	const heapBytes = $derived(heapMb * 1024 * 1024);
 	const memoryCeiling = $derived(Math.max(heapBytes, ...data.memory.map((p) => p.value * 1.1)));
 
 
@@ -234,7 +240,11 @@
 	<div>
 		<dt>Memory</dt>
 		<dd class="mono">{data.running && latestMemory !== null ? formatBytes(latestMemory) : '-'}</dd>
-		<dd class="sub">heap up to {formatBytes((data.detail.memoryMaxMb ?? 0) * 1024 * 1024)}</dd>
+		<dd class="sub">
+			heap up to {formatBytes(heapBytes)}{#if heapPending}<span title="Saved in settings; applies when the server next starts">
+					· {formatBytes((data.detail.memoryMaxMb ?? 0) * 1024 * 1024)} after a restart</span
+				>{/if}
+		</dd>
 	</div>
 	<div>
 		<dt>CPU</dt>
@@ -465,6 +475,9 @@
 					<dd class="mono">
 						{data.detail.memoryMinMb ? `${data.detail.memoryMinMb.toLocaleString()} – ` : ''}{data.detail.memoryMaxMb?.toLocaleString()} MB
 					</dd>
+					{#if heapPending}
+						<dd class="faint small">running with {data.detail.runningMemoryMaxMb?.toLocaleString()} MB until it restarts</dd>
+					{/if}
 				</div>
 				<div>
 					<dt>Restart on crash</dt>

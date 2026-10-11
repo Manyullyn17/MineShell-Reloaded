@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseHeapInfo, parseMaxHeap, safeToSignal } from './heap';
+import { parseHeapArg, parseHeapInfo, parseMaxHeap, safeToSignal } from './heap';
 
 // GC.heap_info as Java 8, 17, 21 and 25 printed it (October 2026, -Xmx256m).
 const K = 1024;
@@ -26,6 +26,16 @@ describe('GC.heap_info', () => {
 	it('reads the maximum from VM.flags', () => {
 		expect(parseMaxHeap('-XX:CICompilerCount=4 -XX:InitialHeapSize=268435456 -XX:MaxHeapSize=17179869184 -XX:+UseG1GC')).toBe(16 * 1024 * M);
 		expect(parseMaxHeap('')).toBeNull();
+	});
+
+	it('reads the heap a command line asks for, the last flag counting', () => {
+		// irithyll-go-brrr, saved at 8192 MB while it ran with this (October 2026).
+		const args = ['/usr/lib/jvm/java-21-openjdk-amd64/bin/java', '-Xms1024M', '-Xmx10240M', '-XX:+UseZGC', '-jar', 'server.jar', 'nogui'];
+		expect(parseHeapArg(args)).toBe(10240 * M);
+		expect(parseHeapArg(['java', '-Xmx4g', '-XX:MaxHeapSize=6G'])).toBe(6 * 1024 * M);
+		expect(parseHeapArg(['java', '-Xmx512k'])).toBe(512 * K);
+		expect(parseHeapArg(['java', '-Xmx1073741824'])).toBe(1024 * M);
+		expect(parseHeapArg(['java', '@user_jvm_args.txt', '-Xms2G'])).toBeNull();
 	});
 
 	it('never signals a JVM that would not take SIGQUIT as an attach request', () => {

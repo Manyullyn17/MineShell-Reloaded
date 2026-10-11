@@ -62,6 +62,34 @@ export function parseMaxHeap(text: string): number | null {
 	return m ? Number(m[1]) : null;
 }
 
+/**
+ * The heap a java command line asks for, in bytes: -Xmx or -XX:MaxHeapSize,
+ * the last one counting, as in Java. Null when neither is there (an @argfile).
+ */
+export function parseHeapArg(args: string[]): number | null {
+	let bytes: number | null = null;
+	for (const arg of args) {
+		const m = arg.match(/^(?:-Xmx|-XX:MaxHeapSize=)(\d+)([kmgt]?)$/i);
+		if (m) bytes = Number(m[1]) * 1024 ** ' kmgt'.indexOf((m[2] || ' ').toLowerCase());
+	}
+	return bytes;
+}
+
+/**
+ * The maximum heap the running process `pid` was started with, in MB. Memory
+ * settings saved while a server runs apply from its next start, so this, not
+ * the saved value, is what the server has now.
+ */
+export async function runningHeapMb(pid: number | null | undefined): Promise<number | null> {
+	if (!pid) return null;
+	try {
+		const bytes = parseHeapArg((await fs.readFile(`/proc/${pid}/cmdline`, 'utf8')).split('\0'));
+		return bytes === null ? null : Math.round(bytes / 1024 ** 2);
+	} catch {
+		return null;
+	}
+}
+
 /** Whether a SIGQUIT can only start the attach listener, judging by the command line. */
 export function safeToSignal(args: string[]): boolean {
 	return !args.some((a) => a === '-Xrs' || a === '-XX:+ReduceSignalUsage' || a === '-XX:+DisableAttachMechanism');

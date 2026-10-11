@@ -59,6 +59,8 @@
 	});
 
 	const s = $derived(data.settings);
+	/** A limit applies to a running server at once, and that server has the heap it started with. */
+	const limitHeapMb = $derived(Math.max(s.memoryMaxMb ?? 0, data.runningMemoryMaxMb ?? 0));
 
 	// ---- field state
 	//
@@ -227,7 +229,7 @@
 		{ id: 'voice', tab: 'network', label: 'Voice chat', restart: true, dirty: () => svChanged('voicePort') },
 		{ id: 'distances', tab: 'performance', label: 'Distances', restart: true, dirty: () => PROPERTY_SECTIONS.distances.some(changedProperty) },
 		{ id: 'ticking', tab: 'performance', label: 'Ticking and disk', restart: true, dirty: () => PROPERTY_SECTIONS.ticking.some(changedProperty) },
-		{ id: 'limits', tab: 'performance', label: 'Resource limits', restart: true, dirty: () => svChanged('limitMemoryMb', 'limitCpuPercent') },
+		{ id: 'limits', tab: 'performance', label: 'Resource limits', restart: false, dirty: () => svChanged('limitMemoryMb', 'limitCpuPercent') },
 		{
 			id: 'runtime',
 			tab: 'java',
@@ -940,29 +942,30 @@
 
 	<SettingsSection tab="performance" title="Resource limits" dirty={dirtyIds.has('limits')}>
 		{#snippet description()}
-			Caps systemd puts on the server process. The kernel kills the server past the memory limit (crash restarts then
-			apply), so leave Java room above its {s.memoryMaxMb} MB heap. The CPU limit slows it down instead: 100% is one full
-			core, {data.cpuCores * 100}% all of them. Blank means no limit.
+			Caps systemd puts on the server process, applied at once, also to a running server. The kernel kills the server
+			past the memory limit (crash restarts then apply), so leave Java room above its {limitHeapMb} MB heap. The CPU limit
+			slows it down instead: 100% is one full core, {data.cpuCores * 100}% all of them. Blank means no limit.
 		{/snippet}
 		<form method="POST" action="?/limits" class="rows" bind:this={forms.limits} onsubmit={onSectionSubmit}>
 			<div class="field">
-				<label for="limitMemoryMb">Memory limit (MB) <span class="tag warn">restart</span></label>
+				<label for="limitMemoryMb">Memory limit (MB)</label>
 				<input
 					id="limitMemoryMb"
 					name="limitMemoryMb"
 					type="number"
-					min={(s.memoryMaxMb ?? 0) + 512}
+					min={limitHeapMb + 512}
 					step="256"
 					placeholder="No limit"
 					bind:value={sv.limitMemoryMb}
 				/>
 				<p class="hint">
-					At least {(s.memoryMaxMb ?? 0) + 512} MB; around {Math.ceil(((s.memoryMaxMb ?? 0) * 1.25) / 256) * 256} MB is
-					comfortable.
+					At least {limitHeapMb + 512} MB; around {Math.ceil((limitHeapMb * 1.25) / 256) * 256} MB is comfortable.
+					{#if limitHeapMb !== (s.memoryMaxMb ?? 0)}The running server started with a {limitHeapMb} MB heap; the
+						{s.memoryMaxMb} MB one applies after a restart.{/if}
 				</p>
 			</div>
 			<div class="field">
-				<label for="limitCpuPercent">CPU limit (%) <span class="tag warn">restart</span></label>
+				<label for="limitCpuPercent">CPU limit (%)</label>
 				<input
 					id="limitCpuPercent"
 					name="limitCpuPercent"
@@ -1024,6 +1027,9 @@
 				<div class="field">
 					<label for="memoryMaxMb">Maximum memory (MB) <span class="tag warn">restart</span></label>
 					<input id="memoryMaxMb" name="memoryMaxMb" type="number" min="512" step="256" bind:value={sv.memoryMaxMb} />
+					{#if data.runningMemoryMaxMb !== null && data.runningMemoryMaxMb !== s.memoryMaxMb}
+						<p class="hint">The server is running with {data.runningMemoryMaxMb} MB until it restarts.</p>
+					{/if}
 				</div>
 				<div class="field">
 					<label for="memoryMinMb">Starting memory (MB) <span class="tag warn">restart</span></label>

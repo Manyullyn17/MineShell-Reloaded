@@ -84,7 +84,11 @@ start, but its buffer outlives a run, so an answer could reach the next one.
 environment file exists. So per-instance restart behaviour is written as a drop-in at
 `<unit>.d/restart.conf` next to the template instead, and `writeRestartPolicy()` owns that
 file. Memory and CPU caps are a second drop-in, `limits.conf` (`MemoryMax=`, `CPUQuota=`),
-from `writeResourceLimits()`. The template itself says `Restart=on-failure`, so a server
+from `writeResourceLimits()`. Unlike everything else in the unit, the caps reach a running
+server at once: `daemon-reload` re-applies cgroup settings to active units (checked for both,
+and for removing them). So the memory cap is checked against the bigger of the saved heap and
+the one the running process started with (`runningHeapMb`, its `-Xmx` from
+`/proc/<pid>/cmdline`), which differ until a restart. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping
@@ -318,6 +322,8 @@ makes the JVM open `/tmp/.java_pid<pid>`, read through `/proc/<pid>/root` becaus
 G1, Parallel, Serial, ZGC and Shenandoah; Java 8 to 25). An unhandled SIGQUIT ends a process,
 so it is never sent with `-Xrs`, `-XX:+ReduceSignalUsage` or attach disabled, to a JVM under a
 minute old, or twice to one that did not answer. Samples (`heap_samples`) are kept 3 days.
+The overview's heap size is the running process's own `-Xmx`, not the saved setting, which
+applies from the next start (both are shown while they differ).
 `memoryadvice.ts` takes the highest hourly low (close to what survives a collection; G1
 lets the heap fill before collecting, so peaks say little) as what a server needs: more when
 that is over 70% of the heap or the journal has an `OutOfMemoryError` since the memory was last

@@ -17,7 +17,7 @@ import {
 	summarise
 } from '#lib/server/instances.js';
 import { bucketSamples, recentSamples } from '#lib/server/monitor.js';
-import { heapSamplesSince } from '#lib/server/heap.js';
+import { heapSamplesSince, runningHeapMb } from '#lib/server/heap.js';
 import { memoryAdvice } from '#lib/server/memoryadvice.js';
 import { resolveJava } from '#lib/server/java.js';
 import { cpus } from 'node:os';
@@ -127,6 +127,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		detail: {
 			jvmArgs: instance.jvmArgs,
 			memoryMaxMb: instance.memoryMaxMb,
+			/** What the running process has: a changed setting applies from the next start. */
+			runningMemoryMaxMb: summary.running ? await runningHeapMb(summary.state.mainPid) : null,
 			memoryMinMb: instance.memoryMinMb,
 			crashRestartWindowSec: instance.crashRestartWindowSec,
 			javaPath: instance.javaPath,
