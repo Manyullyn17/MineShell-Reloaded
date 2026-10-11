@@ -6,6 +6,8 @@
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
+	import { sftpLink } from '#lib/shared/sftp.js';
+	import { page } from '$app/state';
 
 	let { data, form } = $props();
 
@@ -26,6 +28,15 @@
 	};
 
 	const base = $derived(`/instances/${data.instance.id}/files`);
+	// The host the browser reached MineShell by, unless Settings names another.
+	const sftp = $derived(
+		data.sftp
+			? {
+					...data.sftp,
+					href: sftpLink({ user: data.sftp.user, host: data.sftp.host ?? page.url.hostname, port: data.sftp.port, path: data.folder })
+				}
+			: null
+	);
 
 	function href(dir: string) {
 		return dir ? `${base}?path=${encodeURIComponent(dir)}` : base;
@@ -268,6 +279,17 @@
 				<a class="button button-quiet" href={href(data.parentDir)}>Up one level</a>
 			{/if}
 			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>New folder</button>
+			{#if sftp}
+				<a
+					class="button button-quiet"
+					href={sftp.href}
+					title={sftp.reachable
+						? `Opens ${sftp.href} in your file manager (Nautilus, Dolphin, WinSCP, FileZilla...), logging in as ${sftp.user} over SSH`
+						: `Nothing answers on SSH port ${sftp.port} on this machine, so ${sftp.href} will not open until an SSH server runs there (or set the port in MineShell's settings)`}
+					>Open in file manager</a
+				>
+				{#if !sftp.reachable}<span class="faint small">no SSH on port {sftp.port} here?</span>{/if}
+			{/if}
 			<form
 				method="POST"
 				action="?/upload"

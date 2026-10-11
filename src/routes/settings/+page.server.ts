@@ -79,6 +79,7 @@ import {
 } from '#lib/server/selfupdate.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
+import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 
 /** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
 async function playitOverview() {
@@ -142,6 +143,7 @@ export const load: PageServerLoad = async () => {
 		freeBytes: await freeSpace(INSTANCES_DIR),
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
 		itemIcons: itemIconsEnabled(),
+		sftp: { ...getSftpSettings(), defaults: await sftpDefaults() },
 		update: {
 			current: currentVersion(),
 			installed: installInfo() !== null,
@@ -327,6 +329,19 @@ export const actions: Actions = {
 	itemIcons: async ({ request }) => {
 		const form = await request.formData();
 		setItemIcons(form.get('itemIcons') === 'on');
+		return { ok: true, message: 'Saved.' };
+	},
+
+	sftp: async ({ request }) => {
+		const form = await request.formData();
+		const text = (key: string) => String(form.get(key) ?? '').trim();
+		const host = text('sftpHost');
+		const user = text('sftpUser');
+		const port = text('sftpPort') ? Number(text('sftpPort')) : null;
+		if (host && !validHost(host)) return fail(400, { ok: false, message: 'The host is a name or an IP address, nothing else.' });
+		if (user && !validUser(user)) return fail(400, { ok: false, message: 'That is not an account name.' });
+		if (port !== null && !validPort(port)) return fail(400, { ok: false, message: 'The port is a number from 1 to 65535.' });
+		saveSftpSettings({ enabled: form.get('sftpEnabled') === 'on', host: host || null, port, user: user || null });
 		return { ok: true, message: 'Saved.' };
 	},
 

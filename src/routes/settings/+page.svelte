@@ -39,6 +39,11 @@
 	$effect(() => {
 		itemIcons = data.itemIcons;
 	});
+	// svelte-ignore state_referenced_locally
+	let sftpEnabled = $state(data.sftp.enabled);
+	$effect(() => {
+		sftpEnabled = data.sftp.enabled;
+	});
 
 	// Updates. Re-synced after a save, like the snapshot fields.
 	// svelte-ignore state_referenced_locally
@@ -643,6 +648,36 @@
 </section>
 
 <section class="panel">
+	<h2>Files over SFTP</h2>
+	<form method="POST" action="?/sftp" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="check field">
+			<input id="sftpEnabled" name="sftpEnabled" type="checkbox" bind:checked={sftpEnabled} />
+			<label for="sftpEnabled">Show "Open in file manager" on the Files tab</label>
+		</div>
+		<p class="small muted">
+			An <code>sftp://</code> link to the folder you are looking at, which file managers (Nautilus, Dolphin, WinSCP,
+			FileZilla) open over this machine's SSH server, logging in with its account. MineShell runs no file server itself.
+			Blank fields use what MineShell finds.
+		</p>
+		<div class="sftp-fields">
+			<div class="field">
+				<label for="sftpHost">Host</label>
+				<input id="sftpHost" name="sftpHost" value={data.sftp.host ?? ''} placeholder="The address MineShell was opened at" />
+			</div>
+			<div class="field">
+				<label for="sftpPort">SSH port</label>
+				<input id="sftpPort" name="sftpPort" type="number" min="1" max="65535" value={data.sftp.port ?? ''} placeholder={String(data.sftp.defaults.port)} />
+			</div>
+			<div class="field">
+				<label for="sftpUser">Account</label>
+				<input id="sftpUser" name="sftpUser" value={data.sftp.user ?? ''} placeholder={data.sftp.defaults.user} />
+			</div>
+		</div>
+		<button class="button" type="submit">Save</button>
+	</form>
+</section>
+
+<section class="panel">
 	<h2>Where things live</h2>
 	<dl class="paths">
 		<div><dt>Data</dt><dd class="mono"><PathText path={data.paths.data} /></dd></div>
@@ -654,6 +689,13 @@
 </div>
 
 <style>
+	.sftp-fields {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
+	}
+
 	.release {
 		margin: var(--space-3) 0;
 		padding: var(--space-3);

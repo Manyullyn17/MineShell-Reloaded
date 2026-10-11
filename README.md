@@ -176,7 +176,9 @@ drawn).
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all
-confined to the instance directory. A disk usage page shows where the space goes, the world
+confined to the instance directory. "Open in file manager" is an `sftp://` link to the
+folder shown, through the machine's own SSH server (port read from `sshd_config`; host,
+port and account can be set in Settings). A disk usage page shows where the space goes, the world
 map included (also the one MineShell renders outside the server folder). Every
 other upload (a world zip, a pack file, mod jars, the server icon) takes a drop onto its own
 section too.
