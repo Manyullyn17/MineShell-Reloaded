@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { gzipSync } from 'node:zlib';
 import type { ServerInstance } from './db/schema';
 import { rconPassword } from './instances';
 import { subscribeConsole } from './journal';
@@ -38,6 +39,10 @@ export type SparkUpload = {
 	url: string | null;
 	/** Set instead of url when Spark saved to disk (an upload failed, or --save-to-file). */
 	file: string | null;
+	/** `file` relative to the server folder, when it is inside it: what can be downloaded. */
+	path: string | null;
+	/** A saved profile MineShell can upload again (`uploadSavedProfile`); url is set once it has. */
+	retryable: boolean;
 };
 
 export function activityFile(root: string): string {
@@ -64,14 +69,101 @@ export function parseActivity(raw: string): SparkUpload[] {
 		const file = kind === 'file' ? value : null;
 		if (!url && !file) continue;
 		const name = user && typeof user === 'object' ? (user as Record<string, unknown>).name : null;
-		uploads.push({ time, type, user: typeof name === 'string' ? name : '', url, file });
+		const rel = file ? savedPath(file) : null;
+		const upload = { time, type, user: typeof name === 'string' ? name : '', url, file, path: rel, retryable: false };
+		upload.retryable = !!rel && isProfile(upload);
+		uploads.push(upload);
 	}
 	return uploads.sort((a, b) => b.time - a.time);
 }
 
+/** Spark writes `./config/spark/<name>` (relative to the server's folder): null for anything outside it. */
+function savedPath(file: string): string | null {
+	const rel = path.posix.normalize(file.replace(/\\/g, '/'));
+	return rel.startsWith('/') || rel === '..' || rel.startsWith('../') ? null : rel;
+}
+
+/** Links MineShell got by uploading a saved profile again, by its path. Spark's own activity.json is Spark's to write. */
+function retriedFile(root: string): string {
+	return path.join(root, '.mineshell', 'spark-uploads.json');
+}
+
+async function readRetried(root: string): Promise<Record<string, string>> {
+	try {
+		const parsed = JSON.parse(await fs.readFile(retriedFile(root), 'utf8'));
+		return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+	} catch {
+		return {};
+	}
+}
+
 export async function sparkUploads(root: string): Promise<SparkUpload[]> {
 	const raw = await fs.readFile(activityFile(root), 'utf8').catch(() => '[]');
-	return parseActivity(raw);
+	const retried = await readRetried(root);
+	return parseActivity(raw).map((u) => {
+		// An absolute path into the server's own folder is downloadable too.
+		const inside = u.file && path.isAbsolute(u.file) ? path.relative(root, u.file) : null;
+		if (inside && !inside.startsWith('..') && !path.isAbsolute(inside)) {
+			u = { ...u, path: inside.split(path.sep).join('/'), retryable: isProfile(u) };
+		}
+		return u.path && !u.url && typeof retried[u.path] === 'string' ? { ...u, url: retried[u.path] } : u;
+	});
+}
+
+/** Spark's defaults; config/spark/config.json can point elsewhere, and Spark adds a missing slash. */
+const BYTEBIN_URL = 'https://spark-usercontent.lucko.me/';
+const VIEWER_URL = 'https://spark.lucko.me/';
+/** Spark gives up after 10 s, which a slow upload server can take for even a small profile. */
+const UPLOAD_TIMEOUT_MS = 60_000;
+
+async function sparkUrls(root: string): Promise<{ bytebin: string; viewer: string }> {
+	let config: Record<string, unknown> = {};
+	try {
+		config = JSON.parse(await fs.readFile(path.join(root, 'config', 'spark', 'config.json'), 'utf8'));
+	} catch {
+		// No config, or not JSON: Spark uses its defaults then too.
+	}
+	const url = (value: unknown, fallback: string) =>
+		typeof value === 'string' && /^https?:\/\//i.test(value) ? (value.endsWith('/') ? value : `${value}/`) : fallback;
+	return { bytebin: url(config?.bytebinUrl, BYTEBIN_URL), viewer: url(config?.viewerUrl, VIEWER_URL) };
+}
+
+/**
+ * Uploads a profile Spark saved to disk (its own upload failed) the way Spark
+ * does: the file is the profile's protobuf, posted gzipped to bytebin, which
+ * answers with the key in Location. Returns the viewer link, also kept for
+ * the uploads list.
+ */
+export async function uploadSavedProfile(root: string, file: string): Promise<string> {
+	const upload = (await sparkUploads(root)).find((u) => u.path === file && u.retryable);
+	if (!upload) throw new SparkError('Spark lists no saved profile by that name.');
+	if (upload.url) return upload.url;
+	const data = await fs.readFile(path.join(root, file)).catch(() => null);
+	if (!data) throw new SparkError(`The saved profile is no longer there (${file}).`);
+	const { bytebin, viewer } = await sparkUrls(root);
+	let res: Response;
+	try {
+		res = await fetch(`${bytebin}post`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-spark-sampler', 'Content-Encoding': 'gzip', 'User-Agent': 'MineShell' },
+			body: gzipSync(data),
+			signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS)
+		});
+	} catch {
+		throw new SparkError("Spark's upload server did not answer. Try again later, or download the file and open it at spark.lucko.me.");
+	}
+	const key = res.headers.get('location');
+	if (!res.ok || !key || !/^[\w-]+$/.test(key)) {
+		throw new SparkError(
+			`Spark's upload server did not take the profile (HTTP ${res.status}). Try again later, or download the file and open it at spark.lucko.me.`
+		);
+	}
+	const url = `${viewer}${key}`;
+	const retried = await readRetried(root);
+	retried[file] = url;
+	await fs.mkdir(path.dirname(retriedFile(root)), { recursive: true });
+	await fs.writeFile(retriedFile(root), JSON.stringify(retried, null, 2), 'utf8');
+	return url;
 }
 
 /**
@@ -175,7 +267,9 @@ async function runProfile(
 				return;
 			}
 			if (upload?.file) {
-				task.log(`Spark could not upload the profile and saved it to ${upload.file} instead.`);
+				task.log(
+					`Spark could not upload the profile and saved it to ${upload.file} instead. The overview's Spark list can download it or try the upload again.`
+				);
 				task.setProgress(100, 'Saved to disk');
 				return;
 			}

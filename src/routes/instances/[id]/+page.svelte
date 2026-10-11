@@ -419,16 +419,37 @@
 									<td>{upload.type}</td>
 									<td>{upload.user}</td>
 									<td class="wrap">
-										{#if upload.url}
-											<a href={upload.url} target="_blank" rel="noreferrer">Open</a>
-										{:else}
-											<span class="mono small">{upload.file}</span>
-										{/if}
+										<div class="upload-actions">
+											{#if upload.url}
+												<a href={upload.url} target="_blank" rel="noreferrer">Open</a>
+											{:else if upload.retryable}
+												<form method="POST" action="?/profileUpload" use:enhance>
+													<input type="hidden" name="file" value={upload.path} />
+													<button type="submit" class="button-quiet" title="Spark's own upload failed; send the saved file again">
+														Retry upload
+													</button>
+												</form>
+											{/if}
+											{#if upload.path}
+												<a
+													href="/api/instances/{encodeURIComponent(data.instance.id)}/files?path={encodeURIComponent(upload.path)}"
+													title="Open it at spark.lucko.me by dropping the file onto the page">Download</a
+												>
+											{:else if !upload.url}
+												<span class="mono small">{upload.file}</span>
+											{/if}
+										</div>
 									</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
+					{#if spark.uploads.some((u) => !u.url && u.path)}
+						<p class="faint small">
+							Where Spark's upload failed it saved the result instead: try the upload again, or download the file and drop it
+							onto spark.lucko.me to view it.
+						</p>
+					{/if}
 					<p class="faint small">Spark lists its uploads for 60 days, including ones started in-game.</p>
 				{:else}
 					<p class="faint small">Nothing uploaded from this server yet.</p>
@@ -595,6 +616,13 @@
 
 	.duration {
 		width: auto;
+	}
+
+	.upload-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	.uploads {

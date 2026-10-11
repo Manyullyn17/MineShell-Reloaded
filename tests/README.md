@@ -229,4 +229,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) playit.gg: voice chat's UDP tunnel, voice_host written, both taken away when private | `flows/playit.test.ts` |
 | The Map tab walked every tile for the map's size on each look; MineShell's render was missing from the disk usage | `flows/disk-usage.test.ts` |
 | Memory advice suggested less from an idle server (2 GB of 10 empty says nothing when players take it to 8) | `memoryadvice.test.ts`, `flows/memory-advice.test.ts` |
+| The overview's heap size and the memory limit's check used the saved heap while the server still ran with the old one | `heap.test.ts` |
+| Spark's upload timed out (its server answered 502): the saved profile was only a path in the list | `spark.test.ts`, `flows/spark-profile.test.ts` |
 | A file-list entry without a URL was dropped (install "succeeded" without it); failed downloads were only in the task log; CurseForge files had one source | `packs/index.test.ts`, `flows/pack-install.test.ts` |

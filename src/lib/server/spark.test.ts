@@ -17,9 +17,24 @@ describe('parseActivity', () => {
 			entry(2000, 'Profiler', 'file', '/srv/mc/config/spark/profile-2026-10-04.sparkprofile')
 		]);
 		expect(parseActivity(raw)).toEqual([
-			{ time: 3000, type: 'Health report', user: 'Alex', url: 'https://spark.lucko.me/def456', file: null },
-			{ time: 2000, type: 'Profiler', user: 'Rcon', url: null, file: '/srv/mc/config/spark/profile-2026-10-04.sparkprofile' },
-			{ time: 1000, type: 'Profiler', user: 'Rcon', url: 'https://spark.lucko.me/abc123', file: null }
+			{ time: 3000, type: 'Health report', user: 'Alex', url: 'https://spark.lucko.me/def456', file: null, path: null, retryable: false },
+			// Absolute: sparkUploads, which knows the server's folder, decides whether it is inside it.
+			{ time: 2000, type: 'Profiler', user: 'Rcon', url: null, file: '/srv/mc/config/spark/profile-2026-10-04.sparkprofile', path: null, retryable: false },
+			{ time: 1000, type: 'Profiler', user: 'Rcon', url: 'https://spark.lucko.me/abc123', file: null, path: null, retryable: false }
+		]);
+	});
+
+	it('knows a saved file by its path in the server folder, and only a profile can be uploaded again', () => {
+		const raw = JSON.stringify([
+			// As Spark 1.10.156 wrote it when its upload timed out (irithyll, October 2026).
+			entry(3000, 'Profiler', 'file', './config/spark/profile-2026-10-11_01.33.31.sparkprofile'),
+			entry(2000, 'Heap dump summary', 'file', './config/spark/heap-summary.sparkheap'),
+			entry(1000, 'Profiler', 'file', '../../etc/passwd')
+		]);
+		expect(parseActivity(raw).map((u) => [u.path, u.retryable])).toEqual([
+			['config/spark/profile-2026-10-11_01.33.31.sparkprofile', true],
+			['config/spark/heap-summary.sparkheap', false],
+			[null, false]
 		]);
 	});
 

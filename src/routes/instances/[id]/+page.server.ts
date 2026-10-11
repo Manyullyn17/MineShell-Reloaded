@@ -39,7 +39,8 @@ import {
 	SparkError,
 	sparkUploads,
 	startProfile,
-	stopProfile
+	stopProfile,
+	uploadSavedProfile
 } from '#lib/server/spark.js';
 import { voiceChat } from '#lib/server/voicechat.js';
 import { forgetMissing, readMissing, startRetryMissing } from '#lib/server/packs/missing.js';
@@ -301,6 +302,18 @@ export const actions: Actions = {
 			throw err;
 		}
 		return { ok: true, message: 'Profile cancelled.' };
+	},
+
+	profileUpload: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const file = String((await request.formData()).get('file') ?? '');
+		try {
+			await uploadSavedProfile(instance.path, file);
+		} catch (err) {
+			if (err instanceof SparkError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Uploaded; the profile opens from the list below.' };
 	},
 
 	kick: async ({ request, params }) => {

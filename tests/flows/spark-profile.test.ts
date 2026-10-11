@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { gunzipSync } from 'node:zlib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -24,15 +25,31 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	})
 }));
 
-const { activeProfile, cancelProfile, hasSpark, sparkUploads, startProfile, stopProfile, SparkError } = await import(
-	'#lib/server/spark.js'
-);
+const { activeProfile, cancelProfile, hasSpark, sparkUploads, startProfile, stopProfile, SparkError, uploadSavedProfile } =
+	await import('#lib/server/spark.js');
+const { useRecordedHttp } = await import('../helpers/http');
 const { bus } = await import('#lib/server/events.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 const { writeJar } = await import('../helpers/fs');
+
+/** Spark's upload server (bytebin): answers with the new key in Location, or whatever `bytebin.answer` says. */
+const bytebin = vi.hoisted(() => ({
+	posts: [] as { url: string; headers: Headers; body: Buffer }[],
+	answer: null as (() => Response) | null
+}));
+const takePost = (url: string) => async (init?: RequestInit) => {
+	bytebin.posts.push({ url, headers: new Headers(init?.headers), body: Buffer.from(init?.body as Uint8Array) });
+	return bytebin.answer ? bytebin.answer() : new Response(null, { status: 201, headers: { Location: 'Kq81mZpX' } });
+};
+useRecordedHttp('spark', {
+	extra: {
+		'https://spark-usercontent.lucko.me/post': takePost('default'),
+		'http://127.0.0.1:9/bytebin/post': takePost('configured')
+	}
+});
 
 const FAST = { pollMs: 10, confirmMs: 300, uploadGraceMs: 1000, stateCheckMs: 10_000 };
 const URL = 'https://spark.lucko.me/Xy12AbCd';
@@ -198,5 +215,77 @@ describe('Spark profiles', () => {
 			path.join(instance.path, 'mods', 'spark-1.10.53-fabric.jar.disabled')
 		);
 		expect(await hasSpark(instance.path)).toBe(false);
+	});
+
+	describe('a profile Spark saved because its upload failed', () => {
+		const PROFILE = './config/spark/profile-2026-10-11_01.33.31.sparkprofile';
+		const bytes = Buffer.from([0x0a, 0xd3, 0xd3, 0x01, 0x0a, 0x06, 0x12, 0x04, 0x52, 0x63, 0x6f, 0x6e]);
+
+		async function saved() {
+			const instance = await server();
+			await sparkRecords(instance, 'file', PROFILE);
+			await fs.writeFile(path.join(instance.path, PROFILE), bytes);
+			bytebin.posts = [];
+			bytebin.answer = null;
+			return instance;
+		}
+
+		it('is uploaded again the way Spark does, and the link is kept', async () => {
+			const instance = await saved();
+			const rel = 'config/spark/profile-2026-10-11_01.33.31.sparkprofile';
+			expect((await sparkUploads(instance.path))[0]).toMatchObject({ url: null, path: rel, retryable: true });
+
+			expect(await uploadSavedProfile(instance.path, rel)).toBe('https://spark.lucko.me/Kq81mZpX');
+			const [post] = bytebin.posts;
+			expect(post.url).toBe('default');
+			expect(post.headers.get('content-type')).toBe('application/x-spark-sampler');
+			expect(post.headers.get('content-encoding')).toBe('gzip');
+			expect(gunzipSync(post.body).equals(bytes)).toBe(true);
+
+			expect((await sparkUploads(instance.path))[0]).toMatchObject({ url: 'https://spark.lucko.me/Kq81mZpX', path: rel });
+			// Spark's own list is left alone.
+			expect(await fs.readFile(path.join(instance.path, 'config/spark/activity.json'), 'utf8')).toContain('"type":"file"');
+			// Asked again: the same link, nothing sent.
+			expect(await uploadSavedProfile(instance.path, rel)).toBe('https://spark.lucko.me/Kq81mZpX');
+			expect(bytebin.posts).toHaveLength(1);
+		});
+
+		it('goes where Spark is configured to upload, and links to its viewer', async () => {
+			const instance = await saved();
+			await fs.writeFile(
+				path.join(instance.path, 'config/spark/config.json'),
+				JSON.stringify({ bytebinUrl: 'http://127.0.0.1:9/bytebin', viewerUrl: 'http://127.0.0.1:9/view/' })
+			);
+			expect(await uploadSavedProfile(instance.path, 'config/spark/profile-2026-10-11_01.33.31.sparkprofile')).toBe(
+				'http://127.0.0.1:9/view/Kq81mZpX'
+			);
+			expect(bytebin.posts[0].url).toBe('configured');
+		});
+
+		it('says so when the upload server fails again, and keeps nothing', async () => {
+			const instance = await saved();
+			bytebin.answer = () => new Response('Bad Gateway', { status: 502 });
+			const rel = 'config/spark/profile-2026-10-11_01.33.31.sparkprofile';
+			await expect(uploadSavedProfile(instance.path, rel)).rejects.toThrow(/HTTP 502/);
+			expect((await sparkUploads(instance.path))[0].url).toBeNull();
+		});
+
+		it('takes only files Spark listed as saved profiles', async () => {
+			const instance = await saved();
+			await expect(uploadSavedProfile(instance.path, 'config/spark/config.json')).rejects.toBeInstanceOf(SparkError);
+			await expect(uploadSavedProfile(instance.path, '../other/x.sparkprofile')).rejects.toBeInstanceOf(SparkError);
+			expect(bytebin.posts).toHaveLength(0);
+		});
+
+		it('finds an absolute path into the server folder too', async () => {
+			const instance = await server();
+			await sparkRecords(instance, 'file', path.join(instance.path, 'config/spark/p.sparkprofile'));
+			await sparkRecords(instance, 'file', '/srv/elsewhere/p.sparkprofile');
+			const uploads = await sparkUploads(instance.path);
+			const inside = uploads.find((u) => u.file!.startsWith(instance.path));
+			const outside = uploads.find((u) => u.file!.startsWith('/srv/'));
+			expect(inside).toMatchObject({ path: 'config/spark/p.sparkprofile', retryable: true });
+			expect(outside).toMatchObject({ path: null, retryable: false });
+		});
 	});
 });

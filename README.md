@@ -103,7 +103,7 @@ server "if it was running before" (the default), always, or never.
 how long each has been on, today's peak and a kick button), tick rate where the server reports it,
 CPU and memory over the last hour, 6 hours or day, how much of the Java heap is really in
 use, with advice when a server needs more memory (or has far more than it uses), disk use, the address to connect to. Recent crashes with their causes, and which cause keeps coming back. After a crash: the last output and a diagnosis naming the mod that caused
-it, with a one-click disable; also when the server crashed but its process hung on instead of exiting. With Spark installed, timed profiles uploaded for viewing.
+it, with a one-click disable; also when the server crashed but its process hung on instead of exiting. With Spark installed, timed profiles uploaded for viewing; when Spark's own upload fails, the saved profile can be downloaded or uploaded again.
 
 **Console and logs.** Live output streamed from the journal, commands sent over RCON.
 Filter by level, search, stack traces folded under their error, players joining and leaving
