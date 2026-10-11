@@ -551,7 +551,11 @@
 
 {#if data.running}
 	<div class="notice info">
-		<p>The server is running. Mod changes are written now and load on the next restart.</p>
+		<p>
+			The server is running. Adding, removing, enabling and disabling mods is written now and loads on the next
+			restart. Changing mod versions and updating mods need the server stopped: each is one operation that is undone
+			as a whole if it fails, and can snapshot the world first.
+		</p>
 	</div>
 {/if}
 
@@ -693,8 +697,9 @@
 		</div>
 		{#if data.packName}
 			<span class="pack-toggle">
-				<input id="pack-mods" type="checkbox" bind:checked={packMods} />
+				<input id="pack-mods" type="checkbox" bind:checked={packMods} disabled={data.running} />
 				<label for="pack-mods">Allow changing single mods</label>
+				{#if data.running}<span class="faint">· stop the server first</span>{/if}
 				<InfoTip
 					label="About changing a modpack's mods"
 					text={`This server runs ${data.packName}. A modpack is usually updated as a whole, from its version in Settings. Updating or switching single mods is meant for custom setups, and a later pack version change replaces them again.`}
@@ -890,8 +895,9 @@
 			<div class="button-row">
 				{#if data.packName}
 					<span class="pack-toggle">
-						<input id="pack-mods-u" type="checkbox" bind:checked={packMods} />
+						<input id="pack-mods-u" type="checkbox" bind:checked={packMods} disabled={data.running} />
 						<label for="pack-mods-u">Allow changing single mods</label>
+						{#if data.running}<span class="faint">· stop the server first</span>{/if}
 					</span>
 				{/if}
 				<button
