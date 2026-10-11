@@ -16,7 +16,9 @@ const {
 	listSnapshots,
 	pruneSnapshots,
 	saveSnapshotPolicy,
+	setSnapshotDetails,
 	setSnapshotPinned,
+	snapshotDetails,
 	DEFAULT_POLICY,
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
@@ -165,6 +167,36 @@ describe('world snapshots', () => {
 		expect(snapshot).toMatchObject({ reason: 'manual', worlds: ['world', 'world_nether'] });
 		expect(reload(instance.id)).toMatchObject({ status: 'ready', statusMessage: null });
 		expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(false);
+	});
+
+	it('gets a name and tags of its own, which change nothing else and can be cleared', async () => {
+		const instance = await instanceWithWorld();
+		await waitForTask(await snapshotNow(instance));
+		const [taken] = await listSnapshots(instance.path);
+		await setSnapshotPinned(instance.path, taken.id, true);
+		const files = await tree(path.join(instance.path, SNAPSHOTS_DIR, taken.id));
+
+		await setSnapshotDetails(instance.path, taken.id, snapshotDetails('  Before the  Wither ', 'boss, keep, Boss, , wither'));
+		const [named] = await listSnapshots(instance.path);
+		expect(named).toEqual({ ...taken, pinned: true, note: 'Before the Wither', tags: ['boss', 'keep', 'wither'] });
+		// Only the manifest is rewritten.
+		const { 'manifest.json': _after, ...worldAfter } = await tree(path.join(instance.path, SNAPSHOTS_DIR, taken.id));
+		const { 'manifest.json': _before, ...worldBefore } = files;
+		expect(worldAfter).toEqual(worldBefore);
+		expect(Object.keys(worldBefore).length).toBeGreaterThan(0);
+
+		await setSnapshotDetails(instance.path, taken.id, snapshotDetails('', ''));
+		const [cleared] = await listSnapshots(instance.path);
+		expect(cleared).toEqual({ ...taken, pinned: true });
+		expect(cleared).not.toHaveProperty('note');
+		expect(cleared).not.toHaveProperty('tags');
+	});
+
+	it('refuses names and tags it cannot keep tidy', () => {
+		expect(() => snapshotDetails('x'.repeat(121), '')).toThrow(/at most 120/);
+		expect(() => snapshotDetails('', 'y'.repeat(33))).toThrow(/at most 32/);
+		expect(() => snapshotDetails('', Array.from({ length: 11 }, (_, i) => `t${i}`).join(','))).toThrow(/At most 10 tags/);
+		expect(snapshotDetails('Fine', 'a,b')).toEqual({ note: 'Fine', tags: ['a', 'b'] });
 	});
 
 	describe('whether to ask', () => {

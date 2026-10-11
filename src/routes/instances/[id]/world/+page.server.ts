@@ -8,7 +8,9 @@ import {
 	deleteSnapshot,
 	getSnapshot,
 	listSnapshots,
+	setSnapshotDetails,
 	setSnapshotPinned,
+	snapshotDetails,
 	snapshotPrompt,
 	SnapshotChoiceNeeded,
 	worldFolders
@@ -212,6 +214,18 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not change that snapshot.' });
 		}
 		return { ok: true, message: pinned ? 'Pinned: kept until you unpin it.' : 'Unpinned: it counts towards the limit again.' };
+	},
+
+	editSnapshot: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			const details = snapshotDetails(String(form.get('note') ?? ''), String(form.get('tags') ?? ''));
+			await setSnapshotDetails(instance.path, String(form.get('id') ?? ''), details);
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not change that snapshot.' });
+		}
+		return { ok: true, message: 'Snapshot saved.' };
 	},
 
 	deleteSnapshot: async ({ request, params }) => {

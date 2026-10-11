@@ -231,4 +231,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Memory advice suggested less from an idle server (2 GB of 10 empty says nothing when players take it to 8) | `memoryadvice.test.ts`, `flows/memory-advice.test.ts` |
 | The overview's heap size and the memory limit's check used the saved heap while the server still ran with the old one | `heap.test.ts` |
 | Spark's upload timed out (its server answered 502): the saved profile was only a path in the list | `spark.test.ts`, `flows/spark-profile.test.ts` |
+| (feature) Snapshot names and tags: only the manifest changes, clearing removes them, tidied and limited | `flows/snapshots.test.ts` |
 | A file-list entry without a URL was dropped (install "succeeded" without it); failed downloads were only in the task log; CurseForge files had one source | `packs/index.test.ts`, `flows/pack-install.test.ts` |

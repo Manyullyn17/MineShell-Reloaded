@@ -137,7 +137,7 @@ client-side files the server never needed.
 few hours on the clock; a running server is copied with saving paused, or stopped for it and
 started again; a slot nobody played in since the last snapshot is skipped unless turned off;
 scheduled restarts and snapshots wait for each other), kept by count and by storage
-per server. Reset, replace with an uploaded world, restore a snapshot or download as a zip;
+per server; pin them, name and tag them, and filter by tag. Reset, replace with an uploaded world, restore a snapshot or download as a zip;
 reset or restore one dimension; prune chunks nobody really visited. With Chunky installed,
 pre-generate terrain with live progress.
 

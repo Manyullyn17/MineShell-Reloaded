@@ -15,6 +15,22 @@
 	const snapshotBytes = $derived(data.snapshots.reduce((sum, s) => sum + s.sizeBytes, 0));
 	let pendingRestore = $state<string | null>(null);
 	let pendingDelete = $state<string | null>(null);
+	let pendingEdit = $state<string | null>(null);
+	/** Opens one confirm/edit row under a snapshot, closing the others; again on the same one closes it. */
+	function openRow(kind: 'restore' | 'delete' | 'edit', id: string) {
+		const open = { restore: pendingRestore, delete: pendingDelete, edit: pendingEdit }[kind] !== id;
+		pendingRestore = open && kind === 'restore' ? id : null;
+		pendingDelete = open && kind === 'delete' ? id : null;
+		pendingEdit = open && kind === 'edit' ? id : null;
+	}
+	// The user's tags, to show only the snapshots with one.
+	let tagFilter = $state<string | null>(null);
+	const allTags = $derived(
+		[...new Set(data.snapshots.flatMap((s) => s.tags ?? []))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+	);
+	const shownSnapshots = $derived(
+		tagFilter && allTags.includes(tagFilter) ? data.snapshots.filter((s) => s.tags?.includes(tagFilter!)) : data.snapshots
+	);
 	let seedMode = $state<'keep' | 'random' | 'set'>('keep');
 
 	// ---- Chunky pre-generation
@@ -199,6 +215,18 @@
 	{#if data.snapshots.length === 0}
 		<div class="empty"><p>No snapshots yet.</p></div>
 	{:else}
+		{#if allTags.length}
+			<div class="chips tag-filter" role="group" aria-label="Show snapshots tagged">
+				<button type="button" class="chip" aria-pressed={!tagFilter || !allTags.includes(tagFilter)} onclick={() => (tagFilter = null)}>
+					All<span class="count">{data.snapshots.length}</span>
+				</button>
+				{#each allTags as tag (tag)}
+					<button type="button" class="chip" aria-pressed={tagFilter === tag} onclick={() => (tagFilter = tagFilter === tag ? null : tag)}>
+						{tag}<span class="count">{data.snapshots.filter((s) => s.tags?.includes(tag)).length}</span>
+					</button>
+				{/each}
+			</div>
+		{/if}
 		<div class="table-box">
 		<table>
 			<thead>
@@ -211,16 +239,22 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.snapshots as s (s.id)}
+				{#each shownSnapshots as s (s.id)}
 					<tr>
 						<td class="nowrap">
 							{formatDateTime(s.createdAt)}
 							<div class="faint small">{formatRelative(s.createdAt)}</div>
 						</td>
 						<td>
-							{s.label}
+							{#if s.note}
+								<strong>{s.note}</strong>
+								<div class="small muted">{s.label}</div>
+							{:else}
+								{s.label}
+							{/if}
 							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
 							{#if s.partial}<span class="tag">part of the world</span>{/if}
+							{#each s.tags ?? [] as tag (tag)}<span class="tag">{tag}</span>{/each}
 							<div class="faint small mono">{s.worlds.join(', ')}</div>
 						</td>
 						<td class="small nowrap" class:warn-text={differs(s)}>
@@ -241,24 +275,19 @@
 										{s.pinned ? 'Unpin' : 'Pin'}
 									</button>
 								</form>
+								<button type="button" class="button-quiet" title="Name and tags" onclick={() => openRow('edit', s.id)}>Edit</button>
 								<a class="button button-quiet" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>
 								<button
 									type="button"
 									class="button-quiet"
 									disabled={data.running || busy}
-									onclick={() => {
-										pendingRestore = pendingRestore === s.id ? null : s.id;
-										pendingDelete = null;
-									}}>Restore</button
+									onclick={() => openRow('restore', s.id)}>Restore</button
 								>
 								<button
 									type="button"
 									class="button-quiet"
 									disabled={busy}
-									onclick={() => {
-										pendingDelete = pendingDelete === s.id ? null : s.id;
-										pendingRestore = null;
-									}}>Delete</button
+									onclick={() => openRow('delete', s.id)}>Delete</button
 								>
 							</div>
 						</td>
@@ -306,6 +335,40 @@
 									<div class="button-row">
 										<button class="button-primary" type="submit">Restore this snapshot</button>
 										<button class="button-quiet" type="button" onclick={() => (pendingRestore = null)}>Cancel</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{:else if pendingEdit === s.id}
+						<tr class="confirm-row">
+							<td colspan="5">
+								<form
+									method="POST"
+									action="?/editSnapshot"
+									class="snapshot-edit"
+									use:enhance={() => async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') pendingEdit = null;
+									}}
+								>
+									<input type="hidden" name="id" value={s.id} />
+									<div class="field">
+										<label for="snap-note-{s.id}">Name</label>
+										<input id="snap-note-{s.id}" name="note" maxlength="120" value={s.note ?? ''} placeholder={s.label} />
+									</div>
+									<div class="field">
+										<label for="snap-tags-{s.id}">Tags</label>
+										<input
+											id="snap-tags-{s.id}"
+											name="tags"
+											value={(s.tags ?? []).join(', ')}
+											placeholder="e.g. before boss fight, keep"
+										/>
+										<p class="hint">Separated by commas.</p>
+									</div>
+									<div class="button-row">
+										<button class="button-primary" type="submit">Save</button>
+										<button class="button-quiet" type="button" onclick={() => (pendingEdit = null)}>Cancel</button>
 									</div>
 								</form>
 							</td>
@@ -784,6 +847,52 @@
 		/* Pin and Unpin differ in width; a fixed slot keeps every row's buttons in line. */
 		min-width: 4.5rem;
 		text-align: right;
+	}
+
+	.chips {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+	}
+
+	.chip {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.7rem;
+		border-radius: 12px;
+		border: 1px solid var(--line);
+		background: transparent;
+		color: var(--text-muted);
+		font-size: 0.85rem;
+		font-weight: 400;
+	}
+
+	.chip[aria-pressed='true'] {
+		background: var(--panel);
+		border-color: var(--line-strong);
+		color: var(--text);
+	}
+
+	.tag-filter {
+		margin-bottom: var(--space-3);
+	}
+
+	.snapshot-edit {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--space-3);
+		align-items: start;
+	}
+
+	.snapshot-edit .button-row {
+		grid-column: 1 / -1;
+	}
+
+	@media (max-width: 60rem) {
+		.snapshot-edit {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 
 	.confirm-row td {

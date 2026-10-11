@@ -467,7 +467,8 @@ packs cannot name Cleanroom, so they ask for Forge 1.12.2 (the version migrated 
 
 Snapshots live inside the server folder, `.mineshell/snapshots/<id>/`, with the world
 folders at their relative paths and a `manifest.json`; one is assembled as `<id>.partial`
-and only counts once renamed. Before MineShell's own risky operations the world is copied
+and only counts once renamed. Pinning, the user's name (`note`) and tags only rewrite the
+manifest (`updateManifest`). Before MineShell's own risky operations the world is copied
 into one (reflinks where the filesystem has them). The World tab's operations - reset,
 replace, restore, reset or restore one dimension, prune chunks - instead move what they
 replace into the snapshot, so keeping the old world costs no copy; they share one journalled

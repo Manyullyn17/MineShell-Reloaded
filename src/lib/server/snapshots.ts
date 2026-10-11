@@ -65,7 +65,36 @@ export type Snapshot = {
 	packVersionName: string | null;
 	/** Kept until unpinned: never deleted to make room, and not counted towards the limit. */
 	pinned?: boolean;
+	/** The user's own name for it, shown above `label`. */
+	note?: string;
+	/** The user's own tags, to find snapshots by. */
+	tags?: string[];
 };
+
+export const NOTE_MAX = 120;
+export const TAG_MAX = 32;
+export const TAGS_MAX = 10;
+
+/**
+ * A note and tags as the user typed them (tags comma-separated), tidied:
+ * trimmed, empty ones dropped, tags deduplicated ignoring case. Throws on
+ * what cannot be stored.
+ */
+export function snapshotDetails(note: string, tags: string): { note: string | null; tags: string[] } {
+	const cleanNote = note.replace(/\s+/g, ' ').trim();
+	if (cleanNote.length > NOTE_MAX) throw new Error(`A name is at most ${NOTE_MAX} characters.`);
+	const seen = new Set<string>();
+	const cleanTags: string[] = [];
+	for (const raw of tags.split(',')) {
+		const tag = raw.replace(/\s+/g, ' ').trim();
+		if (!tag || seen.has(tag.toLowerCase())) continue;
+		if (tag.length > TAG_MAX) throw new Error(`A tag is at most ${TAG_MAX} characters ("${tag.slice(0, TAG_MAX)}...").`);
+		seen.add(tag.toLowerCase());
+		cleanTags.push(tag);
+	}
+	if (cleanTags.length > TAGS_MAX) throw new Error(`At most ${TAGS_MAX} tags.`);
+	return { note: cleanNote || null, tags: cleanTags };
+}
 
 // ---------------------------------------------------------------- policy ---
 
@@ -421,7 +450,7 @@ export async function getSnapshot(root: string, id: string): Promise<Snapshot | 
 	return (await listSnapshots(root)).find((s) => s.id === id) ?? null;
 }
 
-export type SnapshotInput = { reason: SnapshotReason; label: string };
+export type SnapshotInput = { reason: SnapshotReason; label: string; note?: string | null; tags?: string[] };
 
 function manifestFor(
 	instance: ServerInstance,
@@ -442,7 +471,9 @@ function manifestFor(
 		minecraftVersion: instance.minecraftVersion,
 		modloader: instance.modloader,
 		modloaderVersion: instance.modloaderVersion,
-		packVersionName: instance.packVersionName
+		packVersionName: instance.packVersionName,
+		...(input.note ? { note: input.note } : {}),
+		...(input.tags?.length ? { tags: input.tags } : {})
 	};
 }
 
@@ -517,13 +548,27 @@ export async function pruneSnapshots(root: string, policy: SnapshotPolicy): Prom
 	return removed;
 }
 
-export async function setSnapshotPinned(root: string, id: string, pinned: boolean): Promise<void> {
+/** Rewrites a finished snapshot's manifest with `change` applied; the folders are not touched. */
+async function updateManifest(root: string, id: string, change: (manifest: Omit<Snapshot, 'id'>) => Omit<Snapshot, 'id'>): Promise<void> {
 	const snapshot = await getSnapshot(root, id);
 	if (!snapshot) throw new Error('That snapshot no longer exists.');
 	const file = path.join(snapshotPath(root, id), MANIFEST);
 	const { id: _id, ...manifest } = snapshot;
-	await fs.writeFile(`${file}.tmp`, JSON.stringify({ ...manifest, pinned }, null, 2), 'utf8');
+	await fs.writeFile(`${file}.tmp`, JSON.stringify(change(manifest), null, 2), 'utf8');
 	await fs.rename(`${file}.tmp`, file);
+}
+
+export async function setSnapshotPinned(root: string, id: string, pinned: boolean): Promise<void> {
+	await updateManifest(root, id, (manifest) => ({ ...manifest, pinned }));
+}
+
+/** Sets or clears the user's name and tags for a snapshot (`snapshotDetails` tidies them first). */
+export async function setSnapshotDetails(root: string, id: string, details: { note: string | null; tags: string[] }): Promise<void> {
+	await updateManifest(root, id, ({ note: _note, tags: _tags, ...manifest }) => ({
+		...manifest,
+		...(details.note ? { note: details.note } : {}),
+		...(details.tags.length ? { tags: details.tags } : {})
+	}));
 }
 
 export async function deleteSnapshot(root: string, id: string): Promise<void> {
