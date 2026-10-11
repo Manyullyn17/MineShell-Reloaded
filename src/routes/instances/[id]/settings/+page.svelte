@@ -9,6 +9,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
 	import PackChangePanel from '#lib/components/PackChangePanel.svelte';
+	import PackRollback from '#lib/components/PackRollback.svelte';
 	import MigratePanel from '#lib/components/MigratePanel.svelte';
 	import ConfigMergeReview from '#lib/components/ConfigMergeReview.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
@@ -525,6 +526,9 @@
 		<SettingsSection tab="general" title="Modpack" description="Change the pack version; the world and your own mods stay.">
 			<div class="embedded">
 				<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
+				{#if data.packRollback}
+					<PackRollback info={data.packRollback} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
+				{/if}
 				{#if data.configMerge?.entries.length}
 					<ConfigMergeReview instanceId={data.instance.id} report={data.configMerge} />
 				{/if}

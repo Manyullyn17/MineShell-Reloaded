@@ -400,3 +400,46 @@ export const instanceDatapacks = sqliteTable(
 );
 
 export type InstanceDatapack = typeof instanceDatapacks.$inferSelect;
+
+/**
+ * Committed pack version changes (packchange.ts), what a rollback
+ * (packrollback.ts) needs to put the server back: the version it was on, the
+ * old-configs folder holding the configs as they were, and the snapshot taken
+ * first. JSON columns are string arrays unless noted.
+ */
+export const packChanges = sqliteTable(
+	'pack_changes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		changedAt: integer('changed_at').notNull(),
+		/** Null when the server was on an uploaded file, which cannot be fetched again. */
+		fromVersionId: text('from_version_id'),
+		fromVersionName: text('from_version_name'),
+		/** A rollback across Minecraft versions needs the world from before too, once the server has run. */
+		fromMinecraft: text('from_minecraft').notNull(),
+		/** Null when the change went to an uploaded file. */
+		toVersionId: text('to_version_id'),
+		toVersionName: text('to_version_name'),
+		/** old-configs/<stamp>, relative to the server folder; null when nothing was moved. */
+		oldConfigs: text('old_configs'),
+		/** Top-level entries moved to oldConfigs (they existed before the change). */
+		configsMoved: text('configs_moved').notNull(),
+		/** Top-level entries the change created (they did not exist before). */
+		configsCreated: text('configs_created').notNull(),
+		snapshotId: text('snapshot_id'),
+		/** JSON [{ fileName, name }]: the user's own mods the change updated. */
+		updatedMods: text('updated_mods').notNull(),
+		/** The user's own mod files right after the change, to tell what changed since. Null until known. */
+		userModsAfter: text('user_mods_after'),
+		/** Set when a rollback undid this change. */
+		rolledBackAt: integer('rolled_back_at')
+	},
+	(t) => ({
+		byInstance: index('pack_changes_instance_idx').on(t.instanceId, t.changedAt)
+	})
+);
+
+export type PackChange = typeof packChanges.$inferSelect;

@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { ServerInstance } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { db } from './db';
+import { packChanges, type PackChange, type ServerInstance } from './db/schema';
 import {
 	bestVersion,
 	DISABLED_SUFFIX,
@@ -14,7 +16,7 @@ import {
 	type ProjectVersion
 } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
-import { snapshotStep } from './snapshots';
+import { snapshotStep, type Snapshot } from './snapshots';
 import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, writeBase, type Base } from './configmerge';
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
 import { missingNotice, recordMissing } from './packs/missing';
@@ -496,14 +498,69 @@ async function exists(p: string): Promise<boolean> {
 	);
 }
 
+/** What a rollback takes back from the change it undoes (packrollback.ts). */
+export type RollbackOf = { record: PackChange; oldConfigs: string | null; moved: string[]; created: string[] };
+
+export function rollbackOf(record: PackChange): RollbackOf {
+	return {
+		record,
+		oldConfigs: record.oldConfigs,
+		moved: JSON.parse(record.configsMoved) as string[],
+		created: JSON.parse(record.configsCreated) as string[]
+	};
+}
+
+/**
+ * A rollback's configs: each entry exactly as it was before the change being
+ * undone - its copy in that change's old-configs where the change moved it,
+ * gone where the change created it, and as it is now where the change never
+ * touched it (it was moved aside with the rest a moment ago). Copied, never
+ * moved, so a failure can still put everything back from the journal. An
+ * entry whose copy is gone keeps the version's own files.
+ */
+async function putBackConfigs(root: string, names: string[], rollback: RollbackOf, oldConfigsNow: string, movedNow: string[]): Promise<{ restored: string[]; removed: string[]; missing: string[] }> {
+	const result = { restored: [] as string[], removed: [] as string[], missing: [] as string[] };
+	for (const name of names) {
+		const target = path.join(root, name);
+		let from: string | null = null;
+		if (rollback.moved.includes(name)) from = rollback.oldConfigs ? path.join(root, rollback.oldConfigs, name) : null;
+		else if (!rollback.created.includes(name) && movedNow.includes(name)) from = path.join(oldConfigsNow, name);
+		if (from && (await exists(from))) {
+			await fs.rm(target, { recursive: true, force: true });
+			await fs.cp(from, target, { recursive: true, preserveTimestamps: true });
+			result.restored.push(name);
+		} else if (rollback.created.includes(name) || (!rollback.moved.includes(name) && !movedNow.includes(name))) {
+			// Not there before the change: whatever is there now goes (old-configs keeps a copy).
+			if (movedNow.includes(name) || (await exists(target))) result.removed.push(name);
+			await fs.rm(target, { recursive: true, force: true });
+		} else {
+			result.missing.push(name);
+		}
+	}
+	return result;
+}
+
 export async function applyPackChange(
 	instance: ServerInstance,
 	versionId: string,
-	opts: { updateMods: string[]; confirmMinecraftChange: boolean; snapshot?: boolean; downloadJava?: JavaVendor }
+	opts: {
+		updateMods: string[];
+		confirmMinecraftChange: boolean;
+		snapshot?: boolean;
+		downloadJava?: JavaVendor;
+		/** Undo this change: its configs come back exactly (packrollback.ts). */
+		rollback?: RollbackOf;
+		/** Runs after the change has committed and the server is ready. */
+		then?: (task: TaskHandle) => Promise<void>;
+	}
 ): Promise<string> {
 	await requireStopped(instance);
 	const pack = await preparePack(instance, versionId);
 	const plan = await buildPlan(instance, versionId, pack);
+	const rollback = opts.rollback ?? null;
+	// A rollback also takes back what the change it undoes moved or created,
+	// whether or not the version it returns to ships it.
+	if (rollback) plan.configs = [...new Set([...plan.configs, ...rollback.moved, ...rollback.created])].sort();
 
 	if (plan.minecraftChange && !opts.confirmMinecraftChange) {
 		throw new InstanceError(
@@ -556,18 +613,26 @@ export async function applyPackChange(
 		const oldConfigs = path.join(root, journal.oldConfigs);
 		const modsBefore = new Set(journal.modsBefore);
 		const movedConfigs: string[] = [];
+		const updatedMods: { fileName: string; name: string }[] = [];
+		let recordId = 0;
 		let downloadFailures: FailedDownload[] = [];
 		const problems: string[] = [];
 
 		try {
 			const javaPath = javaPlan ? await obtainJava(javaPlan, javaFor, task) : null;
+			let snapshot: Snapshot | null = null;
 			if (opts.snapshot) {
-				const what = plan.sameVersion ? `reinstalling ${label}` : `changing the pack to ${label}`;
-				await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);
+				const what = rollback
+					? `rolling back to ${label}`
+					: plan.sameVersion
+						? `reinstalling ${label}`
+						: `changing the pack to ${label}`;
+				snapshot = await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);
 			}
 			await fs.mkdir(path.join(staging, 'mods'), { recursive: true });
 			// The installed version's originals, to tell the user's config edits from the pack's.
-			const base = configsBefore.size ? await mergeBase(instance, task) : null;
+			// A rollback puts back the configs as they were instead.
+			const base = configsBefore.size && !rollback ? await mergeBase(instance, task) : null;
 
 			// 1. Configs and other pack-shipped folders go to old-configs, whole.
 			task.setProgress(null, 'Moving current configs to old-configs');
@@ -653,8 +718,18 @@ export async function applyPackChange(
 			}
 
 			// 5b. The user's config edits come back into the new pack's files
-			// (configmerge.ts); old-configs keeps their copies either way.
-			if (base && movedConfigs.length) {
+			// (configmerge.ts); old-configs keeps their copies either way. A
+			// rollback puts back the configs from before the change it undoes.
+			if (rollback) {
+				task.setProgress(null, 'Putting back the configs from before the change');
+				const put = await putBackConfigs(root, plan.configs, rollback, oldConfigs, movedConfigs);
+				if (put.restored.length) task.log(`Put back ${put.restored.join(', ')} as they were before the change.`);
+				if (put.removed.length) task.log(`Removed ${put.removed.join(', ')}, which the change had added.`);
+				if (put.missing.length) {
+					problems.push(`The copies of ${put.missing.join(', ')} from before the change are gone from ${rollback.oldConfigs ?? 'old-configs'}; the pack version's own files are in place.`);
+				}
+				if (movedConfigs.length) task.log(`The configs as they were until now are in ${path.relative(root, oldConfigs)}/.`);
+			} else if (base && movedConfigs.length) {
 				task.setProgress(null, 'Bringing back your config edits');
 				const report = await mergeConfigs(root, oldConfigs, movedConfigs, base, path.join(staging, 'config-merge'), path.basename(journal.oldConfigs));
 				const count = (o: string) => report.entries.filter((e) => e.outcome === o).length;
@@ -688,6 +763,7 @@ export async function applyPackChange(
 			for (const fileName of opts.updateMods) {
 				const update = plan.updates?.get(fileName);
 				if (!update) continue;
+				updatedMods.push({ fileName, name: update.project.name });
 				task.log(`Updating ${update.project.name} to ${update.version.versionNumber}`);
 				// The old jar is staged first so a rollback can restore it even
 				// when the new file has the same name.
@@ -725,15 +801,37 @@ export async function applyPackChange(
 				loaderVersion = result.loaderVersion;
 			}
 
-			commitOperation(instance.id, {
-				minecraftVersion: plan.target.minecraft,
-				modloader: plan.target.loader,
-				modloaderVersion: loaderVersion,
-				launchArgs,
-				// An uploaded file is no provider version: the server is no longer on one it can name.
-				...committed,
-				packDatapacks: JSON.stringify([...plan.world.datapacks.add, ...plan.world.datapacks.update].sort())
-			});
+			// What a rollback of this change needs (packrollback.ts).
+			const record = {
+				instanceId: instance.id,
+				changedAt: Date.now(),
+				fromVersionId: instance.packVersionId,
+				fromVersionName: instance.packVersionName,
+				fromMinecraft: instance.minecraftVersion,
+				toVersionId: committed.packVersionId,
+				toVersionName: committed.packVersionName,
+				oldConfigs: (await exists(oldConfigs)) ? journal.oldConfigs : null,
+				configsMoved: JSON.stringify(movedConfigs),
+				configsCreated: JSON.stringify(plan.configs.filter((n) => !configsBefore.has(n))),
+				snapshotId: snapshot?.id ?? null,
+				updatedMods: JSON.stringify(updatedMods)
+			};
+			commitOperation(
+				instance.id,
+				{
+					minecraftVersion: plan.target.minecraft,
+					modloader: plan.target.loader,
+					modloaderVersion: loaderVersion,
+					launchArgs,
+					// An uploaded file is no provider version: the server is no longer on one it can name.
+					...committed,
+					packDatapacks: JSON.stringify([...plan.world.datapacks.add, ...plan.world.datapacks.update].sort())
+				},
+				(tx) => {
+					recordId = tx.insert(packChanges).values(record).returning({ id: packChanges.id }).get().id;
+					if (rollback) tx.update(packChanges).set({ rolledBackAt: Date.now() }).where(eq(packChanges.id, rollback.record.id)).run();
+				}
+			);
 		} catch (err) {
 			task.log('The change failed; putting everything back.');
 			await restorePackChange(root, journal);
@@ -774,11 +872,23 @@ export async function applyPackChange(
 		} finally {
 			await syncUnit(requireInstance(instance.id));
 		}
+		// The user's own mods as this change left them, so a rollback can name the ones changed since.
+		try {
+			const userMods = (await listInstanceMods(requireInstance(instance.id))).filter((r) => !r.fromPack).map((r) => baseName(r.fileName));
+			db.update(packChanges).set({ userModsAfter: JSON.stringify(userMods.sort()) }).where(eq(packChanges.id, recordId)).run();
+		} catch {
+			// Without it a rollback lists only the mods this change updated.
+		}
+		// The rolled-back change's config merge describes files no longer there.
+		if (rollback?.oldConfigs) {
+			await fs.rm(path.join(root, REPORTS_DIR, path.basename(rollback.oldConfigs)), { recursive: true, force: true });
+		}
 		setStatus(instance.id, 'ready', problems.length ? problems.join(' ') : null);
 		audit('instance.pack_changed', {
 			instanceId: instance.id,
-			detail: `${instance.packVersionName ?? instance.packVersionId ?? '?'} -> ${plan.uploaded ? `${label} (uploaded file)` : versionId}`
+			detail: `${instance.packVersionName ?? instance.packVersionId ?? '?'} -> ${plan.uploaded ? `${label} (uploaded file)` : versionId}${rollback ? ' (rollback)' : ''}`
 		});
+		await opts.then?.(task);
 		task.setProgress(100, 'Ready');
 	});
 	return taskId;

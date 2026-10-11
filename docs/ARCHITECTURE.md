@@ -406,6 +406,21 @@ overrides once. The merge runs inside the journalled change; its report, with th
 pack sides of every file a review needs, goes to `.mineshell/config-merges/<stamp>/`, and
 the Modpack settings show it with a compare view and "use mine / use the pack's".
 
+**Rolling a pack change back** (`packrollback.ts`). Each committed change writes a
+`pack_changes` row in its commit transaction (`commitOperation`'s `also`): the version and
+Minecraft it came from, its old-configs folder, which top-level entries it moved there and
+which it created, the snapshot it took, the user's mods it updated, and (after the sync) the
+user's mod files as it left them. A rollback of the newest change is a pack change back to
+`from` with `rollback` set: the entries it moved come back from that old-configs folder,
+the ones it created go, the ones it never touched stay as they are - copied, never moved,
+so the journal still restores everything if it fails - and no merge runs. The current
+configs go to a new old-configs folder as in any change, and the rollback is itself a
+recorded change. The user's own mods stay (listed in the form: updated by the change, or
+changed since, by file name against the record). With "put the world back" the
+world-change restore of the snapshot runs as its own task after the commit. A change that
+moved Minecraft can only be rolled back with that world; one from an uploaded file cannot
+be (the file is not kept), nor one whose server is no longer on the version it went to.
+
 Mods are always downloaded fresh per instance. No shared cache, no symlinks. This is
 deliberate: modpacks sometimes ship a patched jar under the same version label as the
 upstream one, and a shared cache would serve the wrong file with no way to tell. Disk is

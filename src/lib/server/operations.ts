@@ -144,12 +144,16 @@ export function endOperation(instanceId: string): void {
 }
 
 /** Writes the operation's result and drops its journal in one transaction. */
-export function commitOperation(instanceId: string, changes: Partial<ServerInstance>): void {
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** `also` writes what belongs to the result in the same transaction (a pack change's record). */
+export function commitOperation(instanceId: string, changes: Partial<ServerInstance>, also?: (tx: Transaction) => void): void {
 	db.transaction((tx) => {
 		tx.update(serverInstances)
 			.set({ ...changes, updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instanceId))
 			.run();
+		also?.(tx);
 		tx.delete(operations).where(eq(operations.instanceId, instanceId)).run();
 	});
 }

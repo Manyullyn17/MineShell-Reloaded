@@ -76,7 +76,8 @@ links to download them by hand, and can be tried again. Each instance gets its o
 port can be picked), RCON password and systemd unit; with Simple Voice Chat, a voice chat port of its own too
 (checked before every start). Later you can change the pack version (picked from the
 provider, or by uploading the new version's file - the way to update a pack installed from an upload; your config edits
-are carried over or merged, and where you and the pack changed the same lines you get a side-by-side review) or the loader version,
+are carried over or merged, and where you and the pack changed the same lines you get a side-by-side review; the last change
+can be rolled back, configs exactly as they were and optionally the world from the snapshot taken before it) or the loader version,
 move a server that is not from a pack to a newer Minecraft or another loader (1.20.1 Forge to 1.21.1 NeoForge: every mod
 MineShell can look up moves to a build for it, the rest are disabled and listed first),
 migrate a Forge 1.12.2 pack to Cleanroom (and back; Fugue, which Cleanroom needs, is kept at a build made for the

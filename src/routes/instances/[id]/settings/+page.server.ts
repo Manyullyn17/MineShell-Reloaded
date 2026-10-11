@@ -26,6 +26,7 @@ import {
 } from '#lib/server/instances.js';
 import { applyCleanroomModFixes, cleanroomReport } from '#lib/server/cleanroom.js';
 import { applyPackChange } from '#lib/server/packchange.js';
+import { rollbackInfo, rollbackPackChange } from '#lib/server/packrollback.js';
 import { applyMigration } from '#lib/server/migrate.js';
 import { latestMergeReport, resolveMerge } from '#lib/server/configmerge.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
@@ -194,6 +195,8 @@ export const load: PageServerLoad = async ({ params }) => {
 						versionName: instance.packVersionName
 					}
 				: null,
+		/** The last pack change, to roll back. */
+		packRollback: instance.packSource ? await rollbackInfo(instance) : null,
 		/** The last pack change's config merge, for the review under Modpack. */
 		configMerge: instance.packSource ? await latestMergeReport(instance.path) : null,
 		cleanroom: cleanroomRelevant
@@ -338,6 +341,26 @@ export const actions: Actions = {
 			};
 		} catch (err) {
 			return refused(err, 'changePack') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
+		}
+	},
+
+	rollbackPack: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const restoreWorld = form.get('world') === 'restore';
+		try {
+			await rollbackPackChange(instance, {
+				restoreWorld,
+				// Restoring the world keeps the current one as a snapshot anyway.
+				snapshot: restoreWorld ? false : await decideSnapshot(instance, form.get('snapshot')),
+				downloadJava: downloadJavaFrom(form)
+			});
+			return {
+				ok: true,
+				message: `Rolling back the pack${restoreWorld ? ', then the world' : ''}. Follow it in Tasks; the server stays stopped until it finishes.`
+			};
+		} catch (err) {
+			return refused(err, 'rollbackPack') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not roll back the pack.' });
 		}
 	},
 

@@ -234,4 +234,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Snapshot names and tags: only the manifest changes, clearing removes them, tidied and limited | `flows/snapshots.test.ts` |
 | (feature) Files over SFTP: the link, sshd_config's port, what the settings accept | `sftp.test.ts` (shared and server) |
 | A jar put into mods/ by hand became a "pack mod" at the next pack change's sync, and the change after removed it | `flows/pack-change.test.ts` |
+| (feature) Pack change rollback: exact configs, user mods kept, failure restores all, world from the snapshot, Minecraft moves need it | `flows/pack-rollback.test.ts` |
 | A file-list entry without a URL was dropped (install "succeeded" without it); failed downloads were only in the task log; CurseForge files had one source | `packs/index.test.ts`, `flows/pack-install.test.ts` |
