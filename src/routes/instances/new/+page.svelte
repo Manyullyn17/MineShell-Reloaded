@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
@@ -330,6 +330,10 @@
 
 	async function choose(hit: Hit) {
 		selected = hit;
+		await tick();
+		if (window.matchMedia('(max-width: 60rem)').matches) {
+			document.querySelector('.browse > .detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 		if (!nameTouched) name = hit.name;
 		loadingVersions = true;
 		packVersions = [];
@@ -1247,7 +1251,16 @@
 		}
 
 		.steps .line {
-			width: 0.8rem;
+			width: 0.45rem;
+		}
+
+		.steps {
+			gap: 0.35rem;
+			font-size: 0.84rem;
+		}
+
+		.steps li {
+			gap: 0.3rem;
 		}
 
 		.page-head {
@@ -1260,6 +1273,23 @@
 			padding: 0.75rem var(--space-4);
 		}
 
+		.browse:has(.detail:not(.empty)) {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.browse:has(.detail:not(.empty)) > .detail {
+			order: -1;
+			width: 100%;
+			min-width: 0;
+			min-height: 70vh;
+			max-height: 80vh;
+		}
+
+		.browse:has(.detail:not(.empty)) > .hits {
+			width: 100%;
+		}
+
 		.rows .field {
 			grid-template-columns: minmax(0, 1fr);
 		}
@@ -1268,6 +1298,11 @@
 		.rows .field > select {
 			grid-column: 1;
 			grid-row: auto;
+		}
+
+		.rows .field > input[type='number'] {
+			justify-self: start;
+			text-align: left;
 		}
 	}
 </style>

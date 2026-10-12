@@ -1828,6 +1828,24 @@
 	}
 
 	@media (max-width: 60rem) {
+		.icon-block {
+			display: grid;
+			grid-template-columns: 64px minmax(0, 1fr);
+			align-items: start;
+			gap: var(--space-3);
+		}
+
+		.icon-block > p {
+			min-width: 0;
+			grid-column: 1 / -1;
+			grid-row: 2;
+		}
+
+		.icon-block > .button-row {
+			grid-column: 1 / -1;
+			flex-wrap: wrap;
+		}
+
 		/* One short line, then the buttons side by side across the width. */
 		.savebar {
 			flex-wrap: wrap;

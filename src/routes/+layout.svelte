@@ -74,7 +74,7 @@
 			<div class="rail-section">
 				<div class="rail-heading">
 					<span>Servers</span>
-					<a href="/instances/new" title="Add a server" aria-label="Add a server">+</a>
+					<a href="/instances/new" title="Add a server" aria-label="Add a server" onclick={() => (railOpen = false)}>+</a>
 				</div>
 				{#if instances.length === 0}
 					<p class="rail-empty">No servers yet.</p>

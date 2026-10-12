@@ -79,8 +79,8 @@
 				<tbody>
 					<tr class="group">
 						<th scope="rowgroup">{group.label}</th>
-						<td class="num mono">{formatBytes(group.bytes)}</td>
-						<td class="num mono faint">{percent(group.bytes, usage.total)}</td>
+						<td class="num mono" data-label="Size">{formatBytes(group.bytes)}</td>
+						<td class="num mono faint" data-label="Share">{percent(group.bytes, usage.total)}</td>
 						<td class="bar-col" aria-hidden="true">
 							<span class="bar" style:width="{share(group.bytes, usage.total)}%"></span>
 						</td>
@@ -91,8 +91,8 @@
 								<a href={item.outside ? `/instances/${encodeURIComponent(data.instance.id)}/map` : filesHref(item.path)}>{item.label}</a>
 								{#if item.note === 'pinned'}<span class="tag accent">pinned</span>{:else if item.note}<div class="faint small">{item.note}</div>{/if}
 							</td>
-							<td class="num mono">{formatBytes(item.bytes)}</td>
-							<td class="num mono faint">{percent(item.bytes, usage.total)}</td>
+							<td class="num mono" data-label="Size">{formatBytes(item.bytes)}</td>
+							<td class="num mono faint" data-label="Share">{percent(item.bytes, usage.total)}</td>
 							<td class="bar-col" aria-hidden="true">
 								<span class="bar thin" style:width="{share(item.bytes, usage.total)}%"></span>
 							</td>
@@ -112,6 +112,128 @@
 		align-items: baseline;
 		gap: var(--space-3);
 		font-size: 1.3rem;
+	}
+
+	@media (max-width: 40rem) {
+		:global(.panel-head) {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		:global(.panel-head > div:first-child) {
+			min-width: 0;
+		}
+
+		:global(.panel-head > div:first-child p) {
+			max-width: none;
+			overflow-wrap: anywhere;
+		}
+
+		:global(.panel-head > .row) {
+			flex-wrap: wrap;
+		}
+
+		.suggestions li {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: center;
+			gap: var(--space-2) var(--space-3);
+			padding: var(--space-3) 0;
+		}
+
+		.suggestions .text {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+
+		.suggestions .size {
+			grid-column: 1;
+			grid-row: 2;
+		}
+
+		.suggestions li > form,
+		.suggestions li > a {
+			grid-column: 2;
+			grid-row: 2;
+		}
+
+		:global(.content table.usage) {
+			display: block;
+			width: 100%;
+			overflow: visible;
+			border-collapse: separate;
+			border-spacing: 0;
+		}
+
+		.usage thead {
+			display: none;
+		}
+
+		.usage tbody {
+			display: block;
+			margin: 0 0 var(--space-3);
+			padding: var(--space-3);
+			background: var(--panel);
+			border: 1px solid var(--line);
+			border-radius: var(--radius-lg);
+		}
+
+		.usage tr {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: var(--space-2) var(--space-3);
+			padding: var(--space-2) 0;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.usage tr:last-child {
+			border-bottom: 0;
+		}
+
+		.usage .group th {
+			grid-column: 1 / -1;
+			padding: 0 0 var(--space-2);
+			border: 0;
+		}
+
+		.usage .group td {
+			border: 0;
+		}
+
+		.usage td,
+		.usage th {
+			min-width: 0;
+			padding: 0;
+			text-align: left;
+		}
+
+		.usage td.item {
+			grid-column: 1 / -1;
+			padding-left: 0;
+			overflow-wrap: anywhere;
+		}
+
+		.usage td.num {
+			white-space: normal;
+			font-size: 0.9rem;
+		}
+
+		.usage td.num::before {
+			content: attr(data-label);
+			display: block;
+			margin-bottom: 0.1rem;
+			color: var(--text-faint);
+			font-size: 0.72rem;
+			font-family: inherit;
+			font-weight: 400;
+		}
+
+		.usage .bar-col {
+			grid-column: 1 / -1;
+			width: auto;
+			padding: 0;
+			border: 0;
+		}
 	}
 
 	h3 {

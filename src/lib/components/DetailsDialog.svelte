@@ -335,6 +335,12 @@
 		margin: 0;
 	}
 
+	@media (max-width: 40rem) {
+		.pane .tabs button {
+			padding-inline: 0.55rem;
+		}
+	}
+
 	.pane .body {
 		padding: var(--space-4) 1.25rem;
 	}
