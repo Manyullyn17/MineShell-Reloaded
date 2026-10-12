@@ -221,6 +221,23 @@ describe('map mods', () => {
 	const forge1122 = (files: Record<string, string | Buffer> = {}) =>
 		createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2' }, { 'server.properties': 'level-name=world\n', ...files });
 
+	it('prepares BlueMap config before its first start', async () => {
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.21.11' },
+			{ 'mods/bluemap.jar': zipBuffer({ 'fabric.mod.json': JSON.stringify({ id: 'bluemap' }) }) }
+		);
+		saveMapSettings(instance.id, { eulaAccepted: true });
+
+		expect(await applyMapModConfig(instance)).toEqual(['config/bluemap/webserver.conf', 'config/bluemap/core.conf']);
+		const port = getMapSettings(instance.id).modPort!;
+		const webserver = await fs.readFile(path.join(instance.path, 'config/bluemap/webserver.conf'), 'utf8');
+		const core = await fs.readFile(path.join(instance.path, 'config/bluemap/core.conf'), 'utf8');
+		expect(webserver).toContain(`port: ${port}`);
+		expect(webserver).toContain('ip: "127.0.0.1"');
+		expect(core).toContain('accept-download: true');
+		expect(await liveMapTarget(instance, '', '')).toBe(`http://127.0.0.1:${port}/`);
+	});
+
 	it('installs Dynmap (its newest build) and DynmapBlockScan, then gives Dynmap its own local port', async () => {
 		const instance = await forge1122();
 		expect((await waitForTask(await installMapMod(instance))).state).toBe('done');

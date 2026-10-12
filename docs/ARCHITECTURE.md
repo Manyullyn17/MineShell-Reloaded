@@ -551,9 +551,11 @@ renderer reads RoughlyEnoughIDs/JEID worlds; without BlockScan modded blocks are
 1.12.2 build from CurseForge, BlockScan from dynmap.us, BlueMap from Modrinth), gives each
 server one port of its own for the mod's web server (`modPort`, from 8123, not another
 server's), and writes it with a localhost-only bind into the mod's config before every start
-(`applyMapModConfig`; the files exist only after the mod's first start, which uses its
-default port). `/instances/<id>/map/live/` passes requests through to that port behind
-MineShell's login - bodies streamed, MineShell's own cookies and auth headers not passed on.
+(`applyMapModConfig`; BlueMap's config is created during install, so its first start uses
+the assigned port and the per-server EULA answer; Dynmap's config is created by its first
+start and is configured before later starts). `/instances/<id>/map/live/` passes requests
+through to that port behind MineShell's login - bodies streamed, MineShell's own cookies
+and auth headers not passed on.
 
 A BlueMap render's size is measured when the render ends and kept (`sizeBytes` in the `map:`
 settings row; `mapDataSize` measures once for renders from before): walking 100k+ tiles took

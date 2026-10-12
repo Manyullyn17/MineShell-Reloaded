@@ -174,7 +174,7 @@
 	{/if}
 	{#if !map.mods.blueMap}
 		<div class="live-offer small">
-			<span class="muted">Want it live, with players on it? The BlueMap mod updates the map as the world changes, while the server runs.</span>
+			<span class="muted">Want it live, with players on it? The BlueMap mod updates the map as the world changes, while the server runs. It needs to download Minecraft client resources from Mojang once. MineShell applies your recorded EULA acceptance and configures the local map port before the server starts.</span>
 			{@render installForm('Add the BlueMap mod')}
 		</div>
 	{/if}

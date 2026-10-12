@@ -536,21 +536,26 @@ export function setConfigLine(text: string, key: string, value: string): string 
 /**
  * Points the map mods' web servers at the server's own port, on localhost
  * only (MineShell passes them through, behind its login), and gives the
- * BlueMap mod the EULA answer. Their config files exist only once the mod
- * has started once, so this runs before every start and after an install;
- * a first start uses the mod's default port. Returns what it changed.
+ * BlueMap mod the EULA answer. BlueMap's configs are created here if needed,
+ * so the first start uses the same settings as later starts. Dynmap creates
+ * its config on first start, so its settings are applied on later starts.
+ * Returns what it changed.
  */
 export async function applyMapModConfig(instance: ServerInstance): Promise<string[]> {
 	const mods = await mapMods(instance);
 	if (!mods.dynmap && !mods.blueMap) return [];
 	const port = await modPort(instance);
 	const changed: string[] = [];
-	const edit = async (rel: string, apply: (text: string) => string) => {
+	const edit = async (rel: string, apply: (text: string) => string, initial?: string) => {
 		const file = path.join(instance.path, rel);
-		const text = await fs.readFile(file, 'utf8').catch(() => null);
-		if (text === null) return;
+		let text = await fs.readFile(file, 'utf8').catch(() => null);
+		if (text === null) {
+			if (initial === undefined) return;
+			text = initial;
+		}
 		const next = apply(text);
 		if (next !== text) {
+			await fs.mkdir(path.dirname(file), { recursive: true });
 			await fs.writeFile(file, next);
 			changed.push(rel);
 		}
@@ -559,8 +564,19 @@ export async function applyMapModConfig(instance: ServerInstance): Promise<strin
 		await edit('dynmap/configuration.txt', (t) => setConfigLine(setConfigLine(t, 'webserver-port', String(port)), 'webserver-bindaddress', '127.0.0.1'));
 	}
 	if (mods.blueMap) {
-		await edit('config/bluemap/webserver.conf', (t) => setConfigLine(setConfigLine(t, 'port', String(port)), 'ip', '"127.0.0.1"'));
-		await edit('config/bluemap/core.conf', (t) => setConfigLine(t, 'accept-download', String(getMapSettings(instance.id).eulaAccepted)));
+		// BlueMap generates its configs on first launch. Create the two settings
+		// it needs before that launch, so the proxy port and EULA choice are right
+		// from the start. HOCON config fields omitted here use BlueMap's defaults.
+		await edit(
+			'config/bluemap/webserver.conf',
+			(t) => setConfigLine(setConfigLine(t, 'port', String(port)), 'ip', '"127.0.0.1"'),
+			'enabled: true\n'
+		);
+		await edit(
+			'config/bluemap/core.conf',
+			(t) => setConfigLine(t, 'accept-download', String(getMapSettings(instance.id).eulaAccepted)),
+			''
+		);
 	}
 	return changed;
 }
