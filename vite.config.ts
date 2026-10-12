@@ -49,6 +49,15 @@ if (explicitData && process.argv.includes('dev')) {
 // MineShell's own version, for the update check (src/lib/server/selfupdate.ts).
 const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version as string;
 
+// Which test files replace modules is read from the files themselves, so a new
+// test using vi.mock lands in the isolated project without anyone remembering to
+// list it.
+const allTests = testing
+  ? fs.globSync(['src/**/*.test.ts', 'tests/**/*.test.ts']).map((f) => f.split(path.sep).join('/'))
+  : [];
+const mockingTests = allTests.filter((f) => /\bvi\.mock\(/.test(fs.readFileSync(f, 'utf8')));
+const otherTests = allTests.filter((f) => !mockingTests.includes(f));
+
 export default defineConfig({
   define: { __MINESHELL_VERSION__: JSON.stringify(version) },
   plugins: [
@@ -74,7 +83,6 @@ export default defineConfig({
   ],
   envDir: testing ? 'tests/env' : undefined,
   test: {
-    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     setupFiles: ['tests/setup.ts'],
     globalSetup: ['tests/global-setup.ts'],
     environment: 'node',
@@ -83,8 +91,21 @@ export default defineConfig({
     testTimeout: process.env.RECORD_HTTP ? 60_000 : 5_000,
     // Every test file shares the one throwaway database (SvelteKit fixes the
     // env once per run), and parallel workers migrating it at the same time
-    // lock it, so files simply run in turn (the suite takes about half a minute).
-    fileParallelism: false
+    // lock it, so files simply run in turn - in one worker, also across the two
+    // projects below.
+    fileParallelism: false,
+    maxWorkers: 1,
+    projects: [
+      // Files that replace modules (vi.mock) keep a fresh module registry each:
+      // a mock cannot reach modules another file already loaded, and a module
+      // loaded under one file's mock would stay mocked for the next.
+      { extends: true, test: { name: 'isolated', include: mockingTests, isolate: true } },
+      // The rest load the app's modules once and share them: evaluating them
+      // again for every file was half of the suite's time. The price: module
+      // state (caches, registries) outlives a file, so a test must leave none
+      // behind that another file could trip over - or use vi.mock after all.
+      { extends: true, test: { name: 'shared', include: otherTests, isolate: false } }
+    ]
   },
   server: {
     host: '0.0.0.0',

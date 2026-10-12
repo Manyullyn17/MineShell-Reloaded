@@ -38,10 +38,20 @@ Vitest:
 - `tests/global-setup.ts` deletes the temporary directory afterwards.
 
 Test files run one after another (`fileParallelism: false`) because they share that one
-database; the suite is small enough that it does not matter. What one file writes is still there
+database (and `maxWorkers: 1`, so the two projects below do not overlap either). What one file writes is still there
 for the files after it, in an order that can change: give mods, projects and servers ids no
 other test uses (`upsertMod` reuses a row with the same source and slug, name included), and
 do not assert an order that comes from such shared rows.
+
+Two Vitest projects (`vite.config.ts`): files containing `vi.mock(` run **isolated** (a fresh
+module registry per file, because a mock cannot reach modules another file already loaded, and
+a module loaded under one file's mock stays mocked); all others run with `isolate: false` and
+share the app's modules, which cut the suite from ~44s to ~21s (evaluating ~300 modules again
+for every file was half of it). The split is read from the files, so nothing needs listing.
+Sharing means module state outlives a file: a cache or registry a test fills (an operation
+left registered, a setting cached) can trip a later file. Clean up in the test, or reach for
+`vi.mock` and the file moves to the isolated project by itself. `vitest run --no-isolate`
+on everything fails 38 tests for that reason.
 
 ## No real processes
 
