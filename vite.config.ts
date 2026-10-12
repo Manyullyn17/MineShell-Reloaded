@@ -38,6 +38,14 @@ const outDir = testing
     ? `.svelte-kit-${createHash('sha256').update(path.resolve(explicitData)).digest('hex').slice(0, 8)}`
     : '.svelte-kit';
 
+// A throwaway dev server's folder is of no use once it stops, so it removes
+// its own on the way out (only SIGKILL leaves one behind - delete those by
+// hand). The signals are caught because a plain kill skips 'exit' handlers.
+if (explicitData && process.argv.includes('dev')) {
+  process.once('exit', () => fs.rmSync(outDir, { recursive: true, force: true }));
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.once(signal, () => process.exit());
+}
+
 // MineShell's own version, for the update check (src/lib/server/selfupdate.ts).
 const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version as string;
 
