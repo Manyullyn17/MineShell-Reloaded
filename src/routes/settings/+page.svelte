@@ -279,13 +279,19 @@
 						</form>
 					{:else}
 						<div>
-							<span>{preset.name}</span>
+							<span>{preset.name}{#if preset.id === data.defaultPresetId}<span class="tag">new servers</span>{/if}</span>
 							{#if preset.description}<span class="small muted">{preset.description}</span>{/if}
 							<code class="small">{preset.flags || '(memory settings only)'}</code>
 						</div>
 						<div class="actions">
 							<button class="button-quiet" type="button" onclick={() => (editingPreset = preset.id)}>Edit</button>
-							<form method="POST" action="?/deletePreset" use:enhance>
+							<form
+								method="POST"
+								action="?/deletePreset"
+								use:enhance={({ cancel }) => {
+									if (preset.id === data.defaultPresetId && !confirm(`New servers get "${preset.name}". Delete it? They get the built-in default instead.`)) cancel();
+								}}
+							>
 								<input type="hidden" name="presetId" value={preset.id} />
 								<button class="button-quiet" type="submit">Delete</button>
 							</form>
@@ -295,6 +301,7 @@
 			{/each}
 		</ul>
 	{/if}
+	<h3 class="java-download">New preset</h3>
 	<form method="POST" action="?/savePreset" use:enhance class="preset-form">
 		<div class="field">
 			<label for="preset-name">Name</label>
@@ -1008,13 +1015,16 @@
 	}
 
 	.preset-form {
-		margin-top: var(--space-4);
 		max-width: 40rem;
 	}
 
 	.saved-presets .preset-edit {
 		flex: 1;
 		max-width: 40rem;
+	}
+
+	.saved-presets .tag {
+		margin-left: var(--space-2);
 	}
 
 	.saved-presets .actions {
@@ -1072,6 +1082,11 @@
 	}
 
 	@media (max-width: 60rem) {
+		/* A saved preset's Edit and Delete go under it: beside long flags they ran off the edge. */
+		.saved-presets li {
+			flex-wrap: wrap;
+		}
+
 		/* Name and path one under the other: side by side the path had a sliver of the width. */
 		.paths div {
 			grid-template-columns: minmax(0, 1fr);

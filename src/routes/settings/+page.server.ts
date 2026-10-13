@@ -83,7 +83,8 @@ import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
 import { MAX_TRASH_DAYS, setTrashDays, trashDays } from '#lib/server/trash.js';
 import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
-import { deleteCustomPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
+import { deleteCustomPreset, getPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
+import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
 
 /**
  * The agent, and each server's tunnel next to the ones made on playit's
@@ -126,6 +127,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		javaDownloads: javaDownloads(),
 		/** Saved JVM flag presets; the built-in ones are not edited. */
 		jvmPresets: listPresets().filter((p) => !p.builtIn),
+		/** The preset new servers get (New server defaults). */
+		defaultPresetId: getInstanceDefaults().jvmPreset,
 		authEnabled: authEnabled(),
 		username: locals.user?.username ?? null,
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
@@ -339,8 +342,17 @@ export const actions: Actions = {
 	},
 
 	deletePreset: async ({ request }) => {
-		deleteCustomPreset(String((await request.formData()).get('presetId') ?? ''));
-		return { ok: true, message: 'Preset removed. Servers using it keep their current flags.' };
+		const id = String((await request.formData()).get('presetId') ?? '');
+		const defaults = getInstanceDefaults();
+		deleteCustomPreset(id);
+		// New servers would quietly have fallen back to the built-in default.
+		if (defaults.jvmPreset !== id) return { ok: true, message: 'Preset removed. Servers using it keep their current flags.' };
+		const fallback = getPreset(BUILT_IN_DEFAULTS.jvmPreset)!;
+		setInstanceDefaults({ ...defaults, jvmPreset: fallback.id });
+		return {
+			ok: true,
+			message: `Preset removed. Servers using it keep their current flags. New servers got it; they get ${fallback.name} now (New server defaults).`
+		};
 	},
 
 	curseforgeKey: async ({ request }) => {

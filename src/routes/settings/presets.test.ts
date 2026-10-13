@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import { actions as serverActions } from '../instances/[id]/settings/+page.server';
 import { deleteCustomPreset, listPresets } from '#lib/server/jvm-presets.js';
+import { getInstanceDefaults, resetInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
 import { addJava, clearJava } from '../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses } from '../../../tests/helpers/process';
 
@@ -68,6 +69,21 @@ describe('JVM flag presets', () => {
 
 		deleteCustomPreset(saved.id);
 		deleteCustomPreset(again.id);
+	});
+
+	it('say so when the one new servers get is deleted, and make the built-in default theirs', async () => {
+		await post(actions.savePreset, { presetName: 'House', jvmArgs: '-XX:+UseG1GC' });
+		await post(actions.savePreset, { presetName: 'Other', jvmArgs: '-XX:+UseG1GC' });
+		setInstanceDefaults({ ...getInstanceDefaults(), jvmPreset: 'custom:house' });
+
+		const other = await post(actions.deletePreset, { presetId: 'custom:other' });
+		expect((other as { message: string }).message).not.toContain('New servers');
+		expect(getInstanceDefaults().jvmPreset).toBe('custom:house');
+
+		const house = await post(actions.deletePreset, { presetId: 'custom:house' });
+		expect((house as { message: string }).message).toContain('New servers got it; they get Aikar (recommended) now');
+		expect(getInstanceDefaults().jvmPreset).toBe('aikar');
+		resetInstanceDefaults();
 	});
 
 	it('need a name', async () => {
