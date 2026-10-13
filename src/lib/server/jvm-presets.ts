@@ -19,6 +19,10 @@ export type JvmPreset = {
 	description: string;
 	/** Flags excluding -Xms/-Xmx, which are applied from the memory fields. */
 	flags: string;
+	/** The oldest Java that starts with these flags; absent = any. */
+	minJava?: number;
+	/** Flags only some Java versions take, added by presetFlags. */
+	javaFlags?: { min: number; max: number; flags: string }[];
 	builtIn: boolean;
 };
 
@@ -80,16 +84,15 @@ export const BUILT_IN_PRESETS: JvmPreset[] = [
 	},
 	{
 		id: 'zgc',
-		name: 'ZGC (low pause, Java 17+)',
+		name: 'ZGC (low pause, Java 15+)',
 		description:
 			'Trades throughput for very short pauses. Worth trying on a big heap if tick lag spikes matter more than raw performance.',
-		flags: [
-			'-XX:+UseZGC',
-			'-XX:+ZGenerational',
-			'-XX:+AlwaysPreTouch',
-			'-XX:+DisableExplicitGC',
-			'-XX:+PerfDisableSharedMem'
-		].join(' '),
+		flags: ['-XX:+UseZGC', '-XX:+AlwaysPreTouch', '-XX:+DisableExplicitGC', '-XX:+PerfDisableSharedMem'].join(' '),
+		// ZGC is a product feature from Java 15. -XX:+ZGenerational picks the
+		// generational mode on 21 to 23; 17 refuses to start with it (unknown
+		// option) and 24 removed the old mode, so it only warns there.
+		minJava: 15,
+		javaFlags: [{ min: 21, max: 23, flags: '-XX:+ZGenerational' }],
 		builtIn: true
 	},
 	{
@@ -129,6 +132,19 @@ export function listPresets(): JvmPreset[] {
 
 export function getPreset(id: string): JvmPreset | null {
 	return listPresets().find((p) => p.id === id) ?? null;
+}
+
+/** A preset's flags for one Java version; with the version unknown, the ones every supported version takes. */
+export function presetFlags(preset: JvmPreset, javaMajor: number | null): string {
+	const extra = (preset.javaFlags ?? [])
+		.filter((f) => javaMajor !== null && javaMajor >= f.min && javaMajor <= f.max)
+		.map((f) => f.flags);
+	return [preset.flags, ...extra].filter(Boolean).join(' ');
+}
+
+/** Whether a Java version starts with the preset's flags (unknown counts as yes; the launch check catches it). */
+export function presetRunsOn(preset: JvmPreset, javaMajor: number | null): boolean {
+	return javaMajor === null || !preset.minJava || javaMajor >= preset.minJava;
 }
 
 /** Strips memory flags so a saved preset never fights the memory fields. */

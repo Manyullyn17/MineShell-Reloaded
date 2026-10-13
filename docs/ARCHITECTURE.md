@@ -771,6 +771,10 @@ its tab is closed, so the search can look through all of them. Things that act a
 commands, copy and delete) keep their own buttons. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
 preset" posts to `/settings?/savePreset`, and only MineShell settings deletes one.
+A preset's flags can depend on the server's Java (`presetFlags`, `minJava`): ZGC needs 15+,
+and `-XX:+ZGenerational` goes in only on 21-23 (17 refuses to start with it, 24+ warns that
+it is ignored). Applying refuses a preset the server's Java cannot run; a new server whose
+Java cannot run the default preset gets Aikar.
 Java & memory saves through two actions: `memory` (heap sizes; it rebuilds `-Xms`/`-Xmx` in
 the stored JVM arguments) and `launch` (Java binary, JVM flags, launch arguments). Those three
 can run any program on the machine, so nothing that only changes memory may change them. The

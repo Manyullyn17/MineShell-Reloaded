@@ -26,7 +26,7 @@ function fakeInstall() {
 	});
 }
 
-async function newServer(fields: { memoryMaxMb?: number; memoryMinMb?: number } = {}) {
+async function newServer(fields: { memoryMaxMb?: number; memoryMinMb?: number; minecraftVersion?: string } = {}) {
 	const { instance, taskId } = await createFromLoader({ name: 'Defaults', minecraftVersion: '1.21.1', modloader: 'fabric', ...fields });
 	expect((await waitForTask(taskId)).state).toBe('done');
 	return reload(instance.id);
@@ -86,6 +86,21 @@ describe('defaults for new servers', () => {
 		// What MineShell assigns per server is never a default.
 		expect(props['server-port']).toBe(String(row.serverPort));
 		expect(props.motd).toBe('Defaults');
+	});
+
+	it('fits the default preset to the new server’s Java', async () => {
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), jvmPreset: 'zgc' });
+		// Java 21 takes -XX:+ZGenerational; Java 17 refuses to start with it.
+		expect((await newServer()).jvmArgs).toContain('-XX:+UseZGC -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+PerfDisableSharedMem -XX:+ZGenerational');
+		addJava(17);
+		const java17 = await newServer({ minecraftVersion: '1.20.1' });
+		expect(java17.jvmArgs).toContain('-XX:+UseZGC');
+		expect(java17.jvmArgs).not.toContain('ZGenerational');
+		// Java 8 has no ZGC at all: the server gets Aikar's flags.
+		addJava(8);
+		const java8 = await newServer({ minecraftVersion: '1.16.5' });
+		expect(java8.jvmArgs).not.toContain('ZGC');
+		expect(java8.jvmArgs).toContain('-XX:+UseG1GC');
 	});
 
 	it('lets the add-a-server form override the memory defaults', async () => {

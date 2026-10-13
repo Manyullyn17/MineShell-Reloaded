@@ -8,7 +8,7 @@ import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { copyGrants, makeCreatorAdmin } from './accounts';
 import { currentActor } from './requestcontext';
-import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
+import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, presetFlags, presetRunsOn, stripJava8OnlyFlags } from './jvm-presets';
 import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
 import {
 	defaultProperties,
@@ -190,11 +190,14 @@ export type CreateInstanceInput = {
 	creatorId?: string | null;
 };
 
-function jvmArgsFor(presetId: string, minMb: number, maxMb: number): string {
+function jvmArgsFor(presetId: string, minMb: number, maxMb: number, javaMajor: number): string {
 	// A preset, so a new instance starts from something that is still
-	// reselectable later rather than a one-off string.
-	const preset = getPreset(presetId) ?? getPreset('aikar') ?? BUILT_IN_PRESETS[0];
-	return composeJvmArgs(preset.flags, minMb, maxMb);
+	// reselectable later rather than a one-off string. One its Java cannot
+	// start with (the default set to ZGC, a 1.12 server on Java 8) gives way.
+	const fallback = getPreset('aikar') ?? BUILT_IN_PRESETS[0];
+	const chosen = getPreset(presetId);
+	const preset = chosen && presetRunsOn(chosen, javaMajor) ? chosen : fallback;
+	return composeJvmArgs(presetFlags(preset, javaMajor), minMb, maxMb);
 }
 
 /** server.properties for a new server: built-in values, the stored defaults over them, then what MineShell assigns. */
@@ -239,6 +242,8 @@ async function insertInstanceRow(
 	const defaults = getInstanceDefaults();
 	const maxMb = input.memoryMaxMb ?? defaultMaxMb(defaults);
 	const minMb = Math.min(input.memoryMinMb ?? defaults.memoryMinMb, maxMb);
+	// The Java it will run on; before a download that is the one it needs.
+	const java = resolveJava({ ...input, explicitPath: input.javaPath ?? null });
 	const now = Date.now();
 
 	db.insert(serverInstances)
@@ -255,7 +260,7 @@ async function insertInstanceRow(
 			packVersionId: input.packVersionId ?? null,
 			packVersionName: input.packVersionName ?? null,
 			launchArgs: '-jar server.jar nogui',
-			jvmArgs: jvmArgsFor(defaults.jvmPreset, minMb, maxMb),
+			jvmArgs: jvmArgsFor(defaults.jvmPreset, minMb, maxMb, java.majorVersion ?? java.requiredMajor),
 			memoryMinMb: minMb,
 			memoryMaxMb: maxMb,
 			...defaults.restarts,

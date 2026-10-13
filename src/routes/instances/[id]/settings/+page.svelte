@@ -1127,7 +1127,9 @@
 					<select id="applyPreset" name="applyPreset" bind:value={presetToApply}>
 						<option value="">Keep the current flags</option>
 						{#each data.jvmPresets as preset (preset.id)}
-							<option value={preset.id}>{preset.name}{preset.builtIn ? '' : ' (saved)'}</option>
+							<option value={preset.id} disabled={!preset.runs}
+								>{preset.name}{preset.builtIn ? '' : ' (saved)'}{preset.runs ? '' : ` - not on Java ${data.javaResolution.majorVersion}`}</option
+							>
 						{/each}
 					</select>
 					{#if presetToApply}

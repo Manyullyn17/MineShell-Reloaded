@@ -101,6 +101,7 @@
 					{/each}
 				</select>
 				{#if preset?.description}<p class="hint">{preset.description}</p>{/if}
+				{#if preset?.minJava}<p class="hint">A new server whose Java is older than {preset.minJava} gets Aikar instead.</p>{/if}
 			</div>
 		</div>
 	</section>

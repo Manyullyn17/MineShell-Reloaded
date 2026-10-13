@@ -75,6 +75,8 @@ import {
 	composeJvmArgs,
 	getPreset,
 	listPresets,
+	presetFlags,
+	presetRunsOn,
 	stripMemoryFlags
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
@@ -124,7 +126,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		versions,
-		jvmPresets: listPresets(),
+		// The flags as they would be applied with the server's current Java.
+		jvmPresets: listPresets().map((p) => ({
+			...p,
+			flags: presetFlags(p, java.majorVersion),
+			runs: presetRunsOn(p, java.majorVersion)
+		})),
 		// Streamed: it may search the journal for an out-of-memory crash.
 		memoryAdvice: memoryAdvice(instance).catch(() => null),
 		playit: {
@@ -447,18 +454,24 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: 'That preset no longer exists.' });
 		}
 
-		const body = preset ? preset.flags : stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
+		// The manual path field wins when it says something different, so a
+		// runtime that was never scanned can still be used. A form without
+		// either field keeps the current choice.
+		const javaPath =
+			form.has('javaPath') || form.has('javaPathManual')
+				? String(form.get('javaPathManual') ?? '').trim() || String(form.get('javaPath') ?? '').trim() || null
+				: instance.javaPath;
+		const javaMajor = resolveJava({ ...instance, explicitPath: javaPath }).majorVersion;
+		if (preset && !presetRunsOn(preset, javaMajor)) {
+			return fail(400, { ok: false, message: `${preset.name} needs Java ${preset.minJava} or newer; this server runs Java ${javaMajor}.` });
+		}
+
+		const body = preset ? presetFlags(preset, javaMajor) : stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
 		db.update(serverInstances)
 			.set({
 				jvmArgs: composeJvmArgs(body, instance.memoryMinMb ?? 1024, instance.memoryMaxMb ?? 4096),
 				launchArgs: String(form.get('launchArgs') ?? instance.launchArgs).trim(),
-				// The manual path field wins when it says something different, so a
-				// runtime that was never scanned can still be used. A form without
-				// either field keeps the current choice.
-				javaPath:
-					form.has('javaPath') || form.has('javaPathManual')
-						? String(form.get('javaPathManual') ?? '').trim() || String(form.get('javaPath') ?? '').trim() || null
-						: instance.javaPath,
+				javaPath,
 				updatedAt: Date.now()
 			})
 			.where(eq(serverInstances.id, instance.id))

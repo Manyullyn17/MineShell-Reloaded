@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import { getInstance } from '#lib/server/instances.js';
-import { createInstance } from '../../../../../tests/helpers/instances';
+import { addJava, clearJava, createInstance } from '../../../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses } from '../../../../../tests/helpers/process';
 
 afterEach(resetProcesses);
@@ -53,6 +53,23 @@ describe('memory and launch settings', () => {
 			launchArgs: '-jar other.jar nogui',
 			memoryMaxMb: 4096
 		});
+	});
+
+	it('applies a preset with the flags for the server’s Java, and refuses one it cannot start with', async () => {
+		fakeProcesses(() => ({}));
+		clearJava();
+		const java21 = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', memoryMinMb: 1024, memoryMaxMb: 4096, javaPath: addJava(21) });
+		expect(await post(actions.launch, java21.id, { applyPreset: 'zgc', launchArgs: '-jar server.jar nogui' })).toMatchObject({ ok: true });
+		expect(getInstance(java21.id)!.jvmArgs).toBe('-Xms1024M -Xmx4096M -XX:+UseZGC -XX:+AlwaysPreTouch -XX:+DisableExplicitGC -XX:+PerfDisableSharedMem -XX:+ZGenerational');
+
+		const java17 = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.20.1', javaPath: addJava(17) });
+		await post(actions.launch, java17.id, { applyPreset: 'zgc', launchArgs: '-jar server.jar nogui' });
+		expect(getInstance(java17.id)!.jvmArgs).not.toContain('ZGenerational');
+
+		const java8 = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2', jvmArgs: '-Xms1024M -Xmx2048M -XX:+UseG1GC', javaPath: addJava(8) });
+		expect(await post(actions.launch, java8.id, { applyPreset: 'zgc', launchArgs: '-jar server.jar nogui' })).toMatchObject({ status: 400 });
+		expect(getInstance(java8.id)!.jvmArgs).toBe('-Xms1024M -Xmx2048M -XX:+UseG1GC');
+		clearJava();
 	});
 
 	it('memory refuses a starting size above the maximum', async () => {
