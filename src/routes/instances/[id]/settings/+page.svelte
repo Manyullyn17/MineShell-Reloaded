@@ -184,6 +184,14 @@
 	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
 	let playitRegion = $state('global');
 	let presetToApply = $state('');
+	// The preset the flags in the box are, ignoring order and the memory flags.
+	const flagSet = (flags: string) =>
+		flags
+			.split(/\s+/)
+			.filter((f) => f && !/^-Xm[sx]/.test(f))
+			.sort()
+			.join(' ');
+	const currentPreset = $derived(data.jvmPresets.find((p) => flagSet(p.flags) === flagSet(sv.jvmArgs ?? '')) ?? null);
 	let presetName = $state('');
 	let showSavePreset = $state(false);
 	let commandMode = $state<'interval' | 'daily'>('interval');
@@ -1137,6 +1145,10 @@
 						{#if chosen}
 							<p class="hint">{chosen.description} Saving replaces the arguments below; memory flags come from Memory either way.</p>
 						{/if}
+					{:else}
+						<p class="hint">
+							{#if currentPreset}The current flags are the {currentPreset.name} preset.{:else}The current flags match no preset.{/if}
+						</p>
 					{/if}
 				</div>
 				{#if presetToApply}
