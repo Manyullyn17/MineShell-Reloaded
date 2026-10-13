@@ -47,5 +47,12 @@ describe('JVM flag presets', () => {
 
 	it('need a name', async () => {
 		expect(await post(actions.savePreset, { presetName: ' ', jvmArgs: '-XX:+UseG1GC' })).toMatchObject({ status: 400 });
+		// The id comes from the name: "!!!" and "???" would be one preset.
+		expect(await post(actions.savePreset, { presetName: '!!!', jvmArgs: '-XX:+UseG1GC' })).toMatchObject({ status: 400 });
+	});
+
+	it('cannot take a built-in preset’s name, which would show twice in the picker', async () => {
+		expect(await post(actions.savePreset, { presetName: 'aikar (Recommended)', jvmArgs: '-XX:+UseG1GC' })).toMatchObject({ status: 400 });
+		expect(listPresets().filter((p) => p.name.toLowerCase() === 'aikar (recommended)')).toHaveLength(1);
 	});
 });

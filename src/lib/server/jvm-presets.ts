@@ -186,12 +186,16 @@ export function stripJava8OnlyFlags(flags: string): { flags: string; removed: st
 
 export function saveCustomPreset(name: string, flags: string): JvmPreset {
 	const trimmed = name.trim();
-    if (!trimmed) throw new Error('A preset needs a name.');
+	if (!trimmed) throw new Error('A preset needs a name.');
 
 	const custom = readCustom();
-	const id = `custom:${trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
-	if (BUILT_IN_PRESETS.some((p) => p.id === id)) {
-		throw new Error('That name collides with a built-in preset. Pick another.');
+	const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+	// The id is made from the name, so a name of only symbols would share one.
+	if (!slug) throw new Error('A preset name needs a letter or a digit.');
+	const id = `custom:${slug}`;
+	// Saved ids never equal a built-in's (custom: prefix); the names can.
+	if (BUILT_IN_PRESETS.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
+		throw new Error('That is the name of a built-in preset. Pick another.');
 	}
 
 	const entry: StoredPreset = {
