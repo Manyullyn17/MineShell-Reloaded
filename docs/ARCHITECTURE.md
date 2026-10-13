@@ -675,6 +675,13 @@ status). A server the account may not see is "Another server" in port messages, 
 another server's port to make room needs `settings.edit` on it. A visitor who is not signed in
 has no access (`NO_ACCESS`), never the full access `MINESHELL_AUTH=off` gives.
 
+Pages show only what the account may use, from the same `can()`: the root layout hands every
+page `access` (the account's own permissions, nothing secret), and tabs, header actions, buttons
+and links are left out without the permission. Lists an account may look at but not change
+(installed mods, a player's data, the whitelist switch) stay, disabled; a server's Settings
+sections it may not change get `editable={false}` (`SettingsSection`: a disabled fieldset, "view
+only"). This is for the eye only: the route policy and handlers decide.
+
 Access is given on an account's page under Accounts: per server "No access", chosen permissions
 (grouped, the full-trust ones marked, player data as nobody's, every player's or chosen
 players' with a picker of the server's known players), or admin of the server. Choosing admin

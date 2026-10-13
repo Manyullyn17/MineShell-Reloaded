@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { tick } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
@@ -7,6 +8,8 @@
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	const keepValues = () => async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) =>
 		update({ reset: false });
@@ -160,6 +163,7 @@
 			role="switch"
 			aria-checked={data.lists.whitelistEnforced}
 			aria-label="Whitelist"
+			disabled={!may('players.manage')}
 		></button>
 		<span>
 			<strong>Whitelist {data.lists.whitelistEnforced ? 'on' : 'off'}</strong>
@@ -169,7 +173,7 @@
 		</span>
 	</form>
 
-	<button type="button" class="button button-primary" onclick={openAdd}>Add access</button>
+	{#if may('players.manage')}<button type="button" class="button button-primary" onclick={openAdd}>Add access</button>{/if}
 </section>
 
 {#if !panelMode && !hideActionNotice}<Flash {form} />{/if}
@@ -240,11 +244,12 @@
 					{/if}
 					{#if selectedPerson.op}
 						<span class="tag accent">Operator{selectedPerson.op.level ? ` · level ${selectedPerson.op.level}` : ''}</span>
-					{:else}
+					{:else if may('console.command')}
 						<form method="POST" action="?/add" use:enhance><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="ops" />{#if !data.lists.serverRunning}<input type="hidden" name="level" value="4" />{/if}<button>Make operator</button></form>
 					{/if}
 				</div>
-				{#if selectedPerson.op}
+				<!-- An operator runs commands in the game: managing them is console access too. -->
+				{#if selectedPerson.op && may('console.command')}
 					<div class="operator-settings">
 						<div class="operator-heading">
 							<div><strong>Operator settings</strong><p class="small muted">Permission level and player limit access.</p></div>
@@ -373,10 +378,12 @@
 							{/if}
 						</td>
 						<td class="right nowrap">
-							{#if person.file}
+							{#if person.file && can(data.access, data.instance.id, 'players.data.view', person.file.uuid)}
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
-							<button type="button" class="button-quiet" onclick={(event) => openManage(person, event)}>Manage</button>
+							{#if may('players.manage')}
+								<button type="button" class="button-quiet" onclick={(event) => openManage(person, event)}>Manage</button>
+							{/if}
 						</td>
 					</tr>
 				{/each}
@@ -392,6 +399,7 @@
 	</p>
 {/if}
 
+{#if may('players.manage')}
 <details class="extra" open={data.lists.ipBans.length > 0}>
 	<summary>IP bans ({data.lists.ipBans.length})</summary>
 	{#if data.lists.ipBans.length === 0}
@@ -423,6 +431,7 @@
 		</div>
 	{/if}
 </details>
+{/if}
 
 {#if unnamedFiles.length}
 	<details class="extra">

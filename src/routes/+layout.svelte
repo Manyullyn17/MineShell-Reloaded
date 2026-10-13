@@ -58,7 +58,7 @@
 						Update {data.updateAvailable}
 					</a>
 				{/if}
-				<NotificationCenter running={data.runningTasks} />
+				<NotificationCenter running={data.runningTasks} access={data.access} />
 				<span class="topbar-theme">
 					<label class="visually-hidden" for="theme-select">Theme</label>
 					{@render themeSelect('theme-select')}
@@ -74,7 +74,9 @@
 			<div class="rail-section">
 				<div class="rail-heading">
 					<span>Servers</span>
-					<a href="/instances/new" title="Add a server" aria-label="Add a server" onclick={() => (railOpen = false)}>+</a>
+					{#if data.access.canCreate}
+						<a href="/instances/new" title="Add a server" aria-label="Add a server" onclick={() => (railOpen = false)}>+</a>
+					{/if}
 				</div>
 				{#if instances.length === 0}
 					<p class="rail-empty">No servers yet.</p>
@@ -124,14 +126,16 @@
 				<a class="rail-link" class:current={page.url.pathname === '/tasks'} href="/tasks" onclick={() => (railOpen = false)}>
 					Activity
 				</a>
-				<a
-					class="rail-link"
-					class:current={page.url.pathname.startsWith('/settings')}
-					href="/settings"
-					onclick={() => (railOpen = false)}
-				>
-					MineShell settings
-				</a>
+				{#if data.access.globalAdmin}
+					<a
+						class="rail-link"
+						class:current={page.url.pathname.startsWith('/settings')}
+						href="/settings"
+						onclick={() => (railOpen = false)}
+					>
+						MineShell settings
+					</a>
+				{/if}
 				{#if data.authRequired}
 					<a
 						class="rail-link"

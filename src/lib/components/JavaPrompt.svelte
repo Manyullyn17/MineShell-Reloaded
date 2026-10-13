@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	/**
 	 * Shown inside a form whose submission came back with a missing Java. Its
 	 * buttons submit the same form again with `downloadJava` set, so the
@@ -26,8 +27,8 @@
 			<button type="submit" name="downloadJava" value="zulu">Azul Zulu {missing.major}</button>
 		</div>
 		<p class="hint">
-			Kept in MineShell's data folder and matched automatically from then on. Downloaded runtimes are listed
-			in <a href="/settings">MineShell settings</a>.
+			Kept in MineShell's data folder and matched automatically from then on.{#if page.data.access?.globalAdmin}
+				Downloaded runtimes are listed in <a href="/settings?tab=java">MineShell settings</a>.{/if}
 		</p>
 	</div>
 {/if}

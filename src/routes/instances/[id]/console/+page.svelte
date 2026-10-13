@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can } from '#lib/shared/access.js';
 	import { refreshAll } from '$app/navigation';
 	import Console from '#lib/components/Console.svelte';
 
@@ -36,6 +37,7 @@
 	instanceId={data.instance.id}
 	bufferLines={data.bufferLines}
 	canSend={data.running}
+	mayCommand={can(data.access, data.instance.id, 'console.command')}
 	resetKey={consoleGeneration}
 	macros={data.macros}
 />

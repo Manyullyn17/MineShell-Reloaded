@@ -168,6 +168,10 @@ export function can(
 	return grant.permissions.some((held) => held === permission || IMPLIES[held]?.includes(permission));
 }
 
+/** Who may cancel a task: admins of its server; one of no server (a Java download, an update), global admins. */
+export const mayCancelTask = (access: Access, task: { instanceId: string | null }): boolean =>
+	task.instanceId ? can(access, task.instanceId, 'admin') : access.globalAdmin;
+
 /** Everything allowed: what the owner has, and what MINESHELL_AUTH=off gives every request. */
 export const FULL_ACCESS: Access = { owner: true, globalAdmin: true, canCreate: true, instances: {} };
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { untrack } from 'svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
@@ -13,6 +14,8 @@
 	import { formatBytes } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	// ------------------------------------------------- the mod bisect assistant
 	const bisect = $derived(data.bisect.state);
@@ -481,12 +484,16 @@
 		<button type="button" aria-current={view === 'installed' ? 'page' : undefined} onclick={() => (view = 'installed')}>
 			Installed<span class="count">{data.counts.total}</span>
 		</button>
-		<button type="button" aria-current={view === 'updates' ? 'page' : undefined} onclick={() => (view = 'updates')}>
-			Updates{#if updateCheck?.updates.length}<span class="badge">{updateCheck.updates.length}</span>{/if}
-		</button>
-		<button type="button" aria-current={view === 'browse' ? 'page' : undefined} onclick={() => (view = 'browse')}>
-			Add mods
-		</button>
+		{#if may('mods')}
+			<button type="button" aria-current={view === 'updates' ? 'page' : undefined} onclick={() => (view = 'updates')}>
+				Updates{#if updateCheck?.updates.length}<span class="badge">{updateCheck.updates.length}</span>{/if}
+			</button>
+		{/if}
+		{#if may('mods') || may('datapacks')}
+			<button type="button" aria-current={view === 'browse' ? 'page' : undefined} onclick={() => (view = 'browse')}>
+				{may('mods') ? 'Add mods' : 'Add data packs'}
+			</button>
+		{/if}
 		<button type="button" aria-current={view === 'datapacks' ? 'page' : undefined} onclick={() => (view = 'datapacks')}>
 			Data packs<span class="count">{data.datapacks.packs.length}</span>
 		</button>
@@ -510,6 +517,7 @@
 				<input type="search" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
 			</span>
 		{/if}
+		{#if may('mods')}
 		<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance bind:this={uploadForm}>
 			<label class="button upload">
 				Upload jars
@@ -534,7 +542,10 @@
 				{syncing ? 'Syncing' : 'Sync'}
 			</button>
 		</form>
-		<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
+		{/if}
+		{#if may('files')}
+			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
+		{/if}
 	</div>
 </div>
 
@@ -570,11 +581,13 @@
 				{data.counts.missing} record{data.counts.missing === 1 ? '' : 's'} with no matching file.
 			{/if}
 		</p>
-		<form method="POST" action="?/sync" use:enhance={syncEnhance}>
-			<button class="button-quiet" type="submit" disabled={syncing}>
-				{syncing ? 'Syncing' : 'Sync mods with database'}
-			</button>
-		</form>
+		{#if may('mods')}
+			<form method="POST" action="?/sync" use:enhance={syncEnhance}>
+				<button class="button-quiet" type="submit" disabled={syncing}>
+					{syncing ? 'Syncing' : 'Sync mods with database'}
+				</button>
+			</form>
+		{/if}
 	</div>
 {/if}
 
@@ -590,9 +603,11 @@
 							{bisect.suspects}. The server starts on a throwaway world; yours is not touched.
 						</p>
 					</div>
-					<form method="POST" action="?/bisectCancel" use:enhance>
-						<button type="submit" class="button-danger">Cancel</button>
-					</form>
+					{#if may('mods')}
+						<form method="POST" action="?/bisectCancel" use:enhance>
+							<button type="submit" class="button-danger">Cancel</button>
+						</form>
+					{/if}
 				</div>
 				<div class="progress" role="progressbar" aria-valuenow={Math.round((bisect.tests.length / bisect.estimate) * 100)}>
 					<span style="width: {Math.min(100, (bisect.tests.length / bisect.estimate) * 100)}%"></span>
@@ -608,9 +623,11 @@
 								? 'Search cancelled'
 								: 'The search did not find a mod'}
 					</h2>
-					<form method="POST" action="?/bisectDismiss" use:enhance>
-						<button type="submit" class="button-quiet">Dismiss</button>
-					</form>
+					{#if may('mods')}
+						<form method="POST" action="?/bisectDismiss" use:enhance>
+							<button type="submit" class="button-quiet">Dismiss</button>
+						</form>
+					{/if}
 				</div>
 				{#if bisect.status === 'found'}
 					<p class="small muted">
@@ -622,13 +639,13 @@
 						{#each bisect.culprits as file (file)}
 							<li>
 								<span><strong>{modName(file)}</strong> <span class="faint small mono">{file}</span></span>
-								{#if data.mods.some((m) => m.fileName === file)}
+								{#if data.mods.some((m) => m.fileName === file) && may('mods')}
 									<form method="POST" action="?/toggle" use:enhance>
 										<input type="hidden" name="fileName" value={file} />
 										<input type="hidden" name="enabled" value="false" />
 										<button type="submit">Disable</button>
 									</form>
-								{:else}
+								{:else if !data.mods.some((m) => m.fileName === file)}
 									<span class="faint small">disabled</span>
 								{/if}
 							</li>
@@ -652,7 +669,7 @@
 				</details>
 			{/if}
 		</section>
-	{:else}
+	{:else if may('mods') && may('power')}
 		<details class="bisect-start" bind:open={bisectOpen}>
 			<summary>Find the mod behind a crash</summary>
 			<form method="POST" action="?/bisect" use:enhance class="bisect-form">
@@ -708,7 +725,9 @@
 		{/if}
 	</div>
 
-	<div use:dropzone={{ input: jarInput, label: 'Drop .jar files to add them' }}>
+	<!-- Without mod management the list shows, its switches and buttons disabled. -->
+	<fieldset class="plain" disabled={!may('mods')}>
+	<div use:dropzone={{ input: jarInput, label: 'Drop .jar files to add them', disabled: !may('mods') }}>
 	{#if visible.length === 0}
 		<div class="empty">
 			<p>
@@ -877,6 +896,7 @@
 		</div>
 	{/if}
 	</div>
+	</fieldset>
 	<p class="faint small foot">
 		{data.counts.enabled} of {data.counts.total} enabled. Disabling renames the file to <code>.jar.disabled</code>, which is
 		what the loader looks at.
@@ -1227,6 +1247,7 @@
 							<td class="mono small">{pack.version ?? ''}</td>
 							<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
 							<td class="right">
+								{#if may('datapacks')}
 								<form
 									method="POST"
 									action="?/removeDatapack"
@@ -1243,6 +1264,7 @@
 									<input type="hidden" name="force" value="on" />
 									<button class="button-quiet">Remove</button>
 								</form>
+								{/if}
 							</td>
 						</tr>
 					{/each}
@@ -1253,6 +1275,13 @@
 {/if}
 
 <style>
+	fieldset.plain {
+		border: 0;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
+	}
+
 	.bisect {
 		margin-bottom: var(--space-4);
 	}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
@@ -7,6 +8,8 @@
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	const base = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/world`);
 	const busy = $derived(data.instance.status === 'provisioning');
@@ -157,7 +160,7 @@
 
 <div class="subhead">
 	<nav class="subtabs" aria-label="World sections">
-		{#each [['snapshots', 'Snapshots'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const as [id, label] (id)}
+		{#each ([['snapshots', 'Snapshots'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || may('world')) as [id, label] (id)}
 			<button type="button" aria-current={view === id ? 'page' : undefined} onclick={() => (view = id)}>{label}</button>
 		{/each}
 	</nav>
@@ -197,17 +200,20 @@
 					No world yet; the server creates <code>{data.levelName}</code> on its first start.
 				{/if}
 				At least the newest {data.snapshotPrompt.policy.keepMin} full and {data.snapshotPrompt.policy.partialMin} partial
-				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)} (<a
-					href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=snapshots">Settings</a>), plus any you pin. Restoring keeps
+				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)}{#if may('settings.view')}
+					(<a href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=snapshots">Settings</a>){/if}, plus any pinned. Restoring keeps
 				the current world as a snapshot first, unless you choose otherwise.
 			</p>
 		</div>
 		{#if data.worlds.length}
 			<div class="button-row">
-				<a class="button" href={base} download>Download as zip</a>
-				<form method="POST" action="?/snapshot" use:enhance>
-					<button type="submit" disabled={data.running || busy}>Snapshot now</button>
-				</form>
+				<!-- A world zip holds every player's data: file access. -->
+				{#if may('files')}<a class="button" href={base} download>Download as zip</a>{/if}
+				{#if may('backups.create')}
+					<form method="POST" action="?/snapshot" use:enhance>
+						<button type="submit" disabled={data.running || busy}>Snapshot now</button>
+					</form>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -264,31 +270,40 @@
 						<td class="mono small nowrap">{formatBytes(s.sizeBytes)}</td>
 						<td>
 							<div class="row-actions">
-								<form method="POST" action="?/pinSnapshot" use:enhance>
-									<input type="hidden" name="id" value={s.id} />
-									<input type="hidden" name="pinned" value={String(!s.pinned)} />
+								<!-- Unpinning lets retention delete it: that takes snapshot deletion. -->
+								{#if s.pinned ? may('backups.delete') : may('backups.create')}
+									<form method="POST" action="?/pinSnapshot" use:enhance>
+										<input type="hidden" name="id" value={s.id} />
+										<input type="hidden" name="pinned" value={String(!s.pinned)} />
+										<button
+											type="submit"
+											class="button-quiet"
+											title={s.pinned ? 'Let it be deleted to make room again' : 'Keep it until unpinned; it does not count towards the limit'}
+										>
+											{s.pinned ? 'Unpin' : 'Pin'}
+										</button>
+									</form>
+								{/if}
+								{#if may('backups.create')}
+									<button type="button" class="button-quiet" title="Name and tags" onclick={() => openRow('edit', s.id)}>Edit</button>
+								{/if}
+								{#if may('files')}<a class="button button-quiet" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>{/if}
+								{#if may('backups.restore')}
 									<button
-										type="submit"
+										type="button"
 										class="button-quiet"
-										title={s.pinned ? 'Let it be deleted to make room again' : 'Keep it until unpinned; it does not count towards the limit'}
+										disabled={data.running || busy}
+										onclick={() => openRow('restore', s.id)}>Restore</button
 									>
-										{s.pinned ? 'Unpin' : 'Pin'}
-									</button>
-								</form>
-								<button type="button" class="button-quiet" title="Name and tags" onclick={() => openRow('edit', s.id)}>Edit</button>
-								<a class="button button-quiet" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>
-								<button
-									type="button"
-									class="button-quiet"
-									disabled={data.running || busy}
-									onclick={() => openRow('restore', s.id)}>Restore</button
-								>
-								<button
-									type="button"
-									class="button-quiet"
-									disabled={busy}
-									onclick={() => openRow('delete', s.id)}>Delete</button
-								>
+								{/if}
+								{#if may('backups.delete')}
+									<button
+										type="button"
+										class="button-quiet"
+										disabled={busy}
+										onclick={() => openRow('delete', s.id)}>Delete</button
+									>
+								{/if}
 							</div>
 						</td>
 					</tr>

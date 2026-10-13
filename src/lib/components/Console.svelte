@@ -14,12 +14,15 @@
 		instanceId,
 		bufferLines = 2000,
 		canSend = true,
+		mayCommand = true,
 		resetKey = null,
 		macros = []
 	}: {
 		instanceId: string;
 		bufferLines?: number;
 		canSend?: boolean;
+		/** False: output only, no command line or saved commands (the account may read, not send). */
+		mayCommand?: boolean;
 		/** Bump this (any changed value) to clear the view without reconnecting. */
 		resetKey?: unknown;
 		/** Saved commands for this server (lib/server/macros.ts). */
@@ -416,6 +419,7 @@
 	</div>
 
 	<div class="below" bind:this={below}>
+		{#if mayCommand}
 		{#if macroList.length}
 			<div class="macros" aria-label="Saved commands">
 				<span class="faint">Saved</span>
@@ -481,6 +485,7 @@
 				Send
 			</button>
 		</form>
+		{/if}
 	</div>
 </div>
 

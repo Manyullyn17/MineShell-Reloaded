@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { mayCancelTask } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatDateTime, formatDuration } from '#lib/shared/format.js';
@@ -62,7 +63,7 @@
 						</div>
 					</div>
 					<div class="row">
-						{#if task.state === 'running'}
+						{#if task.state === 'running' && mayCancelTask(data.access, task)}
 							<form method="POST" action="?/cancel" use:enhance>
 								<input type="hidden" name="id" value={task.id} />
 								<button class="button-quiet button-danger">Cancel</button>

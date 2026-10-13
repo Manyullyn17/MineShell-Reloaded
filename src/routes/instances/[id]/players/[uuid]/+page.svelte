@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can } from '#lib/shared/access.js';
 	import { tick } from 'svelte';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
@@ -114,7 +115,11 @@
 	/** Results go to a toast: one message for the item panel and the page alike, closable, gone after a few seconds. */
 	const report = (ok: boolean, message: string) => message && toast({ tone: ok ? 'ok' : 'error', message });
 	let busy = $state(false);
-	const locked = $derived(!!data.locked);
+	// This player's data may be changed by this account (the server checks again)...
+	const mayEdit = $derived(can(data.access, data.instance.id, 'players.data.edit', data.uuid));
+	// ...and fields shown for every player need every player.
+	const mayMap = $derived(can(data.access, data.instance.id, 'players.data.edit', 'all'));
+	const locked = $derived(!!data.locked || !mayEdit);
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}/players`);
 	const samePath = (a: Path, b: Path) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -173,7 +178,7 @@
 	const kindFor = (tag: TreeTag) =>
 		tag.type === 'list' ? 'list' : tag.type === 'string' ? 'text' : tag.type === 'byte' ? 'checkbox' : 'number';
 	const fieldAction = $derived(
-		locked
+		locked || !mayMap
 			? null
 			: remapping
 				? {
@@ -649,10 +654,12 @@
 	</nav>
 </div>
 
-{#if data.locked}
+{#if !mayEdit}
+	<div class="notice"><p>View only: your account may look at this player's data, not change it.</p></div>
+{:else if data.locked}
 	<div class="notice warning spread">
 		<p>{data.locked}</p>
-		{#if data.online && data.name}<button type="button" onclick={kick} disabled={busy}>Kick to edit</button>{/if}
+		{#if data.online && data.name && can(data.access, data.instance.id, 'players.manage')}<button type="button" onclick={kick} disabled={busy}>Kick to edit</button>{/if}
 	</div>
 {/if}
 
@@ -676,10 +683,12 @@
 						<p class="small">{c.problem}</p>
 						<p class="mono small faint">{c.path.join(' › ')}</p>
 					{/if}
-					<span class="custom-actions">
-						<button type="button" class="button-quiet" disabled={locked} onclick={() => (remapping = c)}>Remap</button>
-						<button type="button" class="button-quiet button-danger" disabled={busy} onclick={() => post('removeField', { id: String(c.id) })}>Remove</button>
-					</span>
+					{#if mayMap}
+						<span class="custom-actions">
+							<button type="button" class="button-quiet" disabled={locked} onclick={() => (remapping = c)}>Remap</button>
+							<button type="button" class="button-quiet button-danger" disabled={busy} onclick={() => post('removeField', { id: String(c.id) })}>Remove</button>
+						</span>
+					{/if}
 				</div>
 			{/each}
 		</div>

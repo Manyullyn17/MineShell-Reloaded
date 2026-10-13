@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
@@ -17,17 +18,20 @@
 	const publicInfo = streamed(() => data.publicAddress, () => data.instance.id);
 	const publicAddress = $derived(publicInfo.ready ? (publicInfo.value?.address ?? null) : null);
 
-	const tabs = [
-		{ slug: '', label: 'Overview' },
-		{ slug: 'console', label: 'Console' },
-		{ slug: 'logs', label: 'Logs' },
-		{ slug: 'mods', label: 'Mods' },
-		{ slug: 'world', label: 'World' },
-		{ slug: 'map', label: 'Map' },
-		{ slug: 'players', label: 'Players' },
-		{ slug: 'files', label: 'Files' },
-		{ slug: 'settings', label: 'Settings' }
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission | 'admin') => can(data.access, data.instance.id, permission);
+	const allTabs: { slug: string; label: string; need: InstancePermission }[] = [
+		{ slug: '', label: 'Overview', need: 'view' },
+		{ slug: 'console', label: 'Console', need: 'console.read' },
+		{ slug: 'logs', label: 'Logs', need: 'console.read' },
+		{ slug: 'mods', label: 'Mods', need: 'view' },
+		{ slug: 'world', label: 'World', need: 'view' },
+		{ slug: 'map', label: 'Map', need: 'view' },
+		{ slug: 'players', label: 'Players', need: 'view' },
+		{ slug: 'files', label: 'Files', need: 'files' },
+		{ slug: 'settings', label: 'Settings', need: 'settings.view' }
 	];
+	const tabs = $derived(allTabs.filter((tab) => may(tab.need)));
 
 	const base = $derived(`/instances/${data.instance.id}`);
 	const current = $derived(page.url.pathname.replace(base, '').replace(/^\//, ''));
@@ -118,7 +122,9 @@
 		</div>
 
 		<form class="actions" method="POST" action={actionUrl('power')} use:enhance={inPlace}>
-			{#if data.running}
+			{#if !may('power')}
+				<!-- No buttons to start or stop: the menu still copies the address. -->
+			{:else if data.running}
 				<button name="verb" value="restart">Restart</button>
 				<button class="button-primary" name="verb" value="stop">Save and stop</button>
 			{:else}
@@ -138,7 +144,7 @@
 				{#if menuOpen}
 					<button type="button" class="menu-scrim" aria-label="Close menu" onclick={() => (menuOpen = false)}></button>
 					<div class="menu" class:from-left={menuFromLeft} role="menu">
-						{#if data.running}
+						{#if data.running && may('power')}
 							<div class="menu-head">Stop with a warning</div>
 							{#each delays as minutes (minutes)}
 								<button
@@ -173,21 +179,27 @@
 								<span>Copy public address</span><span class="hint mono">{publicAddress}</span>
 							</button>
 						{/if}
-						<button type="submit" role="menuitem" formaction={actionUrl('pin')}>
-							<span>{data.instance.pinned ? 'Unpin from the top of the list' : 'Pin to top of list'}</span>
-						</button>
-						{#if spark && data.running && !spark.active}
+						{#if may('settings.edit')}
+							<button type="submit" role="menuitem" formaction={actionUrl('pin')}>
+								<span>{data.instance.pinned ? 'Unpin from the top of the list' : 'Pin to top of list'}</span>
+							</button>
+						{/if}
+						{#if spark && data.running && !spark.active && may('console.command')}
 							<button type="submit" role="menuitem" formaction={actionUrl('profile')} name="seconds" value="60">
 								<span>Start a Spark profile</span><span class="hint">60 s</span>
 							</button>
 						{/if}
-						<a role="menuitem" href="{base}/console" onclick={() => (menuOpen = false)}>
-							<span>Open console</span>
-						</a>
-						<a role="menuitem" href="{base}/export" onclick={() => (menuOpen = false)}>
-							<span>Export a client pack</span><span class="hint">Modrinth, CurseForge, Prism</span>
-						</a>
-						{#if data.running}
+						{#if may('console.read')}
+							<a role="menuitem" href="{base}/console" onclick={() => (menuOpen = false)}>
+								<span>Open console</span>
+							</a>
+						{/if}
+						{#if may('files')}
+							<a role="menuitem" href="{base}/export" onclick={() => (menuOpen = false)}>
+								<span>Export a client pack</span><span class="hint">Modrinth, CurseForge, Prism</span>
+							</a>
+						{/if}
+						{#if data.running && may('power')}
 							<div class="menu-head">If it's stuck</div>
 							<button type="submit" role="menuitem" class="danger" name="verb" value="kill">
 								<span>Force stop</span><span class="hint">kills the process</span>
@@ -206,7 +218,7 @@
 				{data.countdown.verb === 'stop' ? 'Stopping' : 'Restarting'} in
 				<strong class="mono">{clock(data.countdown.at - now)}</strong>; players have been warned.
 			</span>
-			<button class="button-quiet" type="submit">Cancel</button>
+			{#if may('power')}<button class="button-quiet" type="submit">Cancel</button>{/if}
 		</form>
 	{/if}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { mayCancelTask, type Access } from '#lib/shared/access.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { formatRelative } from '#lib/shared/format.js';
@@ -12,7 +13,8 @@
 	 * A finished task also changes what the current page shows (a server leaving
 	 * "provisioning", mods appearing), so a completion reloads the page data.
 	 */
-	let { running: initialRunning = 0 }: { running?: number } = $props();
+	/** `access`: the account's, for which tasks it may cancel (the server checks again). */
+	let { running: initialRunning = 0, access }: { running?: number; access: Access } = $props();
 
 	type Task = {
 		id: string;
@@ -211,7 +213,7 @@
 									<div class="small faint">{ended(task)}</div>
 								{/if}
 							</div>
-							{#if task.state === 'running'}
+							{#if task.state === 'running' && mayCancelTask(access, task)}
 								<button type="button" class="button-quiet button-danger cancel" onclick={() => cancel(task)}>Cancel</button>
 							{/if}
 						</li>

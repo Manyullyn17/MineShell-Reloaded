@@ -24,6 +24,7 @@
 		title,
 		description,
 		dirty = false,
+		editable = true,
 		aside,
 		children
 	}: {
@@ -32,6 +33,8 @@
 		description?: Snippet | string;
 		/** Has unsaved changes; marks the heading. */
 		dirty?: boolean;
+		/** False: shown, but every field and button in it disabled (the account may look, not change). */
+		editable?: boolean;
 		/** Actions beside the heading. */
 		aside?: Snippet;
 		children?: Snippet;
@@ -53,6 +56,7 @@
 			{#if view.query}<p class="where">{view.tabLabel(tab)}</p>{/if}
 			<h2>
 				{#if dirty}<span class="changed" title="Unsaved changes"></span>{/if}{title}
+				{#if !editable}<span class="tag view-only">view only</span>{/if}
 			</h2>
 			{#if typeof description === 'string'}
 				{#if description}<p class="desc">{description}</p>{/if}
@@ -60,9 +64,14 @@
 				<p class="desc">{@render description()}</p>
 			{/if}
 		</div>
-		{#if aside}<div class="aside">{@render aside()}</div>{/if}
+		{#if aside && editable}<div class="aside">{@render aside()}</div>{/if}
 	</div>
-	{@render children?.()}
+	{#if editable}
+		{@render children?.()}
+	{:else}
+		<!-- A disabled fieldset disables everything in it, forms nested inside included. -->
+		<fieldset class="view-only-body" disabled>{@render children?.()}</fieldset>
+	{/if}
 </section>
 
 <style>
@@ -72,6 +81,19 @@
 
 	.settings-section[hidden] {
 		display: none;
+	}
+
+	.view-only-body {
+		border: 0;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
+	}
+
+	.view-only {
+		margin-left: var(--space-2);
+		vertical-align: middle;
+		font-weight: 400;
 	}
 
 	.head {

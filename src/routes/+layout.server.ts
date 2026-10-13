@@ -3,17 +3,20 @@ import { recentPlayerCount, summariseAll } from '#lib/server/instances.js';
 import { listTasks } from '#lib/server/tasks.js';
 import { availableUpdate } from '#lib/server/selfupdate.js';
 import { sees, seesTask } from '#lib/server/access.js';
+import { NO_ACCESS } from '#lib/shared/access.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	if (!locals.authenticated) {
-		return { railInstances: [], runningTasks: 0, authRequired: locals.authRequired, path: url.pathname };
+		return { railInstances: [], runningTasks: 0, authRequired: locals.authRequired, path: url.pathname, access: NO_ACCESS };
 	}
 
 	// Only the servers and tasks this account may see; an update only to whoever may install it.
 	const summaries = await summariseAll(sees(locals.access));
 	return {
 		authRequired: locals.authRequired,
+		/** What this account may do (its own permissions), for pages to show only what it can use. The server checks again. */
+		access: locals.access,
 		path: url.pathname,
 		runningTasks: listTasks().filter((t) => t.state === 'running' && seesTask(locals.access)(t)).length,
 		updateAvailable: locals.access.owner ? (availableUpdate()?.version ?? null) : null,

@@ -198,9 +198,8 @@ console, mods, settings, files, backups and more - with player data limited to e
 chosen ones. Whoever adds or copies a server becomes its admin; a copy gives others access only
 when a MineShell admin asks for the same access as the original. A new account or a reset password gets a one-time password the person replaces
 when they first sign in; accounts can be disabled and signed out everywhere. Everyone has an
-account page for their password and where they are signed in. Pages hold only the servers and
-details an account may see; for now, buttons it may not use are refused when pressed rather than
-hidden. Managing the playit.gg and CurseForge connections and updating MineShell are the owner's.
+account page for their password and where they are signed in. Each account sees only its
+servers, the tabs and buttons it may use, and settings it may only look at marked view only. Managing the playit.gg and CurseForge connections and updating MineShell are the owner's.
 
 ## What it does not do
 

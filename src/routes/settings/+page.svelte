@@ -332,6 +332,9 @@
 		</div>
 	{/if}
 
+	{#if !data.access.owner}
+		<p class="muted small">The CurseForge key is managed by the owner account; everyone's installs use it.</p>
+	{:else}
 	<form method="POST" action="?/curseforgeKey" use:enhance class="inline-form">
 		<div class="field grow">
 			<label for="curseforge-key">
@@ -359,6 +362,7 @@
 		<form method="POST" action="?/removeCurseforgeKey" use:enhance class="inline-form">
 			<button class="button-quiet" type="submit">Remove saved key</button>
 		</form>
+	{/if}
 	{/if}
 </section>
 <section class="panel">
@@ -549,7 +553,9 @@
 			{/if}
 			<p class="small"><a href={u.available.url} target="_blank" rel="noreferrer">On GitHub</a></p>
 		</div>
-		{#if u.installed}
+		{#if !data.access.owner}
+			<p class="small muted">Updating MineShell is up to the owner account.</p>
+		{:else if u.installed}
 			<form method="POST" action="?/update" use:enhance={() => async ({ update }) => update({ reset: false })}>
 				<button class="button-primary" type="submit" disabled={!!u.blocker || !!updateTask}>Update to {u.available.version}</button>
 				{#if u.blocker}<p class="small muted">{u.blocker}</p>{/if}
@@ -566,7 +572,7 @@
 	{/if}
 
 	<form method="POST" action="?/checkUpdate" use:enhance class="check-row">
-		<button class="button" type="submit">Check now</button>
+		{#if data.access.owner}<button class="button" type="submit">Check now</button>{/if}
 		<span class="small muted">
 			{#if u.check}
 				Last checked {formatDateTime(u.check.checkedAt)}{#if u.check.error}: <span class="error-text">{u.check.error}</span>{/if}
@@ -577,6 +583,7 @@
 	</form>
 </section>
 
+{#if data.access.owner}
 <section class="panel">
 	<h2>Automatic checks</h2>
 	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
@@ -591,6 +598,7 @@
 		<button class="button" type="submit">Save</button>
 	</form>
 </section>
+{/if}
 {:else if tab === 'activity'}
 <section class="panel">
 	<h2>Recent actions</h2>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
@@ -6,6 +7,8 @@
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	const map = $derived(data.map);
 	const viewUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/view/`);
@@ -34,9 +37,13 @@
 <Flash {form} />
 
 {#snippet installForm(label: string)}
-	<form method="POST" action="?/installMod" use:enhance>
-		<button type="submit">{label}</button>
-	</form>
+	{#if may('mods')}
+		<form method="POST" action="?/installMod" use:enhance>
+			<button type="submit">{label}</button>
+		</form>
+	{:else}
+		<p class="muted small">Someone who manages this server's mods can add it.</p>
+	{/if}
 {/snippet}
 
 {#if map.support.engine === null}
@@ -70,7 +77,7 @@
 			<div class="bar">
 				<p class="small muted">Dynmap draws what changes as the server runs. A world it has not drawn yet stays empty until it is rendered once.</p>
 				<div class="button-row">
-					<form method="POST" action="?/dynmapRender" use:enhance><button type="submit">Render the whole world</button></form>
+					{#if may('map.render')}<form method="POST" action="?/dynmapRender" use:enhance><button type="submit">Render the whole world</button></form>{/if}
 					<a class="button button-quiet" href={liveUrl} target="_blank" rel="noreferrer">Open full screen</a>
 				</div>
 			</div>
@@ -91,6 +98,9 @@
 			BlueMap downloads the Minecraft client from Mojang for the vanilla textures (once, kept in MineShell's data folder), which
 			means accepting Mojang's EULA. BlueMap and a Java 21+ runtime are downloaded the first time if they are not here yet.
 		</p>
+		{#if !may('map.render')}
+			<p class="muted small">Someone who may render this server's map has to set it up first.</p>
+		{:else}
 		<form method="POST" action="?/setup" use:enhance>
 			<label class="check">
 				<input type="checkbox" name="eula" required />
@@ -99,6 +109,7 @@
 			<JavaPrompt {form} action="setup" />
 			<button class="button-primary" type="submit">Render the map</button>
 		</form>
+		{/if}
 	</section>
 {:else}
 	{#if map.mods.blueMap}
@@ -126,12 +137,15 @@
 			{/if}
 		</p>
 		<div class="button-row">
-			<form method="POST" action="?/render" use:enhance>
-				<JavaPrompt {form} action="render" />
-				<button type="submit" disabled={!!map.taskId}>{map.ready ? 'Update map' : 'Render the map'}</button>
-			</form>
+			{#if may('map.render')}
+				<form method="POST" action="?/render" use:enhance>
+					<JavaPrompt {form} action="render" />
+					<button type="submit" disabled={!!map.taskId}>{map.ready ? 'Update map' : 'Render the map'}</button>
+				</form>
+			{/if}
 			{#if map.ready && !map.taskId}
 				<a class="button button-quiet" href={viewUrl} target="_blank" rel="noreferrer">Open full screen</a>
+				{#if may('map.render')}
 				<form
 					method="POST"
 					action="?/delete"
@@ -141,10 +155,12 @@
 				>
 					<button type="submit" class="button-quiet button-danger">Delete map data</button>
 				</form>
+				{/if}
 			{/if}
 		</div>
 	</div>
 
+	{#if may('map.render')}
 	<form method="POST" action="?/schedule" use:enhance={() => async ({ update }) => update({ reset: false })} class="schedule small">
 		<label for="map-every">Update automatically</label>
 		<select id="map-every" name="every" bind:value={every}>
@@ -162,6 +178,7 @@
 			<span class="muted">next {formatRelative(map.settings.nextAt)}</span>
 		{/if}
 	</form>
+	{/if}
 
 	{#if map.ready}
 		{#key frameKey}

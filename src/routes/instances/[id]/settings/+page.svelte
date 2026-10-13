@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { deserialize } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
@@ -26,6 +27,10 @@
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission | 'admin') => can(data.access, data.instance.id, permission);
+	// A copy has every file and makes its maker the copy's admin.
+	const mayCopy = $derived(may('duplicate') && may('files') && data.access.canCreate);
 
 	// Streamed: fetched from Mojang and the loader's servers the first time.
 	// Until they arrive, the pickers hold only the installed version.
@@ -524,7 +529,7 @@
 
 	<!-- ============================================================ General -->
 
-	<SettingsSection tab="general" title="Identity" dirty={dirtyIds.has('identity') || dirtyIds.has('motd')}>
+	<SettingsSection tab="general" title="Identity" editable={may('settings.edit')} dirty={dirtyIds.has('identity') || dirtyIds.has('motd')}>
 		{#snippet description()}
 			The folder and systemd unit (<code class="mono">{data.instance.id}</code>) are fixed at creation, so renaming only changes
 			the label.
@@ -538,7 +543,7 @@
 		{@render propertyForm('motd')}
 	</SettingsSection>
 
-	<SettingsSection tab="general" title="Server icon" description="Shown next to the server in players' server lists.">
+	<SettingsSection tab="general" title="Server icon" editable={may('settings.edit')} description="Shown next to the server in players' server lists.">
 		<div class="block icon-block" use:dropzone={{ label: 'Drop an image to use as the icon' }}>
 			{#if hasIcon}
 				<img src="{iconUrl}?v={iconVersion}" alt="Server icon" width="64" height="64" />
@@ -562,7 +567,7 @@
 	</SettingsSection>
 
 	{#if data.pack}
-		<SettingsSection tab="general" title="Modpack" description="Change the pack version; the world and your own mods stay.">
+		<SettingsSection tab="general" title="Modpack" editable={may('software')} description="Change the pack version; the world and your own mods stay.">
 			<div class="embedded">
 				<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
 				{#if data.packRollback}
@@ -577,7 +582,7 @@
 
 	<!-- Pack servers move with their pack; Cleanroom has its own section below. -->
 	{#if !data.pack && data.settings.modloader !== 'cleanroom'}
-		<SettingsSection tab="general" title="Minecraft version and loader">
+		<SettingsSection tab="general" title="Minecraft version and loader" editable={may('software')}>
 			{#snippet description()}
 				Runs <strong>{data.instance.modloaderLabel}{data.settings.modloader === 'vanilla' ? '' : ` ${data.settings.modloaderVersion ?? ''}`}</strong> on
 				Minecraft <strong>{data.settings.minecraftVersion}</strong>. Moving to a newer Minecraft or another loader reinstalls the
@@ -597,7 +602,7 @@
 	{/if}
 
 	{#if data.settings.modloader !== 'vanilla'}
-		<SettingsSection tab="general" title="{data.instance.modloaderLabel} version">
+		<SettingsSection tab="general" title="{data.instance.modloaderLabel} version" editable={may('software')}>
 			{#snippet description()}
 				Installed: <strong>{data.settings.modloaderVersion ?? 'not recorded'}</strong>. Reinstalls the loader in place; the
 				world, configs and mods are left alone, and the current install is put back if the new one fails.
@@ -647,7 +652,7 @@
 
 	{#if data.cleanroom}
 		{@const cr = data.cleanroom}
-		<SettingsSection tab="general" title="Cleanroom">
+		<SettingsSection tab="general" title="Cleanroom" editable={may('software')}>
 			{#snippet description()}
 				{#if cr.onCleanroom}
 					This server runs Cleanroom, a Forge 1.12.2 fork for modern Java.
@@ -748,8 +753,10 @@
 		</SettingsSection>
 	{/if}
 
-	<SettingsSection tab="general" title="Copy or delete">
+	{#if mayCopy || may('delete')}
+	<SettingsSection tab="general" title={mayCopy && may('delete') ? 'Copy or delete' : mayCopy ? 'Copy' : 'Delete'}>
 		<div class="danger-box">
+			{#if mayCopy}
 			<div class="danger-row">
 				<div>
 					<div class="strong">Copy this server</div>
@@ -784,6 +791,8 @@
 					</div>
 				</form>
 			{/if}
+			{/if}
+			{#if may('delete')}
 			<div class="danger-row bad">
 				<div>
 					<div class="strong">Delete this server</div>
@@ -813,18 +822,21 @@
 					</div>
 				</form>
 			{/if}
+			{/if}
 		</div>
 	</SettingsSection>
+	{/if}
 
 	<!-- =========================================================== Gameplay -->
 
-	<SettingsSection tab="gameplay" title="Rules" dirty={dirtyIds.has('rules')}>
+	<SettingsSection tab="gameplay" title="Rules" editable={may('settings.edit')} dirty={dirtyIds.has('rules')}>
 		{@render propertyForm('rules')}
 	</SettingsSection>
 
 	<SettingsSection
 		tab="gameplay"
 		title="World"
+		editable={may('settings.edit')}
 		description="Seed and type only apply when a world is first generated."
 		dirty={dirtyIds.has('world')}
 	>
@@ -833,7 +845,7 @@
 
 	<!-- ============================================================ Players -->
 
-	<SettingsSection tab="players" title="Joining" dirty={dirtyIds.has('joining')}>
+	<SettingsSection tab="players" title="Joining" editable={may('settings.edit')} dirty={dirtyIds.has('joining')}>
 		{#snippet description()}
 			Whitelist, operators and bans are managed on the <a href="/instances/{encodeURIComponent(data.instance.id)}/players"
 				>Players</a
@@ -842,13 +854,13 @@
 		{@render propertyForm('joining')}
 	</SettingsSection>
 
-	<SettingsSection tab="players" title="Permissions" dirty={dirtyIds.has('permissions')}>
+	<SettingsSection tab="players" title="Permissions" editable={may('settings.edit')} dirty={dirtyIds.has('permissions')}>
 		{@render propertyForm('permissions')}
 	</SettingsSection>
 
 	<!-- ============================================================ Network -->
 
-	<SettingsSection tab="network" title="Connection" dirty={dirtyIds.has('port') || dirtyIds.has('connection')}>
+	<SettingsSection tab="network" title="Connection" editable={may('settings.edit')} dirty={dirtyIds.has('port') || dirtyIds.has('connection')}>
 		<form method="POST" action="?/network" class="rows" bind:this={forms.port} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="serverPort">Game port <span class="tag warn">restart</span></label>
@@ -860,7 +872,7 @@
 		{@render propertyForm('connection')}
 	</SettingsSection>
 
-	<SettingsSection tab="network" title="RCON" description="MineShell sends console commands over RCON. Do not expose its port." dirty={dirtyIds.has('rcon')}>
+	<SettingsSection tab="network" title="RCON" editable={may('settings.edit')} description="MineShell sends console commands over RCON. Do not expose its port." dirty={dirtyIds.has('rcon')}>
 		<form method="POST" action="?/network" class="rows" bind:this={forms.rcon} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="rconPort">RCON port <span class="tag warn">restart</span></label>
@@ -871,7 +883,9 @@
 				<span class="label">RCON password</span>
 				<div class="control secret-row">
 					<code class="secret">{rconShown ?? '••••••••••••'}</code>
-					<button class="button-quiet" type="button" onclick={toggleRcon}>{rconShown !== null ? 'Hide' : 'Show'}</button>
+					{#if may('admin') || may('files')}
+						<button class="button-quiet" type="button" onclick={toggleRcon}>{rconShown !== null ? 'Hide' : 'Show'}</button>
+					{/if}
 				</div>
 				<p class="hint">Generated when the server was created and stored encrypted.</p>
 			</div>
@@ -886,6 +900,7 @@
 		<SettingsSection
 			tab="network"
 			title="Voice chat"
+			editable={may('settings.edit')}
 			description="Simple Voice Chat talks to players' clients on a UDP port of its own, not through the game port."
 			dirty={dirtyIds.has('voice')}
 		>
@@ -907,6 +922,7 @@
 	<SettingsSection
 		tab="network"
 		title="Public address (playit.gg)"
+		editable={may('admin')}
 		description="Players outside your network join through playit.gg, without port forwarding."
 	>
 		{#if !data.playit.linked}
@@ -982,15 +998,15 @@
 
 	<!-- ======================================================== Performance -->
 
-	<SettingsSection tab="performance" title="Distances" description="The biggest lever on CPU and memory use." dirty={dirtyIds.has('distances')}>
+	<SettingsSection tab="performance" title="Distances" editable={may('settings.edit')} description="The biggest lever on CPU and memory use." dirty={dirtyIds.has('distances')}>
 		{@render propertyForm('distances')}
 	</SettingsSection>
 
-	<SettingsSection tab="performance" title="Ticking and disk" dirty={dirtyIds.has('ticking')}>
+	<SettingsSection tab="performance" title="Ticking and disk" editable={may('settings.edit')} dirty={dirtyIds.has('ticking')}>
 		{@render propertyForm('ticking')}
 	</SettingsSection>
 
-	<SettingsSection tab="performance" title="Resource limits" dirty={dirtyIds.has('limits')}>
+	<SettingsSection tab="performance" title="Resource limits" editable={may('settings.edit')} dirty={dirtyIds.has('limits')}>
 		{#snippet description()}
 			Caps systemd puts on the server process, applied at once, also to a running server. The kernel kills the server
 			past the memory limit (crash restarts then apply), so leave Java room above its {limitHeapMb} MB heap. The CPU limit
@@ -1035,7 +1051,7 @@
 	<!-- Memory has an action of its own; its fields sit between the launch form's sections and join it by id. -->
 	<form method="POST" action="?/memory" id="memory-form" bind:this={forms.memory} onsubmit={onSectionSubmit}></form>
 	<form method="POST" action="?/launch" bind:this={forms.launch} onsubmit={onSectionSubmit}>
-		<SettingsSection tab="java" title="Runtime" dirty={dirtyIds.has('launch')}>
+		<SettingsSection tab="java" title="Runtime" editable={may('software')} dirty={dirtyIds.has('launch')}>
 			{#snippet description()}
 				{data.instance.modloaderLabel} on Minecraft {s.minecraftVersion} expects Java {data.requiredJava}. MineShell picks a
 				match unless you pin one.
@@ -1074,7 +1090,7 @@
 			</div>
 		</SettingsSection>
 
-		<SettingsSection tab="java" title="Memory" dirty={dirtyIds.has('memory')}>
+		<SettingsSection tab="java" title="Memory" editable={may('settings.edit')} dirty={dirtyIds.has('memory')}>
 			<div class="rows">
 				<div class="field">
 					<label for="memoryMaxMb">Maximum memory (MB) <span class="tag warn">restart</span></label>
@@ -1104,7 +1120,7 @@
 			{/await}
 		</SettingsSection>
 
-		<SettingsSection tab="java" title="JVM flags" dirty={dirtyIds.has('launch')}>
+		<SettingsSection tab="java" title="JVM flags" editable={may('software')} dirty={dirtyIds.has('launch')}>
 			<div class="rows">
 				<div class="field">
 					<label for="applyPreset">Flag preset</label>
@@ -1145,6 +1161,7 @@
 		</SettingsSection>
 	</form>
 
+	{#if data.access.globalAdmin}
 	<SettingsSection tab="java" title="Saved presets" description="Flags you saved for reuse on any server.">
 		<div class="block">
 			{#if showSavePreset}
@@ -1161,16 +1178,18 @@
 			<p class="hint">Saved presets are shared by every server; delete them in <a href="/settings?tab=java">MineShell settings</a>.</p>
 		</div>
 	</SettingsSection>
+	{/if}
 
 	<!-- ========================================================= Automation -->
 
-	<SettingsSection tab="automation" title="Restarts" dirty={dirtyIds.has('restarts')}>
+	<SettingsSection tab="automation" title="Restarts" editable={may('settings.edit')} dirty={dirtyIds.has('restarts')}>
 		<form method="POST" action="?/restarts" class="rows" bind:this={forms.restarts} onsubmit={onSectionSubmit}>
 			<RestartFields bind:values={sv} bootNote={data.bootNote} />
 		</form>
 	</SettingsSection>
 
-	<SettingsSection tab="automation" title="Scheduled commands" description="Console commands run on a schedule while the server is running.">
+	{#if may('console.read') || may('console.command')}
+	<SettingsSection tab="automation" title="Scheduled commands" editable={may('console.command')} description="Console commands run on a schedule while the server is running.">
 		<div class="table-box commands">
 			{#if data.scheduledCommands.length}
 				<table>
@@ -1233,12 +1252,14 @@
 			<code>chunky continue</code> and <code>chunky pause</code>.
 		</p>
 	</SettingsSection>
+	{/if}
 
 	<!-- ========================================================== Snapshots -->
 
 	<SettingsSection
 		tab="snapshots"
 		title="Scheduled snapshots"
+		editable={may('backups.create')}
 		description="A copy of the world on a schedule, kept by the settings below like every other snapshot."
 		dirty={dirtyIds.has('snapshotSchedule')}
 	>
@@ -1314,7 +1335,7 @@
 		</form>
 	</SettingsSection>
 
-	<SettingsSection tab="snapshots" title="World snapshots" dirty={dirtyIds.has('snapshots')}>
+	<SettingsSection tab="snapshots" title="World snapshots" editable={may('backups.delete')} dirty={dirtyIds.has('snapshots')}>
 		{#snippet description()}
 			How many to keep for this server. A blank field follows the <a href="/settings">MineShell settings</a>, shown greyed.
 			Now: {data.snapshotSettings.usage.full} full, {data.snapshotSettings.usage.partial} partial,
@@ -1330,7 +1351,7 @@
 
 	<!-- =========================================================== Advanced -->
 
-	<SettingsSection tab="advanced" title="Console" dirty={dirtyIds.has('console')}>
+	<SettingsSection tab="advanced" title="Console" editable={may('settings.edit')} dirty={dirtyIds.has('console')}>
 		<form method="POST" action="?/console" class="rows" bind:this={forms.console} onsubmit={onSectionSubmit}>
 			<ConsoleFields bind:values={sv} />
 		</form>
@@ -1339,6 +1360,7 @@
 	<SettingsSection
 		tab="advanced"
 		title="Other keys"
+		editable={may('settings.edit')}
 		description="Keys MineShell has no control for, usually added by a mod or the pack. Kept exactly as written."
 		dirty={dirtyIds.has('more')}
 	>
@@ -1363,7 +1385,7 @@
 		</form>
 	</SettingsSection>
 
-	<SettingsSection tab="advanced" title="Raw file" description="Edit server.properties directly. Saved as-is; comments and ordering are not kept.">
+	<SettingsSection tab="advanced" title="Raw file" editable={may('settings.edit')} description="Edit server.properties directly. Saved as-is; comments and ordering are not kept.">
 		<form method="POST" action="?/propertiesRaw" use:enhance={keepValues} class="block raw">
 			<textarea name="raw" rows="16" spellcheck="false" class="mono" bind:value={rawValue}></textarea>
 			<div class="button-row">

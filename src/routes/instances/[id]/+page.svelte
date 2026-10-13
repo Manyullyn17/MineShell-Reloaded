@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
@@ -13,6 +14,8 @@
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
+	/** What this account may do here; the server checks every action again. */
+	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	// Streamed: slow the first time on a big pack (the last run's journal, a walk of the
 	// folder, every mod jar opened). Kept between the 5 s refreshes, so nothing flickers.
@@ -106,13 +109,17 @@
 {:else if data.instance.statusMessage}
 	<div class="notice warning">
 		<p>{data.instance.statusMessage}</p>
-		<form method="POST" action="?/dismissNotice" use:enhance>
-			<button class="button-quiet" type="submit">Dismiss</button>
-		</form>
+		{#if may('power')}
+			<form method="POST" action="?/dismissNotice" use:enhance>
+				<button class="button-quiet" type="submit">Dismiss</button>
+			</form>
+		{/if}
 	</div>
 {/if}
 
-{#if !data.eulaAccepted}
+{#if !data.eulaAccepted && !may('power')}
+	<div class="notice"><p>The Minecraft EULA has not been accepted for this server yet, so it cannot start.</p></div>
+{:else if !data.eulaAccepted}
 	<section class="panel">
 		<h2>Accept the Minecraft EULA</h2>
 		<p class="muted">
@@ -127,17 +134,21 @@
 	</section>
 {/if}
 
-{#if data.forgeQuestion}
+{#if data.forgeQuestion && may('software')}
 	<ForgeQuestion question={data.forgeQuestion} />
+{:else if data.forgeQuestion}
+	<div class="notice warning">
+		<p>The server is waiting for an answer to a question Forge asks on its console; someone who manages its loader and modpack has to answer it here.</p>
+	</div>
 {/if}
 
 {#if data.stuckSince}
 	<div class="notice warning">
 		<p>
 			Started {formatRelative(data.stuckSince)} and still not done starting: the log never reached "Done". It may be
-			stuck, typically on a mod waiting for something or a deadlock. The <a href="/instances/{data.instance.id}/console"
+			stuck, typically on a mod waiting for something or a deadlock. The {#if may('console.read')}<a href="/instances/{data.instance.id}/console"
 				>console</a
-			> shows where it stopped; Force stop if it does not move.
+			>{:else}console{/if} shows where it stopped; Force stop if it does not move.
 		</p>
 	</div>
 {/if}
@@ -163,12 +174,12 @@
 					<p>The server exited unexpectedly.{crash.value.tail !== null ? ' These are the final journal lines.' : ''}</p>
 				{/if}
 			</div>
-			<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>
+			{#if may('console.read')}<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>{/if}
 		</div>
 		{#if !diagnosis.ready}
 			<p class="muted small">Working out what went wrong.</p>
 		{:else if diagnosis.value}
-			<CrashDiagnosis diagnosis={diagnosis.value} fixAction={data.running ? null : '?/modFix'} />
+			<CrashDiagnosis diagnosis={diagnosis.value} fixAction={data.running || !may('mods') ? null : '?/modFix'} />
 		{/if}
 		{#if crash.value.tail !== null}
 			<pre class="crash">{crash.value.tail}</pre>
@@ -206,10 +217,12 @@
 				</li>
 			{/each}
 		</ul>
-		<form method="POST" use:enhance class="row">
-			<button type="submit" formaction="?/retryDownloads">Try again</button>
-			<button type="submit" class="button-quiet" formaction="?/forgetDownloads">Forget the list</button>
-		</form>
+		{#if may('software')}
+			<form method="POST" use:enhance class="row">
+				<button type="submit" formaction="?/retryDownloads">Try again</button>
+				<button type="submit" class="button-quiet" formaction="?/forgetDownloads">Forget the list</button>
+			</form>
+		{/if}
 	</section>
 {/if}
 
@@ -262,7 +275,11 @@
 		<dt>Disk</dt>
 		<dd class="mono">{disk.ready && disk.value ? formatBytes(disk.value.diskBytes) : '…'}</dd>
 		<dd class="sub">
-			<a href="/instances/{data.instance.id}/files/usage">{disk.ready && disk.value?.worldBytes ? `world ${formatBytes(disk.value.worldBytes)}` : 'where it goes'}</a>
+			{#if may('files')}
+				<a href="/instances/{data.instance.id}/files/usage">{disk.ready && disk.value?.worldBytes ? `world ${formatBytes(disk.value.worldBytes)}` : 'where it goes'}</a>
+			{:else if disk.ready && disk.value?.worldBytes}
+				world {formatBytes(disk.value.worldBytes)}
+			{/if}
 		</dd>
 	</div>
 </dl>
@@ -337,10 +354,12 @@
 										>{formatSeconds(Date.now() - data.history.onlineSince[name])}</span
 									>
 								{/if}
-								<form method="POST" action="?/kick" use:enhance>
-									<input type="hidden" name="name" value={name} />
-									<button class="button-quiet small" type="submit">Kick</button>
-								</form>
+								{#if may('players.manage')}
+									<form method="POST" action="?/kick" use:enhance>
+										<input type="hidden" name="name" value={name} />
+										<button class="button-quiet small" type="submit">Kick</button>
+									</form>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -360,7 +379,7 @@
 						<h2>Recent crashes</h2>
 						<p>{crashes.length} in the last 30 days{crashes.length === 10 ? ' (newest ten)' : ''}.</p>
 					</div>
-					<a class="small" href="/instances/{data.instance.id}/logs">Logs →</a>
+					{#if may('console.read')}<a class="small" href="/instances/{data.instance.id}/logs">Logs →</a>{/if}
 				</div>
 				{#if repeated && repeated[1] > 1}
 					<p class="notice warning repeat">The same cause {repeated[1]} times: {repeated[0]}</p>
@@ -368,7 +387,11 @@
 				<ul class="crash-list">
 					{#each crashes as crash (crash.invocation)}
 						<li>
-							<a href="/instances/{data.instance.id}/logs?run={crash.invocation}">{formatDateTime(crash.at)}</a>
+							{#if may('console.read')}
+								<a href="/instances/{data.instance.id}/logs?run={crash.invocation}">{formatDateTime(crash.at)}</a>
+							{:else}
+								<span>{formatDateTime(crash.at)}</span>
+							{/if}
 							<span class="small" class:muted={!crash.cause}>
 								{crash.cause ?? (crash.diagnosed ? 'Cause not recognised; the log has the details.' : 'Being looked at.')}
 							</span>
@@ -378,7 +401,7 @@
 			</section>
 		{/if}
 
-		{#if spark}
+		{#if spark && may('console.command')}
 			<section class="panel">
 				<div class="panel-head">
 					<div>
@@ -480,7 +503,7 @@
 		<section class="panel">
 			<div class="panel-head">
 				<h2>Setup</h2>
-				<a class="small" href="/instances/{data.instance.id}/settings">Edit in Settings →</a>
+				{#if may('settings.view')}<a class="small" href="/instances/{data.instance.id}/settings">{may('settings.edit') ? 'Edit in Settings →' : 'Settings →'}</a>{/if}
 			</div>
 			<dl class="facts">
 				<div>
@@ -547,19 +570,31 @@
 			</details>
 		</section>
 
-		<section class="panel">
-			<form method="POST" action="?/notes" use:enhance={() => async ({ update }) => update({ reset: false })} class="notes">
-				<label for="notes"><h2>Notes</h2></label>
-				<textarea id="notes" name="notes" rows="3" placeholder="Anything you want to remember about this server."
-					>{data.detail.notes ?? ''}</textarea
-				>
-				<button class="button-quiet" type="submit">Save notes</button>
-			</form>
-		</section>
+		{#if may('settings.edit')}
+			<section class="panel">
+				<form method="POST" action="?/notes" use:enhance={() => async ({ update }) => update({ reset: false })} class="notes">
+					<label for="notes"><h2>Notes</h2></label>
+					<textarea id="notes" name="notes" rows="3" placeholder="Anything you want to remember about this server."
+						>{data.detail.notes ?? ''}</textarea
+					>
+					<button class="button-quiet" type="submit">Save notes</button>
+				</form>
+			</section>
+		{:else if data.detail.notes}
+			<section class="panel">
+				<h2>Notes</h2>
+				<p class="notes-text">{data.detail.notes}</p>
+			</section>
+		{/if}
 	</div>
 </div>
 
 <style>
+	.notes-text {
+		white-space: pre-wrap;
+		margin: var(--space-2) 0 0;
+	}
+
 	.missing {
 		list-style: none;
 		margin: 0 0 var(--space-4);

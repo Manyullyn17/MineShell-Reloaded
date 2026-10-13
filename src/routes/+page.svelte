@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import type { SubmitFunction } from '$app/forms';
@@ -9,6 +10,8 @@
 	import { isStopped, matchesDashboardFilters, needsAttention } from '#lib/shared/dashboard-filters.js';
 
 	let { data } = $props();
+	/** What this account may do on a server; the server checks every action again. */
+	const may = (id: string, permission: InstancePermission) => can(data.access, id, permission);
 
 	let busy = $state<string | null>(null);
 	let search = $state('');
@@ -119,12 +122,15 @@
 				: `${data.instances.filter((i) => i.running).length} of ${data.instances.length} running${attention ? ` · ${attention} need${attention === 1 ? 's' : ''} attention` : ''}`}
 		</p>
 	</div>
-	<a class="button button-primary" href="/instances/new">Add a server</a>
+	{#if data.access.canCreate}<a class="button button-primary" href="/instances/new">Add a server</a>{/if}
 </header>
 
 <Flash form={message} />
 
-{#if !data.environment.systemdAvailable}
+<!-- What MineShell itself needs is for whoever looks after MineShell. -->
+{#if !data.access.globalAdmin}
+	<!-- nothing -->
+{:else if !data.environment.systemdAvailable}
 	<div class="notice error">
 		<p>
 			MineShell cannot reach the user's systemd instance, so servers cannot be started.
@@ -141,7 +147,7 @@
 	</div>
 {/if}
 
-{#if data.environment.javaCount === 0}
+{#if data.access.globalAdmin && data.environment.javaCount === 0}
 	<div class="notice warning">
 		<p>
 			No Java runtime has been found on this machine. Install one, then rescan from
@@ -152,12 +158,17 @@
 
 {#if data.instances.length === 0}
 	<div class="empty">
-		<h2>Set up your first server</h2>
-		<p>
-			Start from a Modrinth or CurseForge modpack, or build one from a bare mod loader and add
-			mods yourself.
-		</p>
-		<a class="button button-primary" href="/instances/new">Add a server</a>
+		{#if data.access.canCreate}
+			<h2>Set up your first server</h2>
+			<p>
+				Start from a Modrinth or CurseForge modpack, or build one from a bare mod loader and add
+				mods yourself.
+			</p>
+			<a class="button button-primary" href="/instances/new">Add a server</a>
+		{:else}
+			<h2>No servers for you yet</h2>
+			<p>Your account has not been given any servers. Ask the owner or an admin of this MineShell.</p>
+		{/if}
 	</div>
 {:else}
 	<section class="list-tools panel" aria-label="Find servers">
@@ -239,19 +250,23 @@
 					</div>
 					<div class="status">
 						<StatusPill active={instance.active} sub={instance.sub} />
-						<form method="POST" action={action(instance.id, 'pin')} use:enhance={inPlace()}>
-							<button
-								class="pin hit-area"
-								class:pinned={instance.pinned}
-								type="submit"
-								title={instance.pinned ? 'Unpin from the top' : 'Pin to the top'}
-								aria-label={instance.pinned
-									? `Unpin ${instance.name}`
-									: `Pin ${instance.name} to the top`}
-							>
-								{instance.pinned ? '★' : '☆'}
-							</button>
-						</form>
+						{#if may(instance.id, 'settings.edit')}
+							<form method="POST" action={action(instance.id, 'pin')} use:enhance={inPlace()}>
+								<button
+									class="pin hit-area"
+									class:pinned={instance.pinned}
+									type="submit"
+									title={instance.pinned ? 'Unpin from the top' : 'Pin to the top'}
+									aria-label={instance.pinned
+										? `Unpin ${instance.name}`
+										: `Pin ${instance.name} to the top`}
+								>
+									{instance.pinned ? '★' : '☆'}
+								</button>
+							</form>
+						{:else if instance.pinned}
+							<span class="pin pinned" title="Pinned to the top">★</span>
+						{/if}
 					</div>
 					<!-- Across the whole card, not only beside the status, so they stay on one line when they fit. -->
 					<div class="tags">
@@ -272,7 +287,7 @@
 								{/if}
 							{/each}
 						</div>
-						<button type="button" class="button-quiet manage-tags" aria-expanded={editingTagsFor === instance.id} onclick={() => (editingTagsFor === instance.id ? (editingTagsFor = null) : (editingTagsFor = instance.id))}>{editingTagsFor === instance.id ? 'Done' : 'Manage tags'}</button>
+						{#if may(instance.id, 'settings.edit')}<button type="button" class="button-quiet manage-tags" aria-expanded={editingTagsFor === instance.id} onclick={() => (editingTagsFor === instance.id ? (editingTagsFor = null) : (editingTagsFor = instance.id))}>{editingTagsFor === instance.id ? 'Done' : 'Manage tags'}</button>{/if}
 					</div>
 					{#if editingTagsFor === instance.id}
 						<div class="tag-editor">
@@ -357,7 +372,11 @@
 				<footer>
 					<form method="POST" action={action(instance.id, 'power')} use:enhance={inPlace(instance.id)}>
 						<div class="button-row">
-							{#if instance.running}
+							{#if !may(instance.id, 'power')}
+								{#if tone === 'failed' && instance.status === 'ready'}
+									<a class="button button-danger" href="/instances/{instance.id}">See what went wrong</a>
+								{/if}
+							{:else if instance.running}
 								<button
 									class="button-primary"
 									name="verb"
@@ -380,7 +399,7 @@
 									Start
 								</button>
 							{/if}
-							<a class="button" href="/instances/{instance.id}/console">Console</a>
+							{#if may(instance.id, 'console.read')}<a class="button" href="/instances/{instance.id}/console">Console</a>{/if}
 						</div>
 					</form>
 					{#if instance.schedule !== 'Off'}
