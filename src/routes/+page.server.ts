@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '#lib/server/db/index.js';
 import { instanceTags, serverInstances, serverTags } from '#lib/server/db/schema.js';
-import { and, eq, sql } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
+import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { fail } from '@sveltejs/kit';
 import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } from '#lib/server/instances.js';
 import { latestSample } from '#lib/server/monitor.js';
@@ -107,20 +107,16 @@ export const actions: Actions = {
 		} catch {
 			return fail(404, { ok: false, message: 'That server no longer exists.' });
 		}
-		let tag = tagId ? db.select().from(serverTags).where(eq(serverTags.id, tagId)).get() : undefined;
+		let tag = tagId ? findServerTag(tagId) : undefined;
 		if (tagId && !tag) return fail(404, { ok: false, message: 'That tag no longer exists.' });
 		if (!tagId) {
 			if (!name || name.length > 32 || /[\u0000-\u001f\u007f]/.test(name)) {
 				return fail(400, { ok: false, message: 'Tags must be 1–32 characters and cannot contain control characters.' });
 			}
-			db.insert(serverTags)
-				.values({ id: randomUUID(), name })
-				.onConflictDoNothing()
-				.run();
-			tag = db.select().from(serverTags).where(sql`lower(${serverTags.name}) = lower(${name})`).get();
+			tag = createOrFindServerTag(name);
 		}
 		if (!tag) return fail(500, { ok: false, message: 'Could not save that tag.' });
-		db.insert(instanceTags).values({ instanceId: instance.id, tagId: tag.id }).onConflictDoNothing().run();
+		assignServerTag(instance.id, tag.id);
 		return { ok: true, message: `Added “${tag.name}” to ${instance.name}.` };
 	},
 	removeTag: async ({ request }) => {
@@ -133,10 +129,7 @@ export const actions: Actions = {
 		} catch {
 			return fail(404, { ok: false, message: 'That server no longer exists.' });
 		}
-		db.delete(instanceTags).where(and(eq(instanceTags.instanceId, instance.id), eq(instanceTags.tagId, tagId))).run();
-		if (!db.select().from(instanceTags).where(eq(instanceTags.tagId, tagId)).get()) {
-			db.delete(serverTags).where(eq(serverTags.id, tagId)).run();
-		}
+		removeServerTag(instance.id, tagId);
 		return { ok: true, message: `Removed the tag from ${instance.name}.` };
 	},
 	power: async ({ request }) => {
