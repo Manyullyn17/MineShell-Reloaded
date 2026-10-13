@@ -661,6 +661,10 @@ its tab is closed, so the search can look through all of them. Things that act a
 commands, copy and delete) keep their own buttons. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
 preset" posts to `/settings?/savePreset`, and only MineShell settings deletes one.
+Java & memory saves through two actions: `memory` (heap sizes; it rebuilds `-Xms`/`-Xmx` in
+the stored JVM arguments) and `launch` (Java binary, JVM flags, launch arguments). Those three
+can run any program on the machine, so nothing that only changes memory may change them. The
+memory fields sit between the launch form's sections and join their own empty form by its id.
 
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page

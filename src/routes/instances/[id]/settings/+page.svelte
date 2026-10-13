@@ -238,11 +238,19 @@
 		{ id: 'ticking', tab: 'performance', label: 'Ticking and disk', restart: true, dirty: () => PROPERTY_SECTIONS.ticking.some(changedProperty) },
 		{ id: 'limits', tab: 'performance', label: 'Resource limits', restart: false, dirty: () => svChanged('limitMemoryMb', 'limitCpuPercent') },
 		{
-			id: 'runtime',
+			// Before launch: launch rebuilds the memory flags from what memory saved.
+			id: 'memory',
 			tab: 'java',
-			label: 'Java and memory',
+			label: 'Memory',
 			restart: true,
-			dirty: () => svChanged('javaPath', 'javaPathManual', 'memoryMaxMb', 'memoryMinMb', 'jvmArgs', 'launchArgs') || !!presetToApply
+			dirty: () => svChanged('memoryMaxMb', 'memoryMinMb')
+		},
+		{
+			id: 'launch',
+			tab: 'java',
+			label: 'Java and JVM flags',
+			restart: true,
+			dirty: () => svChanged('javaPath', 'javaPathManual', 'jvmArgs', 'launchArgs') || !!presetToApply
 		},
 		{
 			id: 'restarts',
@@ -359,7 +367,7 @@
 				}
 				if (result.type === 'success') notes.push(...((result.data as { notes?: string[] } | undefined)?.notes ?? []));
 				if (section.id === 'rcon') rotateRcon = false;
-				if (section.id === 'runtime') presetToApply = '';
+				if (section.id === 'launch') presetToApply = '';
 				done++;
 			}
 			if (restartAfter) {
@@ -1017,8 +1025,10 @@
 
 	<!-- ====================================================== Java & memory -->
 
-	<form method="POST" action="?/runtime" bind:this={forms.runtime} onsubmit={onSectionSubmit}>
-		<SettingsSection tab="java" title="Runtime" dirty={dirtyIds.has('runtime')}>
+	<!-- Memory has an action of its own; its fields sit between the launch form's sections and join it by id. -->
+	<form method="POST" action="?/memory" id="memory-form" bind:this={forms.memory} onsubmit={onSectionSubmit}></form>
+	<form method="POST" action="?/launch" bind:this={forms.launch} onsubmit={onSectionSubmit}>
+		<SettingsSection tab="java" title="Runtime" dirty={dirtyIds.has('launch')}>
 			{#snippet description()}
 				{data.instance.modloaderLabel} on Minecraft {s.minecraftVersion} expects Java {data.requiredJava}. MineShell picks a
 				match unless you pin one.
@@ -1057,18 +1067,18 @@
 			</div>
 		</SettingsSection>
 
-		<SettingsSection tab="java" title="Memory" dirty={dirtyIds.has('runtime')}>
+		<SettingsSection tab="java" title="Memory" dirty={dirtyIds.has('memory')}>
 			<div class="rows">
 				<div class="field">
 					<label for="memoryMaxMb">Maximum memory (MB) <span class="tag warn">restart</span></label>
-					<input id="memoryMaxMb" name="memoryMaxMb" type="number" min="512" step="256" bind:value={sv.memoryMaxMb} />
+					<input id="memoryMaxMb" name="memoryMaxMb" form="memory-form" type="number" min="512" step="256" bind:value={sv.memoryMaxMb} />
 					{#if data.runningMemoryMaxMb !== null && data.runningMemoryMaxMb !== s.memoryMaxMb}
 						<p class="hint">The server is running with {data.runningMemoryMaxMb} MB until it restarts.</p>
 					{/if}
 				</div>
 				<div class="field">
 					<label for="memoryMinMb">Starting memory (MB) <span class="tag warn">restart</span></label>
-					<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={sv.memoryMinMb} />
+					<input id="memoryMinMb" name="memoryMinMb" form="memory-form" type="number" min="256" step="256" bind:value={sv.memoryMinMb} />
 				</div>
 			</div>
 			{#await data.memoryAdvice then advice}
@@ -1087,7 +1097,7 @@
 			{/await}
 		</SettingsSection>
 
-		<SettingsSection tab="java" title="JVM flags" dirty={dirtyIds.has('runtime')}>
+		<SettingsSection tab="java" title="JVM flags" dirty={dirtyIds.has('launch')}>
 			<div class="rows">
 				<div class="field">
 					<label for="applyPreset">Flag preset</label>

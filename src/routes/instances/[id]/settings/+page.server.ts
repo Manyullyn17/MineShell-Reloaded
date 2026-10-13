@@ -383,7 +383,12 @@ export const actions: Actions = {
 		}
 	},
 
-	runtime: async ({ request, params }) => {
+	/**
+	 * Heap sizes, kept apart from `launch`: what Java runs with, not what runs.
+	 * The memory flags in the JVM arguments are rebuilt from these, so the two
+	 * never drift apart.
+	 */
+	memory: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 
@@ -399,26 +404,37 @@ export const actions: Actions = {
 			});
 		}
 
+		if (maxMb !== instance.memoryMaxMb) markMemoryChanged(instance.id);
+		db.update(serverInstances)
+			.set({ memoryMaxMb: maxMb, memoryMinMb: minMb, jvmArgs: composeJvmArgs(instance.jvmArgs, minMb, maxMb), updatedAt: Date.now() })
+			.where(eq(serverInstances.id, instance.id))
+			.run();
+
+		const { warning } = await syncUnit(requireInstance(instance.id));
+		return { ok: true, message: warning ?? 'Saved. Restart the server to use the new memory settings.' };
+	},
+
+	/**
+	 * What the server runs: the Java binary, the JVM flags and the launch
+	 * arguments. Any of these can run any program on the machine, so this is
+	 * its own action rather than part of the memory settings.
+	 */
+	launch: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+
 		// Applying a preset replaces the flag body; otherwise the textarea wins.
-		// Either way the memory flags are rebuilt from the memory fields, so the
-		// two can never drift apart.
+		// Either way the memory flags come from the memory settings.
 		const presetId = String(form.get('applyPreset') ?? '').trim();
 		const preset = presetId ? getPreset(presetId) : null;
 		if (presetId && !preset) {
 			return fail(400, { ok: false, message: 'That preset no longer exists.' });
 		}
 
-		const body = preset
-			? preset.flags
-			: stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
-		const jvmArgs = composeJvmArgs(body, minMb, maxMb);
-
-		if (maxMb !== instance.memoryMaxMb) markMemoryChanged(instance.id);
+		const body = preset ? preset.flags : stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
 		db.update(serverInstances)
 			.set({
-				memoryMaxMb: maxMb,
-				memoryMinMb: minMb,
-				jvmArgs,
+				jvmArgs: composeJvmArgs(body, instance.memoryMinMb ?? 1024, instance.memoryMaxMb ?? 4096),
 				launchArgs: String(form.get('launchArgs') ?? instance.launchArgs).trim(),
 				// The manual path field wins when it says something different, so a
 				// runtime that was never scanned can still be used. A form without
