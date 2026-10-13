@@ -547,6 +547,10 @@ tbody tr:last-child td {
 	background: color-mix(in srgb, var(--tone) 8%, transparent);
 }
 
+.notice p {
+	max-width: none;
+}
+
 .notice p:last-child {
 	margin-bottom: 0;
 }
