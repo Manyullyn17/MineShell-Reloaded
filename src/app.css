@@ -99,7 +99,9 @@
 	--space-7: 3rem;
 
 	--rail-width: 15.5rem;
-	--measure: 68ch;
+	/* The widest a paragraph or hint gets: as wide as Settings' column, so text fills it on a
+	   desktop (68ch wrapped at half of it). In rem, so smaller hint text lines up with paragraphs. */
+	--measure: 62rem;
 }
 
 * {
