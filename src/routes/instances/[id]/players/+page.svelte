@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
@@ -18,6 +19,8 @@
 	let accessType = $state<'whitelist' | 'ops' | 'bans' | 'ipBans'>('whitelist');
 	let selectedPersonKey = $state<string | null>(null);
 	let hideActionNotice = $state(false);
+	let drawerEl = $state<HTMLElement | null>(null);
+	let panelOpener: HTMLElement | null = null;
 	$effect(() => {
 		form;
 		hideActionNotice = false;
@@ -94,24 +97,54 @@
 			.filter((p) => !playerQuery.trim() || p.name.toLocaleLowerCase().includes(playerQuery.trim().toLocaleLowerCase()))
 	);
 	const playerUrl = (uuid: string) => `/instances/${encodeURIComponent(data.instance.id)}/players/${uuid}`;
-	function openAdd() {
+	function focusDrawer() {
+		void tick().then(() => drawerEl?.querySelector<HTMLElement>('button, input:not([type="hidden"]), select, textarea')?.focus());
+	}
+	function openAdd(event: MouseEvent) {
+		panelOpener = event.currentTarget as HTMLElement;
 		hideActionNotice = true;
 		selectedPersonKey = null;
 		accessType = 'whitelist';
 		newName = '';
 		newReason = '';
 		panelMode = 'add';
+		focusDrawer();
 	}
-	function openManage(person: Person) {
+	function openManage(person: Person, event: MouseEvent) {
+		panelOpener = event.currentTarget as HTMLElement;
 		hideActionNotice = true;
 		selectedPersonKey = person.key;
 		newReason = '';
 		kickReason = '';
 		panelMode = 'manage';
+		focusDrawer();
 	}
 	function closePanel() {
 		panelMode = null;
 		selectedPersonKey = null;
+		const opener = panelOpener;
+		panelOpener = null;
+		void tick().then(() => opener?.focus());
+	}
+	function trapDrawerFocus(event: KeyboardEvent) {
+		if (event.key !== 'Tab' || !drawerEl) return;
+		const focusable = [...drawerEl.querySelectorAll<HTMLElement>(
+			'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+		)].filter((el) => el.getAttribute('aria-hidden') !== 'true' && el.offsetParent !== null);
+		if (!focusable.length) {
+			event.preventDefault();
+			drawerEl.focus();
+			return;
+		}
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+		if (event.shiftKey && (document.activeElement === first || !drawerEl.contains(document.activeElement))) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && (document.activeElement === last || !drawerEl.contains(document.activeElement))) {
+			event.preventDefault();
+			first.focus();
+		}
 	}
 
 </script>
@@ -143,7 +176,7 @@
 
 {#if panelMode}
 	<button class="drawer-backdrop" type="button" aria-label="Close player panel" onclick={closePanel}></button>
-	<div class="access-drawer" role="dialog" aria-modal="true" aria-labelledby="access-title">
+	<div class="access-drawer" bind:this={drawerEl} role="dialog" aria-modal="true" aria-labelledby="access-title" tabindex="-1" onkeydown={trapDrawerFocus}>
 		<header class="drawer-head">
 			<div>
 				<p class="eyebrow">{panelMode === 'add' ? 'Player access' : 'Access and actions'}</p>
@@ -343,7 +376,7 @@
 							{#if person.file}
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
-							<button type="button" class="button-quiet" onclick={() => openManage(person)}>Manage</button>
+							<button type="button" class="button-quiet" onclick={(event) => openManage(person, event)}>Manage</button>
 						</td>
 					</tr>
 				{/each}
