@@ -326,7 +326,7 @@
 	</div>
 {:else}
 	<div class="table-box">
-		<table>
+		<table class="people">
 			<thead>
 				<tr>
 					<th>Player</th>
@@ -353,10 +353,9 @@
 										</div>
 									{/if}
 									<div class="faint small mono">
-										{#if person.file}last saved {formatRelative(person.file.modifiedAt)}{:else}never joined{/if}{person.uuid
-											? ` · ${person.uuid}`
-											: ''}
+										{#if person.file}last saved {formatRelative(person.file.modifiedAt)}{:else}never joined{/if}
 									</div>
+									{#if person.uuid}<div class="faint small mono uuid">{#each person.uuid.split('-') as part, i}{#if i}-<wbr />{/if}{part}{/each}</div>{/if}
 									{#if person.file?.fromMojang}
 										<div class="faint small" title="This server's files do not name this player; Mojang gave the account's current name.">
 											name from Mojang
@@ -368,7 +367,7 @@
 								</div>
 							</div>
 						</td>
-						<td class="nowrap">
+						<td class="nowrap person-status">
 							{#if person.ban}
 								<span class="status" data-tone="failed"><span class="dot failed"></span>Banned</span>
 							{:else if person.online}
@@ -377,7 +376,7 @@
 								<span class="status"><span class="dot"></span>Offline</span>
 							{/if}
 						</td>
-						<td class="right nowrap">
+						<td class="right nowrap person-actions">
 							{#if person.file && can(data.access, data.instance.id, 'players.data.view', person.file.uuid)}
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
@@ -613,6 +612,18 @@
 		flex-wrap: wrap;
 	}
 
+	.who-text {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	/* Break only after a hyphen (<wbr> in the markup: browsers refuse a break
+	   between a hyphen and a digit), as late as the line allows. */
+	.uuid {
+		overflow-wrap: normal;
+		word-break: normal;
+	}
+
 	.ban-reason {
 		color: var(--error);
 	}
@@ -672,5 +683,62 @@
 
 	@media (max-width: 600px) {
 		.access-drawer { width: 100vw; padding: 1rem; border-left: 0; }
+	}
+
+	/* Phones: one card per player instead of a three-column table. */
+	@media (max-width: 40rem) {
+		.table-box:has(> .people) {
+			overflow: visible;
+			background: transparent;
+			border: 0;
+		}
+
+		:global(.content table.people),
+		.people tbody {
+			display: block;
+			width: 100%;
+		}
+
+		.people thead {
+			display: none;
+		}
+
+		.people tr {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: center;
+			gap: var(--space-2) var(--space-3);
+			margin-bottom: var(--space-3);
+			padding: var(--space-3);
+			background: var(--panel);
+			border: 1px solid var(--line);
+			border-radius: var(--radius-lg);
+		}
+
+		.people td {
+			display: block;
+			padding: 0;
+			border: 0;
+			background: transparent;
+		}
+
+		.people td:first-child {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+
+		.people .person-status {
+			grid-column: 1;
+			grid-row: 2;
+		}
+
+		.people .person-actions {
+			grid-column: 2;
+			grid-row: 2;
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+			gap: var(--space-2);
+		}
 	}
 </style>
