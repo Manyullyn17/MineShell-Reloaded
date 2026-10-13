@@ -47,11 +47,15 @@
 	const trashHref = $derived(data.dir ? `${href(data.dir)}&trash` : `${base}?trash`);
 	const undoId = $derived(form && 'undo' in form && typeof form.undo === 'string' ? form.undo : null);
 
-	/** Deleting the trash itself (or what holds it), or with the trash off, cannot be undone: ask first. */
+	/** The trash itself (or what holds it, or what is in it), or anything with the trash off: no undo. */
+	function deletesForGood(relPath: string) {
+		return data.trashDays === 0 || relPath === '.mineshell' || relPath === '.mineshell/trash' || relPath.startsWith('.mineshell/trash/');
+	}
+
+	/** Deleting for good cannot be undone: ask first. */
 	function confirmDelete(relPath: string) {
 		return ({ cancel }: { cancel: () => void }) => {
-			const forGood = data.trashDays === 0 || relPath === '.mineshell' || relPath === '.mineshell/trash' || relPath.startsWith('.mineshell/trash/');
-			if (forGood && !confirm(`Delete ${relPath} for good? This does not go to the trash.`)) cancel();
+			if (deletesForGood(relPath) && !confirm(`Delete ${relPath} for good? This does not go to the trash.`)) cancel();
 		};
 	}
 
@@ -207,7 +211,7 @@
 					</button>
 					<form method="POST" action="?/delete" use:enhance={confirmDelete(entry.relPath)}>
 						<input type="hidden" name="path" value={entry.relPath} />
-						<button class="button-quiet button-danger" type="submit" title={data.trashDays ? 'Moves it to the trash' : undefined}>Delete</button>
+						<button class="button-quiet button-danger" type="submit" title={deletesForGood(entry.relPath) ? 'Deletes it for good: this does not go to the trash' : 'Moves it to the trash'}>Delete</button>
 					</form>
 				</div>
 			</td>
