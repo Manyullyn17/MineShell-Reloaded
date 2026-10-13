@@ -680,6 +680,12 @@ Access is given on an account's page under Accounts: per server "No access", cho
 players' with a picker of the server's known players), or admin of the server. Choosing admin
 keeps the chosen permissions stored, so choosing them again later gives back the same.
 
+Whoever adds a server, or copies one (which needs `duplicate` and `files` on the source and
+"may create servers"), becomes admin of the new one: `insertInstanceRow` and `cloneInstance`
+take a `creatorId` (`access.ts` `creatorId`: any account but the owner, global admins included,
+so the server stays theirs if that role goes). The grant is made with the row, so a server whose
+creation is rolled back takes it along; a copy never takes the source's access list.
+
 ---
 
 ## Frontend

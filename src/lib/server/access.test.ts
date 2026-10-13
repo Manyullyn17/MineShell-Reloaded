@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { loadAccess } from './access';
+import { creatorId, loadAccess } from './access';
 import { db } from './db';
 import { instanceAccess, serverInstances, users } from './db/schema';
 import { grant, otherUser, owner, setAccountFlags } from '../../../tests/helpers/auth';
@@ -58,5 +58,14 @@ describe('loadAccess', () => {
 		grant(account.id, again.id, { permissions: ['power'] });
 		db.delete(users).where(eq(users.id, account.id)).run();
 		expect(db.select().from(instanceAccess).where(eq(instanceAccess.userId, account.id)).all()).toEqual([]);
+	});
+});
+
+describe('creatorId', () => {
+	it("is the account adding a server, but not the owner's (it has every server) nor anyone's with sign-in off", () => {
+		const account = otherUser();
+		expect(creatorId({ user: account } as App.Locals)).toBe(account.id);
+		expect(creatorId({ user: owner() } as App.Locals)).toBeNull();
+		expect(creatorId({ user: null } as App.Locals)).toBeNull();
 	});
 });

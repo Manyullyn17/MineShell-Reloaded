@@ -4,6 +4,7 @@ import path from 'node:path';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
+import { creatorId } from '#lib/server/access.js';
 import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
@@ -784,12 +785,12 @@ export const actions: Actions = {
 		return { ok: true, message: 'File written. Restart to apply.' };
 	},
 
-	clone: async ({ request, params }) => {
+	clone: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const name = String((await request.formData()).get('name') ?? '').trim().slice(0, 80);
 		let copy;
 		try {
-			({ instance: copy } = await cloneInstance(instance, name));
+			({ instance: copy } = await cloneInstance(instance, name, creatorId(locals)));
 		} catch (err) {
 			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;

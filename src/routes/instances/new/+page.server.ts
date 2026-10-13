@@ -1,5 +1,6 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { creatorId } from '#lib/server/access.js';
 import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	JavaMissingError,
@@ -101,7 +102,7 @@ function cleanroomFrom(form: FormData): { modloader?: ModloaderId; modloaderVers
 
 export const actions: Actions = {
 	/** Bare mod loader, no pack. */
-	loader: async ({ request }) => {
+	loader: async ({ request, locals }) => {
 		const form = await request.formData();
 		const name = String(form.get('name') ?? '').trim();
 		const minecraftVersion = String(form.get('minecraftVersion') ?? '').trim();
@@ -130,7 +131,8 @@ export const actions: Actions = {
 				javaPath: String(form.get('javaPath') ?? '') || null,
 				...memoryFrom(form),
 				...downloadJavaFrom(form),
-				...choicesFrom(form)
+				...choicesFrom(form),
+				creatorId: creatorId(locals)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -143,7 +145,7 @@ export const actions: Actions = {
 	},
 
 	/** Uploaded .mrpack or CurseForge zip. */
-	upload: async ({ request }) => {
+	upload: async ({ request, locals }) => {
 		const form = await request.formData();
 		const file = form.get('archive');
 		if (!(file instanceof File) || file.size === 0) {
@@ -157,7 +159,8 @@ export const actions: Actions = {
 				...memoryFrom(form),
 				...cleanroomFrom(form),
 				...downloadJavaFrom(form),
-				...choicesFrom(form)
+				...choicesFrom(form),
+				creatorId: creatorId(locals)
 			});
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
@@ -170,7 +173,7 @@ export const actions: Actions = {
 	},
 
 	/** A pack picked from Modrinth, CurseForge or FTB. */
-	install: async ({ request }) => {
+	install: async ({ request, locals }) => {
 		const form = await request.formData();
 		const source = String(form.get('source') ?? 'modrinth');
 		const projectId = String(form.get('projectId') ?? '');
@@ -194,7 +197,8 @@ export const actions: Actions = {
 					...choicesFrom(form),
 					disableMods: targetsFrom(form, 'disableMods'),
 					keepMods: targetsFrom(form, 'keepMods'),
-					enableMods: targetsFrom(form, 'enableMods')
+					enableMods: targetsFrom(form, 'enableMods'),
+					creatorId: creatorId(locals)
 				}
 			);
 			redirect(303, `/instances/${instance.id}`);

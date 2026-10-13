@@ -57,6 +57,13 @@ function parsePermissions(json: string): InstancePermission[] {
 
 export const NO_ACCESS_REASON = 'You do not have access to that.';
 
+/**
+ * The account to make admin of a server it adds or copies: any account but the
+ * owner (who has every server anyway). A global admin gets it too, so the server
+ * stays theirs if that role is taken away. None with MINESHELL_AUTH=off.
+ */
+export const creatorId = (locals: App.Locals): string | null => (locals.user && !locals.user.isOwner ? locals.user.id : null);
+
 /** Whether a list (the servers, the rail) shows this server to the account. */
 export const sees = (access: Access) => (instance: { id: string }) => can(access, instance.id, 'view');
 

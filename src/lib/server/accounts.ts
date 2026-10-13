@@ -218,6 +218,14 @@ export function saveGrant(userId: string, instanceId: string, grant: GrantForm):
 	});
 }
 
+/**
+ * Whoever adds or copies a server becomes its admin (a copy never takes the
+ * source's access list: the server is new, so it has none).
+ */
+export function makeCreatorAdmin(userId: string, instanceId: string): void {
+	saveGrant(userId, instanceId, { admin: true, permissions: [], playerView: 'none', playerEdit: 'none', viewUuids: [], editUuids: [] });
+}
+
 /** No access to that server any more: its permissions and players go too. */
 export function removeGrant(userId: string, instanceId: string): void {
 	db.delete(instanceAccess).where(and(eq(instanceAccess.userId, userId), eq(instanceAccess.instanceId, instanceId))).run();

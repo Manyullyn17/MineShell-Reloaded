@@ -13,6 +13,8 @@ const { settings } = await import('#lib/server/db/schema.js');
 const { addJava, clearJava, reload, systemdStopped, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
+const { otherUser } = await import('../helpers/auth');
+const { grantsOf } = await import('#lib/server/accounts.js');
 
 const served: Record<string, () => Response> = {};
 useRecordedHttp('none', { extra: served });
@@ -165,6 +167,13 @@ describe('choices made when adding a server', () => {
 		expect(row.serverPort).toBe(25901);
 		expect(row.rconPort).not.toBe(25901);
 		expect((await readProperties(row.path)).values['server-port']).toBe('25901');
+	});
+
+	it('makes the account adding it the admin of the new server', async () => {
+		const account = otherUser();
+		const { instance, taskId } = await createFromLoader({ name: 'Mine', minecraftVersion: '1.21.1', modloader: 'fabric', creatorId: account.id });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(grantsOf(account.id)[instance.id]).toMatchObject({ admin: true });
 	});
 
 	it('refuses a port another server has, before creating anything', async () => {

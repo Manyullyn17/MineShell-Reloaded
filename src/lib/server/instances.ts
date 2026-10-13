@@ -6,6 +6,7 @@ import { db } from './db';
 import { auditLog, instanceMods, serverInstances, type ServerInstance } from './db/schema';
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
+import { makeCreatorAdmin } from './accounts';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
 import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
 import {
@@ -180,6 +181,8 @@ export type CreateInstanceInput = {
 	keepMods?: string[];
 	/** Mods the pack ships disabled (mods/<file>.disabled) to enable. */
 	enableMods?: string[];
+	/** The account adding it, which becomes its admin (access.ts creatorId). */
+	creatorId?: string | null;
 };
 
 function jvmArgsFor(presetId: string, minMb: number, maxMb: number): string {
@@ -266,6 +269,8 @@ async function insertInstanceRow(
 	// Committed (and so dropped) with the final 'ready'; still there after a
 	// restart means the install never finished.
 	beginOperation(id, { kind: 'create' });
+	// A failed install deletes the row, and the access goes with it.
+	if (input.creatorId) makeCreatorAdmin(input.creatorId, id);
 
 	await writeProperties(
 		dir,
@@ -660,7 +665,8 @@ export async function createFromPack(
 		packVersionId: meta.versionId ?? pack.version,
 		packVersionName: pack.version,
 		acceptEula: overrides.acceptEula,
-		startWhenReady: overrides.startWhenReady
+		startWhenReady: overrides.startWhenReady,
+		creatorId: overrides.creatorId
 	});
 
 	const taskId = provisionFromPack(instance, pack, java, notes, {
@@ -1439,7 +1445,9 @@ export function cloneSkips(relative: string): boolean {
  */
 export async function cloneInstance(
 	source: ServerInstance,
-	name: string
+	name: string,
+	/** The account copying it, which becomes the copy's admin; the source's access list is not copied. */
+	creatorId: string | null = null
 ): Promise<{ instance: ServerInstance; taskId: string }> {
 	if (!name.trim()) throw new InstanceError('Give the copy a name.');
 	await requireStopped(source);
@@ -1474,6 +1482,7 @@ export async function cloneInstance(
 		})
 		.run();
 	beginOperation(id, { kind: 'create' });
+	if (creatorId) makeCreatorAdmin(creatorId, id);
 	beingCopied.add(source.id);
 
 	const taskId = startTask(

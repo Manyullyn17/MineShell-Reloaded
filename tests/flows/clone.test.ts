@@ -12,6 +12,8 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { readProperties } = await import('#lib/server/properties.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { hangForever, restartMineShell } = await import('../helpers/crash');
+const { grant, otherUser } = await import('../helpers/auth');
+const { grantsOf } = await import('#lib/server/accounts.js');
 
 const FILES = {
 	'server.jar': 'fabric launcher',
@@ -93,6 +95,20 @@ describe('cloning a server', () => {
 		// The original is untouched.
 		expect(await tree(original.path, /^$/)).toEqual(before);
 		expect(reload(original.id).serverPort).toBe(25600);
+	});
+
+	it("makes the one copying it the copy's admin, and copies nobody's access", async () => {
+		const original = await source();
+		const viewer = otherUser();
+		const copier = otherUser();
+		grant(viewer.id, original.id, { permissions: ['view'] });
+		grant(copier.id, original.id, { permissions: ['duplicate', 'files'] });
+		const { instance, taskId } = await cloneInstance(original, 'My copy', copier.id);
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(grantsOf(copier.id)[instance.id]).toMatchObject({ admin: true });
+		expect(grantsOf(viewer.id)[instance.id]).toBeUndefined();
+		// What the copier had on the original stays as it was.
+		expect(grantsOf(copier.id)[original.id]).toMatchObject({ admin: false, permissions: ['duplicate', 'files'] });
 	});
 
 	it('keeps the original from starting while it is being copied', async () => {
