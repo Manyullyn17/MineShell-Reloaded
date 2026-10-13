@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { listTasks } from '#lib/server/tasks.js';
+import { seesTask } from '#lib/server/access.js';
 import { bus } from '#lib/server/events.js';
 
 /**
@@ -11,7 +12,9 @@ import { bus } from '#lib/server/events.js';
 export const GET: RequestHandler = async ({ locals, url }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
 	const brief = url.searchParams.get('brief') === '1';
-	const tasks = () => (brief ? listTasks().map(({ log: _, ...task }) => task) : listTasks());
+	// Only this account's servers' tasks (and, for global admins, those of no server).
+	const visible = seesTask(locals.access);
+	const tasks = () => (brief ? listTasks().filter(visible).map(({ log: _, ...task }) => task) : listTasks().filter(visible));
 
 	if (url.searchParams.get('stream') !== '1') {
 		return Response.json({ tasks: tasks() });

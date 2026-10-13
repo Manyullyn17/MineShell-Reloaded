@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { instanceAccess, instancePlayerAccess, users } from './db/schema';
-import { can, FULL_ACCESS, isInstancePermission, type Access, type InstanceGrant, type InstancePermission, type PlayerScope, type PlayerTarget } from '#lib/shared/access.js';
+import { can, FULL_ACCESS, isInstancePermission, NO_ACCESS, type Access, type InstanceGrant, type InstancePermission, type PlayerScope, type PlayerTarget } from '#lib/shared/access.js';
 import type { SessionUser } from './auth';
 
 /**
@@ -13,12 +13,15 @@ import type { SessionUser } from './auth';
  * check what depends on the request's contents (`requireAccess`).
  */
 
-/** With MINESHELL_AUTH=off every request may do everything, as before accounts. */
-export function loadAccess(user: SessionUser | null): Access {
-	if (!user) return FULL_ACCESS;
+/**
+ * A signed-in account's access. (The guard gives FULL_ACCESS with
+ * MINESHELL_AUTH=off, as before accounts, and NO_ACCESS to a visitor who is
+ * not signed in.)
+ */
+export function loadAccess(user: SessionUser): Access {
 	if (user.isOwner) return FULL_ACCESS;
 	const row = db.select({ isGlobalAdmin: users.isGlobalAdmin, canCreate: users.canCreate }).from(users).where(eq(users.id, user.id)).get();
-	if (!row) return { owner: false, globalAdmin: false, canCreate: false, instances: {} };
+	if (!row) return NO_ACCESS;
 	if (row.isGlobalAdmin) return { owner: false, globalAdmin: true, canCreate: true, instances: {} };
 
 	const chosen = new Map<string, { view: string[]; edit: string[] }>();
@@ -52,7 +55,14 @@ function parsePermissions(json: string): InstancePermission[] {
 	}
 }
 
-export const NO_ACCESS = 'You do not have access to that.';
+export const REFUSED = 'You do not have access to that.';
+
+/** Whether a list (the servers, the rail) shows this server to the account. */
+export const sees = (access: Access) => (instance: { id: string }) => can(access, instance.id, 'view');
+
+/** A task of a server shows to whoever may see that server; one of no server (a Java download, an update) to global admins. */
+export const seesTask = (access: Access) => (task: { instanceId: string | null }) =>
+	task.instanceId ? can(access, task.instanceId, 'view') : access.globalAdmin;
 
 /**
  * For a handler whose check depends on what was posted (which list, pin or
@@ -64,9 +74,9 @@ export function requireAccess(
 	permission: InstancePermission | 'admin',
 	player?: PlayerTarget
 ): void {
-	if (!can(locals.access, instanceId, permission, player)) error(403, NO_ACCESS);
+	if (!can(locals.access, instanceId, permission, player)) error(403, REFUSED);
 }
 
 export function requireGlobalAdmin(locals: App.Locals): void {
-	if (!locals.access.globalAdmin) error(403, NO_ACCESS);
+	if (!locals.access.globalAdmin) error(403, REFUSED);
 }

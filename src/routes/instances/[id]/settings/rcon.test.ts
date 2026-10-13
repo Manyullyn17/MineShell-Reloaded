@@ -3,6 +3,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { actions, load } from './+page.server';
 import { encryptSecret } from '#lib/server/crypto.js';
+import { FULL_ACCESS } from '#lib/shared/access.js';
 import { createInstance } from '../../../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses } from '../../../../../tests/helpers/process';
 
@@ -15,7 +16,8 @@ describe('the RCON password on the Settings page', () => {
 			{ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPasswordEnc: encryptSecret('hunter2-rcon') },
 			{ 'server.properties': 'motd=Hello\nrcon.password=hunter2-rcon\nenable-rcon=true\n' }
 		);
-		const data = await load({ params: { id: instance.id } } as never);
+		// The owner's view: even full access gets the password only by asking.
+		const data = await load({ params: { id: instance.id }, locals: { access: FULL_ACCESS } } as never);
 		expect(JSON.stringify(data)).not.toContain('hunter2-rcon');
 		expect((data as { properties: { values: Record<string, string> } }).properties.values.motd).toBe('Hello');
 	});

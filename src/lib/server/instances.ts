@@ -1543,8 +1543,9 @@ export async function iconVersion(instance: ServerInstance): Promise<number | nu
 	return stat?.isFile() ? Math.round(stat.mtimeMs) : null;
 }
 
-export async function summariseAll(): Promise<InstanceSummary[]> {
-	const list = listInstances();
+/** Every server, or those `include` keeps (the ones an account may see), in list order. */
+export async function summariseAll(include: (instance: ServerInstance) => boolean = () => true): Promise<InstanceSummary[]> {
+	const list = listInstances().filter(include);
 	const summaries = await Promise.all(list.map(summarise));
 	return summaries.sort((a, b) => {
 		if (a.instance.pinned !== b.instance.pinned) return a.instance.pinned ? -1 : 1;

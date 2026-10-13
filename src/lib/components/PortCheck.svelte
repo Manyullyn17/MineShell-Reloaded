@@ -15,7 +15,11 @@
 
 	type Answer =
 		| { valid: false }
-		| { valid: true; other: { name: string; kind: 'game' | 'rcon'; swapTo: number; freeTo: number | null } | null; listening: boolean };
+		| {
+				valid: true;
+				other: { name: string; kind: 'game' | 'rcon'; swapTo: number; freeTo: number | null; movable: boolean } | null;
+				listening: boolean;
+		  };
 
 	let answer = $state<Answer | null>(null);
 	let move = $state<'' | 'swap' | 'free'>('');
@@ -47,6 +51,10 @@
 {#if answer && port !== current}
 	{#if !answer.valid}
 		<p class="port-note bad">Ports go from 1 to 65535.</p>
+	{:else if answer.other && !answer.other.movable}
+		<p class="port-note bad">
+			{answer.other.name} uses {port} as its {kindLabel(answer.other.kind)}, and your account may not change that server. Pick another port.
+		</p>
 	{:else if answer.other}
 		{@const other = answer.other}
 		<div class="port-clash" role="group" aria-label="Port {port} is taken">

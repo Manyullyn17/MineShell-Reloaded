@@ -230,7 +230,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			general: on('settings.edit'),
 			memory: on('settings.edit'),
 			limits: on('settings.edit'),
-			network: on('settings.edit'),
+			network: handler(on('settings.edit'), "moving another server's port needs settings.edit on that server"),
 			voiceChat: on('settings.edit'),
 			restarts: on('settings.edit'),
 			console: on('settings.edit'),

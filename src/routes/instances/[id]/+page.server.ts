@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { can } from '#lib/shared/access.js';
 import { packIconPending } from '#lib/server/packicon.js';
 import { hungAfterCrash, onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
@@ -72,7 +73,7 @@ async function stuckStarting(instanceId: string, createdAt: number, startedAt: n
 const RANGES = { '1h': 60 * 60 * 1000, '6h': 6 * 60 * 60 * 1000, '24h': 24 * 60 * 60 * 1000 } as const;
 type Range = keyof typeof RANGES;
 
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
 	const requested = url.searchParams.get('range');
@@ -112,7 +113,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			? {
 					active: activeProfile(instance.id),
 					durations: PROFILE_SECONDS,
-					uploads: (await sparkUploads(instance.path)).slice(0, 5)
+					// Profiles are the profiler's (console.command) to share.
+					uploads: can(locals.access, instance.id, 'console.command') ? (await sparkUploads(instance.path)).slice(0, 5) : []
 				}
 			: null
 	);
@@ -198,7 +200,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		heapMaxBytes: heap.at(-1)?.maxBytes ?? null,
 		// Streamed: it may search the journal for an out-of-memory crash.
 		memoryAdvice: memoryAdvice(instance).catch(() => null),
-		crashTail: crash.then((c) => (c ? c.log.split('\n').slice(-40).join('\n') : null)),
+		// That it crashed shows to everyone; its last lines are console output (console.read).
+		crash: crash.then((c) =>
+			c ? { tail: can(locals.access, instance.id, 'console.read') ? c.log.split('\n').slice(-40).join('\n') : null } : null
+		),
 		// Indexing a big pack's mods takes a moment the first time.
 		diagnosis: crash.then((c) => c?.diagnosis ?? null)
 	};

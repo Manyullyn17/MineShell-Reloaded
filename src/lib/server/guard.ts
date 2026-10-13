@@ -1,7 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
 import { authEnabled, ownerExists, sessionUser, SESSION_COOKIE } from './auth';
-import { loadAccess, NO_ACCESS } from './access';
+import { loadAccess, REFUSED } from './access';
+import { FULL_ACCESS, NO_ACCESS } from '#lib/shared/access.js';
 import { decide } from './access/check';
 
 /**
@@ -82,7 +83,7 @@ function checkPolicy(event: GuardEvent): Response | null {
 		const from = event.url.pathname.replace(/\/__data\.json$/, '');
 		redirect(303, `/denied?${new URLSearchParams({ from, ...(decision.unlisted ? { unlisted: '1' } : {}) })}`);
 	}
-	return refused(event.request, decision.unlisted ? UNLISTED : NO_ACCESS);
+	return refused(event.request, decision.unlisted ? UNLISTED : REFUSED);
 }
 
 /**
@@ -99,13 +100,13 @@ export function guard(event: GuardEvent): Response | null {
 	event.locals.user = null;
 	if (!required) {
 		event.locals.authenticated = true;
-		event.locals.access = loadAccess(null);
+		event.locals.access = FULL_ACCESS;
 		return checkPolicy(event);
 	}
 
 	event.locals.user = sessionUser(event.cookies.get(SESSION_COOKIE));
 	event.locals.authenticated = event.locals.user !== null;
-	event.locals.access = loadAccess(event.locals.user);
+	event.locals.access = event.locals.user ? loadAccess(event.locals.user) : NO_ACCESS;
 	const pathname = event.url.pathname;
 	const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 

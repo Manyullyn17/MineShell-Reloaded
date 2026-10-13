@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
+import { can } from '#lib/shared/access.js';
 import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
@@ -54,7 +55,7 @@ import {
 } from '#lib/server/scheduledcommands.js';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
-import { portConflict } from '#lib/server/ports.js';
+import { portUser } from '#lib/server/ports.js';
 import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel, syncVoiceTunnel } from '#lib/server/playit.js';
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
@@ -83,9 +84,17 @@ import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
  * with the RCON port through the network action so the DB and file agree.
  */
 const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port', 'server-port']);
+
+/** Another server using `port`, by name only to an account that may see it. */
+function portClash(locals: App.Locals, port: number, instanceId: string) {
+	const user = portUser(port, instanceId);
+	if (!user) return null;
+	const name = can(locals.access, user.instanceId, 'view') ? user.name : 'Another server';
+	return { ...user, message: `${name} already uses port ${port} for ${user.kind === 'game' ? 'Minecraft' : 'RCON'}.` };
+}
 const editableProperties = () => PROPERTY_SCHEMA.filter((f) => !MANAGED_KEYS.has(f.key));
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const instance = requireInstance(params.id);
 	const voice = await voiceChat(instance);
 	const parsed = await readProperties(instance.path);
@@ -216,7 +225,11 @@ export const load: PageServerLoad = async ({ params }) => {
 			global: policyFormValues(getSnapshotPolicy()),
 			usage: await snapshotUsage(instance.path)
 		},
-		scheduledCommands: listScheduledCommands(instance.id),
+		// Console commands: for whoever may read or send them.
+		scheduledCommands:
+			can(locals.access, instance.id, 'console.read') || can(locals.access, instance.id, 'console.command')
+				? listScheduledCommands(instance.id)
+				: [],
 		properties: {
 			values: shownProperties,
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k)).map((key) => ({ key, value: parsed.values[key] })),
@@ -493,7 +506,7 @@ export const actions: Actions = {
 		return { ok: true, message: summary.running ? `${what} and applied to the running server.` : `${what}.` };
 	},
 
-	network: async ({ request, params }) => {
+	network: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const serverPort = formInt(form, 'serverPort', instance.serverPort);
@@ -513,10 +526,14 @@ export const actions: Actions = {
 		];
 		for (const change of changes) {
 			if (change.port === change.current) continue;
-			const conflict = portConflict(change.port, instance.id);
-			if (!conflict) continue;
+			const clash = portClash(locals, change.port, instance.id);
+			if (!clash) continue;
+			// Moving it changes that server: only for an account that may change it.
+			if (!can(locals.access, clash.instanceId, 'settings.edit')) {
+				return fail(400, { ok: false, message: `${clash.message} Your account may not change that server; pick another port.` });
+			}
 			if (change.how !== 'swap' && change.how !== 'free') {
-				return fail(400, { ok: false, message: `${conflict} Choose next to the field whether to swap ports with it or move it.` });
+				return fail(400, { ok: false, message: `${clash.message} Choose next to the field whether to swap ports with it or move it.` });
 			}
 			try {
 				const result = await movePortAside(instance.id, change.port, change.field, change.how);
@@ -745,7 +762,7 @@ export const actions: Actions = {
 		return { ok: true, message: 'Saved. Restart the server for the changes to take effect.' };
 	},
 
-	propertiesRaw: async ({ request, params }) => {
+	propertiesRaw: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const raw = String((await request.formData()).get('raw') ?? '');
 		const parsed = parseProperties(raw);
@@ -755,8 +772,8 @@ export const actions: Actions = {
 		// The game port lives in the DB too; a changed one in the raw file moves it.
 		const newPort = Number(parsed.values['server-port']);
 		if (Number.isInteger(newPort) && newPort !== instance.serverPort) {
-			const conflict = portConflict(newPort, instance.id);
-			if (conflict) return fail(400, { ok: false, message: conflict });
+			const clash = portClash(locals, newPort, instance.id);
+			if (clash) return fail(400, { ok: false, message: clash.message });
 			db.update(serverInstances)
 				.set({ serverPort: newPort, updatedAt: Date.now() })
 				.where(eq(serverInstances.id, instance.id))

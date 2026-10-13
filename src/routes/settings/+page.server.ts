@@ -82,8 +82,11 @@ import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 import { deleteCustomPreset, listPresets, saveCustomPreset } from '#lib/server/jvm-presets.js';
 
-/** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
-async function playitOverview() {
+/**
+ * The agent, and each server's tunnel next to the ones made on playit's
+ * dashboard. Those others are the owner's account's, so only the owner sees them.
+ */
+async function playitOverview(owner: boolean) {
 	const status = await playitStatus();
 	return {
 		running: status.running,
@@ -94,7 +97,7 @@ async function playitOverview() {
 		servers: listInstances()
 			.filter((i) => serverTunnel(i.id))
 			.map((i) => ({ id: i.id, name: i.name, port: i.serverPort, ...publicAddress(i.id, status) })),
-		others: otherTunnels(status).map((t) => ({
+		others: (owner ? otherTunnels(status) : []).map((t) => ({
 			id: t.id,
 			name: t.name,
 			address: t.display_address,
@@ -123,17 +126,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 		authEnabled: authEnabled(),
 		username: locals.user?.username ?? null,
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
+		// Managing the playit.gg link (the account's pages, linking, routing) is the owner's;
+		// global admins see whether it works.
 		playit: {
+			owner: locals.access.owner,
 			linked: linkedAgent().agentId !== null,
-			dashboard: DASHBOARD,
-			agentPage: linkedAgent().agentId ? agentPage(linkedAgent().agentId!) : null,
+			dashboard: locals.access.owner ? DASHBOARD : null,
+			agentPage: locals.access.owner && linkedAgent().agentId ? agentPage(linkedAgent().agentId!) : null,
 			routing: linkedAgent().routing,
 			// Streamed: playit's list of locations.
-			locations: linkedAgent().agentId ? playitLocations() : null,
-			claim: claimState() ? { ...claimState()! } : null,
+			locations: locals.access.owner && linkedAgent().agentId ? playitLocations() : null,
+			claim: locals.access.owner && claimState() ? { ...claimState()! } : null,
 			unit: AGENT_UNIT,
 			// Streamed: it asks playit's API.
-			status: linkedAgent().agentId ? playitOverview() : null
+			status: linkedAgent().agentId ? playitOverview(locals.access.owner) : null
 		},
 		snapshots: policyFormValues(getSnapshotPolicy()),
 		snapshotUsage: await Promise.all(

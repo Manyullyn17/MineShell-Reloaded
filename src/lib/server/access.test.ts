@@ -10,9 +10,8 @@ const STEVE = '8667ba71-b85a-4004-af54-457a9734eed7';
 const server = () => createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 
 describe('loadAccess', () => {
-	it('gives the owner, and every request with sign-in off, everything', () => {
+	it('gives the owner everything', () => {
 		expect(loadAccess(owner())).toMatchObject({ owner: true, globalAdmin: true, canCreate: true });
-		expect(loadAccess(null)).toMatchObject({ owner: true, globalAdmin: true });
 	});
 
 	it("reads an account's grants, player scopes and flags", async () => {

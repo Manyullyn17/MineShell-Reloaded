@@ -113,3 +113,6 @@ export function can(
 
 /** Everything allowed: what the owner has, and what MINESHELL_AUTH=off gives every request. */
 export const FULL_ACCESS: Access = { owner: true, globalAdmin: true, canCreate: true, instances: {} };
+
+/** Nothing allowed: a visitor who is not signed in. */
+export const NO_ACCESS: Access = { owner: false, globalAdmin: false, canCreate: false, instances: {} };

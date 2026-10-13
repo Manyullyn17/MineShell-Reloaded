@@ -93,7 +93,10 @@ describe('the access policy', () => {
 			const leftToHandler = Object.entries(entry.actions ?? {}).filter(([, r]) => handlerChecked(r));
 			if (!leftToHandler.length) continue;
 			const source = pageSources[`/src/routes${id === '/' ? '' : id}/+page.server.ts`] ?? '';
-			expect(/require(Access|GlobalAdmin)\(/.test(source), `${id} (${leftToHandler.map(([n]) => n).join(', ')}) calls requireAccess`).toBe(true);
+			expect(
+				/require(Access|GlobalAdmin)\(|can\(locals\.access/.test(source),
+				`${id} (${leftToHandler.map(([n]) => n).join(', ')}) checks access in the handler`
+			).toBe(true);
 		}
 	});
 });

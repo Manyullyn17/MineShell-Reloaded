@@ -3,6 +3,7 @@ import { db } from '#lib/server/db/index.js';
 import { instanceTags, serverTags } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { onlinePlayers, summariseAll } from '#lib/server/instances.js';
+import { sees } from '#lib/server/access.js';
 import { latestSample } from '#lib/server/monitor.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
@@ -12,7 +13,7 @@ import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
 import { likelyCause } from '#lib/server/lastcrash.js';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const [tagRows, allTags] = await Promise.all([
 		db.select({ instanceId: instanceTags.instanceId, id: serverTags.id, name: serverTags.name })
 			.from(instanceTags)
@@ -28,7 +29,8 @@ export const load: PageServerLoad = async () => {
 		]);
 	}
 
-	const summaries = await summariseAll();
+	// Only the servers this account may see. The tag names stay shared, like the tags themselves.
+	const summaries = await summariseAll(sees(locals.access));
 	const systemd = await probeSystemd();
 	const unitInstalled = await templateUnitInstalled();
 	const javaCount = listJavaRuntimes().length;

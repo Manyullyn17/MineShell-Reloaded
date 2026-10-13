@@ -1,8 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { cancelTask, getTask, listTasks } from '#lib/server/tasks.js';
-import { requireAccess, requireGlobalAdmin } from '#lib/server/access.js';
+import { requireAccess, requireGlobalAdmin, seesTask } from '#lib/server/access.js';
 
-export const load: PageServerLoad = async () => ({ tasks: listTasks() });
+export const load: PageServerLoad = async ({ locals }) => ({ tasks: listTasks().filter(seesTask(locals.access)) });
 
 export const actions: Actions = {
 	cancel: async ({ request, locals }) => {

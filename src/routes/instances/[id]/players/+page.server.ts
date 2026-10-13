@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { requireAccess } from '#lib/server/access.js';
+import { can } from '#lib/shared/access.js';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import {
@@ -16,9 +17,11 @@ import { listPlayerData } from '#lib/server/playerdata.js';
 import { lookUpProfiles } from '#lib/server/profiles.js';
 import { playtimes } from '#lib/server/history.js';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const instance = requireInstance(params.id);
-	const lists = await loadPlayerLists(instance);
+	const all = await loadPlayerLists(instance);
+	// IP addresses are for whoever manages bans, not for everyone who may see the server.
+	const lists = can(locals.access, instance.id, 'players.manage') ? all : { ...all, ipBans: [] };
 	const online = lists.serverRunning ? await onlinePlayers(instance) : null;
 	const playerFiles = await listPlayerData(instance);
 	const uuids = [

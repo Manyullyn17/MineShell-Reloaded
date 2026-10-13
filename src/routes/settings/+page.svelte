@@ -370,7 +370,9 @@
 		settings (Network).
 	</p>
 
-	{#if !data.playit.linked}
+	{#if !data.playit.linked && !data.playit.owner}
+		<p class="muted small">Not linked. Only the owner account can link MineShell to playit.gg.</p>
+	{:else if !data.playit.linked}
 		{#if data.playit.claim && claiming}
 			<div class="notice">
 				<p>
@@ -415,6 +417,7 @@
 				{/if}
 			</p>
 		</div>
+		{#if data.playit.owner}
 		<p class="small">
 			<a href={data.playit.agentPage} target="_blank" rel="noreferrer">This agent on playit.gg</a> ·
 			<a href={data.playit.dashboard} target="_blank" rel="noreferrer">All agents</a>
@@ -436,6 +439,9 @@
 			Which playit location this machine's agent connects out through; free on every plan. Where players
 			connect (a server's region) is set per server and is Premium.
 		</p>
+		{:else}
+		<p class="muted small">The playit.gg link and where the agent connects through are managed by the owner account.</p>
+		{/if}
 		{#if playit.servers.length}
 			<h3>Public servers</h3>
 			<ul class="plain-list">
@@ -465,6 +471,7 @@
 				{/each}
 			</ul>
 		{/if}
+		{#if data.playit.owner}
 		<form
 			method="POST"
 			action="?/playitUnlink"
@@ -476,6 +483,7 @@
 		>
 			<button class="button-danger" type="submit">Unlink</button>
 		</form>
+		{/if}
 		<p class="muted small">The agent stays listed on playit.gg after unlinking; remove it there if you like.</p>
 	{/if}
 </section>

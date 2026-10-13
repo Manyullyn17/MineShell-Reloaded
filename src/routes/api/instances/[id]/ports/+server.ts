@@ -3,11 +3,13 @@ import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
 import { allocatePort, DEFAULT_SERVER_PORT, portIsFree, portUser, RCON_OFFSET } from '#lib/server/ports.js';
 import { unitState } from '#lib/server/systemd.js';
+import { can } from '#lib/shared/access.js';
 
 /**
  * Whether a port can be given to this server, for the indicator next to the
  * Settings port fields: the MineShell server using it (with where it would
- * go if moved), or something else on the machine listening on it.
+ * go if moved, when this account may change that server), or something else on
+ * the machine listening on it. A server the account may not see is not named.
  */
 export const GET: RequestHandler = async ({ params, url, locals }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
@@ -32,7 +34,15 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	const listening = !other && !(own && running) && !(await portIsFree(port));
 	return json({
 		valid: true,
-		other: other ? { name: other.name, kind: other.kind, swapTo: current, freeTo } : null,
+		other: other
+			? {
+					name: can(locals.access, other.instanceId, 'view') ? other.name : 'Another server',
+					kind: other.kind,
+					swapTo: current,
+					freeTo,
+					movable: can(locals.access, other.instanceId, 'settings.edit')
+				}
+			: null,
 		listening
 	});
 };

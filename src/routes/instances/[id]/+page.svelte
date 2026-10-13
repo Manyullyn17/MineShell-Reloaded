@@ -16,7 +16,7 @@
 	// Streamed: slow the first time on a big pack (the last run's journal, a walk of the
 	// folder, every mod jar opened). Kept between the 5 s refreshes, so nothing flickers.
 	const key = () => data.instance.id;
-	const crashTail = streamed(() => data.crashTail, key);
+	const crash = streamed(() => data.crash, key);
 	const diagnosis = streamed(() => data.diagnosis, key);
 	const facesInfo = streamed(() => data.faces);
 	const faces = $derived((facesInfo.ready ? facesInfo.value : {}) as Record<string, { id: string; skin: string | null }>);
@@ -145,7 +145,7 @@
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}
 
-{#if crashTail.ready && crashTail.value}
+{#if crash.ready && crash.value}
 	<section class="panel">
 		<div class="panel-head">
 			<div>
@@ -153,11 +153,13 @@
 					<h2>It crashed but is still running</h2>
 					<p>
 						The server logged a crash {formatRelative(data.hungSince)}, but its process never exited, so it will not
-						restart on its own either. Stop it, and Force stop if that does not end it. These are its last journal lines.
+						restart on its own either. Stop it, and Force stop if that does not end it.{crash.value.tail !== null
+							? ' These are its last journal lines.'
+							: ''}
 					</p>
 				{:else}
 					<h2>Last output before it stopped</h2>
-					<p>The server exited unexpectedly. These are the final journal lines.</p>
+					<p>The server exited unexpectedly.{crash.value.tail !== null ? ' These are the final journal lines.' : ''}</p>
 				{/if}
 			</div>
 			<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>
@@ -167,7 +169,11 @@
 		{:else if diagnosis.value}
 			<CrashDiagnosis diagnosis={diagnosis.value} fixAction={data.running ? null : '?/modFix'} />
 		{/if}
-		<pre class="crash">{crashTail.value}</pre>
+		{#if crash.value.tail !== null}
+			<pre class="crash">{crash.value.tail}</pre>
+		{:else}
+			<p class="muted small">Its last output is in the console, which your account may not read.</p>
+		{/if}
 	</section>
 {/if}
 

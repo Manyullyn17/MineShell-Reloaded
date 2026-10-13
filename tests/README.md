@@ -267,3 +267,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Access: `can()`, loading grants (admin removal keeps the listed permissions, grants go with the server or account), the guard applying the policy, a refused page never running its load | `shared/access.test.ts`, `server/access.test.ts`, `guard.test.ts` |
 | (feature) The access policy names every route, action and method, and handler-checked entries call `requireAccess` | `access/policy.test.ts` |
 | (feature) Checks that depend on the posted form: the ops list, unpinning, mod or data pack, cancelling a task | `routes/instances/access-handlers.test.ts` |
+| (feature) Page data per account: rail, server list and Activity filtered; crash log lines, IP bans, scheduled commands and the playit.gg account links left out; another server's port neither named nor moved without access | `routes/access-filtering.test.ts` |
