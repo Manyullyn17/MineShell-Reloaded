@@ -3,7 +3,7 @@ import { and, eq, lt } from 'drizzle-orm';
 import { db } from './db';
 import { sessions, settings } from './db/schema';
 import { hashPassword, verifyPassword } from './crypto';
-import { AUTH_ENABLED } from './config';
+import { AUTH_ENABLED, DATA_DIR } from './config';
 
 /**
  * One admin password, one cookie. The design notes flagged auth as open: this is
@@ -12,7 +12,17 @@ import { AUTH_ENABLED } from './config';
  * MINESHELL_AUTH=off to skip it entirely.
  */
 
-export const SESSION_COOKIE = 'mineshell_session';
+/**
+ * Browsers keep cookies per host, not per port: a production MineShell on
+ * port 3000 and `npm run dev` on 5173 shared one cookie, and signing in to
+ * either signed the other out. Each data folder holds its own sessions, so the
+ * cookie is named after it.
+ */
+export function sessionCookieName(dataDir: string): string {
+	return `mineshell_session_${crypto.createHash('sha256').update(dataDir).digest('hex').slice(0, 12)}`;
+}
+
+export const SESSION_COOKIE = sessionCookieName(DATA_DIR);
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_KEY = 'auth.password_hash';
 

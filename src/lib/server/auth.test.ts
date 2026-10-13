@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sessionCookieOptions } from './auth';
+import { sessionCookieName, sessionCookieOptions } from './auth';
 
 describe('sessionCookieOptions', () => {
 	const req = (headers: Record<string, string> = {}) => new Request('http://x/', { headers });
@@ -22,5 +22,16 @@ describe('sessionCookieOptions', () => {
 
 	it('is http-only, same-site lax and lasts 30 days', () => {
 		expect(sessionCookieOptions(req(), new URL('http://x/'))).toMatchObject({ httpOnly: true, sameSite: 'lax', path: '/', maxAge: 30 * 24 * 60 * 60 });
+	});
+});
+
+describe('sessionCookieName', () => {
+	it('differs between data folders, so two MineShells on one host keep their own sign-ins', () => {
+		expect(sessionCookieName('/home/a/.local/share/mineshell')).not.toBe(sessionCookieName('/home/a/mineshell-data'));
+	});
+
+	it('is the same every start for one data folder, and a valid cookie name', () => {
+		expect(sessionCookieName('/srv/mineshell')).toBe(sessionCookieName('/srv/mineshell'));
+		expect(sessionCookieName('/srv/mineshell')).toMatch(/^mineshell_session_[0-9a-f]{12}$/);
 	});
 });

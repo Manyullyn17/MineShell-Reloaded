@@ -172,15 +172,11 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Bug | Test |
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
-| Overlapping RCON commands got each other's output (player list held the tick report) | `rcon.test.ts` |
-| A new RCON connection per command: two log lines each, several a minute | `rcon.test.ts` |
 | Forge 1.12 waited forever on "/fml confirm" at startup (missing blocks/items after a pack update) | `flows/forge-question.test.ts`, `src/lib/server/forgequery.test.ts` |
-| RCON answers over 4096 characters cut off after the first packet | `rcon.test.ts` |
 | Rollback deleted originals not yet moved aside | `instances.test.ts` |
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
 | Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
 | Fugue 0.24 (needs Cleanroom 0.6.10) added to 0.5.x servers; a pack's Fugue 0.21 kept on Cleanroom 0.5.17, where it crashes | `cleanroom.test.ts`, `flows/cleanroom-fugue.test.ts` |
-| Player count 0 on Minecraft 1.12 | `rcon.test.ts` |
 | Pack update kept old jars that changed under the same name | `flows/pack-change.test.ts` |
 | Failure while moving a loader aside lost files | `flows/loader-version.test.ts` |
 | Cleanup after a failed recovery deleted the originals | `flows/recovery.test.ts` |
@@ -246,3 +242,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A jar put into mods/ by hand became a "pack mod" at the next pack change's sync, and the change after removed it | `flows/pack-change.test.ts` |
 | (feature) Pack change rollback: exact configs, user mods kept, failure restores all, world from the snapshot, Minecraft moves need it | `flows/pack-rollback.test.ts` |
 | A file-list entry without a URL was dropped (install "succeeded" without it); failed downloads were only in the task log; CurseForge files had one source | `packs/index.test.ts`, `flows/pack-install.test.ts` |
+| Two MineShells on one machine (production and dev) shared one session cookie and signed each other out | `auth.test.ts` |

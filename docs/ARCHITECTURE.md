@@ -625,7 +625,9 @@ SvelteKit's own full-origin check is turned off for that reason.
 attempt throttle. The original notes left this open, wondering whether LAN-only made it
 unnecessary; it is on by default because "LAN-only" tends to stop being true — a guest
 device, an IoT box, a Tailscale exit node — and this application can delete a world.
-`MINESHELL_AUTH=off` disables it and says so plainly on the settings page.
+`MINESHELL_AUTH=off` disables it and says so plainly on the settings page. The cookie's
+name carries a hash of the data folder: browsers keep cookies per host, not per port, so
+two MineShells on one machine (production and `npm run dev`) otherwise signed each other out.
 
 ---
 
