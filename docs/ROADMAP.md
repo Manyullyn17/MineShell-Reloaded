@@ -22,6 +22,37 @@ deferred and is not a current priority.
 
 ## Not built yet
 
+### Accounts and permissions (in progress)
+
+Several trusted people using one MineShell, each with access to chosen servers and features.
+Agreed with the user on 2026-10-13 after an audit of every route; built in phases.
+
+- **Roles.** The owner (one account, `admin`, protected by the database: never deleted,
+  demoted or disabled) and global admins may do everything; only the owner manages the
+  integrations (CurseForge key, playit.gg link and routing, the links to those accounts),
+  updates MineShell, and makes or unmakes global admins. An instance admin may do everything
+  on one server but not hand out access. Everyone else has permissions per server.
+- **Permissions** (`lib/shared/access.ts`): feature-level, not per button. Console output and
+  Logs are one permission, outside plain read access (same journal, player IPs and chat).
+  Player data has view and edit, each for all players (later ones too) or chosen UUIDs; edit
+  counts as view. `files`, `mods` and `software` can run programs as MineShell's user, so they
+  mean full trust (accepted). The Map is viewable with read access; rendering is `map.render`,
+  installing a map mod is `mods`; Mojang's EULA tick can be accepted with `map.render` or
+  player data view. Going public through playit.gg is for instance admins. Pins and tags stay
+  shared. A Java download an operation asks for is allowed with that operation's permission.
+- **Creating and copying.** Whoever creates or copies a server becomes its admin; a copy never
+  takes the source's access list, and copying needs `duplicate` and `files` on the source.
+- **Owner name.** `admin` for now; renaming may come later (only the username column changes).
+
+Phases: (1) fixes worth having alone - RCON password only on request, JVM presets in MineShell
+settings, memory apart from the launch settings, the server list's buttons under each
+server - **built**; (2) accounts, owner, username sign-in, `npm run reset-password` - **built**;
+(3) the permission model and a default-deny route policy in the guard - **built**; (4) filter
+lists and secrets in page data per account; (5) managing accounts and access (one-time
+passwords with a forced change, disable, sign-out everywhere); (6) creator becomes admin;
+(7) show only what an account may use; (8) close open console/task streams when access
+changes; (9) record who did what in the audit log.
+
 ### World backups
 
 Not implemented yet. External backup integration is planned for the future; its provider
