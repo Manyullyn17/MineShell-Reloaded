@@ -7,6 +7,7 @@ import { auditLog, instanceMods, serverInstances, type ServerInstance } from './
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { copyGrants, makeCreatorAdmin } from './accounts';
+import { currentActor } from './requestcontext';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
 import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
 import {
@@ -110,13 +111,17 @@ export function audit(
 	action: string,
 	opts: { instanceId?: string | null; detail?: string; actor?: string } = {}
 ): void {
+	// Whose request this came from, however far down (requestcontext.ts).
+	const who = currentActor();
 	db.insert(auditLog)
 		.values({
 			timestamp: Date.now(),
 			instanceId: opts.instanceId ?? null,
 			action,
 			detail: opts.detail ?? null,
-			actor: opts.actor ?? 'ui'
+			actor: opts.actor ?? 'ui',
+			userId: who?.id ?? null,
+			username: who?.username ?? null
 		})
 		.run();
 }

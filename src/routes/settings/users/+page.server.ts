@@ -22,7 +22,7 @@ export const actions: Actions = {
 				globalAdmin,
 				canCreate: form.get('canCreate') === 'on'
 			});
-			audit('account.created', { detail: `${account.username} by ${locals.user?.username ?? 'MineShell'}` });
+			audit('account.created', { detail: account.username });
 			// Shown once, here; only its hash is kept.
 			return { ok: true, message: `Added ${account.username}.`, created: { id: account.id, username: account.username, password } };
 		} catch (err) {

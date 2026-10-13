@@ -607,12 +607,14 @@
 	{:else}
 		<table class="stacked activity-table">
 			<thead>
-				<tr><th>When</th><th>Server</th><th>Action</th><th>Detail</th></tr>
+				<tr><th>When</th><th>Who</th><th>Server</th><th>Action</th><th>Detail</th></tr>
 			</thead>
 			<tbody>
 				{#each data.recent as entry (entry.id)}
 					<tr>
 						<td class="small nowrap faint">{formatDateTime(entry.timestamp)}</td>
+						<!-- An account's name then; else what MineShell did on its own (scheduler, system). -->
+						<td class="small">{entry.username ?? (entry.actor === 'ui' ? '-' : entry.actor)}</td>
 						<td class="small mono">{entry.instanceId ?? '-'}</td>
 						<td class="small">{entry.action}</td>
 						<td class="small muted wrap">{entry.detail ?? ''}</td>
@@ -995,8 +997,8 @@
 			margin-top: var(--space-2);
 		}
 
-		/* When and server on one line, then what happened. */
-		.activity-table td:nth-child(-n + 2) {
+		/* When, who and server on one line, then what happened. */
+		.activity-table td:nth-child(-n + 3) {
 			display: inline;
 			margin-right: var(--space-2);
 		}

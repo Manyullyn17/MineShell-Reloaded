@@ -22,7 +22,7 @@ deferred and is not a current priority.
 
 ## Not built yet
 
-### Accounts and permissions (in progress)
+### Accounts and permissions (built)
 
 Several trusted people using one MineShell, each with access to chosen servers and features.
 Agreed with the user on 2026-10-13 after an audit of every route; built in phases.
@@ -51,7 +51,8 @@ server - **built**; (2) accounts, owner, username sign-in, `npm run reset-passwo
 lists and secrets in page data per account - **built**; (5) managing accounts and access (one-time
 passwords with a forced change, disable, sign-out everywhere) - **built**; (6) creator becomes admin - **built**;
 (7) show only what an account may use - **built**; (8) close open console/task streams when access
-changes - **built**; (9) record who did what in the audit log.
+changes - **built**; (9) record who did what in the audit log - **built**. All
+phases are built (2026-10-13).
 
 ### World backups
 

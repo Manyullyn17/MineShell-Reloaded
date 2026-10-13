@@ -380,7 +380,10 @@ export const auditLog = sqliteTable(
 		action: text('action').notNull(),
 		detail: text('detail'),
 		/** ui | scheduler | monitor | system */
-		actor: text('actor').notNull().default('ui')
+		actor: text('actor').notNull().default('ui'),
+		/** The account it was for (requestcontext.ts), and its name then; null for MineShell's own work. No foreign key: the log outlives accounts. */
+		userId: text('user_id'),
+		username: text('username')
 	},
 	(t) => ({
 		byTime: index('audit_log_ts_idx').on(t.timestamp)

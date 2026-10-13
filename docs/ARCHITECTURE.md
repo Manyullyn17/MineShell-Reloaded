@@ -690,6 +690,13 @@ also re-reads which tasks to show. The browser's EventSource gives up when its r
 refused, and `whenClosedForGood` then reloads the page's data, so the guard moves the page to
 sign-in or "No access" within seconds.
 
+The audit log (`audit_log`, MineShell settings > Activity) records which account did what:
+hooks.server.ts runs each request with `runAs` (`requestcontext.ts`, Node's AsyncLocalStorage),
+and `audit()` reads the account from there, so an entry written deep in an operation, or in a
+task the request started that finishes minutes later, still names who asked. The account's name
+is kept beside its id, so entries read right after it is renamed or deleted. MineShell's own work
+(scheduler, recovery, boot) runs outside any request and has none; `actor` says what it was.
+
 Access is given on an account's page under Accounts: per server "No access", chosen permissions
 (grouped, the full-trust ones marked, player data as nobody's, every player's or chosen
 players' with a picker of the server's known players), or admin of the server. Choosing admin

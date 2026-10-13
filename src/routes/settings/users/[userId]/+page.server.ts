@@ -50,8 +50,6 @@ function target(params: { userId: string }, locals: App.Locals): Account {
 	return account;
 }
 
-const by = (locals: App.Locals) => locals.user?.username ?? 'MineShell';
-
 /** UUIDs from the ticked players and a free text field (any separators), lower case. */
 function uuidsFrom(form: FormData, ticked: string, typed: string): string[] {
 	const extra = String(form.get(typed) ?? '')
@@ -72,28 +70,28 @@ export const actions: Actions = {
 			return fail(403, { ok: false, message: 'Only the owner makes or unmakes MineShell admins.' });
 		}
 		setAccountFlags(account.id, { globalAdmin, canCreate: form.get('canCreate') === 'on' });
-		audit('account.flags', { detail: `${account.username}: admin ${globalAdmin}, create ${form.get('canCreate') === 'on'}; by ${by(locals)}` });
+		audit('account.flags', { detail: `${account.username}: admin ${globalAdmin}, create ${form.get('canCreate') === 'on'}` });
 		return { ok: true, message: 'Saved.' };
 	},
 
 	disable: async ({ params, locals }) => {
 		const account = target(params, locals);
 		setAccountDisabled(account.id, true);
-		audit('account.disabled', { detail: `${account.username} by ${by(locals)}` });
+		audit('account.disabled', { detail: `${account.username}` });
 		return { ok: true, message: `${account.username} is disabled and signed out everywhere.` };
 	},
 
 	enable: async ({ params, locals }) => {
 		const account = target(params, locals);
 		setAccountDisabled(account.id, false);
-		audit('account.enabled', { detail: `${account.username} by ${by(locals)}` });
+		audit('account.enabled', { detail: `${account.username}` });
 		return { ok: true, message: `${account.username} can sign in again.` };
 	},
 
 	resetPassword: async ({ params, locals }) => {
 		const account = target(params, locals);
 		const password = resetAccountPassword(account.id);
-		audit('account.password_reset', { detail: `${account.username} by ${by(locals)}` });
+		audit('account.password_reset', { detail: `${account.username}` });
 		// Shown once, here; only its hash is kept.
 		return { ok: true, message: `${account.username} has a new one-time password.`, reset: { username: account.username, password } };
 	},
@@ -101,7 +99,7 @@ export const actions: Actions = {
 	signOut: async ({ params, locals }) => {
 		const account = target(params, locals);
 		destroyUserSessions(account.id);
-		audit('account.signed_out', { detail: `${account.username} by ${by(locals)}` });
+		audit('account.signed_out', { detail: `${account.username}` });
 		return { ok: true, message: `${account.username} is signed out everywhere.` };
 	},
 
@@ -111,7 +109,7 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: `Type ${account.username} to confirm.` });
 		}
 		deleteAccount(account.id);
-		audit('account.deleted', { detail: `${account.username} by ${by(locals)}` });
+		audit('account.deleted', { detail: `${account.username}` });
 		redirect(303, '/settings/users');
 	},
 
@@ -138,7 +136,7 @@ export const actions: Actions = {
 			if (err instanceof AccountError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
-		audit('account.access', { instanceId: instance.id, detail: `${account.username}: ${level}; by ${by(locals)}` });
+		audit('account.access', { instanceId: instance.id, detail: `${account.username}: ${level}` });
 		return { ok: true, message: `Saved ${account.username}'s access to ${instance.name}.` };
 	}
 };
