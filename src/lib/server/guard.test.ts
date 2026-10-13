@@ -14,7 +14,9 @@ const { guard, isCrossSiteRequest } = await import('./guard');
 const { createSession, destroySession, SESSION_COOKIE } = await import('./auth');
 const { db } = await import('./db');
 const { users } = await import('./db/schema');
-const { owner, otherUser } = await import('../../../tests/helpers/auth');
+const { owner, otherUser, grant, setAccountFlags } = await import('../../../tests/helpers/auth');
+const { createInstance } = await import('../../../tests/helpers/instances');
+const { POLICY } = await import('./access/policy');
 
 const HOST = '192.168.0.200:5173';
 
@@ -22,11 +24,20 @@ function request(method: string, headers: Record<string, string> = {}) {
 	return new Request(`http://${HOST}/instances/a?/power`, { method, headers: { host: HOST, ...headers } });
 }
 
-function event(path: string, opts: { session?: string; method?: string; headers?: Record<string, string> } = {}) {
+/**
+ * A request as guard() sees it. `route` is the route id (`/instances/[id]`);
+ * left out, it is the path when the policy lists that path, else none.
+ */
+function event(
+	path: string,
+	opts: { session?: string; method?: string; headers?: Record<string, string>; route?: string | null; params?: Record<string, string> } = {}
+) {
 	const url = new URL(path, `http://${HOST}`);
 	return {
 		request: new Request(url, { method: opts.method ?? 'GET', headers: { host: HOST, ...(opts.headers ?? {}) } }),
 		url,
+		route: { id: opts.route !== undefined ? opts.route : POLICY[url.pathname] ? url.pathname : null },
+		params: opts.params ?? {},
 		cookies: { get: (name: string) => (name === SESSION_COOKIE ? opts.session : undefined) },
 		locals: {} as App.Locals
 	};
@@ -118,7 +129,7 @@ describe('auth guard', () => {
 
 		const account = otherUser();
 		const other = createSession(account.id, 'test').id;
-		expect(outcome(event('/settings', { session: other }))).toBeNull();
+		expect(outcome(event('/', { session: other }))).toBeNull();
 		db.update(users).set({ disabledAt: Date.now() }).where(eq(users.id, account.id)).run();
 		const e = event('/settings', { session: other });
 		expect(outcome(e)).toEqual({ redirect: '/login?next=%2Fsettings' });
@@ -130,5 +141,117 @@ describe('auth guard', () => {
 		const e = event('/settings');
 		expect(outcome(e)).toBeNull();
 		expect(e.locals).toMatchObject({ authenticated: true, authRequired: false, user: null });
+	});
+});
+
+describe('access policy', () => {
+	const ORIGIN = { origin: `http://${HOST}` };
+	const ACTION = { ...ORIGIN, 'x-sveltekit-action': 'true', accept: 'application/json' };
+
+	beforeEach(() => {
+		authControl.enabled = true;
+		authControl.setUp = true;
+	});
+
+	async function server() {
+		return createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+	}
+
+	it('lets the owner do anything the policy lists', async () => {
+		const { id } = await server();
+		const session = createSession(owner().id, null).id;
+		const at = (path: string, route: string, method = 'GET') => outcome(event(path, { session, method, route, params: { id }, headers: ORIGIN }));
+		expect(at(`/instances/${id}?/delete`, '/instances/[id]/settings', 'POST')).toBeNull();
+		expect(at('/settings?/curseforgeKey', '/settings', 'POST')).toBeNull();
+		expect(at(`/api/instances/${id}/command`, '/api/instances/[id]/command', 'POST')).toBeNull();
+	});
+
+	it('refuses what the policy does not list, the owner and MINESHELL_AUTH=off included', async () => {
+		const { id } = await server();
+		const session = createSession(owner().id, null).id;
+		expect(outcome(event('/somewhere', { session, route: '/somewhere' }))).toEqual({ status: 403 });
+		expect(outcome(event(`/instances/${id}?/noSuchAction`, { session, method: 'POST', route: '/instances/[id]', params: { id }, headers: ORIGIN }))).toEqual({ status: 403 });
+		expect(outcome(event(`/api/instances/${id}/command`, { session, method: 'DELETE', route: '/api/instances/[id]/command', params: { id }, headers: ORIGIN }))).toEqual({ status: 403 });
+		authControl.enabled = false;
+		expect(outcome(event('/somewhere', { route: '/somewhere' }))).toEqual({ status: 403 });
+		expect(outcome(event(`/instances/${id}?/delete`, { method: 'POST', route: '/instances/[id]/settings', params: { id }, headers: ORIGIN }))).toBeNull();
+	});
+
+	it('gives a read-only account the server but none of its actions, and no other server', async () => {
+		const mine = await server();
+		const other = await server();
+		const account = otherUser();
+		grant(account.id, mine.id, { permissions: ['view'] });
+		const session = createSession(account.id, null).id;
+		const get = (route: string, id: string) => outcome(event(route.replace('[id]', id), { session, route, params: { id } }));
+		// A refused page goes to /denied: its load never runs, so none of its data is sent.
+		const denied = (path: string) => ({ redirect: `/denied?from=${encodeURIComponent(path)}` });
+		expect(get('/instances/[id]', mine.id)).toBeNull();
+		expect(get('/instances/[id]/mods', mine.id)).toBeNull();
+		expect(get('/instances/[id]/console', mine.id)).toEqual(denied(`/instances/${mine.id}/console`));
+		expect(get('/instances/[id]/files', mine.id)).toEqual(denied(`/instances/${mine.id}/files`));
+		expect(get('/instances/[id]/settings', mine.id)).toEqual(denied(`/instances/${mine.id}/settings`));
+		expect(get('/instances/[id]', other.id)).toEqual(denied(`/instances/${other.id}`));
+		expect(get('/settings', mine.id)).toEqual(denied('/settings'));
+		// Also when the page's data is asked for by a client-side navigation.
+		expect(outcome(event(`/instances/${mine.id}/console/__data.json`, { session, route: '/instances/[id]/console', params: { id: mine.id } }))).toEqual(
+			denied(`/instances/${mine.id}/console`)
+		);
+
+		const post = (path: string, route: string) => event(path, { session, method: 'POST', route, params: { id: mine.id }, headers: ACTION });
+		expect(outcome(post(`/instances/${mine.id}?/power`, '/instances/[id]'))).toEqual({ status: 403 });
+		expect(outcome(post(`/api/instances/${mine.id}/command`, '/api/instances/[id]/command'))).toEqual({ status: 403 });
+	});
+
+	it('answers an enhanced form with an action error, so the page shows it like any failure', async () => {
+		const { id } = await server();
+		const account = otherUser();
+		grant(account.id, id, { permissions: ['view'] });
+		const session = createSession(account.id, null).id;
+		const response = guard(event(`/instances/${id}?/power`, { session, method: 'POST', route: '/instances/[id]', params: { id }, headers: ACTION }));
+		expect(response?.status).toBe(403);
+		expect(await response?.json()).toEqual({ type: 'error', error: { message: 'You do not have access to that.' } });
+	});
+
+	it('checks player pages against the UUIDs an account may see', async () => {
+		const { id } = await server();
+		const account = otherUser();
+		const steve = '8667ba71-b85a-4004-af54-457a9734eed7';
+		const alex = 'ec561538-f3fd-461d-aff5-086b22154bce';
+		grant(account.id, id, { permissions: ['view'], playerEdit: [steve] });
+		const session = createSession(account.id, null).id;
+		const player = (uuid: string, action = '') =>
+			outcome(event(`/instances/${id}/players/${uuid}${action}`, { session, method: action ? 'POST' : 'GET', route: '/instances/[id]/players/[uuid]', params: { id, uuid }, headers: ORIGIN }));
+		expect(player(steve)).toBeNull();
+		expect(player(steve, '?/edit')).toBeNull();
+		expect(player(alex)).toEqual({ redirect: `/denied?from=${encodeURIComponent(`/instances/${id}/players/${alex}`)}` });
+		// Fields shown for every player need every player.
+		expect(player(steve, '?/addField')).toEqual({ status: 403 });
+	});
+
+	it('lets an instance admin do everything on its server, and nothing MineShell-wide', async () => {
+		const { id } = await server();
+		const account = otherUser();
+		grant(account.id, id, { admin: true });
+		const session = createSession(account.id, null).id;
+		const post = (path: string, route: string) => outcome(event(path, { session, method: 'POST', route, params: { id }, headers: ORIGIN }));
+		expect(post(`/instances/${id}/settings?/delete`, '/instances/[id]/settings')).toBeNull();
+		expect(post(`/instances/${id}/settings?/playitPublic`, '/instances/[id]/settings')).toBeNull();
+		// Copying makes a server: that needs "may create servers".
+		expect(post(`/instances/${id}/settings?/clone`, '/instances/[id]/settings')).toEqual({ status: 403 });
+		expect(post('/settings?/scanJava', '/settings')).toEqual({ status: 403 });
+		setAccountFlags(account.id, { canCreate: true });
+		expect(post(`/instances/${id}/settings?/clone`, '/instances/[id]/settings')).toBeNull();
+	});
+
+	it('lets a global admin manage MineShell, but not the owner-only integrations', async () => {
+		const account = otherUser();
+		setAccountFlags(account.id, { globalAdmin: true });
+		const session = createSession(account.id, null).id;
+		const post = (action: string) => outcome(event(`/settings?/${action}`, { session, method: 'POST', route: '/settings', headers: ORIGIN }));
+		expect(post('scanJava')).toBeNull();
+		expect(post('curseforgeKey')).toEqual({ status: 403 });
+		expect(post('playitUnlink')).toEqual({ status: 403 });
+		expect(post('update')).toEqual({ status: 403 });
 	});
 });

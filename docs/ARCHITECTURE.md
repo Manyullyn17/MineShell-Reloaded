@@ -631,13 +631,36 @@ one account, the owner, named `admin`: created by /setup, or by migration 0019 f
 single admin password (whose sessions it kept). The owner is the row with `is_owner`, never a
 name; the database's triggers refuse to delete, demote or disable it, and a unique index allows
 one. `npm run reset-password` gives it a new password from the shell (DEPLOYMENT,
-Troubleshooting). Further accounts and per-server permissions are planned. The original notes
+Troubleshooting). Adding further accounts is not built yet; what they may do is (Access,
+below). The original notes
 left auth open, wondering whether LAN-only made it unnecessary; it is on by default because
 "LAN-only" tends to stop being true — a guest device, an IoT box, a Tailscale exit node — and
 this application can delete a world.
 `MINESHELL_AUTH=off` disables it and says so plainly on the settings page. The cookie's
 name carries a hash of the data folder: browsers keep cookies per host, not per port, so
 two MineShells on one machine (production and `npm run dev`) otherwise signed each other out.
+
+**Access.** Who may do what is checked before anything runs, in one place. `lib/shared/access.ts`
+holds the model: per-server permissions (`view`, `power`, `console.read`, `console.command`,
+`players.manage`, `players.data.view`/`edit` with a player scope of none, all or chosen UUIDs,
+`mods`, `datapacks`, `software`, `settings.view`/`edit`, `files`, `backups.create`/`restore`/
+`delete`, `world`, `map.render`, `duplicate`, `delete`), and `can()`, the one answer to "may this
+account do X on this server". The owner and global admins may do everything; an instance admin
+everything on its server (permissions added later included), stored as a flag on its
+`instance_access` row, apart from the listed permissions, so taking admin away leaves them.
+`lib/server/access.ts` loads an account's access per request (no cache, so a change applies on
+the next request); with `MINESHELL_AUTH=off` every request may do everything.
+`lib/server/access/policy.ts` names what each page load, form action and endpoint method needs,
+with the server from `params.id` and the player from `params.uuid`; `guard.ts` applies it. A
+route, action or method missing from the table is refused for everyone, the owner included, and
+`policy.test.ts` fails on any that has no entry, so a new one cannot be reachable by accident.
+Where the posted form decides (the ops list, unpinning a snapshot, a data pack or a mod, a
+task's server), the entry is marked `handler(...)` and the handler calls `requireAccess`. A
+refused page load redirects to `/denied`, never running its load (whose data would reach the
+browser); a refused action answers as a failed action, an endpoint with 403. `files`, `mods` and
+`software` can run a program on the machine as MineShell's user and so reach everything: they
+are for people trusted that far. Lists (servers, tasks) and secrets in page data are not yet
+filtered per account, and there is no way yet to add accounts or grant access.
 
 ---
 

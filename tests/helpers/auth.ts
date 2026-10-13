@@ -2,8 +2,9 @@ import crypto from 'node:crypto';
 import { createOwner, ownerExists, setPassword, type SessionUser } from '#lib/server/auth.js';
 import { hashPassword } from '#lib/server/crypto.js';
 import { db } from '#lib/server/db/index.js';
-import { users } from '#lib/server/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { instanceAccess, instancePlayerAccess, users } from '#lib/server/db/schema.js';
+import type { InstancePermission } from '#lib/shared/access.js';
+import { and, eq } from 'drizzle-orm';
 
 export const OWNER_PASSWORD = 'correct-horse';
 
@@ -33,4 +34,43 @@ export function otherUser(fields: { username?: string; disabledAt?: number | nul
 	};
 	db.insert(users).values(row).run();
 	return { id: row.id, username: row.username, isOwner: false };
+}
+
+/** Gives an account access to a server, replacing what it had there. */
+export function grant(
+	userId: string,
+	instanceId: string,
+	access: {
+		admin?: boolean;
+		permissions?: InstancePermission[];
+		playerView?: 'none' | 'all' | string[];
+		playerEdit?: 'none' | 'all' | string[];
+	}
+): void {
+	const kind = (scope: 'none' | 'all' | string[] | undefined) => (Array.isArray(scope) ? 'selected' : (scope ?? 'none'));
+	db.delete(instanceAccess).where(and(eq(instanceAccess.userId, userId), eq(instanceAccess.instanceId, instanceId))).run();
+	db.insert(instanceAccess)
+		.values({
+			userId,
+			instanceId,
+			isAdmin: access.admin ?? false,
+			permissions: JSON.stringify(access.permissions ?? []),
+			playerView: kind(access.playerView),
+			playerEdit: kind(access.playerEdit),
+			updatedAt: Date.now()
+		})
+		.run();
+	const players = [
+		...(Array.isArray(access.playerView) ? access.playerView.map((uuid) => ({ uuid, canEdit: false })) : []),
+		...(Array.isArray(access.playerEdit) ? access.playerEdit.map((uuid) => ({ uuid, canEdit: true })) : [])
+	];
+	for (const p of players) db.insert(instancePlayerAccess).values({ userId, instanceId, ...p }).run();
+}
+
+/** Global flags on an account other than the owner. */
+export function setAccountFlags(userId: string, flags: { globalAdmin?: boolean; canCreate?: boolean }): void {
+	db.update(users)
+		.set({ isGlobalAdmin: flags.globalAdmin ?? false, canCreate: flags.canCreate ?? false })
+		.where(eq(users.id, userId))
+		.run();
 }

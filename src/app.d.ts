@@ -8,6 +8,8 @@ declare global {
 			authRequired: boolean;
 			/** The signed-in account; null when signed out, and with MINESHELL_AUTH=off. */
 			user: import('#lib/server/auth.js').SessionUser | null;
+			/** What that account may do (lib/shared/access.ts); everything with MINESHELL_AUTH=off. */
+			access: import('#lib/shared/access.js').Access;
 		}
 		interface PageData {
 			flash?: { type: 'success' | 'error' | 'info' | 'warning'; message: string } | null;

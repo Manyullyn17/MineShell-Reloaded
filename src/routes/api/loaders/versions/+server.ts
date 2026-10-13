@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getLoader, listReleaseVersions, pickerLoaderVersions } from '#lib/server/modloaders.js';
+import { getLoader, pickerLoaderVersions } from '#lib/server/modloaders.js';
 
 /** Powers the version pickers on the new-server form. */
 export const GET: RequestHandler = async ({ url }) => {
@@ -21,9 +21,4 @@ export const GET: RequestHandler = async ({ url }) => {
 		// to a free-text field rather than blocking the user.
 		error(502, err instanceof Error ? err.message : 'Version lookup failed.');
 	}
-};
-
-export const fallback: RequestHandler = async () => {
-	const versions = await listReleaseVersions();
-	return Response.json({ versions });
 };

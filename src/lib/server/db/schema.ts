@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex, foreignKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -293,6 +293,10 @@ export const users = sqliteTable(
 		username: text('username').notNull(),
 		passwordHash: text('password_hash').notNull(),
 		isOwner: integer('is_owner', { mode: 'boolean' }).notNull().default(false),
+		/** Everything on every server, and MineShell's settings (access.ts); the owner always is. */
+		isGlobalAdmin: integer('is_global_admin', { mode: 'boolean' }).notNull().default(false),
+		/** May add servers (and copy ones it may copy); it becomes admin of what it adds. */
+		canCreate: integer('can_create', { mode: 'boolean' }).notNull().default(false),
 		/** Set while the account may not sign in. */
 		disabledAt: integer('disabled_at'),
 		createdAt: integer('created_at').notNull(),
@@ -305,6 +309,48 @@ export const users = sqliteTable(
 );
 
 export type User = typeof users.$inferSelect;
+
+/**
+ * An account's access to one server (access.ts, lib/shared/access.ts). `isAdmin`
+ * grants everything on it; `permissions` is kept as it is when admin is
+ * taken away. Player data scopes: none, all, or the UUIDs in instancePlayerAccess.
+ */
+export const instanceAccess = sqliteTable(
+	'instance_access',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+		/** JSON array of permission ids; unknown ones are ignored on read. */
+		permissions: text('permissions').notNull().default('[]'),
+		playerView: text('player_view', { enum: ['none', 'all', 'selected'] }).notNull().default('none'),
+		playerEdit: text('player_edit', { enum: ['none', 'all', 'selected'] }).notNull().default('none'),
+		updatedAt: integer('updated_at').notNull()
+	},
+	(t) => ({
+		primary: primaryKey({ columns: [t.userId, t.instanceId] }),
+		byInstance: index('instance_access_instance_idx').on(t.instanceId)
+	})
+);
+
+/** The players a "selected" player data scope covers (`canEdit`: edit too, not only view). */
+export const instancePlayerAccess = sqliteTable(
+	'instance_player_access',
+	{
+		userId: text('user_id').notNull(),
+		instanceId: text('instance_id').notNull(),
+		uuid: text('uuid').notNull(),
+		canEdit: integer('can_edit', { mode: 'boolean' }).notNull().default(false)
+	},
+	(t) => ({
+		primary: primaryKey({ columns: [t.userId, t.instanceId, t.uuid] }),
+		grant: foreignKey({ columns: [t.userId, t.instanceId], foreignColumns: [instanceAccess.userId, instanceAccess.instanceId] }).onDelete('cascade')
+	})
+);
 
 /** Login sessions. Only used when MINESHELL_AUTH is on. */
 export const sessions = sqliteTable(

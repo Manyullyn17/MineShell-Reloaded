@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { requireAccess } from '#lib/server/access.js';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { readProperties } from '#lib/server/properties.js';
@@ -204,10 +205,12 @@ export const actions: Actions = {
 		}
 	},
 
-	pinSnapshot: async ({ request, params }) => {
+	pinSnapshot: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const pinned = form.get('pinned') === 'true';
+		// Unpinned, retention may delete it.
+		if (!pinned) requireAccess(locals, instance.id, 'backups.delete');
 		try {
 			await setSnapshotPinned(instance.path, String(form.get('id') ?? ''), pinned);
 		} catch (err) {

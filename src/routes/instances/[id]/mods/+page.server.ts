@@ -1,4 +1,5 @@
-import { fail } from '@sveltejs/kit';
+import { fail, isHttpError } from '@sveltejs/kit';
+import { requireAccess } from '#lib/server/access.js';
 import type { Actions, PageServerLoad } from './$types';
 import { bisectState, cancelBisect, clearBisectState, isBisecting, startBisect } from '#lib/server/bisect.js';
 import { OperationInProgressError } from '#lib/server/operations.js';
@@ -231,7 +232,7 @@ export const actions: Actions = {
 		return { ok: true, message: `Added ${added.length} mod${added.length === 1 ? '' : 's'}. Restart to load them.` };
 	},
 
-	install: async ({ request, params }) => {
+	install: async ({ request, params, locals }) => {
 		const busy = bisectBusy(params.id);
 		if (busy) return busy;
 		const instance = requireInstance(params.id);
@@ -253,7 +254,10 @@ export const actions: Actions = {
 			version: Awaited<ReturnType<ReturnType<typeof getModProvider>['getVersion']>>
 		) => {
 			const meta = { id: project.id, slug: project.slug, name: project.name, projectUrl: project.projectUrl, iconUrl: project.iconUrl };
-			if (isDatapackVersion(version, catalogLoader)) {
+			const datapack = isDatapackVersion(version, catalogLoader);
+			// Known only now: the access policy let in anyone with either permission.
+			requireAccess(locals, instance.id, datapack ? 'datapacks' : 'mods');
+			if (datapack) {
 				datapacks++;
 				return installDatapackVersion(instance, provider.id, meta, version);
 			}
@@ -297,6 +301,7 @@ export const actions: Actions = {
 				message: `Installed ${installed.join(', ')}. ${when} to load ${installed.length === 1 ? 'it' : 'them'}.${note}`
 			};
 		} catch (err) {
+			if (isHttpError(err)) throw err;
 			return fail(502, {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Install failed.'

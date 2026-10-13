@@ -145,7 +145,11 @@ below the ephemeral range; never pick ports by pid or at random.
 `tests/helpers/auth.ts`: `owner()`, the owner account with `OWNER_PASSWORD` (made once: the
 database will not delete an owner, so it is reused and its password put back), and
 `otherUser({ username, disabledAt })` for a second account. A test that needs "no account yet"
-mocks `ownerExists` (`guard.test.ts`).
+mocks `ownerExists` (`guard.test.ts`). `grant(userId, instanceId, { admin, permissions,
+playerView, playerEdit })` gives an account access to a server (a UUID list is a "selected"
+scope), `setAccountFlags(userId, { globalAdmin, canCreate })` sets its MineShell-wide flags.
+Handlers that check access read `locals.access`: pass an `Access` object
+(`lib/shared/access.ts`) in the event, as `routes/instances/access-handlers.test.ts` does.
 
 `tests/helpers/instances.ts`:
 
@@ -260,3 +264,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Migration 0019 turns the old admin password into the owner and keeps its sessions | `db/users-migration.test.ts` |
 | "Sign out every other device" on a password change also signed out the device asking | `auth.test.ts` |
 | Sign out did nothing: the guard sent every signed-in request for /login home, the sign-out post included | `guard.test.ts` |
+| (feature) Access: `can()`, loading grants (admin removal keeps the listed permissions, grants go with the server or account), the guard applying the policy, a refused page never running its load | `shared/access.test.ts`, `server/access.test.ts`, `guard.test.ts` |
+| (feature) The access policy names every route, action and method, and handler-checked entries call `requireAccess` | `access/policy.test.ts` |
+| (feature) Checks that depend on the posted form: the ops list, unpinning, mod or data pack, cancelling a task | `routes/instances/access-handlers.test.ts` |

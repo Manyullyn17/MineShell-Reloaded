@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { requireAccess } from '#lib/server/access.js';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import {
@@ -34,6 +35,12 @@ export const load: PageServerLoad = async ({ params }) => {
 	};
 };
 
+/** An operator runs commands in the game, so changing the ops list is console access too. */
+function listChange(locals: App.Locals, instanceId: string, list: ListName): ListName {
+	if (list === 'ops') requireAccess(locals, instanceId, 'console.command');
+	return list;
+}
+
 function listFrom(form: FormData): ListName {
 	const value = String(form.get('list') ?? 'whitelist');
 	return (['whitelist', 'ops', 'bans', 'ipBans'] as ListName[]).includes(value as ListName)
@@ -42,10 +49,10 @@ function listFrom(form: FormData): ListName {
 }
 
 export const actions: Actions = {
-	add: async ({ request, params }) => {
+	add: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const result = await addPlayer(instance, listFrom(form), String(form.get('name') ?? ''), {
+		const result = await addPlayer(instance, listChange(locals, instance.id, listFrom(form)), String(form.get('name') ?? ''), {
 			reason: String(form.get('reason') ?? ''),
 			level: Number(form.get('level') ?? 4)
 		});
@@ -62,10 +69,10 @@ export const actions: Actions = {
 		return result.ok ? result : fail(400, result);
 	},
 
-	remove: async ({ request, params }) => {
+	remove: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const result = await removePlayer(instance, listFrom(form), String(form.get('name') ?? ''));
+		const result = await removePlayer(instance, listChange(locals, instance.id, listFrom(form)), String(form.get('name') ?? ''));
 		return result.ok ? result : fail(400, result);
 	},
 
