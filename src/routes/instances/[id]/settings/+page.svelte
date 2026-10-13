@@ -168,7 +168,13 @@
 	});
 
 	let rotateRcon = $state(false);
-	let showRcon = $state(false);
+	/** The RCON password once Show asked for it; the page does not come with it. */
+	let rconShown = $state<string | null>(null);
+	$effect(() => {
+		// A save may have generated a new one: hide the old.
+		void data.settings;
+		rconShown = null;
+	});
 	const playitInfo = streamed(() => data.playit.status, () => data.instance.id);
 	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
 	let playitRegion = $state('global');
@@ -298,6 +304,15 @@
 			headers: { accept: 'application/json', 'x-sveltekit-action': 'true' }
 		});
 		return deserialize(await res.text());
+	}
+
+	async function toggleRcon() {
+		if (rconShown !== null) {
+			rconShown = null;
+			return;
+		}
+		const result = await post('?/revealRcon', new FormData());
+		rconShown = result.type === 'success' ? String((result.data as { password?: string | null } | undefined)?.password ?? 'not set') : 'could not be read';
 	}
 
 	const resultMessage = (result: Awaited<ReturnType<typeof post>>, fallback: string) =>
@@ -824,8 +839,8 @@
 			<div class="field">
 				<span class="label">RCON password</span>
 				<div class="control secret-row">
-					<code class="secret">{showRcon ? (data.rconPassword ?? 'not set') : '••••••••••••'}</code>
-					<button class="button-quiet" type="button" onclick={() => (showRcon = !showRcon)}>{showRcon ? 'Hide' : 'Show'}</button>
+					<code class="secret">{rconShown ?? '••••••••••••'}</code>
+					<button class="button-quiet" type="button" onclick={toggleRcon}>{rconShown !== null ? 'Hide' : 'Show'}</button>
 				</div>
 				<p class="hint">Generated when the server was created and stored encrypted.</p>
 			</div>

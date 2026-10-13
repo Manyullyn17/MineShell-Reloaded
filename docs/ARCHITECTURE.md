@@ -614,7 +614,9 @@ refuses to operate outside `INSTANCES_DIR`, so a corrupt database row cannot poi
 **Secrets.** RCON passwords (and a CurseForge key set in Settings) are AES-256-GCM
 encrypted with a key in a `0600` file (`secret.key`) beside the database. Losing the key
 means regenerating RCON passwords, which a server's Settings can do (Network, "Generate a
-new password on save").
+new password on save"). Settings sends a server's RCON password only when its Show button
+asks for it (`?/revealRcon`): not with the page, and not in the property values or the raw
+server.properties editor, which leaves the line out (a save puts it back from the database).
 
 **Cross-site requests.** A state-changing request whose browser `Origin` names another host
 is refused (`guard.ts`). Only the host is compared, against `Host` and `X-Forwarded-Host`,

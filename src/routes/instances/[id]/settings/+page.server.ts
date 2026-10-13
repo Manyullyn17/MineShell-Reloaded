@@ -91,6 +91,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const voice = await voiceChat(instance);
 	const parsed = await readProperties(instance.path);
+	// The RCON password is only sent when asked for (revealRcon), never with the page.
+	const { 'rcon.password': _, ...shownProperties } = parsed.values;
 	const cleanroomRelevant =
 		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
 	const backup = cleanroomRelevant ? await readForgeBackup(instance) : null;
@@ -174,7 +176,6 @@ export const load: PageServerLoad = async ({ params }) => {
 		/** When the next scheduled snapshot is due, if one is set. */
 		snapshotNextAt: scheduledSnapshotAt(instance.id),
 		cpuCores: cpus().length || 1,
-		rconPassword: rconPassword(instance),
 		javaRuntimes: listJavaRuntimes(),
 		requiredJava: requiredJavaMajor(instance.minecraftVersion, instance.modloader, instance.modloaderVersion),
 		javaResolution: java,
@@ -219,12 +220,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		},
 		scheduledCommands: listScheduledCommands(instance.id),
 		properties: {
-			values: parsed.values,
+			values: shownProperties,
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k)).map((key) => ({ key, value: parsed.values[key] })),
 			schema: editableProperties().map((field) =>
 				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
 			),
-			raw: serialiseProperties(parsed.values)
+			raw: serialiseProperties(shownProperties)
 		},
 		bootNote: bootStartNote(),
 		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(
@@ -800,6 +801,11 @@ export const actions: Actions = {
 		await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
 		forgetDiskBreakdown(instance.path);
 		redirect(303, '/');
+	},
+
+	/** The RCON password, asked for by its Show button rather than sent with every page load. */
+	revealRcon: async ({ params }) => {
+		return { ok: true, password: rconPassword(requireInstance(params.id)) };
 	},
 
 	rescanJava: async ({ params }) => {
