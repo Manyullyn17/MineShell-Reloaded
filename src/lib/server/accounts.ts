@@ -4,6 +4,7 @@ import { db } from './db';
 import { instanceAccess, instancePlayerAccess, sessions, users } from './db/schema';
 import { hashPassword, randomPassword } from './crypto';
 import { destroyUserSessions } from './auth';
+import { bus } from './events';
 import { isInstancePermission, type Access, type InstancePermission } from '#lib/shared/access.js';
 
 /**
@@ -127,6 +128,7 @@ export function setAccountDisabled(id: string, disabled: boolean): void {
 		.where(eq(users.id, id))
 		.run();
 	if (disabled) destroyUserSessions(id);
+	else bus.publish('access:changed', { userId: id });
 }
 
 /** Global admin and "may create servers". Taking global admin away leaves the account's access per server as it was. */
@@ -135,11 +137,13 @@ export function setAccountFlags(id: string, flags: { globalAdmin: boolean; canCr
 		.set({ isGlobalAdmin: flags.globalAdmin, canCreate: flags.canCreate, updatedAt: Date.now() })
 		.where(eq(users.id, id))
 		.run();
+	bus.publish('access:changed', { userId: id });
 }
 
 /** Deletes the account, its sessions and its access (the database cascades them). */
 export function deleteAccount(id: string): void {
 	db.delete(users).where(eq(users.id, id)).run();
+	bus.publish('access:changed', { userId: id });
 }
 
 // ------------------------------------------------------------------ access ---
@@ -216,6 +220,7 @@ export function saveGrant(userId: string, instanceId: string, grant: GrantForm):
 			tx.insert(instancePlayerAccess).values({ userId, instanceId, uuid, canEdit: edit.has(uuid) }).run();
 		}
 	});
+	bus.publish('access:changed', { userId });
 }
 
 /**
@@ -240,9 +245,11 @@ export function copyGrants(fromId: string, toId: string): void {
 			tx.insert(instancePlayerAccess).values({ ...row, instanceId: toId }).onConflictDoNothing().run();
 		}
 	});
+	bus.publish('access:changed', { userId: null });
 }
 
 /** No access to that server any more: its permissions and players go too. */
 export function removeGrant(userId: string, instanceId: string): void {
 	db.delete(instanceAccess).where(and(eq(instanceAccess.userId, userId), eq(instanceAccess.instanceId, instanceId))).run();
+	bus.publish('access:changed', { userId });
 }

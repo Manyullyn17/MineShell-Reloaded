@@ -10,6 +10,8 @@ export type BusEvents = {
 	'stats:sample': { instanceId: string; cpuPercent: number; memoryBytes: number; ts: number };
 	'instance:state': { instanceId: string; active: string; sub: string };
 	'task:update': { id: string };
+	/** Sessions, accounts or access changed (auth.ts, accounts.ts): open streams check again (access.ts guardStream). */
+	'access:changed': { userId: string | null };
 };
 
 class TypedBus extends EventEmitter {

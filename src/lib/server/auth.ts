@@ -4,6 +4,7 @@ import { db } from './db';
 import { sessions, users } from './db/schema';
 import { hashPassword, verifyPassword } from './crypto';
 import { AUTH_ENABLED, DATA_DIR } from './config';
+import { bus } from './events';
 
 /**
  * Accounts and sessions. The design notes flagged auth as open: it is on by
@@ -176,7 +177,9 @@ export function sessionUser(id: string | undefined): SessionUser | null {
 }
 
 export function destroySession(id: string | undefined): void {
-	if (id) db.delete(sessions).where(eq(sessions.id, id)).run();
+	if (!id) return;
+	db.delete(sessions).where(eq(sessions.id, id)).run();
+	bus.publish('access:changed', { userId: null });
 }
 
 /** Signs an account out everywhere, except the session given in `keep` (the one asking). */
@@ -184,6 +187,7 @@ export function destroyUserSessions(userId: string, keep?: string): void {
 	db.delete(sessions)
 		.where(keep ? and(eq(sessions.userId, userId), ne(sessions.id, keep)) : eq(sessions.userId, userId))
 		.run();
+	bus.publish('access:changed', { userId });
 }
 
 /**

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { whenClosedForGood } from '#lib/shared/eventsource.js';
+	import { refreshAll } from '$app/navigation';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import { onDestroy } from 'svelte';
 	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
@@ -159,6 +161,8 @@
 			// EventSource retries on its own; the banner just explains the gap.
 			error = 'Console disconnected. Reconnecting.';
 		});
+		// Refused (access taken away, signed out): the page's own data decides where to go.
+		whenClosedForGood(source, () => void refreshAll());
 	}
 
 	$effect(() => {

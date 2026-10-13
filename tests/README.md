@@ -272,3 +272,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Accounts pages and your account page: only the owner makes or changes global admins, nobody changes the owner, delete wants the name, a password change needs the current one; a forced change allows only `/account` and signing out | `routes/settings/users/accounts-routes.test.ts`, `guard.test.ts` |
 | (feature) Whoever adds or copies a server becomes its admin; a copy takes nobody's access from the source | `flows/instance-defaults.test.ts`, `flows/clone.test.ts`, `server/access.test.ts` |
 | (feature) Copying a server with "the same access": everyone's access and chosen players carried over, only for global admins | `flows/clone.test.ts`, `routes/instances/access-handlers.test.ts` |
+| (feature) Open event streams close when the session is signed out or the access they need goes, announced or found within 15 s; Activity's stream ends on sign-out | `access-stream.test.ts` |

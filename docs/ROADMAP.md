@@ -51,7 +51,7 @@ server - **built**; (2) accounts, owner, username sign-in, `npm run reset-passwo
 lists and secrets in page data per account - **built**; (5) managing accounts and access (one-time
 passwords with a forced change, disable, sign-out everywhere) - **built**; (6) creator becomes admin - **built**;
 (7) show only what an account may use - **built**; (8) close open console/task streams when access
-changes; (9) record who did what in the audit log.
+changes - **built**; (9) record who did what in the audit log.
 
 ### World backups
 

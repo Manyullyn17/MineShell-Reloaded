@@ -2,22 +2,39 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
 import { subscribeConsole, type ConsoleSubscription } from '#lib/server/journal.js';
+import { guardStream } from '#lib/server/access.js';
+import { can } from '#lib/shared/access.js';
 
 /**
  * Server-Sent Events rather than a WebSocket: SvelteKit serves this from a plain
  * endpoint with no custom HTTP server, so it behaves identically in `vite dev`
  * and behind adapter-node. Console input is a separate POST.
  */
-export const GET: RequestHandler = async ({ params, locals }) => {
+export const GET: RequestHandler = async ({ params, locals, cookies }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
 	const instance = getInstance(params.id);
 	if (!instance) error(404, 'No server with that name.');
 
 	let subscription: ConsoleSubscription | null = null;
 	let heartbeat: NodeJS.Timeout | null = null;
+	let stopGuard: (() => void) | null = null;
+	const cleanup = () => {
+		subscription?.close();
+		if (heartbeat) clearInterval(heartbeat);
+		stopGuard?.();
+	};
 
 	const stream = new ReadableStream({
 		start(controller) {
+			// Closed once the account may no longer read the console (signed out, disabled, access taken away).
+			stopGuard = guardStream({ locals, cookies }, (access) => can(access, instance.id, 'console.read'), () => {
+				cleanup();
+				try {
+					controller.close();
+				} catch {
+					/* already closed */
+				}
+			});
 			const encoder = new TextEncoder();
 			const send = (event: string, data: string) => {
 				try {
@@ -51,8 +68,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			}, 25_000);
 		},
 		cancel() {
-			subscription?.close();
-			if (heartbeat) clearInterval(heartbeat);
+			cleanup();
 		}
 	});
 

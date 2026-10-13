@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { listTasks } from '#lib/server/tasks.js';
-import { seesTask } from '#lib/server/access.js';
+import { guardStream, seesTask } from '#lib/server/access.js';
 import { bus } from '#lib/server/events.js';
 
 /**
@@ -9,11 +9,11 @@ import { bus } from '#lib/server/events.js';
  * leaves out the logs: the notification center on every page only needs
  * progress, and a 300-mod install logs a line per mod.
  */
-export const GET: RequestHandler = async ({ locals, url }) => {
+export const GET: RequestHandler = async ({ locals, url, cookies }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
 	const brief = url.searchParams.get('brief') === '1';
-	// Only this account's servers' tasks (and, for global admins, those of no server).
-	const visible = seesTask(locals.access);
+	// Only this account's servers' tasks (and, for global admins, those of no server); a stream re-reads it on changes.
+	let visible = seesTask(locals.access);
 	const tasks = () => (brief ? listTasks().filter(visible).map(({ log: _, ...task }) => task) : listTasks().filter(visible));
 
 	if (url.searchParams.get('stream') !== '1') {
@@ -22,9 +22,31 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 	let unsubscribe: (() => void) | null = null;
 	let heartbeat: NodeJS.Timeout | null = null;
+	let stopGuard: (() => void) | null = null;
+	const cleanup = () => {
+		unsubscribe?.();
+		if (heartbeat) clearInterval(heartbeat);
+		stopGuard?.();
+	};
 
 	const stream = new ReadableStream({
 		start(controller) {
+			// Which tasks show follows access changes; signed out or disabled, the stream closes.
+			stopGuard = guardStream(
+				{ locals, cookies },
+				(access) => {
+					visible = seesTask(access);
+					return true;
+				},
+				() => {
+					cleanup();
+					try {
+						controller.close();
+					} catch {
+						/* already closed */
+					}
+				}
+			);
 			const encoder = new TextEncoder();
 			const push = () => {
 				try {
@@ -46,8 +68,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			}, 25_000);
 		},
 		cancel() {
-			unsubscribe?.();
-			if (heartbeat) clearInterval(heartbeat);
+			cleanup();
 		}
 	});
 

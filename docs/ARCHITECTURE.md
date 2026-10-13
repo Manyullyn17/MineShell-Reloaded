@@ -682,6 +682,14 @@ and links are left out without the permission. Lists an account may look at but 
 sections it may not change get `editable={false}` (`SettingsSection`: a disabled fieldset, "view
 only"). This is for the eye only: the route policy and handlers decide.
 
+Event streams (console, live stats, Activity) stay open, so the guard's check at the start is not
+enough: `guardStream` checks the session and the permission again on every `access:changed` the
+bus carries (published by sign-outs, disabling, resets, flags and grants) and every 15 s (an
+expired session, a reset from the shell), and closes the stream once it fails; Activity's stream
+also re-reads which tasks to show. The browser's EventSource gives up when its reconnect is
+refused, and `whenClosedForGood` then reloads the page's data, so the guard moves the page to
+sign-in or "No access" within seconds.
+
 Access is given on an account's page under Accounts: per server "No access", chosen permissions
 (grouped, the full-trust ones marked, player data as nobody's, every player's or chosen
 players' with a picker of the server's known players), or admin of the server. Choosing admin

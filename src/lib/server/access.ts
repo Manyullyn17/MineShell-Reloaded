@@ -3,7 +3,8 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { instanceAccess, instancePlayerAccess, users } from './db/schema';
 import { can, FULL_ACCESS, isInstancePermission, NO_ACCESS, type Access, type InstanceGrant, type InstancePermission, type PlayerScope, type PlayerTarget } from '#lib/shared/access.js';
-import type { SessionUser } from './auth';
+import { sessionUser, SESSION_COOKIE, type SessionUser } from './auth';
+import { bus } from './events';
 
 /**
  * Loads an account's access (lib/shared/access.ts has the model) and checks
@@ -86,4 +87,45 @@ export function requireAccess(
 
 export function requireGlobalAdmin(locals: App.Locals): void {
 	if (!locals.access.globalAdmin) error(403, NO_ACCESS_REASON);
+}
+
+/** How often an open stream checks again without a change being announced (a session expiring, a reset from the shell). */
+export const STREAM_RECHECK_MS = 15_000;
+
+/**
+ * For a response that stays open (an event stream): the guard let it start,
+ * so this keeps asking. `check` gets the account's access as it is now, on
+ * every change MineShell announces and every STREAM_RECHECK_MS; once the
+ * session is gone, the account changed, disabled or made to pick a new
+ * password, or `check` says no, `lost` runs (once) to close the stream. The
+ * browser then connects again, through the guard. Returns the stop function.
+ */
+export function guardStream(
+	event: { locals: App.Locals; cookies: { get(name: string): string | undefined } },
+	check: (access: Access) => boolean,
+	lost: () => void
+): () => void {
+	const sessionId = event.cookies.get(SESSION_COOKIE);
+	const userId = event.locals.user?.id ?? null;
+	const allowed = () => {
+		// MINESHELL_AUTH=off: nobody to lose access.
+		if (!event.locals.authRequired) return check(event.locals.access);
+		const user = sessionUser(sessionId);
+		if (!user || user.id !== userId || user.mustChangePassword) return false;
+		return check(loadAccess(user));
+	};
+	let stopped = false;
+	const recheck = () => {
+		if (stopped || allowed()) return;
+		stop();
+		lost();
+	};
+	const unsubscribe = bus.subscribe('access:changed', recheck);
+	const timer = setInterval(recheck, STREAM_RECHECK_MS);
+	function stop() {
+		stopped = true;
+		unsubscribe();
+		clearInterval(timer);
+	}
+	return stop;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { whenClosedForGood } from '#lib/shared/eventsource.js';
 	import { mayCancelTask, type Access } from '#lib/shared/access.js';
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
@@ -85,6 +86,8 @@
 
 	$effect(() => {
 		const source = new EventSource('/api/tasks?stream=1&brief=1');
+		// Signed out or disabled elsewhere: reloading the page's data sends it to sign-in.
+		whenClosedForGood(source, () => void refreshAll());
 		/** Task states already announced, so a reconnect does not announce them again. */
 		const seen = new Set<string>();
 		let primed = false;
