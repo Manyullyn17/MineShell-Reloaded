@@ -2,6 +2,7 @@
 	import { mayCancelTask } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
+	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import { formatDateTime, formatDuration } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
@@ -84,6 +85,9 @@
 				{#if task.error}
 					<p class="notice error">{task.error}</p>
 				{/if}
+				{#each task.blocked as blocked (blocked.address)}
+					<AllowDownloadPrompt {blocked} />
+				{/each}
 
 				<p class="small faint meta">
 					Started {formatDateTime(task.startedAt)}

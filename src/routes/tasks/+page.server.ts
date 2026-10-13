@@ -3,8 +3,9 @@ import { cancelTask, getTask, listTasks } from '#lib/server/tasks.js';
 import { error } from '@sveltejs/kit';
 import { NO_ACCESS_REASON, seesTask } from '#lib/server/access.js';
 import { mayCancelTask } from '#lib/shared/access.js';
+import { withoutAllowed } from '#lib/server/downloadaccess.js';
 
-export const load: PageServerLoad = async ({ locals }) => ({ tasks: listTasks().filter(seesTask(locals.access)) });
+export const load: PageServerLoad = async ({ locals }) => ({ tasks: listTasks().filter(seesTask(locals.access)).map(withoutAllowed) });
 
 export const actions: Actions = {
 	cancel: async ({ request, locals }) => {

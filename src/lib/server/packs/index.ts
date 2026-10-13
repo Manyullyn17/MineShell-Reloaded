@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { downloadFile, fetchJson } from '../download';
+import { BlockedDownloadError, downloadFile, fetchJson } from '../download';
 import { getCurseforgeApiKey } from '../curseforge';
 import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import type { ModloaderId } from '../modloaders';
@@ -8,6 +8,7 @@ import type { TaskHandle } from '../tasks';
 import { TMP_DIR } from '../config';
 import { safeJoin } from '../files';
 import { openZipBuffer, type ZipArchive } from '../zip';
+import type { BlockedDownload } from '#lib/shared/downloads.js';
 
 /**
  * Both supported pack formats are zips with a manifest plus an `overrides/`
@@ -342,7 +343,13 @@ export function curseforgeUrls(url: string | null, fileId: number, fileName: str
 }
 
 /** A required pack file that could not be fetched, with what is needed to fetch it later. */
-export type FailedDownload = { file: string; error: string; download: PackDownload };
+export type FailedDownload = {
+	file: string;
+	error: string;
+	download: PackDownload;
+	/** Set when the last source tried was refused for its address, which an admin can allow. */
+	blocked?: BlockedDownload;
+};
 
 /** Fetch every file the pack lists, in small batches, into the instance. */
 export async function downloadPackFiles(
@@ -406,7 +413,8 @@ export async function downloadPackFiles(
 					? `CurseForge file ${item.curseforge.fileId}`
 					: item.target || 'unknown file';
 				const message = err instanceof Error ? err.message : String(err);
-				if (item.required) failures.push({ file: label, error: message, download: item });
+				const blocked = err instanceof BlockedDownloadError && err.blocked ? { blocked: err.blocked } : {};
+				if (item.required) failures.push({ file: label, error: message, download: item, ...blocked });
 				task?.log(`${item.required ? 'Failed' : 'Skipped optional'}: ${label} (${message})`);
 			} finally {
 				done += 1;

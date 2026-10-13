@@ -79,6 +79,7 @@ import {
 } from '#lib/server/selfupdate.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
+import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 import { deleteCustomPreset, listPresets, saveCustomPreset } from '#lib/server/jvm-presets.js';
 
@@ -153,6 +154,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		freeBytes: await freeSpace(INSTANCES_DIR),
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
 		itemIcons: itemIconsEnabled(),
+		downloads: { allowed: allowedAddresses(), refused: recentRefusals() },
 		sftp: { ...getSftpSettings(), defaults: await sftpDefaults() },
 		update: {
 			current: currentVersion(),

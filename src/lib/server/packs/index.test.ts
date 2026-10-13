@@ -162,6 +162,17 @@ describe('downloadPackFiles', () => {
 			globalThis.fetch = guard;
 		}
 	});
+
+	it('reports a file refused for its address with that address, so the overview can ask to allow it', async () => {
+		const dir = await tempDir();
+		const pack = {
+			kind: 'mrpack', name: 'T', version: null, minecraftVersion: '1.21.1', modloader: 'vanilla', modloaderVersion: null,
+			downloads: [{ target: 'mods/a.jar', urls: ['http://192.168.1.20/a.jar'], hash: null, required: true }],
+			overrideEntries: [], zip: null
+		} satisfies ParsedPack;
+		const { failures } = await downloadPackFiles(pack, dir);
+		expect(failures[0].blocked).toEqual({ host: '192.168.1.20', address: '192.168.1.20', kind: 'an address on your local network' });
+	});
 });
 
 describe('applyOverrides', () => {

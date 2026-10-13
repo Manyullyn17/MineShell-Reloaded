@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { listTasks } from '#lib/server/tasks.js';
 import { guardStream, seesTask } from '#lib/server/access.js';
 import { bus } from '#lib/server/events.js';
+import { withoutAllowed } from '#lib/server/downloadaccess.js';
 
 /**
  * Push task progress so the Activity page does not have to poll. `brief=1`
@@ -14,7 +15,7 @@ export const GET: RequestHandler = async ({ locals, url, cookies }) => {
 	const brief = url.searchParams.get('brief') === '1';
 	// Only this account's servers' tasks (and, for global admins, those of no server); a stream re-reads it on changes.
 	let visible = seesTask(locals.access);
-	const tasks = () => (brief ? listTasks().filter(visible).map(({ log: _, ...task }) => task) : listTasks().filter(visible));
+	const tasks = () => (brief ? listTasks().filter(visible).map(({ log: _, ...task }) => task) : listTasks().filter(visible)).map(withoutAllowed);
 
 	if (url.searchParams.get('stream') !== '1') {
 		return Response.json({ tasks: tasks() });

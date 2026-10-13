@@ -1,5 +1,7 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import crypto from 'node:crypto';
 import { bus } from './events';
+import type { BlockedDownload } from '#lib/shared/downloads.js';
 
 /**
  * Installing a 300-mod pack takes minutes. Rather than holding an HTTP request
@@ -20,6 +22,8 @@ export type Task = {
 	step: string;
 	log: string[];
 	error: string | null;
+	/** Downloads refused while it ran (downloadaccess.ts), one per address: Activity asks to allow them. */
+	blocked: BlockedDownload[];
 	startedAt: number;
 	finishedAt: number | null;
 };
@@ -36,6 +40,17 @@ export type TaskHandle = {
 };
 
 const cancelled = new Set<string>();
+
+/** The task the current work belongs to, through awaits and timers. */
+const current = new AsyncLocalStorage<Task>();
+
+/** Records a refused download on the task running it, if any. */
+export function noteBlockedDownload(blocked: BlockedDownload): void {
+	const task = current.getStore();
+	if (!task || task.blocked.some((b) => b.address === blocked.address)) return;
+	task.blocked.push(blocked);
+	touch(task);
+}
 
 export function listTasks(): Task[] {
 	return [...tasks.values()].sort((a, b) => b.startedAt - a.startedAt);
@@ -83,6 +98,7 @@ export function startTask(
 		step: 'Starting',
 		log: [],
 		error: null,
+		blocked: [],
 		startedAt: Date.now(),
 		finishedAt: null
 	};
@@ -103,7 +119,8 @@ export function startTask(
 		isCancelled: () => cancelled.has(id)
 	};
 
-	work(handle)
+	current
+		.run(task, () => work(handle))
 		.then(() => {
 			task.state = cancelled.has(id) ? 'cancelled' : 'done';
 			task.progress = task.state === 'done' ? 100 : task.progress;

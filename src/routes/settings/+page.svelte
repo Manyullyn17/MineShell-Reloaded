@@ -4,6 +4,8 @@
 	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
+	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
+	import { blockedLabel } from '#lib/shared/downloads.js';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { invalidateAll } from '$app/navigation';
@@ -82,6 +84,12 @@
 		}, 2000);
 		return () => clearInterval(timer);
 	});
+
+	async function removeAllowed(address: string) {
+		if (!confirm(`Stop allowing downloads from ${address}?`)) return;
+		await fetch(`/api/downloads/allowed?address=${encodeURIComponent(address)}`, { method: 'DELETE' });
+		await invalidateAll();
+	}
 
 	const CLAIM_TEXT: Record<string, string> = {
 		waiting: 'Waiting for you to open the link.',
@@ -720,6 +728,44 @@
 </section>
 
 <section class="panel">
+	<h2>Downloads from local addresses</h2>
+	<p class="small muted">
+		MineShell does not download from this machine, your local network or other non-public addresses: a pack's links
+		could otherwise reach services that only listen there. An address allowed here is exempt, exactly that address.
+	</p>
+	{#each data.downloads.refused as blocked (blocked.host + ' ' + blocked.address)}
+		<AllowDownloadPrompt {blocked} />
+		<p class="small faint refused-at">
+			{formatDateTime(blocked.at)}{#if blocked.by}, for {blocked.by}{/if}: <span class="mono">{blocked.url}</span>
+		</p>
+	{/each}
+	{#if data.downloads.allowed.length}
+		<table class="stacked">
+			<thead>
+				<tr>
+					<th>Address</th>
+					<th>Allowed</th>
+					<th><span class="visually-hidden">Actions</span></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.downloads.allowed as allowed (allowed.address)}
+					<tr>
+						<td class="mono">{blockedLabel(allowed)}</td>
+						<td class="small faint">{formatDateTime(allowed.addedAt)}{#if allowed.addedBy} by {allowed.addedBy}{/if}</td>
+						<td class="right">
+							<button class="button-quiet" onclick={() => removeAllowed(allowed.address)}>Remove</button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{:else if !data.downloads.refused.length}
+		<p class="small faint">None allowed, and nothing refused since MineShell started.</p>
+	{/if}
+</section>
+
+<section class="panel">
 	<h2>Where things live</h2>
 	<dl class="paths">
 		<div><dt>Data</dt><dd class="mono"><PathText path={data.paths.data} /></dd></div>
@@ -731,6 +777,11 @@
 </div>
 
 <style>
+	.refused-at {
+		margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+		overflow-wrap: anywhere;
+	}
+
 	.sftp-fields {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));

@@ -278,3 +278,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The overview sent each crash diagnosis's log line, and Forge's startup question in full, to accounts without console access | `routes/access-filtering.test.ts` |
 | A pack file's `../` path made MineShell write a download outside the server folder | `server/packs/index.test.ts` |
 | A pack's download URL (or a redirect from it) could point MineShell at loopback or private-network services | `server/download.test.ts` |
+| (feature) An exact local address can be allowed by global admins only; the refusal is asked about on its task and on the pack file it failed | `server/download.test.ts`, `server/packs/index.test.ts` |

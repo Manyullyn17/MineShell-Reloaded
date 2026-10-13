@@ -615,9 +615,18 @@ server folder is refused when parsed (`packPath`), and `downloadPackFiles` write
 `safeJoin` as well, since targets also come from CurseForge file names and the world mapping.
 
 **Downloads.** `downloadFile` takes only http(s) and refuses a host that is, or resolves to,
-a loopback, private, link-local or multicast address, checking every redirect hop itself
-(`redirect: 'manual'`): a pack's URLs would otherwise let anyone allowed to create a server
-make MineShell fetch from services only reachable from the host. The check resolves the name
+a loopback, private, link-local, CGNAT (Tailscale), reserved or multicast address, checking
+every redirect hop itself (`redirect: 'manual'`): a pack's URLs would otherwise let anyone
+allowed to create a server make MineShell fetch from services only reachable from the host.
+198.18.0.0/15 is not refused: proxies with fake-IP DNS answer every name from it.
+The owner or a global admin can allow an exact address (`downloadaccess.ts`, settings row
+`downloads.allowedAddresses`, endpoint `/api/downloads/allowed`): never a range, and never by
+name, which could resolve elsewhere later. A refusal carries host, address and kind
+(`BlockedDownloadError.blocked`) and is recorded three ways, each of which asks
+(`AllowDownloadPrompt`): on the task it happened in (`Task.blocked`, through an
+AsyncLocalStorage in tasks.ts; Activity), on a missing pack file (`MissingDownload.blocked`;
+the overview's "Allow and try again" submits the list's retry), and in memory among the last 20
+refusals (MineShell settings > System, beside the allowed list). The check resolves the name
 before fetch resolves it again, so DNS rebinding is not covered; pinning the address would need
 undici's Agent. Spark's upload URL (`bytebinUrl` in the server's Spark config) is not checked.
 

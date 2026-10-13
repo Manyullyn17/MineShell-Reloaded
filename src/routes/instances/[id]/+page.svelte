@@ -8,6 +8,7 @@
 	import Sparkline from '#lib/components/Sparkline.svelte';
 	import CrashDiagnosis from '#lib/components/CrashDiagnosis.svelte';
 	import ForgeQuestion from '#lib/components/ForgeQuestion.svelte';
+	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
@@ -16,6 +17,9 @@
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
 	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
+	// "Allow and try again" on a refused pack download submits the list's Try again.
+	let retryForm = $state<HTMLFormElement | null>(null);
+	let retryButton = $state<HTMLButtonElement | null>(null);
 
 	// Streamed: slow the first time on a big pack (the last run's journal, a walk of the
 	// folder, every mod jar opened). Kept between the 5 s refreshes, so nothing flickers.
@@ -200,6 +204,10 @@
 				</p>
 			</div>
 		</div>
+		<!-- Whoever may allow (a global admin) may also try again. -->
+		{#each data.blockedDownloads as blocked (blocked.address)}
+			<AllowDownloadPrompt {blocked} label="Allow and try again" onallowed={() => retryForm?.requestSubmit(retryButton)} />
+		{/each}
 		<ul class="missing">
 			{#each data.missingDownloads as missing (missing.download.target || missing.name)}
 				<li>
@@ -218,8 +226,8 @@
 			{/each}
 		</ul>
 		{#if may('software')}
-			<form method="POST" use:enhance class="row">
-				<button type="submit" formaction="?/retryDownloads">Try again</button>
+			<form method="POST" use:enhance class="row" bind:this={retryForm}>
+				<button type="submit" formaction="?/retryDownloads" bind:this={retryButton}>Try again</button>
 				<button type="submit" class="button-quiet" formaction="?/forgetDownloads">Forget the list</button>
 			</form>
 		{/if}

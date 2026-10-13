@@ -93,6 +93,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	},
 	'/api/tasks': { methods: { GET: 'signedIn' } },
 	'/api/update': { methods: { GET: 'owner' } },
+	// Lets downloads reach one exact local or private address (downloadaccess.ts).
+	'/api/downloads/allowed': { methods: { POST: 'globalAdmin', DELETE: 'globalAdmin' } },
 	'/api/skins/[texture]': { methods: { GET: 'signedIn' } },
 	// Catalog searches (Modrinth, CurseForge through MineShell's key) for installing and creating.
 	'/api/loaders/versions': { methods: { GET: 'signedIn' } },

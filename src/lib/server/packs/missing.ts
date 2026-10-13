@@ -7,6 +7,7 @@ import type { ModloaderId } from '../modloaders';
 import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import { syncMods } from '../mods';
 import { startTask, type TaskHandle } from '../tasks';
+import type { BlockedDownload } from '#lib/shared/downloads.js';
 import { curseforgeOrigins, downloadPackFiles, type FailedDownload, type PackDownload, type ParsedPack } from './index';
 
 /**
@@ -22,6 +23,8 @@ export type MissingDownload = {
 	/** A page to download it from by hand. */
 	page: string | null;
 	error: string;
+	/** Refused for its address (downloadaccess.ts); the overview asks to allow it. */
+	blocked?: BlockedDownload;
 };
 
 const FILE = path.join('.mineshell', 'missing-downloads.json');
@@ -57,7 +60,8 @@ export async function recordMissing(root: string, failures: FailedDownload[]): P
 			name: f.download.target ? path.posix.basename(f.download.target) : f.file,
 			download: f.download,
 			page: await downloadPage(f.download.curseforge, i < PAGE_LOOKUPS),
-			error: f.error
+			error: f.error,
+			...(f.blocked ? { blocked: f.blocked } : {})
 		}))
 	);
 	await fs.mkdir(path.dirname(file), { recursive: true });

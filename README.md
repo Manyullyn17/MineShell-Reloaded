@@ -72,7 +72,9 @@ Tests never touch real data; see [tests/README.md](tests/README.md).
 `.mrpack` or CurseForge zip you upload, or from just a loader and a Minecraft version
 (vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom). Before a pack installs you see its
 mods and can untick client-only ones; files that fail to download are listed on the overview with
-links to download them by hand, and can be tried again. Each instance gets its own directory, port pair (the game
+links to download them by hand, and can be tried again. Downloads never reach this machine or your local network
+unless the owner or a global admin allows that exact address (asked where the refusal shows; the list is under
+MineShell settings > System), so a pack's links cannot reach services only listening there. Each instance gets its own directory, port pair (the game
 port can be picked), RCON password and systemd unit; with Simple Voice Chat, a voice chat port of its own too
 (checked before every start). Later you can change the pack version (picked from the
 provider, or by uploading the new version's file - the way to update a pack installed from an upload; your config edits

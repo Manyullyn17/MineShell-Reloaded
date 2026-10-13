@@ -45,6 +45,7 @@ import {
 } from '#lib/server/spark.js';
 import { voiceChat } from '#lib/server/voicechat.js';
 import { forgetMissing, readMissing, startRetryMissing } from '#lib/server/packs/missing.js';
+import { isAllowedAddress } from '#lib/server/downloadaccess.js';
 import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { isBisecting } from '#lib/server/bisect.js';
 
@@ -118,6 +119,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 				}
 			: null
 	);
+	const missingDownloads = await readMissing(instance.path);
 
 	return {
 		summary: {
@@ -183,7 +185,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		forgeQuestion:
 			forgeQuestion && !can(locals.access, instance.id, 'software') ? { ...forgeQuestion, text: '', groups: [] } : forgeQuestion,
 		/** Pack files the last install or pack change could not download (packs/missing.ts). */
-		missingDownloads: await readMissing(instance.path),
+		missingDownloads,
+		/** Addresses those downloads were refused for that nobody has allowed since, one each (downloadaccess.ts). */
+		blockedDownloads: [
+			...new Map(missingDownloads.flatMap((m) => (m.blocked && !isAllowedAddress(m.blocked.address) ? [[m.blocked.address, m.blocked]] as const : []))).values()
+		],
 		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
 		// Streamed: the first walk of a big pack takes seconds.
 		disk: recentDiskBreakdown(instance).then(
