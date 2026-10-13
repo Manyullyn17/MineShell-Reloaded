@@ -114,6 +114,80 @@
 		font-size: 1.3rem;
 	}
 
+	h3 {
+		margin: var(--space-4) 0 var(--space-2);
+	}
+
+	.suggestions {
+		list-style: none;
+		margin: 0 0 var(--space-5);
+		padding: 0;
+	}
+
+	.suggestions li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-2) 0;
+		border-bottom: 1px solid var(--line);
+		font-size: 0.9rem;
+	}
+
+	.suggestions .size {
+		flex: 0 0 5.5rem;
+	}
+
+	.suggestions .text {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.usage .group th,
+	.usage .group td {
+		padding-top: var(--space-4);
+		font-weight: 600;
+		color: var(--text);
+		border-bottom: 1px solid var(--line-strong);
+	}
+
+	.usage .group th {
+		text-align: left;
+		font-size: 0.9rem;
+	}
+
+	.item {
+		padding-left: var(--space-5);
+		overflow-wrap: anywhere;
+	}
+
+	.num {
+		text-align: right;
+		white-space: nowrap;
+	}
+
+	.bar-col {
+		width: 30%;
+	}
+
+	/* One measure, one hue: a bar per row, its length the share of the total. */
+	.bar {
+		display: block;
+		height: 8px;
+		background: var(--accent);
+		border-radius: 0 4px 4px 0;
+	}
+
+	.bar.thin {
+		height: 4px;
+		background: color-mix(in srgb, var(--accent) 60%, transparent);
+	}
+
+	li .button,
+	li button {
+		font-size: 0.82rem;
+		padding: 0.2rem 0.5rem;
+	}
+
 	@media (max-width: 40rem) {
 		:global(.panel-head) {
 			align-items: stretch;
@@ -234,79 +308,5 @@
 			padding: 0;
 			border: 0;
 		}
-	}
-
-	h3 {
-		margin: var(--space-4) 0 var(--space-2);
-	}
-
-	.suggestions {
-		list-style: none;
-		margin: 0 0 var(--space-5);
-		padding: 0;
-	}
-
-	.suggestions li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-2) 0;
-		border-bottom: 1px solid var(--line);
-		font-size: 0.9rem;
-	}
-
-	.suggestions .size {
-		flex: 0 0 5.5rem;
-	}
-
-	.suggestions .text {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
-
-	.usage .group th,
-	.usage .group td {
-		padding-top: var(--space-4);
-		font-weight: 600;
-		color: var(--text);
-		border-bottom: 1px solid var(--line-strong);
-	}
-
-	.usage .group th {
-		text-align: left;
-		font-size: 0.9rem;
-	}
-
-	.item {
-		padding-left: var(--space-5);
-		overflow-wrap: anywhere;
-	}
-
-	.num {
-		text-align: right;
-		white-space: nowrap;
-	}
-
-	.bar-col {
-		width: 30%;
-	}
-
-	/* One measure, one hue: a bar per row, its length the share of the total. */
-	.bar {
-		display: block;
-		height: 8px;
-		background: var(--accent);
-		border-radius: 0 4px 4px 0;
-	}
-
-	.bar.thin {
-		height: 4px;
-		background: color-mix(in srgb, var(--accent) 60%, transparent);
-	}
-
-	li .button,
-	li button {
-		font-size: 0.82rem;
-		padding: 0.2rem 0.5rem;
 	}
 </style>
