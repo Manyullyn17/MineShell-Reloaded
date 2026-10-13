@@ -18,7 +18,7 @@ export const actions: Actions = {
 		const globalAdmin = form.get('globalAdmin') === 'on';
 		if (globalAdmin && !locals.access.owner) return fail(403, { ok: false, message: 'Only the owner makes MineShell admins.' });
 		try {
-			const { account, password } = createAccount(String(form.get('username') ?? ''), {
+			const { account, password } = createAccount(String(form.get('newAccount') ?? ''), {
 				globalAdmin,
 				canCreate: form.get('canCreate') === 'on'
 			});

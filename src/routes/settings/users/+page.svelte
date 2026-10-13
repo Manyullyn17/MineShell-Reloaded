@@ -56,8 +56,20 @@
 	</p>
 	<form method="POST" action="?/create" use:enhance class="add-form">
 		<div class="field">
-			<label for="username">Username</label>
-			<input id="username" name="username" autocomplete="off" minlength="2" maxlength="32" required />
+			<label for="new-account">Username</label>
+			<!-- Not a sign-in: its own name, so browsers do not offer the login's saved names, and password managers told to keep out. -->
+			<input
+				id="new-account"
+				name="newAccount"
+				autocomplete="off"
+				data-1p-ignore
+				data-lpignore="true"
+				data-bwignore
+				data-form-type="other"
+				minlength="2"
+				maxlength="32"
+				required
+			/>
 			<p class="hint">Letters, digits, dots, dashes and underscores.</p>
 		</div>
 		<div class="check field">

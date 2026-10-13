@@ -33,10 +33,10 @@ async function post(action: unknown, event: { params?: Record<string, string>; a
 
 describe('Accounts', () => {
 	it('a global admin adds accounts, but only the owner adds MineShell admins', async () => {
-		const made = (await post(list.actions.create, { access: globalAdmin, fields: { username: name(), canCreate: 'on' } })) as { created: { password: string; username: string } };
+		const made = (await post(list.actions.create, { access: globalAdmin, fields: { newAccount: name(), canCreate: 'on' } })) as { created: { password: string; username: string } };
 		expect(verifyLogin(made.created.username, made.created.password)).toMatchObject({ mustChangePassword: true });
-		expect(await post(list.actions.create, { access: globalAdmin, fields: { username: name(), globalAdmin: 'on' } })).toMatchObject({ status: 403 });
-		expect(await post(list.actions.create, { access: FULL_ACCESS, fields: { username: name(), globalAdmin: 'on' } })).toMatchObject({ ok: true });
+		expect(await post(list.actions.create, { access: globalAdmin, fields: { newAccount: name(), globalAdmin: 'on' } })).toMatchObject({ status: 403 });
+		expect(await post(list.actions.create, { access: FULL_ACCESS, fields: { newAccount: name(), globalAdmin: 'on' } })).toMatchObject({ ok: true });
 	});
 
 	it('nobody changes the owner here; only the owner changes or makes a global admin', async () => {
