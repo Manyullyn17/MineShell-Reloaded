@@ -610,6 +610,9 @@ browser, uploads, mod deletion and the text editor all use it. A dropped folder'
 keep their paths inside it (`uploadPath`, which refuses `..` steps). Deletion additionally
 refuses to operate outside `INSTANCES_DIR`, so a corrupt database row cannot point
 `rm -rf` at something interesting.
+Pack files are the uploader's: a `.mrpack` or file list naming a path that leaves the
+server folder is refused when parsed (`packPath`), and `downloadPackFiles` writes through
+`safeJoin` as well, since targets also come from CurseForge file names and the world mapping.
 
 **Secrets.** RCON passwords (and a CurseForge key set in Settings) are AES-256-GCM
 encrypted with a key in a `0600` file (`secret.key`) beside the database. Losing the key

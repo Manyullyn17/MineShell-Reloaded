@@ -6,6 +6,7 @@ import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import type { ModloaderId } from '../modloaders';
 import type { TaskHandle } from '../tasks';
 import { TMP_DIR } from '../config';
+import { safeJoin } from '../files';
 import { openZipBuffer, type ZipArchive } from '../zip';
 
 /**
@@ -93,7 +94,7 @@ function parseMrpack(zip: ZipArchive): ParsedPack {
 		// Client-only files would just bloat the server directory.
 		.filter((f) => f.env?.server !== 'unsupported')
 		.map((f) => ({
-			target: f.path,
+			target: packPath(f.path),
 			urls: f.downloads,
 			hash: f.hashes.sha512
 				? { algo: 'sha512' as const, value: f.hashes.sha512 }
@@ -176,6 +177,20 @@ function zipEntriesUnder(zip: ZipArchive, prefixes: string[]): string[] {
 }
 
 // ------------------------------------------------------------------ shared ---
+
+/**
+ * A file path a pack names, refused when it would leave the server folder
+ * (`../`, an absolute path): the pack is the uploader's, the folder it writes
+ * to is not. downloadPackFiles checks again, since targets also come from
+ * CurseForge file names and the world-folder mapping.
+ */
+function packPath(target: string): string {
+	const normalised = target.replace(/\\/g, '/');
+	if (normalised.startsWith('/') || normalised.split('/').includes('..')) {
+		throw new Error(`The pack lists a file outside the server folder (${target}); refusing to install it.`);
+	}
+	return normalised;
+}
 
 export function parsePack(buffer: Buffer): ParsedPack {
 	const zip = openZipBuffer(buffer);
@@ -368,7 +383,8 @@ export async function downloadPackFiles(
 
 				if (!urls.length) throw new Error('no download URL');
 
-				const destination = path.join(instanceDir, target);
+				// Throws for a path outside the instance: the pack names it.
+				const destination = safeJoin(instanceDir, target);
 				let lastError: unknown = null;
 				let ok = false;
 				for (const [i, url] of urls.entries()) {
@@ -444,7 +460,7 @@ export function packFromFileList(input: {
 					? { projectId: Number(f.curseforge.projectId), fileId: Number(f.curseforge.fileId) }
 					: null;
 				return {
-					target: path.posix.join(f.dir, f.name),
+					target: packPath(path.posix.join(f.dir, f.name)),
 					urls: curseforge && f.url ? curseforgeUrls(f.url, curseforge.fileId, f.name) : f.url ? [f.url] : [],
 					hash: f.sha1 ? { algo: 'sha1' as const, value: f.sha1 } : null,
 					...(curseforge ? { curseforge } : {}),

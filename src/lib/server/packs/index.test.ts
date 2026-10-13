@@ -1,8 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { applyOverrides, curseforgeCdnUrl, curseforgeUrls, packFromFileList, parsePack } from './index';
+import { applyOverrides, curseforgeCdnUrl, curseforgeUrls, downloadPackFiles, packFromFileList, parsePack, type ParsedPack } from './index';
 import { ls, tempDir, zipBuffer } from '../../../../tests/helpers/fs';
+
+const guard = globalThis.fetch;
 
 describe('packFromFileList (modpacks.ch file lists)', () => {
 	const files = [
@@ -38,6 +40,12 @@ describe('packFromFileList (modpacks.ch file lists)', () => {
 		});
 		expect(nested.overridesArchive).toBeNull();
 		expect(nested.downloads.map((d) => d.target)).toEqual(['mods/overrides.zip']);
+	});
+
+	it('refuses a file list naming a file outside the server folder', () => {
+		const input = { name: 'P', version: '1', minecraftVersion: '1.12.2', modloader: 'forge' as const, modloaderVersion: null };
+		expect(() => packFromFileList({ ...input, files: [{ path: './mods/', name: '../../escape.jar', url: 'https://x/a' }] })).toThrow(/outside the server folder/);
+		expect(() => packFromFileList({ ...input, files: [{ path: './../', name: 'escape.jar', url: 'https://x/a' }] })).toThrow(/outside the server folder/);
 	});
 
 	it('keeps entries without a URL, so they are looked up or reported instead of silently dropped', () => {
@@ -100,6 +108,19 @@ describe('parsePack', () => {
 		expect(pack.overrideEntries).toEqual(['overrides/config/a.toml']);
 	});
 
+	it('refuses a .mrpack naming a file outside the server folder', () => {
+		const mrpack = (filePath: string) =>
+			zipBuffer({
+				'modrinth.index.json': JSON.stringify({
+					formatVersion: 1, game: 'minecraft', versionId: '1', name: 'T', dependencies: { minecraft: '1.21.1' },
+					files: [{ path: filePath, hashes: { sha1: 'a1' }, downloads: ['https://x/a'] }]
+				})
+			});
+		for (const bad of ['../../.bashrc', 'mods/../../escape.jar', '/etc/cron.d/x', '..\\..\\escape.jar']) {
+			expect(() => parsePack(mrpack(bad)), bad).toThrow(/outside the server folder/);
+		}
+	});
+
 	it('reads a CurseForge manifest and its loader id', () => {
 		const pack = parsePack(
 			zipBuffer({
@@ -118,6 +139,28 @@ describe('parsePack', () => {
 
 	it('rejects archives that are neither', () => {
 		expect(() => parsePack(zipBuffer({ 'readme.txt': 'hi' }))).toThrow(/Unrecognised archive/);
+	});
+});
+
+describe('downloadPackFiles', () => {
+	it('never writes outside the instance, whatever the target says', async () => {
+		// Targets also come from CurseForge file names and the world mapping, not only from parsePack.
+		globalThis.fetch = (async () => new Response('x')) as typeof fetch;
+		try {
+			const root = await tempDir();
+			const dir = path.join(root, 'server');
+			await fs.mkdir(dir);
+			const pack = {
+				kind: 'mrpack', name: 'T', version: null, minecraftVersion: '1.21.1', modloader: 'vanilla', modloaderVersion: null,
+				downloads: [{ target: '../escape.jar', urls: ['https://cdn.example.com/a.jar'], hash: null, required: true }],
+				overrideEntries: [], zip: null
+			} satisfies ParsedPack;
+			const { failures } = await downloadPackFiles(pack, dir);
+			expect(failures.map((f) => f.error)).toEqual(['That path is outside the instance directory.']);
+			expect(await ls(root)).toEqual(['server']);
+		} finally {
+			globalThis.fetch = guard;
+		}
 	});
 });
 
