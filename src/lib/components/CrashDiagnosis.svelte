@@ -28,7 +28,8 @@
 	const other = $derived((diagnosis ?? []).filter((d) => !d.fatal));
 </script>
 
-{#each fatal as d (d.title + d.evidence)}
+<!-- By position: without console access the evidence is empty, so title and evidence need not be unique. -->
+{#each fatal as d, i (i)}
 	<div class="diagnosis">
 		<strong>{d.title}</strong>
 		<p>{d.detail}</p>
@@ -38,7 +39,7 @@
 				{#if d.related}· related: <code>{d.related.fileName}</code>{/if}
 			</p>
 		{/if}
-		<p class="small muted evidence"><code>{d.evidence}</code></p>
+		{#if d.evidence}<p class="small muted evidence"><code>{d.evidence}</code></p>{/if}
 		{#if d.fix && fixAction}
 			<form method="POST" action={fixAction} use:enhance>
 				<input type="hidden" name="fileName" value={d.fix.fileName} />
@@ -54,7 +55,7 @@
 			{other.length} other error{other.length === 1 ? '' : 's'} earlier in this run (the server carried on past {other.length === 1 ? 'it' : 'them'}; often harmless)
 		</summary>
 		<ul>
-			{#each other as d (d.title + d.evidence)}
+			{#each other as d, i (i)}
 				<li><strong>{d.title}</strong> <span class="muted">- {d.detail}</span></li>
 			{/each}
 		</ul>

@@ -179,7 +179,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		spark,
 		stuckSince: stuck ? summary.state.activeEnterTimestamp : null,
 		hungSince,
-		forgeQuestion,
+		// Forge's words are console output: in full for whoever answers it; others learn only that it asks.
+		forgeQuestion:
+			forgeQuestion && !can(locals.access, instance.id, 'software') ? { ...forgeQuestion, text: '', groups: [] } : forgeQuestion,
 		/** Pack files the last install or pack change could not download (packs/missing.ts). */
 		missingDownloads: await readMissing(instance.path),
 		// One walk of the folder serves both numbers, reused for a minute (recentDiskBreakdown).
@@ -205,7 +207,12 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			c ? { tail: can(locals.access, instance.id, 'console.read') ? c.log.split('\n').slice(-40).join('\n') : null } : null
 		),
 		// Indexing a big pack's mods takes a moment the first time.
-		diagnosis: crash.then((c) => c?.diagnosis ?? null)
+		// What went wrong, in MineShell's words, for everyone; the log line it came from is console output.
+		diagnosis: crash.then(async (c) => {
+			const found = c ? await c.diagnosis : null;
+			if (!found || can(locals.access, instance.id, 'console.read')) return found;
+			return found.map((d) => ({ ...d, evidence: '' }));
+		})
 	};
 };
 

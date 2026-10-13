@@ -667,9 +667,11 @@ are for people trusted that far.
 
 Page data is cut to the account too, not only hidden on screen: the rail, the server list and
 Activity (page and stream) hold only servers the account may see (tasks of no server, such as a
-Java download, only for global admins); the overview's crash notice keeps its diagnosis but its
-log lines need `console.read`, and Spark's profile links `console.command`; Players' IP bans need
-`players.manage`; a server's scheduled commands need console access; the playit.gg account links,
+Java download, only for global admins); the overview's crash notice keeps its diagnosis (MineShell's
+own words and the blamed mod) but its log lines, and each diagnosis's `evidence` line, need
+`console.read`, and Forge's startup question comes in full (its console text, the missing
+entries) only with `software`, the others learning just that it asks; Spark's profile links need
+`console.command`; Players' IP bans need `players.manage`; a server's scheduled commands need console access; the playit.gg account links,
 link-up and routing, and tunnels made outside MineShell are the owner's (global admins see the
 status). A server the account may not see is "Another server" in port messages, and moving
 another server's port to make room needs `settings.edit` on it. A visitor who is not signed in

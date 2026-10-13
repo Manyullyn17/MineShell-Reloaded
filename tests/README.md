@@ -274,3 +274,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Copying a server with "the same access": everyone's access and chosen players carried over, only for global admins | `flows/clone.test.ts`, `routes/instances/access-handlers.test.ts` |
 | (feature) Open event streams close when the session is signed out or the access they need goes, announced or found within 15 s; Activity's stream ends on sign-out | `access-stream.test.ts` |
 | (feature) The audit log names the account a request ran as, through awaits, timers and tasks it started; MineShell's own work none | `requestcontext.test.ts` |
+| The overview sent each crash diagnosis's log line, and Forge's startup question in full, to accounts without console access | `routes/access-filtering.test.ts` |

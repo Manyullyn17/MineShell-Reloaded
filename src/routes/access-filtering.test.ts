@@ -2,10 +2,32 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Access, InstanceGrant } from '#lib/shared/access.js';
 import { FULL_ACCESS } from '#lib/shared/access.js';
 
-// A last run that crashed, without a journal to read it from.
+// A last run that crashed, and Forge asking on the console, without a journal to read them from.
+const EVIDENCE = '[Server thread/ERROR]: player 1.2.3.4 broke it';
 vi.mock('#lib/server/lastcrash.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/lastcrash.js')>()),
-	lastCrash: async () => ({ log: 'line one\n[Server thread/ERROR]: player 1.2.3.4 broke it', diagnosis: Promise.resolve([]) })
+	lastCrash: async () => ({
+		log: `line one\n${EVIDENCE}`,
+		diagnosis: Promise.resolve([
+			{ kind: 'mixin-failure', title: 'A mod broke', detail: 'Disable it.', culprit: null, related: null, evidence: EVIDENCE, fix: null, fatal: true }
+		])
+	})
+}));
+vi.mock('#lib/server/forgequery.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/forgequery.js')>()),
+	pendingForgeQuestion: async () => ({
+		kind: 'missing-entries',
+		askedAt: 1,
+		text: 'Forge console text',
+		groups: [{ name: 'minecraft:blocks', entries: ['gone:block'] }]
+	})
+}));
+// A running server's RCON and heap, which a test has none of.
+vi.mock('#lib/server/tps.js', async (importOriginal) => ({ ...(await importOriginal<typeof import('#lib/server/tps.js')>()), tickStats: async () => null }));
+vi.mock('#lib/server/heap.js', async (importOriginal) => ({ ...(await importOriginal<typeof import('#lib/server/heap.js')>()), runningHeapMb: async () => null }));
+vi.mock('#lib/server/instances.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/instances.js')>()),
+	onlinePlayers: async () => null
 }));
 
 const layout = await import('./+layout.server');
@@ -83,6 +105,23 @@ describe('page data leaves out what the account may not read', () => {
 			(await (await load(overview, { params: { id }, locals: { access: who } })).crash) as { tail: string | null } | null;
 		expect(await crash(access({ [id]: { permissions: ['view'] } }))).toEqual({ tail: null });
 		expect((await crash(access({ [id]: { permissions: ['console.read'] } })))?.tail).toContain('1.2.3.4');
+	});
+
+	it("the overview: a crash's diagnosis for everyone, the log line it came from only with console access", async () => {
+		stopped();
+		const { id } = await server();
+		const diagnosis = async (who: Access) =>
+			(await (await load(overview, { params: { id }, locals: { access: who } })).diagnosis) as { title: string; evidence: string }[];
+		expect(await diagnosis(access({ [id]: { permissions: ['view'] } }))).toEqual([expect.objectContaining({ title: 'A mod broke', evidence: '' })]);
+		expect((await diagnosis(access({ [id]: { permissions: ['console.read'] } })))[0].evidence).toBe(EVIDENCE);
+	});
+
+	it("the overview: Forge's question in full only for whoever may answer it", async () => {
+		fakeProcesses(() => ({ stdout: 'ActiveState=active\nSubState=running\nMainPID=4242\n' }));
+		const { id } = await server();
+		const question = async (who: Access) => (await load(overview, { params: { id }, locals: { access: who } })).forgeQuestion;
+		expect(await question(access({ [id]: { permissions: ['view'] } }))).toEqual({ kind: 'missing-entries', askedAt: 1, text: '', groups: [] });
+		expect(await question(access({ [id]: { permissions: ['software'] } }))).toMatchObject({ text: 'Forge console text', groups: [{ entries: ['gone:block'] }] });
 	});
 
 	it('Players: IP bans only for whoever manages bans', async () => {
