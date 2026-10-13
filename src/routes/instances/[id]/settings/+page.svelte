@@ -315,6 +315,22 @@
 		rconShown = result.type === 'success' ? String((result.data as { password?: string | null } | undefined)?.password ?? 'not set') : 'could not be read';
 	}
 
+	// Presets belong to every server, so they are saved through MineShell settings' action.
+	let presetMessage = $state<{ ok: boolean; message: string } | null>(null);
+	async function savePreset(event: SubmitEvent) {
+		event.preventDefault();
+		const body = new FormData();
+		body.set('presetName', presetName);
+		body.set('jvmArgs', sv.jvmArgs);
+		const result = await post('/settings?/savePreset', body);
+		presetMessage = { ok: result.type === 'success', message: resultMessage(result, 'Could not save that preset.') };
+		if (result.type === 'success') {
+			showSavePreset = false;
+			presetName = '';
+			await invalidateAll();
+		}
+	}
+
 	const resultMessage = (result: Awaited<ReturnType<typeof post>>, fallback: string) =>
 		result.type === 'success' || result.type === 'failure'
 			? String((result.data as { message?: string } | undefined)?.message ?? fallback)
@@ -1115,8 +1131,7 @@
 	<SettingsSection tab="java" title="Saved presets" description="Flags you saved for reuse on any server.">
 		<div class="block">
 			{#if showSavePreset}
-				<form method="POST" action="?/savePreset" use:enhance class="inline-row">
-					<input type="hidden" name="jvmArgs" value={sv.jvmArgs} />
+				<form class="inline-row" onsubmit={savePreset}>
 					<input name="presetName" bind:value={presetName} placeholder="Preset name, e.g. My tuning" aria-label="Preset name" />
 					<button class="button-primary" type="submit">Save preset</button>
 					<button type="button" class="button-quiet" onclick={() => (showSavePreset = false)}>Cancel</button>
@@ -1125,19 +1140,8 @@
 			{:else}
 				<button type="button" onclick={() => (showSavePreset = true)}>Save current flags as a preset</button>
 			{/if}
-			{#if data.jvmPresets.some((p) => !p.builtIn)}
-				<ul class="saved-presets">
-					{#each data.jvmPresets.filter((p) => !p.builtIn) as preset (preset.id)}
-						<li>
-							<span>{preset.name}</span>
-							<form method="POST" action="?/deletePreset" use:enhance>
-								<input type="hidden" name="presetId" value={preset.id} />
-								<button class="button-quiet" type="submit">Delete</button>
-							</form>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+			{#if presetMessage}<p class="hint" class:warn-text={!presetMessage.ok}>{presetMessage.message}</p>{/if}
+			<p class="hint">Saved presets are shared by every server; delete them in <a href="/settings?tab=java">MineShell settings</a>.</p>
 		</div>
 	</SettingsSection>
 
@@ -1723,24 +1727,6 @@
 		font-size: 0.75rem;
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
-	}
-
-	.saved-presets {
-		list-style: none;
-		margin: var(--space-3) 0 0;
-		padding: 0;
-		display: grid;
-		gap: var(--space-1);
-	}
-
-	.saved-presets li {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		font-size: 0.9rem;
-		padding: var(--space-1) 0;
-		border-bottom: 1px solid var(--line);
 	}
 
 	.commands {

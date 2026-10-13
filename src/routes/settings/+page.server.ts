@@ -80,6 +80,7 @@ import {
 import { policyFormValues } from '#lib/shared/snapshots.js';
 import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
+import { deleteCustomPreset, listPresets, saveCustomPreset } from '#lib/server/jvm-presets.js';
 
 /** The agent, and each server's tunnel next to the ones made on playit's dashboard. */
 async function playitOverview() {
@@ -117,6 +118,8 @@ export const load: PageServerLoad = async () => {
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
 		javaDownloads: javaDownloads(),
+		/** Saved JVM flag presets; the built-in ones are not edited. */
+		jvmPresets: listPresets().filter((p) => !p.builtIn),
 		authEnabled: authEnabled(),
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
 		playit: {
@@ -279,6 +282,22 @@ export const actions: Actions = {
 	removeJava: async ({ request }) => {
 		removeJavaRuntime(String((await request.formData()).get('path') ?? ''));
 		return { ok: true, message: 'Removed from the list. The file itself is untouched.' };
+	},
+
+	/** Also posted to by a server's Settings ("Save current flags as a preset"): presets belong to every server. */
+	savePreset: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			const preset = saveCustomPreset(String(form.get('presetName') ?? ''), String(form.get('jvmArgs') ?? ''));
+			return { ok: true, message: `Saved "${preset.name}". It is available on every server.` };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save that preset.' });
+		}
+	},
+
+	deletePreset: async ({ request }) => {
+		deleteCustomPreset(String((await request.formData()).get('presetId') ?? ''));
+		return { ok: true, message: 'Preset removed. Servers using it keep their current flags.' };
 	},
 
 	curseforgeKey: async ({ request }) => {

@@ -248,3 +248,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A file-list entry without a URL was dropped (install "succeeded" without it); failed downloads were only in the task log; CurseForge files had one source | `packs/index.test.ts`, `flows/pack-install.test.ts` |
 | Two MineShells on one machine (production and dev) shared one session cookie and signed each other out | `auth.test.ts` |
 | Settings sent the RCON password with every page load (masked only on screen), also inside the raw server.properties | `routes/instances/[id]/settings/rcon.test.ts` |
+| A server's Settings saved and deleted the JVM flag presets every server shares | `routes/settings/presets.test.ts` |

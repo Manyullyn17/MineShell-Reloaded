@@ -181,7 +181,7 @@ export function saveCustomPreset(name: string, flags: string): JvmPreset {
 	const entry: StoredPreset = {
 		id,
 		name: trimmed,
-		description: 'Saved from an instance.',
+		description: 'Saved preset.',
 		flags: stripMemoryFlags(flags)
 	};
 

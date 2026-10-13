@@ -228,6 +228,42 @@
 		kept in <code>{data.paths.data}/java</code>. Servers set to match Java automatically pick it up.
 	</p>
 </section>
+
+<section class="panel">
+	<h2>JVM flag presets</h2>
+	<p class="muted">
+		Saved flags any server can apply under Settings, Java &amp; memory. A server's settings save its current flags as
+		a preset; servers using one keep their flags when it is deleted.
+	</p>
+	{#if data.jvmPresets.length}
+		<ul class="saved-presets">
+			{#each data.jvmPresets as preset (preset.id)}
+				<li>
+					<div>
+						<span>{preset.name}</span>
+						<code class="small">{preset.flags || '(memory settings only)'}</code>
+					</div>
+					<form method="POST" action="?/deletePreset" use:enhance>
+						<input type="hidden" name="presetId" value={preset.id} />
+						<button class="button-quiet" type="submit">Delete</button>
+					</form>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	<form method="POST" action="?/savePreset" use:enhance class="preset-form">
+		<div class="field">
+			<label for="preset-name">Name</label>
+			<input id="preset-name" name="presetName" placeholder="My tuning" />
+		</div>
+		<div class="field">
+			<label for="preset-flags">Flags</label>
+			<textarea id="preset-flags" name="jvmArgs" rows="2" class="mono" spellcheck="false" placeholder="-XX:+UseG1GC ..."></textarea>
+			<p class="hint">Without <code>-Xms</code>/<code>-Xmx</code>: memory is set per server. A name that exists already replaces that preset.</p>
+		</div>
+		<button type="submit">Save preset</button>
+	</form>
+</section>
 {:else if tab === 'snapshots'}
 <section class="panel">
 	<h2>World snapshots</h2>
@@ -826,6 +862,38 @@
 		overflow-x: auto;
 		font-family: var(--font-mono);
 		font-size: 0.75rem;
+	}
+
+	.saved-presets {
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.saved-presets li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding: var(--space-1) 0;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.saved-presets li div {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+
+	.saved-presets code {
+		overflow-wrap: anywhere;
+	}
+
+	.preset-form {
+		margin-top: var(--space-4);
+		max-width: 40rem;
 	}
 
 	.inline-form {

@@ -658,7 +658,9 @@ server, so an action elsewhere on the page (a scheduled command added, a section
 does not wipe edits that are not saved yet. Every section stays mounted and is hidden when
 its tab is closed, so the search can look through all of them. Things that act at once
 (installing a loader version, a pack change, Cleanroom, the icon, presets, scheduled
-commands, copy and delete) keep their own buttons.
+commands, copy and delete) keep their own buttons. JVM flag presets are shared by every
+server, so they live in MineShell settings (Java): a server's "Save current flags as a
+preset" posts to `/settings?/savePreset`, and only MineShell settings deletes one.
 
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page

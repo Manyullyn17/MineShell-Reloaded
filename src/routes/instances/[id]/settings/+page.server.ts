@@ -71,10 +71,8 @@ import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
 import { LOADER_LIST, LOADERS, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	composeJvmArgs,
-	deleteCustomPreset,
 	getPreset,
 	listPresets,
-	saveCustomPreset,
 	stripMemoryFlags
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
@@ -477,29 +475,6 @@ export const actions: Actions = {
 		await syncUnit(requireInstance(instance.id));
 		const what = memoryMb || cpuPercent ? 'Limits saved' : 'Limits removed';
 		return { ok: true, message: summary.running ? `${what} and applied to the running server.` : `${what}.` };
-	},
-
-	savePreset: async ({ request, params }) => {
-		requireInstance(params.id);
-		const form = await request.formData();
-		try {
-			const preset = saveCustomPreset(
-				String(form.get('presetName') ?? ''),
-				String(form.get('jvmArgs') ?? '')
-			);
-			return { ok: true, message: `Saved "${preset.name}". It is available on every instance.` };
-		} catch (err) {
-			return fail(400, {
-				ok: false,
-				message: err instanceof Error ? err.message : 'Could not save that preset.'
-			});
-		}
-	},
-
-	deletePreset: async ({ request, params }) => {
-		requireInstance(params.id);
-		deleteCustomPreset(String((await request.formData()).get('presetId') ?? ''));
-		return { ok: true, message: 'Preset removed. Instances using it keep their current flags.' };
 	},
 
 	network: async ({ request, params }) => {
