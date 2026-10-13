@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '#lib/shared/clipboard.js';
 	import { onDestroy } from 'svelte';
 	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
@@ -282,24 +283,7 @@
 		// What is shown, traces included: a filtered view copies just that.
 		const text = visible.flatMap((l) => [l.text, ...l.trace]).join('\n');
 		if (!text) return;
-		try {
-			await navigator.clipboard.writeText(text);
-		} catch {
-			// Clipboard API needs a secure context; over plain http on a LAN IP
-			// that is not granted, so fall back to a hidden textarea + execCommand.
-			const scratch = document.createElement('textarea');
-			scratch.value = text;
-			scratch.setAttribute('readonly', '');
-			scratch.style.position = 'fixed';
-			scratch.style.opacity = '0';
-			document.body.appendChild(scratch);
-			scratch.select();
-			try {
-				document.execCommand('copy');
-			} finally {
-				document.body.removeChild(scratch);
-			}
-		}
+		if (!(await copyText(text))) return;
 		copied = true;
 		setTimeout(() => (copied = false), 1500);
 	}

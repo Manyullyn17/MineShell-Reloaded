@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '#lib/shared/clipboard.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
@@ -85,7 +86,7 @@
 
 	let copied = $state(false);
 	async function copyAddress() {
-		await navigator.clipboard?.writeText(`${data.detail.host}:${data.detail.serverPort}`).catch(() => undefined);
+		if (!(await copyText(`${data.detail.host}:${data.detail.serverPort}`))) return;
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}

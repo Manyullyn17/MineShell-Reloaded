@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '#lib/shared/clipboard.js';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
@@ -63,8 +64,9 @@
 	};
 
 	async function copyAddress(address = data.address) {
-		await navigator.clipboard?.writeText(address).catch(() => undefined);
-		message = { ok: true, message: `Copied ${address}.` };
+		message = (await copyText(address))
+			? { ok: true, message: `Copied ${address}.` }
+			: { ok: false, message: `Could not copy; the address is ${address}.` };
 		menuOpen = false;
 	}
 
