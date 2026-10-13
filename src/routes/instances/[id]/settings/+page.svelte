@@ -766,6 +766,13 @@
 						<label for="clone-name">Name of the copy</label>
 						<input id="clone-name" name="name" value="{data.instance.name} (copy)" maxlength="80" required />
 					</div>
+					{#if data.mayGrant}
+						<div class="check field">
+							<input id="clone-access" name="copyAccess" type="checkbox" />
+							<label for="clone-access">Give the same people the same access to the copy</label>
+							<p class="hint">Otherwise only you, the owner and MineShell admins can use it.</p>
+						</div>
+					{/if}
 					{#if data.instance.status === 'provisioning' || data.running}
 						<p class="hint">Stop the server to copy it; a running server's world is still being written.</p>
 					{/if}

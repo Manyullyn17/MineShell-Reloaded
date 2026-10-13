@@ -271,7 +271,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			revertForge: on('software'),
 			cleanroomFixes: on('software'),
 			// The copy has every file, player data included, and its creator becomes its admin.
-			clone: { all: [on('duplicate'), on('files'), 'create'] },
+			clone: handler({ all: [on('duplicate'), on('files'), 'create'] }, 'copying the access list too needs a global admin'),
 			delete: on('delete')
 		}
 	},

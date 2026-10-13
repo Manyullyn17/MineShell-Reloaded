@@ -22,6 +22,7 @@ const players = await import('./[id]/players/+page.server');
 const world = await import('./[id]/world/+page.server');
 const mods = await import('./[id]/mods/+page.server');
 const tasks = await import('../tasks/+page.server');
+const settings = await import('./[id]/settings/+page.server');
 const { startTask } = await import('#lib/server/tasks.js');
 const { createInstance } = await import('../../../tests/helpers/instances');
 
@@ -77,6 +78,12 @@ describe('access checked in handlers', () => {
 		expect(await post(mods.actions.install, id, datapacker, { projectId: 'terralith', versionId: 'terralith-1' })).toMatchObject({ ok: true });
 		expect(installs.datapacks).toEqual(['terralith']);
 		expect(await post(mods.actions.install, id, access(id, { permissions: ['mods'] }), { projectId: 'terralith', versionId: 'terralith-1' })).toEqual({ refused: 403 });
+	});
+
+	it("copying a server's access list along needs a global admin", async () => {
+		const { id } = await server();
+		const who = { ...access(id, { permissions: ['duplicate', 'files'] }), canCreate: true };
+		expect(await post(settings.actions.clone, id, who, { name: 'Copy', copyAccess: 'on' })).toEqual({ refused: 403 });
 	});
 
 	it("cancelling a task needs admin of its server; one of no server needs a global admin", async () => {

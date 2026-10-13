@@ -4,7 +4,7 @@ import path from 'node:path';
 import { cpus } from 'node:os';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
-import { creatorId } from '#lib/server/access.js';
+import { creatorId, requireGlobalAdmin } from '#lib/server/access.js';
 import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
@@ -240,6 +240,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			raw: serialiseProperties(shownProperties)
 		},
 		bootNote: bootStartNote(),
+		/** May hand out access (the Copy form's "same access" option). */
+		mayGrant: locals.access.globalAdmin,
 		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(
 			() => true,
 			() => false
@@ -787,10 +789,14 @@ export const actions: Actions = {
 
 	clone: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
-		const name = String((await request.formData()).get('name') ?? '').trim().slice(0, 80);
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim().slice(0, 80);
+		// Handing the same access to the copy is giving people access: a global admin's to do.
+		const copyAccess = form.get('copyAccess') === 'on';
+		if (copyAccess) requireGlobalAdmin(locals);
 		let copy;
 		try {
-			({ instance: copy } = await cloneInstance(instance, name, creatorId(locals)));
+			({ instance: copy } = await cloneInstance(instance, name, creatorId(locals), copyAccess));
 		} catch (err) {
 			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;

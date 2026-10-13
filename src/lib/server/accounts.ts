@@ -226,6 +226,22 @@ export function makeCreatorAdmin(userId: string, instanceId: string): void {
 	saveGrant(userId, instanceId, { admin: true, permissions: [], playerView: 'none', playerEdit: 'none', viewUuids: [], editUuids: [] });
 }
 
+/**
+ * Gives everyone with access to `fromId` the same access to `toId` (a copy,
+ * when asked for), chosen players included. Called before the creator is made
+ * admin, which then wins for the creator.
+ */
+export function copyGrants(fromId: string, toId: string): void {
+	db.transaction((tx) => {
+		for (const row of tx.select().from(instanceAccess).where(eq(instanceAccess.instanceId, fromId)).all()) {
+			tx.insert(instanceAccess).values({ ...row, instanceId: toId, updatedAt: Date.now() }).onConflictDoNothing().run();
+		}
+		for (const row of tx.select().from(instancePlayerAccess).where(eq(instancePlayerAccess.instanceId, fromId)).all()) {
+			tx.insert(instancePlayerAccess).values({ ...row, instanceId: toId }).onConflictDoNothing().run();
+		}
+	});
+}
+
 /** No access to that server any more: its permissions and players go too. */
 export function removeGrant(userId: string, instanceId: string): void {
 	db.delete(instanceAccess).where(and(eq(instanceAccess.userId, userId), eq(instanceAccess.instanceId, instanceId))).run();

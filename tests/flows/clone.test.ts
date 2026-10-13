@@ -111,6 +111,20 @@ describe('cloning a server', () => {
 		expect(grantsOf(copier.id)[original.id]).toMatchObject({ admin: false, permissions: ['duplicate', 'files'] });
 	});
 
+	it('gives the same people the same access to the copy when asked', async () => {
+		const original = await source();
+		const viewer = otherUser();
+		const copier = otherUser();
+		const steve = '8667ba71-b85a-4004-af54-457a9734eed7';
+		grant(viewer.id, original.id, { permissions: ['power'], playerView: [steve] });
+		grant(copier.id, original.id, { permissions: ['duplicate', 'files'] });
+		const { instance, taskId } = await cloneInstance(original, 'Shared copy', copier.id, true);
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(grantsOf(viewer.id)[instance.id]).toMatchObject({ admin: false, permissions: ['power'], playerView: 'selected', viewUuids: [steve] });
+		// The one copying it is its admin either way, with what they had kept underneath.
+		expect(grantsOf(copier.id)[instance.id]).toMatchObject({ admin: true, permissions: ['duplicate', 'files'] });
+	});
+
 	it('keeps the original from starting while it is being copied', async () => {
 		const original = await source();
 		vi.spyOn(fs, 'cp').mockImplementation(() => hangForever());

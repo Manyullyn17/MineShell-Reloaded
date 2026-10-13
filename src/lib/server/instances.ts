@@ -6,7 +6,7 @@ import { db } from './db';
 import { auditLog, instanceMods, serverInstances, type ServerInstance } from './db/schema';
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
-import { makeCreatorAdmin } from './accounts';
+import { copyGrants, makeCreatorAdmin } from './accounts';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, stripJava8OnlyFlags } from './jvm-presets';
 import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
 import {
@@ -1446,8 +1446,10 @@ export function cloneSkips(relative: string): boolean {
 export async function cloneInstance(
 	source: ServerInstance,
 	name: string,
-	/** The account copying it, which becomes the copy's admin; the source's access list is not copied. */
-	creatorId: string | null = null
+	/** The account copying it, which becomes the copy's admin. */
+	creatorId: string | null = null,
+	/** Give everyone with access to the source the same access to the copy (otherwise nobody gets any). */
+	copyAccess = false
 ): Promise<{ instance: ServerInstance; taskId: string }> {
 	if (!name.trim()) throw new InstanceError('Give the copy a name.');
 	await requireStopped(source);
@@ -1482,6 +1484,7 @@ export async function cloneInstance(
 		})
 		.run();
 	beginOperation(id, { kind: 'create' });
+	if (copyAccess) copyGrants(source.id, id);
 	if (creatorId) makeCreatorAdmin(creatorId, id);
 	beingCopied.add(source.id);
 

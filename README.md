@@ -195,7 +195,8 @@ place. MineShell restarts; the servers keep running.
 (`admin`) and MineShell admins may do everything; anyone else is given access per server:
 everything on it (admin of that server), or chosen permissions - starting and stopping, the
 console, mods, settings, files, backups and more - with player data limited to every player or
-chosen ones. Whoever adds or copies a server becomes its admin. A new account or a reset password gets a one-time password the person replaces
+chosen ones. Whoever adds or copies a server becomes its admin; a copy gives others access only
+when a MineShell admin asks for the same access as the original. A new account or a reset password gets a one-time password the person replaces
 when they first sign in; accounts can be disabled and signed out everywhere. Everyone has an
 account page for their password and where they are signed in. Pages hold only the servers and
 details an account may see; for now, buttons it may not use are refused when pressed rather than
