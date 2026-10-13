@@ -1,7 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '#lib/server/db/index.js';
-import { serverInstances } from '#lib/server/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { instanceTags, serverInstances, serverTags } from '#lib/server/db/schema.js';
+import { and, eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { fail } from '@sveltejs/kit';
 import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } from '#lib/server/instances.js';
 import { latestSample } from '#lib/server/monitor.js';
@@ -14,6 +15,21 @@ import { gaveUpAfter } from '#lib/shared/format.js';
 import { likelyCause } from '#lib/server/lastcrash.js';
 
 export const load: PageServerLoad = async () => {
+	const [tagRows, allTags] = await Promise.all([
+		db.select({ instanceId: instanceTags.instanceId, id: serverTags.id, name: serverTags.name })
+			.from(instanceTags)
+			.innerJoin(serverTags, eq(instanceTags.tagId, serverTags.id))
+			.all(),
+		db.select({ id: serverTags.id, name: serverTags.name }).from(serverTags).orderBy(serverTags.name).all()
+	]);
+	const tagsByInstance = new Map<string, { id: string; name: string }[]>();
+	for (const tag of tagRows) {
+		tagsByInstance.set(tag.instanceId, [
+			...(tagsByInstance.get(tag.instanceId) ?? []),
+			{ id: tag.id, name: tag.name }
+		]);
+	}
+
 	const summaries = await summariseAll();
 	const systemd = await probeSystemd();
 	const unitInstalled = await templateUnitInstalled();
@@ -26,6 +42,7 @@ export const load: PageServerLoad = async () => {
 			return {
 				id: summary.instance.id,
 				name: summary.instance.name,
+				tags: tagsByInstance.get(summary.instance.id) ?? [],
 				minecraftVersion: summary.instance.minecraftVersion,
 				modloader: summary.instance.modloader,
 				modloaderLabel: LOADERS[summary.instance.modloader as ModloaderId]?.label ?? summary.instance.modloader,
@@ -64,6 +81,7 @@ export const load: PageServerLoad = async () => {
 
 	return {
 		instances,
+		tags: allTags,
 		causes,
 		environment: {
 			systemdAvailable: systemd.available,
@@ -78,6 +96,49 @@ export const load: PageServerLoad = async () => {
 
 /** The dashboard's start/stop buttons post here so they work without JavaScript. */
 export const actions: Actions = {
+	addTag: async ({ request }) => {
+		const form = await request.formData();
+		const id = String(form.get('id') ?? '');
+		const tagId = String(form.get('tagId') ?? '');
+		const name = String(form.get('name') ?? '').trim();
+		let instance;
+		try {
+			instance = requireInstance(id);
+		} catch {
+			return fail(404, { ok: false, message: 'That server no longer exists.' });
+		}
+		let tag = tagId ? db.select().from(serverTags).where(eq(serverTags.id, tagId)).get() : undefined;
+		if (tagId && !tag) return fail(404, { ok: false, message: 'That tag no longer exists.' });
+		if (!tagId) {
+			if (!name || name.length > 32 || /[\u0000-\u001f\u007f]/.test(name)) {
+				return fail(400, { ok: false, message: 'Tags must be 1–32 characters and cannot contain control characters.' });
+			}
+			db.insert(serverTags)
+				.values({ id: randomUUID(), name })
+				.onConflictDoNothing()
+				.run();
+			tag = db.select().from(serverTags).where(sql`lower(${serverTags.name}) = lower(${name})`).get();
+		}
+		if (!tag) return fail(500, { ok: false, message: 'Could not save that tag.' });
+		db.insert(instanceTags).values({ instanceId: instance.id, tagId: tag.id }).onConflictDoNothing().run();
+		return { ok: true, message: `Added “${tag.name}” to ${instance.name}.` };
+	},
+	removeTag: async ({ request }) => {
+		const form = await request.formData();
+		const id = String(form.get('id') ?? '');
+		const tagId = String(form.get('tagId') ?? '');
+		let instance;
+		try {
+			instance = requireInstance(id);
+		} catch {
+			return fail(404, { ok: false, message: 'That server no longer exists.' });
+		}
+		db.delete(instanceTags).where(and(eq(instanceTags.instanceId, instance.id), eq(instanceTags.tagId, tagId))).run();
+		if (!db.select().from(instanceTags).where(eq(instanceTags.tagId, tagId)).get()) {
+			db.delete(serverTags).where(eq(serverTags.id, tagId)).run();
+		}
+		return { ok: true, message: `Removed the tag from ${instance.name}.` };
+	},
 	power: async ({ request }) => {
 		const form = await request.formData();
 		const id = String(form.get('id') ?? '');

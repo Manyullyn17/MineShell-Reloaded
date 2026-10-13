@@ -9,6 +9,13 @@
 	let { data, form } = $props();
 
 	let busy = $state<string | null>(null);
+	let search = $state('');
+	let statusFilter = $state<'all' | 'running' | 'stopped' | 'attention'>('all');
+	let selectedTagIds = $state<string[]>([]);
+	let selectedMinecraftVersions = $state<string[]>([]);
+	let selectedLoaders = $state<string[]>([]);
+	let editingTagsFor = $state<string | null>(null);
+	let filterPanel = $state<HTMLDetailsElement | null>(null);
 
 	// Systemd state changes a second or two after the button click, so the page
 	// re-reads itself on a slow tick rather than pretending it is instant.
@@ -25,6 +32,60 @@
 		!instance.eulaAccepted ||
 		!!instance.javaWarning;
 	const attention = $derived(data.instances.filter(needsAttention).length);
+	const minecraftVersions = $derived([...new Set(data.instances.map((instance) => instance.minecraftVersion))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true })));
+	const loaders = $derived([...new Map(data.instances.map((instance) => [instance.modloader, instance.modloaderLabel])).entries()].sort((a, b) => a[1].localeCompare(b[1])));
+	const isStopped = (instance: (typeof data.instances)[number]) => {
+		const tone = describeState(instance.active, instance.sub).tone;
+		return !instance.running && instance.status === 'ready' && tone !== 'busy' && tone !== 'failed';
+	};
+	const visibleInstances = $derived.by(() => {
+		const query = search.trim().toLocaleLowerCase();
+		return data.instances.filter((instance) => {
+			if (statusFilter === 'running' && !instance.running) return false;
+			if (statusFilter === 'stopped' && !isStopped(instance)) return false;
+			if (statusFilter === 'attention' && !needsAttention(instance)) return false;
+			if (selectedTagIds.length && !selectedTagIds.some((id) => instance.tags.some((tag) => tag.id === id))) return false;
+			if (selectedMinecraftVersions.length && !selectedMinecraftVersions.includes(instance.minecraftVersion)) return false;
+			if (selectedLoaders.length && !selectedLoaders.includes(instance.modloader)) return false;
+			if (!query) return true;
+			return [instance.name, instance.packName ?? '', instance.minecraftVersion, instance.modloaderLabel, ...instance.tags.map((tag) => tag.name)]
+				.some((value) => value.toLocaleLowerCase().includes(query));
+		});
+	});
+	const selectedFilterCount = $derived(selectedTagIds.length + selectedMinecraftVersions.length + selectedLoaders.length);
+	const hasFilters = $derived(!!search.trim() || statusFilter !== 'all' || selectedFilterCount > 0);
+	function toggleTag(id: string) {
+		selectedTagIds = selectedTagIds.includes(id)
+			? selectedTagIds.filter((selected) => selected !== id)
+			: [...selectedTagIds, id];
+	}
+	function toggleMinecraftVersion(version: string) {
+		selectedMinecraftVersions = selectedMinecraftVersions.includes(version)
+			? selectedMinecraftVersions.filter((value) => value !== version)
+			: [...selectedMinecraftVersions, version];
+	}
+	function toggleLoader(id: string) {
+		selectedLoaders = selectedLoaders.includes(id)
+			? selectedLoaders.filter((value) => value !== id)
+			: [...selectedLoaders, id];
+	}
+	function clearFilters() {
+		search = '';
+		statusFilter = 'all';
+		selectedTagIds = [];
+		selectedMinecraftVersions = [];
+		selectedLoaders = [];
+	}
+	function closeFilterPanel() {
+		if (filterPanel) filterPanel.open = false;
+	}
+	function onWindowClick(event: MouseEvent) {
+		const target = event.target;
+		if (filterPanel?.open && !filterPanel.contains(target as Node)) closeFilterPanel();
+		if (editingTagsFor && (!(target instanceof Element) || target.closest('.card')?.getAttribute('data-instance-id') !== editingTagsFor)) {
+			editingTagsFor = null;
+		}
+	}
 
 	// The page reloads every few seconds, each time with a new pending promise;
 	// keeping the last answer stops the line flashing back to its loading text.
@@ -43,6 +104,8 @@
 		};
 	}
 </script>
+
+<svelte:window onclick={onWindowClick} onkeydown={(event) => event.key === 'Escape' && closeFilterPanel()} />
 
 <svelte:head><title>MineShell</title></svelte:head>
 
@@ -96,10 +159,78 @@
 		<a class="button button-primary" href="/instances/new">Add a server</a>
 	</div>
 {:else}
-	<div class="cards">
-		{#each data.instances as instance (instance.id)}
+	<section class="list-tools panel" aria-label="Find servers">
+		<label class="search-field">
+			<span class="visually-hidden">Search servers</span>
+			<input type="search" bind:value={search} placeholder="Search servers, packs, versions, loaders, or tags" />
+		</label>
+		<div class="list-controls">
+			<div class="segmented" role="group" aria-label="Server status">
+				{#each [
+					{ id: 'all', label: 'All', count: data.instances.length },
+					{ id: 'running', label: 'Running', count: data.instances.filter((i) => i.running).length },
+					{ id: 'stopped', label: 'Stopped', count: data.instances.filter(isStopped).length },
+					{ id: 'attention', label: 'Needs attention', count: attention }
+				] as option (option.id)}
+					<button type="button" aria-pressed={statusFilter === option.id} onclick={() => (statusFilter = option.id as typeof statusFilter)}>
+						{option.label}<span class="count">{option.count}</span>
+					</button>
+				{/each}
+			</div>
+			<details class="tag-filter" bind:this={filterPanel}>
+				<summary>Filters{#if selectedFilterCount}<span class="count">{selectedFilterCount}</span>{/if}</summary>
+					<div class="tag-options">
+						<p class="hint">Any selected value within a group matches; each selected group must match.</p>
+						<fieldset>
+							<legend>Custom tags</legend>
+							{#if data.tags.length}
+								{#each data.tags as tag (tag.id)}
+									<label><input type="checkbox" checked={selectedTagIds.includes(tag.id)} onchange={() => toggleTag(tag.id)} />{tag.name}</label>
+								{/each}
+							{:else}<span class="small faint">No custom tags yet.</span>{/if}
+						</fieldset>
+						<fieldset>
+							<legend>Minecraft version</legend>
+							{#each minecraftVersions as version (version)}
+								<label><input type="checkbox" checked={selectedMinecraftVersions.includes(version)} onchange={() => toggleMinecraftVersion(version)} />{version}</label>
+							{/each}
+						</fieldset>
+						<fieldset>
+							<legend>Modloader</legend>
+							{#each loaders as [id, label] (id)}
+								<label><input type="checkbox" checked={selectedLoaders.includes(id)} onchange={() => toggleLoader(id)} />{label}</label>
+							{/each}
+						</fieldset>
+				</div>
+			</details>
+			{#if hasFilters}<button class="button-quiet" type="button" onclick={clearFilters}>Clear filters</button>{/if}
+		</div>
+		{#if selectedFilterCount}
+			<div class="selected-tags" aria-label="Selected tag filters">
+				{#each selectedTagIds as id (id)}
+					{@const tag = data.tags.find((t) => t.id === id)}
+					{#if tag}<button type="button" class="tag" onclick={() => toggleTag(id)} aria-label="Remove {tag.name} tag filter">Tag: {tag.name} ×</button>{/if}
+				{/each}
+				{#each selectedMinecraftVersions as version (version)}
+					<button type="button" class="tag" onclick={() => toggleMinecraftVersion(version)} aria-label="Remove Minecraft {version} filter">MC {version} ×</button>
+				{/each}
+				{#each selectedLoaders as id (id)}
+					{@const loader = loaders.find(([loaderId]) => loaderId === id)}
+					{#if loader}<button type="button" class="tag" onclick={() => toggleLoader(id)} aria-label="Remove {loader[1]} filter">Loader: {loader[1]} ×</button>{/if}
+				{/each}
+			</div>
+		{/if}
+		<p class="small muted result-count">Showing {visibleInstances.length} of {data.instances.length} servers</p>
+	</section>
+	{#if visibleInstances.length === 0}
+		<div class="empty">
+			<p>No servers match these filters.</p>
+			<button type="button" class="button-quiet" onclick={clearFilters}>Clear filters</button>
+		</div>
+	{:else}<div class="cards">
+		{#each visibleInstances as instance (instance.id)}
 			{@const tone = describeState(instance.active, instance.sub).tone}
-			<article class="panel card" data-tone={tone}>
+			<article class="panel card" data-tone={tone} data-instance-id={instance.id}>
 				<div class="card-head">
 					<div class="title">
 						<ServerIcon id={instance.id} name={instance.name} iconVersion={instance.iconVersion} size={32} />
@@ -124,10 +255,47 @@
 					</div>
 					<!-- Across the whole card, not only beside the status, so they stay on one line when they fit. -->
 					<div class="tags">
-						<span class="tag">{instance.minecraftVersion}</span>
-						<span class="tag accent">{instance.modloaderLabel}</span>
+						<button type="button" class="tag filter-chip" aria-label="Filter Minecraft version {instance.minecraftVersion}" onclick={() => toggleMinecraftVersion(instance.minecraftVersion)}>{instance.minecraftVersion}</button>
+						<button type="button" class="tag accent filter-chip" aria-label="Filter by {instance.modloaderLabel}" onclick={() => toggleLoader(instance.modloader)}>{instance.modloaderLabel}</button>
 						<span class="tag">:{instance.port}</span>
+						<div class="server-tags">
+							{#each instance.tags as tag (tag.id)}
+								{#if editingTagsFor === instance.id}
+									<span class="tag-item"><span class="tag-name">{tag.name}</span>
+										<form method="POST" action="?/removeTag" use:enhance>
+											<input type="hidden" name="id" value={instance.id} />
+											<input type="hidden" name="tagId" value={tag.id} />
+											<button class="tag-remove" aria-label="Remove tag {tag.name}" title="Remove {tag.name}">×</button>
+										</form>
+									</span>
+								{:else}
+									<button type="button" class="tag" aria-label="Filter by tag {tag.name}" onclick={() => toggleTag(tag.id)}>{tag.name}</button>
+								{/if}
+							{/each}
+						</div>
+						<button type="button" class="button-quiet manage-tags" aria-expanded={editingTagsFor === instance.id} onclick={() => (editingTagsFor === instance.id ? (editingTagsFor = null) : (editingTagsFor = instance.id))}>{editingTagsFor === instance.id ? 'Done' : 'Manage tags'}</button>
 					</div>
+					{#if editingTagsFor === instance.id}
+						<div class="tag-editor">
+							<form method="POST" action="?/addTag" use:enhance class="tag-add-form">
+								<input type="hidden" name="id" value={instance.id} />
+								<input name="name" maxlength="32" placeholder="Create a new tag" aria-label="Create a new server tag" autocomplete="off" required />
+								<button class="button button-quiet" type="submit">Create tag</button>
+							</form>
+							{#if data.tags.some((tag) => !instance.tags.some((assigned) => assigned.id === tag.id))}
+								<div class="existing-tags" aria-label="Add an existing tag">
+									<span class="small muted">Add existing:</span>
+									{#each data.tags.filter((tag) => !instance.tags.some((assigned) => assigned.id === tag.id)) as tag (tag.id)}
+										<form method="POST" action="?/addTag" use:enhance>
+											<input type="hidden" name="id" value={instance.id} />
+											<input type="hidden" name="tagId" value={tag.id} />
+											<button class="tag-choice" type="submit">+ {tag.name}</button>
+										</form>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				</div>
 
 				{#if instance.status === 'provisioning'}
@@ -229,7 +397,7 @@
 				</footer>
 			</article>
 		{/each}
-	</div>
+	</div>{/if}
 {/if}
 
 <style>
@@ -244,6 +412,51 @@
 
 	.page-head p {
 		margin: var(--space-1) 0 0;
+	}
+
+	.list-tools {
+		padding: var(--space-3) var(--space-4);
+		margin: 0 0 var(--space-4);
+	}
+
+	.search-field input { width: 100%; }
+	.list-controls { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); }
+	.list-controls .segmented { flex: 1 1 auto; }
+	.list-controls .segmented button { white-space: nowrap; }
+	.count { margin-left: 0.3rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); }
+	.tag-filter { position: relative; }
+	.tag-filter summary { cursor: pointer; padding: 0.45rem 0.7rem; border: 1px solid var(--line); border-radius: var(--radius); }
+	.tag-options { position: absolute; z-index: 10; top: calc(100% + 0.3rem); right: 0; min-width: 13rem; max-height: 18rem; overflow: auto; padding: var(--space-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22); }
+	.tag-options p { margin: 0 0 var(--space-2); }
+	.tag-options fieldset { border: 0; border-top: 1px solid var(--line); margin: var(--space-2) 0 0; padding: var(--space-2) 0 0; }
+	.tag-options legend { padding: 0; color: var(--text-faint); font-size: 0.78rem; font-weight: 600; }
+	.tag-options label { display: flex; align-items: center; gap: var(--space-2); padding: 0.2rem 0; font-weight: 400; }
+	.tag-options input { width: auto; }
+	.result-count { margin: var(--space-2) 0 0; }
+	.server-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem; }
+	.selected-tags { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+	.selected-tags .tag { border: 0; cursor: pointer; }
+	.filter-chip { cursor: pointer; background: transparent; }
+	.server-tags .tag { border: 0; display: inline-flex; align-items: center; gap: 0.2rem; }
+	.tag-item { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.12rem 0.35rem 0.12rem 0.5rem; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text-muted); background: var(--panel-raised); font: 0.75rem var(--font-mono); }
+	.tag-name { padding: 0; }
+	.server-tags button.tag { cursor: pointer; }
+	.server-tags button.tag:hover { color: var(--accent-hover); }
+	.server-tags form { display: inline-flex; }
+	.tag-editor { display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem; margin-top: var(--space-1); }
+	.tag-remove { border: 0; background: transparent; color: var(--text-faint); padding: 0 0.2rem; font: inherit; cursor: pointer; }
+	.tag-add-form { display: flex; align-items: center; gap: var(--space-1); flex-wrap: nowrap; flex: 1 1 100%; padding: var(--space-2) 0; }
+	.tag-add-form input { width: min(14rem, 100%); min-width: 0; flex: 0 1 14rem; }
+	.tag-add-form button { flex: none; white-space: nowrap; }
+	.existing-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; flex: 1 1 100%; padding: 0.1rem 0 var(--space-1); }
+	.existing-tags form { margin: 0; }
+	.tag-choice { padding: 0.2rem 0.5rem; border: 1px dashed var(--line-strong); border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.78rem; cursor: pointer; }
+	.tag-choice:hover { border-style: solid; color: var(--text); }
+	.manage-tags { padding: 0.1rem 0.4rem; font-size: 0.78rem; }
+
+	@media (max-width: 760px) {
+		.list-controls { align-items: stretch; }
+		.list-controls .segmented { width: 100%; overflow-x: auto; }
 	}
 
 	/* Explicit column count rather than auto-fit: on a wide screen auto-fit

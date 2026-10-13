@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index, primaryKey, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Every table is defined here. When you change something, run
@@ -88,6 +89,30 @@ export const serverInstances = sqliteTable('server_instances', {
 	createdAt: integer('created_at').notNull(),
 	updatedAt: integer('updated_at').notNull()
 });
+
+/** User-defined labels shared across the server list. */
+export const serverTags = sqliteTable(
+	'server_tags',
+	{
+		id: text('id').primaryKey(),
+		name: text('name').notNull()
+	},
+	(t) => ({ uniqueName: uniqueIndex('server_tags_name_idx').on(sql`lower(${t.name})`) })
+);
+
+/** Many-to-many assignment of labels to managed servers. */
+export const instanceTags = sqliteTable(
+	'instance_tags',
+	{
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		tagId: text('tag_id')
+			.notNull()
+			.references(() => serverTags.id, { onDelete: 'cascade' })
+	},
+	(t) => ({ primary: primaryKey({ columns: [t.instanceId, t.tagId] }), byTag: index('instance_tags_tag_idx').on(t.tagId) })
+);
 
 /** Mod identity, shared across instances. */
 export const mods = sqliteTable(
