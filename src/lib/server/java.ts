@@ -204,6 +204,29 @@ export async function probeJava(binary: string): Promise<ProbedJava | null> {
 	};
 }
 
+export type FlagCheck = { ok: true; warnings: string[] } | { ok: false; error: string };
+
+/**
+ * Whether a Java starts with these JVM arguments: `java <args> -version`, split
+ * at whitespace as the unit's shell does. The maximum heap stays (flags tuned
+ * for a big heap can refuse a small one); -Xms and -XX:+AlwaysPreTouch go, so
+ * the check does not touch the whole heap. Null when the binary did not run at
+ * all, which is the start's problem to report, not the flags'.
+ */
+export async function checkJvmFlags(binary: string, jvmArgs: string): Promise<FlagCheck | null> {
+	const args = jvmArgs.split(/\s+/).filter((a) => a && !/^-Xms/.test(a) && a !== '-XX:+AlwaysPreTouch');
+	const res = await run([binary, ...args, '-version'], { timeoutMs: 15_000 });
+	if (res.code === 127 && /\b(ENOENT|EACCES)\b/.test(res.stderr)) return null;
+	const lines = `${res.stderr}\n${res.stdout}`.split('\n').map((l) => l.trim()).filter(Boolean);
+	if (res.code !== 0) {
+		// The JVM's own boilerplate after the reason says nothing.
+		const reason = lines.filter((l) => !/^Error: (Could not create the Java Virtual Machine|A fatal exception has occurred)/.test(l));
+		return { ok: false, error: reason.join(' ') || `Java exited with ${res.code}.` };
+	}
+	const warnings = lines.filter((l) => /VM warning:/.test(l)).map((l) => l.replace(/^.*VM warning:\s*/, ''));
+	return { ok: true, warnings };
+}
+
 /** Scan the usual install locations and refresh the java_runtimes table. */
 export async function scanJavaRuntimes(): Promise<ProbedJava[]> {
 	const binaries = await candidateBinaries();
@@ -330,6 +353,23 @@ export function runtimeForMajor(
 	if (chosen) return { runtime: chosen, isDefault: true };
 	const newest = [...candidates].sort(newerFirst)[0];
 	return newest ? { runtime: newest, isDefault: false } : null;
+}
+
+/**
+ * The installed Java versions that do not start with these flags (one runtime
+ * per version, the one servers would get), checked side by side with a 4 GB heap.
+ */
+export async function javasRefusing(flags: string): Promise<{ major: number; error: string }[]> {
+	const installed = listJavaRuntimes();
+	const majors = [...new Set(installed.map((j) => j.majorVersion))].sort((a, b) => a - b);
+	const checks = await Promise.all(
+		majors.map(async (major) => {
+			const runtime = runtimeForMajor(installed, major)?.runtime;
+			const check = runtime ? await checkJvmFlags(runtime.path, `-Xmx4096M ${flags}`) : null;
+			return check && !check.ok ? { major, error: check.error } : null;
+		})
+	);
+	return checks.filter((c) => c !== null);
 }
 
 export type JavaResolution = {

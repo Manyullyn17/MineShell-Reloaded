@@ -55,7 +55,7 @@ import {
 	setScheduledCommandEnabled
 } from '#lib/server/scheduledcommands.js';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
-import { listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
+import { checkJvmFlags, listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portUser } from '#lib/server/ports.js';
 import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel, syncVoiceTunnel } from '#lib/server/playit.js';
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
@@ -461,15 +461,26 @@ export const actions: Actions = {
 			form.has('javaPath') || form.has('javaPathManual')
 				? String(form.get('javaPathManual') ?? '').trim() || String(form.get('javaPath') ?? '').trim() || null
 				: instance.javaPath;
-		const javaMajor = resolveJava({ ...instance, explicitPath: javaPath }).majorVersion;
+		const java = resolveJava({ ...instance, explicitPath: javaPath });
+		const javaMajor = java.majorVersion;
 		if (preset && !presetRunsOn(preset, javaMajor)) {
 			return fail(400, { ok: false, message: `${preset.name} needs Java ${preset.minJava} or newer; this server runs Java ${javaMajor}.` });
 		}
 
 		const body = preset ? presetFlags(preset, javaMajor) : stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
+		const jvmArgs = composeJvmArgs(body, instance.memoryMinMb ?? 1024, instance.memoryMaxMb ?? 4096);
+		// A flag this Java does not know only showed as a failed start before.
+		// Unchanged flags on the same Java are not checked again, so a launch
+		// argument can still be saved for a server whose flags are already off.
+		const changed = jvmArgs !== instance.jvmArgs || javaPath !== instance.javaPath;
+		const check = java.path && changed ? await checkJvmFlags(java.path, jvmArgs) : null;
+		if (check && !check.ok) {
+			return fail(400, { ok: false, message: `Java${javaMajor ? ` ${javaMajor}` : ''} does not start with these flags: ${check.error}` });
+		}
+		const flagWarning = check?.warnings.length ? ` Java warns: ${check.warnings.join(' ')}` : '';
 		db.update(serverInstances)
 			.set({
-				jvmArgs: composeJvmArgs(body, instance.memoryMinMb ?? 1024, instance.memoryMaxMb ?? 4096),
+				jvmArgs,
 				launchArgs: String(form.get('launchArgs') ?? instance.launchArgs).trim(),
 				javaPath,
 				updatedAt: Date.now()
@@ -481,10 +492,10 @@ export const actions: Actions = {
 		return {
 			ok: true,
 			message:
-				warning ??
-				(preset
-					? `Applied the ${preset.name} preset. Restart the server to use it.`
-					: 'Saved. Restart the server to apply the new runtime settings.')
+				(warning ??
+					(preset
+						? `Applied the ${preset.name} preset. Restart the server to use it.`
+						: 'Saved. Restart the server to apply the new runtime settings.')) + flagWarning
 		};
 	},
 

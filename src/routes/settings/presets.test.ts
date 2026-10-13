@@ -1,7 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import { actions as serverActions } from '../instances/[id]/settings/+page.server';
-import { listPresets } from '#lib/server/jvm-presets.js';
+import { deleteCustomPreset, listPresets } from '#lib/server/jvm-presets.js';
+import { addJava, clearJava } from '../../../tests/helpers/instances';
+import { fakeProcesses, resetProcesses } from '../../../tests/helpers/process';
+
+beforeEach(clearJava);
+afterEach(() => {
+	clearJava();
+	resetProcesses();
+});
 
 async function post(action: unknown, fields: Record<string, string>) {
 	const form = new FormData();
@@ -20,6 +28,21 @@ describe('JVM flag presets', () => {
 
 		await post(actions.deletePreset, { presetId: saved!.id });
 		expect(listPresets().some((p) => p.name === 'Route test')).toBe(false);
+	});
+
+	it('are saved with a note naming the installed Java versions that would not start with them', async () => {
+		addJava(8);
+		addJava(21);
+		fakeProcesses((cmd, args) =>
+			cmd.includes('java-8') && args.includes('-XX:+UseZGC')
+				? { code: 1, stderr: "Unrecognized VM option 'UseZGC'\nError: Could not create the Java Virtual Machine.\nError: A fatal exception has occurred. Program will exit.\n" }
+				: {}
+		);
+		const result = await post(actions.savePreset, { presetName: 'Low pause', jvmArgs: '-XX:+UseZGC' });
+		expect(result).toMatchObject({ ok: true });
+		expect((result as { message: string }).message).toContain("Java 8 does not start with it: Unrecognized VM option 'UseZGC'");
+		expect((result as { message: string }).message).not.toContain('Java 21');
+		deleteCustomPreset(listPresets().find((p) => p.name === 'Low pause')!.id);
 	});
 
 	it('need a name', async () => {

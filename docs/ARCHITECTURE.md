@@ -775,6 +775,11 @@ A preset's flags can depend on the server's Java (`presetFlags`, `minJava`): ZGC
 and `-XX:+ZGenerational` goes in only on 21-23 (17 refuses to start with it, 24+ warns that
 it is ignored). Applying refuses a preset the server's Java cannot run; a new server whose
 Java cannot run the default preset gets Aikar.
+Saving JVM flags (`launch`) first runs the server's Java with them and `-version`
+(`checkJvmFlags`: split at whitespace as the unit's shell does, the maximum heap kept since
+G1 tuning can refuse a small heap, `-Xms` and AlwaysPreTouch left out) and refuses with
+Java's own error; warnings ride along in the saved message. Saving a preset checks it against
+one runtime per installed Java version and names the ones that refuse it, but saves anyway.
 Java & memory saves through two actions: `memory` (heap sizes; it rebuilds `-Xms`/`-Xmx` in
 the stored JVM arguments) and `launch` (Java binary, JVM flags, launch arguments). Those three
 can run any program on the machine, so nothing that only changes memory may change them. The

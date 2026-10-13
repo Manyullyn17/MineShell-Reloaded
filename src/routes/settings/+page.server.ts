@@ -34,6 +34,7 @@ import {
 import {
 	addManualJava,
 	getJavaDefaults,
+	javasRefusing,
 	listJavaRuntimes,
 	removeJavaRuntime,
 	requiredJavaMajor,
@@ -300,7 +301,11 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			const preset = saveCustomPreset(String(form.get('presetName') ?? ''), String(form.get('jvmArgs') ?? ''));
-			return { ok: true, message: `Saved "${preset.name}". It is available on every server.` };
+			// Saved either way: a preset for newer Java is fine to have. Applying
+			// it checks again against the server's own Java.
+			const refused = await javasRefusing(preset.flags);
+			const note = refused.map((r) => ` Java ${r.major} does not start with it: ${r.error}`).join('');
+			return { ok: true, message: `Saved "${preset.name}". It is available on every server.${note}` };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save that preset.' });
 		}

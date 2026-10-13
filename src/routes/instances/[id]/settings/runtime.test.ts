@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import { getInstance } from '#lib/server/instances.js';
 import { addJava, clearJava, createInstance } from '../../../../../tests/helpers/instances';
-import { fakeProcesses, resetProcesses } from '../../../../../tests/helpers/process';
+import { fakeProcesses, resetProcesses, spawnCalls } from '../../../../../tests/helpers/process';
 
 afterEach(resetProcesses);
 
@@ -69,6 +69,29 @@ describe('memory and launch settings', () => {
 		const java8 = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2', jvmArgs: '-Xms1024M -Xmx2048M -XX:+UseG1GC', javaPath: addJava(8) });
 		expect(await post(actions.launch, java8.id, { applyPreset: 'zgc', launchArgs: '-jar server.jar nogui' })).toMatchObject({ status: 400 });
 		expect(getInstance(java8.id)!.jvmArgs).toBe('-Xms1024M -Xmx2048M -XX:+UseG1GC');
+		clearJava();
+	});
+
+	it('launch refuses flags the server’s Java does not start with, in Java’s words', async () => {
+		clearJava();
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.20.1', memoryMinMb: 1024, memoryMaxMb: 2048, jvmArgs: '-Xms1024M -Xmx2048M -XX:+UseG1GC', javaPath: addJava(17) });
+		fakeProcesses((cmd, args) =>
+			cmd.endsWith('/java') && args.includes('-XX:+ZGenerational')
+				? { code: 1, stderr: "Unrecognized VM option 'ZGenerational'\nError: Could not create the Java Virtual Machine.\nError: A fatal exception has occurred. Program will exit.\n" }
+				: cmd.endsWith('/java')
+					? { stderr: 'OpenJDK 64-Bit Server VM warning: Ignoring option Foo; support was removed in 24.0\nopenjdk version "17.0.1"\n' }
+					: {}
+		);
+		const refused = await post(actions.launch, instance.id, { jvmArgs: '-XX:+UseZGC -XX:+ZGenerational', launchArgs: '-jar server.jar nogui' });
+		expect(refused).toMatchObject({ status: 400, data: { message: "Java 17 does not start with these flags: Unrecognized VM option 'ZGenerational'" } });
+		expect(getInstance(instance.id)!.jvmArgs).toBe('-Xms1024M -Xmx2048M -XX:+UseG1GC');
+
+		// Checked with the maximum heap, without the starting size and pre-touch.
+		const saved = await post(actions.launch, instance.id, { jvmArgs: '-XX:+AlwaysPreTouch -XX:+UseZGC', launchArgs: '-jar server.jar nogui' });
+		expect(saved).toMatchObject({ ok: true });
+		expect((saved as { message: string }).message).toContain('Java warns: Ignoring option Foo; support was removed in 24.0');
+		const check = spawnCalls.filter((c) => c.cmd.endsWith('/java')).at(-1)!;
+		expect(check.args).toEqual(['-Xmx2048M', '-XX:+UseZGC', '-version']);
 		clearJava();
 	});
 
