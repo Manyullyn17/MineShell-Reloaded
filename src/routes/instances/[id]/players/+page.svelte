@@ -12,7 +12,17 @@
 
 	let newName = $state('');
 	let newReason = $state('');
-	/** An address in the name field bans the address, not a player. */
+	let kickReason = $state('');
+	let playerQuery = $state('');
+	let panelMode = $state<'add' | 'manage' | null>(null);
+	let accessType = $state<'whitelist' | 'ops' | 'bans' | 'ipBans'>('whitelist');
+	let selectedPersonKey = $state<string | null>(null);
+	let hideActionNotice = $state(false);
+	$effect(() => {
+		form;
+		hideActionNotice = false;
+	});
+	/** Avoid treating a typed numeric address as a player name in the add panel. */
 	const isAddress = $derived(/^[\d.:a-fA-F]+$/.test(newName.trim()) && /[.:]/.test(newName));
 
 	/**
@@ -66,6 +76,7 @@
 			(a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name)
 		);
 	});
+	const selectedPerson = $derived(people.find((p) => p.key === selectedPersonKey) ?? null);
 	/** Player data files whose owner's name is not known. */
 	const unnamedFiles = $derived(playerFiles.filter((f) => !f.name));
 
@@ -77,65 +88,35 @@
 		{ id: 'banned', label: 'Banned', test: (p: Person) => !!p.ban }
 	] as const;
 	let filter = $state<(typeof FILTERS)[number]['id']>('all');
-	const shown = $derived(people.filter(FILTERS.find((f) => f.id === filter)!.test));
+	const shown = $derived(
+		people
+			.filter(FILTERS.find((f) => f.id === filter)!.test)
+			.filter((p) => !playerQuery.trim() || p.name.toLocaleLowerCase().includes(playerQuery.trim().toLocaleLowerCase()))
+	);
 	const playerUrl = (uuid: string) => `/instances/${encodeURIComponent(data.instance.id)}/players/${uuid}`;
-
-	/**
-	 * One "More" menu open at a time, placed with fixed coordinates: the table box
-	 * clips anything that pokes out of it, which cut off the menu on the last rows.
-	 * It opens upward when there is no room below.
-	 */
-	let menuFor = $state<string | null>(null);
-	let menuButton: HTMLElement | null = null;
-	let menuEl = $state<HTMLElement | null>(null);
-	let menuAt = $state({ top: 0, right: 0 });
-
-	function toggleMenu(key: string, event: MouseEvent) {
-		if (menuFor === key) return closeMenu();
-		menuButton = event.currentTarget as HTMLElement;
-		menuFor = key;
-		placeMenu();
+	function openAdd() {
+		hideActionNotice = true;
+		selectedPersonKey = null;
+		accessType = 'whitelist';
+		newName = '';
+		newReason = '';
+		panelMode = 'add';
+	}
+	function openManage(person: Person) {
+		hideActionNotice = true;
+		selectedPersonKey = person.key;
+		newReason = '';
+		kickReason = '';
+		panelMode = 'manage';
+	}
+	function closePanel() {
+		panelMode = null;
+		selectedPersonKey = null;
 	}
 
-	function closeMenu() {
-		menuFor = null;
-		menuButton = null;
-	}
-
-	function placeMenu() {
-		if (!menuButton) return;
-		const box = menuButton.getBoundingClientRect();
-		const height = menuEl?.offsetHeight ?? 0;
-		const below = window.innerHeight - box.bottom;
-		const up = height + 8 > below && box.top > below;
-		const top = up ? box.top - 4 - height : box.bottom + 4;
-		menuAt = {
-			top: Math.max(8, Math.min(top, window.innerHeight - height - 8)),
-			right: Math.max(8, window.innerWidth - box.right)
-		};
-	}
-
-	// Measured once it is in the page, then kept by its button while anything scrolls.
-	$effect(() => {
-		if (!menuEl) return;
-		placeMenu();
-		document.addEventListener('scroll', placeMenu, true);
-		return () => document.removeEventListener('scroll', placeMenu, true);
-	});
-
-	function onWindowClick(event: MouseEvent) {
-		const target = event.target as Node;
-		if (menuFor && !menuEl?.contains(target) && !menuButton?.contains(target)) closeMenu();
-	}
 </script>
 
-<svelte:window
-	onclick={onWindowClick}
-	onresize={placeMenu}
-	onkeydown={(e) => e.key === 'Escape' && closeMenu()}
-/>
-
-<Flash {form} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && closePanel()} />
 
 <section class="bar">
 	<form method="POST" action="?/whitelist" use:enhance class="enforce">
@@ -155,29 +136,128 @@
 		</span>
 	</form>
 
-	<form method="POST" action="?/add" use:enhance={keepValues} class="add">
-		<input
-			name="name"
-			bind:value={newName}
-			placeholder={data.lists.serverRunning ? 'Player name or IP address' : 'Player name or IP address'}
-			aria-label="Player name or IP address"
-			autocomplete="off"
-		/>
-		<input name="reason" bind:value={newReason} maxlength="200" placeholder="Reason, for a ban" aria-label="Ban reason" />
-		{#if !data.lists.serverRunning}
-			<select name="level" class="level" aria-label="Operator level" title="Level for Make operator">
-				{#each [4, 3, 2, 1] as level (level)}<option value={level}>op {level}</option>{/each}
-			</select>
-		{/if}
-		<button class="button-primary" name="list" value="whitelist" disabled={!newName.trim() || isAddress}>
-			Add to whitelist
-		</button>
-		<button name="list" value="ops" disabled={!newName.trim() || isAddress}>Make operator</button>
-		<button class="button-danger" name="list" value={isAddress ? 'ipBans' : 'bans'} disabled={!newName.trim()}>
-			{isAddress ? 'Ban address' : 'Ban'}
-		</button>
-	</form>
+	<button type="button" class="button button-primary" onclick={openAdd}>Add access</button>
 </section>
+
+{#if !panelMode && !hideActionNotice}<Flash {form} />{/if}
+
+{#if panelMode}
+	<button class="drawer-backdrop" type="button" aria-label="Close player panel" onclick={closePanel}></button>
+	<div class="access-drawer" role="dialog" aria-modal="true" aria-labelledby="access-title">
+		<header class="drawer-head">
+			<div>
+				<p class="eyebrow">{panelMode === 'add' ? 'Player access' : 'Access and actions'}</p>
+				<h2 id="access-title">{panelMode === 'add' ? 'Add access' : selectedPerson?.name}</h2>
+			</div>
+			<button type="button" class="button-quiet" onclick={closePanel} aria-label="Close">Close</button>
+		</header>
+		{#if !hideActionNotice}<Flash {form} />{/if}
+		{#if panelMode === 'add'}
+			<p class="muted">Choose what this player should be allowed to do. Each access type can be changed separately later.</p>
+			<div class="access-types" role="group" aria-label="Access type">
+				{#each [
+					{ id: 'whitelist', label: 'Whitelist' },
+					{ id: 'ops', label: 'Operator' },
+					{ id: 'bans', label: 'Ban player' },
+					{ id: 'ipBans', label: 'Ban IP' }
+				] as option (option.id)}
+					<button type="button" aria-pressed={accessType === option.id} onclick={() => (accessType = option.id as typeof accessType)}>{option.label}</button>
+				{/each}
+			</div>
+			<form method="POST" action="?/add" use:enhance={keepValues} class="drawer-form">
+				<label for="access-name">
+					{accessType === 'ipBans'
+						? data.lists.serverRunning ? 'IP address or online player' : 'IP address'
+						: 'Minecraft player name'}
+				</label>
+				<input id="access-name" name="name" bind:value={newName} autocomplete="off" placeholder={accessType === 'ipBans' ? 'e.g. 203.0.113.10' : 'e.g. PlayerName'} required />
+				<input type="hidden" name="list" value={accessType} />
+				{#if accessType === 'ipBans'}<p class="hint">{data.lists.serverRunning ? 'While the server is running, you can also enter the name of an online player.' : 'When stopped, enter a numeric IP address.'}</p>{/if}
+				{#if accessType === 'ops' && !data.lists.serverRunning}
+					<label for="new-op-level">Operator level</label>
+					<select id="new-op-level" name="level" class="level">
+						{#each [4, 3, 2, 1] as level (level)}<option value={level}>op {level}</option>{/each}
+					</select>
+				{:else if accessType === 'ops'}
+					<p class="hint">The server is running. This uses its default operator level ({data.lists.defaultOpLevel}).</p>
+				{/if}
+				{#if accessType === 'bans' || accessType === 'ipBans'}
+					<label for="new-ban-reason">Reason (optional)</label>
+					<input id="new-ban-reason" name="reason" bind:value={newReason} maxlength="200" />
+				{/if}
+				{#if isAddress && accessType !== 'ipBans'}<p class="hint warn-text">This looks like an address. Choose Ban IP to ban an address.</p>{/if}
+				<button class:button-danger={accessType === 'bans' || accessType === 'ipBans'} class:button-primary={accessType === 'whitelist'} disabled={isAddress && accessType !== 'ipBans'}>
+					{accessType === 'whitelist' ? 'Add to whitelist' : accessType === 'ops' ? 'Make operator' : accessType === 'ipBans' ? 'Ban IP address' : 'Ban player'}
+				</button>
+			</form>
+		{:else if selectedPerson}
+			<div class="current-access">
+				<span class="tag">{selectedPerson.online ? 'Online' : 'Offline'}</span>
+				{#if selectedPerson.whitelisted}<span class="tag">Whitelisted</span>{/if}
+				{#if selectedPerson.op}<span class="tag accent">Operator{selectedPerson.op.level ? ` · level ${selectedPerson.op.level}` : ''}</span>{/if}
+				{#if selectedPerson.ban}<span class="tag warn">Banned</span>{/if}
+			</div>
+			<section class="drawer-section">
+				<h3>Access</h3>
+				<div class="drawer-actions">
+					{#if selectedPerson.whitelisted}
+						<form method="POST" action="?/remove" use:enhance><input type="hidden" name="name" value={selectedPerson.whitelisted} /><input type="hidden" name="list" value="whitelist" /><button class="button-quiet">Remove from whitelist</button></form>
+					{:else}
+						<form method="POST" action="?/add" use:enhance><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="whitelist" /><button class="button-primary">Add to whitelist</button></form>
+					{/if}
+					{#if selectedPerson.op}
+						<span class="tag accent">Operator{selectedPerson.op.level ? ` · level ${selectedPerson.op.level}` : ''}</span>
+					{:else}
+						<form method="POST" action="?/add" use:enhance><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="ops" />{#if !data.lists.serverRunning}<input type="hidden" name="level" value="4" />{/if}<button>Make operator</button></form>
+					{/if}
+				</div>
+				{#if selectedPerson.op}
+					<div class="operator-settings">
+						<div class="operator-heading">
+							<div><strong>Operator settings</strong><p class="small muted">Permission level and player limit access.</p></div>
+							<form method="POST" action="?/remove" use:enhance><input type="hidden" name="name" value={selectedPerson.op.key} /><input type="hidden" name="list" value="ops" /><button class="button-quiet">Remove operator</button></form>
+						</div>
+						{#if !data.lists.serverRunning}
+							<form method="POST" action="?/opOptions" use:enhance={keepValues} class="operator-form">
+								<input type="hidden" name="name" value={selectedPerson.op.key} />
+								<label class="operator-level">Operator level
+									<select name="level" class="level">
+										{#each [4, 3, 2, 1] as level (level)}<option value={level} selected={selectedPerson.op.level === level}>Level {level}</option>{/each}
+									</select>
+								</label>
+								<label class="operator-check"><input name="bypass" type="checkbox" checked={selectedPerson.op.bypassesPlayerLimit} /> Bypasses the player limit</label>
+								<button class="button-quiet">Save settings</button>
+							</form>
+						{:else}
+							<p class="hint">These settings can be changed while the server is stopped.</p>
+						{/if}
+					</div>
+				{/if}
+			</section>
+			<section class="drawer-section">
+				<h3>Moderation</h3>
+				{#if selectedPerson.online}
+					<form method="POST" action="?/kick" use:enhance class="drawer-form">
+						<input type="hidden" name="name" value={selectedPerson.name} />
+						<label for="kick-reason">Kick reason (optional)</label><input id="kick-reason" name="reason" bind:value={kickReason} maxlength="200" />
+						<button class="button-quiet">Kick player</button>
+					</form>
+				{/if}
+				{#if selectedPerson.ban}
+					<p>{selectedPerson.ban.reason ? `Reason: ${selectedPerson.ban.reason}` : 'This player is banned.'}</p>
+					<form method="POST" action="?/remove" use:enhance><input type="hidden" name="name" value={selectedPerson.ban.key} /><input type="hidden" name="list" value="bans" /><button class="button-quiet">Pardon player</button></form>
+				{:else}
+					<form method="POST" action="?/add" use:enhance class="drawer-form">
+						<input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="bans" />
+						<label for="manage-ban-reason">Ban reason (optional)</label><input id="manage-ban-reason" name="reason" bind:value={newReason} maxlength="200" />
+						<button class="button-danger">Ban player</button>
+					</form>
+					{#if selectedPerson.online}<form method="POST" action="?/add" use:enhance class="drawer-form"><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="ipBans" /><button class="button-danger">Ban this player’s IP address</button></form>{/if}
+				{/if}
+			</section>
+		{/if}
+	</div>
+{/if}
 
 <div class="list-head">
 	<div class="segmented" role="group" aria-label="Show">
@@ -187,6 +267,7 @@
 			</button>
 		{/each}
 	</div>
+	<label class="player-search"><span class="visually-hidden">Search players</span><input type="search" bind:value={playerQuery} placeholder="Search players" /></label>
 	<span class="faint small">
 		{data.lists.serverRunning
 			? 'Server running, so changes apply live.'
@@ -197,10 +278,13 @@
 {#if shown.length === 0}
 	<div class="empty">
 		<p>
-			{filter === 'all'
+			{playerQuery.trim()
+				? 'No players match that search.'
+				: filter === 'all'
 				? 'Nobody yet. Whitelist or op someone above; players who join show up here too.'
 				: 'Nobody in this list.'}
 		</p>
+		{#if playerQuery.trim()}<button type="button" class="button-quiet" onclick={() => (playerQuery = '')}>Clear search</button>{/if}
 	</div>
 {:else}
 	<div class="table-box">
@@ -259,84 +343,7 @@
 							{#if person.file}
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
-							<button
-								type="button"
-								class="button-quiet"
-								aria-haspopup="menu"
-								aria-expanded={menuFor === person.key}
-								onclick={(e) => toggleMenu(person.key, e)}>More ▾</button
-							>
-							{#if menuFor === person.key}
-								<!-- Closed after the submit: removing the button during its click cancels it. -->
-								<div
-									class="menu"
-									role="menu"
-									tabindex="-1"
-									bind:this={menuEl}
-									style:top="{menuAt.top}px"
-									style:right="{menuAt.right}px"
-									onsubmit={() => setTimeout(closeMenu)}
-								>
-									<form method="POST" use:enhance>
-										<input type="hidden" name="name" value={person.name} />
-										{#if !person.whitelisted}
-											<button formaction="?/add" name="list" value="whitelist">Add to whitelist</button>
-										{/if}
-										{#if !person.op}
-											<button formaction="?/add" name="list" value="ops">Make operator</button>
-										{/if}
-										{#if person.online}
-											<input type="hidden" name="reason" value={newReason || 'Kicked by an operator'} />
-											<button formaction="?/kick" title="Uses the reason typed above, if any">Kick</button>
-										{/if}
-									</form>
-									{#if person.whitelisted}
-										<form method="POST" action="?/remove" use:enhance>
-											<input type="hidden" name="name" value={person.whitelisted} />
-											<button name="list" value="whitelist">Remove from whitelist</button>
-										</form>
-									{/if}
-									{#if person.op}
-										<form method="POST" action="?/remove" use:enhance>
-											<input type="hidden" name="name" value={person.op.key} />
-											<button name="list" value="ops">Remove operator</button>
-										</form>
-									{/if}
-									{#if person.op && !data.lists.serverRunning}
-										<form method="POST" action="?/opOptions" use:enhance={keepValues} class="op-options">
-											<input type="hidden" name="name" value={person.op.key} />
-											<select name="level" class="level" aria-label="Level of {person.name}">
-												{#each [4, 3, 2, 1] as level (level)}
-													<option value={level} selected={person.op.level === level}>op {level}</option>
-												{/each}
-											</select>
-											<label class="check">
-												<input name="bypass" type="checkbox" checked={person.op.bypassesPlayerLimit} />
-												Bypasses limit
-											</label>
-											<button class="button-quiet">Save</button>
-										</form>
-									{/if}
-									<form method="POST" use:enhance>
-										<input type="hidden" name="name" value={person.ban?.key ?? person.name} />
-										{#if person.ban}
-											<button class="danger" formaction="?/remove" name="list" value="bans">Pardon</button>
-										{:else}
-											<input type="hidden" name="reason" value={newReason} />
-											<button class="danger" formaction="?/add" name="list" value="bans">Ban</button>
-											{#if person.online}
-												<button
-													class="danger"
-													formaction="?/add"
-													name="list"
-													value="ipBans"
-													title="Bans the address {person.name} is connected from">Ban IP</button
-												>
-											{/if}
-										{/if}
-									</form>
-								</div>
-							{/if}
+							<button type="button" class="button-quiet" onclick={() => openManage(person)}>Manage</button>
 						</td>
 					</tr>
 				{/each}
@@ -356,7 +363,7 @@
 	<summary>IP bans ({data.lists.ipBans.length})</summary>
 	{#if data.lists.ipBans.length === 0}
 		<p class="faint small">
-			No addresses are banned. Type an address in the field above and press Ban, or use Ban IP on an online player.
+			No addresses are banned. Use Add access to enter an address, or open an online player and choose Ban IP.
 		</p>
 	{:else}
 		<div class="table-box">
@@ -427,17 +434,6 @@
 		flex-direction: column;
 	}
 
-	.add {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-wrap: wrap;
-	}
-
-	.add input {
-		width: 12.5rem;
-	}
-
 	.level {
 		width: auto;
 	}
@@ -482,6 +478,59 @@
 		flex-wrap: wrap;
 		margin-bottom: var(--space-3);
 	}
+
+	.player-search { flex: 1 1 13rem; max-width: 20rem; }
+	.player-search input { width: 100%; }
+
+	.drawer-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 39;
+		width: 100%;
+		border: 0;
+		border-radius: 0;
+		background: rgba(0, 0, 0, 0.48);
+	}
+
+	.access-drawer {
+		position: fixed;
+		inset: 0 0 0 auto;
+		z-index: 40;
+		width: min(28rem, 100vw);
+		height: 100dvh;
+		overflow-y: auto;
+		padding: 1.25rem;
+		background: var(--panel);
+		border-left: 1px solid var(--line-strong);
+		box-shadow: -12px 0 32px rgba(0, 0, 0, 0.28);
+	}
+
+	.drawer-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-3); }
+	.drawer-head h2 { margin: 0; font-size: 1.2rem; }
+	.eyebrow { margin: 0 0 0.2rem; color: var(--text-faint); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+	.access-drawer > p { margin: 0 0 var(--space-4); }
+	.access-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-bottom: var(--space-4); }
+	.access-types button[aria-pressed='true'] { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+	.drawer-form { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+	.drawer-form label { margin: 0; }
+	.drawer-form input:not([type='checkbox']), .drawer-form select { width: 100%; }
+	.drawer-form button { justify-self: start; }
+	.current-access { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-3) 0; }
+	.drawer-section { padding: var(--space-3) 0; border-top: 1px solid var(--line); }
+	.drawer-section h3 { margin: 0 0 var(--space-2); font-size: 0.92rem; }
+	.drawer-actions { display: flex; align-items: flex-start; flex-wrap: wrap; gap: var(--space-2); }
+	.drawer-actions form { margin: 0; }
+	.drawer-section p { color: var(--text-muted); }
+	.operator-settings { margin-top: var(--space-3); padding: var(--space-3); background: var(--bg-sunken); border: 1px solid var(--line); border-radius: var(--radius); }
+	.operator-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-2); }
+	.operator-heading p { margin: 0.2rem 0 0; }
+	.operator-form { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+	.operator-level { display: grid; gap: var(--space-1); max-width: 13rem; }
+	.operator-form select { width: 100%; }
+	.operator-check { display: flex; align-items: center; gap: var(--space-2); font-weight: 400; }
+	.operator-check input { width: auto; margin: 0; }
+	.operator-form button { justify-self: start; }
+	.operator-settings > .hint { margin-bottom: 0; }
 
 	.segmented {
 		display: flex;
@@ -552,68 +601,6 @@
 		padding: 0.25rem 0.5rem;
 	}
 
-	.menu {
-		position: fixed;
-		z-index: 30;
-		min-width: 13rem;
-		max-height: calc(100vh - 16px);
-		overflow-y: auto;
-		text-align: left;
-		padding: 5px;
-		background: var(--panel-raised);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius-lg);
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.menu form {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.menu form + form {
-		border-top: 1px solid var(--line-strong);
-		padding-top: 2px;
-	}
-
-	.menu button {
-		justify-content: flex-start;
-		width: 100%;
-		border: 0;
-		background: none;
-		font-weight: 400;
-	}
-
-	.menu button:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--text) 8%, transparent);
-	}
-
-	.menu .danger {
-		color: var(--error);
-	}
-
-	.op-options {
-		flex-direction: row !important;
-		align-items: center;
-		gap: var(--space-2);
-		padding: 0.25rem 0.4rem;
-	}
-
-	.op-options .check {
-		display: flex;
-		align-items: center;
-		gap: 0.3rem;
-		margin: 0;
-		white-space: nowrap;
-	}
-
-	.op-options button {
-		width: auto;
-	}
-
 	.after {
 		margin: var(--space-3) 0 0;
 	}
@@ -639,5 +626,9 @@
 	.files li {
 		display: flex;
 		gap: var(--space-3);
+	}
+
+	@media (max-width: 600px) {
+		.access-drawer { width: 100vw; padding: 1rem; border-left: 0; }
 	}
 </style>
