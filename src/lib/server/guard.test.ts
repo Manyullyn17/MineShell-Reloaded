@@ -102,6 +102,11 @@ describe('auth guard', () => {
 		expect(outcome(event('/login', { session }))).toEqual({ redirect: '/' });
 	});
 
+	it('lets a signed-in browser post to sign out, rather than sending it home', () => {
+		const session = createSession(owner().id, 'test').id;
+		expect(outcome(event('/login?/logout', { session, method: 'POST', headers: { origin: `http://${HOST}` } }))).toBeNull();
+	});
+
 	it('treats an unknown session like none', () => {
 		expect(outcome(event('/settings', { session: 'made-up' }))).toEqual({ redirect: '/login?next=%2Fsettings' });
 	});

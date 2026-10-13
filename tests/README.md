@@ -259,3 +259,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Accounts: the owner `admin`, sign-in by name, sessions per account, a disabled account or deleted session stops at once, the owner cannot be deleted/demoted/disabled, throttle per address and per name | `auth.test.ts`, `guard.test.ts` |
 | (feature) Migration 0019 turns the old admin password into the owner and keeps its sessions | `db/users-migration.test.ts` |
 | "Sign out every other device" on a password change also signed out the device asking | `auth.test.ts` |
+| Sign out did nothing: the guard sent every signed-in request for /login home, the sign-out post included | `guard.test.ts` |

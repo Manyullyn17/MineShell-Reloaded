@@ -70,6 +70,7 @@ export function guard(event: GuardEvent): Response | null {
 	if (!event.locals.authenticated && !isPublic) {
 		redirect(303, `/login?next=${encodeURIComponent(pathname + event.url.search)}`);
 	}
-	if (event.locals.authenticated && pathname === '/login') redirect(303, '/');
+	// Only the page: signing out posts to /login?/logout, which this used to send home unrun.
+	if (event.locals.authenticated && pathname === '/login' && event.request.method === 'GET') redirect(303, '/');
 	return null;
 }
