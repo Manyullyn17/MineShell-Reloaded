@@ -219,9 +219,9 @@ tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `c
 
 ## Network exposure
 
-MineShell is designed for a LAN. It has no rate limiting beyond the login throttle, no
-audit trail suitable for a shared environment, and its file browser can read every file in
-an instance directory.
+MineShell is designed for a LAN. It has no rate limiting beyond the login throttle, its
+accounts are separated only by its own permissions (every server runs as the same system
+account), and anyone with Files on a server can read every file in its directory.
 
 If you want to reach it from outside your network, put it behind Tailscale or a similar
 mesh VPN. That gets you an encrypted, authenticated path without exposing anything to the
