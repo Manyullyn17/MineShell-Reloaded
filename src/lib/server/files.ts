@@ -102,12 +102,6 @@ export async function statFile(root: string, relative: string) {
 	return fs.stat(safeJoin(root, relative));
 }
 
-export async function deleteEntry(root: string, relative: string): Promise<void> {
-	const target = safeJoin(root, relative);
-	if (target === path.resolve(root)) throw new Error('The instance root cannot be deleted here.');
-	await fs.rm(target, { recursive: true, force: true });
-}
-
 export async function createDirectory(root: string, relative: string): Promise<void> {
 	await fs.mkdir(safeJoin(root, relative), { recursive: true });
 }

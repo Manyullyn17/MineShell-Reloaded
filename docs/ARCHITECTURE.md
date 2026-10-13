@@ -610,6 +610,16 @@ browser, uploads, mod deletion and the text editor all use it. A dropped folder'
 keep their paths inside it (`uploadPath`, which refuses `..` steps). Deletion additionally
 refuses to operate outside `INSTANCES_DIR`, so a corrupt database row cannot point
 `rm -rf` at something interesting.
+
+**Files trash** (`trash.ts`). The Files tab's Delete renames into `.mineshell/trash/<id>/<name>`
+(copy and remove across filesystems), with `<id>.json` (original path, time, size) written
+first: a crash between the two leaves a record without a folder, which listing drops. Ids
+carry a random part, so two deletes in one millisecond stay apart. Restore renames back,
+making missing parent folders, beside anything that took the place since ("name (restored)").
+The trash itself, anything inside it and anything holding it (`.mineshell`) cannot move into
+it and is deleted for good, as is everything when the kept days (`files.trashDays`, MineShell
+settings, default 7) are 0. The scheduler's tick deletes items past the days; clones leave the
+trash out, and disk usage shows it as its own group.
 Pack files are the uploader's: a `.mrpack` or file list naming a path that leaves the
 server folder is refused when parsed (`packPath`), and `downloadPackFiles` writes through
 `safeJoin` as well, since targets also come from CurseForge file names and the world mapping.

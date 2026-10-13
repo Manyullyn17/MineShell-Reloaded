@@ -3,7 +3,6 @@ import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import {
 	createDirectory,
-	deleteEntry,
 	listDirectory,
 	readTextFile,
 	renameEntry,
@@ -13,13 +12,17 @@ import {
 	type DirEntry
 } from '#lib/server/files.js';
 import path from 'node:path';
-import { recentDiskBreakdown } from '#lib/server/diskusage.js';
+import { forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { sftpAccess } from '#lib/server/sftp.js';
+import { deleteToTrash, emptyTrash, listTrash, purgeTrashItem, restoreFromTrash, trashDays } from '#lib/server/trash.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
 	const dir = url.searchParams.get('path') ?? '';
 	const edit = url.searchParams.get('edit');
+	const trash = await listTrash(instance.path).catch(() => []);
+	// The trash, shown in place of a folder.
+	const showTrash = url.searchParams.has('trash');
 
 	let entries: DirEntry[];
 	let listError: string | null = null;
@@ -55,6 +58,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		listError,
 		// "Open in file manager": the folder shown, on this machine, over SSH.
 		sftp: await sftpAccess(),
+		trash: showTrash ? trash : null,
+		trashCount: trash.length,
+		trashDays: trashDays(),
 		folder: listError ? instance.path : path.join(instance.path, dir),
 		// Streamed and reused for a minute: walking a big pack takes a moment.
 		usage: recentDiskBreakdown(instance)
@@ -128,10 +134,47 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const target = String((await request.formData()).get('path') ?? '');
 		try {
-			await deleteEntry(instance.path, target);
-			return { ok: true, message: `Deleted ${target}.` };
+			const item = await deleteToTrash(instance.path, target);
+			forgetDiskBreakdown(instance.path);
+			if (!item) return { ok: true, message: `Deleted ${target} for good.` };
+			return { ok: true, message: `Moved ${target} to the trash.`, undo: item.id };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Delete failed.' });
+		}
+	},
+
+	restore: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const id = String((await request.formData()).get('id') ?? '');
+		try {
+			const to = await restoreFromTrash(instance.path, id);
+			forgetDiskBreakdown(instance.path);
+			return { ok: true, message: `Restored ${to}.` };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Restore failed.' });
+		}
+	},
+
+	purge: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const id = String((await request.formData()).get('id') ?? '');
+		try {
+			await purgeTrashItem(instance.path, id);
+			forgetDiskBreakdown(instance.path);
+			return { ok: true, message: 'Deleted for good.' };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Delete failed.' });
+		}
+	},
+
+	emptyTrash: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		try {
+			const count = await emptyTrash(instance.path);
+			forgetDiskBreakdown(instance.path);
+			return { ok: true, message: `Emptied the trash (${count} item${count === 1 ? '' : 's'}).` };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not empty the trash.' });
 		}
 	}
 };

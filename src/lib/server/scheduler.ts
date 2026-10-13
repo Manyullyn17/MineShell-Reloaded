@@ -9,6 +9,7 @@ import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
 import { evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
+import { expireTrash } from './trash';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -161,6 +162,9 @@ async function checkAll(): Promise<void> {
 		);
 		await evaluateMapSchedule(instance).catch((err) =>
 			console.error(`[mineshell] scheduled map update failed for ${instance.id}:`, err)
+		);
+		await expireTrash(instance.path).catch((err) =>
+			console.error(`[mineshell] emptying old trash failed for ${instance.id}:`, err)
 		);
 	}
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));

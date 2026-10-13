@@ -1,13 +1,21 @@
 <script lang="ts">
 	/** Renders the `form` object returned by an action, or an explicit message. */
+	import type { Snippet } from 'svelte';
+
 	let {
 		form = null,
 		message = '',
-		type = 'info'
+		type = 'info',
+		lasts = 6000,
+		children
 	}: {
 		form?: { ok?: boolean; message?: string } | null;
 		message?: string;
 		type?: 'success' | 'error' | 'info' | 'warning';
+		/** How long a message that is not an error stays, in ms. */
+		lasts?: number;
+		/** Buttons after the text (an Undo). */
+		children?: Snippet;
 	} = $props();
 
 	const text = $derived(form?.message ?? message);
@@ -24,7 +32,7 @@
 		if (!text || tone === 'error') return;
 		const timer = setTimeout(() => {
 			dismissed = true;
-		}, 6000);
+		}, lasts);
 		return () => clearTimeout(timer);
 	});
 </script>
@@ -32,6 +40,7 @@
 {#if text && !dismissed}
 	<div class="notice {tone} flash" role="status">
 		<p>{text}</p>
+		{@render children?.()}
 		<button type="button" class="close" aria-label="Dismiss" onclick={() => (dismissed = true)}>×</button>
 	</div>
 {/if}

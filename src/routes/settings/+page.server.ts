@@ -79,6 +79,7 @@ import {
 } from '#lib/server/selfupdate.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
+import { MAX_TRASH_DAYS, setTrashDays, trashDays } from '#lib/server/trash.js';
 import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 import { deleteCustomPreset, listPresets, saveCustomPreset } from '#lib/server/jvm-presets.js';
@@ -154,6 +155,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		freeBytes: await freeSpace(INSTANCES_DIR),
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
 		itemIcons: itemIconsEnabled(),
+		trash: { days: trashDays(), max: MAX_TRASH_DAYS },
 		downloads: { allowed: allowedAddresses(), refused: recentRefusals() },
 		sftp: { ...getSftpSettings(), defaults: await sftpDefaults() },
 		update: {
@@ -358,6 +360,16 @@ export const actions: Actions = {
 		const form = await request.formData();
 		setItemIcons(form.get('itemIcons') === 'on');
 		return { ok: true, message: 'Saved.' };
+	},
+
+	trashDays: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			setTrashDays(Number(String(form.get('trashDays') ?? '').trim() || NaN));
+			return { ok: true, message: 'Saved.' };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save that.' });
+		}
 	},
 
 	sftp: async ({ request }) => {

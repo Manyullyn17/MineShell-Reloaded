@@ -63,6 +63,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			installUnit: 'globalAdmin',
 			itemIcons: 'globalAdmin',
 			sftp: 'globalAdmin',
+			trashDays: 'globalAdmin',
 			// Integrations: using them is up to each feature's permission; managing them is the owner's.
 			curseforgeKey: 'owner',
 			removeCurseforgeKey: 'owner',
@@ -231,7 +232,16 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 
 	'/instances/[id]/files': {
 		load: on('files'),
-		actions: { save: on('files'), upload: on('files'), mkdir: on('files'), rename: on('files'), delete: on('files') }
+		actions: {
+			save: on('files'),
+			upload: on('files'),
+			mkdir: on('files'),
+			rename: on('files'),
+			delete: on('files'),
+			restore: on('files'),
+			purge: on('files'),
+			emptyTrash: on('files')
+		}
 	},
 	'/instances/[id]/files/usage': { load: on('files'), actions: { deleteOldLogs: on('files') } },
 	'/api/instances/[id]/files': { methods: { GET: on('files') } },

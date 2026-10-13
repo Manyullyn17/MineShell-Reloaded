@@ -6,6 +6,7 @@ import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
 import { serverWorldName } from './packworld';
 import { listSnapshots, SNAPSHOTS_DIR, worldFolders } from './snapshots';
+import { TRASH_DIR } from './trash';
 import { mapDataSize } from './worldmap';
 
 /**
@@ -27,13 +28,13 @@ export type UsageItem = {
 
 export type UsageGroup = { id: GroupId; label: string; bytes: number; items: UsageItem[] };
 
-type GroupId = 'world' | 'map' | 'mineshell' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
+type GroupId = 'world' | 'map' | 'mineshell' | 'trash' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
 
 export type Suggestion = {
 	text: string;
 	bytes: number;
 	/** A tab or Files path to go and act; absent when the page offers the action itself. */
-	href?: { tab: 'world' | 'files'; path?: string };
+	href?: { tab: 'world' | 'files' | 'trash'; path?: string };
 	action?: 'deleteOldLogs';
 };
 
@@ -43,6 +44,7 @@ const GROUP_LABELS: Record<GroupId, string> = {
 	world: 'World',
 	map: 'World map',
 	mineshell: 'Snapshots and MineShell backups',
+	trash: 'Deleted files in the trash',
 	'old-configs': 'Configs replaced by pack changes',
 	logs: 'Logs and crash reports',
 	mods: 'Mods',
@@ -179,6 +181,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		world: [],
 		map: [],
 		mineshell: [],
+		trash: [],
 		'old-configs': [],
 		logs: [],
 		mods: [],
@@ -201,7 +204,9 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		} else if (name === '.mineshell') {
 			for (const sub of await entries(full)) {
 				const rel = path.join(name, sub.name);
-				if (rel === SNAPSHOTS_DIR) {
+				if (rel === TRASH_DIR) {
+					items.trash.push({ label: 'Deleted files in the trash', path: rel, bytes: await sizeOf(path.join(root, rel)) });
+				} else if (rel === SNAPSHOTS_DIR) {
 					for (const snap of await entries(path.join(root, rel))) {
 						const info = snapshots.get(snap.name);
 						items.mineshell.push({
@@ -272,6 +277,14 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 			text: `Configs that pack changes moved aside (${items['old-configs'].length} version${items['old-configs'].length === 1 ? '' : 's'}). Delete the ones you no longer need in Files.`,
 			bytes: oldConfigs,
 			href: { tab: 'files', path: 'old-configs' }
+		});
+	}
+	const trash = items.trash[0];
+	if (trash && trash.bytes > 0) {
+		suggestions.push({
+			text: 'Files deleted in the Files tab, kept in the trash until it is emptied.',
+			bytes: trash.bytes,
+			href: { tab: 'trash' }
 		});
 	}
 	const leftovers = items.mineshell.filter((i) => i.label.startsWith('Left over'));

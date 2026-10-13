@@ -58,6 +58,8 @@
 							</form>
 						{:else if suggestion.href?.tab === 'world'}
 							<a class="button button-quiet" href="{base}/world">World tab</a>
+						{:else if suggestion.href?.tab === 'trash'}
+							<a class="button button-quiet" href="{base}/files?trash">Open the trash</a>
 						{:else if suggestion.href}
 							<a class="button button-quiet" href={filesHref(suggestion.href.path ?? '')}>Open in Files</a>
 						{/if}

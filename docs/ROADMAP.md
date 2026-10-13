@@ -22,6 +22,14 @@ deferred and is not a current priority.
 
 ## Not built yet
 
+### Trash in the Files tab (built)
+
+The user's idea (2026-10-13): Delete in Files moves to a per-server trash instead of deleting,
+with Undo right after, restore and "delete for good" per item, an Empty button, and automatic
+emptying after a number of days (MineShell settings, default 7; 0 = no trash). Kept inside the
+server folder (`.mineshell/trash/`) so a delete is a rename, never a copy of a world. Only the
+Files tab uses it; MineShell's own operations keep their own aside/rollback folders.
+
 ### Accounts and permissions (built)
 
 Several trusted people using one MineShell, each with access to chosen servers and features.

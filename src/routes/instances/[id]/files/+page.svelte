@@ -22,6 +22,7 @@
 		mods: 'Mods',
 		logs: 'Logs',
 		mineshell: 'Snapshots',
+		trash: 'Trash',
 		'old-configs': 'Old configs',
 		loader: 'Loader',
 		other: 'Other'
@@ -40,6 +41,18 @@
 
 	function href(dir: string) {
 		return dir ? `${base}?path=${encodeURIComponent(dir)}` : base;
+	}
+
+	// The trash opens over the folder you were in, so leaving it goes back there.
+	const trashHref = $derived(data.dir ? `${href(data.dir)}&trash` : `${base}?trash`);
+	const undoId = $derived(form && 'undo' in form && typeof form.undo === 'string' ? form.undo : null);
+
+	/** Deleting the trash itself (or what holds it), or with the trash off, cannot be undone: ask first. */
+	function confirmDelete(relPath: string) {
+		return ({ cancel }: { cancel: () => void }) => {
+			const forGood = data.trashDays === 0 || relPath === '.mineshell' || relPath === '.mineshell/trash' || relPath.startsWith('.mineshell/trash/');
+			if (forGood && !confirm(`Delete ${relPath} for good? This does not go to the trash.`)) cancel();
+		};
 	}
 
 	/** Folders opened in place, by path, with their entries once listed. */
@@ -192,9 +205,9 @@
 					>
 						Rename
 					</button>
-					<form method="POST" action="?/delete" use:enhance>
+					<form method="POST" action="?/delete" use:enhance={confirmDelete(entry.relPath)}>
 						<input type="hidden" name="path" value={entry.relPath} />
-						<button class="button-quiet button-danger" type="submit">Delete</button>
+						<button class="button-quiet button-danger" type="submit" title={data.trashDays ? 'Moves it to the trash' : undefined}>Delete</button>
 					</form>
 				</div>
 			</td>
@@ -212,7 +225,14 @@
 	{/each}
 {/snippet}
 
-<Flash {form} />
+<Flash {form} lasts={undoId ? 20000 : 6000}>
+	{#if undoId}
+		<form method="POST" action="?/restore" use:enhance>
+			<input type="hidden" name="id" value={undoId} />
+			<button class="button-quiet" type="submit">Undo</button>
+		</form>
+	{/if}
+</Flash>
 
 {#if data.listError}
 	<div class="notice error"><p>{data.listError}</p></div>
@@ -240,6 +260,80 @@
 				</a>
 			</div>
 		</form>
+	</section>
+{:else if data.trash}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2>Trash</h2>
+				<p>
+					{#if data.trashDays}
+						Deleted files stay here for {data.trashDays} day{data.trashDays === 1 ? '' : 's'}, then go for good.
+					{:else}
+						Deleting skips the trash (MineShell settings, System). What is still here goes after 7 days.
+					{/if}
+				</p>
+			</div>
+			<div class="button-row">
+				<a class="button button-quiet" href={href(data.dir)}>Back to files</a>
+				{#if data.trash.length}
+					<form
+						method="POST"
+						action="?/emptyTrash"
+						use:enhance={({ cancel }) => {
+							if (!confirm(`Delete everything in the trash of ${data.instance.name} for good?`)) cancel();
+						}}
+					>
+						<button class="button-danger" type="submit">Empty trash</button>
+					</form>
+				{/if}
+			</div>
+		</div>
+		{#if data.trash.length === 0}
+			<div class="empty"><p>The trash is empty.</p></div>
+		{:else}
+			<div class="table-box">
+				<table class="trash-table">
+					<thead>
+						<tr>
+							<th>Was at</th>
+							<th class="nowrap">Size</th>
+							<th class="nowrap">Deleted</th>
+							<th><span class="visually-hidden">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.trash as item (item.id)}
+							<tr>
+								<td>
+									<span class="entry mono trash-path"><span class="glyph" aria-hidden="true">{item.isDirectory ? '▸' : ''}</span>{item.path}</span>
+								</td>
+								<td class="mono small nowrap">{formatBytes(item.bytes)}</td>
+								<td class="small nowrap faint">{formatRelative(item.deletedAt)}</td>
+								<td>
+									<div class="row-actions">
+										<form method="POST" action="?/restore" use:enhance>
+											<input type="hidden" name="id" value={item.id} />
+											<button class="button-quiet" type="submit">Restore</button>
+										</form>
+										<form
+											method="POST"
+											action="?/purge"
+											use:enhance={({ cancel }) => {
+												if (!confirm(`Delete ${item.path} for good?`)) cancel();
+											}}
+										>
+											<input type="hidden" name="id" value={item.id} />
+											<button class="button-quiet button-danger" type="submit">Delete for good</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
 	</section>
 {:else}
 	{#await data.usage then usage}
@@ -279,6 +373,9 @@
 				<a class="button button-quiet" href={href(data.parentDir)}>Up one level</a>
 			{/if}
 			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>New folder</button>
+			<a class="button button-quiet" href={trashHref} title="Deleted files, to restore or delete for good">
+				Trash{data.trashCount ? ` (${data.trashCount})` : ''}
+			</a>
 			{#if sftp}
 				<a
 					class="button button-quiet"
@@ -534,6 +631,37 @@
 
 	.editor-actions {
 		margin-top: var(--space-3);
+	}
+
+	.trash-path {
+		overflow-wrap: anywhere;
+	}
+
+	/* Phones: each item as a card, the path on its own line above size, time and buttons. */
+	@media (max-width: 60rem) {
+		.trash-table thead {
+			display: none;
+		}
+
+		.trash-table tr {
+			display: grid;
+			grid-template-columns: auto auto 1fr;
+			align-items: center;
+			column-gap: var(--space-3);
+		}
+
+		.trash-table td:first-child {
+			grid-column: 1 / -1;
+			padding-bottom: 0;
+		}
+
+		.trash-table td {
+			border: 0;
+		}
+
+		.trash-table tr + tr {
+			border-top: 1px solid var(--line);
+		}
 	}
 
 	.file-title {

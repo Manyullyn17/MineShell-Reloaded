@@ -728,6 +728,21 @@
 </section>
 
 <section class="panel">
+	<h2>Trash</h2>
+	<form method="POST" action="?/trashDays" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="field trash-days">
+			<label for="trashDays">Keep deleted files for (days)</label>
+			<input id="trashDays" name="trashDays" type="number" min="0" max={data.trash.max} step="1" value={data.trash.days} required />
+		</div>
+		<p class="small muted">
+			What is deleted in a server's Files tab goes to its trash first, where it can be restored, and is deleted for good
+			after this many days. 0 deletes straight away, with no undo.
+		</p>
+		<button class="button" type="submit">Save</button>
+	</form>
+</section>
+
+<section class="panel">
 	<h2>Downloads from local addresses</h2>
 	<p class="small muted">
 		MineShell does not download from this machine, your local network or other non-public addresses: a pack's links
@@ -780,6 +795,10 @@
 	.refused-at {
 		margin: calc(-1 * var(--space-2)) 0 var(--space-3);
 		overflow-wrap: anywhere;
+	}
+
+	.trash-days {
+		max-width: 16rem;
 	}
 
 	.sftp-fields {

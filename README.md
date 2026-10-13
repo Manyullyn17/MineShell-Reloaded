@@ -179,7 +179,9 @@ drawn).
 
 **Files.** Browse, upload (with the button, or by dropping files and whole folders on
 the file list), download, rename, delete, and edit text files in place, all
-confined to the instance directory. "Open in file manager" is an `sftp://` link to the
+confined to the instance directory. Deleting moves things to the server's trash: Undo right
+after, or restore them from the trash later; it empties itself after 7 days (a setting; 0 turns
+the trash off) or by hand. "Open in file manager" is an `sftp://` link to the
 folder shown, through the machine's own SSH server (port read from `sshd_config`; host,
 port and account can be set in Settings). A disk usage page shows where the space goes, the world
 map included (also the one MineShell renders outside the server folder). Every
