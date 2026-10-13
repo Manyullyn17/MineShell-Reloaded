@@ -1,17 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { actions } from './+page.server';
+import * as dashboard from '../../+page.server';
 import { db } from '#lib/server/db/index.js';
 import { instanceTags, serverTags } from '#lib/server/db/schema.js';
-import { createInstance } from '../../tests/helpers/instances';
+import { createInstance } from '../../../../tests/helpers/instances';
 
+/** The dashboard's card forms post to each server's own actions; the server is in the address. */
 async function post(action: (event: never) => unknown, fields: Record<string, string>) {
+	const { id, ...rest } = fields;
 	const form = new FormData();
-	for (const [key, value] of Object.entries(fields)) form.set(key, value);
-	return await action({ request: new Request('http://localhost/', { method: 'POST', body: form }) } as never);
+	for (const [key, value] of Object.entries(rest)) form.set(key, value);
+	return await action({ params: { id }, request: new Request('http://localhost/', { method: 'POST', body: form }) } as never);
 }
 
 describe('dashboard server tag actions', () => {
+	it('live on the server, not on the dashboard, which names no server in its address', () => {
+		expect(dashboard).not.toHaveProperty('actions');
+		expect(Object.keys(actions)).toEqual(expect.arrayContaining(['power', 'pin', 'addTag', 'removeTag']));
+	});
+
 	it('creates a tag, reuses it across servers, and prunes it after the last removal', async () => {
 		const first = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		const second = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });

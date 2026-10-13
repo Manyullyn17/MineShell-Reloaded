@@ -250,3 +250,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Settings sent the RCON password with every page load (masked only on screen), also inside the raw server.properties | `routes/instances/[id]/settings/rcon.test.ts` |
 | A server's Settings saved and deleted the JVM flag presets every server shares | `routes/settings/presets.test.ts` |
 | Saving memory went through the same action as the Java path, JVM flags and launch arguments | `routes/instances/[id]/settings/runtime.test.ts` |
+| The server list's start/stop, pin and tag buttons named their server only in the form body, not in the address | `routes/instances/[id]/tags.test.ts` |

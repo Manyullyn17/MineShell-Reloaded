@@ -1,13 +1,14 @@
 <script lang="ts">
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import { enhance } from '#lib/shared/forms.js';
+	import type { SubmitFunction } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { describeState, formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
 	import { isStopped, matchesDashboardFilters, needsAttention } from '#lib/shared/dashboard-filters.js';
 
-	let { data, form } = $props();
+	let { data } = $props();
 
 	let busy = $state<string | null>(null);
 	let search = $state('');
@@ -81,11 +82,26 @@
 		return () => (current = false);
 	});
 
-	function powerSubmit(id: string) {
-		busy = id;
-		return async ({ update }: { update: () => Promise<void> }) => {
-			await update();
-			busy = null;
+	/**
+	 * A card's buttons post to that server's own actions (`/instances/<id>?/power`,
+	 * like its header), so every one names the server in its address. The default
+	 * enhance would navigate there; the answer is shown here instead.
+	 */
+	let message = $state<{ ok?: boolean; message?: string } | null>(null);
+	const action = (id: string, name: string) => `/instances/${encodeURIComponent(id)}?/${name}`;
+	function inPlace(busyId: string | null = null): SubmitFunction {
+		return () => {
+			busy = busyId;
+			return async ({ result, formElement }) => {
+				if (result.type === 'success' || result.type === 'failure') {
+					message = (result.data as { ok?: boolean; message?: string }) ?? null;
+				} else if (result.type === 'error') {
+					message = { ok: false, message: result.error?.message ?? 'Something went wrong.' };
+				}
+				if (result.type === 'success') formElement.reset();
+				await refreshAll();
+				busy = null;
+			};
 		};
 	}
 </script>
@@ -106,7 +122,7 @@
 	<a class="button button-primary" href="/instances/new">Add a server</a>
 </header>
 
-<Flash {form} />
+<Flash form={message} />
 
 {#if !data.environment.systemdAvailable}
 	<div class="notice error">
@@ -223,8 +239,7 @@
 					</div>
 					<div class="status">
 						<StatusPill active={instance.active} sub={instance.sub} />
-						<form method="POST" action="?/pin" use:enhance>
-							<input type="hidden" name="id" value={instance.id} />
+						<form method="POST" action={action(instance.id, 'pin')} use:enhance={inPlace()}>
 							<button
 								class="pin hit-area"
 								class:pinned={instance.pinned}
@@ -247,8 +262,7 @@
 							{#each instance.tags as tag (tag.id)}
 								{#if editingTagsFor === instance.id}
 									<span class="tag-item"><span class="tag-name">{tag.name}</span>
-										<form method="POST" action="?/removeTag" use:enhance>
-											<input type="hidden" name="id" value={instance.id} />
+										<form method="POST" action={action(instance.id, 'removeTag')} use:enhance={inPlace()}>
 											<input type="hidden" name="tagId" value={tag.id} />
 											<button class="tag-remove" aria-label="Remove tag {tag.name}" title="Remove {tag.name}">×</button>
 										</form>
@@ -262,8 +276,7 @@
 					</div>
 					{#if editingTagsFor === instance.id}
 						<div class="tag-editor">
-							<form method="POST" action="?/addTag" use:enhance class="tag-add-form">
-								<input type="hidden" name="id" value={instance.id} />
+							<form method="POST" action={action(instance.id, 'addTag')} use:enhance={inPlace()} class="tag-add-form">
 								<input name="name" maxlength="32" placeholder="Create a new tag" aria-label="Create a new server tag" autocomplete="off" required />
 								<button class="button button-quiet" type="submit">Create tag</button>
 							</form>
@@ -271,8 +284,7 @@
 								<div class="existing-tags" aria-label="Add an existing tag">
 									<span class="small muted">Add existing:</span>
 									{#each data.tags.filter((tag) => !instance.tags.some((assigned) => assigned.id === tag.id)) as tag (tag.id)}
-										<form method="POST" action="?/addTag" use:enhance>
-											<input type="hidden" name="id" value={instance.id} />
+										<form method="POST" action={action(instance.id, 'addTag')} use:enhance={inPlace()}>
 											<input type="hidden" name="tagId" value={tag.id} />
 											<button class="tag-choice" type="submit">+ {tag.name}</button>
 										</form>
@@ -343,8 +355,7 @@
 				{/if}
 
 				<footer>
-					<form method="POST" action="?/power" use:enhance={() => powerSubmit(instance.id)}>
-						<input type="hidden" name="id" value={instance.id} />
+					<form method="POST" action={action(instance.id, 'power')} use:enhance={inPlace(instance.id)}>
 						<div class="button-row">
 							{#if instance.running}
 								<button

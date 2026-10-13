@@ -669,6 +669,9 @@ memory fields sit between the launch form's sections and join their own empty fo
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page
 would navigate there, so the header applies the result itself and reloads in place.
+The server list's cards do the same (start, stop, restart, pin, tags): every operation on
+one server is an action under `/instances/<id>`, never an id in a form body, so the address
+alone says which server a request touches.
 Kit 3 counts the query as part of the page, so `action="?/x"` also lands somewhere else
 on a page with one (`?path=`, `?tab=`, `?range=`): every page imports `enhance` from
 `#lib/shared/forms.js`, which keeps a form posting to its own path on the current URL.

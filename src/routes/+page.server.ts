@@ -1,10 +1,8 @@
-import type { Actions, PageServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 import { db } from '#lib/server/db/index.js';
-import { instanceTags, serverInstances, serverTags } from '#lib/server/db/schema.js';
+import { instanceTags, serverTags } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
-import { fail } from '@sveltejs/kit';
-import { onlinePlayers, requireInstance, restart, start, stop, summariseAll } from '#lib/server/instances.js';
+import { onlinePlayers, summariseAll } from '#lib/server/instances.js';
 import { latestSample } from '#lib/server/monitor.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
@@ -92,89 +90,4 @@ export const load: PageServerLoad = async () => {
 			javaCount
 		}
 	};
-};
-
-/** The dashboard's start/stop buttons post here so they work without JavaScript. */
-export const actions: Actions = {
-	addTag: async ({ request }) => {
-		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
-		const tagId = String(form.get('tagId') ?? '');
-		const name = String(form.get('name') ?? '').trim();
-		let instance;
-		try {
-			instance = requireInstance(id);
-		} catch {
-			return fail(404, { ok: false, message: 'That server no longer exists.' });
-		}
-		let tag = tagId ? findServerTag(tagId) : undefined;
-		if (tagId && !tag) return fail(404, { ok: false, message: 'That tag no longer exists.' });
-		if (!tagId) {
-			if (!name || name.length > 32 || /[\u0000-\u001f\u007f]/.test(name)) {
-				return fail(400, { ok: false, message: 'Tags must be 1–32 characters and cannot contain control characters.' });
-			}
-			tag = createOrFindServerTag(name);
-		}
-		if (!tag) return fail(500, { ok: false, message: 'Could not save that tag.' });
-		assignServerTag(instance.id, tag.id);
-		return { ok: true, message: `Added “${tag.name}” to ${instance.name}.` };
-	},
-	removeTag: async ({ request }) => {
-		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
-		const tagId = String(form.get('tagId') ?? '');
-		let instance;
-		try {
-			instance = requireInstance(id);
-		} catch {
-			return fail(404, { ok: false, message: 'That server no longer exists.' });
-		}
-		removeServerTag(instance.id, tagId);
-		return { ok: true, message: `Removed the tag from ${instance.name}.` };
-	},
-	power: async ({ request }) => {
-		const form = await request.formData();
-		const id = String(form.get('id') ?? '');
-		const verb = String(form.get('verb') ?? '');
-
-		let instance;
-		try {
-			instance = requireInstance(id);
-		} catch {
-			return fail(404, { ok: false, message: 'That server no longer exists.' });
-		}
-
-		const result =
-			verb === 'start'
-				? await start(instance)
-				: verb === 'stop'
-					? await stop(instance)
-					: verb === 'restart'
-						? await restart(instance)
-						: { ok: false, message: `Unknown action "${verb}".` };
-
-		return result.ok ? result : fail(400, result);
-	},
-
-	pin: async ({ request }) => {
-		const id = String((await request.formData()).get('id') ?? '');
-		let instance;
-		try {
-			instance = requireInstance(id);
-		} catch {
-			return fail(404, { ok: false, message: 'That server no longer exists.' });
-		}
-
-		db.update(serverInstances)
-			.set({ pinned: !instance.pinned, updatedAt: Date.now() })
-			.where(eq(serverInstances.id, instance.id))
-			.run();
-
-		return {
-			ok: true,
-			message: instance.pinned
-				? `${instance.name} unpinned.`
-				: `${instance.name} pinned to the top.`
-		};
-	}
 };

@@ -44,6 +44,7 @@ import {
 } from '#lib/server/spark.js';
 import { voiceChat } from '#lib/server/voicechat.js';
 import { forgetMissing, readMissing, startRetryMissing } from '#lib/server/packs/missing.js';
+import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { isBisecting } from '#lib/server/bisect.js';
 
 /**
@@ -369,7 +370,32 @@ export const actions: Actions = {
 			.set({ pinned: !instance.pinned, updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
-		return { ok: true, message: instance.pinned ? 'Unpinned.' : 'Pinned to the top of the list.' };
+		return { ok: true, message: instance.pinned ? `${instance.name} unpinned.` : `${instance.name} pinned to the top.` };
+	},
+
+	/** The dashboard's tag editor: an existing tag by id, or a new one by name. */
+	addTag: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const tagId = String(form.get('tagId') ?? '');
+		const name = String(form.get('name') ?? '').trim();
+		let tag = tagId ? findServerTag(tagId) : undefined;
+		if (tagId && !tag) return fail(404, { ok: false, message: 'That tag no longer exists.' });
+		if (!tagId) {
+			if (!name || name.length > 32 || /[\u0000-\u001f\u007f]/.test(name)) {
+				return fail(400, { ok: false, message: 'Tags must be 1–32 characters and cannot contain control characters.' });
+			}
+			tag = createOrFindServerTag(name);
+		}
+		if (!tag) return fail(500, { ok: false, message: 'Could not save that tag.' });
+		assignServerTag(instance.id, tag.id);
+		return { ok: true, message: `Added “${tag.name}” to ${instance.name}.` };
+	},
+
+	removeTag: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		removeServerTag(instance.id, String((await request.formData()).get('tagId') ?? ''));
+		return { ok: true, message: `Removed the tag from ${instance.name}.` };
 	},
 
 	notes: async ({ request, params }) => {
