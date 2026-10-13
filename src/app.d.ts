@@ -6,6 +6,8 @@ declare global {
 		interface Locals {
 			authenticated: boolean;
 			authRequired: boolean;
+			/** The signed-in account; null when signed out, and with MINESHELL_AUTH=off. */
+			user: import('#lib/server/auth.js').SessionUser | null;
 		}
 		interface PageData {
 			flash?: { type: 'success' | 'error' | 'info' | 'warning'; message: string } | null;

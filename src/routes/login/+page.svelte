@@ -1,13 +1,15 @@
 <script lang="ts">
 	import Flash from '#lib/components/Flash.svelte';
 	let { data, form } = $props();
+	// While there is one account its name is filled in: an install from before accounts never typed one.
+	const username = $derived(form?.username ?? data.username ?? '');
 </script>
 
 <svelte:head><title>Sign in - MineShell</title></svelte:head>
 
 <div class="card panel">
 	<h1>MineShell</h1>
-	<p class="muted">Enter the admin password to manage your servers.</p>
+	<p class="muted">Sign in to manage your servers.</p>
 
 	{#if form?.message}
 		<Flash message={form.message} type="error" />
@@ -16,9 +18,14 @@
 	<form method="POST" action="?/login">
 		<input type="hidden" name="next" value={data.next} />
 		<div class="field">
+			<label for="username">Username</label>
+			<!-- svelte-ignore a11y_autofocus -->
+			<input id="username" name="username" autocomplete="username" value={username} autofocus={!username} required />
+		</div>
+		<div class="field">
 			<label for="password">Password</label>
 			<!-- svelte-ignore a11y_autofocus -->
-			<input id="password" name="password" type="password" autocomplete="current-password" autofocus required />
+			<input id="password" name="password" type="password" autocomplete="current-password" autofocus={!!username} required />
 		</div>
 		<button class="button-primary" type="submit" style="width: 100%">Sign in</button>
 	</form>

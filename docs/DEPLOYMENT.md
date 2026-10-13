@@ -72,7 +72,7 @@ Run it as the account MineShell should run as (not root). It needs Node.js 22.12
 - turns on lingering if it can (otherwise it says to run `sudo loginctl enable-linger $USER`);
 - starts MineShell and waits until it answers.
 
-Open `http://<server-ip>:3000`, set an admin password, add a server.
+Open `http://<server-ip>:3000`, set the password of the owner account (`admin`), add a server.
 
 It refuses, before changing anything, when `~/mineshell` or `mineshell.service` exist and
 were not made by it. Options are environment variables on the `bash` side of the pipe, e.g.
@@ -268,6 +268,14 @@ rule; servers made before October 2026 have theirs from 25575 up.
 ---
 
 ## Troubleshooting
+
+**The owner's password is forgotten.**
+As the account MineShell runs as, run `npm run reset-password` in a git checkout, or in the
+release folder (`~/mineshell/current` by default)
+`MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/reset-password.mjs`. It
+prints a new random password for `admin` and signs it out everywhere; pick your own under
+MineShell settings > Security. It needs nothing but access to MineShell's database, which
+already allows anything.
 
 **`npm run doctor` says systemctl is unreachable.**
 The process cannot reach the account's user manager. This happens when MineShell is started

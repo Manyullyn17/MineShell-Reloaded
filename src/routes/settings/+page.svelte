@@ -482,7 +482,8 @@
 {:else if tab === 'security'}
 {#if data.authEnabled}
 	<section class="panel">
-		<h2>Admin password</h2>
+		<h2>Your password</h2>
+		{#if data.username}<p class="muted">Signed in as <strong>{data.username}</strong>.</p>{/if}
 		<form method="POST" action="?/password" use:enhance>
 			<div class="grid-2">
 				<div class="field">

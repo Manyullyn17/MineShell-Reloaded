@@ -2,17 +2,19 @@ import { isRedirect } from '@sveltejs/kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 
-// Tests run with MINESHELL_AUTH=off; the guard's auth path needs it on.
-const authControl = vi.hoisted(() => ({ enabled: true }));
+// Tests run with MINESHELL_AUTH=off; the guard's auth path needs it on. The
+// owner cannot be deleted, so "before setup" is the mocked ownerExists.
+const authControl = vi.hoisted(() => ({ enabled: true, setUp: true }));
 vi.mock('./auth', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('./auth')>();
-	return { ...actual, authEnabled: () => authControl.enabled };
+	return { ...actual, authEnabled: () => authControl.enabled, ownerExists: () => authControl.setUp && actual.ownerExists() };
 });
 
 const { guard, isCrossSiteRequest } = await import('./guard');
-const { createSession, setPassword, SESSION_COOKIE } = await import('./auth');
+const { createSession, destroySession, SESSION_COOKIE } = await import('./auth');
 const { db } = await import('./db');
-const { settings } = await import('./db/schema');
+const { users } = await import('./db/schema');
+const { owner, otherUser } = await import('../../../tests/helpers/auth');
 
 const HOST = '192.168.0.200:5173';
 
@@ -73,40 +75,55 @@ describe('cross-site requests', () => {
 describe('auth guard', () => {
 	beforeEach(() => {
 		authControl.enabled = true;
-		db.delete(settings).where(eq(settings.key, 'auth.password_hash')).run();
+		authControl.setUp = true;
+		owner();
 	});
 
-	it('sends everyone to setup until a password exists', () => {
+	it('sends everyone to setup until the owner account exists', () => {
+		authControl.setUp = false;
 		expect(outcome(event('/'))).toEqual({ redirect: '/setup' });
 		expect(outcome(event('/login'))).toEqual({ redirect: '/setup' });
 		expect(outcome(event('/setup'))).toBeNull();
 	});
 
 	it('sends visitors without a session to login, remembering where they were going', () => {
-		setPassword('correct-horse');
 		expect(outcome(event('/settings?tab=x'))).toEqual({ redirect: '/login?next=%2Fsettings%3Ftab%3Dx' });
 		expect(outcome(event('/login'))).toBeNull();
 		expect(outcome(event('/setup'))).toBeNull();
 	});
 
-	it('lets a valid session through and sends it away from the login page', () => {
-		setPassword('correct-horse');
-		const session = createSession('test').id;
+	it('lets a valid session through as its account and sends it away from the login page', () => {
+		const account = owner();
+		const session = createSession(account.id, 'test').id;
 		const e = event('/settings', { session });
 		expect(outcome(e)).toBeNull();
 		expect(e.locals.authenticated).toBe(true);
+		expect(e.locals.user).toEqual({ id: account.id, username: 'admin', isOwner: true });
 		expect(outcome(event('/login', { session }))).toEqual({ redirect: '/' });
 	});
 
 	it('treats an unknown session like none', () => {
-		setPassword('correct-horse');
 		expect(outcome(event('/settings', { session: 'made-up' }))).toEqual({ redirect: '/login?next=%2Fsettings' });
+	});
+
+	it('stops a session at once when it is deleted or its account is disabled', () => {
+		const session = createSession(owner().id, 'test').id;
+		destroySession(session);
+		expect(outcome(event('/settings', { session }))).toEqual({ redirect: '/login?next=%2Fsettings' });
+
+		const account = otherUser();
+		const other = createSession(account.id, 'test').id;
+		expect(outcome(event('/settings', { session: other }))).toBeNull();
+		db.update(users).set({ disabledAt: Date.now() }).where(eq(users.id, account.id)).run();
+		const e = event('/settings', { session: other });
+		expect(outcome(e)).toEqual({ redirect: '/login?next=%2Fsettings' });
+		expect(e.locals.user).toBeNull();
 	});
 
 	it('lets everything through when auth is off', () => {
 		authControl.enabled = false;
 		const e = event('/settings');
 		expect(outcome(e)).toBeNull();
-		expect(e.locals).toMatchObject({ authenticated: true, authRequired: false });
+		expect(e.locals).toMatchObject({ authenticated: true, authRequired: false, user: null });
 	});
 });

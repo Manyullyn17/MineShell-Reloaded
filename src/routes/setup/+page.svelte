@@ -8,8 +8,8 @@
 <div class="card panel">
 	<h1>Set up MineShell</h1>
 	<p class="muted">
-		Pick a password for this control panel. It is the only account, and it is what stands between
-		your servers and anything else on the network.
+		Pick a password for this control panel's owner account. It is what stands between your servers
+		and anything else on the network.
 	</p>
 
 	{#if form?.message}
@@ -18,14 +18,19 @@
 
 	<form method="POST">
 		<div class="field">
+			<label for="username">Username</label>
+			<!-- Shown (and sent) so a password manager saves the name with the password; the account is always this name. -->
+			<input id="username" name="username" autocomplete="username" value={data.username} readonly />
+		</div>
+		<div class="field">
 			<label for="password">Password</label>
 			<!-- svelte-ignore a11y_autofocus -->
-			<input id="password" name="password" type="password" minlength="8" autofocus required />
+			<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" autofocus required />
 			<p class="hint">At least 8 characters.</p>
 		</div>
 		<div class="field">
 			<label for="confirm">Password again</label>
-			<input id="confirm" name="confirm" type="password" minlength="8" required />
+			<input id="confirm" name="confirm" type="password" autocomplete="new-password" minlength="8" required />
 		</div>
 		<button class="button-primary" type="submit" style="width: 100%">Save and continue</button>
 	</form>

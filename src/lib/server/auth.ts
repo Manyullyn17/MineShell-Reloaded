@@ -1,16 +1,26 @@
 import crypto from 'node:crypto';
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, lt, ne, sql } from 'drizzle-orm';
 import { db } from './db';
-import { sessions, settings } from './db/schema';
+import { sessions, users } from './db/schema';
 import { hashPassword, verifyPassword } from './crypto';
 import { AUTH_ENABLED, DATA_DIR } from './config';
 
 /**
- * One admin password, one cookie. The design notes flagged auth as open: this is
- * the minimal hedge against network creep (a guest device, a stray port forward)
- * without turning a single-user LAN tool into an identity system. Set
- * MINESHELL_AUTH=off to skip it entirely.
+ * Accounts and sessions. The design notes flagged auth as open: it is on by
+ * default as the hedge against network creep (a guest device, a stray port
+ * forward). Set MINESHELL_AUTH=off to skip it entirely.
+ *
+ * One account so far: the owner, created by /setup (or migration 0019 from
+ * the old single admin password) and named "admin". More accounts and their
+ * permissions come later (docs/ROADMAP.md); the owner is told apart by its
+ * `isOwner` row, never by its name, so renaming it stays possible.
  */
+
+/** The owner's name. Fixed for now; a rename would only change the row. */
+export const OWNER_USERNAME = 'admin';
+
+/** Who a session belongs to, as the rest of MineShell sees it. */
+export type SessionUser = { id: string; username: string; isOwner: boolean };
 
 /**
  * Browsers keep cookies per host, not per port: a production MineShell on
@@ -24,7 +34,7 @@ export function sessionCookieName(dataDir: string): string {
 
 export const SESSION_COOKIE = sessionCookieName(DATA_DIR);
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const PASSWORD_KEY = 'auth.password_hash';
+const MIN_PASSWORD = 8;
 
 /**
  * Session cookie settings. Secure when the browser used https - directly, or
@@ -53,87 +63,155 @@ export function authEnabled(): boolean {
 	return AUTH_ENABLED;
 }
 
-export function passwordIsSet(): boolean {
-	const row = db.select().from(settings).where(eq(settings.key, PASSWORD_KEY)).get();
-	return Boolean(row?.value);
+/** Whether setup has run: before it there is no account to sign in to. */
+export function ownerExists(): boolean {
+	return db.select({ id: users.id }).from(users).where(eq(users.isOwner, true)).get() !== undefined;
 }
 
-export function setPassword(password: string): void {
-	if (password.length < 8) {
-		throw new Error('Use a password of at least 8 characters.');
+function checkNewPassword(password: string): void {
+	if (password.length < MIN_PASSWORD) {
+		throw new Error(`Use a password of at least ${MIN_PASSWORD} characters.`);
 	}
-	const value = hashPassword(password);
-	db.insert(settings)
-		.values({ key: PASSWORD_KEY, value })
-		.onConflictDoUpdate({ target: settings.key, set: { value } })
+}
+
+const toSessionUser = (row: { id: string; username: string; isOwner: boolean }): SessionUser => ({
+	id: row.id,
+	username: row.username,
+	isOwner: row.isOwner
+});
+
+/** /setup: the first account, the owner. Refused once there is one. */
+export function createOwner(password: string): SessionUser {
+	checkNewPassword(password);
+	const passwordHash = hashPassword(password);
+	return db.transaction((tx) => {
+		if (tx.select({ id: users.id }).from(users).where(eq(users.isOwner, true)).get()) {
+			throw new Error('MineShell is already set up.');
+		}
+		const now = Date.now();
+		const row = { id: crypto.randomUUID(), username: OWNER_USERNAME, passwordHash, isOwner: true, createdAt: now, updatedAt: now };
+		tx.insert(users).values(row).run();
+		return toSessionUser(row);
+	});
+}
+
+export function setPassword(userId: string, password: string): void {
+	checkNewPassword(password);
+	db.update(users)
+		.set({ passwordHash: hashPassword(password), updatedAt: Date.now() })
+		.where(eq(users.id, userId))
 		.run();
 }
 
-export function checkPassword(password: string): boolean {
-	const row = db.select().from(settings).where(eq(settings.key, PASSWORD_KEY)).get();
-	if (!row) return false;
+/** Compared against when the name is unknown, so a miss takes as long as a wrong password. */
+let decoyHash: string | null = null;
+
+/** The account a name and password sign in to; null for a wrong pair or a disabled account. */
+export function verifyLogin(username: string, password: string): SessionUser | null {
+	const row = db
+		.select()
+		.from(users)
+		.where(eq(sql`lower(${users.username})`, username.trim().toLowerCase()))
+		.get();
+	let matches: boolean;
 	try {
-		return verifyPassword(password, row.value);
+		matches = verifyPassword(password, row?.passwordHash ?? (decoyHash ??= hashPassword(crypto.randomUUID())));
 	} catch {
-		return false;
+		matches = false;
 	}
+	if (!row || !matches || row.disabledAt !== null) return null;
+	return toSessionUser(row);
 }
 
-export function createSession(userAgent: string | null): { id: string; expiresAt: number } {
+/**
+ * The only account's name while there is just one, for the login form to fill
+ * in: an install from before accounts never had to type one.
+ */
+export function soleUsername(): string | null {
+	const rows = db.select({ username: users.username }).from(users).limit(2).all();
+	return rows.length === 1 ? rows[0].username : null;
+}
+
+export function createSession(userId: string, userAgent: string | null): { id: string; expiresAt: number } {
 	pruneSessions();
 	const id = crypto.randomBytes(32).toString('base64url');
 	const expiresAt = Date.now() + SESSION_TTL_MS;
 	db.insert(sessions)
-		.values({ id, createdAt: Date.now(), expiresAt, userAgent })
+		.values({ id, userId, createdAt: Date.now(), expiresAt, userAgent })
 		.run();
 	return { id, expiresAt };
 }
 
-export function sessionValid(id: string | undefined): boolean {
-	if (!id) return false;
-	const row = db.select().from(sessions).where(eq(sessions.id, id)).get();
-	if (!row) return false;
+/**
+ * The account a session cookie signs in as: null when the session is unknown,
+ * expired, or its account is disabled. Read on every request, so a deleted
+ * session or a disabled account stops working at once.
+ */
+export function sessionUser(id: string | undefined): SessionUser | null {
+	if (!id) return null;
+	const row = db
+		.select({ expiresAt: sessions.expiresAt, id: users.id, username: users.username, isOwner: users.isOwner, disabledAt: users.disabledAt })
+		.from(sessions)
+		.innerJoin(users, eq(users.id, sessions.userId))
+		.where(eq(sessions.id, id))
+		.get();
+	if (!row) return null;
 	if (row.expiresAt < Date.now()) {
 		db.delete(sessions).where(eq(sessions.id, id)).run();
-		return false;
+		return null;
 	}
-	return true;
+	return row.disabledAt === null ? toSessionUser(row) : null;
 }
 
 export function destroySession(id: string | undefined): void {
 	if (id) db.delete(sessions).where(eq(sessions.id, id)).run();
 }
 
-export function destroyAllSessions(): void {
-	db.delete(sessions).run();
+/** Signs an account out everywhere, except the session given in `keep` (the one asking). */
+export function destroyUserSessions(userId: string, keep?: string): void {
+	db.delete(sessions)
+		.where(keep ? and(eq(sessions.userId, userId), ne(sessions.id, keep)) : eq(sessions.userId, userId))
+		.run();
 }
 
 function pruneSessions(): void {
 	db.delete(sessions).where(lt(sessions.expiresAt, Date.now())).run();
 }
 
-/** Simple per-IP throttle so the login form is not worth brute-forcing. */
+/**
+ * Failed sign-ins are counted per address (10 in 15 minutes) and per account
+ * name (50): the per-account limit catches guessing spread over many
+ * addresses, and is high enough that someone else cannot easily lock the
+ * owner out by failing on purpose.
+ */
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 15 * 60_000;
-const MAX_ATTEMPTS = 10;
+const MAX_PER_IP = 10;
+const MAX_PER_ACCOUNT = 50;
 
-export function loginThrottled(ip: string): boolean {
-	const entry = attempts.get(ip);
-	if (!entry || entry.resetAt < Date.now()) return false;
-	return entry.count >= MAX_ATTEMPTS;
+const ipKey = (ip: string) => `ip:${ip}`;
+const accountKey = (username: string) => `user:${username.trim().toLowerCase()}`;
+
+function failures(key: string): number {
+	const entry = attempts.get(key);
+	return entry && entry.resetAt >= Date.now() ? entry.count : 0;
 }
 
-export function recordFailedLogin(ip: string): void {
-	const entry = attempts.get(ip);
-	if (!entry || entry.resetAt < Date.now()) {
-		attempts.set(ip, { count: 1, resetAt: Date.now() + WINDOW_MS });
-	} else {
-		entry.count += 1;
+export function loginThrottled(ip: string, username: string): boolean {
+	return failures(ipKey(ip)) >= MAX_PER_IP || failures(accountKey(username)) >= MAX_PER_ACCOUNT;
+}
+
+export function recordFailedLogin(ip: string, username: string): void {
+	for (const key of [ipKey(ip), accountKey(username)]) {
+		const entry = attempts.get(key);
+		if (!entry || entry.resetAt < Date.now()) attempts.set(key, { count: 1, resetAt: Date.now() + WINDOW_MS });
+		else entry.count += 1;
 	}
 }
 
+/** After a successful sign-in: that address starts over. The account's count stays, since others may be guessing. */
 export function clearLoginAttempts(ip: string): void {
-	attempts.delete(ip);
+	attempts.delete(ipKey(ip));
 }
 
 export { and };

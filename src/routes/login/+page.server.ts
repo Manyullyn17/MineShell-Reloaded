@@ -2,39 +2,42 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	SESSION_COOKIE,
-	checkPassword,
 	clearLoginAttempts,
 	createSession,
 	destroySession,
 	loginThrottled,
-	passwordIsSet,
+	ownerExists,
 	recordFailedLogin,
-	sessionCookieOptions
+	sessionCookieOptions,
+	soleUsername,
+	verifyLogin
 } from '#lib/server/auth.js';
 import { sameOriginPath } from '#lib/shared/links.js';
 
 export const load: PageServerLoad = async ({ url }) => {
-	if (!passwordIsSet()) redirect(303, '/setup');
-	return { next: sameOriginPath(url.searchParams.get('next'), url.origin) };
+	if (!ownerExists()) redirect(303, '/setup');
+	return { next: sameOriginPath(url.searchParams.get('next'), url.origin), username: soleUsername() };
 };
 
 export const actions: Actions = {
 	login: async ({ request, cookies, getClientAddress, url }) => {
 		const ip = getClientAddress();
-		if (loginThrottled(ip)) {
-			return fail(429, { message: 'Too many attempts. Wait a few minutes and try again.' });
-		}
-
 		const form = await request.formData();
+		const username = String(form.get('username') ?? '');
 		const password = String(form.get('password') ?? '');
 
-		if (!checkPassword(password)) {
-			recordFailedLogin(ip);
-			return fail(401, { message: 'That password does not match.' });
+		if (loginThrottled(ip, username)) {
+			return fail(429, { message: 'Too many attempts. Wait a few minutes and try again.', username });
+		}
+
+		const user = verifyLogin(username, password);
+		if (!user) {
+			recordFailedLogin(ip, username);
+			return fail(401, { message: 'That username and password do not match.', username });
 		}
 
 		clearLoginAttempts(ip);
-		const session = createSession(request.headers.get('user-agent'));
+		const session = createSession(user.id, request.headers.get('user-agent'));
 		cookies.set(SESSION_COOKIE, session.id, sessionCookieOptions(request, url));
 
 		// Only ever back into MineShell: "//evil.example" also starts with "/".

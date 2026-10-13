@@ -33,7 +33,7 @@ overwritten), sets it up as the systemd user service `mineshell` that starts at 
 starts it on port 3000. Run it again to update. Options, the layout and uninstalling:
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-Open the app, set an admin password on first visit, and add a server.
+Open the app, set the owner account's password on first visit (you sign in as `admin`), and add a server.
 
 ## Run from a checkout
 

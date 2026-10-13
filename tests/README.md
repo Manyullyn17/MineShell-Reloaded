@@ -142,6 +142,11 @@ expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing le
 starts (`start()` binds them to check they are free). Each Vitest worker gets its own block
 below the ephemeral range; never pick ports by pid or at random.
 
+`tests/helpers/auth.ts`: `owner()`, the owner account with `OWNER_PASSWORD` (made once: the
+database will not delete an owner, so it is reused and its password put back), and
+`otherUser({ username, disabledAt })` for a second account. A test that needs "no account yet"
+mocks `ownerExists` (`guard.test.ts`).
+
 `tests/helpers/instances.ts`:
 
 | Helper | Use |
@@ -251,3 +256,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A server's Settings saved and deleted the JVM flag presets every server shares | `routes/settings/presets.test.ts` |
 | Saving memory went through the same action as the Java path, JVM flags and launch arguments | `routes/instances/[id]/settings/runtime.test.ts` |
 | The server list's start/stop, pin and tag buttons named their server only in the form body, not in the address | `routes/instances/[id]/tags.test.ts` |
+| (feature) Accounts: the owner `admin`, sign-in by name, sessions per account, a disabled account or deleted session stops at once, the owner cannot be deleted/demoted/disabled, throttle per address and per name | `auth.test.ts`, `guard.test.ts` |
+| (feature) Migration 0019 turns the old admin password into the owner and keeps its sessions | `db/users-migration.test.ts` |
+| "Sign out every other device" on a password change also signed out the device asking | `auth.test.ts` |

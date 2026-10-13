@@ -19,9 +19,10 @@ mkdir -p "$stage/scripts" "$stage/src/lib/server" "$stage/docs"
 
 cp -r build "$stage/build"
 cp package.json package-lock.json README.md LICENSE .env.example "$stage/"
-cp scripts/setup.mjs scripts/doctor.mjs scripts/install.sh "$stage/scripts/"
-# setup.mjs writes the template unit from the same module the app uses.
-cp src/lib/server/unit-template.js "$stage/src/lib/server/"
+cp scripts/setup.mjs scripts/doctor.mjs scripts/reset-password.mjs scripts/install.sh "$stage/scripts/"
+# setup.mjs writes the template unit from the same module the app uses, and
+# reset-password.mjs hashes as the app does.
+cp src/lib/server/unit-template.js src/lib/server/passwordhash.js "$stage/src/lib/server/"
 cp docs/DEPLOYMENT.md "$stage/docs/"
 echo "$version" > "$stage/VERSION"
 

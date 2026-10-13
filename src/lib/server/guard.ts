@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { authEnabled, passwordIsSet, sessionValid, SESSION_COOKIE } from './auth';
+import { authEnabled, ownerExists, sessionUser, SESSION_COOKIE } from './auth';
 
 /**
  * Every request's access decision, in one place (hooks.server.ts only calls
@@ -53,18 +53,20 @@ export function guard(event: GuardEvent): Response | null {
 
 	const required = authEnabled();
 	event.locals.authRequired = required;
+	event.locals.user = null;
 	if (!required) {
 		event.locals.authenticated = true;
 		return null;
 	}
 
-	event.locals.authenticated = sessionValid(event.cookies.get(SESSION_COOKIE));
+	event.locals.user = sessionUser(event.cookies.get(SESSION_COOKIE));
+	event.locals.authenticated = event.locals.user !== null;
 	const pathname = event.url.pathname;
 	const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-	// A fresh install has no password yet, so send the first visitor to setup.
+	// A fresh install has no account yet, so send the first visitor to setup.
 	// (In SvelteKit 2, redirect() throws by itself.)
-	if (!passwordIsSet() && pathname !== '/setup') redirect(303, '/setup');
+	if (!ownerExists() && pathname !== '/setup') redirect(303, '/setup');
 	if (!event.locals.authenticated && !isPublic) {
 		redirect(303, `/login?next=${encodeURIComponent(pathname + event.url.search)}`);
 	}

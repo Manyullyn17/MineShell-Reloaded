@@ -623,10 +623,18 @@ is refused (`guard.ts`). Only the host is compared, against `Host` and `X-Forwar
 because MineShell is reached by raw IP, other hostnames and through TLS-terminating proxies;
 SvelteKit's own full-origin check is turned off for that reason.
 
-**Auth.** A single admin password, scrypt-hashed, with session cookies and a per-IP
-attempt throttle. The original notes left this open, wondering whether LAN-only made it
-unnecessary; it is on by default because "LAN-only" tends to stop being true — a guest
-device, an IoT box, a Tailscale exit node — and this application can delete a world.
+**Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
+throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
+failing on purpose does not easily lock the owner out). The guard reads the session's account
+on every request, so a deleted session or a disabled account stops at once. So far there is
+one account, the owner, named `admin`: created by /setup, or by migration 0019 from the old
+single admin password (whose sessions it kept). The owner is the row with `is_owner`, never a
+name; the database's triggers refuse to delete, demote or disable it, and a unique index allows
+one. `npm run reset-password` gives it a new password from the shell (DEPLOYMENT,
+Troubleshooting). Further accounts and per-server permissions are planned. The original notes
+left auth open, wondering whether LAN-only made it unnecessary; it is on by default because
+"LAN-only" tends to stop being true — a guest device, an IoT box, a Tailscale exit node — and
+this application can delete a world.
 `MINESHELL_AUTH=off` disables it and says so plainly on the settings page. The cookie's
 name carries a hash of the data folder: browsers keep cookies per host, not per port, so
 two MineShells on one machine (production and `npm run dev`) otherwise signed each other out.

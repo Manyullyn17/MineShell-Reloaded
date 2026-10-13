@@ -50,7 +50,7 @@ import {
 	removeManagedJava,
 	startJavaDownload
 } from '#lib/server/javadownload.js';
-import { authEnabled, destroyAllSessions, setPassword } from '#lib/server/auth.js';
+import { authEnabled, destroyUserSessions, SESSION_COOKIE, setPassword } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
 import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
@@ -104,7 +104,7 @@ async function playitOverview() {
 	};
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const systemd = await probeSystemd();
 	return {
 		paths: {
@@ -121,6 +121,7 @@ export const load: PageServerLoad = async () => {
 		/** Saved JVM flag presets; the built-in ones are not edited. */
 		jvmPresets: listPresets().filter((p) => !p.builtIn),
 		authEnabled: authEnabled(),
+		username: locals.user?.username ?? null,
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
 		playit: {
 			linked: linkedAgent().agentId !== null,
@@ -386,14 +387,17 @@ export const actions: Actions = {
 		}
 	},
 
-	password: async ({ request }) => {
+	/** The signed-in account's own password. */
+	password: async ({ request, locals, cookies }) => {
+		if (!locals.user) return fail(400, { ok: false, message: 'Sign-in is off (MINESHELL_AUTH=off): there is no account to change.' });
 		const form = await request.formData();
 		const password = String(form.get('password') ?? '');
 		const confirm = String(form.get('confirm') ?? '');
 		if (password !== confirm) return fail(400, { ok: false, message: 'The two passwords do not match.' });
 		try {
-			setPassword(password);
-			if (form.get('signOutEverywhere') === 'on') destroyAllSessions();
+			setPassword(locals.user.id, password);
+			// "Every other device": the session asking stays signed in.
+			if (form.get('signOutEverywhere') === 'on') destroyUserSessions(locals.user.id, cookies.get(SESSION_COOKIE));
 			return { ok: true, message: 'Password updated.' };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save.' });

@@ -281,13 +281,46 @@ export const operations = sqliteTable('operations', {
 	startedAt: integer('started_at').notNull()
 });
 
+/**
+ * Accounts (auth.ts). The owner (`isOwner`, at most one) cannot be deleted,
+ * demoted or disabled: migration 0019's triggers refuse it below the app too.
+ * Identified by `id`, never by name.
+ */
+export const users = sqliteTable(
+	'users',
+	{
+		id: text('id').primaryKey(),
+		username: text('username').notNull(),
+		passwordHash: text('password_hash').notNull(),
+		isOwner: integer('is_owner', { mode: 'boolean' }).notNull().default(false),
+		/** Set while the account may not sign in. */
+		disabledAt: integer('disabled_at'),
+		createdAt: integer('created_at').notNull(),
+		updatedAt: integer('updated_at').notNull()
+	},
+	(t) => ({
+		uniqueName: uniqueIndex('users_username_idx').on(sql`lower(${t.username})`),
+		oneOwner: uniqueIndex('users_one_owner_idx').on(t.isOwner).where(sql`${t.isOwner} = 1`)
+	})
+);
+
+export type User = typeof users.$inferSelect;
+
 /** Login sessions. Only used when MINESHELL_AUTH is on. */
-export const sessions = sqliteTable('sessions', {
-	id: text('id').primaryKey(),
-	createdAt: integer('created_at').notNull(),
-	expiresAt: integer('expires_at').notNull(),
-	userAgent: text('user_agent')
-});
+export const sessions = sqliteTable(
+	'sessions',
+	{
+		id: text('id').primaryKey(),
+		/** Null only in rows from before accounts; migration 0019 gave them the owner. */
+		userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+		createdAt: integer('created_at').notNull(),
+		expiresAt: integer('expires_at').notNull(),
+		userAgent: text('user_agent')
+	},
+	(t) => ({
+		byUser: index('sessions_user_idx').on(t.userId)
+	})
+);
 
 /** Append-only record of what MineShell did, so surprises are explainable. */
 export const auditLog = sqliteTable(
