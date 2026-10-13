@@ -770,7 +770,9 @@ its tab is closed, so the search can look through all of them. Things that act a
 (installing a loader version, a pack change, Cleanroom, the icon, presets, scheduled
 commands, copy and delete) keep their own buttons. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
-preset" posts to `/settings?/savePreset`, and only MineShell settings deletes one.
+preset" posts to `/settings?/savePreset`, and only MineShell settings edits or deletes one.
+A saved preset's id is made from its first name and kept through renames (the defaults for
+new servers refer to it); saving under an existing name replaces that preset.
 A preset's flags can depend on the server's Java (`presetFlags`, `minJava`): ZGC needs 15+,
 and `-XX:+ZGenerational` goes in only on 21-23 (17 refuses to start with it, 24+ warns that
 it is ignored). Applying refuses a preset the server's Java cannot run; a new server whose

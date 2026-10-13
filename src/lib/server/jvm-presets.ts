@@ -184,30 +184,58 @@ export function stripJava8OnlyFlags(flags: string): { flags: string; removed: st
 	return { flags: kept.join(' '), removed };
 }
 
-export function saveCustomPreset(name: string, flags: string): JvmPreset {
+/** A preset name that is free: not a built-in's, not another saved one's (`exceptId` is the one being edited). */
+function checkName(name: string, custom: StoredPreset[], exceptId: string | null): string {
 	const trimmed = name.trim();
 	if (!trimmed) throw new Error('A preset needs a name.');
-
-	const custom = readCustom();
-	const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-	// The id is made from the name, so a name of only symbols would share one.
-	if (!slug) throw new Error('A preset name needs a letter or a digit.');
-	const id = `custom:${slug}`;
-	// Saved ids never equal a built-in's (custom: prefix); the names can.
-	if (BUILT_IN_PRESETS.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
+	const same = (other: string) => other.toLowerCase() === trimmed.toLowerCase();
+	if (BUILT_IN_PRESETS.some((p) => same(p.name))) {
 		throw new Error('That is the name of a built-in preset. Pick another.');
 	}
+	if (custom.some((p) => p.id !== exceptId && same(p.name))) {
+		throw new Error('Another saved preset has that name.');
+	}
+	return trimmed;
+}
 
+/**
+ * Saves flags as a preset. A saved preset of the same name is replaced and
+ * keeps its id; otherwise the id comes from the name and never changes, since
+ * the defaults for new servers refer to it.
+ */
+export function saveCustomPreset(name: string, flags: string, description = ''): JvmPreset {
+	const custom = readCustom();
+	const existing = custom.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
+	const trimmed = checkName(name, custom, existing?.id ?? null);
+
+	let id = existing?.id;
+	if (!id) {
+		const slug = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+		// The id is made from the name, so a name of only symbols would share one.
+		if (!slug) throw new Error('A preset name needs a letter or a digit.');
+		// A renamed preset keeps its old id, which a new name can map to again.
+		id = `custom:${slug}`;
+		for (let n = 2; custom.some((p) => p.id === id); n++) id = `custom:${slug}-${n}`;
+	}
+
+	const entry: StoredPreset = { id, name: trimmed, description: description.trim(), flags: stripMemoryFlags(flags) };
+	writeCustom([...custom.filter((p) => p.id !== id), entry]);
+	return { ...entry, builtIn: false };
+}
+
+/** Changes a saved preset in place; its id stays, so the defaults that name it keep working. */
+export function updateCustomPreset(id: string, fields: { name: string; description: string; flags: string }): JvmPreset {
+	const custom = readCustom();
+	const index = custom.findIndex((p) => p.id === id);
+	if (index < 0) throw new Error('That preset no longer exists.');
 	const entry: StoredPreset = {
 		id,
-		name: trimmed,
-		description: 'Saved preset.',
-		flags: stripMemoryFlags(flags)
+		name: checkName(fields.name, custom, id),
+		description: fields.description.trim(),
+		flags: stripMemoryFlags(fields.flags)
 	};
-
-	const next = custom.filter((p) => p.id !== id);
-	next.push(entry);
-	writeCustom(next);
+	custom[index] = entry;
+	writeCustom(custom);
 	return { ...entry, builtIn: false };
 }
 

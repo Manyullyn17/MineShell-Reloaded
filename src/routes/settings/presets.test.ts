@@ -45,6 +45,31 @@ describe('JVM flag presets', () => {
 		deleteCustomPreset(listPresets().find((p) => p.name === 'Low pause')!.id);
 	});
 
+	it('are edited in place: renaming keeps the id the defaults for new servers refer to', async () => {
+		expect(await post(actions.savePreset, { presetName: 'Before', presetDescription: ' For big packs ', jvmArgs: '-XX:+UseG1GC' })).toMatchObject({ ok: true });
+		const saved = listPresets().find((p) => p.name === 'Before')!;
+		expect(saved).toMatchObject({ id: 'custom:before', description: 'For big packs' });
+
+		expect(await post(actions.updatePreset, { presetId: saved.id, presetName: 'After', presetDescription: '', jvmArgs: '-Xmx8G -XX:+UseZGC' })).toMatchObject({ ok: true });
+		expect(listPresets().find((p) => p.id === saved.id)).toMatchObject({ name: 'After', description: '', flags: '-XX:+UseZGC' });
+
+		// The old name maps to the same id again: the new preset gets another one.
+		await post(actions.savePreset, { presetName: 'Before', jvmArgs: '-XX:+UseG1GC' });
+		const again = listPresets().find((p) => p.name === 'Before')!;
+		expect(again.id).toBe('custom:before-2');
+		// Saving under an existing name replaces that preset, id and all.
+		await post(actions.savePreset, { presetName: 'after', jvmArgs: '-XX:+UseParallelGC' });
+		expect(listPresets().filter((p) => p.id === saved.id)).toMatchObject([{ name: 'after', flags: '-XX:+UseParallelGC' }]);
+
+		// An edit cannot take another preset's name, nor a built-in's.
+		expect(await post(actions.updatePreset, { presetId: saved.id, presetName: 'BEFORE', presetDescription: '', jvmArgs: '' })).toMatchObject({ status: 400 });
+		expect(await post(actions.updatePreset, { presetId: saved.id, presetName: 'Minimal', presetDescription: '', jvmArgs: '' })).toMatchObject({ status: 400 });
+		expect(await post(actions.updatePreset, { presetId: 'custom:gone', presetName: 'X', presetDescription: '', jvmArgs: '' })).toMatchObject({ status: 400 });
+
+		deleteCustomPreset(saved.id);
+		deleteCustomPreset(again.id);
+	});
+
 	it('need a name', async () => {
 		expect(await post(actions.savePreset, { presetName: ' ', jvmArgs: '-XX:+UseG1GC' })).toMatchObject({ status: 400 });
 		// The id comes from the name: "!!!" and "???" would be one preset.

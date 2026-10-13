@@ -58,6 +58,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			addJava: 'globalAdmin',
 			removeJava: 'globalAdmin',
 			savePreset: 'globalAdmin',
+			updatePreset: 'globalAdmin',
 			deletePreset: 'globalAdmin',
 			snapshots: 'globalAdmin',
 			installUnit: 'globalAdmin',

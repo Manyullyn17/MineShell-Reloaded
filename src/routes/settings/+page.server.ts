@@ -83,7 +83,7 @@ import { itemIconsEnabled, setItemIcons } from '#lib/server/itemicons.js';
 import { MAX_TRASH_DAYS, setTrashDays, trashDays } from '#lib/server/trash.js';
 import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js';
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
-import { deleteCustomPreset, listPresets, saveCustomPreset } from '#lib/server/jvm-presets.js';
+import { deleteCustomPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
 
 /**
  * The agent, and each server's tunnel next to the ones made on playit's
@@ -208,6 +208,16 @@ function javaDownloads() {
 	};
 }
 
+/**
+ * The installed Java versions a preset's flags do not start on. A preset is
+ * saved either way (one for newer Java is fine to have); applying it checks
+ * again against the server's own Java.
+ */
+async function refusalNote(flags: string): Promise<string> {
+	const refused = await javasRefusing(flags);
+	return refused.map((r) => ` Java ${r.major} does not start with it: ${r.error}`).join('');
+}
+
 export const actions: Actions = {
 	downloadJava: async ({ request }) => {
 		const form = await request.formData();
@@ -300,12 +310,29 @@ export const actions: Actions = {
 	savePreset: async ({ request }) => {
 		const form = await request.formData();
 		try {
-			const preset = saveCustomPreset(String(form.get('presetName') ?? ''), String(form.get('jvmArgs') ?? ''));
-			// Saved either way: a preset for newer Java is fine to have. Applying
-			// it checks again against the server's own Java.
-			const refused = await javasRefusing(preset.flags);
-			const note = refused.map((r) => ` Java ${r.major} does not start with it: ${r.error}`).join('');
-			return { ok: true, message: `Saved "${preset.name}". It is available on every server.${note}` };
+			const preset = saveCustomPreset(
+				String(form.get('presetName') ?? ''),
+				String(form.get('jvmArgs') ?? ''),
+				String(form.get('presetDescription') ?? '')
+			);
+			return { ok: true, message: `Saved "${preset.name}". It is available on every server.${await refusalNote(preset.flags)}` };
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save that preset.' });
+		}
+	},
+
+	updatePreset: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			const preset = updateCustomPreset(String(form.get('presetId') ?? ''), {
+				name: String(form.get('presetName') ?? ''),
+				description: String(form.get('presetDescription') ?? ''),
+				flags: String(form.get('jvmArgs') ?? '')
+			});
+			return {
+				ok: true,
+				message: `Saved "${preset.name}". Servers that applied it keep their flags until it is applied again.${await refusalNote(preset.flags)}`
+			};
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save that preset.' });
 		}

@@ -18,6 +18,8 @@
 	const tab = $derived(page.url.searchParams.get('tab') ?? 'system');
 	let showUnit = $state(false);
 	let manualJava = $state('');
+	/** The saved preset whose edit form is open. */
+	let editingPreset = $state<string | null>(null);
 	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
 	// svelte-ignore state_referenced_locally
 	let snap = $state({ ...data.snapshots });
@@ -247,14 +249,48 @@
 		<ul class="saved-presets">
 			{#each data.jvmPresets as preset (preset.id)}
 				<li>
-					<div>
-						<span>{preset.name}</span>
-						<code class="small">{preset.flags || '(memory settings only)'}</code>
-					</div>
-					<form method="POST" action="?/deletePreset" use:enhance>
-						<input type="hidden" name="presetId" value={preset.id} />
-						<button class="button-quiet" type="submit">Delete</button>
-					</form>
+					{#if editingPreset === preset.id}
+						<form
+							method="POST"
+							action="?/updatePreset"
+							class="preset-edit"
+							use:enhance={() => async ({ result, update }) => {
+								if (result.type === 'success') editingPreset = null;
+								await update({ reset: false });
+							}}
+						>
+							<input type="hidden" name="presetId" value={preset.id} />
+							<div class="field">
+								<label for="edit-name-{preset.id}">Name</label>
+								<input id="edit-name-{preset.id}" name="presetName" value={preset.name} />
+							</div>
+							<div class="field">
+								<label for="edit-description-{preset.id}">Description <span class="muted">(optional)</span></label>
+								<input id="edit-description-{preset.id}" name="presetDescription" value={preset.description} />
+							</div>
+							<div class="field">
+								<label for="edit-flags-{preset.id}">Flags</label>
+								<textarea id="edit-flags-{preset.id}" name="jvmArgs" rows="2" class="mono" spellcheck="false">{preset.flags}</textarea>
+							</div>
+							<div class="actions">
+								<button class="button-primary" type="submit">Save</button>
+								<button class="button-quiet" type="button" onclick={() => (editingPreset = null)}>Cancel</button>
+							</div>
+						</form>
+					{:else}
+						<div>
+							<span>{preset.name}</span>
+							{#if preset.description}<span class="small muted">{preset.description}</span>{/if}
+							<code class="small">{preset.flags || '(memory settings only)'}</code>
+						</div>
+						<div class="actions">
+							<button class="button-quiet" type="button" onclick={() => (editingPreset = preset.id)}>Edit</button>
+							<form method="POST" action="?/deletePreset" use:enhance>
+								<input type="hidden" name="presetId" value={preset.id} />
+								<button class="button-quiet" type="submit">Delete</button>
+							</form>
+						</div>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -263,6 +299,10 @@
 		<div class="field">
 			<label for="preset-name">Name</label>
 			<input id="preset-name" name="presetName" placeholder="My tuning" />
+		</div>
+		<div class="field">
+			<label for="preset-description">Description <span class="muted">(optional)</span></label>
+			<input id="preset-description" name="presetDescription" placeholder="What it is for, shown when picking it" />
 		</div>
 		<div class="field">
 			<label for="preset-flags">Flags</label>
@@ -957,7 +997,7 @@
 		border-bottom: 1px solid var(--line);
 	}
 
-	.saved-presets li div {
+	.saved-presets li > div {
 		display: grid;
 		gap: 0.15rem;
 		min-width: 0;
@@ -970,6 +1010,17 @@
 	.preset-form {
 		margin-top: var(--space-4);
 		max-width: 40rem;
+	}
+
+	.saved-presets .preset-edit {
+		flex: 1;
+		max-width: 40rem;
+	}
+
+	.saved-presets .actions {
+		display: flex;
+		gap: var(--space-2);
+		align-items: center;
 	}
 
 	.inline-form {

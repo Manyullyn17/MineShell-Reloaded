@@ -282,3 +282,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The ZGC preset's `-XX:+ZGenerational` stopped Java 17 servers from starting (and ZGC Java 8 ones), also as the default for new servers | `server/jvm-presets.test.ts`, `routes/instances/[id]/settings/runtime.test.ts`, `flows/instance-defaults.test.ts` |
 | (feature) JVM flags a server's Java does not start with are refused when saved, in Java's words; a saved preset names the installed Java versions that refuse it | `routes/instances/[id]/settings/runtime.test.ts`, `routes/settings/presets.test.ts` |
 | A saved preset could take a built-in preset's name (shown twice in the picker), and names of only symbols shared one id | `routes/settings/presets.test.ts` |
+| (feature) Saved presets are edited in place (name, description, flags); a rename keeps the id new-server defaults refer to | `routes/settings/presets.test.ts` |
