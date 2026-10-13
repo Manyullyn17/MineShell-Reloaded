@@ -5,6 +5,7 @@
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { describeState, formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
+	import { isStopped, matchesDashboardFilters, needsAttention } from '#lib/shared/dashboard-filters.js';
 
 	let { data, form } = $props();
 
@@ -24,33 +25,17 @@
 		return () => clearInterval(timer);
 	});
 
-	/** Something on the card asks to be looked at: a crash, a failed setup, a warning. */
-	const needsAttention = (instance: (typeof data.instances)[number]) =>
-		describeState(instance.active, instance.sub).tone === 'failed' ||
-		instance.status === 'failed' ||
-		!!instance.statusMessage ||
-		!instance.eulaAccepted ||
-		!!instance.javaWarning;
 	const attention = $derived(data.instances.filter(needsAttention).length);
 	const minecraftVersions = $derived([...new Set(data.instances.map((instance) => instance.minecraftVersion))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true })));
 	const loaders = $derived([...new Map(data.instances.map((instance) => [instance.modloader, instance.modloaderLabel])).entries()].sort((a, b) => a[1].localeCompare(b[1])));
-	const isStopped = (instance: (typeof data.instances)[number]) => {
-		const tone = describeState(instance.active, instance.sub).tone;
-		return !instance.running && instance.status === 'ready' && tone !== 'busy' && tone !== 'failed';
-	};
 	const visibleInstances = $derived.by(() => {
-		const query = search.trim().toLocaleLowerCase();
-		return data.instances.filter((instance) => {
-			if (statusFilter === 'running' && !instance.running) return false;
-			if (statusFilter === 'stopped' && !isStopped(instance)) return false;
-			if (statusFilter === 'attention' && !needsAttention(instance)) return false;
-			if (selectedTagIds.length && !selectedTagIds.some((id) => instance.tags.some((tag) => tag.id === id))) return false;
-			if (selectedMinecraftVersions.length && !selectedMinecraftVersions.includes(instance.minecraftVersion)) return false;
-			if (selectedLoaders.length && !selectedLoaders.includes(instance.modloader)) return false;
-			if (!query) return true;
-			return [instance.name, instance.packName ?? '', instance.minecraftVersion, instance.modloaderLabel, ...instance.tags.map((tag) => tag.name)]
-				.some((value) => value.toLocaleLowerCase().includes(query));
-		});
+		return data.instances.filter((instance) => matchesDashboardFilters(instance, {
+			search,
+			status: statusFilter,
+			tagIds: selectedTagIds,
+			minecraftVersions: selectedMinecraftVersions,
+			loaders: selectedLoaders
+		}));
 	});
 	const selectedFilterCount = $derived(selectedTagIds.length + selectedMinecraftVersions.length + selectedLoaders.length);
 	const hasFilters = $derived(!!search.trim() || statusFilter !== 'all' || selectedFilterCount > 0);
@@ -177,6 +162,7 @@
 					</button>
 				{/each}
 			</div>
+			{#if hasFilters}<button class="button-quiet" type="button" onclick={clearFilters}>Clear filters</button>{/if}
 			<details class="tag-filter" bind:this={filterPanel}>
 				<summary>Filters{#if selectedFilterCount}<span class="count">{selectedFilterCount}</span>{/if}</summary>
 					<div class="tag-options">
@@ -203,7 +189,6 @@
 						</fieldset>
 				</div>
 			</details>
-			{#if hasFilters}<button class="button-quiet" type="button" onclick={clearFilters}>Clear filters</button>{/if}
 		</div>
 		{#if selectedFilterCount}
 			<div class="selected-tags" aria-label="Selected tag filters">
