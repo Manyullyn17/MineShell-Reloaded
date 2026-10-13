@@ -71,9 +71,10 @@ The fake is reset after every test.
 
 ## No network: recorded API responses
 
-`fetch` throws in tests too. Code that talks to Modrinth, CurseForge, the modpacks.ch mirror
-or loader metadata servers is tested against **real responses recorded once** and replayed
-offline:
+`fetch` throws in tests too, and `node:dns/promises` answers every name with a public
+documentation address (`downloadFile` checks where a host resolves before fetching). Code that
+talks to Modrinth, CurseForge, the modpacks.ch mirror or loader metadata servers is tested
+against **real responses recorded once** and replayed offline:
 
 ```ts
 import { useRecordedHttp, fetchCalls } from '../../../../tests/helpers/http';
@@ -276,3 +277,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) The audit log names the account a request ran as, through awaits, timers and tasks it started; MineShell's own work none | `requestcontext.test.ts` |
 | The overview sent each crash diagnosis's log line, and Forge's startup question in full, to accounts without console access | `routes/access-filtering.test.ts` |
 | A pack file's `../` path made MineShell write a download outside the server folder | `server/packs/index.test.ts` |
+| A pack's download URL (or a redirect from it) could point MineShell at loopback or private-network services | `server/download.test.ts` |

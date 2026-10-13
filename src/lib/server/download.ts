@@ -3,6 +3,8 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import crypto from 'node:crypto';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 import path from 'node:path';
 
 /** Small wrappers around fetch that every provider and installer shares. */
@@ -35,13 +37,65 @@ export type DownloadOptions = {
 	onProgress?: (received: number, total: number | null) => void;
 };
 
+/**
+ * Addresses a download must never reach: this machine, the local network,
+ * link-local (cloud metadata at 169.254.169.254) and the like. Node checks
+ * IPv4-mapped IPv6 addresses (::ffff:127.0.0.1) against the IPv4 rules.
+ */
+const NOT_PUBLIC = new net.BlockList();
+for (const [address, prefix] of [
+	['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16],
+	['172.16.0.0', 12], ['192.0.0.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15], ['224.0.0.0', 3]
+] as const) NOT_PUBLIC.addSubnet(address, prefix, 'ipv4');
+for (const [address, prefix] of [['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8]] as const) {
+	NOT_PUBLIC.addSubnet(address, prefix, 'ipv6');
+}
+
+export class BlockedDownloadError extends Error {}
+
+/**
+ * Refuses a URL that is not http(s) or whose host is, or resolves to, a
+ * non-public address. Download URLs come from pack files that anyone allowed
+ * to create a server can upload, so without this they could make MineShell
+ * fetch from services that only listen locally.
+ */
+export async function assertPublicUrl(url: string): Promise<void> {
+	const parsed = new URL(url);
+	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+		throw new BlockedDownloadError(`Refusing to download ${url}: only http and https links are allowed.`);
+	}
+	const host = parsed.hostname.replace(/^\[|\]$/g, '');
+	const addresses = net.isIP(host)
+		? [{ address: host, family: net.isIP(host) }]
+		: await dns.lookup(host, { all: true });
+	for (const { address, family } of addresses) {
+		if (NOT_PUBLIC.check(address, family === 6 ? 'ipv6' : 'ipv4')) {
+			throw new BlockedDownloadError(`Refusing to download ${url}: ${parsed.hostname} is not a public address.`);
+		}
+	}
+}
+
+/** Fetches a download, checking every redirect hop with assertPublicUrl. */
+async function fetchPublic(url: string): Promise<Response> {
+	let current = url;
+	for (let hop = 0; hop <= 10; hop++) {
+		await assertPublicUrl(current);
+		const res = await fetch(current, { headers: { 'User-Agent': USER_AGENT }, redirect: 'manual' });
+		const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
+		if (!location) return res;
+		await res.body?.cancel();
+		current = new URL(location, current).href;
+	}
+	throw new Error(`Download failed for ${url}: too many redirects.`);
+}
+
 export async function downloadFile(
 	url: string,
 	destination: string,
 	opts: DownloadOptions = {}
 ): Promise<void> {
 	await fs.mkdir(path.dirname(destination), { recursive: true });
-	const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+	const res = await fetchPublic(url);
 	if (!res.ok || !res.body) {
 		throw new Error(`Download failed (${res.status}) for ${url}`);
 	}

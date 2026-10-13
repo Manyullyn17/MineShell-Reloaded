@@ -17,7 +17,8 @@ import { fakeSpawn, forbidden, resetProcesses } from './helpers/process';
  * fakeProcesses() (tests/helpers/process.ts).
  *
  * Network: fetch throws; tests replay recorded API responses with
- * useRecordedHttp() (tests/helpers/http.ts).
+ * useRecordedHttp() (tests/helpers/http.ts). DNS lookups answer a fixed
+ * public address.
  */
 vi.mock('node:child_process', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('node:child_process')>();
@@ -34,6 +35,18 @@ vi.mock('node:child_process', async (importOriginal) => {
 });
 
 afterEach(() => resetProcesses());
+
+// Downloads check where a host resolves (download.ts, assertPublicUrl). Every
+// name resolves to a public documentation address instead of asking DNS;
+// download.test.ts makes it answer otherwise. One function for the whole run:
+// files that share modules (vite.config.ts) run this setup again, and a new
+// mock would not reach a download.ts loaded under an earlier file's.
+vi.mock('node:dns/promises', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('node:dns/promises')>();
+	const shared = globalThis as { __dnsLookup?: typeof actual.lookup };
+	const lookup = (shared.__dnsLookup ??= vi.fn(async () => [{ address: '203.0.113.10', family: 4 }]) as never);
+	return { ...actual, lookup, default: { ...actual, lookup } };
+});
 
 // No network either: fetch throws unless a test file replays recorded
 // responses with useRecordedHttp() (tests/helpers/http.ts).

@@ -614,6 +614,13 @@ Pack files are the uploader's: a `.mrpack` or file list naming a path that leave
 server folder is refused when parsed (`packPath`), and `downloadPackFiles` writes through
 `safeJoin` as well, since targets also come from CurseForge file names and the world mapping.
 
+**Downloads.** `downloadFile` takes only http(s) and refuses a host that is, or resolves to,
+a loopback, private, link-local or multicast address, checking every redirect hop itself
+(`redirect: 'manual'`): a pack's URLs would otherwise let anyone allowed to create a server
+make MineShell fetch from services only reachable from the host. The check resolves the name
+before fetch resolves it again, so DNS rebinding is not covered; pinning the address would need
+undici's Agent. Spark's upload URL (`bytebinUrl` in the server's Spark config) is not checked.
+
 **Secrets.** RCON passwords (and a CurseForge key set in Settings) are AES-256-GCM
 encrypted with a key in a `0600` file (`secret.key`) beside the database. Losing the key
 means regenerating RCON passwords, which a server's Settings can do (Network, "Generate a
