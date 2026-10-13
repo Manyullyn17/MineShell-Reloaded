@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
 import { authEnabled, ownerExists, sessionUser, SESSION_COOKIE } from './auth';
-import { loadAccess, REFUSED } from './access';
+import { loadAccess, NO_ACCESS_REASON } from './access';
 import { FULL_ACCESS, NO_ACCESS } from '#lib/shared/access.js';
 import { decide } from './access/check';
 
@@ -51,6 +51,12 @@ type GuardEvent = {
 const UNLISTED = 'MineShell has no access rule for that, so nobody may do it.';
 
 /**
+ * All an account given its password by someone else may reach until it picks
+ * its own: its account page (and the change there) and signing out.
+ */
+const FORCED_CHANGE_ROUTES = new Set(['/account', '/login']);
+
+/**
  * A refusal in the form the asker reads: an enhanced form gets an action
  * error (shown like any failed action), a script JSON, a browser text.
  */
@@ -83,7 +89,7 @@ function checkPolicy(event: GuardEvent): Response | null {
 		const from = event.url.pathname.replace(/\/__data\.json$/, '');
 		redirect(303, `/denied?${new URLSearchParams({ from, ...(decision.unlisted ? { unlisted: '1' } : {}) })}`);
 	}
-	return refused(event.request, decision.unlisted ? UNLISTED : REFUSED);
+	return refused(event.request, decision.unlisted ? UNLISTED : NO_ACCESS_REASON);
 }
 
 /**
@@ -118,5 +124,9 @@ export function guard(event: GuardEvent): Response | null {
 	}
 	// Only the page: signing out posts to /login?/logout, which this used to send home unrun.
 	if (event.locals.authenticated && pathname === '/login' && event.request.method === 'GET') redirect(303, '/');
+	if (event.locals.user?.mustChangePassword && !FORCED_CHANGE_ROUTES.has(event.route.id ?? '')) {
+		if (event.request.method === 'GET' && !pathname.startsWith('/api/')) redirect(303, '/account');
+		return refused(event.request, 'Pick your own password first, on your account page.');
+	}
 	return checkPolicy(event);
 }

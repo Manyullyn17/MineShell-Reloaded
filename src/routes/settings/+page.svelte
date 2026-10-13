@@ -490,25 +490,12 @@
 {:else if tab === 'security'}
 {#if data.authEnabled}
 	<section class="panel">
-		<h2>Your password</h2>
-		{#if data.username}<p class="muted">Signed in as <strong>{data.username}</strong>.</p>{/if}
-		<form method="POST" action="?/password" use:enhance>
-			<div class="grid-2">
-				<div class="field">
-					<label for="password">New password</label>
-					<input id="password" name="password" type="password" minlength="8" required />
-				</div>
-				<div class="field">
-					<label for="confirm">New password again</label>
-					<input id="confirm" name="confirm" type="password" minlength="8" required />
-				</div>
-			</div>
-			<div class="check field">
-				<input id="signOutEverywhere" name="signOutEverywhere" type="checkbox" checked />
-				<label for="signOutEverywhere">Sign out every other device</label>
-			</div>
-			<button class="button-primary" type="submit">Change password</button>
-		</form>
+		<h2>Sign-in</h2>
+		<p>
+			{#if data.username}Signed in as <strong>{data.username}</strong>.{/if}
+			Your password and where you are signed in are on <a href="/account">your account page</a>; other people's
+			accounts and what they may do are under <a href="/settings/users">Accounts</a>.
+		</p>
 	</section>
 {:else}
 	<section class="panel">

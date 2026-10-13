@@ -273,8 +273,8 @@ rule; servers made before October 2026 have theirs from 25575 up.
 As the account MineShell runs as, run `npm run reset-password` in a git checkout, or in the
 release folder (`~/mineshell/current` by default)
 `MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/reset-password.mjs`. It
-prints a new random password for `admin` and signs it out everywhere; pick your own under
-MineShell settings > Security. It needs nothing but access to MineShell's database, which
+prints a new random password for `admin` and signs it out everywhere; signing in with it asks
+for your own. It needs nothing but access to MineShell's database, which
 already allows anything.
 
 **`npm run doctor` says systemctl is unreachable.**

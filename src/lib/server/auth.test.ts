@@ -54,7 +54,7 @@ describe('sessionCookieName', () => {
 describe('accounts', () => {
 	it('signs in by name (any case) and password; a wrong pair, an unknown name or a disabled account gets nothing', () => {
 		const account = owner();
-		expect(verifyLogin('admin', OWNER_PASSWORD)).toEqual({ id: account.id, username: 'admin', isOwner: true });
+		expect(verifyLogin('admin', OWNER_PASSWORD)).toEqual({ id: account.id, username: 'admin', isOwner: true, mustChangePassword: false });
 		expect(verifyLogin(' Admin ', OWNER_PASSWORD)?.id).toBe(account.id);
 		expect(verifyLogin('admin', 'wrong-password')).toBeNull();
 		expect(verifyLogin('nobody', OWNER_PASSWORD)).toBeNull();

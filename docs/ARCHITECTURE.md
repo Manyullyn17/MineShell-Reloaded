@@ -626,13 +626,17 @@ SvelteKit's own full-origin check is turned off for that reason.
 **Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
 failing on purpose does not easily lock the owner out). The guard reads the session's account
-on every request, so a deleted session or a disabled account stops at once. So far there is
-one account, the owner, named `admin`: created by /setup, or by migration 0019 from the old
-single admin password (whose sessions it kept). The owner is the row with `is_owner`, never a
+on every request, so a deleted session or a disabled account stops at once. The owner, named
+`admin`, is created by /setup, or by migration 0019 from the old single admin password (whose
+sessions it kept); other accounts are added under MineShell settings > Accounts (`accounts.ts`).
+A new account or a reset one gets a random one-time password, shown once and kept only as a
+hash, and `must_change_password`: until it picks its own on `/account` (which asks for the
+current one), the guard lets it reach only that page and signing out. Disabling or resetting
+signs the account out everywhere. Who may change whom (`mayManage`): nobody changes the owner
+there, only the owner a global admin (or makes one), any global admin everyone else. The owner is the row with `is_owner`, never a
 name; the database's triggers refuse to delete, demote or disable it, and a unique index allows
 one. `npm run reset-password` gives it a new password from the shell (DEPLOYMENT,
-Troubleshooting). Adding further accounts is not built yet; what they may do is (Access,
-below). The original notes
+Troubleshooting); it forces a change too. What each account may do: Access, below. The original notes
 left auth open, wondering whether LAN-only made it unnecessary; it is on by default because
 "LAN-only" tends to stop being true — a guest device, an IoT box, a Tailscale exit node — and
 this application can delete a world.
@@ -669,8 +673,12 @@ log lines need `console.read`, and Spark's profile links `console.command`; Play
 link-up and routing, and tunnels made outside MineShell are the owner's (global admins see the
 status). A server the account may not see is "Another server" in port messages, and moving
 another server's port to make room needs `settings.edit` on it. A visitor who is not signed in
-has no access (`NO_ACCESS`), never the full access `MINESHELL_AUTH=off` gives. There is no way yet
-to add accounts or grant access.
+has no access (`NO_ACCESS`), never the full access `MINESHELL_AUTH=off` gives.
+
+Access is given on an account's page under Accounts: per server "No access", chosen permissions
+(grouped, the full-trust ones marked, player data as nobody's, every player's or chosen
+players' with a picker of the server's known players), or admin of the server. Choosing admin
+keeps the chosen permissions stored, so choosing them again later gives back the same.
 
 ---
 

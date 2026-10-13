@@ -3,19 +3,24 @@
 
 	let { data, children } = $props();
 
-	/** Tabs are links, so each one has an address; New server defaults is its own page. */
+	/** Tabs are links, so each one has an address; New server defaults and Accounts are pages of their own. */
 	const TABS = [
 		{ id: 'system', label: 'System' },
 		{ id: 'java', label: 'Java' },
 		{ id: 'snapshots', label: 'Snapshots' },
 		{ id: 'defaults', label: 'New server defaults', href: '/settings/defaults' },
+		{ id: 'accounts', label: 'Accounts', href: '/settings/users' },
 		{ id: 'integrations', label: 'Integrations' },
 		{ id: 'security', label: 'Security' },
 		{ id: 'updates', label: 'Updates' },
 		{ id: 'activity', label: 'Activity' }
 	];
 	const current = $derived(
-		page.url.pathname.startsWith('/settings/defaults') ? 'defaults' : (page.url.searchParams.get('tab') ?? 'system')
+		page.url.pathname.startsWith('/settings/defaults')
+			? 'defaults'
+			: page.url.pathname.startsWith('/settings/users')
+				? 'accounts'
+				: (page.url.searchParams.get('tab') ?? 'system')
 	);
 </script>
 

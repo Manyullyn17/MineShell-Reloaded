@@ -299,6 +299,8 @@ export const users = sqliteTable(
 		canCreate: integer('can_create', { mode: 'boolean' }).notNull().default(false),
 		/** Set while the account may not sign in. */
 		disabledAt: integer('disabled_at'),
+		/** Given a password by someone else: may do nothing until it picks its own (guard.ts). */
+		mustChangePassword: integer('must_change_password', { mode: 'boolean' }).notNull().default(false),
 		createdAt: integer('created_at').notNull(),
 		updatedAt: integer('updated_at').notNull()
 	},

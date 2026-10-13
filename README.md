@@ -191,6 +191,16 @@ default per Java version when several are installed.
 and shows it in the top bar; Settings > Updates has the release notes and installs it in
 place. MineShell restarts; the servers keep running.
 
+**Accounts.** Several people can use one MineShell (MineShell settings > Accounts). The owner
+(`admin`) and MineShell admins may do everything; anyone else is given access per server:
+everything on it (admin of that server), or chosen permissions - starting and stopping, the
+console, mods, settings, files, backups and more - with player data limited to every player or
+chosen ones. A new account or a reset password gets a one-time password the person replaces
+when they first sign in; accounts can be disabled and signed out everywhere. Everyone has an
+account page for their password and where they are signed in. Pages hold only the servers and
+details an account may see; for now, buttons it may not use are refused when pressed rather than
+hidden. Managing the playit.gg and CurseForge connections and updating MineShell are the owner's.
+
 ## What it does not do
 
 Backups elsewhere (another disk, another machine, the cloud) are not implemented: every

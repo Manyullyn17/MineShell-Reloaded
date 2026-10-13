@@ -42,6 +42,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 
 	// ------------------------------------------------------------ MineShell-wide
 	'/': { load: 'signedIn' },
+	// Your own password and sessions.
+	'/account': { load: 'signedIn', actions: { password: 'signedIn', signOutOthers: 'signedIn' } },
 	// Where a refused page sends the browser.
 	'/denied': { load: 'signedIn' },
 	'/tasks': { load: 'signedIn', actions: { cancel: handler('signedIn', "admin of the task's server; global admin for others") } },
@@ -71,12 +73,24 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			// Updating MineShell runs its installer.
 			checkUpdate: 'owner',
 			updateAuto: 'owner',
-			update: 'owner',
-			// Your own password.
-			password: 'signedIn'
+			update: 'owner'
 		}
 	},
 	'/settings/defaults': { load: 'globalAdmin', actions: { save: 'globalAdmin', reset: 'globalAdmin' } },
+	// Accounts. Who may change which account (the owner: nobody here; global admins: the owner) is checked in the handlers.
+	'/settings/users': { load: 'globalAdmin', actions: { create: handler('globalAdmin', 'only the owner makes global admins') } },
+	'/settings/users/[userId]': {
+		load: 'globalAdmin',
+		actions: {
+			flags: handler('globalAdmin', 'accounts.ts mayManage; global admin flag: the owner'),
+			disable: handler('globalAdmin', 'accounts.ts mayManage'),
+			enable: handler('globalAdmin', 'accounts.ts mayManage'),
+			resetPassword: handler('globalAdmin', 'accounts.ts mayManage'),
+			signOut: handler('globalAdmin', 'accounts.ts mayManage'),
+			delete: handler('globalAdmin', 'accounts.ts mayManage'),
+			access: handler('globalAdmin', 'accounts.ts mayManage')
+		}
+	},
 	'/api/tasks': { methods: { GET: 'signedIn' } },
 	'/api/update': { methods: { GET: 'owner' } },
 	'/api/skins/[texture]': { methods: { GET: 'signedIn' } },

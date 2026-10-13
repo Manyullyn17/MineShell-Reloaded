@@ -19,8 +19,11 @@ import { AUTH_ENABLED, DATA_DIR } from './config';
 /** The owner's name. Fixed for now; a rename would only change the row. */
 export const OWNER_USERNAME = 'admin';
 
-/** Who a session belongs to, as the rest of MineShell sees it. */
-export type SessionUser = { id: string; username: string; isOwner: boolean };
+/**
+ * Who a session belongs to, as the rest of MineShell sees it. `mustChangePassword`:
+ * it was given its password by someone else and may only pick its own (guard.ts).
+ */
+export type SessionUser = { id: string; username: string; isOwner: boolean; mustChangePassword: boolean };
 
 /**
  * Browsers keep cookies per host, not per port: a production MineShell on
@@ -74,10 +77,11 @@ function checkNewPassword(password: string): void {
 	}
 }
 
-const toSessionUser = (row: { id: string; username: string; isOwner: boolean }): SessionUser => ({
+const toSessionUser = (row: { id: string; username: string; isOwner: boolean; mustChangePassword: boolean }): SessionUser => ({
 	id: row.id,
 	username: row.username,
-	isOwner: row.isOwner
+	isOwner: row.isOwner,
+	mustChangePassword: row.mustChangePassword
 });
 
 /** /setup: the first account, the owner. Refused once there is one. */
@@ -89,16 +93,17 @@ export function createOwner(password: string): SessionUser {
 			throw new Error('MineShell is already set up.');
 		}
 		const now = Date.now();
-		const row = { id: crypto.randomUUID(), username: OWNER_USERNAME, passwordHash, isOwner: true, createdAt: now, updatedAt: now };
+		const row = { id: crypto.randomUUID(), username: OWNER_USERNAME, passwordHash, isOwner: true, mustChangePassword: false, createdAt: now, updatedAt: now };
 		tx.insert(users).values(row).run();
 		return toSessionUser(row);
 	});
 }
 
+/** An account picking its own password (which ends a forced change). */
 export function setPassword(userId: string, password: string): void {
 	checkNewPassword(password);
 	db.update(users)
-		.set({ passwordHash: hashPassword(password), updatedAt: Date.now() })
+		.set({ passwordHash: hashPassword(password), mustChangePassword: false, updatedAt: Date.now() })
 		.where(eq(users.id, userId))
 		.run();
 }
@@ -150,7 +155,14 @@ export function createSession(userId: string, userAgent: string | null): { id: s
 export function sessionUser(id: string | undefined): SessionUser | null {
 	if (!id) return null;
 	const row = db
-		.select({ expiresAt: sessions.expiresAt, id: users.id, username: users.username, isOwner: users.isOwner, disabledAt: users.disabledAt })
+		.select({
+			expiresAt: sessions.expiresAt,
+			id: users.id,
+			username: users.username,
+			isOwner: users.isOwner,
+			mustChangePassword: users.mustChangePassword,
+			disabledAt: users.disabledAt
+		})
 		.from(sessions)
 		.innerJoin(users, eq(users.id, sessions.userId))
 		.where(eq(sessions.id, id))
@@ -172,6 +184,21 @@ export function destroyUserSessions(userId: string, keep?: string): void {
 	db.delete(sessions)
 		.where(keep ? and(eq(sessions.userId, userId), ne(sessions.id, keep)) : eq(sessions.userId, userId))
 		.run();
+}
+
+/**
+ * An account's open sessions, newest first, for its account page. The ids are
+ * the cookies' values, so they stay here: `current` marks the one asking.
+ */
+export function listUserSessions(userId: string, currentId: string | undefined): { createdAt: number; userAgent: string | null; current: boolean }[] {
+	return db
+		.select()
+		.from(sessions)
+		.where(eq(sessions.userId, userId))
+		.all()
+		.filter((s) => s.expiresAt >= Date.now())
+		.sort((a, b) => b.createdAt - a.createdAt)
+		.map((s) => ({ createdAt: s.createdAt, userAgent: s.userAgent, current: s.id === currentId }));
 }
 
 function pruneSessions(): void {

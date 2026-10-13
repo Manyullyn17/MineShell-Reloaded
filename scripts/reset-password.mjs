@@ -70,8 +70,11 @@ const owner = db.prepare('SELECT id, username FROM users WHERE is_owner = 1').ge
 if (!owner) fail('MineShell has no account yet: open it in a browser and pick a password there.');
 
 const password = crypto.randomBytes(18).toString('base64url');
+// A database from before forced changes (migration 0021) has no such column.
+const forced = db.prepare("SELECT 1 FROM pragma_table_info('users') WHERE name = 'must_change_password'").get();
 db.transaction(() => {
 	db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(hashPassword(password), Date.now(), owner.id);
+	if (forced) db.prepare('UPDATE users SET must_change_password = 1 WHERE id = ?').run(owner.id);
 	db.prepare('DELETE FROM sessions WHERE user_id = ?').run(owner.id);
 })();
 db.close();
@@ -80,5 +83,5 @@ console.log(`New password for ${owner.username} (the owner account, ${DATA_DIR})
 
     ${password}
 
-Every session of ${owner.username} was signed out. Sign in with this password, then pick your own
-under MineShell settings > Security.`);
+Every session of ${owner.username} was signed out. Sign in with this password; MineShell then asks
+you to pick your own.`);

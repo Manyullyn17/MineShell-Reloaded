@@ -50,7 +50,7 @@ import {
 	removeManagedJava,
 	startJavaDownload
 } from '#lib/server/javadownload.js';
-import { authEnabled, destroyUserSessions, SESSION_COOKIE, setPassword } from '#lib/server/auth.js';
+import { authEnabled } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
 import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
@@ -391,22 +391,6 @@ export const actions: Actions = {
 			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
 			throw err;
 		}
-	},
-
-	/** The signed-in account's own password. */
-	password: async ({ request, locals, cookies }) => {
-		if (!locals.user) return fail(400, { ok: false, message: 'Sign-in is off (MINESHELL_AUTH=off): there is no account to change.' });
-		const form = await request.formData();
-		const password = String(form.get('password') ?? '');
-		const confirm = String(form.get('confirm') ?? '');
-		if (password !== confirm) return fail(400, { ok: false, message: 'The two passwords do not match.' });
-		try {
-			setPassword(locals.user.id, password);
-			// "Every other device": the session asking stays signed in.
-			if (form.get('signOutEverywhere') === 'on') destroyUserSessions(locals.user.id, cookies.get(SESSION_COOKIE));
-			return { ok: true, message: 'Password updated.' };
-		} catch (err) {
-			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not save.' });
-		}
 	}
 };
+

@@ -17,7 +17,7 @@ export function owner(): SessionUser {
 	if (!ownerExists()) return createOwner(OWNER_PASSWORD);
 	const row = db.select().from(users).where(eq(users.isOwner, true)).get()!;
 	setPassword(row.id, OWNER_PASSWORD);
-	return { id: row.id, username: row.username, isOwner: true };
+	return { id: row.id, username: row.username, isOwner: true, mustChangePassword: false };
 }
 
 /** A second account (password OWNER_PASSWORD), inserted directly: there is no way to add one in the app yet. */
@@ -33,7 +33,7 @@ export function otherUser(fields: { username?: string; disabledAt?: number | nul
 		updatedAt: now
 	};
 	db.insert(users).values(row).run();
-	return { id: row.id, username: row.username, isOwner: false };
+	return { id: row.id, username: row.username, isOwner: false, mustChangePassword: false };
 }
 
 /** Gives an account access to a server, replacing what it had there. */

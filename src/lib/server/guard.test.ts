@@ -109,7 +109,7 @@ describe('auth guard', () => {
 		const e = event('/settings', { session });
 		expect(outcome(e)).toBeNull();
 		expect(e.locals.authenticated).toBe(true);
-		expect(e.locals.user).toEqual({ id: account.id, username: 'admin', isOwner: true });
+		expect(e.locals.user).toEqual({ id: account.id, username: 'admin', isOwner: true, mustChangePassword: false });
 		expect(outcome(event('/login', { session }))).toEqual({ redirect: '/' });
 	});
 
@@ -253,5 +253,24 @@ describe('access policy', () => {
 		expect(post('curseforgeKey')).toEqual({ status: 403 });
 		expect(post('playitUnlink')).toEqual({ status: 403 });
 		expect(post('update')).toEqual({ status: 403 });
+	});
+});
+
+describe('an account that must pick its own password', () => {
+	it('may only reach its account page and sign out', async () => {
+		authControl.enabled = true;
+		authControl.setUp = true;
+		const { id } = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		const account = otherUser();
+		grant(account.id, id, { admin: true });
+		db.update(users).set({ mustChangePassword: true }).where(eq(users.id, account.id)).run();
+		const session = createSession(account.id, null).id;
+		const ORIGIN = { origin: `http://${HOST}` };
+		expect(outcome(event(`/instances/${id}`, { session, route: '/instances/[id]', params: { id } }))).toEqual({ redirect: '/account' });
+		expect(outcome(event(`/instances/${id}?/power`, { session, method: 'POST', route: '/instances/[id]', params: { id }, headers: ORIGIN }))).toEqual({ status: 403 });
+		expect(outcome(event(`/api/instances/${id}/stats`, { session, route: '/api/instances/[id]/stats', params: { id } }))).toEqual({ status: 403 });
+		expect(outcome(event('/account', { session }))).toBeNull();
+		expect(outcome(event('/account?/password', { session, method: 'POST', headers: ORIGIN }))).toBeNull();
+		expect(outcome(event('/login?/logout', { session, method: 'POST', headers: ORIGIN }))).toBeNull();
 	});
 });

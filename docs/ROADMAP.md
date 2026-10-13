@@ -49,7 +49,7 @@ settings, memory apart from the launch settings, the server list's buttons under
 server - **built**; (2) accounts, owner, username sign-in, `npm run reset-password` - **built**;
 (3) the permission model and a default-deny route policy in the guard - **built**; (4) filter
 lists and secrets in page data per account - **built**; (5) managing accounts and access (one-time
-passwords with a forced change, disable, sign-out everywhere); (6) creator becomes admin;
+passwords with a forced change, disable, sign-out everywhere) - **built**; (6) creator becomes admin;
 (7) show only what an account may use; (8) close open console/task streams when access
 changes; (9) record who did what in the audit log.
 

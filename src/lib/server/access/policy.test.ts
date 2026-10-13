@@ -94,7 +94,7 @@ describe('the access policy', () => {
 			if (!leftToHandler.length) continue;
 			const source = pageSources[`/src/routes${id === '/' ? '' : id}/+page.server.ts`] ?? '';
 			expect(
-				/require(Access|GlobalAdmin)\(|can\(locals\.access/.test(source),
+				/require(Access|GlobalAdmin)\(|can\(locals\.access|mayManage\(/.test(source),
 				`${id} (${leftToHandler.map(([n]) => n).join(', ')}) checks access in the handler`
 			).toBe(true);
 		}

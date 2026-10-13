@@ -133,6 +133,14 @@
 					MineShell settings
 				</a>
 				{#if data.authRequired}
+					<a
+						class="rail-link"
+						class:current={page.url.pathname === '/account'}
+						href="/account"
+						onclick={() => (railOpen = false)}
+					>
+						Your account
+					</a>
 					<form method="POST" action="/login?/logout">
 						<button class="rail-link rail-signout" type="submit">Sign out</button>
 					</form>

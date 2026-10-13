@@ -41,6 +41,63 @@ export const isInstancePermission = (value: unknown): value is InstancePermissio
 	typeof value === 'string' && (INSTANCE_PERMISSIONS as readonly string[]).includes(value);
 
 /**
+ * The permissions as the access editor shows them, in groups. Player data is
+ * shown apart from these, with its scopes; `view` comes with any access.
+ */
+export const PERMISSION_GROUPS: { label: string; permissions: { id: InstancePermission; label: string; hint: string }[] }[] = [
+	{
+		label: 'Server',
+		permissions: [
+			{ id: 'power', label: 'Start and stop', hint: 'Start, stop, restart and force stop, with or without a countdown.' },
+			{ id: 'duplicate', label: 'Copy it', hint: 'Also needs Files here and "may create servers": the copy has every file, and its maker becomes its admin.' },
+			{ id: 'delete', label: 'Delete it', hint: 'Remove the server, and its files if asked.' }
+		]
+	},
+	{
+		label: 'Console',
+		permissions: [
+			{ id: 'console.read', label: 'Read the console and logs', hint: "Output, past runs' logs and crash lines; they show players' IP addresses and chat." },
+			{ id: 'console.command', label: 'Send commands', hint: 'The console, saved and scheduled commands, the operators list, the Spark profiler.' }
+		]
+	},
+	{
+		label: 'Players',
+		permissions: [{ id: 'players.manage', label: 'Manage players', hint: 'Whitelist, bans and IP bans, kicking. Operators also need Send commands.' }]
+	},
+	{
+		label: 'Mods and versions',
+		permissions: [
+			{ id: 'mods', label: 'Mods', hint: 'Install, update, disable and remove mods, find a crashing one, add a map mod.' },
+			{ id: 'datapacks', label: 'Data packs', hint: 'Install and remove data packs.' },
+			{ id: 'software', label: 'Loader, modpack and Java', hint: 'Loader and Minecraft versions, pack versions and rollbacks, Cleanroom, the Java runtime and launch settings.' }
+		]
+	},
+	{
+		label: 'Settings',
+		permissions: [
+			{ id: 'settings.view', label: 'See settings', hint: 'Without the RCON password.' },
+			{ id: 'settings.edit', label: 'Change settings', hint: 'Name, notes, server.properties, ports, memory, restarts, tags. Not the Java and launch settings.' }
+		]
+	},
+	{
+		label: 'World and backups',
+		permissions: [
+			{ id: 'backups.create', label: 'Take snapshots', hint: 'Snapshots by hand and on a schedule.' },
+			{ id: 'backups.restore', label: 'Restore snapshots', hint: 'Put a snapshot back over the world.' },
+			{ id: 'backups.delete', label: 'Delete snapshots', hint: 'Delete or unpin them, and how many are kept.' },
+			{ id: 'world', label: 'World tools', hint: 'Reset or prune the world, upload one, pre-generate it with Chunky.' },
+			{ id: 'map.render', label: 'Render the map', hint: 'Set up, render and schedule the world map. Looking at it needs nothing more.' }
+		]
+	},
+	{
+		label: 'Files',
+		permissions: [
+			{ id: 'files', label: 'Files', hint: "Every file of the server, world downloads, client pack export, the RCON password." }
+		]
+	}
+];
+
+/**
  * Permissions that can run a program on the machine as MineShell's own user
  * (a mod, a file, a Java path), and through it reach everything MineShell can.
  * Only for people trusted that far; the access editor says so.

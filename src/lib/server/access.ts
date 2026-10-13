@@ -55,7 +55,7 @@ function parsePermissions(json: string): InstancePermission[] {
 	}
 }
 
-export const REFUSED = 'You do not have access to that.';
+export const NO_ACCESS_REASON = 'You do not have access to that.';
 
 /** Whether a list (the servers, the rail) shows this server to the account. */
 export const sees = (access: Access) => (instance: { id: string }) => can(access, instance.id, 'view');
@@ -74,9 +74,9 @@ export function requireAccess(
 	permission: InstancePermission | 'admin',
 	player?: PlayerTarget
 ): void {
-	if (!can(locals.access, instanceId, permission, player)) error(403, REFUSED);
+	if (!can(locals.access, instanceId, permission, player)) error(403, NO_ACCESS_REASON);
 }
 
 export function requireGlobalAdmin(locals: App.Locals): void {
-	if (!locals.access.globalAdmin) error(403, REFUSED);
+	if (!locals.access.globalAdmin) error(403, NO_ACCESS_REASON);
 }
