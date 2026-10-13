@@ -24,11 +24,15 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const password = String(form.get('password') ?? '');
 		if (password !== String(form.get('confirm') ?? '')) return fail(400, { ok: false, message: 'The two new passwords do not match.' });
-		// The current password too: a session left open somewhere is not enough to take the account.
-		if (!verifyLogin(user.username, String(form.get('current') ?? ''))) {
-			return fail(400, { ok: false, message: 'Your current password is not right.' });
+		if (user.mustChangePassword) {
+			// Just signed in with the one-time password, which proves it: it is not asked again.
+			if (verifyLogin(user.username, password)) return fail(400, { ok: false, message: 'Pick a new password, not the one you were given.' });
+		} else {
+			// The current password too: a session left open somewhere is not enough to take the account.
+			const current = String(form.get('current') ?? '');
+			if (!verifyLogin(user.username, current)) return fail(400, { ok: false, message: 'Your current password is not right.' });
+			if (password === current) return fail(400, { ok: false, message: 'Pick a new password, not the current one.' });
 		}
-		if (password === String(form.get('current') ?? '')) return fail(400, { ok: false, message: 'Pick a new password, not the current one.' });
 		try {
 			setPassword(user.id, password);
 		} catch (err) {

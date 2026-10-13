@@ -68,14 +68,22 @@ describe('Accounts', () => {
 });
 
 describe('your account page', () => {
-	it('changes the password only with the current one, and a forced change goes on to MineShell', async () => {
+	it('a forced change needs only the new password and goes on to MineShell; later ones need the current one', async () => {
 		const { account, password } = createAccount(name(), { globalAdmin: false, canCreate: false });
 		const user = { id: account.id, username: account.username, isOwner: false, mustChangePassword: true };
 		const cookie = createSession(account.id, null).id;
 		const change = (fields: Record<string, string>) => post(accountPage.actions.password, { access: NO_ACCESS, user, fields, cookie });
-		expect(await change({ current: 'wrong-one', password: 'my-own-password', confirm: 'my-own-password' })).toMatchObject({ status: 400 });
-		expect(await change({ current: password, password: password, confirm: password })).toMatchObject({ status: 400 });
-		expect(await change({ current: password, password: 'my-own-password', confirm: 'my-own-password' })).toEqual({ redirect: '/' });
+		// The forced change after signing in with the one-time password does not ask for it again, but will not keep it.
+		expect(await change({ password, confirm: password })).toMatchObject({ status: 400 });
+		expect(await change({ password: 'my-own-password', confirm: 'my-own-password' })).toEqual({ redirect: '/' });
 		expect(verifyLogin(account.username, 'my-own-password')).toMatchObject({ mustChangePassword: false });
+
+		// After that, a change needs the current password.
+		const settled = { ...user, mustChangePassword: false };
+		const later = (fields: Record<string, string>) => post(accountPage.actions.password, { access: NO_ACCESS, user: settled, fields, cookie });
+		expect(await later({ password: 'another-password', confirm: 'another-password' })).toMatchObject({ status: 400 });
+		expect(await later({ current: 'wrong-one', password: 'another-password', confirm: 'another-password' })).toMatchObject({ status: 400 });
+		expect(await later({ current: 'my-own-password', password: 'my-own-password', confirm: 'my-own-password' })).toMatchObject({ status: 400 });
+		expect(await later({ current: 'my-own-password', password: 'another-password', confirm: 'another-password' })).toMatchObject({ ok: true });
 	});
 });

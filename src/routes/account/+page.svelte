@@ -47,10 +47,12 @@
 		<form method="POST" action="?/password" use:enhance class="password-form">
 			<!-- For password managers: which account this is. -->
 			<input type="text" name="username" autocomplete="username" value={data.account.username} hidden readonly />
-			<div class="field">
-				<label for="current">{data.account.mustChangePassword ? 'The password you were given' : 'Current password'}</label>
-				<input id="current" name="current" type="password" autocomplete="current-password" required />
-			</div>
+			{#if !data.account.mustChangePassword}
+				<div class="field">
+					<label for="current">Current password</label>
+					<input id="current" name="current" type="password" autocomplete="current-password" required />
+				</div>
+			{/if}
 			<div class="grid-2">
 				<div class="field">
 					<label for="password">New password</label>
