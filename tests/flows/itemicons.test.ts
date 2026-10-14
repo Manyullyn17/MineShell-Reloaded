@@ -193,6 +193,29 @@ describe('item icons', () => {
 		expect(await resolveIcon(res, 'techreborn:dust', 1)).toMatchObject({ spec: { layers: [{ texture: 'techreborn:items/dust/aluminum' }] }, exact: false, variant: true, variantOf: 'aluminum' });
 	});
 
+	it("names 1.12 items by a key in the mod's own lang file with the id's words", async () => {
+		const res = await Resources.load([
+			await jar('mods.jar', {
+				'assets/thermalfoundation/lang/en_US.lang': 'item.thermalfoundation.armor.aluminumBoots.name=Aluminum Boots\nitem.thermalfoundation.tool.steelBow.name=Steel Bow\n',
+				'assets/railcraft/lang/en_us.lang': 'item.railcraft.borehead.iron.name=Iron Bore Head\n',
+				'assets/mysticalagriculture/lang/en_US.lang': 'tile.ma.prosperity_ore.name=Prosperity Ore\nitem.ma.copper_seeds.name=Copper Seeds\n',
+				// Two keys with the same words and different names: no answer.
+				'assets/twins/lang/en_us.lang': 'item.twins.red.gem.name=Ruby\ntile.twins.gem.red.name=Red Gem Block\n',
+				// Another mod's key with the words does not count.
+				'assets/other/lang/en_us.lang': 'item.other.iron.borehead.name=Wrong Name\nitem.other.gem.name=Other Gem\n'
+			})
+		], null);
+		const lang = await res.lang();
+		expect(itemName('thermalfoundation:armor.boots_aluminum', lang)).toBe('Aluminum Boots');
+		expect(itemName('thermalfoundation:tool.bow_steel', lang)).toBe('Steel Bow');
+		expect(itemName('railcraft:borehead_iron', lang)).toBe('Iron Bore Head');
+		expect(itemName('mysticalagriculture:copper_seeds', lang)).toBe('Copper Seeds');
+		expect(itemName('twins:red_gem', lang)).toBe('Red Gem');
+		expect(itemName('thermalfoundation:gem', lang)).toBe('Gem');
+		// Formatting codes are not part of the name.
+		expect(itemName('mysticalagriculture:supremium_hoe', new Map([['item.mysticalagriculture.supremium_hoe.name', '§cSupremium Hoe']]))).toBe('Supremium Hoe');
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);

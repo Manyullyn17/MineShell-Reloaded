@@ -242,17 +242,17 @@ export class Resources {
 	private constructor(
 		private readonly files: Map<string, Source>,
 		/** Every English lang file, in the same order: the game merges them key by key. */
-		private readonly langs: { json: boolean; read: Source }[],
+		private readonly langs: { ns: string; json: boolean; read: Source }[],
 		readonly hasVanilla: boolean
 	) {}
 
 	/** `dirs` hold namespace folders (`<dir>/<namespace>/textures/...`), as a pack's resources/ or kubejs/assets/ does. */
 	static async load(jars: string[], clientJar: string | null, dirs: string[] = []): Promise<Resources> {
 		const files = new Map<string, Source>();
-		const langs: { json: boolean; read: Source }[] = [];
+		const langs: { ns: string; json: boolean; read: Source }[] = [];
 		const add = (key: string | null, read: Source) => {
 			if (!key) return;
-			if (/\/lang\/en_us\.(json|lang)$/.test(key)) langs.push({ json: key.endsWith('.json'), read });
+			if (/\/lang\/en_us\.(json|lang)$/.test(key)) langs.push({ ns: key.split('/')[0], json: key.endsWith('.json'), read });
 			else if (!files.has(key)) files.set(key, read);
 		};
 		for (const dir of dirs) {
@@ -391,11 +391,17 @@ export class Resources {
 
 	private async readLang(): Promise<Map<string, string>> {
 		const out = new Map<string, string>();
-		for (const { json, read } of this.langs) {
+		const own = new Map<string, Map<string, string>>();
+		for (const { ns, json, read } of this.langs) {
 			const text = (await read())?.toString('utf8').replace(/^\uFEFF/, '') ?? '';
+			const mine = own.get(ns) ?? own.set(ns, new Map()).get(ns)!;
+			const set = (k: string, v: string) => {
+				if (!out.has(k)) out.set(k, v);
+				if (!mine.has(k)) mine.set(k, v);
+			};
 			if (json) {
 				try {
-					for (const [k, v] of Object.entries(JSON.parse(text) as Record<string, unknown>)) if (typeof v === 'string' && !out.has(k)) out.set(k, v);
+					for (const [k, v] of Object.entries(JSON.parse(text) as Record<string, unknown>)) if (typeof v === 'string') set(k, v);
 				} catch {
 					/* not JSON after all */
 				}
@@ -404,10 +410,11 @@ export class Resources {
 					const at = line.indexOf('=');
 					// Keys are properties-style: item.ebwizardry\:charm_flight.name is item.ebwizardry:charm_flight.name.
 					const key = line.slice(0, at).trim().replace(/\\(.)/g, '$1');
-					if (at > 0 && !line.startsWith('#') && !out.has(key)) out.set(key, line.slice(at + 1).trim());
+					if (at > 0 && !line.startsWith('#')) set(key, line.slice(at + 1).trim());
 				}
 			}
 		}
+		ownLangs.set(out, own);
 		return out;
 	}
 }
@@ -1049,6 +1056,8 @@ const VANILLA_112_KEYS: Record<string, string> = { stonebrick: 'stonebricksmooth
  * gaps (crafting_on_a_stick's "%1$s%2$s%3$s") says nothing: null.
  */
 function filled(value: string | undefined): string | null {
+	// Formatting codes (Mystical Agriculture colours its tools' names: "§6Intermedium Paxel").
+	value = value?.replace(/§./g, '').trim();
 	if (!value) return null;
 	const gap = /%(\d+\$)?[sd]/g;
 	if (!gap.test(value)) return value;
@@ -1082,7 +1091,58 @@ function langName(id: string, lang: Map<string, string>): string | null {
 		const found = filled(lower.get(key.toLowerCase()));
 		if (found) return found;
 	}
-	return null;
+	return ns === 'minecraft' ? null : byWords(ns, path, lang);
+}
+
+/** Every namespace's own lang lines, by the merged map Resources.lang() returns. */
+const ownLangs = new WeakMap<Map<string, string>, Map<string, Map<string, string>>>();
+const wordIndexes = new WeakMap<Map<string, string>, Map<string, Map<string, Set<string>>>>();
+
+/** "armor.aluminumBoots" -> ["armor", "aluminum", "boots"]. */
+const words = (s: string) =>
+	s
+		.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+		.toLowerCase()
+		.split(/[^a-z0-9]+/)
+		.filter(Boolean);
+
+/**
+ * The last resort before the id: a key in the mod's own lang file made of the
+ * same words as the id, in any order and case. 1.12 mods name keys after
+ * their code, not their ids: Thermal Foundation's armor.boots_aluminum is
+ * item.thermalfoundation.armor.aluminumBoots.name, Railcraft's borehead_iron
+ * item.railcraft.borehead.iron.name, Mystical Agriculture keys its blocks
+ * tile.ma.<id>.name (a short prefix of its own in place of the mod id). Only
+ * a single answer counts.
+ */
+function byWords(ns: string, path: string, lang: Map<string, string>): string | null {
+	const own = ownLangs.get(lang)?.get(ns);
+	if (!own) return null;
+	let index = wordIndexes.get(lang);
+	if (!index) wordIndexes.set(lang, (index = new Map()));
+	let byKey = index.get(ns);
+	if (!byKey) {
+		byKey = new Map();
+		const put = (w: string[], value: string) => {
+			if (!w.length) return;
+			const at = [...w].sort().join(' ');
+			byKey!.set(at, (byKey!.get(at) ?? new Set()).add(value));
+		};
+		for (const [key, value] of own) {
+			// item.<mod>.<the name's words>.name (1.12) or item.<mod>.<words> (1.13+).
+			const m = key.match(/^(?:item|tile|block)\.(.+?)(?:\.name)?$/);
+			const name = m && filled(value);
+			if (!m || !name) continue;
+			const [first, ...rest] = m[1].split(/[.:]/);
+			if (first === ns) put(words(rest.join('.')), name);
+			// The mod's short prefix in place of its id (tile.ma.prosperity_ore), or a key without one.
+			else if (first.length <= 3 && rest.length) put(words(rest.join('.')), name);
+			else put(words(m[1]), name);
+		}
+		index.set(ns, byKey);
+	}
+	const found = byKey.get(words(path.replace(/^(item|tile)\./, '')).sort().join(' '));
+	return found?.size === 1 ? [...found][0] : null;
 }
 
 const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();
