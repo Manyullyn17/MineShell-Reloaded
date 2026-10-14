@@ -120,6 +120,33 @@ describe('item icons', () => {
 		expect(await resolveIcon(res, 'enderio:item_dark_steel_helmet', 37)).toMatchObject({ spec: { kind: 'flat' }, exact: true });
 	});
 
+	it("takes a mod item's own model over its block's, and the block's when the item's draws nothing", async () => {
+		const res = await Resources.load(
+			[
+				await jar('mod.jar', {
+					// A door: the item model is a flat sprite, the blockstate the placed door.
+					'assets/doors/blockstates/oak_door.json': json({ variants: { 'facing=east,half=lower': { model: 'doors:block/oak_door_bottom' }, 'facing=east,half=upper': { model: 'doors:block/oak_door_top' } } }),
+					'assets/doors/models/block/oak_door_bottom.json': json({ parent: 'minecraft:block/cube_all', textures: { all: 'doors:block/oak_door_bottom' } }),
+					'assets/doors/models/item/oak_door.json': json({ parent: 'minecraft:item/generated', textures: { layer0: 'doors:item/oak_door' } }),
+					// A sign: its block model draws nothing (the game draws signs in code), the item is flat.
+					'assets/doors/blockstates/oak_sign.json': json({ variants: { '': { model: 'doors:block/oak_sign' } } }),
+					'assets/doors/models/block/oak_sign.json': json({ textures: { particle: 'doors:block/oak_planks' } }),
+					'assets/doors/models/item/oak_sign.json': json({ parent: 'minecraft:item/generated', textures: { layer0: 'doors:item/oak_sign' } }),
+					// A barrel whose item the mod draws in code: the placed block is the closest picture.
+					'assets/doors/blockstates/barrel.json': json({ variants: { '': { model: 'doors:block/barrel' } } }),
+					'assets/doors/models/block/barrel.json': json({ parent: 'minecraft:block/cube_all', textures: { all: 'doors:block/barrel' } }),
+					'assets/doors/models/item/barrel.json': json({ parent: 'minecraft:builtin/entity' })
+				})
+			],
+			await vanilla()
+		);
+		expect(await resolveIcon(res, 'doors:oak_door')).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'doors:item/oak_door', tint: null }] }, exact: true, variant: false });
+		expect((await resolveIcon(res, 'doors:oak_sign')).spec).toEqual({ kind: 'flat', layers: [{ texture: 'doors:item/oak_sign', tint: null }] });
+		expect(await resolveIcon(res, 'doors:barrel')).toMatchObject({ spec: { kind: 'block', elements: [{ faces: { up: { texture: 'doors:block/barrel' } } }] } });
+		// 1.12 sends damage 0: the same.
+		expect((await resolveIcon(res, 'doors:oak_door', 0)).spec).toMatchObject({ kind: 'flat' });
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);

@@ -622,13 +622,17 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		if (box) return { spec: box, exact: true };
 	}
 	const candidates = variantModels(ns, itemPath, damage);
-	// A mod's own name pattern for the variant, before its blockstate file and the base model.
-	const patterns = ns === 'minecraft' ? candidates : candidates.slice(0, -1);
+	// With a damage value, a mod's own name pattern for the variant, before its blockstate file
+	// and the base model. Without one, the item model itself first: the blockstate is the
+	// placed block, which is not what the inventory shows for doors, signs, saplings or pies.
+	const patterns = ns === 'minecraft' || !damage ? candidates : candidates.slice(0, -1);
 	for (const [i, name] of patterns.entries()) {
 		if (!res.has(`${ns}/models/item/${name}.json`)) continue;
 		const loaded = await loadModel(res, `${ns}:item/${name}`);
 		if (!loaded) continue;
 		const spec = specOf(loaded, [], legacyTint(itemPath));
+		// An item model the mod draws in code (builtin/entity, nothing to draw): its block's picture below is closer.
+		if (!spec && ns !== 'minecraft') continue;
 		// Vanilla is known: its table, or damage that is wear (tools, armour). A
 		// mod's damage may be a variant whose model only its code knows: a guess.
 		const variant = !!damage && (ns === 'minecraft' ? !!VANILLA_112[itemPath] : candidates.length > 1);
@@ -636,7 +640,8 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 	}
 	if (ns !== 'minecraft') {
 		const fromState = await blockstateIcon(res, ns, itemPath, damage ?? 0, legacyTint(itemPath));
-		if (fromState) return { ...fromState, variant: !!damage && !fromState.exact };
+		// A blockstate whose model draws nothing (signs: drawn in code) leaves the item's own files.
+		if (fromState?.spec) return { ...fromState, variant: !!damage && !fromState.exact };
 		if (res.has(`${ns}/models/item/${itemPath}.json`)) {
 			// A plain item model and a damage value is nearly always wear (tools,
 			// armour): not flagged, or every worn tool would carry the mark.
