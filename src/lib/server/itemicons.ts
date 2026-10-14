@@ -458,6 +458,27 @@ export async function clientJar(minecraftVersion: string): Promise<string | null
 const cache = new Map<string, { key: string; resources: Promise<Resources> }>();
 
 /**
+ * The mod loader's own assets, which mods' models build on: NeoForge's
+ * (neoforge:item/bucket, neoforge:block/default) and Forge's (1.17+), in its
+ * universal jar under libraries/. After the mods: as in the game, a mod's
+ * file of the same name wins.
+ */
+async function loaderJars(serverDir: string): Promise<string[]> {
+	const out: string[] = [];
+	for (const [dir, name] of [
+		['net/neoforged/neoforge', 'neoforge'],
+		['net/minecraftforge/forge', 'forge']
+	]) {
+		const base = path.join(serverDir, 'libraries', dir);
+		for (const version of (await fs.readdir(base).catch(() => [] as string[])).sort()) {
+			const jar = path.join(base, version, `${name}-${version}-universal.jar`);
+			if (await fs.access(jar).then(() => true, () => false)) out.push(jar);
+		}
+	}
+	return out;
+}
+
+/**
  * Folders a pack puts its own assets in: resources/ (ResourceLoader, which
  * ContentTweaker items use on 1.12) and kubejs/assets/.
  */
@@ -482,7 +503,7 @@ export async function serverResources(instance: ServerInstance): Promise<Resourc
 			.sort()
 			.map((n) => path.join(mods, n));
 		const client = eula ? await clientJar(instance.minecraftVersion).catch(() => null) : null;
-		return Resources.load(jars, client, dirs);
+		return Resources.load([...jars, ...(await loaderJars(instance.path))], client, dirs);
 	})();
 	cache.set(instance.id, { key, resources });
 	resources.catch(() => cache.delete(instance.id));

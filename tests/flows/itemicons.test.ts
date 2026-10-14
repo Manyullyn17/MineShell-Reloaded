@@ -284,6 +284,20 @@ describe('item icons', () => {
 		expect(await tints('short_grass')).toEqual(['#7cbd6b']);
 	});
 
+	it("reads models that build on the mod loader's own (NeoForge's universal jar under libraries/)", async () => {
+		const instance = await createInstance(
+			{ modloader: 'neoforge', minecraftVersion: '1.21.1' },
+			{
+				'libraries/net/neoforged/neoforge/21.1.251/neoforge-21.1.251-universal.jar': zipBuffer({
+					'assets/neoforge/models/block/default.json': json({ elements: [{ from: [0, 0, 0], to: [16, 16, 16], faces: { up: { texture: '#all' } } }] })
+				}),
+				'mods/claims.jar': zipBuffer({ 'assets/claims/models/item/marker.json': json({ parent: 'neoforge:block/default', textures: { all: 'claims:block/marker' } }) })
+			}
+		);
+		const { icons } = await iconsFor(instance, [{ id: 'claims:marker', damage: null }]);
+		expect(icons['claims:marker'].spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'claims:block/marker' } } }] });
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
