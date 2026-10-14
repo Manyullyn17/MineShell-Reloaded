@@ -550,6 +550,11 @@ async function loadModel(res: Resources, ref: string, depth = 0): Promise<Model 
 	if (`${ns}:${p}` === 'minecraft:builtin/entity') return { textures: {}, elements: null, flat: false, entity: true, gui: null };
 	const json = (await res.json(`${ns}/models/${p}.json`)) ?? (ns === 'minecraft' ? BASE_MODELS[p.replace(/^(blocks?|items?)\//, (m) => (m.startsWith('b') ? 'block/' : 'item/'))] : undefined);
 	if (!json) return null;
+	return modelOf(res, json, depth);
+}
+
+/** A model from its JSON: a file's, or a composite model's child given inline. */
+async function modelOf(res: Resources, json: Record<string, unknown>, depth: number): Promise<Model | null> {
 	const parent = typeof json.parent === 'string' ? await loadModel(res, json.parent, depth + 1) : null;
 	if (typeof json.parent === 'string' && !parent) return null;
 	// 26.x can give a texture as { sprite, force_translucent } (glass) instead of its name.
@@ -560,11 +565,39 @@ async function loadModel(res: Resources, ref: string, depth = 0): Promise<Model 
 		})
 	);
 	const textures = { ...(parent?.textures ?? {}), ...own };
-	const elements = Array.isArray(json.elements) ? json.elements : (parent?.elements ?? null);
+	const composed = await compositeElements(res, json, depth);
+	const elements = composed ?? (Array.isArray(json.elements) ? json.elements : (parent?.elements ?? null));
 	const display = json.display as { gui?: { rotation?: unknown } } | undefined;
 	const rotation = display?.gui?.rotation;
 	const gui = Array.isArray(rotation) && rotation.length === 3 && rotation.every((n) => typeof n === 'number') ? (rotation as [number, number, number]) : (parent?.gui ?? null);
-	return { textures, elements, flat: !Array.isArray(json.elements) && (parent?.flat ?? false), entity: parent?.entity ?? false, gui };
+	return { textures, elements, flat: !composed && !Array.isArray(json.elements) && (parent?.flat ?? false), entity: parent?.entity ?? false, gui };
+}
+
+/**
+ * NeoForge's and Forge's composite models (loader "neoforge:composite",
+ * "forge:composite"): the children's elements together, each face's texture
+ * looked up in its own child (Immersive Engineering's catwalks, Mekanism's
+ * machines). A child placed by a transform (Flux Networks' connectors) is
+ * left out rather than drawn in the wrong place. Null for other models.
+ */
+async function compositeElements(res: Resources, json: Record<string, unknown>, depth: number): Promise<unknown[] | null> {
+	if (!/:composite$/.test(String(json.loader ?? '')) || !json.children || typeof json.children !== 'object') return null;
+	const out: unknown[] = [];
+	for (const child of Object.values(json.children as Record<string, unknown>)) {
+		if (!child || typeof child !== 'object' || 'transform' in child) continue;
+		const model = await modelOf(res, child as Record<string, unknown>, depth + 1);
+		for (const raw of (model?.elements ?? []) as Record<string, unknown>[]) {
+			const faces = Object.fromEntries(
+				Object.entries((raw.faces ?? {}) as Record<string, Record<string, unknown>>).map(([side, face]) => {
+					const named = typeof face.texture === 'string' ? face.texture : undefined;
+					const resolved = texture(model!, named && !named.startsWith('#') && model!.textures[named] ? `#${named}` : named);
+					return [side, { ...face, texture: resolved ?? named }];
+				})
+			);
+			out.push({ ...raw, faces });
+		}
+	}
+	return out;
 }
 
 /** "#all" -> the texture it names, followed through other references. */

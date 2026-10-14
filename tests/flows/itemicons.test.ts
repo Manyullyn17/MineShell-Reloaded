@@ -298,6 +298,28 @@ describe('item icons', () => {
 		expect(icons['claims:marker'].spec).toMatchObject({ kind: 'block', elements: [{ faces: { up: { texture: 'claims:block/marker' } } }] });
 	});
 
+	it("draws composite models from their children, each with its own textures", async () => {
+		const res = await Resources.load([
+			await jar('ie.jar', {
+				'assets/minecraft/models/block/block.json': json({ display: { gui: { rotation: [30, 225, 0] } } }),
+				'assets/ie/models/block/slab_part.json': json({ elements: [{ from: [0, 0, 0], to: [16, 2, 16], faces: { up: { texture: '#top' } } }] }),
+				'assets/ie/models/block/rail_part.json': json({ elements: [{ from: [0, 2, 0], to: [1, 16, 16], faces: { up: { texture: '#top' } } }] }),
+				'assets/ie/models/item/catwalk.json': json({
+					parent: 'minecraft:block/block',
+					loader: 'neoforge:composite',
+					children: {
+						base: { parent: 'ie:block/slab_part', textures: { top: 'ie:block/grate' } },
+						railing: { parent: 'ie:block/rail_part', textures: { top: 'ie:block/rail' } },
+						turned: { parent: 'ie:block/rail_part', textures: { top: 'ie:block/rail' }, transform: { rotation: [{ y: 90 }] } }
+					}
+				})
+			})
+		], null);
+		const spec = (await resolveIcon(res, 'ie:catwalk')).spec as { kind: string; elements: { faces: { up: { texture: string } } }[] };
+		// Both untransformed children, each face with its own child's texture; the turned one left out.
+		expect(spec.elements.map((e) => e.faces.up.texture)).toEqual(['ie:block/grate', 'ie:block/rail']);
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
