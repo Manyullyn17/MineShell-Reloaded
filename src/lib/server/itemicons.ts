@@ -246,11 +246,15 @@ export class Resources {
 		private readonly files: Map<string, Source>,
 		/** Every English lang file, in the same order: the game merges them key by key. */
 		private readonly langs: { ns: string; json: boolean; read: Source }[],
-		readonly hasVanilla: boolean
+		readonly hasVanilla: boolean,
+		/** 1.7 mod ids (lower case) -> the asset folders of their jar (mcmod.info): TConstruct's are "tinker". */
+		private readonly modDomains: Map<string, Set<string>> = new Map(),
+		/** Before 1.8: no block or item has a model, so a block's texture is the best there is. */
+		readonly modelless = false
 	) {}
 
 	/** `dirs` hold namespace folders (`<dir>/<namespace>/textures/...`), as a pack's resources/ or kubejs/assets/ does. */
-	static async load(jars: string[], clientJar: string | null, dirs: string[] = []): Promise<Resources> {
+	static async load(jars: string[], clientJar: string | null, dirs: string[] = [], opts: { modelless?: boolean } = {}): Promise<Resources> {
 		const files = new Map<string, Source>();
 		const langs: { ns: string; json: boolean; read: Source }[] = [];
 		const add = (key: string | null, read: Source) => {
@@ -265,15 +269,75 @@ export class Resources {
 				add(rest.length ? indexKey(ns, rest.join('/')) : null, () => fs.readFile(path.join(dir, rel)).catch(() => null));
 			}
 		}
+		const modDomains = new Map<string, Set<string>>();
 		for (const jar of clientJar ? [...jars, clientJar] : jars) {
 			const zip = await openZipFile(jar).catch(() => null);
 			if (!zip) continue;
+			const domains = new Set<string>();
+			let info: (typeof zip.entries)[number] | undefined;
 			for (const entry of zip.entries) {
 				const m = entry.name.match(/^assets\/([^/]+)\/(.+)$/);
+				if (m) domains.add(m[1]);
 				add(m && indexKey(m[1], m[2]), () => zip.read(entry));
+				// IC2 (1.7) keeps its names outside assets/: ic2/lang/en_US.properties, "itemCellEmpty = Empty Cell".
+				const props = entry.name.match(/^([^/]+)\/lang\/en_us\.properties$/i);
+				if (props) langs.push({ ns: props[1].toLowerCase(), json: false, read: () => zip.read(entry) });
+				if (entry.name === 'mcmod.info') info = entry;
+			}
+			// Not Minecraft's own: mods that replace a vanilla file have it in their jar too.
+			domains.delete('minecraft');
+			for (const id of info ? modIds(await zip.read(info).catch(() => null)) : []) {
+				modDomains.set(id, new Set([...(modDomains.get(id) ?? []), ...domains]));
 			}
 		}
-		return new Resources(files, langs, !!clientJar);
+		return new Resources(files, langs, !!clientJar, modDomains, opts.modelless ?? false);
+	}
+
+	/** An id's namespace and the asset folders its mod's jar has (1.7: Botania -> botania, TConstruct -> tinker). */
+	domainsOf(ns: string): Set<string> {
+		const base = ns.split('|')[0].toLowerCase();
+		return new Set([domain(ns), ...(this.modDomains.get(ns.toLowerCase()) ?? []), ...(this.modDomains.get(base) ?? [])]);
+	}
+
+	private textureWords: Map<string, Map<string, string[]>> | undefined;
+
+	/**
+	 * Before 1.8 a mod names its items' textures in code, not in models: the
+	 * texture under items/ or blocks/ made of the id's words, in any order or
+	 * case (IC2:itemCellEmpty is items/itemCellEmpty, ThermalFoundation:
+	 * tool.sickleGold items/tool/gold/GoldSickle). A block's sides
+	 * (<name>_top, _side, _front...) count under its name. Null unless exactly
+	 * one texture of a kind matches.
+	 */
+	textureByWords(ns: string, itemPath: string, kinds: ('items' | 'blocks')[] = ['items', 'blocks']): { ref: string; kind: 'items' | 'blocks'; sides: Record<string, string> } | null {
+		if (!this.textureWords) {
+			this.textureWords = new Map();
+			for (const key of this.files.keys()) {
+				const m = key.match(/^([^/]+)\/textures\/(items|blocks)\/(.+)\.png$/);
+				if (!m) continue;
+				const side = m[3].match(/^(.*?)[_.](top|bottom|side|front|back)$/i);
+				const named = words(side ? side[1] : m[3]).filter((w) => !TEXTURE_FOLDER_WORDS.has(w));
+				if (!named.length) continue;
+				const at = `${m[1]}|${m[2]}|${[...new Set(named)].sort().join(' ')}`;
+				const byDomain = this.textureWords.get(at) ?? new Map<string, string[]>();
+				const ref = `${m[1]}:${m[2]}/${m[3]}`;
+				byDomain.set(side ? side[2].toLowerCase() : '', [...(byDomain.get(side ? side[2].toLowerCase() : '') ?? []), ref]);
+				this.textureWords.set(at, byDomain);
+			}
+		}
+		const wanted = [...new Set(words(itemPath).filter((w) => !TEXTURE_FOLDER_WORDS.has(w) && !words(ns).includes(w)))].sort().join(' ');
+		if (!wanted) return null;
+		const blockish = /^tile\.|^block|block/i.test(itemPath);
+		for (const kind of (blockish ? (['blocks', 'items'] as const) : (['items', 'blocks'] as const)).filter((k) => kinds.includes(k))) {
+			const found = [...this.domainsOf(ns)].map((d) => this.textureWords!.get(`${d}|${kind}|${wanted}`)).filter((f) => !!f);
+			if (found.length !== 1) continue;
+			const sides = Object.fromEntries([...found[0]!].filter(([k]) => k).map(([k, refs]) => [k, refs[0].toLowerCase()]));
+			const plain = found[0]!.get('');
+			if (plain && plain.length !== 1) continue;
+			const ref = (plain?.[0] ?? sides.side ?? sides.front ?? Object.values(sides)[0])?.toLowerCase();
+			if (ref) return { ref, kind, sides };
+		}
+		return null;
 	}
 
 	private lowerKeys: Map<string, string> | undefined;
@@ -461,6 +525,7 @@ export class Resources {
 			}
 		}
 		ownLangs.set(out, own);
+		langDomains.set(out, (ns) => this.domainsOf(ns));
 		return out;
 	}
 }
@@ -534,7 +599,9 @@ export async function serverResources(instance: ServerInstance): Promise<Resourc
 		const client = eula ? await clientJar(instance.minecraftVersion).catch(() => null) : null;
 		// Before 1.8 there are no item models: 1.8.9's, which name 1.7's textures as 1.7 does, over the version's own textures.
 		const models = client && compareVersions(instance.minecraftVersion, '1.8') < 0 ? await clientJar('1.8.9').catch(() => null) : null;
-		return Resources.load([...jars, ...(await loaderJars(instance.path)), ...(models ? [client!] : [])], models ?? client, dirs);
+		return Resources.load([...jars, ...(await loaderJars(instance.path)), ...(models ? [client!] : [])], models ?? client, dirs, {
+			modelless: compareVersions(instance.minecraftVersion, '1.8') < 0
+		});
 	})();
 	cache.set(instance.id, { key, resources });
 	resources.catch(() => cache.delete(instance.id));
@@ -862,8 +929,40 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		}
 		const numbered = numberedTexture(res, ns, itemPath, damage ?? 0);
 		if (numbered) return numbered;
+		// From 1.8 on, a block without a model is drawn in its mod's code: only items' textures then.
+		const named = res.textureByWords(ns0, itemPath, res.modelless ? ['items', 'blocks'] : ['items']);
+		if (named) return textureIcon(named, itemPath);
 	}
 	return { spec: null, exact: true };
+}
+
+/** Blocks the inventory shows flat (crossed squares in the world), by their id. */
+const FLAT_BLOCKS = /sapling|flower|mushroom|torch|plant|crop|seed|rail|ladder|vine|tallgrass|foliage|reed|lily|bush|shrub|sprout|door|pane|web/i;
+
+/**
+ * A picture from a texture found by name (Resources.textureByWords): an
+ * item's flat; a block's a cube with its own top and sides where it has
+ * them, or flat when it is a plant or the like. A block's picture is a
+ * guess: its shape is in its mod's code.
+ */
+function textureIcon(found: { ref: string; kind: 'items' | 'blocks'; sides: Record<string, string> }, itemPath: string): ItemIcon {
+	if (found.kind === 'items' || FLAT_BLOCKS.test(itemPath)) return { spec: { kind: 'flat', layers: [{ texture: found.ref, tint: null }] }, exact: found.kind === 'items' };
+	const side = found.sides.side ?? found.ref;
+	const face = (texture: string): FaceSpec => ({ texture, uv: [0, 0, 16, 16], tint: null });
+	return {
+		spec: {
+			kind: 'block',
+			elements: [
+				{
+					from: [0, 0, 0],
+					to: [16, 16, 16],
+					faces: { up: face(found.sides.top ?? found.ref), north: face(found.sides.front ?? side), south: face(side), east: face(side), west: face(side) }
+				}
+			],
+			rotation: GUI_ROTATION
+		},
+		exact: false
+	};
 }
 
 /**
@@ -1331,11 +1430,27 @@ function langName(id: string, lang: Map<string, string>): string | null {
 		const found = filled(lower.get(key.toLowerCase()));
 		if (found) return found;
 	}
-	return ns === 'minecraft' ? null : byWords(domain(ns), path, lang);
+	return ns === 'minecraft' ? null : byWords(ns, path, lang);
+}
+
+/** Words of a texture's path or an id that say where it is, not what (items/, tile.ItemFoo). */
+const TEXTURE_FOLDER_WORDS = new Set(['item', 'items', 'tile', 'block', 'blocks']);
+
+/** The mod ids a jar's mcmod.info names, in lower case (1.7 to 1.12). */
+function modIds(data: Buffer | null): string[] {
+	try {
+		const info = JSON.parse(data?.toString('utf8') ?? '') as unknown;
+		const list = Array.isArray(info) ? info : ((info as { modList?: unknown; modlist?: unknown }).modList ?? (info as { modlist?: unknown }).modlist ?? []);
+		return (list as { modid?: unknown }[]).flatMap((m) => (typeof m?.modid === 'string' ? [m.modid.toLowerCase()] : []));
+	} catch {
+		return [];
+	}
 }
 
 /** Every namespace's own lang lines, by the merged map Resources.lang() returns. */
 const ownLangs = new WeakMap<Map<string, string>, Map<string, Map<string, string>>>();
+/** The namespaces an id's names may be in (Resources.domainsOf), by the merged lang map. */
+const langDomains = new WeakMap<Map<string, string>, (ns: string) => Set<string>>();
 const wordIndexes = new WeakMap<Map<string, string>, Map<string, Map<string, Set<string>>>>();
 
 /** "armor.aluminumBoots" -> ["armor", "aluminum", "boots"]. */
@@ -1355,7 +1470,14 @@ const words = (s: string) =>
  * tile.ma.<id>.name (a short prefix of its own in place of the mod id). Only
  * a single answer counts.
  */
-function byWords(ns: string, path: string, lang: Map<string, string>): string | null {
+function byWords(ns0: string, path: string, lang: Map<string, string>): string | null {
+	const found = new Set<string>();
+	for (const ns of langDomains.get(lang)?.(ns0) ?? [domain(ns0)]) for (const name of byWordsIn(ns, path, lang) ?? []) found.add(name);
+	return found.size === 1 ? [...found][0] : null;
+}
+
+/** The names with the id's words in one namespace's lang lines. */
+function byWordsIn(ns: string, path: string, lang: Map<string, string>): Set<string> | null {
 	const own = ownLangs.get(lang)?.get(ns);
 	if (!own) return null;
 	let index = wordIndexes.get(lang);
@@ -1371,8 +1493,11 @@ function byWords(ns: string, path: string, lang: Map<string, string>): string | 
 		for (const [key, value] of own) {
 			// item.<mod>.<the name's words>.name (1.12) or item.<mod>.<words> (1.13+).
 			const m = key.match(/^(?:item|tile|block)\.(.+?)(?:\.name)?$/);
-			const name = m && filled(value);
-			if (!m || !name) continue;
+			const name = filled(value);
+			if (!name) continue;
+			// IC2 (1.7) names items by their registry names alone: itemCellEmpty = Empty Cell.
+			if (!m && !key.includes('.')) put(words(key), name);
+			if (!m) continue;
 			const [first, ...rest] = m[1].split(/[.:]/);
 			if (first === ns) put(words(rest.join('.')), name);
 			// The mod's short prefix in place of its id (tile.ma.prosperity_ore), or a key without one.
@@ -1381,8 +1506,7 @@ function byWords(ns: string, path: string, lang: Map<string, string>): string | 
 		}
 		index.set(ns, byKey);
 	}
-	const found = byKey.get(words(path.replace(/^(item|tile)\./, '')).sort().join(' '));
-	return found?.size === 1 ? [...found][0] : null;
+	return byKey.get(words(path.replace(/^(item|tile)\./, '')).sort().join(' ')) ?? null;
 }
 
 const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();

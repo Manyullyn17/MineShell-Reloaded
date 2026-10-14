@@ -828,6 +828,49 @@ describe('item icons', () => {
 		expect(await iconTexture(instance, 'minecraft:items/diamond')).toEqual(PNG);
 	});
 
+	it('finds 1.7 mod pictures by the words of the id: items flat, blocks as cubes with their sides (a guess)', async () => {
+		const res = await Resources.load([
+			await jar('mods.jar', {
+				'mcmod.info': JSON.stringify([{ modid: 'TConstruct' }]),
+				'assets/thermalfoundation/textures/items/tool/gold/GoldSickle.png': PNG,
+				'assets/ic2/textures/blocks/blockMachine_top.png': PNG,
+				'assets/ic2/textures/blocks/blockMachine_side.png': PNG,
+				'assets/ic2/textures/blocks/blockMachine.png': PNG,
+				'assets/ic2/textures/blocks/blockRubSapling.png': PNG,
+				'assets/tinker/textures/items/gearCast.png': PNG,
+				// Two textures with the same words: no answer.
+				'assets/twins/textures/items/red_gem.png': PNG,
+				'assets/twins/textures/items/gem/red.png': PNG
+			})
+		], null, [], { modelless: true });
+		expect(await resolveIcon(res, 'ThermalFoundation:tool.sickleGold', 0)).toEqual({ spec: { kind: 'flat', layers: [{ texture: 'thermalfoundation:items/tool/gold/goldsickle', tint: null }] }, exact: true });
+		const machine = await resolveIcon(res, 'IC2:blockMachine', 0);
+		expect(machine).toMatchObject({ exact: false, spec: { kind: 'block', elements: [{ faces: { up: { texture: 'ic2:blocks/blockmachine_top' }, east: { texture: 'ic2:blocks/blockmachine_side' } } }] } });
+		// A sapling is flat in the inventory.
+		expect((await resolveIcon(res, 'IC2:blockRubSapling', 0)).spec).toMatchObject({ kind: 'flat' });
+		// TConstruct's assets are "tinker" (its jar's mcmod.info names the mod).
+		expect((await resolveIcon(res, 'TConstruct:gearCast', 0)).spec).toMatchObject({ layers: [{ texture: 'tinker:items/gearcast' }] });
+		expect((await resolveIcon(res, 'twins:redGem', 0)).spec).toBeNull();
+		// From 1.8 on, a block without a model is drawn in its mod's code: no cube from its texture.
+		const modern = await Resources.load([await jar('m.jar', { 'assets/ic2/textures/blocks/blockMachine.png': PNG, 'assets/ic2/textures/items/itemCell.png': PNG })], null);
+		expect((await resolveIcon(modern, 'ic2:block_machine', 0)).spec).toBeNull();
+		expect((await resolveIcon(modern, 'ic2:item_cell', 0)).spec).toMatchObject({ kind: 'flat' });
+	});
+
+	it("names 1.7 mod items from their mod's lang files, IC2's properties file included", async () => {
+		const res = await Resources.load([
+			await jar('ic2.jar', {
+				'mcmod.info': JSON.stringify({ modList: [{ modid: 'IC2' }] }),
+				'assets/ic2/textures/items/x.png': PNG,
+				'ic2/lang/en_US.properties': 'itemCellEmpty = Empty Cell\nic2.chat.hello = Hi\n'
+			}),
+			await jar('tc.jar', { 'mcmod.info': JSON.stringify([{ modid: 'TConstruct' }]), 'assets/tinker/lang/en_US.lang': 'item.tconstruct.GearCast.name=Gear Cast\n' })
+		], null);
+		const lang = await res.lang();
+		expect(itemName('IC2:itemCellEmpty', lang)).toBe('Empty Cell');
+		expect(itemName('TConstruct:gearCast', lang)).toBe('Gear Cast');
+	});
+
 	it("lists a 1.7 world's items from its registry, and finds 1.7 ids with capitals and '|' in their lowercase asset folders", async () => {
 		const tag = (type: string, value: unknown) => ({ type, value }) as never;
 		const compound = (entries: [string, unknown][]) => tag('compound', entries);
