@@ -312,6 +312,22 @@ export class Resources {
 		return this.nestedIndex.get(`${ns}/${name}`) ?? [];
 	}
 
+	private stateIndex: Map<string, string[]> | undefined;
+
+	/** Blockstates in subfolders, by `<namespace>/<file name>`: their paths under blockstates/. Built once. */
+	nestedBlockstates(ns: string, name: string): string[] {
+		if (!this.stateIndex) {
+			this.stateIndex = new Map();
+			for (const key of this.files.keys()) {
+				const m = key.match(/^([^/]+)\/blockstates\/(.+\/([^/]+))\.json$/);
+				if (!m) continue;
+				const at = `${m[1]}/${m[3]}`;
+				this.stateIndex.set(at, [...(this.stateIndex.get(at) ?? []), m[2]]);
+			}
+		}
+		return this.stateIndex.get(`${ns}/${name}`) ?? [];
+	}
+
 	private numberedIndex: Map<string, Map<number, string>> | undefined;
 
 	/**
@@ -667,6 +683,19 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 			// armour): not flagged, or every worn tool would carry the mark.
 			const loaded = await loadModel(res, `${ns}:item/${itemPath}`);
 			if (loaded) return { spec: specOf(loaded, [], legacyTint(itemPath)), exact: true };
+		}
+		// Thermal Foundation's tool.bow_steel: the dots are folders (models/item/tool/bow_steel).
+		const dotted = itemPath.replace(/\./g, '/');
+		if (dotted !== itemPath && res.has(`${ns}/models/item/${dotted}.json`)) {
+			const loaded = await loadModel(res, `${ns}:item/${dotted}`);
+			const spec = loaded && specOf(loaded, [], legacyTint(itemPath));
+			if (spec) return { spec, exact: true };
+		}
+		// A blockstate in a subfolder (Tech Reborn's blockstates/items/materials/dust): by file name, when only one has it.
+		const states = res.nestedBlockstates(ns, itemPath);
+		if (states.length === 1) {
+			const fromState = await blockstateIcon(res, ns, states[0], damage ?? 0, legacyTint(itemPath));
+			if (fromState?.spec) return { ...fromState, variant: !!damage && !fromState.exact };
 		}
 		// Models registered in code from a subfolder: by file name, when only one has it.
 		const nested = res.nestedItemModels(ns, itemPath);

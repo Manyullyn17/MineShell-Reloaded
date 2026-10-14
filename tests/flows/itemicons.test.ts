@@ -178,6 +178,21 @@ describe('item icons', () => {
 		expect(spec.elements[0].faces.north.texture).toBe('minecraft:block/heavy_core');
 	});
 
+	it('finds 1.12 models for dotted ids in folders, and blockstates in subfolders', async () => {
+		const res = await Resources.load([
+			await jar('mods.jar', {
+				'assets/thermalfoundation/models/item/tool/bow_steel.json': json({ parent: 'item/generated', textures: { layer0: 'thermalfoundation:items/tool/bow_steel' } }),
+				'assets/techreborn/blockstates/items/materials/dust.json': json({
+					forge_marker: 1,
+					defaults: { model: 'builtin/generated' },
+					variants: { type: { almandine: { textures: { layer0: 'techreborn:items/dust/almandine' } }, aluminum: { textures: { layer0: 'techreborn:items/dust/aluminum' } } } }
+				})
+			})
+		], null);
+		expect((await resolveIcon(res, 'thermalfoundation:tool.bow_steel', 0)).spec).toEqual({ kind: 'flat', layers: [{ texture: 'thermalfoundation:items/tool/bow_steel', tint: null }] });
+		expect(await resolveIcon(res, 'techreborn:dust', 1)).toMatchObject({ spec: { layers: [{ texture: 'techreborn:items/dust/aluminum' }] }, exact: false, variant: true, variantOf: 'aluminum' });
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
