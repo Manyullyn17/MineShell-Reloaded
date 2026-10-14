@@ -367,19 +367,35 @@ export class Resources {
 	/**
 	 * Item ids for the picker, `ns:path`: a namespace's 1.21.4+ item
 	 * definitions where it has them (exactly the items), else its item models
-	 * minus the shared bases models are built on.
+	 * minus the shared bases models are built on. Item models also hold
+	 * pictures that are not items (a clock's 64 frames, armour trims, a bow
+	 * being drawn): where a namespace names its items in 1.13+'s lang keys
+	 * (item.<ns>.<id>, block.<ns>.<id>; the game shows the raw key without
+	 * one), only models with a name count.
 	 */
-	itemNames(): string[] {
+	async itemNames(): Promise<string[]> {
 		const defined = new Set<string>();
 		const modelled = new Set<string>();
 		for (const key of this.files.keys()) {
 			const def = key.match(/^([^/]+)\/items\/([^/.]+)\.json$/);
 			if (def) defined.add(`${def[1]}:${def[2]}`);
 			const model = key.match(/^([^/]+)\/models\/item\/([^/.]+)\.json$/);
-			if (model && !/^(generated|handheld|handheld_rod|template_.*|.*_template)$/.test(model[2])) modelled.add(`${model[1]}:${model[2]}`);
+			if (model && !/^(generated|handheld|handheld_rod|handheld_mace|template_.*)$/.test(model[2])) modelled.add(`${model[1]}:${model[2]}`);
+		}
+		const lang = await this.lang();
+		const named = new Set<string>();
+		for (const key of lang.keys()) {
+			const m = key.match(/^(?:item|block)\.([^.]+)\.([^.]+)$/);
+			if (m) named.add(m[1]);
 		}
 		const withDefinitions = new Set([...defined].map((id) => id.split(':')[0]));
-		return [...defined, ...[...modelled].filter((id) => !withDefinitions.has(id.split(':')[0]))].sort();
+		const items = [...modelled].filter((id) => {
+			const [ns, p] = id.split(':');
+			if (withDefinitions.has(ns)) return false;
+			// 1.19.4-1.20.x name every smithing template "Smithing Template", by one shared key.
+			return !named.has(ns) || lang.has(`item.${ns}.${p}`) || lang.has(`block.${ns}.${p}`) || p.endsWith('_smithing_template');
+		});
+		return [...defined, ...items].filter((id) => id !== 'minecraft:air').sort();
 	}
 
 	/** Every en_us line of every jar and asset folder: 1.13+'s JSON and 1.12's .lang. The first to set a key wins. */
@@ -1240,6 +1256,35 @@ function byWords(ns: string, path: string, lang: Map<string, string>): string | 
 
 const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();
 
+/**
+ * A 1.12 server without Forge's registry (vanilla) has only model names to go
+ * by, and vanilla's are often its variants' (black_wool, granite) or other
+ * names (dead_bush): those become the ids they belong to (wool, stone,
+ * deadbush). The variant itself is picked by damage, not here.
+ */
+async function vanilla112Ids(res: Resources, models: string[]): Promise<string[]> {
+	const owner = new Map<string, string>();
+	// Ids with one model of their own first: dead_bush is deadbush's, though tallgrass 0 looks the same.
+	const entries = Object.entries(VANILLA_112).sort(([, a], [, b]) => Number(a(0) !== a(1)) - Number(b(0) !== b(1)));
+	for (const [id, model] of entries) {
+		for (let d = 0; d < 16; d++) {
+			const name = model(d);
+			if (name && !owner.has(name)) owner.set(name, id);
+		}
+	}
+	// Pictures other models switch to (a clock's frames, a drawn bow) are not items.
+	const shown = new Set<string>();
+	for (const id of models) {
+		const [ns, p] = split(id);
+		const overrides = (await res.json(`${ns}/models/item/${p}.json`))?.overrides;
+		for (const o of Array.isArray(overrides) ? (overrides as { model?: unknown }[]) : []) {
+			if (typeof o.model === 'string' && split(o.model).join(':') !== `${ns}:item/${p}`) shown.add(split(o.model).join(':'));
+		}
+	}
+	const items = models.filter((id) => !shown.has(`${split(id)[0]}:item/${split(id)[1]}`));
+	return [...new Set(items.map((id) => (id.startsWith('minecraft:') ? `minecraft:${owner.get(id.slice(10)) ?? id.slice(10)}` : id)))].sort();
+}
+
 /** Every item the server knows, with its name, for the picker. */
 export async function itemChoices(instance: ServerInstance): Promise<ItemChoice[]> {
 	const res = await serverResources(instance);
@@ -1247,7 +1292,7 @@ export async function itemChoices(instance: ServerInstance): Promise<ItemChoice[
 	if (!hit) {
 		hit = (async () => {
 			const registry = compareVersions(instance.minecraftVersion, '1.13') < 0 ? await registryItems(path.join(instance.path, await serverWorldName(instance.path))) : null;
-			const ids = registry ?? res.itemNames();
+			const ids = registry ?? (compareVersions(instance.minecraftVersion, '1.13') < 0 ? await vanilla112Ids(res, await res.itemNames()) : await res.itemNames());
 			const lang = await res.lang();
 			return ids.map((id) => ({ id, name: itemName(id, lang) }));
 		})();

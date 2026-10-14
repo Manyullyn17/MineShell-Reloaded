@@ -725,5 +725,32 @@ describe('item icons', () => {
 			{ id: 'b:gear', name: 'Gear' }
 		]);
 	});
+
+	it('offers only item models that are items: named ones before 1.21.4, ids for vanilla 1.12 without a registry', async () => {
+		// 1.13-1.21.3: models without a name are pictures (a clock's frames, trims), not items;
+		// smithing templates share one name in 1.19.4-1.20.x.
+		const mid = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '1.20.1' },
+			{
+				'mods/c.jar': zipBuffer({
+					...Object.fromEntries(['clock', 'clock_01', 'iron_helmet', 'iron_helmet_gold_trim', 'coast_armor_trim_smithing_template', 'template_banner'].map((m) => [`assets/minecraft/models/item/${m}.json`, '{}'])),
+					'assets/minecraft/lang/en_us.json': JSON.stringify({ 'item.minecraft.clock': 'Clock', 'item.minecraft.iron_helmet': 'Iron Helmet', 'item.minecraft.smithing_template': 'Smithing Template' })
+				})
+			}
+		);
+		expect((await itemChoices(mid)).map((c) => c.id)).toEqual(['minecraft:clock', 'minecraft:coast_armor_trim_smithing_template', 'minecraft:iron_helmet']);
+
+		// Vanilla 1.12 (no Forge registry): model names back to the ids they belong to.
+		const old = await createInstance(
+			{ modloader: 'vanilla', minecraftVersion: '1.12.2' },
+			{
+				'mods/c.jar': zipBuffer({
+					...Object.fromEntries(['black_wool', 'red_wool', 'granite', 'dead_bush', 'tall_grass', 'clock_01', 'diamond'].map((m) => [`assets/minecraft/models/item/${m}.json`, '{}'])),
+					'assets/minecraft/models/item/clock.json': json({ overrides: [{ predicate: { time: 0 }, model: 'item/clock' }, { predicate: { time: 0.5 }, model: 'item/clock_01' }] })
+				})
+			}
+		);
+		expect((await itemChoices(old)).map((c) => c.id)).toEqual(['minecraft:clock', 'minecraft:deadbush', 'minecraft:diamond', 'minecraft:stone', 'minecraft:tallgrass', 'minecraft:wool']);
+	});
 });
 
