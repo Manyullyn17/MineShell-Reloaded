@@ -12,6 +12,7 @@ import { openZipFile } from './zip';
 import { child, parseNbt, str } from './nbt';
 import { compareVersions } from './java';
 import { serverWorldName } from './packworld';
+import { LEGACY_TINTS } from './itemtints';
 import { bannerIcon, bedIcon, chestIcon, conduitIcon, decoratedPotIcon, headIcon, statueIcon, type HeadKind } from './entityicons';
 
 /**
@@ -555,12 +556,19 @@ function tintsOf(def: Record<string, unknown>): Tints {
 	});
 }
 
-/** Before 1.21.4 tints are set in code: the vanilla ones that matter, by item path. */
+/**
+ * Before 1.21.4 tints are set in code: foliage and grass by item path, for
+ * mods' leaves too. Cherry leaves are pink and drawn untinted; 1.20.3
+ * renamed grass to short_grass.
+ */
 function legacyTint(itemPath: string): string | null {
-	if (/leaves|vine|lily_pad|waterlily/.test(itemPath)) return DEFAULT_TINT.foliage;
-	if (/^(grass|grass_block|tall_grass|tallgrass|fern|large_fern|double_plant)$/.test(itemPath)) return DEFAULT_TINT.grass;
+	if (/leaves|vine|lily_pad|waterlily/.test(itemPath) && !/cherry/.test(itemPath)) return DEFAULT_TINT.foliage;
+	if (/^(grass|short_grass|grass_block|tall_grass|tallgrass|fern|large_fern|double_plant)$/.test(itemPath)) return DEFAULT_TINT.grass;
 	return null;
 }
+
+/** A vanilla item's colours per tint index before 1.21.4 (spawn eggs, leather, potions...), by its model's name or its id. */
+const legacyTints = (ns: string, model: string, itemPath: string): Tints => (ns === 'minecraft' ? (LEGACY_TINTS[model] ?? LEGACY_TINTS[itemPath] ?? []) : []);
 
 /** The game's default uv for a face, from the element's box. */
 const UV: Record<ModelSide, (f: number[], t: number[]) => [number, number, number, number]> = {
@@ -673,7 +681,7 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		if (!res.has(`${ns}/models/item/${name}.json`)) continue;
 		const loaded = await loadModel(res, `${ns}:item/${name}`);
 		if (!loaded) continue;
-		const spec = specOf(loaded, [], legacyTint(itemPath));
+		const spec = specOf(loaded, legacyTints(ns, name, itemPath), legacyTint(itemPath));
 		// An item model the mod draws in code (builtin/entity, nothing to draw): its block's picture below is closer.
 		if (!spec && ns !== 'minecraft') continue;
 		// Vanilla is known: its table, or damage that is wear (tools, armour). A

@@ -252,8 +252,36 @@ describe('item icons', () => {
 			...Object.fromEntries(['dead_bush', 'bottle_drinkable', 'totem'].map((m) => [`assets/minecraft/models/item/${m}.json`, json({ parent: 'item/generated', textures: { layer0: `items/${m}` } })]))
 		}));
 		for (const [id, model] of [['deadbush', 'dead_bush'], ['potion', 'bottle_drinkable'], ['totem_of_undying', 'totem']]) {
-			expect((await resolveIcon(res, `minecraft:${id}`, 0)).spec).toEqual({ kind: 'flat', layers: [{ texture: `minecraft:items/${model}`, tint: null }] });
+			expect((await resolveIcon(res, `minecraft:${id}`, 0)).spec).toMatchObject({ kind: 'flat', layers: [{ texture: `minecraft:items/${model}` }] });
 		}
+	});
+
+	it('colours vanilla items the game tints in code before 1.21.4: spawn eggs, leather, potions, leaves, grass', async () => {
+		const flat = (name: string, layers: number) =>
+			json({ parent: 'item/generated', textures: Object.fromEntries([...Array(layers).keys()].map((i) => [`layer${i}`, `item/${name}_${i}`])) });
+		const res = await Resources.load([], await jar('c.jar', {
+			'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
+			'assets/minecraft/models/item/creeper_spawn_egg.json': flat('spawn_egg', 2),
+			'assets/minecraft/models/item/leather_helmet.json': flat('leather_helmet', 2),
+			'assets/minecraft/models/item/potion.json': flat('potion', 2),
+			'assets/minecraft/models/block/leaves.json': json({ elements: [{ from: [0, 0, 0], to: [16, 16, 16], faces: { up: { texture: '#all', tintindex: 0 } } }] }),
+			...Object.fromEntries(['spruce', 'cherry'].map((w) => [`assets/minecraft/models/item/${w}_leaves.json`, json({ parent: 'block/leaves', textures: { all: `block/${w}_leaves` } })])),
+			'assets/minecraft/models/item/short_grass.json': json({ parent: 'item/generated', textures: { layer0: 'block/short_grass' } })
+		}));
+		const tints = async (id: string, damage: number | null = null) => {
+			const spec = (await resolveIcon(res, `minecraft:${id}`, damage)).spec as { kind: string; layers?: { tint: string | null }[]; elements?: { faces: { up: { tint: string | null } } }[] };
+			return spec.layers ? spec.layers.map((l) => l.tint) : spec.elements!.map((e) => e.faces.up.tint);
+		};
+		// Every egg its own two colours, not one grey egg for all.
+		expect(await tints('creeper_spawn_egg')).toEqual(['#0da70b', '#000000']);
+		expect(await tints('leather_helmet')).toEqual(['#a06540', null]);
+		expect(await tints('potion')).toEqual(['#385dc6', null]);
+		expect(await tints('spruce_leaves')).toEqual(['#619961']);
+		// 1.12: leaves by damage, named by the model the damage picks.
+		expect(await tints('leaves', 1)).toEqual(['#619961']);
+		// Cherry leaves are pink: not tinted green. 1.20.3's short_grass is grass.
+		expect(await tints('cherry_leaves')).toEqual([null]);
+		expect(await tints('short_grass')).toEqual(['#7cbd6b']);
 	});
 
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
