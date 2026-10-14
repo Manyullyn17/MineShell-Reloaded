@@ -51,4 +51,43 @@ describe('icon loader', () => {
 			vi.unstubAllGlobals();
 		}
 	});
+
+	it("takes a connected texture's first piece, not a strip of all of them (Rechiseled)", async () => {
+		const canvases: { width: number; height: number }[] = [];
+		const draws: number[][] = [];
+		const context = new Proxy({} as Record<string, unknown>, {
+			get: (_t, key) =>
+				key === 'getImageData'
+					? () => ({ data: new Uint8ClampedArray(64 * 64 * 4).fill(255) })
+					: key === 'drawImage'
+						? (...args: unknown[]) => draws.push(args.slice(1).map(Number))
+						: () => {}
+		});
+		vi.stubGlobal('document', {
+			createElement: () => {
+				const canvas = { width: 0, height: 0, getContext: () => context, toDataURL: () => 'data:,' };
+				canvases.push(canvas);
+				return canvas;
+			}
+		});
+		vi.stubGlobal(
+			'Image',
+			class {
+				width = 80;
+				height = 16;
+				onload: (() => void) | null = null;
+				set src(_v: string) {
+					queueMicrotask(() => this.onload?.());
+				}
+			}
+		);
+		try {
+			await renderIcon({ kind: 'flat', layers: [{ texture: 'rechiseled:block/tiles', tint: null }] }, (ref) => ref);
+			// The icon's own canvas, then the texture's: 16 square, from the strip's first 16x16.
+			expect(canvases.map((c) => [c.width, c.height])).toEqual([[64, 64], [16, 16]]);
+			expect(draws[0]).toEqual([0, 0, 16, 16, 0, 0, 16, 16]);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
 });

@@ -256,6 +256,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Mod items whose models build on NeoForge's own (neoforge:block/default, the buckets) without a picture: the loader's jar was not read | `flows/itemicons.test.ts` |
 | (feature) Composite models (NeoForge/Forge `composite` loader): children's elements, each with its own textures | `flows/itemicons.test.ts` |
 | (feature) NeoForge fluid buckets: the bucket, the fluid cut to its shape when its texture is found by name, else flagged | `flows/itemicons.test.ts` |
+| Rechiseled's blocks drawn as thin strokes: a connected texture's pieces side by side were read as one stretched frame | `src/lib/shared/itemicon.test.ts` |
 | A scheduled restart during a live snapshot copy caught the world mid-write; a snapshot due during a restart failed; a failed save-on after a restart was reported as saving still off | `flows/snapshot-schedule.test.ts` |
 | (feature) Snapshot and map schedules on the clock; slots skipped when nobody played | `flows/snapshot-schedule.test.ts`, `flows/worldmap.test.ts` |
 | Two servers with Simple Voice Chat on the default UDP port: the second stopped itself at start | `flows/voicechat.test.ts` |

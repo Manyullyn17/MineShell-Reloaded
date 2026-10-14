@@ -39,14 +39,17 @@ function loadImage(url: string): Promise<HTMLImageElement | null> {
 }
 
 /**
- * One texture's first frame (animated ones are a vertical strip), tinted:
+ * One texture's first frame (animated ones are a vertical strip; connected
+ * textures like Rechiseled's put their pieces side by side, the first one
+ * the plain block), tinted:
  * multiplied by the colour, keeping the texture's own transparency; and
  * shaded for the side it is on. Shading here touches only the texture's own
  * pixels: shading the face's outline on the icon darkened whatever showed
  * through its holes a second time (a shulker box's base under the lid).
  */
-function prepared(img: HTMLImageElement, tint: string | null, shade = 1): HTMLCanvasElement {
-	const size = img.width;
+function prepared(img: HTMLImageElement, tint: string | null, shade = 1, whole = false): HTMLCanvasElement {
+	// The game's own entity models (`whole`) map their uv over the whole texture, which can be wider than tall (1.12's skulls).
+	const size = !whole && img.width > img.height ? img.height : img.width;
 	const canvas = document.createElement('canvas');
 	canvas.width = size;
 	canvas.height = size;
@@ -226,9 +229,9 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 		const groupDepth = new Map([...centres].map(([g, c]) => [g, project(view, ...(c.sum.map((v) => v / c.n) as Vec3)).depth]));
 		const order = (p: (typeof faces)[number], q: (typeof faces)[number]) =>
 			groupDepth.get(p.group)! - groupDepth.get(q.group)! || p.depth - q.depth;
-		for (const { face, points, normal } of faces.sort(order)) {
+		for (const { face, points, normal, group } of faces.sort(order)) {
 			const img = images.get(face.texture);
-			if (img) drawFace(ctx, view, prepared(img, face.tint, shadeOf(view, normal)), face, points);
+			if (img) drawFace(ctx, view, prepared(img, face.tint, shadeOf(view, normal), group.startsWith('q')), face, points);
 		}
 	}
 	const pixels = ctx.getImageData(0, 0, SIZE, SIZE).data;
