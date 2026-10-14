@@ -679,7 +679,11 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		// Vanilla is known: its table, or damage that is wear (tools, armour). A
 		// mod's damage may be a variant whose model only its code knows: a guess.
 		const variant = !!damage && (ns === 'minecraft' ? !!VANILLA_112[itemPath] : candidates.length > 1);
-		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant, ...(name !== itemPath ? { variantOf: name } : {}) };
+		// A 1.12 item at damage 0 whose blockstate lists variants is the first of them: its name is
+		// that variant's (Betweenlands' mud_bricks_carved: "Carved Mud Bricks"), the picture its own.
+		const first = damage === 0 && ns !== 'minecraft' ? (await blockstateIcon(res, ns, itemPath, 0, null))?.variantOf : undefined;
+		const variantOf = name !== itemPath ? name : first;
+		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant, ...(variantOf ? { variantOf } : {}) };
 	}
 	if (ns !== 'minecraft') {
 		const fromState = await blockstateIcon(res, ns, itemPath, damage ?? 0, legacyTint(itemPath));

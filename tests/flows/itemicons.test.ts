@@ -216,6 +216,23 @@ describe('item icons', () => {
 		expect(itemName('mysticalagriculture:supremium_hoe', new Map([['item.mysticalagriculture.supremium_hoe.name', '§cSupremium Hoe']]))).toBe('Supremium Hoe');
 	});
 
+	it("keeps a 1.12 variant's name at damage 0 when the item's own model gives the picture", async () => {
+		const instance = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.12.2' },
+			{
+				'mods/tbl.jar': zipBuffer({
+					'assets/thebetweenlands/blockstates/mud_bricks_carved.json': json({
+						variants: { 'variant=mud_bricks_carved': { model: 'thebetweenlands:mud_bricks_carved' }, 'variant=mud_bricks_carved_decay_1': { model: 'thebetweenlands:mud_bricks_carved_decay_1' } }
+					}),
+					'assets/thebetweenlands/models/item/mud_bricks_carved.json': json({ parent: 'item/generated', textures: { layer0: 'thebetweenlands:blocks/mud_bricks_carved' } }),
+					'assets/thebetweenlands/lang/en_US.lang': 'tile.thebetweenlands.mud_bricks_carved.mud_bricks_carved.name=Carved Mud Bricks\n'
+				})
+			}
+		);
+		const { icons } = await iconsFor(instance, [{ id: 'thebetweenlands:mud_bricks_carved', damage: 0 }]);
+		expect(icons['thebetweenlands:mud_bricks_carved']).toMatchObject({ name: 'Carved Mud Bricks', exact: true, spec: { kind: 'flat' } });
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
