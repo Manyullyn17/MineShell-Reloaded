@@ -568,7 +568,10 @@ function specOf(model: Model, tints: Tints, fallbackTint: string | null): IconSp
 		const faces: ElementSpec['faces'] = {};
 		for (const side of ['up', 'north', 'south', 'east', 'west'] as const) {
 			const face = (raw.faces as Record<string, Record<string, unknown>> | undefined)?.[side];
-			const t = face && texture(model, face.texture as string);
+			// A face's texture is always one of the model's (the game adds the '#' when it is
+			// missing: the heavy core says "all"); a plain name only when the model has no such key.
+			const named = face?.texture as string | undefined;
+			const t = face && texture(model, named && !named.startsWith('#') && model.textures[named] ? `#${named}` : named);
 			if (!face || !t) continue;
 			faces[side] = {
 				texture: t,

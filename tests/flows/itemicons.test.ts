@@ -165,6 +165,19 @@ describe('item icons', () => {
 		expect(await res.read('rocketry/textures/items/advcombustionengine.png')).toEqual(PNG);
 	});
 
+	it("reads a face's texture written without '#' as the model's (the heavy core)", async () => {
+		const res = await Resources.load([], await jar('c.jar', {
+			'assets/minecraft/models/item/heavy_core.json': json({ parent: 'minecraft:block/heavy_core' }),
+			'assets/minecraft/models/block/heavy_core.json': json({
+				textures: { all: 'block/heavy_core' },
+				elements: [{ from: [4, 0, 4], to: [12, 8, 12], faces: { up: { uv: [0, 0, 8, 8], texture: 'all' }, north: { uv: [0, 8, 8, 16], texture: '#all' } } }]
+			})
+		}));
+		const spec = (await resolveIcon(res, 'minecraft:heavy_core')).spec as { elements: { faces: Record<string, { texture: string }> }[] };
+		expect(spec.elements[0].faces.up.texture).toBe('minecraft:block/heavy_core');
+		expect(spec.elements[0].faces.north.texture).toBe('minecraft:block/heavy_core');
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
