@@ -164,7 +164,12 @@ function drawFace(ctx: CanvasRenderingContext2D, view: View, tex: HTMLCanvasElem
 	ctx.restore();
 }
 
-/** Draws one icon; null when a texture it needs is missing. */
+/**
+ * Draws one icon; null when a texture it needs is missing, or when nothing
+ * shows: mods give blocks they draw in code an invisible model (Bewitchment's
+ * blocks/nothing, Astral Sorcery's misc/blank), and the item's name says more
+ * than an empty slot.
+ */
 export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => string): Promise<string | null> {
 	const refs = new Set<string>();
 	if (spec.kind === 'flat') spec.layers.forEach((l) => refs.add(l.texture));
@@ -216,7 +221,10 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 			if (img) drawFace(ctx, view, prepared(img, face.tint, shadeOf(view, normal)), face, points);
 		}
 	}
-	return canvas.toDataURL('image/png');
+	const pixels = ctx.getImageData(0, 0, SIZE, SIZE).data;
+	let drawn = false;
+	for (let i = 3; i < pixels.length && !drawn; i += 4) drawn = pixels[i] > 0;
+	return drawn ? canvas.toDataURL('image/png') : null;
 }
 
 /**
