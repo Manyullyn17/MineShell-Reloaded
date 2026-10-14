@@ -320,6 +320,33 @@ describe('item icons', () => {
 		expect(spec.elements.map((e) => e.faces.up.texture)).toEqual(['ie:block/grate', 'ie:block/rail']);
 	});
 
+	it("draws NeoForge's fluid buckets: the bucket, and the fluid in its shape when the mod has its texture", async () => {
+		const res = await Resources.load([
+			await jar('mods.jar', {
+				'assets/neoforge/models/item/default.json': json({ parent: 'minecraft:item/generated' }),
+				'assets/neoforge/models/item/bucket_drip.json': json({ parent: 'neoforge:item/default', textures: { base: 'item/bucket', fluid: 'neoforge:item/mask/bucket_fluid_drip' } }),
+				'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
+				'assets/ores/models/item/molten_tin_bucket.json': json({ parent: 'neoforge:item/bucket_drip', fluid: 'ores:molten_tin', loader: 'neoforge:fluid_container' }),
+				'assets/ores/textures/block/fluid/molten_tin_still.png': PNG,
+				'assets/ores/textures/block/fluid/molten_tin_flow.png': PNG,
+				'assets/gas/models/item/brine_bucket.json': json({ parent: 'neoforge:item/bucket_drip', fluid: 'gas:brine', loader: 'neoforge:fluid_container' })
+			})
+		], null);
+		expect(await resolveIcon(res, 'ores:molten_tin_bucket')).toEqual({
+			spec: {
+				kind: 'flat',
+				layers: [
+					{ texture: 'minecraft:item/bucket', tint: null },
+					{ texture: 'ores:block/fluid/molten_tin_still', tint: null, mask: 'neoforge:item/mask/bucket_fluid_drip' }
+				]
+			},
+			exact: true,
+			variant: false
+		});
+		// The fluid's texture is set in its mod's code and not found by name: the empty bucket, as a guess.
+		expect(await resolveIcon(res, 'gas:brine_bucket')).toMatchObject({ spec: { kind: 'flat', layers: [{ texture: 'minecraft:item/bucket' }] }, exact: false });
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);

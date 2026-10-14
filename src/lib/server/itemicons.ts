@@ -74,7 +74,8 @@ export type Quad = {
 	group: number;
 };
 export type IconSpec =
-	| { kind: 'flat'; layers: { texture: string; tint: string | null }[] }
+	/** `mask`: a texture whose shape the layer is cut to (a bucket's fluid). */
+	| { kind: 'flat'; layers: { texture: string; tint: string | null; mask?: string }[] }
 	/**
 	 * `rotation`: the model's inventory view, degrees about x, y, z as the game applies them;
 	 * `scale`: the size against a block's (1); `center`: the point drawn in the middle (8, 8, 8).
@@ -313,6 +314,33 @@ export class Resources {
 		return this.nestedIndex.get(`${ns}/${name}`) ?? [];
 	}
 
+	private fluidIndex: Map<string, string[]> | undefined;
+
+	/**
+	 * A fluid's texture, which its mod sets in code: by name, as mods usually
+	 * call it (block/fluid/<name>_still, block/<name>_still, liquid/<name>),
+	 * the still one before the flowing one. Null when there is none by that
+	 * name: many mods tint one shared texture (Mekanism's gases, molten metals).
+	 */
+	fluidTexture(fluid: string): string | null {
+		if (!this.fluidIndex) {
+			this.fluidIndex = new Map();
+			for (const key of this.files.keys()) {
+				const m = key.match(/^([^/]+)\/textures\/(.+\/([^/]+?))\.png$/);
+				if (!m || !/(^|\/)(block|blocks|fluid|fluids|liquid)\//.test(m[2])) continue;
+				const at = `${m[1]}/${m[3]}`;
+				this.fluidIndex.set(at, [...(this.fluidIndex.get(at) ?? []), `${m[1]}:${m[2]}`]);
+			}
+		}
+		const [ns, p] = split(fluid);
+		const name = p.split('/').pop()!;
+		for (const file of [`${name}_still`, name, `${name}_flow`, `${name}_flowing`]) {
+			const found = this.fluidIndex.get(`${ns}/${file}`);
+			if (found?.length) return found.find((t) => /fluid|liquid/.test(t))?.toLowerCase() ?? found[0].toLowerCase();
+		}
+		return null;
+	}
+
 	private stateIndex: Map<string, string[]> | undefined;
 
 	/** Blockstates in subfolders, by `<namespace>/<file name>`: their paths under blockstates/. Built once. */
@@ -519,6 +547,8 @@ type Model = {
 	entity: boolean;
 	/** display.gui.rotation, the nearest one up the chain. */
 	gui: [number, number, number] | null;
+	/** A fluid container (NeoForge's buckets): the fluid it holds and its texture, when the mod has one by that name. */
+	fluid?: { id: string; texture: string | null };
 };
 
 const cube = (faces: Record<ModelSide, string>) => ({
@@ -570,7 +600,8 @@ async function modelOf(res: Resources, json: Record<string, unknown>, depth: num
 	const display = json.display as { gui?: { rotation?: unknown } } | undefined;
 	const rotation = display?.gui?.rotation;
 	const gui = Array.isArray(rotation) && rotation.length === 3 && rotation.every((n) => typeof n === 'number') ? (rotation as [number, number, number]) : (parent?.gui ?? null);
-	return { textures, elements, flat: !composed && !Array.isArray(json.elements) && (parent?.flat ?? false), entity: parent?.entity ?? false, gui };
+	const fluid = /:fluid_container$/.test(String(json.loader ?? '')) && typeof json.fluid === 'string' ? { id: json.fluid, texture: res.fluidTexture(json.fluid) } : parent?.fluid;
+	return { textures, elements, flat: !composed && !Array.isArray(json.elements) && (parent?.flat ?? false), entity: parent?.entity ?? false, gui, ...(fluid ? { fluid } : {}) };
 }
 
 /**
@@ -652,6 +683,13 @@ const UV: Record<ModelSide, (f: number[], t: number[]) => [number, number, numbe
 function specOf(model: Model, tints: Tints, fallbackTint: string | null): IconSpec | null {
 	const tint = (index: unknown) => (typeof index === 'number' ? (tints[index] ?? fallbackTint) : null);
 	if (model.entity) return null;
+	// NeoForge's bucket: the empty bucket, and the fluid cut to its shape (the mask is the model's "fluid" texture).
+	if (model.fluid) {
+		const base = texture(model, '#base');
+		const mask = texture(model, '#fluid');
+		if (!base) return null;
+		return { kind: 'flat', layers: [{ texture: base, tint: null }, ...(model.fluid.texture && mask ? [{ texture: model.fluid.texture, tint: null, mask }] : [])] };
+	}
 	if (model.flat || !model.elements) {
 		const layers: { texture: string; tint: string | null }[] = [];
 		for (let i = 0; i < 8; i++) {
@@ -761,7 +799,9 @@ export async function resolveIcon(res: Resources, id: string, damage: number | n
 		// that variant's (Betweenlands' mud_bricks_carved: "Carved Mud Bricks"), the picture its own.
 		const first = damage === 0 && ns !== 'minecraft' ? (await blockstateIcon(res, ns, itemPath, 0, null))?.variantOf : undefined;
 		const variantOf = name !== itemPath ? name : first;
-		return { spec, exact: !damage || ns === 'minecraft' || (i === 0 && candidates.length === 1), variant, ...(variantOf ? { variantOf } : {}) };
+		// A bucket whose fluid's texture was not found shows as the empty bucket: a guess.
+		const unsure = !!loaded.fluid && !loaded.fluid.texture;
+		return { spec, exact: !unsure && (!damage || ns === 'minecraft' || (i === 0 && candidates.length === 1)), variant, ...(variantOf ? { variantOf } : {}) };
 	}
 	if (ns !== 'minecraft') {
 		const fromState = await blockstateIcon(res, ns, itemPath, damage ?? 0, legacyTint(itemPath));

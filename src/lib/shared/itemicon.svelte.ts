@@ -18,7 +18,7 @@ type Vec3 = [number, number, number];
 /** A face of a model the game draws in code, placed by the server: texture top left, top right, bottom left. */
 export type Quad = { corners: [Vec3, Vec3, Vec3]; normal: Vec3; face: FaceSpec; group: number };
 export type IconSpec =
-	| { kind: 'flat'; layers: { texture: string; tint: string | null }[] }
+	| { kind: 'flat'; layers: { texture: string; tint: string | null; mask?: string }[] }
 	/** `scale`: the size against a block's (1); `center`: the point drawn in the middle (8, 8, 8). */
 	| { kind: 'block'; elements: ElementSpec[]; quads?: Quad[]; rotation: [number, number, number]; scale?: number; center?: [number, number, number] };
 export type ItemIcon = { spec: IconSpec | null; exact: boolean; variant?: boolean; name?: string };
@@ -172,7 +172,7 @@ function drawFace(ctx: CanvasRenderingContext2D, view: View, tex: HTMLCanvasElem
  */
 export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => string): Promise<string | null> {
 	const refs = new Set<string>();
-	if (spec.kind === 'flat') spec.layers.forEach((l) => refs.add(l.texture));
+	if (spec.kind === 'flat') spec.layers.forEach((l) => [l.texture, l.mask].forEach((r) => r && refs.add(r)));
 	else {
 		spec.elements.forEach((e) => Object.values(e.faces).forEach((f) => f && refs.add(f.texture)));
 		spec.quads?.forEach((q) => refs.add(q.face.texture));
@@ -188,7 +188,17 @@ export async function renderIcon(spec: IconSpec, textureUrl: (ref: string) => st
 	if (spec.kind === 'flat') {
 		for (const layer of spec.layers) {
 			const img = images.get(layer.texture);
-			if (img) ctx.drawImage(prepared(img, layer.tint), FLAT_INSET, FLAT_INSET, SIZE - 2 * FLAT_INSET, SIZE - 2 * FLAT_INSET);
+			if (!img) continue;
+			const picture = prepared(img, layer.tint);
+			const mask = layer.mask ? images.get(layer.mask) : null;
+			if (layer.mask && !mask) continue;
+			if (mask) {
+				// Only where the mask is: a bucket's fluid in the bucket's shape.
+				const cut = picture.getContext('2d')!;
+				cut.globalCompositeOperation = 'destination-in';
+				cut.drawImage(mask, 0, 0, mask.width, mask.width, 0, 0, picture.width, picture.height);
+			}
+			ctx.drawImage(picture, FLAT_INSET, FLAT_INSET, SIZE - 2 * FLAT_INSET, SIZE - 2 * FLAT_INSET);
 		}
 	} else {
 		const view = viewOf(spec.rotation, spec.scale, spec.center);
