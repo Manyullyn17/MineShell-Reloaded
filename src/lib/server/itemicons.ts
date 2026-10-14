@@ -12,6 +12,7 @@ import { openZipFile } from './zip';
 import { child, parseNbt, str } from './nbt';
 import { compareVersions } from './java';
 import { serverWorldName } from './packworld';
+import { registryItemIds } from './itemids';
 import { LEGACY_TINTS } from './itemtints';
 import { bannerIcon, bedIcon, chestIcon, conduitIcon, decoratedPotIcon, headIcon, statueIcon, type HeadKind } from './entityicons';
 
@@ -756,9 +757,17 @@ function definitionModel(def: Record<string, unknown> | undefined, depth = 0): R
 	return definitionModel(nested, depth + 1);
 }
 
+/**
+ * The asset folder of an id's namespace: 1.7 mod ids keep their capitals and
+ * some a '|', their assets do not (Botania -> botania, BuildCraft|Core ->
+ * buildcraftcore). The same for every later id.
+ */
+const domain = (ns: string) => ns.toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+
 /** Resolves one item, by id and (1.12 and older) damage. */
 export async function resolveIcon(res: Resources, id: string, damage: number | null = null): Promise<ItemIcon> {
-	const [ns, itemPath] = split(id);
+	const [ns0, itemPath] = split(id);
+	const ns = domain(ns0);
 	const definition = await res.json(`${ns}/items/${itemPath}.json`);
 	if (definition) {
 		const model = definitionModel(definition.model as Record<string, unknown>);
@@ -1098,7 +1107,8 @@ const VANILLA_112_NAMES: Record<string, (d: number) => string | null> = {
  * name stays.
  */
 async function withVariantName(res: Resources, id: string, damage: number | null, icon: ItemIcon): Promise<ItemIcon> {
-	const [ns, itemPath] = split(id);
+	const [ns0, itemPath] = split(id);
+	const ns = domain(ns0);
 	if (damage === null) return icon;
 	if (ns === 'minecraft') {
 		const key = VANILLA_112_NAMES[itemPath]?.(damage);
@@ -1123,7 +1133,8 @@ export async function iconsFor(
 	// resolved side by side: one after another, 500 took 20 s on a big pack.
 	await Promise.all(
 		items.slice(0, 500).map(async ({ id, damage }) => {
-			if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) return;
+			// 1.7 mod ids keep their capitals, some with a '|' (Botania:manaResource, BuildCraft|Core:wrenchItem).
+			if (!/^[A-Za-z0-9_.|-]+:[A-Za-z0-9_./-]+$|^[a-z0-9_./-]+$/.test(id)) return;
 			const key = iconKey(id, damage);
 			if (!memo.has(key)) memo.set(key, resolveIcon(res, id, damage).then((icon) => withVariantName(res, id, damage, icon)).catch(() => ({ spec: null, exact: true })));
 			icons[key] = await memo.get(key)!;
@@ -1146,11 +1157,13 @@ export async function iconTexture(instance: ServerInstance, ref: string): Promis
 export type ItemChoice = { id: string; name: string };
 
 /**
- * Forge's registry in level.dat (FML > Registries > minecraft:items > ids):
- * on 1.12 and older every item id the world knows, the most exact list
- * there is. Null without it (vanilla, 1.13+).
+ * Forge's registry in level.dat (FML > Registries > minecraft:items > ids;
+ * 1.7: FML > ItemData): on 1.12 and older every item id the world knows,
+ * the most exact list there is. Null without it (vanilla, 1.13+).
  */
 async function registryItems(worldDir: string): Promise<string[] | null> {
+	const old = await registryItemIds(worldDir);
+	if (old) return [...old.byName.keys()].sort();
 	try {
 		const level = parseNbt(await fs.readFile(path.join(worldDir, 'level.dat')));
 		const ids = child(child(child(child(level.root, 'FML'), 'Registries'), 'minecraft:items'), 'ids');
@@ -1311,7 +1324,7 @@ function langName(id: string, lang: Map<string, string>): string | null {
 		const found = filled(lower.get(key.toLowerCase()));
 		if (found) return found;
 	}
-	return ns === 'minecraft' ? null : byWords(ns, path, lang);
+	return ns === 'minecraft' ? null : byWords(domain(ns), path, lang);
 }
 
 /** Every namespace's own lang lines, by the merged map Resources.lang() returns. */

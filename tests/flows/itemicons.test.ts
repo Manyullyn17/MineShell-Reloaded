@@ -805,6 +805,29 @@ describe('item icons', () => {
 		]);
 	});
 
+	it("lists a 1.7 world's items from its registry, and finds 1.7 ids with capitals and '|' in their lowercase asset folders", async () => {
+		const tag = (type: string, value: unknown) => ({ type, value }) as never;
+		const compound = (entries: [string, unknown][]) => tag('compound', entries);
+		const entry = (k: string, v: number) => compound([['K', tag('string', k)], ['V', tag('int', v)]]);
+		const itemData = { type: 'list', itemType: 'compound', value: [entry('\u0002minecraft:diamond', 264), entry('\u0001BuildCraft|Core:engineBlock', 4000), entry('\u0002BuildCraft|Core:wrenchItem', 4100)] };
+		const level = writeNbt({ name: '', gzipped: true, root: compound([['FML', compound([['ItemData', itemData]])]]) });
+		const instance = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.7.10' },
+			{
+				'server.properties': 'level-name=world\n',
+				'world/level.dat': level,
+				'mods/bc.jar': zipBuffer({
+					'assets/buildcraftcore/models/item/wrenchitem.json': json({ parent: 'item/generated', textures: { layer0: 'buildcraftcore:items/wrench' } }),
+					'assets/buildcraftcore/lang/en_US.lang': 'item.wrenchItem.name=Wrench\n'
+				})
+			}
+		);
+		expect((await itemChoices(instance)).map((c) => c.id)).toEqual(['BuildCraft|Core:wrenchItem', 'minecraft:diamond']);
+		const { icons } = await iconsFor(instance, [{ id: 'BuildCraft|Core:wrenchItem', damage: 0 }]);
+		expect(icons['BuildCraft|Core:wrenchItem'].spec).toEqual({ kind: 'flat', layers: [{ texture: 'buildcraftcore:items/wrench', tint: null }] });
+		expect((await itemChoices(instance))[0].name).toBe('Wrench');
+	});
+
 	it('offers only item models that are items: named ones before 1.21.4, ids for vanilla 1.12 without a registry', async () => {
 		// 1.13-1.21.3: models without a name are pictures (a clock's frames, trims), not items;
 		// smithing templates share one name in 1.19.4-1.20.x.
