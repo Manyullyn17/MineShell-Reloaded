@@ -547,6 +547,8 @@ type Model = {
 	entity: boolean;
 	/** display.gui.rotation, the nearest one up the chain. */
 	gui: [number, number, number] | null;
+	/** display.gui.scale (its x), likewise: blocks are 0.625, big models shrink to fit. */
+	guiScale?: number;
 	/** A fluid container (NeoForge's buckets): the fluid it holds and its texture, when the mod has one by that name. */
 	fluid?: { id: string; texture: string | null };
 };
@@ -597,11 +599,21 @@ async function modelOf(res: Resources, json: Record<string, unknown>, depth: num
 	const textures = { ...(parent?.textures ?? {}), ...own };
 	const composed = await compositeElements(res, json, depth);
 	const elements = composed ?? (Array.isArray(json.elements) ? json.elements : (parent?.elements ?? null));
-	const display = json.display as { gui?: { rotation?: unknown } } | undefined;
+	const display = json.display as { gui?: { rotation?: unknown; scale?: unknown } } | undefined;
 	const rotation = display?.gui?.rotation;
+	const scaled = display?.gui?.scale;
+	const guiScale = Array.isArray(scaled) && typeof scaled[0] === 'number' && scaled[0] > 0 ? scaled[0] : parent?.guiScale;
 	const gui = Array.isArray(rotation) && rotation.length === 3 && rotation.every((n) => typeof n === 'number') ? (rotation as [number, number, number]) : (parent?.gui ?? null);
 	const fluid = /:fluid_container$/.test(String(json.loader ?? '')) && typeof json.fluid === 'string' ? { id: json.fluid, texture: res.fluidTexture(json.fluid) } : parent?.fluid;
-	return { textures, elements, flat: !composed && !Array.isArray(json.elements) && (parent?.flat ?? false), entity: parent?.entity ?? false, gui, ...(fluid ? { fluid } : {}) };
+	return {
+		textures,
+		elements,
+		flat: !composed && !Array.isArray(json.elements) && (parent?.flat ?? false),
+		entity: parent?.entity ?? false,
+		gui,
+		...(guiScale ? { guiScale } : {}),
+		...(fluid ? { fluid } : {})
+	};
 }
 
 /**
@@ -720,7 +732,9 @@ function specOf(model: Model, tints: Tints, fallbackTint: string | null): IconSp
 		}
 		if (Object.keys(faces).length) elements.push({ from, to, faces });
 	}
-	return elements.length ? { kind: 'block', elements, rotation: model.gui ?? GUI_ROTATION } : null;
+	// Sized as the inventory shows it, against a block's 0.625 (a multiblock's model shrinks to fit).
+	const scale = model.guiScale && Math.abs(model.guiScale - 0.625) > 1e-3 ? model.guiScale / 0.625 : undefined;
+	return elements.length ? { kind: 'block', elements, rotation: model.gui ?? GUI_ROTATION, ...(scale ? { scale } : {}) } : null;
 }
 
 /** The model a 1.21.4+ item definition names: a plain or special model, or the fallback / first case of the rest. */

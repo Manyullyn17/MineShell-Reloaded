@@ -347,6 +347,20 @@ describe('item icons', () => {
 		expect(await resolveIcon(res, 'gas:brine_bucket')).toMatchObject({ spec: { kind: 'flat', layers: [{ texture: 'minecraft:item/bucket' }] }, exact: false });
 	});
 
+	it("sizes block pictures as the model's inventory view says (fence gates, multiblock models)", async () => {
+		const box = { elements: [{ from: [0, 0, 0], to: [16, 16, 16], faces: { up: { texture: '#all' } } }], textures: { all: 'm:block/x' } };
+		const res = await Resources.load([
+			await jar('m.jar', {
+				'assets/m/models/item/gate.json': json({ ...box, display: { gui: { rotation: [30, 45, 0], scale: [0.8, 0.8, 0.8] } } }),
+				'assets/m/models/item/reactor.json': json({ ...box, display: { gui: { rotation: [30, 225, 0], scale: [0.25, 0.25, 0.25] } } }),
+				'assets/m/models/item/cube.json': json({ ...box, display: { gui: { rotation: [30, 225, 0], scale: [0.625, 0.625, 0.625] } } })
+			})
+		], null);
+		expect((await resolveIcon(res, 'm:gate')).spec).toMatchObject({ rotation: [30, 45, 0], scale: 1.28 });
+		expect((await resolveIcon(res, 'm:reactor')).spec).toMatchObject({ scale: 0.4 });
+		expect((await resolveIcon(res, 'm:cube')).spec).not.toHaveProperty('scale');
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
