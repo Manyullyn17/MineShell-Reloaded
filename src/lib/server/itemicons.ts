@@ -532,7 +532,9 @@ export async function serverResources(instance: ServerInstance): Promise<Resourc
 			.sort()
 			.map((n) => path.join(mods, n));
 		const client = eula ? await clientJar(instance.minecraftVersion).catch(() => null) : null;
-		return Resources.load([...jars, ...(await loaderJars(instance.path))], client, dirs);
+		// Before 1.8 there are no item models: 1.8.9's, which name 1.7's textures as 1.7 does, over the version's own textures.
+		const models = client && compareVersions(instance.minecraftVersion, '1.8') < 0 ? await clientJar('1.8.9').catch(() => null) : null;
+		return Resources.load([...jars, ...(await loaderJars(instance.path)), ...(models ? [client!] : [])], models ?? client, dirs);
 	})();
 	cache.set(instance.id, { key, resources });
 	resources.catch(() => cache.delete(instance.id));
@@ -579,6 +581,8 @@ const BASE_MODELS: Record<string, Record<string, unknown>> = {
 async function loadModel(res: Resources, ref: string, depth = 0): Promise<Model | null> {
 	if (depth > 12) return null;
 	const [ns, p] = split(ref);
+	// 1.8's clock and compass, turned in code: their first frame.
+	if (`${ns}:${p}` === 'minecraft:builtin/clock' || `${ns}:${p}` === 'minecraft:builtin/compass') return { textures: {}, elements: null, flat: true, entity: false, gui: null };
 	if (`${ns}:${p}` === 'minecraft:builtin/generated') return { textures: {}, elements: null, flat: true, entity: false, gui: null };
 	if (`${ns}:${p}` === 'minecraft:builtin/entity') return { textures: {}, elements: null, flat: false, entity: true, gui: null };
 	const json = (await res.json(`${ns}/models/${p}.json`)) ?? (ns === 'minecraft' ? BASE_MODELS[p.replace(/^(blocks?|items?)\//, (m) => (m.startsWith('b') ? 'block/' : 'item/'))] : undefined);
@@ -981,6 +985,8 @@ const VANILLA_112: Record<string, (d: number) => string | null> = {
 	coal: (d) => ['coal', 'charcoal'][d] ?? null,
 	fish: (d) => ['cod', 'salmon', 'clownfish', 'pufferfish'][d] ?? null,
 	cooked_fish: (d) => ['cooked_cod', 'cooked_salmon'][d] ?? null,
+	// 1.7's id for it.
+	cooked_fished: (d) => ['cooked_cod', 'cooked_salmon'][d] ?? null,
 	sandstone: (d) => ['sandstone', 'chiseled_sandstone', 'smooth_sandstone'][d] ?? null,
 	red_sandstone: (d) => ['red_sandstone', 'chiseled_red_sandstone', 'smooth_red_sandstone'][d] ?? null,
 	stonebrick: (d) => ['stonebrick', 'mossy_stonebrick', 'cracked_stonebrick', 'chiseled_stonebrick'][d] ?? null,
@@ -1096,7 +1102,8 @@ const VANILLA_112_NAMES: Record<string, (d: number) => string | null> = {
 	skull: pick('item.skull', ['skeleton', 'wither', 'zombie', 'char', 'creeper', 'dragon']),
 	coal: (d) => (d === 1 ? 'item.charcoal' : null),
 	fish: (d) => (['cod', 'salmon', 'clownfish', 'pufferfish'][d] ? `item.fish.${['cod', 'salmon', 'clownfish', 'pufferfish'][d]}.raw` : null),
-	cooked_fish: (d) => (['cod', 'salmon'][d] ? `item.fish.${['cod', 'salmon'][d]}.cooked` : null)
+	cooked_fish: (d) => (['cod', 'salmon'][d] ? `item.fish.${['cod', 'salmon'][d]}.cooked` : null),
+	cooked_fished: (d) => (['cod', 'salmon'][d] ? `item.fish.${['cod', 'salmon'][d]}.cooked` : null)
 };
 
 /**

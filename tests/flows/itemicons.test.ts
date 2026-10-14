@@ -805,6 +805,29 @@ describe('item icons', () => {
 		]);
 	});
 
+	it("draws vanilla items before 1.8 with 1.8.9's models over the version's own textures", async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.7.10' }, {});
+		await fs.mkdir(CLIENT_DIR, { recursive: true });
+		// 1.7.10: textures and names, no models.
+		await fs.writeFile(path.join(CLIENT_DIR, '1.7.10.jar'), zipBuffer({ 'assets/minecraft/textures/items/diamond.png': PNG, 'assets/minecraft/textures/items/clock.png': PNG, 'assets/minecraft/lang/en_US.lang': 'item.diamond.name=Diamond\n' }));
+		// 1.8.9: the models, naming textures as 1.7 does.
+		await fs.writeFile(
+			path.join(CLIENT_DIR, '1.8.9.jar'),
+			zipBuffer({
+				'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
+				'assets/minecraft/models/item/diamond.json': json({ parent: 'builtin/generated', textures: { layer0: 'items/diamond' } }),
+				'assets/minecraft/models/item/clock.json': json({ parent: 'builtin/clock', textures: { layer0: 'items/clock' } }),
+				'assets/minecraft/textures/items/diamond.png': Buffer.from('a 1.8 picture')
+			})
+		);
+		saveMapSettings(instance.id, { eulaAccepted: true });
+		const { icons } = await iconsFor(instance, [{ id: 'minecraft:diamond', damage: 0 }, { id: 'minecraft:clock', damage: 0 }]);
+		expect(icons['minecraft:diamond'].spec).toEqual({ kind: 'flat', layers: [{ texture: 'minecraft:items/diamond', tint: null }] });
+		expect(icons['minecraft:clock'].spec).toEqual({ kind: 'flat', layers: [{ texture: 'minecraft:items/clock', tint: null }] });
+		// The texture is 1.7.10's own.
+		expect(await iconTexture(instance, 'minecraft:items/diamond')).toEqual(PNG);
+	});
+
 	it("lists a 1.7 world's items from its registry, and finds 1.7 ids with capitals and '|' in their lowercase asset folders", async () => {
 		const tag = (type: string, value: unknown) => ({ type, value }) as never;
 		const compound = (entries: [string, unknown][]) => tag('compound', entries);
