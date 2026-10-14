@@ -246,6 +246,28 @@ describe('applyEdits', () => {
 });
 
 describe('nbt', () => {
+	it('reads and writes 1.7 items by number through the world\'s table, refusing ids it does not know', () => {
+		const short = (value: number): Tag => ({ type: 'short', value });
+		const ids = {
+			byNumber: new Map([[1, 'minecraft:stone'], [4100, 'Botania:manaResource']]),
+			byName: new Map([['minecraft:stone', 1], ['Botania:manaResource', 4100]])
+		};
+		// 1.7: no DataVersion, ids are shorts.
+		const file = player(null, ['Inventory', list(c(['id', short(1)], ['Count', b(5)], ['Damage', short(0)], ['Slot', b(0)]))]);
+		expect(playerView(file, ids).items[0]).toMatchObject({ id: 'minecraft:stone', count: 5, damage: 0 });
+		// Without the table the number is all there is.
+		expect(playerView(file).items[0].id).toBe('1');
+
+		applyEdits(file, [{ op: 'item', section: 'main', slot: 1, id: 'Botania:manaResource', count: 3, damage: 2 }], ids);
+		applyEdits(file, [{ op: 'item', section: 'main', slot: 0, id: 'minecraft:stone', count: 9 }], ids);
+		const items = playerView(reread(file), ids).items;
+		expect(items.map((x) => [x.slot, x.id, x.count, x.damage])).toEqual([[0, 'minecraft:stone', 9, 0], [1, 'Botania:manaResource', 3, 2]]);
+		// Stored as numbers: a string id is an item the game loads as nothing.
+		const inv = (reread(file).root.value.find(([k]) => k === 'Inventory')![1] as { value: Compound[] }).value;
+		expect(inv.map((e) => e.value.find(([k]) => k === 'id')![1])).toEqual([short(1), short(4100)]);
+		expect(() => applyEdits(file, [{ op: 'item', section: 'main', slot: 2, id: 'minecraft:netherite_ingot', count: 1 }], ids)).toThrow(/no item "minecraft:netherite_ingot"/);
+	});
+
 	it('round-trips modified UTF-8 (NUL, accents, characters beyond the BMP)', () => {
 		const file = player(3955, ['Name', s('a\u0000é😀')]);
 		expect(zlib.gunzipSync(writeNbt(file)).includes(Buffer.from([0xc0, 0x80]))).toBe(true);

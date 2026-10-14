@@ -81,6 +81,37 @@ describe('player data', () => {
 		expect(backup.equals(playerFile(3))).toBe(true);
 	});
 
+	it('saves a 1.7 player\'s items by the numbers in the world\'s Forge registry, or vanilla 1.7.10\'s', async () => {
+		const short = (value: number) => ({ type: 'short' as const, value });
+		const legacyPlayer = () =>
+			writeNbt({ name: '', gzipped: true, root: { type: 'compound', value: [['Inventory', { type: 'list', itemType: 'compound', value: [{ type: 'compound', value: [['id', short(264)], ['Count', { type: 'byte', value: 2 }], ['Damage', short(0)], ['Slot', { type: 'byte', value: 0 }]] }] }]] } });
+		const entry = (k: string, v: number) => ({ type: 'compound' as const, value: [['K', { type: 'string' as const, value: k }], ['V', { type: 'int' as const, value: v }]] as [string, never][] });
+		const level = writeNbt({
+			name: '',
+			gzipped: true,
+			root: { type: 'compound', value: [['FML', { type: 'compound', value: [['ItemData', { type: 'list', itemType: 'compound', value: [entry('\u0002minecraft:diamond', 264), entry('\u0001Botania:flower', 4000), entry('\u0002Botania:manaResource', 4100)] }]] }]] }
+		});
+		const forge = await createInstance(
+			{ modloader: 'forge', minecraftVersion: '1.7.10' },
+			{ 'server.properties': 'level-name=world\n', 'world/level.dat': level, [`world/playerdata/${ALEX}.dat`]: legacyPlayer() }
+		);
+		const ids = async (instance: typeof forge) => {
+			const { file } = await readPlayerData(instance, ALEX);
+			const { legacyItemIds } = await import('#lib/server/itemids.js');
+			return playerView(file, await legacyItemIds(instance)).items.map((x) => x.id);
+		};
+		expect(await ids(forge)).toEqual(['minecraft:diamond']);
+		await savePlayerData(forge, ALEX, (await readPlayerData(forge, ALEX)).version, [{ op: 'item', section: 'main', slot: 1, id: 'Botania:manaResource', count: 1 }]);
+		expect(await ids(forge)).toEqual(['minecraft:diamond', 'Botania:manaResource']);
+		// A block's number is not an item's.
+		await expect(savePlayerData(forge, ALEX, (await readPlayerData(forge, ALEX)).version, [{ op: 'item', section: 'main', slot: 2, id: 'Botania:flower', count: 1 }])).rejects.toThrow(/no item/);
+
+		// Vanilla 1.7.10 has no registry in level.dat: its own fixed numbers.
+		const vanilla = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.7.10' }, { 'server.properties': 'level-name=world\n', [`world/playerdata/${ALEX}.dat`]: legacyPlayer() });
+		await savePlayerData(vanilla, ALEX, (await readPlayerData(vanilla, ALEX)).version, [{ op: 'item', section: 'main', slot: 1, id: 'minecraft:cooked_fished', count: 3 }]);
+		expect(await ids(vanilla)).toEqual(['minecraft:diamond', 'minecraft:cooked_fished']);
+	});
+
 	it('refuses to write over a file that changed since it was opened', async () => {
 		const instance = await server();
 		const { version } = await readPlayerData(instance, ALEX);

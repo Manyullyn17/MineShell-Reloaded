@@ -6,8 +6,10 @@ import { vanillaEnchantmentTable, type EnchantmentInfo } from './enchantnames';
 import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
 import { serverWorldName } from './packworld';
 import { parseSnbt, SnbtError } from './snbt';
+import { legacyItemIds, type ItemIds } from './itemids';
 import {
 	checkItem,
+	idTag,
 	describeItem,
 	findContainers,
 	PlayerDataError,
@@ -254,10 +256,11 @@ function sectionOf(slot: number): Section {
 	return slot === OFFHAND_SLOT ? 'offhand' : 'other';
 }
 
-export function playerView(file: NbtFile): PlayerView {
+/** `ids`: before 1.8, the world's item numbers (itemids.ts): items show by name. */
+export function playerView(file: NbtFile, ids: ItemIds | null = null): PlayerView {
 	const root = file.root;
 	const dataVersion = num(child(root, 'DataVersion'));
-	const style = styleOf(dataVersion);
+	const style = { ...styleOf(dataVersion), ...(ids ? { ids } : {}) };
 	const format = style.format;
 	const equipment = usesEquipment(root, dataVersion);
 	const items: ItemView[] = [];
@@ -553,12 +556,12 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 		return;
 	}
 
-	const id = checkItem(edit.id, edit.count);
+	const id = checkItem(edit.id, edit.count, style);
 
 	// Changing an item keeps everything else on it (enchantments, names, NBT).
 	const item: Compound = existing ?? { type: 'compound', value: [] };
 	if (!existing && !('equipment' in home && home.equipment)) setChild(item, 'Slot', { type: 'byte', value: edit.slot });
-	setChild(item, 'id', { type: 'string', value: id });
+	setChild(item, 'id', idTag(id, style));
 	// A new item stores its count like the items around it.
 	const like = existing ? null : countStyle(neighbours);
 	setCount(
@@ -586,10 +589,10 @@ function snbtValue(text: string): Tag {
  * The page sends removals one at a time, so positions never shift under a
  * batch it sends.
  */
-export function applyEdits(file: NbtFile, edits: Edit[]): void {
+export function applyEdits(file: NbtFile, edits: Edit[], ids: ItemIds | null = null): void {
 	const root = file.root;
 	const dataVersion = num(child(root, 'DataVersion'));
-	const style = styleOf(dataVersion);
+	const style = { ...styleOf(dataVersion), ...(ids ? { ids } : {}) };
 	const equipment = usesEquipment(root, dataVersion);
 	for (const edit of edits) {
 		switch (edit.op) {
@@ -762,7 +765,7 @@ export async function savePlayerData(instance: ServerInstance, uuid: string, ver
 	const { file, name } = await readPlayerData(instance, id);
 	// Asked first too, so an online player is refused before any work.
 	await requireOffline(instance, id, name);
-	applyEdits(file, edits);
+	applyEdits(file, edits, await legacyItemIds(instance));
 	return replaceFile(instance, id, name, version, writeNbt(file), false);
 }
 

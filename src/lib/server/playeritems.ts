@@ -1,4 +1,5 @@
 import { child, num, removeChild, setChild, str, type Compound, type Tag } from './nbt';
+import type { ItemIds } from './itemids';
 import type { Path } from '#lib/shared/nbt.js';
 
 /**
@@ -23,7 +24,8 @@ export const COMPONENTS = 3837;
 export const NBT_TEXT = 4325;
 
 export type Format = 'legacy' | 'flat' | 'components';
-export type Style = { format: Format; nbtText: boolean };
+/** `ids`: before 1.8 an item's id is a number, read and written through the world's table (itemids.ts). */
+export type Style = { format: Format; nbtText: boolean; ids?: ItemIds };
 
 export function styleOf(dataVersion: number | null): Style {
 	const format: Format =
@@ -477,7 +479,8 @@ function containerLabel(key: string, names: string[], level: number): string {
 export function describeItem(item: Tag, section: Section, slot: number, at: Path, style: Style, depth = 0): ItemView | null {
 	if (item.type !== 'compound') return null;
 	const idTag = child(item, 'id');
-	const id = idTag?.type === 'string' ? idTag.value : idTag ? String(num(idTag)) : '';
+	const number = idTag && idTag.type !== 'string' ? num(idTag) : null;
+	const id = idTag?.type === 'string' ? idTag.value : number !== null ? (style.ids?.byNumber.get(number) ?? String(number)) : '';
 	const data = child(item, dataKey(style)) ?? child(item, 'tag') ?? child(item, 'components');
 	const fields = readFields(item, style);
 	return {
@@ -549,11 +552,11 @@ export function setKeyedItem(items: Compound, slot: number, item: { id: string; 
 		removeChild(items, found[0]);
 		return;
 	}
-	const id = checkItem(item.id, item.count);
+	const id = checkItem(item.id, item.count, style);
 	const sample = items.value[0]?.[1] as Compound | undefined;
 	const prefix = items.value[0]?.[0].match(/^(\D*)\d+$/)?.[1] ?? 'Slot';
 	const target: Compound = found && found[1].type === 'compound' ? found[1] : { type: 'compound', value: [] };
-	setChild(target, 'id', { type: 'string', value: id });
+	setChild(target, 'id', idTag(id, style));
 	const sampleCount = sample ? (child(sample, 'Count') ?? child(sample, 'count')) : undefined;
 	setCount(
 		target,
@@ -567,13 +570,27 @@ export function setKeyedItem(items: Compound, slot: number, item: { id: string; 
 }
 
 const ITEM_ID = /^[a-z0-9_.-]+:[a-zA-Z0-9_./-]+$/;
+/** 1.7 mod ids keep their capitals and some a '|' (BuildCraft|Core:pipeWaterproof). */
+const LEGACY_ITEM_ID = /^[A-Za-z0-9_.|-]+:[A-Za-z0-9_./|-]+$/;
 
 /** The id, checked; the count's upper limit depends on how it is stored and is checked by setCount. */
-export function checkItem(id: string, count: number): string {
+export function checkItem(id: string, count: number, style?: Style): string {
 	const clean = id.trim();
-	if (!ITEM_ID.test(clean)) throw new PlayerDataError(`"${id}" is not an item id (like minecraft:diamond).`);
+	if (!(style?.ids ? LEGACY_ITEM_ID : ITEM_ID).test(clean)) throw new PlayerDataError(`"${id}" is not an item id (like minecraft:diamond).`);
 	if (!Number.isInteger(count) || count < 1) throw new PlayerDataError('The count must be a whole number of 1 or more.');
 	return clean;
+}
+
+/**
+ * The id as the file stores it: the name, or before 1.8 its number in the
+ * world's table. An id the world does not know is refused: the game would
+ * load the item as nothing.
+ */
+export function idTag(id: string, style: Style): Tag {
+	if (!style.ids) return { type: 'string', value: id };
+	const number = style.ids.byName.get(id) ?? style.ids.byName.get(id.includes(':') ? id : `minecraft:${id}`);
+	if (number === undefined) throw new PlayerDataError(`This world has no item "${id}". Before 1.8 items are stored by number, and only the world's own items have one.`);
+	return { type: 'short', value: number };
 }
 
 /** Put an item into a container's slot (replacing id and count of one already there, keeping its data), or take it out. */
@@ -596,7 +613,7 @@ export function setContainerItem(
 		list.value.splice(index, 1);
 		return;
 	}
-	const id = checkItem(item.id, item.count);
+	const id = checkItem(item.id, item.count, style);
 	const entry: Compound = index >= 0 ? (list.value[index] as Compound) : { type: 'compound', value: [] };
 	if (index < 0 && shape.slotKey) setChild(entry, shape.slotKey, { type: shape.slotType, value: slot });
 	let target = entry;
@@ -605,7 +622,7 @@ export function setContainerItem(
 		target = inner?.type === 'compound' ? inner : { type: 'compound', value: [] };
 		setChild(entry, 'item', target);
 	}
-	setChild(target, 'id', { type: 'string', value: id });
+	setChild(target, 'id', idTag(id, style));
 	setCount(target, shape.countKey, shape.countType, item.count, style);
 	setDamage(target, item.damage, index < 0, style);
 	if (index < 0) {

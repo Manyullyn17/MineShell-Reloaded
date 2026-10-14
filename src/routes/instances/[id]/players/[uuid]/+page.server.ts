@@ -15,6 +15,7 @@ import {
 	savePlayerData
 } from '#lib/server/playerdata.js';
 import { legacyEnchantmentTable } from '#lib/server/enchantnames.js';
+import { legacyItemIds } from '#lib/server/itemids.js';
 import { serverWorldName } from '#lib/server/packworld.js';
 import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '#lib/server/playerfields.js';
 import { lookUpProfiles } from '#lib/server/profiles.js';
@@ -31,7 +32,8 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 	const online = await onlinePlayerIds(instance);
 	const uuid = params.uuid.toLowerCase();
-	const view = playerView(data.file);
+	// Before 1.8 items are stored by number: the world's table names them.
+	const view = playerView(data.file, await legacyItemIds(instance));
 	// 1.12 and older number enchantments per world: this world's table names mod ones too.
 	if (view.format === 'legacy') {
 		view.legacyEnchantments = await legacyEnchantmentTable(instance.path, path.join(instance.path, await serverWorldName(instance.path)));
