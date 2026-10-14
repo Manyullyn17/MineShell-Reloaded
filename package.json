@@ -20,7 +20,8 @@
     "release": "scripts/release.sh",
     "db:generate": "drizzle-kit generate",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:icons": "node tests/itemicons/check.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
