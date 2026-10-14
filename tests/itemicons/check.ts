@@ -107,7 +107,8 @@ async function latestRelease(cache: string): Promise<string> {
 /** minecraft-data's items for a version (with 1.12's damage variations), or null when it has none. */
 async function vanillaItems(cache: string, version: string): Promise<{ name: string; displayName: string; variations?: { metadata: number; displayName: string }[] }[] | null> {
 	const paths = JSON.parse(await cached(cache, 'dataPaths.json', `${MCDATA}/dataPaths.json`)) as { pc: Record<string, { items?: string }> };
-	const at = paths.pc[version]?.items;
+	// It lists some patch versions only under their minor (1.7 for 1.7.10).
+	const at = paths.pc[version]?.items ?? paths.pc[version.split('.').slice(0, 2).join('.')]?.items;
 	if (!at) return null;
 	return JSON.parse(await cached(cache, `items-${at.replace(/\//g, '_')}.json`, `${MCDATA}/${at}/items.json`));
 }
