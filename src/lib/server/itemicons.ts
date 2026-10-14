@@ -273,8 +273,24 @@ export class Resources {
 		return new Resources(files, langs, !!clientJar);
 	}
 
+	private lowerKeys: Map<string, string> | undefined;
+
+	/**
+	 * The indexed key for one asked for in another case: 1.12 lower-cases every
+	 * resource location, so libvulpes' parent "block/tintedCube" is the file
+	 * tintedcube.json. Later versions refuse capitals, so this changes nothing there.
+	 */
+	private stored(key: string): string {
+		if (this.files.has(key)) return key;
+		if (!this.lowerKeys) {
+			this.lowerKeys = new Map();
+			for (const k of this.files.keys()) if (!this.lowerKeys.has(k.toLowerCase())) this.lowerKeys.set(k.toLowerCase(), k);
+		}
+		return this.lowerKeys.get(key.toLowerCase()) ?? key;
+	}
+
 	has(key: string): boolean {
-		return this.files.has(key);
+		return this.files.has(this.stored(key));
 	}
 
 	private nestedIndex: Map<string, string[]> | undefined;
@@ -318,7 +334,7 @@ export class Resources {
 	}
 
 	async read(key: string): Promise<Buffer | null> {
-		return (await this.files.get(key)?.()) ?? null;
+		return (await this.files.get(this.stored(key))?.()) ?? null;
 	}
 
 	async json(key: string): Promise<Record<string, unknown> | null> {
@@ -494,7 +510,8 @@ async function loadModel(res: Resources, ref: string, depth = 0): Promise<Model 
 function texture(model: Model, ref: string | undefined): string | null {
 	let current = ref;
 	for (let i = 0; current?.startsWith('#') && i < 10; i++) current = model.textures[current.slice(1)];
-	return current && !current.startsWith('#') ? withNamespace(current) : null;
+	// Lower case, as 1.12 reads it (and the texture endpoint takes it): Resources finds the file in any case.
+	return current && !current.startsWith('#') ? withNamespace(current).toLowerCase() : null;
 }
 
 type Tints = (string | null)[];
@@ -677,11 +694,11 @@ function numberedTexture(res: Resources, ns: string, itemPath: string, damage: n
 		// A plain texture beside the series makes the numbers frames or overlays
 		// (AoA's bows: predatious_bow and predatious_bow_0..2 drawn back): that one.
 		const plain = [...series.values()][0].replace(/_\d+$/, '');
-		if (res.has(`${split(plain)[0]}/textures/${split(plain)[1]}.png`)) return { spec: { kind: 'flat', layers: [{ texture: plain, tint: null }] }, exact: true };
+		if (res.has(`${split(plain)[0]}/textures/${split(plain)[1]}.png`)) return { spec: { kind: 'flat', layers: [{ texture: plain.toLowerCase(), tint: null }] }, exact: true };
 		const n = series.has(0) ? damage : damage + 1;
 		const texture = series.get(n);
 		if (!texture) continue;
-		return { spec: { kind: 'flat', layers: [{ texture, tint: null }] }, exact: false, variant: series.size > 1, variantOf: `${itemPath}_${n}` };
+		return { spec: { kind: 'flat', layers: [{ texture: texture.toLowerCase(), tint: null }] }, exact: false, variant: series.size > 1, variantOf: `${itemPath}_${n}` };
 	}
 	return null;
 }

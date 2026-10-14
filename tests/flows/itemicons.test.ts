@@ -147,6 +147,24 @@ describe('item icons', () => {
 		expect((await resolveIcon(res, 'doors:oak_door', 0)).spec).toMatchObject({ kind: 'flat' });
 	});
 
+	it('finds 1.12 models and textures named in another case, as the game lower-cases them', async () => {
+		const res = await Resources.load([
+			await jar('rocketry.jar', {
+				'assets/libvulpes/models/block/tintedcube.json': json({ parent: 'minecraft:block/cube', textures: { up: '#all', north: '#all', east: '#all', west: '#all' } }),
+				'assets/rocketry/models/block/crystal.json': json({ parent: 'libvulpes:block/tintedCube', textures: { all: 'rocketry:blocks/Crystal' } }),
+				'assets/rocketry/models/item/crystal.json': json({ parent: 'rocketry:block/crystal' }),
+				'assets/rocketry/textures/blocks/crystal.png': PNG,
+				'assets/rocketry/models/item/motor.json': json({ parent: 'item/generated', textures: { layer0: 'rocketry:items/advCombustionEngine' } }),
+				'assets/rocketry/textures/items/advCombustionEngine.png': PNG
+			})
+		], null);
+		const crystal = (await resolveIcon(res, 'rocketry:crystal')).spec as { elements: { faces: Record<string, { texture: string }> }[] };
+		expect(crystal.elements[0].faces.up.texture).toBe('rocketry:blocks/crystal');
+		// Textures are named in lower case (what the texture endpoint takes) and still found.
+		expect((await resolveIcon(res, 'rocketry:motor')).spec).toEqual({ kind: 'flat', layers: [{ texture: 'rocketry:items/advcombustionengine', tint: null }] });
+		expect(await res.read('rocketry/textures/items/advcombustionengine.png')).toEqual(PNG);
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
