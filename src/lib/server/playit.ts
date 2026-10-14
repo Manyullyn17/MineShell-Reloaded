@@ -19,7 +19,7 @@ import { setVoiceConfig, voiceChat } from './voicechat';
  * playit's claim flow (the user approves it on playit.gg; no password or
  * account key passes through MineShell), then creates, moves and deletes a
  * tunnel per public server with the agent's key. Settled on a free account
- * (ROADMAP, "playit.gg tunnels"): the agent key may create tunnels once the
+ * (ROADMAP-ARCHIVE, "playit.gg tunnels"): the agent key may create tunnels once the
  * agent program has connected; regions other than global need Premium; the
  * address players type is a hostname on the default port.
  */

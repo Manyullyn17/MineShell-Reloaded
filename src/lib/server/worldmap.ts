@@ -19,7 +19,7 @@ import { nextSnapshotAt } from './snapshotschedule';
 import { startTask, type TaskHandle } from './tasks';
 
 /**
- * A map of the world in the browser (ROADMAP, "A map of the world").
+ * A map of the world in the browser (ROADMAP-ARCHIVE, "A map of the world").
  *
  * Minecraft 1.13 and newer: BlueMap's standalone CLI, run by MineShell - no
  * mod on the server. It reads the world's region files and the server's mod

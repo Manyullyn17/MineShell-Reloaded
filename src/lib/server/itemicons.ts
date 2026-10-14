@@ -17,7 +17,7 @@ import { LEGACY_TINTS } from './itemtints';
 import { bannerIcon, bedIcon, chestIcon, conduitIcon, decoratedPotIcon, headIcon, statueIcon, type HeadKind } from './entityicons';
 
 /**
- * Item icons for the player editor (ROADMAP, "Item icons in the player
+ * Item icons for the player editor (ROADMAP-ARCHIVE, "Item icons in the player
  * editor"). Textures and models are Mojang's and the mods' own, so nothing is
  * shipped: they are read from the server's mod jars and from the Minecraft
  * client jar, downloaded once per version into the cache - only once the

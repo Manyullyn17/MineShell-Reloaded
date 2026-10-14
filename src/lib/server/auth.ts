@@ -11,10 +11,10 @@ import { bus } from './events';
  * default as the hedge against network creep (a guest device, a stray port
  * forward). Set MINESHELL_AUTH=off to skip it entirely.
  *
- * One account so far: the owner, created by /setup (or migration 0019 from
- * the old single admin password) and named "admin". More accounts and their
- * permissions come later (docs/ROADMAP.md); the owner is told apart by its
- * `isOwner` row, never by its name, so renaming it stays possible.
+ * The owner is created by /setup (or migration 0019 from the old single admin
+ * password) and named "admin"; other accounts and their permissions are in
+ * docs/ROADMAP-ARCHIVE.md, "Accounts and permissions". The owner is told apart
+ * by its `isOwner` row, never by its name, so renaming it stays possible.
  */
 
 /** The owner's name. Fixed for now; a rename would only change the row. */

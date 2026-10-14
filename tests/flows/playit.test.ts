@@ -8,7 +8,7 @@ import { fakeProcesses, spawnCalls } from '../helpers/process';
 /**
  * playit.gg (playit.ts): linking by claim, the agent's unit, tunnels per
  * server. playit's API is faked here with the answers the real one gave on
- * a free account (ROADMAP, "playit.gg tunnels"); nothing reaches playit.
+ * a free account (ROADMAP-ARCHIVE, "playit.gg tunnels"); nothing reaches playit.
  */
 
 const API = 'https://api.playit.gg';
