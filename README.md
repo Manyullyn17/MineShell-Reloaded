@@ -1,316 +1,255 @@
 # MineShell
 
-A self-hosted web control panel for modded Minecraft servers on Linux.
+**A self-hosted web control panel for modded Minecraft servers on Linux.**
 
-MineShell creates server instances from Modrinth, CurseForge and FTB modpacks (or from a
-bare mod loader), runs them as systemd services, and gives you a console, a
-`server.properties` editor, mod management, player lists and a file browser in the browser.
+MineShell brings modpack installation, server management, diagnostics, world administration, and player data editing into one web interface. It runs each Minecraft server as a systemd service, with per-server configuration, resource limits, snapshots, and automation.
 
-It is built for someone running a handful of servers on their own machine, who may want to
-let friends in too: each account gets only the servers and permissions it is given. It is
-not a hosting panel and not multi-tenant: every server runs as the same Linux account, and
-accounts are kept apart by MineShell's permissions, not by the system. Files, mods and the
-loader/Java settings let someone run programs as that account, so give those only to people
-you would trust with it.
+Manage your own servers from a browser, or give friends access to specific servers and features through granular account permissions.
 
----
+## Features
+
+### Modpack & instance management
+
+Install and maintain modded Minecraft servers without having to manage every step manually.
+
+- **Multiple sources:** Browse Modrinth, CurseForge, and FTB, upload `.mrpack` or CurseForge archives, or create a server from a Minecraft version and loader.
+- **Loader support:** Vanilla, Fabric, Quilt, Forge, NeoForge, and Cleanroom.
+- **Pack updates:** Update to a different pack version, including packs originally installed from uploaded files. Configuration changes are preserved or merged, with side-by-side review when both you and the pack changed the same lines.
+- **Rollback:** Revert the last pack change, restoring the previous configuration and optionally the world from its pre-update snapshot.
+- **Minecraft and loader migrations:** Move eligible non-pack servers between Minecraft versions or loaders. Compatible mod builds are selected where available; unsupported mods are disabled and listed.
+- **Forge 1.12.2 / Cleanroom migration:** Switch between Forge and Cleanroom, including handling the compatible Fugue version required by Cleanroom.
+- **Safe experimentation:** Copy an entire server to test changes separately.
+- **Installation recovery:** Failed downloads are reported with manual download links and retry options. Long-running operations report progress and recover interrupted changes after a MineShell restart.
+- **Server icons:** Pack icons are used automatically and can be replaced in server settings.
+
+### Server operations & monitoring
+
+Control server lifecycles and monitor what is happening without leaving the browser.
+
+- Start, stop, restart, and force-stop servers, including delayed shutdowns with in-game warnings.
+- Perform graceful shutdowns using RCON to save the world before stopping Java, with signal-based fallbacks.
+- Configure crash recovery, restart attempt limits, scheduled restarts, and scheduled console commands.
+- Delay scheduled operations while players are online.
+- Set per-server CPU and memory limits, and detect servers that never finish starting.
+- Choose which servers start after a machine reboot: restore their previous state, always start, or never start automatically.
+- Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available.
+- Inspect Java heap usage and receive guidance when memory allocation seems insufficient or excessive.
+- View server addresses and manage players directly from the overview.
+
+### Console, logs & crash diagnostics
+
+Find out what went wrong without manually digging through files and terminal output.
+
+- Live console output streamed from the systemd journal, with commands sent through RCON.
+- Filter log levels, search output, expand or collapse stack traces, and highlight player joins and departures.
+- Command history, saved commands, and a dedicated chat view.
+- Search previous server runs, server logs, and crash reports together, including archived logs.
+- Analyze logs with mclo.gs for a second opinion, or share them through a link that MineShell can subsequently delete.
+- Diagnose crashes and identify likely problematic mods, with one-click mod disabling where supported.
+- Detect crashes where the Java process remains alive but the server has stopped functioning.
+- Run timed Spark profiles and view uploaded results. If Spark's upload fails, download the saved profile or upload it again.
+- **Mod bisect assistant:** When ordinary diagnosis cannot identify the cause, systematically test individual mods or pairs of mods using a throwaway world, then restore the original server configuration.
+
+### Mod management & client exports
+
+Manage server mods and prepare matching client installations from the same interface.
+
+- Search Modrinth and CurseForge, resolve mod dependencies, install updates, or upload JARs manually.
+- Enable, disable, delete, and change mod versions.
+- Detect mods added outside MineShell and identify them rather than silently ignoring them.
+- Detect and disable client-only mods after pack installation.
+- Browse and install data pack releases directly into a world's `datapacks/` directory.
+- Export client installations as Modrinth `.mrpack` files, CurseForge ZIP archives, or Prism Launcher instances.
+- Choose which mods and folders to include in an export. For servers installed from modpacks, include the original pack's client-side files that were not needed on the server.
+
+### World management & snapshots
+
+Manage worlds, recover from mistakes, and automate routine maintenance.
+
+- Create snapshots manually, on a schedule, or automatically before risky operations.
+- Snapshot a running server with saving paused, or stop and restart it around the operation.
+- Configure retention by snapshot count and storage usage. Pin, name, tag, and filter snapshots.
+- Restore a snapshot, reset a world, replace it with an uploaded world, or download a world as a ZIP archive.
+- Reset or restore individual dimensions.
+- Prune chunks that have not actually been visited.
+- Pre-generate terrain with Chunky and monitor its progress.
+- Coordinate snapshots and scheduled restarts so they do not interfere with each other.
+
+**Backup limitation:** Snapshots currently remain inside the server's own directory on the same disk. Off-site, cloud, and separate-disk backups are not implemented.
+
+### Player management & inventory editing
+
+Administer players and inspect their saved data, including inventories containing modded items.
+
+- Manage whitelists, operators and operator levels, bans with reasons, and IP bans.
+- Update player lists through RCON while the server is running, or edit the relevant JSON files while it is stopped.
+- Resolve player names to UUIDs through Mojang and identify players in imported worlds using their current account names.
+- Inspect offline player inventories, effects, and other saved data.
+- Edit modded inventories, including backpacks and Curios or Trinkets equipment slots, with slots grouped and named where supported.
+- Select enchantments by name from the world's own enchantment table, including modded enchantments on Minecraft 1.12 and older.
+- Browse vanilla and modded items by name instead of having to type their identifiers.
+- View item icons and 3D block models sourced from Minecraft and installed mod JARs.
+- Render supported special models, including chests, shulker boxes, beds, banners, heads, shields, conduits, decorated pots, and additional model-based variants.
+- Inspect item tooltips containing information such as enchantments, durability, energy, and item identifiers.
+
+Item rendering can be disabled in MineShell settings, leaving names and data available without loading or drawing item models.
+
+### World maps
+
+Explore your worlds through an integrated browser-based map.
+
+- **Minecraft 1.13 and newer:** BlueMap renders a 3D map directly from world files, including modded blocks using models from the installed mods.
+- Update the map manually or on a schedule.
+- View the map without adding a rendering mod to the Minecraft server. Add the BlueMap mod when a live map with player positions is desired.
+- **Forge 1.12.2:** Install Dynmap and DynmapBlockScan through the Map tab for a live map.
+
+### Networking & public access
+
+Let players join from outside your local network without manually configuring port forwarding.
+
+- Integrate a playit.gg account through an approval flow; MineShell does not receive your playit.gg password.
+- Enable public access for individual servers.
+- Automatically manage the tunnel agent and server tunnel, keeping the tunnel associated with the server's port.
+- Display the public address in the server interface and remove the tunnel when the server is deleted.
+- Access the agent's playit.gg page and choose its connection location where supported by the account plan.
+
+### Settings, files & Java
+
+Manage server configuration and files without needing direct shell access for routine tasks.
+
+- Searchable, tabbed settings for general options, gameplay, players, networking, performance, Java and memory, automation, snapshots, and advanced configuration.
+- Typed controls for common `server.properties` options, alongside an editor for additional keys and a raw configuration editor. Unrecognized properties are preserved.
+- Port availability checks, with options to swap ports with another server or move to a free port.
+- Browse, upload, download, rename, delete, and edit text files within an instance directory.
+- Upload files and folders by dragging them into the file browser.
+- Recover deleted files from a per-server trash, with configurable automatic cleanup.
+- Open server directories in a file manager through SFTP links.
+- Inspect disk usage, including world-map data stored outside the server directory.
+- Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds.
+- Match Java versions to individual servers using Minecraft's version metadata, with configurable defaults when multiple runtimes are available.
+
+### Multi-user access & permissions
+
+Share MineShell with friends while controlling which servers and features each account can access.
+
+- **Global administrators:** The owner and MineShell administrators can manage the entire application.
+- **Per-server access:** Grant full administrative access to a server or assign individual permissions for operations such as starting and stopping, console access, mods, settings, files, and snapshots.
+- **Player-data restrictions:** Limit access to all players or specific players.
+- **Automatic ownership:** The account that creates or copies a server becomes its administrator. Access to copied servers is not automatically granted to everyone who could access the original.
+- **Account management:** Create accounts, issue one-time passwords, require password replacement on first login, disable accounts, and sign them out everywhere.
+- **Permission-aware interface:** Accounts see only their permitted servers, tabs, and controls. Settings that are readable but not editable are marked accordingly.
+- **Activity log:** Review recent actions and the account responsible for each one.
+- **Protected integrations:** Only the owner can manage the playit.gg and CurseForge connections or update MineShell.
+
+### MineShell updates
+
+Keep MineShell itself up to date without manually replacing the installation.
+
+- Check for new releases every 12 hours or on demand.
+- View release notes and install updates from the web interface.
+- Apply updates in place and restart MineShell while Minecraft servers continue running.
 
 ## Requirements
 
-- Linux with systemd
-- Node.js 22.12 or newer
-- A Java runtime — which one depends on the Minecraft version (8 for old packs, 17, 21, 25
-  for 26.x; Cleanroom 21 or 25). MineShell learns the requirement from Mojang's version
-  data, finds installed runtimes and matches one to each instance, and can download Eclipse
-  Temurin or Azul Zulu builds itself.
-- `journalctl` (part of systemd) for console output
+- Linux with systemd.
+- Node.js 22.12 or newer.
+- `journalctl`, provided by systemd.
+- A compatible Java runtime for each Minecraft version. MineShell can discover or download supported runtimes.
 
-## Install
+MineShell is intended for self-hosted use on a Linux machine. It is not a multi-tenant hosting panel: Minecraft servers run under the same Linux account as MineShell. Users granted access to files, mods, or Java and loader settings may be able to execute programs as that account. Only grant those permissions to people you trust.
+
+## Installation
+
+Run the installer as the Linux account that should own and run the Minecraft servers, **not as root**.
 
 ```sh
 curl -fsSL https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest/download/install.sh | bash
 ```
 
-As the account that should run the servers, not root. It installs the newest release into
-`~/mineshell`, writes its settings to `~/.config/mineshell/mineshell.env` (once; never
-overwritten), sets it up as the systemd user service `mineshell` that starts at boot, and
-starts it on port 3000. Run it again to update. Options, the layout and uninstalling:
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+The installer installs MineShell into `~/mineshell`, writes configuration to `~/.config/mineshell/mineshell.env` without overwriting an existing settings file, and sets up a systemd user service that starts at boot. The default port is `3000`. Running the installer again updates an existing installation.
 
-Open the app, set the owner account's password on first visit (you sign in as `admin`), and add a server.
+Open MineShell in your browser and set the owner account's password on first visit. The initial account name is `admin`.
 
-## Run from a checkout
+For installation options, directory layout, and uninstall instructions, see [Deployment](docs/DEPLOYMENT.md).
+
+## Development
+
+Clone the repository and install dependencies:
 
 ```sh
 npm ci
-cp .env.example .env      # edit if you want a different data directory
-npm run setup             # creates directories, installs the systemd template unit
-npm run doctor            # checks the things that silently break a setup
-npm run dev               # development server
-npm run build && npm start   # production, honours PORT and HOST from .env
+cp .env.example .env
+npm run setup
+npm run doctor
+npm run dev
 ```
 
-If `doctor` mentions lingering, run it once so your servers keep going after you log out:
+For a production build:
 
 ```sh
-loginctl enable-linger $USER
+npm run build
+npm start
 ```
 
-A checkout you develop in should not share its data directory with a MineShell that runs
-for real: give it its own `MINESHELL_DATA` and `MINESHELL_UNIT_PREFIX`.
+The production server respects `PORT` and `HOST` from `.env`.
 
-Tests:
+If `doctor` reports that lingering is not enabled, run the following so user services can continue running after logout:
 
 ```sh
-npm test                  # the whole suite, about 30 seconds, offline
-npm run test:watch        # re-runs affected tests on save
+loginctl enable-linger "$USER"
 ```
 
-Tests never touch real data; see [tests/README.md](tests/README.md).
+Keep development data separate from any production MineShell installation by using a separate `MINESHELL_DATA` and `MINESHELL_UNIT_PREFIX`.
 
----
+Run the test suite with:
 
-## What it does
-
-### Instances
-
-- **Create** from a modpack you browse in-app (Modrinth, CurseForge, FTB), from a `.mrpack`
-  or CurseForge zip you upload, or from just a loader and a Minecraft version (vanilla,
-  Fabric, Quilt, Forge, NeoForge, Cleanroom).
-- **Before a pack installs** you see its mods and can untick client-only ones. Files that
-  fail to download are listed on the overview with links to download them by hand, and can
-  be tried again.
-- **Each instance** gets its own directory, port pair (the game port can be picked), RCON
-  password and systemd unit; with Simple Voice Chat, a voice chat port of its own too
-  (checked before every start).
-- **Change the pack version**, picked from the provider or by uploading the new version's
-  file (the way to update a pack installed from an upload). Your config edits are carried
-  over or merged; where you and the pack changed the same lines you get a side-by-side
-  review. The last change can be rolled back: configs exactly as they were, and optionally
-  the world from the snapshot taken before it.
-- **Change the loader version**, or move a server that is not from a pack to a newer
-  Minecraft or another loader (1.20.1 Forge to 1.21.1 NeoForge: every mod MineShell can look
-  up moves to a build for it, the rest are disabled and listed first).
-- **Migrate a Forge 1.12.2 pack to Cleanroom** and back. Fugue, which Cleanroom needs, is
-  kept at a build made for the installed Cleanroom version, also when a pack ships an older
-  one.
-- **Copy** the whole server to try something on the copy first.
-- **Journalled**: these operations are rolled back at the next start if MineShell crashes
-  halfway through. Long ones run in the background; the notification center in the top bar
-  shows their progress from any page and lists what finished.
-- **Icons**: a server installed from a pack takes the pack's icon as its server icon
-  (players see it in their server list, MineShell in its sidebar and headers; a server
-  without one gets its initials on a colour of its own). It can be changed in Settings.
-- **Downloads stay off your network**: they never reach this machine or your local network
-  unless the owner or a global admin allows that exact address (asked where the refusal
-  shows; the list is under MineShell settings > System), so a pack's links cannot reach
-  services only listening there.
-
-### Running servers
-
-- **Start, stop, restart, force stop**, or stop/restart after a countdown with in-game
-  warnings, from the header of every server tab.
-- **Clean stops**: RCON `save-all` then `stop`, waiting for Java to exit, falling back to
-  SIGTERM, so worlds are not cut off mid-write.
-- **Restarts**: crash restarts by systemd with a configurable attempt limit; scheduled
-  restarts and scheduled console commands by MineShell, with an option to wait while players
-  are online.
-- **Limits**: per-server memory and CPU limits, and a warning when a server never finishes
-  starting.
-- **Forge's startup questions**: when Forge 1.12 (or Cleanroom) stops at startup to ask about
-  blocks and items that went missing, missing registries or a damaged level.dat, the overview
-  explains it, lists what is missing, and answers: start once with the answer given (after a
-  world snapshot, on by default), or stop.
-- **After a reboot** MineShell starts the servers that should come back, one at a time: per
-  server "if it was running before" (the default), always, or never.
-
-### Overview
-
-- Uptime, and how long the last start took against the usual.
-- Players, with how long each has been on, today's peak and a kick button.
-- Tick rate where the server reports it; CPU and memory over the last hour, 6 hours or day;
-  disk use; the address to connect to.
-- How much of the Java heap is really in use, with advice when a server needs more memory
-  (or has far more than it uses).
-- Recent crashes with their causes, and which cause keeps coming back. After a crash: the
-  last output and a diagnosis naming the mod that caused it, with a one-click disable; also
-  when the server crashed but its process hung on instead of exiting.
-- With Spark installed, timed profiles uploaded for viewing; when Spark's own upload fails,
-  the saved profile can be downloaded or uploaded again.
-
-### Console and logs
-
-- Live output streamed from the journal, commands sent over RCON.
-- Filter by level, search, stack traces folded under their error, players joining and
-  leaving marked, command history and saved commands.
-- A chat view shows only what players say (and `say` broadcasts), and a chat mode answers
-  them with `say`.
-- The Logs tab has earlier runs and the server's own log files and crash reports, searchable
-  all at once (archived logs included).
-- Any log can be analysed by mclo.gs as a second opinion (read there, not kept) or shared
-  there at a link that MineShell can delete again.
-
-### Settings
-
-- One page per server, in tabs (general, gameplay, players, network, performance, Java and
-  memory, automation, snapshots, advanced), searchable, with one save bar that says which
-  changes need a restart and can restart for you.
-- The common `server.properties` keys are typed controls; everything else is preserved in an
-  "other keys" section, plus a raw editor. Nothing is silently dropped.
-- Port fields say at once whether a port is free; one another server has can be taken by
-  swapping ports with it or moving it to the next free one.
-
-### Mods
-
-- Search and install from Modrinth and CurseForge with dependency resolution, or upload jars
-  by hand.
-- Enable and disable (which renames to `.jar.disabled`, the thing the loader actually reads),
-  delete, switch a mod to another version, check for and apply updates.
-- Client-only mods are spotted and disabled after pack installs.
-- Jars added outside MineShell are detected and identified rather than ignored.
-- Data pack releases from the browser go into the world's `datapacks/` folder.
-- **Bisect assistant**: when a pack crashes and the diagnosis cannot say why, it finds the
-  mod (or pair of mods) by starting the server with fewer and fewer of them, on a throwaway
-  world, and puts everything back afterwards.
-- **Client pack export** for players, as a Modrinth `.mrpack`, a CurseForge zip or a Prism
-  Launcher instance, with the mods and folders you tick (all of them by default) and, for a
-  server installed from a pack, the pack's client-side files the server never needed.
-
-### World
-
-- **Snapshots** before risky operations, on request and on a schedule (daily or every few
-  hours on the clock). A running server is copied with saving paused, or stopped for it and
-  started again; a slot nobody played in since the last snapshot is skipped unless turned
-  off; scheduled restarts and snapshots wait for each other.
-- Snapshots are kept by count and by storage per server; pin them, name and tag them, and
-  filter by tag.
-- Reset, replace with an uploaded world, restore a snapshot or download as a zip; reset or
-  restore one dimension; prune chunks nobody really visited.
-- With Chunky installed, pre-generate terrain with live progress.
-
-### Players
-
-- Whitelist, operators (with levels) and bans (with reasons, and IP bans), edited live over
-  RCON when the server is up and directly in the JSON files when it is down.
-- Names resolve to UUIDs through Mojang, and player data the server has no name for (an
-  imported world) is named from the account's current name. Players show their skin's face,
-  or the colour the game's locator bar gives them.
-- **Player data editor**: inventories, effects and other saved data of players who are
-  offline, mod inventories included (backpacks, Curios and Trinkets slots, grouped and named
-  by slot). On 1.12 and older, enchantments are picked by name from the world's own table,
-  mod enchantments included.
-- **Item pictures** in the editor, read from the server's mod jars and Minecraft's own client
-  (after the EULA answer shared with the Map tab), 3D for blocks. What the game draws in code
-  is drawn from its models too (chests, shulker boxes, beds, plain banners, heads, the shield,
-  the conduit, decorated pots, copper golem statues); on 1.12 packs a variant MineShell had to
-  guess is marked. They can be turned off in MineShell's settings (names only, nothing read or
-  drawn).
-- Items can be picked by name from everything the server has (vanilla and every mod) instead
-  of typing their id. On a desktop, hovering an item shows a tooltip like the game's (name,
-  enchantments, durability, energy, id).
-
-### Map
-
-- **Minecraft 1.13 and newer**: a 3D map in the browser, rendered by BlueMap from the world
-  files. Nothing is added to the server, and modded blocks are drawn from the mods' own
-  models. Updated when you ask or on a schedule; shown behind MineShell's login. The BlueMap
-  mod can be added for a live map with players on it.
-- **Forge 1.12.2**: a live map from Dynmap and DynmapBlockScan, installed from the Map tab.
-
-### Public address (playit.gg)
-
-Players outside your network join without port forwarding.
-
-- Link a playit.gg account (free works) in MineShell settings > Integrations: you approve it
-  on playit.gg, no password passes through MineShell. Then switch a server public in its
-  settings, Network.
-- MineShell runs playit's agent as a user unit, makes the server's tunnel, keeps it on the
-  server's port and deletes it with the server; the address players type is in the header.
-- Premium regions are offered when the account has Premium; which playit location the agent
-  connects through can be picked on any plan, and the agent's playit.gg page is a click away.
-
-### Files
-
-- Browse, upload (with the button, or by dropping files and whole folders on the file list),
-  download, rename, delete, and edit text files in place, all confined to the instance
-  directory. Every other upload (a world zip, a pack file, mod jars, the server icon) takes a
-  drop onto its own section too.
-- Deleting moves things to the server's trash: Undo right after, or restore them from the
-  trash later. It empties itself after 7 days (a setting; 0 turns the trash off) or by hand.
-- "Open in file manager" is an `sftp://` link to the folder shown, through the machine's own
-  SSH server (port read from `sshd_config`; host, port and account can be set in Settings).
-- A disk usage page shows where the space goes, the world map included (also the one
-  MineShell renders outside the server folder).
-
-### Java
-
-Runtimes are found on the system or downloaded, matched per server, with a default per Java
-version when several are installed.
-
-### Accounts
-
-Several people can use one MineShell (MineShell settings > Accounts).
-
-- **Roles**: the owner (`admin`) and MineShell admins may do everything. Anyone else is given
-  access per server: everything on it (admin of that server), or chosen permissions -
-  starting and stopping, the console, mods, settings, files, backups and more - with player
-  data limited to every player or chosen ones.
-- **New servers**: whoever adds or copies a server becomes its admin. A copy gives others
-  access only when a MineShell admin asks for the same access as the original.
-- **Sign-in**: a new account or a reset password gets a one-time password the person
-  replaces when they first sign in. Accounts can be disabled and signed out everywhere.
-  Everyone has an account page for their password and where they are signed in.
-- **What each account sees**: only its servers, the tabs and buttons it may use, and
-  settings it may only look at marked view only.
-- **Activity** (MineShell settings) lists recent actions and which account did each.
-- **Owner only**: managing the playit.gg and CurseForge connections, and updating MineShell.
-
-### Updates
-
-An installed MineShell looks for a new release every 12 hours (or on request) and shows it in
-the top bar; Settings > Updates has the release notes and installs it in place. MineShell
-restarts; the servers keep running.
-
-## What it does not do
-
-Backups elsewhere (another disk, another machine, the cloud) are not implemented: every
-snapshot, scheduled ones included, stays inside the server's folder on the same disk. See [docs/ROADMAP.md](docs/ROADMAP.md) for the reasoning and
-the rest of the deferred list.
-
----
-
-## Layout
-
-```
-migrations/          plain .sql files, applied at startup
-scripts/             setup and doctor
-src/lib/server/      everything that touches the system: systemd, RCON, journal,
-                     mod providers, pack parsing, scheduling, monitoring, worlds
-src/lib/shared/      code the browser uses too: formatting, console line handling, NBT
-src/lib/components/  console, crash diagnosis, snapshot choice, forms shared by pages
-src/routes/          pages and endpoints
-tests/               test setup, helpers, flow tests, recorded HTTP and crash fixtures
-docs/                architecture, deployment, roadmap
+```sh
+npm test
 ```
 
-`docs/ARCHITECTURE.md` explains why each piece works the way it does, including the two
-places this deviates from the original design notes.
+Tests run offline and do not touch real server data. For watch mode and further details, see [tests/README.md](tests/README.md).
 
 ## Configuration
 
-Everything is environment variables (an installed MineShell reads them from its settings file); see `.env.example` for the annotated list. The ones
-worth knowing:
+MineShell is configured through environment variables. Installed instances read them from their settings file; development instances use `.env`.
 
-| Variable | Default | Why you would change it |
+See [`.env.example`](.env.example) for the complete list.
+
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `MINESHELL_DATA` | `~/.local/share/mineshell` | Put instances on a bigger disk |
-| `MINESHELL_AUTH` | `on` | `off` only on a network you fully trust |
-| `MINESHELL_UNIT_PREFIX` | `minecraft` (the installer writes `mineshell`) | Units are `<prefix>@<id>.service`; change to run a second MineShell |
-| `CURSEFORGE_API_KEY` | unset | Better CurseForge metadata; can also be set in Settings |
-| `BODY_SIZE_LIMIT` | `Infinity` in `.env.example` and the installer's settings | Production refuses uploads over 512 KB without it |
+| `MINESHELL_DATA` | `~/.local/share/mineshell` | Data directory for server instances and application data. |
+| `MINESHELL_AUTH` | `on` | Authentication toggle. Disable only on a network you fully trust. |
+| `MINESHELL_UNIT_PREFIX` | `minecraft` in development; `mineshell` in the installer | Prefix for systemd instance units. |
+| `CURSEFORGE_API_KEY` | Unset | Optional CurseForge API key for improved metadata access. Can also be configured in MineShell. |
+| `BODY_SIZE_LIMIT` | `Infinity` in the example configuration and installer settings | Controls request body size. Production rejects uploads larger than 512 KB when this is unset. |
+
+## Documentation
+
+- [Deployment guide](docs/DEPLOYMENT.md) — installation, configuration, and maintenance.
+- [Architecture](docs/ARCHITECTURE.md) — implementation details and design decisions.
+- [Roadmap](docs/ROADMAP.md) — planned work and deferred features.
+- [Test documentation](tests/README.md) — test setup and behavior.
+
+## Project layout
+
+```text
+migrations/          SQL migrations applied at startup
+scripts/             Setup and diagnostic tools
+src/lib/server/      systemd, RCON, journal, mod providers, scheduling,
+                     monitoring, world operations, and other server-side logic
+src/lib/shared/      Shared browser/server utilities, formatting, console handling, NBT
+src/lib/components/  Shared UI components
+src/routes/          Pages and endpoints
+tests/               Test helpers, flow tests, fixtures, and recorded crash/log data
+docs/                Architecture, deployment, and roadmap documentation
+```
 
 ## Theming
 
-Every colour is a CSS custom property in `src/app.css`. Adding a theme is one
-`[data-theme='name']` block there and one entry in `src/lib/shared/themes.ts`; the picker
-in the top bar updates itself. The default is Deep Slate, from the original design notes.
+MineShell's colors are defined using CSS custom properties in `src/app.css`. To add a theme, define a `[data-theme='name']` block and add an entry to `src/lib/shared/themes.ts`. The theme picker updates automatically.
+
+The default theme is Deep Slate.
+
+## License
+
+See the repository's [LICENSE](LICENSE) file for licensing information.
