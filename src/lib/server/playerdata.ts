@@ -712,7 +712,18 @@ async function backUp(instance: ServerInstance, uuid: string, bytes: Buffer, for
 	if (!force && existing[0] && Date.now() - existing[0].at < SESSION_MS) return;
 	const dir = backupDir(instance, uuid);
 	await fs.mkdir(dir, { recursive: true });
-	await fs.writeFile(path.join(dir, `${Date.now()}.dat`), bytes);
+	// Named by the time, and never over another: a save's backup and a restore's forced one can
+	// fall in the same millisecond, and the second used to replace the first.
+	for (let at = Math.max(Date.now(), (existing[0]?.at ?? 0) + 1); ; at++) {
+		const written = await fs.writeFile(path.join(dir, `${at}.dat`), bytes, { flag: 'wx' }).then(
+			() => true,
+			(err: NodeJS.ErrnoException) => {
+				if (err.code === 'EEXIST') return false;
+				throw err;
+			}
+		);
+		if (written) break;
+	}
 	for (const old of (await listBackups(instance, uuid)).slice(KEEP_BACKUPS)) {
 		await fs.rm(path.join(dir, old.name), { force: true });
 	}

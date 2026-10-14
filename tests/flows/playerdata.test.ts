@@ -165,6 +165,28 @@ describe('player data', () => {
 		expect(await listBackups(instance, ALEX)).toHaveLength(2);
 	});
 
+	it('keeps both backups when a save and a restore fall in the same millisecond', async () => {
+		const instance = await server();
+		const now = vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000);
+		try {
+			const saved = await savePlayerData(instance, ALEX, (await readPlayerData(instance, ALEX)).version, [{ op: 'set', path: ['XpLevel'], value: '50' }]);
+			const [backup] = await listBackups(instance, ALEX);
+			await restorePlayerBackup(instance, ALEX, saved, backup.name);
+			const backups = await listBackups(instance, ALEX);
+			expect(backups).toHaveLength(2);
+			// The first (XP 3) is still there, not overwritten by the second (XP 50).
+			const levels = [];
+			for (const b of backups) {
+				const { parseNbt } = await import('#lib/server/nbt.js');
+				const file = parseNbt(await fs.readFile(path.join(instance.path, '.mineshell/playerdata-backups', ALEX, b.name)));
+				levels.push(playerView(file).fields.find((f) => f.key === 'xpLevel')?.value);
+			}
+			expect(levels.map(Number).sort()).toEqual([3, 50]);
+		} finally {
+			now.mockRestore();
+		}
+	});
+
 	it('only takes player ids as file names', async () => {
 		const instance = await server();
 		await expect(readPlayerData(instance, '../../server.properties')).rejects.toThrow(/not a player id/);

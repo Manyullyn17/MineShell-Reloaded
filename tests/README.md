@@ -265,6 +265,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | 1.7 servers: empty item picker (registry in FML > ItemData not read), no picture or name for mod ids with capitals or '\|' | `flows/itemicons.test.ts` |
 | Vanilla 1.7.10 without item pictures (no item models before 1.8); 1.8's clock and compass without one | `flows/itemicons.test.ts` |
 | 1.7 mod items without pictures or names (no models; textures and lang keys named in code, IC2's names in a properties file); 1.12 mod items whose texture is named after them | `flows/itemicons.test.ts` |
+| A restore's backup replaced the save's when both fell in the same millisecond (the flaky "restores a backup" test) | `flows/playerdata.test.ts` |
 | A scheduled restart during a live snapshot copy caught the world mid-write; a snapshot due during a restart failed; a failed save-on after a restart was reported as saving still off | `flows/snapshot-schedule.test.ts` |
 | (feature) Snapshot and map schedules on the clock; slots skipped when nobody played | `flows/snapshot-schedule.test.ts`, `flows/worldmap.test.ts` |
 | Two servers with Simple Voice Chat on the default UDP port: the second stopped itself at start | `flows/voicechat.test.ts` |
