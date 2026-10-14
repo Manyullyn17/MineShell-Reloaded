@@ -855,6 +855,13 @@ const VANILLA_112: Record<string, (d: number) => string | null> = {
 	yellow_flower: () => 'dandelion',
 	red_flower: (d) => ['poppy', 'blue_orchid', 'allium', 'houstonia', 'red_tulip', 'orange_tulip', 'white_tulip', 'pink_tulip', 'oxeye_daisy'][d] ?? null,
 	double_plant: (d) => ['sunflower', 'syringa', 'double_grass', 'double_fern', 'double_rose', 'paeonia'][d & 7] ?? null,
+	// Single ids whose model has another name.
+	deadbush: () => 'dead_bush',
+	stone_slab2: () => 'red_sandstone_slab',
+	potion: () => 'bottle_drinkable',
+	splash_potion: () => 'bottle_splash',
+	lingering_potion: () => 'bottle_lingering',
+	totem_of_undying: () => 'totem',
 	monster_egg: (d) => ['stone_monster_egg', 'cobblestone_monster_egg', 'stone_brick_monster_egg', 'mossy_brick_monster_egg', 'cracked_brick_monster_egg', 'chiseled_brick_monster_egg'][d] ?? null,
 	// Single ids that 1.12 still names by the wood: no damage involved.
 	fence: () => 'oak_fence',
@@ -1049,10 +1056,81 @@ export function itemName(id: string, lang: Map<string, string>): string {
 }
 
 /**
- * 1.12 vanilla ids whose key is another item's: tile.stonebrick.name is
- * Cobblestone (cobblestone's key); Stone Bricks are stonebricksmooth.
+ * 1.12 vanilla ids and their lang keys (without .name) where the key does not
+ * follow the id, as the game registers them (read from the 1.12.2 jar's
+ * Block and Item registration): gold_block is tile.blockGold ("Block of
+ * Gold"), beef item.beefRaw ("Raw Beef"). Some ids are another item's key:
+ * tile.stonebrick.name is Cobblestone; Stone Bricks are stonebricksmooth.
  */
-const VANILLA_112_KEYS: Record<string, string> = { stonebrick: 'stonebricksmooth' };
+const VANILLA_112_KEYS: Record<string, string> = {
+	stonebrick: 'tile.stonebricksmooth',
+	planks: 'tile.wood',
+	lapis_ore: 'tile.oreLapis',
+	lapis_block: 'tile.blockLapis',
+	noteblock: 'tile.musicBlock',
+	gold_block: 'tile.blockGold',
+	iron_block: 'tile.blockIron',
+	brick_block: 'tile.brick',
+	mossy_cobblestone: 'tile.stoneMoss',
+	oak_stairs: 'tile.stairsWood',
+	spruce_stairs: 'tile.stairsWoodSpruce',
+	birch_stairs: 'tile.stairsWoodBirch',
+	jungle_stairs: 'tile.stairsWoodJungle',
+	acacia_stairs: 'tile.stairsWoodAcacia',
+	dark_oak_stairs: 'tile.stairsWoodDarkOak',
+	diamond_block: 'tile.blockDiamond',
+	stone_stairs: 'tile.stairsStone',
+	snow_layer: 'tile.snow',
+	melon_block: 'tile.melon',
+	enchanting_table: 'tile.enchantmentTable',
+	wooden_slab: 'tile.woodSlab',
+	emerald_block: 'tile.blockEmerald',
+	light_weighted_pressure_plate: 'tile.weightedPlate_light',
+	heavy_weighted_pressure_plate: 'tile.weightedPlate_heavy',
+	redstone_block: 'tile.blockRedstone',
+	quartz_ore: 'tile.netherquartz',
+	stained_hardened_clay: 'tile.clayHardenedStained',
+	hardened_clay: 'tile.clayHardened',
+	leaves2: 'tile.leaves',
+	log2: 'tile.log',
+	coal_block: 'tile.blockCoal',
+	silver_shulker_box: 'tile.shulkerBoxSilver',
+	wheat_seeds: 'item.seeds',
+	leather_helmet: 'item.helmetCloth',
+	leather_chestplate: 'item.chestplateCloth',
+	leather_leggings: 'item.leggingsCloth',
+	leather_boots: 'item.bootsCloth',
+	chainmail_helmet: 'item.helmetChain',
+	chainmail_chestplate: 'item.chestplateChain',
+	chainmail_leggings: 'item.leggingsChain',
+	chainmail_boots: 'item.bootsChain',
+	porkchop: 'item.porkchopRaw',
+	golden_apple: 'item.appleGold',
+	wooden_door: 'item.doorOak',
+	milk_bucket: 'item.milk',
+	clay_ball: 'item.clay',
+	chest_minecart: 'item.minecartChest',
+	furnace_minecart: 'item.minecartFurnace',
+	tnt_minecart: 'item.minecartTnt',
+	hopper_minecart: 'item.minecartHopper',
+	command_block_minecart: 'item.minecartCommandBlock',
+	repeater: 'item.diode',
+	filled_map: 'item.map',
+	map: 'item.emptyMap',
+	beef: 'item.beefRaw',
+	cooked_beef: 'item.beefCooked',
+	chicken: 'item.chickenRaw',
+	rabbit: 'item.rabbitRaw',
+	mutton: 'item.muttonRaw',
+	ender_eye: 'item.eyeOfEnder',
+	experience_bottle: 'item.expBottle',
+	writable_book: 'item.writingBook',
+	firework_charge: 'item.fireworksCharge',
+	quartz: 'item.netherquartz',
+	golden_horse_armor: 'item.horsearmorgold',
+	totem_of_undying: 'item.totem',
+	...Object.fromEntries(['13', 'cat', 'blocks', 'chirp', 'far', 'mall', 'mellohi', 'stal', 'strad', 'ward', '11', 'wait'].map((r) => [`record_${r}`, 'item.record']))
+};
 
 /**
  * A lang value as a name. Some are templates the mod fills in its code
@@ -1072,7 +1150,10 @@ function filled(value: string | undefined): string | null {
 /** itemName's lookup alone: null when the lang files do not have it. */
 function langName(id: string, lang: Map<string, string>): string | null {
 	const [ns, path] = split(id);
-	const p = (ns === 'minecraft' && lang.has(`tile.${VANILLA_112_KEYS[path]}.name`) && VANILLA_112_KEYS[path]) || path;
+	// 1.12's own key first; on newer versions it is not there and the id's keys follow.
+	const own = ns === 'minecraft' && VANILLA_112_KEYS[path] ? filled(lang.get(`${VANILLA_112_KEYS[path]}.name`)) : null;
+	if (own) return own;
+	const p = path;
 	const keys = [
 		`item.${ns}.${p}`,
 		`block.${ns}.${p}`,

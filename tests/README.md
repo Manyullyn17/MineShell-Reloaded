@@ -249,6 +249,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Thermal Foundation's tools and armour, Tech Reborn's dusts without a picture: dotted ids' model folders and blockstates in subfolders not looked at | `flows/itemicons.test.ts` |
 | 1.12 mod items named from the id ("Tool.bow Steel", "Armor.boots Aluminum") though the mod's lang file names them under other words; colour codes (`§6`) shown in names | `flows/itemicons.test.ts` |
 | 1.12 items at damage 0 lost their variant's name ("Carved Mud Bricks") once their own model gave the picture | `flows/itemicons.test.ts` |
+| 78 of 447 vanilla 1.12 items misnamed ("Gold Block", "Beef", "Record 13"); dead bush, potions, totem, red sandstone slab without a picture | `flows/itemicons.test.ts` |
 | A scheduled restart during a live snapshot copy caught the world mid-write; a snapshot due during a restart failed; a failed save-on after a restart was reported as saving still off | `flows/snapshot-schedule.test.ts` |
 | (feature) Snapshot and map schedules on the clock; slots skipped when nobody played | `flows/snapshot-schedule.test.ts`, `flows/worldmap.test.ts` |
 | Two servers with Simple Voice Chat on the default UDP port: the second stopped itself at start | `flows/voicechat.test.ts` |

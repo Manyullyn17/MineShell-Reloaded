@@ -233,6 +233,29 @@ describe('item icons', () => {
 		expect(icons['thebetweenlands:mud_bricks_carved']).toMatchObject({ name: 'Carved Mud Bricks', exact: true, spec: { kind: 'flat' } });
 	});
 
+	it('names 1.12 vanilla items by the keys the game registers them with, and finds their renamed models', async () => {
+		const lang = new Map([
+			['tile.blockGold.name', 'Block of Gold'],
+			['item.beefRaw.name', 'Raw Beef'],
+			['item.record.name', 'Music Disc'],
+			['item.minecraft.beef', 'Raw Beef'],
+			['tile.gold_block.name', 'Gold Block']
+		]);
+		expect(itemName('minecraft:gold_block', lang)).toBe('Block of Gold');
+		expect(itemName('minecraft:beef', lang)).toBe('Raw Beef');
+		expect(itemName('minecraft:record_cat', lang)).toBe('Music Disc');
+		// 1.13+ has no such key: the id's own.
+		expect(itemName('minecraft:beef', new Map([['item.minecraft.beef', 'Raw Beef']]))).toBe('Raw Beef');
+
+		const res = await Resources.load([], await jar('c.jar', {
+			'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
+			...Object.fromEntries(['dead_bush', 'bottle_drinkable', 'totem'].map((m) => [`assets/minecraft/models/item/${m}.json`, json({ parent: 'item/generated', textures: { layer0: `items/${m}` } })]))
+		}));
+		for (const [id, model] of [['deadbush', 'dead_bush'], ['potion', 'bottle_drinkable'], ['totem_of_undying', 'totem']]) {
+			expect((await resolveIcon(res, `minecraft:${id}`, 0)).spec).toEqual({ kind: 'flat', layers: [{ texture: `minecraft:items/${model}`, tint: null }] });
+		}
+	});
+
 	it("names vanilla 1.12 variants by its own scheme, and tries mods' usual ones", () => {
 		expect(variantModels('minecraft', 'wool', 14)).toEqual(['red_wool', 'wool']);
 		expect(variantModels('minecraft', 'dye', 4)).toEqual(['dye_blue', 'dye']);
