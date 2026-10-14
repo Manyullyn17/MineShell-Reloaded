@@ -27,7 +27,7 @@ type Options = {
 	instances: { dir: string; version: string }[];
 	world: boolean;
 	render: boolean;
-	sheets: 'problems' | 'all' | null;
+	sheets: 'problems' | 'all' | 'changed' | null;
 	out: string;
 	baseline: string | null;
 };
@@ -71,7 +71,7 @@ function parse(args: string[], cache: string): Options {
 		else if (a === '--render') o.render = true;
 		else if (a === '--sheets') {
 			o.render = true;
-			o.sheets = args[i + 1] === 'all' || args[i + 1] === 'problems' ? (next() as 'all' | 'problems') : 'problems';
+			o.sheets = ['all', 'problems', 'changed'].includes(args[i + 1]) ? (next() as 'all' | 'problems' | 'changed') : 'problems';
 		} else if (a === '--out') o.out = path.resolve(next());
 		else if (a === '--baseline') o.baseline = path.resolve(next());
 		else throw new Error(`Unknown option ${a} (see tests/itemicons/README.md)`);
@@ -302,7 +302,7 @@ try {
 	await post('/drawn/' + q.get('target'), drawn);
 	// Contact sheets, 100 a page: every item, or the problems (guessed, broken or drawing nothing).
 	const mode = q.get('sheets');
-	const chosen = mode === 'all' ? items : mode === 'problems' ? items.filter((it) => it.spec && (!it.exact || !(drawn[it.key] > 0))) : [];
+	const chosen = mode === 'all' ? items : mode === 'problems' ? items.filter((it) => it.spec && (!it.exact || !(drawn[it.key] > 0))) : mode === 'changed' ? items.filter((it) => it.changed) : [];
 	const sheets = [];
 	for (let i = 0; i < chosen.length; i += 100) sheets.push(chosen.slice(i, i + 100).map((it) => it.key));
 	for (const [i, keys] of sheets.entries()) {
@@ -324,13 +324,14 @@ try {
 await post('/done', '');
 </script>`;
 
-async function render(o: Options, repo: string, target: Target, textures: Record<string, string>): Promise<string[]> {
+/** `changed`: keys drawn or named differently than in the baseline (for --sheets changed). */
+async function render(o: Options, repo: string, target: Target, textures: Record<string, string>, changed: Set<string>): Promise<string[]> {
 	const work = path.join(o.out, '.render');
 	await fs.mkdir(work, { recursive: true });
 	// esbuild is CommonJS, which Vite's module runner does not load.
 	const esbuild = createRequire(path.join(repo, 'package.json'))('esbuild') as typeof import('esbuild');
 	await esbuild.build({ entryPoints: [path.join(repo, 'src/lib/shared/itemicon.svelte.ts')], bundle: true, format: 'esm', loader: { '.ts': 'ts' }, outfile: path.join(work, 'itemicon.js'), logLevel: 'silent' });
-	const items = target.items.map(({ key, name, spec, exact, missing }) => ({ key, name, spec, exact, missing }));
+	const items = target.items.map(({ key, name, spec, exact, missing }) => ({ key, name, spec, exact, missing, changed: changed.has(key) }));
 	const written: string[] = [];
 	const browser = await chromium();
 	await new Promise<void>((resolve, reject) => {
@@ -460,11 +461,13 @@ export async function main(args: string[], { repo, cache }: { repo: string; cach
 	for (const spec of targets) {
 		const started = Date.now();
 		const { target, textures } = await check(o, cache, spec);
-		const sheets = o.render ? await render(o, repo, target, textures) : [];
+		const before = o.baseline ? await fs.readFile(path.join(o.baseline, `${target.name}.json`), 'utf8').then((t) => JSON.parse(t) as Target, () => null) : null;
+		const old = new Map(before?.items.map((i) => [i.key, i]) ?? []);
+		const changed = new Set(target.items.filter((i) => old.has(i.key) && (old.get(i.key)!.name !== i.name || JSON.stringify(old.get(i.key)!.spec) !== JSON.stringify(i.spec))).map((i) => i.key));
+		const sheets = o.render ? await render(o, repo, target, textures, changed) : [];
 		await fs.writeFile(path.join(o.out, `${target.name}.json`), JSON.stringify(target));
 		console.log(summary(target).join('\n'));
 		if (o.baseline) {
-			const before = await fs.readFile(path.join(o.baseline, `${target.name}.json`), 'utf8').then((t) => JSON.parse(t) as Target, () => null);
 			if (before) {
 				const diff = compare(target, before);
 				lostAny ||= diff.length > 1 && diff[1].startsWith('    lost');

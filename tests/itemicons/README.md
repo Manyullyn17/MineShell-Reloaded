@@ -21,7 +21,7 @@ npm run check:icons -- --instance <server folder>@<version> --baseline <earlier 
 | `--instance <dir>@<version>` | A server folder (repeatable). Its items: Forge's registry on 1.12, the picker's list on 1.13+ |
 | `--world` | Also every item stack in the server's world (regions, entities, player files): the variants that occur. MeatballCraft's 2.7 GB world takes about 5 minutes |
 | `--render` | Draw every picture with the page's own renderer (`lib/shared/itemicon.svelte.ts`) in headless Chromium, counting what draws nothing |
-| `--sheets [problems\|all]` | Contact sheets, 100 a page: the problems (guesses on a yellow tile, pictures that draw nothing) or every item. Implies `--render` |
+| `--sheets [problems\|all\|changed]` | Contact sheets, 100 a page: the problems (guesses on a yellow tile, pictures that draw nothing), every item, or what changed since `--baseline`. Implies `--render` |
 | `--out <dir>` | Where the report goes (default `~/.cache/mineshell-itemicons/reports/<time>`) |
 | `--baseline <dir>` | An earlier report: lists items that lost or gained a picture, were renamed or are drawn differently. Exits with 2 when any lost one |
 
