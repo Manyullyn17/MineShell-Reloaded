@@ -16,7 +16,9 @@ src/lib/shared/links.ts       src/lib/shared/links.test.ts
 ```
 
 `#lib` imports work as in the app. Bigger fixture-driven suites get their own folder here
-(see [crashdiag/](crashdiag/README.md)).
+(see [crashdiag/](crashdiag/README.md)). [itemicons/](itemicons/README.md) is a manual check
+outside the suite: every item's name and picture for vanilla versions and real servers
+(`npm run check:icons`), run after changes to item icons or names.
 
 ## Real data is never touched
 
@@ -258,6 +260,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) NeoForge fluid buckets: the bucket, the fluid cut to its shape when its texture is found by name, else flagged | `flows/itemicons.test.ts` |
 | Rechiseled's blocks drawn as thin strokes: a connected texture's pieces side by side were read as one stretched frame | `src/lib/shared/itemicon.test.ts` |
 | Fence gates small and multiblock models (Mekanism's nucleosynthesizer) overflowing their slot: the model's inventory scale was ignored | `flows/itemicons.test.ts` |
+| 1.19.4-1.20.x smithing templates named from their ids ("Coast Armor Trim Smithing Template"): they share one key | `flows/itemicons.test.ts` |
 | A scheduled restart during a live snapshot copy caught the world mid-write; a snapshot due during a restart failed; a failed save-on after a restart was reported as saving still off | `flows/snapshot-schedule.test.ts` |
 | (feature) Snapshot and map schedules on the clock; slots skipped when nobody played | `flows/snapshot-schedule.test.ts`, `flows/worldmap.test.ts` |
 | Two servers with Simple Voice Chat on the default UDP port: the second stopped itself at start | `flows/voicechat.test.ts` |

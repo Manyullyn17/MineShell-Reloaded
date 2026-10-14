@@ -1285,6 +1285,9 @@ function langName(id: string, lang: Map<string, string>): string | null {
 	// 1.12's own key first; on newer versions it is not there and the id's keys follow.
 	const own = ns === 'minecraft' && VANILLA_112_KEYS[path] ? filled(lang.get(`${VANILLA_112_KEYS[path]}.name`)) : null;
 	if (own) return own;
+	// 1.19.4-1.20.x name every smithing template by one key ("Smithing Template"); 1.21 gives each its own.
+	const template = ns === 'minecraft' && path.endsWith('_smithing_template') && !lang.has(`item.minecraft.${path}`) ? filled(lang.get('item.minecraft.smithing_template')) : null;
+	if (template) return template;
 	const p = path;
 	const keys = [
 		`item.${ns}.${p}`,

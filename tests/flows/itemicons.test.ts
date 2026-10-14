@@ -246,6 +246,8 @@ describe('item icons', () => {
 		expect(itemName('minecraft:record_cat', lang)).toBe('Music Disc');
 		// 1.13+ has no such key: the id's own.
 		expect(itemName('minecraft:beef', new Map([['item.minecraft.beef', 'Raw Beef']]))).toBe('Raw Beef');
+		// 1.19.4-1.20.x: every smithing template by one shared key.
+		expect(itemName('minecraft:coast_armor_trim_smithing_template', new Map([['item.minecraft.smithing_template', 'Smithing Template']]))).toBe('Smithing Template');
 
 		const res = await Resources.load([], await jar('c.jar', {
 			'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
