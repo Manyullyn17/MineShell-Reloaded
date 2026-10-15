@@ -1374,7 +1374,7 @@
 			<p class="small {last.ok ? 'muted' : 'warn-text'}">Last message {formatDateTime(last.at)}: {last.message}</p>
 		{/if}
 		<div class="check field">
-			<input id="ownNotifications" type="checkbox" bind:checked={ownNotifications} disabled={!!data.notifications.own} />
+			<input id="ownNotifications" type="checkbox" class="switch" role="switch" bind:checked={ownNotifications} disabled={!!data.notifications.own} />
 			<label for="ownNotifications">Send this server's notifications to a destination of its own</label>
 		</div>
 		{#if ownNotifications}
@@ -1382,7 +1382,7 @@
 			<form method="POST" action="?/notifications" use:enhance class="block">
 				<NotificationFields bind:values={notifyValues} savedHint={data.notifications.own?.hint ?? null} idPrefix="server-notify" />
 				<div class="check field">
-					<input id="alsoGlobal" name="alsoGlobal" type="checkbox" bind:checked={alsoGlobal} />
+					<input id="alsoGlobal" name="alsoGlobal" type="checkbox" class="switch" role="switch" bind:checked={alsoGlobal} />
 					<label for="alsoGlobal">Also send to MineShell's destination, for what is ticked there</label>
 				</div>
 				<div class="button-row">

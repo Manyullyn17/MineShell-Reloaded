@@ -1475,41 +1475,6 @@
 		padding-right: 0 !important;
 	}
 
-	/* A toggle switch: the form posts the opposite of the current state. */
-	.switch {
-		position: relative;
-		width: 32px;
-		height: 18px;
-		padding: 0;
-		border: 0;
-		border-radius: 9px;
-		background: var(--line-strong);
-	}
-
-	.switch::after {
-		content: '';
-		position: absolute;
-		top: 3px;
-		left: 3px;
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		background: var(--text);
-		transition: left 0.12s;
-	}
-
-	.switch[aria-checked='true'] {
-		background: var(--accent);
-	}
-
-	.switch[aria-checked='true']::after {
-		left: 17px;
-	}
-
-	.switch:hover:not(:disabled) {
-		outline: 1px solid var(--accent-hover);
-	}
-
 	.mod-name {
 		display: flex;
 		align-items: center;

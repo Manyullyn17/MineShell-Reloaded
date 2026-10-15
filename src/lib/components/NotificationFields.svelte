@@ -50,7 +50,7 @@
 	<legend>Send a message when a server</legend>
 	{#each NOTIFICATION_KINDS as k (k.kind)}
 		<div class="check field">
-			<input id="{idPrefix}-{k.kind}" type="checkbox" name="kinds" value={k.kind} bind:group={values.kinds} />
+			<input id="{idPrefix}-{k.kind}" type="checkbox" class="switch" role="switch" name="kinds" value={k.kind} bind:group={values.kinds} />
 			<label for="{idPrefix}-{k.kind}">{k.label}</label>
 		</div>
 	{/each}

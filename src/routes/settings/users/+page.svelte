@@ -73,12 +73,12 @@
 			<p class="hint">Letters, digits, dots, dashes and underscores.</p>
 		</div>
 		<div class="check field">
-			<input id="canCreate" name="canCreate" type="checkbox" />
+			<input id="canCreate" name="canCreate" type="checkbox" class="switch" role="switch" />
 			<label for="canCreate">May add servers (and becomes admin of what they add)</label>
 		</div>
 		{#if data.owner}
 			<div class="check field">
-				<input id="globalAdmin" name="globalAdmin" type="checkbox" />
+				<input id="globalAdmin" name="globalAdmin" type="checkbox" class="switch" role="switch" />
 				<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts</label>
 			</div>
 		{/if}

@@ -93,12 +93,12 @@
 		<h2>Account</h2>
 		<form method="POST" action="?/flags" use:enhance={keep} class="flags">
 			<div class="check field">
-				<input id="canCreate" name="canCreate" type="checkbox" checked={data.account.canCreate} />
+				<input id="canCreate" name="canCreate" type="checkbox" class="switch" role="switch" checked={data.account.canCreate} />
 				<label for="canCreate">May add servers (and becomes admin of what they add)</label>
 			</div>
 			{#if data.owner}
 				<div class="check field">
-					<input id="globalAdmin" name="globalAdmin" type="checkbox" checked={data.account.isGlobalAdmin} />
+					<input id="globalAdmin" name="globalAdmin" type="checkbox" class="switch" role="switch" checked={data.account.isGlobalAdmin} />
 					<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts</label>
 				</div>
 			{:else}
@@ -179,7 +179,7 @@
 									<legend>{group.label}</legend>
 									{#each group.permissions as p (p.id)}
 										<label class="check perm">
-											<input type="checkbox" name="permission" value={p.id} checked={grant?.permissions.includes(p.id) ?? false} />
+											<input type="checkbox" class="switch" role="switch" name="permission" value={p.id} checked={grant?.permissions.includes(p.id) ?? false} />
 											<span>
 												{p.label}
 												{#if FULL_TRUST.includes(p.id)}<span class="tag warn" title="Can run programs on this machine as MineShell, and through that reach everything">full trust</span>{/if}
