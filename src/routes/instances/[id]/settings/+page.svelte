@@ -25,6 +25,7 @@
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
+	import { minMemoryLimitMb, suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
@@ -1027,13 +1028,14 @@
 					id="limitMemoryMb"
 					name="limitMemoryMb"
 					type="number"
-					min={limitHeapMb + 512}
+					min={minMemoryLimitMb(limitHeapMb)}
 					step="256"
 					placeholder="No limit"
 					bind:value={sv.limitMemoryMb}
 				/>
 				<p class="hint">
-					At least {limitHeapMb + 512} MB; around {Math.ceil((limitHeapMb * 1.25) / 256) * 256} MB is comfortable.
+					At least {minMemoryLimitMb(limitHeapMb)} MB; around {suggestedMemoryLimitMb(limitHeapMb)} MB leaves room for a busy pack.
+					The server is killed past it.
 					{#if limitHeapMb !== (s.memoryMaxMb ?? 0)}The running server started with a {limitHeapMb} MB heap; the
 						{s.memoryMaxMb} MB one applies after a restart.{/if}
 				</p>

@@ -88,7 +88,10 @@ from `writeResourceLimits()`. Unlike everything else in the unit, the caps reach
 server at once: `daemon-reload` re-applies cgroup settings to active units (checked for both,
 and for removing them). So the memory cap is checked against the bigger of the saved heap and
 the one the running process started with (`runningHeapMb`, its `-Xmx` from
-`/proc/<pid>/cmdline`), which differ until a restart. The template itself says `Restart=on-failure`, so a server
+`/proc/<pid>/cmdline`), which differ until a restart. The floor is heap + 10% + 1 GB
+(`minMemoryLimitMb`, `lib/shared/memorylimit.ts`; the measurements are in its comment). A
+kill at the limit is systemd's "killed by the OOM killer" line in the run's journal, which
+crash diagnosis names (`memory-killed`). The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping

@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		inLog: view.then((v) => (query && v ? matchesIn(instance, v.kind, v.key, query).catch(() => []) : null)),
 		// Indexing a big pack's mods takes a moment. Against the mods installed
 		// now, which may have changed since that run.
-		diagnosis: view.then((v) => (v?.failed ? diagnoseRun(v.text, modsDir(instance.path)).catch(() => [] as Diagnosis[]) : null))
+		diagnosis: view.then((v) => (v?.failed ? diagnoseRun(v.text, modsDir(instance.path), { memoryLimitMb: instance.limitMemoryMb }).catch(() => [] as Diagnosis[]) : null))
 	};
 };
 

@@ -90,6 +90,7 @@
 	/** How a run ended, from systemd's lines. 143 is Java answering SIGTERM: a normal stop. */
 	function outcome(run: { endedAt: number | null; exit: string | null; failure: string | null }, newest: boolean) {
 		if (!run.endedAt) return newest && data.running ? { label: 'running now', tone: 'running' } : { label: 'no end recorded', tone: '' };
+		if (run.failure === 'oom-kill') return { label: 'killed: out of memory', tone: 'bad' };
 		if (run.failure && !/status=143\b/.test(run.exit ?? '')) return { label: run.exit ?? run.failure, tone: 'bad' };
 		return { label: 'stopped', tone: '' };
 	}

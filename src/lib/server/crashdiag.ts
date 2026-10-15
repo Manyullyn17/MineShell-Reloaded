@@ -196,7 +196,8 @@ export type DiagnosisKind =
 	| 'incompatible-method'
 	| 'mixin-failure'
 	| 'java-version'
-	| 'loader-version';
+	| 'loader-version'
+	| 'memory-killed';
 
 export type ModRef = { fileName: string; name: string; enabled: boolean; clientOnly: boolean };
 
@@ -256,7 +257,10 @@ function isClientMinecraftClass(name: string): boolean {
 	return /^(net\.minecraft\.client\.|com\.mojang\.blaze3d\.|net\.minecraft\.class_\d+$)/.test(name);
 }
 
-export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
+/** What the log does not say: the server's memory limit, if it has one. */
+export type RunContext = { memoryLimitMb?: number | null };
+
+export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext = {}): Diagnosis[] {
 	// eslint-disable-next-line no-control-regex
 	const lines = rawLog.replace(/\x1b\[[0-9;]*m/g, '').split('\n');
 
@@ -385,6 +389,26 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 		const line = lines[i];
 		current = i;
 		let m: RegExpMatchArray | null;
+
+		// ---- the kernel ended it for its memory (systemd's line; a cgroup limit or the whole machine)
+		if (/A process of this unit has been killed by the OOM killer/.test(line)) {
+			const limit = context.memoryLimitMb;
+			push(
+				{
+					kind: 'memory-killed',
+					title: limit ? `Killed at its memory limit (${limit} MB)` : 'Killed for running out of memory',
+					detail: limit
+						? `The kernel ended the server for using more memory than its limit allows (Settings > Limits), or the machine ran out. Java needs memory beyond its heap: loaded classes, threads and mods' native memory, several GB on a big pack, and a mod that leaks native memory keeps growing. Raise the limit or lower the maximum memory.`
+						: 'The machine ran out of memory and the kernel ended the server. Lower its maximum memory, or that of other servers running beside it.',
+					culprit: null,
+					related: null,
+					evidence: line.trim(),
+					fix: null
+				},
+				'memory-killed'
+			);
+			continue;
+		}
 
 		// ---- loader dependency checks (each loader words these its own way)
 		const deps: { who: string; needs: string; range?: string }[] = [];
@@ -755,10 +779,13 @@ export function diagnoseLog(rawLog: string, mods: ModJar[]): Diagnosis[] {
 		/Missing or unsupported mandatory dependencies/, // modern Forge
 		/Loading errors encountered|ModLoadingException/, // NeoForge, modern Forge
 		/MissingModsException/, // legacy Forge
-		/Error: LinkageError occurred while loading main class|Exception in thread "main"/ // JVM
+		/Error: LinkageError occurred while loading main class|Exception in thread "main"/, // JVM
+		/A process of this unit has been killed by the OOM killer/ // systemd
 	];
 	const fatalAt = lines.findIndex((l) => FATAL.some((re) => re.test(l)));
-	const ranked = out.map((d) => ({ ...d, fatal: fatalAt < 0 || d.at >= fatalAt - 3 }));
+	// Loaders print the cause just before their marker; nothing logged before a memory kill caused it.
+	const before = fatalAt >= 0 && /killed by the OOM killer/.test(lines[fatalAt]) ? 0 : 3;
+	const ranked = out.map((d) => ({ ...d, fatal: fatalAt < 0 || d.at >= fatalAt - before }));
 	ranked.sort((a, b) => Number(b.fatal) - Number(a.fatal) || Number(a.consequence) - Number(b.consequence) || a.at - b.at);
 	return ranked.map(({ at: _at, consequence: _consequence, ...d }) => d);
 }
@@ -772,6 +799,6 @@ export function lastRun(journal: string): string {
 	return journal;
 }
 
-export async function diagnoseRun(journal: string, modsDir: string): Promise<Diagnosis[]> {
-	return diagnoseLog(lastRun(journal), await indexMods(modsDir));
+export async function diagnoseRun(journal: string, modsDir: string, context: RunContext = {}): Promise<Diagnosis[]> {
+	return diagnoseLog(lastRun(journal), await indexMods(modsDir), context);
 }

@@ -14,11 +14,11 @@ import { modsDir } from './mods/index';
  */
 const diagnosisCache = new Map<string, { key: string; result: Promise<Diagnosis[]> }>();
 
-function diagnoseLastRun(instanceId: string, instancePath: string, journal: string): Promise<Diagnosis[]> {
-	const key = `${journal.length}:${journal.slice(-200)}`;
+function diagnoseLastRun(instanceId: string, instancePath: string, journal: string, memoryLimitMb: number | null): Promise<Diagnosis[]> {
+	const key = `${memoryLimitMb}:${journal.length}:${journal.slice(-200)}`;
 	const hit = diagnosisCache.get(instanceId);
 	if (hit && hit.key === key) return hit.result;
-	const result = diagnoseRun(journal, modsDir(instancePath)).catch(() => [] as Diagnosis[]);
+	const result = diagnoseRun(journal, modsDir(instancePath), { memoryLimitMb }).catch(() => [] as Diagnosis[]);
 	diagnosisCache.set(instanceId, { key, result });
 	return result;
 }
@@ -62,7 +62,7 @@ export async function lastCrash(summary: InstanceSummary): Promise<LastCrash | n
 	const loggedCrash = log.split('\n').some(isCrashLine);
 	const crashed =
 		hung || loggedCrash || (!wasStopIntentional(instance.id) && (state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log))));
-	return crashed ? { log, diagnosis: diagnoseLastRun(instance.id, instance.path, log) } : null;
+	return crashed ? { log, diagnosis: diagnoseLastRun(instance.id, instance.path, log, instance.limitMemoryMb) } : null;
 }
 
 /** The newest run in the history logged a crash. */

@@ -28,6 +28,32 @@ describe('recorded crashes', () => {
 	});
 });
 
+describe('memory kills', () => {
+	// systemd's own lines, as journalctl -o cat prints them for a unit past MemoryMax.
+	const log = [
+		'Started minecraft@pack.service - Minecraft server (pack) managed by MineShell.',
+		'[10:00:01] [main/ERROR] [mixin]: Mixin apply for mod somemod failed somemod.mixins.json:FooMixin from mod somemod -> net.minecraft.Foo',
+		'[10:00:30] [Server thread/INFO] [minecraft/DedicatedServer]: Done (8.364s)! For help, type "help" or "?"',
+		'minecraft@pack.service: A process of this unit has been killed by the OOM killer.',
+		'minecraft@pack.service: Main process exited, code=killed, status=9/KILL',
+		"minecraft@pack.service: Failed with result 'oom-kill'."
+	].join('\n');
+
+	it('names the memory limit as the cause, before errors logged earlier', () => {
+		const [top, ...rest] = diagnoseLog(log, [], { memoryLimitMb: 17408 });
+		expect(top.kind).toBe('memory-killed');
+		expect(top.fatal).toBe(true);
+		expect(top.title).toContain('17408 MB');
+		expect(rest.every((d) => !d.fatal)).toBe(true);
+	});
+
+	it('says the machine ran out when the server has no limit', () => {
+		const [top] = diagnoseLog(log, []);
+		expect(top.kind).toBe('memory-killed');
+		expect(top.title).toBe('Killed for running out of memory');
+	});
+});
+
 describe('indexMods', () => {
 	it('reads every loader metadata format, client-only flags and jar-in-jar classes', async () => {
 		const dir = await tempDir();

@@ -166,14 +166,14 @@ after a periodic GC, and never below `-Xms`, the server's min memory), so the ca
 cannot shrink what the servers already hold. CPU: `CPUQuota=` on the slice, which is a
 throttle anyway. Warn when the running servers' heaps plus headroom add up past the cap.
 
-Headroom over the heap: `-Xmx` is the heap only; metaspace (grows with mod count), code
-cache, thread stacks, GC bookkeeping (a few % of heap) and direct buffers come on top.
-Measured 2026-10-05 on `irithyll` (Fabric, 65 mods, 10 GB heap): 890 MB resident outside
-the heap. Big Forge packs load several times the classes, so more. The current per-server
-check (`LIMIT_HEADROOM_MB = 512` in the instance settings route) is too little for that
-server: a hard `MemoryMax` at heap + 512 MB would kill it. Proposal for both the per-server
-check and the cap warning: heap + 1 GB + 10% of heap (4 GB -> 5.4 GB, 10 GB -> 12 GB),
-to be checked against a big Forge/Cleanroom pack (MeatballCraft) before settling.
+Headroom over the heap: the per-server limit's floor is heap + 10% + 1 GB
+(`minMemoryLimitMb`); the cap's warning should use the same. Measured outside the heap:
+`irithyll` (Fabric, 65 mods, 10 GB heap) 890 MB; MeatballCraft (Cleanroom, 16 GB heap, ZGC,
+2026-10-15) 1.5 GB after starting, 3.3 GB three minutes in, then growing ~400 MB a minute
+while Dynmap 3.7-beta-6 did a full render (stopped when the render was paused, never handed
+back: 6.2 GB after 15 minutes). No headroom covers a native leak like that; a hard limit is
+what stops it. ZGC's heap is shared memory (memfd) in the cgroup's accounting, so it counts
+in full.
 
 Also: add the per-server limits to the new-server defaults (`instance-defaults.ts`), which
 they are not.

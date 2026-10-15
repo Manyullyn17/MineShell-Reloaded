@@ -80,6 +80,7 @@ import {
 	stripMemoryFlags
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
+import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -257,12 +258,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 /**
- * Java needs memory beyond its heap (metaspace, threads, native buffers), and
- * systemd kills the server at MemoryMax, so a limit has to leave this much.
- */
-const LIMIT_HEADROOM_MB = 512;
-
-/**
  * A refusal the person can act on: shown on the form instead of as an error
  * page. A missing Java names the form (`action`), which then offers to
  * download it and submit again.
@@ -420,7 +415,7 @@ export const actions: Actions = {
 		if (minMb > maxMb) {
 			return fail(400, { ok: false, message: 'Starting memory cannot exceed the maximum.' });
 		}
-		if (instance.limitMemoryMb && maxMb + LIMIT_HEADROOM_MB > instance.limitMemoryMb) {
+		if (instance.limitMemoryMb && minMemoryLimitMb(maxMb) > instance.limitMemoryMb) {
 			return fail(400, {
 				ok: false,
 				message: `The memory limit below is ${instance.limitMemoryMb} MB; raise it first, or Java would be killed past it.`
@@ -514,10 +509,10 @@ export const actions: Actions = {
 		const summary = await summarise(instance);
 		const runningHeap = summary.running ? await runningHeapMb(summary.state.mainPid) : null;
 		const heap = Math.max(instance.memoryMaxMb ?? 0, runningHeap ?? 0);
-		if (memoryMb !== null && (!Number.isInteger(memoryMb) || memoryMb < heap + LIMIT_HEADROOM_MB)) {
+		if (memoryMb !== null && (!Number.isInteger(memoryMb) || memoryMb < minMemoryLimitMb(heap))) {
 			return fail(400, {
 				ok: false,
-				message: `The memory limit has to leave Java room above its ${heap} MB heap${runningHeap !== null && runningHeap > (instance.memoryMaxMb ?? 0) ? ' (what the running server started with)' : ''}: at least ${heap + LIMIT_HEADROOM_MB} MB, or blank for none.`
+				message: `The memory limit has to leave Java room above its ${heap} MB heap${runningHeap !== null && runningHeap > (instance.memoryMaxMb ?? 0) ? ' (what the running server started with)' : ''}: at least ${minMemoryLimitMb(heap)} MB, or blank for none.`
 			});
 		}
 		const maxCpu = (cpus().length || 1) * 100;
