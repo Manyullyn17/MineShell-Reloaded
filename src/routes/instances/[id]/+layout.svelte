@@ -9,6 +9,7 @@
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
+	import { startAnyway } from '#lib/shared/startanyway.js';
 
 	let { data, children } = $props();
 
@@ -57,7 +58,14 @@
 	const inPlace: SubmitFunction = () => {
 		// Closed after the click: removing a menu item during it cancels the submit.
 		setTimeout(() => (menuOpen = false));
-		return async ({ result }) => {
+		return async ({ result: first, action }) => {
+			const memoryWarned = first.type === 'failure' && (first.data as { memoryWarning?: boolean } | undefined)?.memoryWarning;
+			const result = (await startAnyway(first, action)) ?? first;
+			if (memoryWarned && result === first) {
+				// Not started: the person said no.
+				message = null;
+				return;
+			}
 			if (result.type === 'success' || result.type === 'failure') {
 				message = (result.data as { ok?: boolean; message?: string }) ?? null;
 			} else if (result.type === 'error') {

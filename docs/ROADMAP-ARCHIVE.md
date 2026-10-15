@@ -9,6 +9,19 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Memory check before a start, and limits and update checks as new-server defaults
+
+Built 2026-10-15 (both were open items: "RAM guard on start" undecided, the limits a line
+under the resource cap). A start asked for by hand (overview, dashboard) warns when the
+server's heap plus what Java needs beyond it (heap + 10% + 1 GB, or its memory limit if
+smaller), plus what the running servers can still grow into (the same ceiling minus their
+resident memory), is more than `/proc/meminfo`'s MemAvailable. Warn, not refuse: the page asks
+"Start anyway?" and posts again with `force`. Scheduled restarts, crash restarts and starts
+after a reboot are never held up by it. Servers outside MineShell count only through what
+they use now. The defaults page has the memory limit as none or automatic (heap + 25% +
+1 GB, fixed at creation, since every heap differs), a CPU limit, and the update check
+settings.
+
 ### Trash in the Files tab
 
 The user's idea (2026-10-13): Delete in Files moves to a per-server trash instead of deleting,

@@ -10,6 +10,7 @@ import { answerForgeQuestion, pendingForgeQuestion } from '#lib/server/forgequer
 import {
 	acceptEula,
 	InstanceError,
+	listInstances,
 	onlinePlayers,
 	requireInstance,
 	restart,
@@ -49,6 +50,8 @@ import { isAllowedAddress } from '#lib/server/downloadaccess.js';
 import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { isBisecting } from '#lib/server/bisect.js';
 import { currentNotice, skipNotice } from '#lib/server/updatecheck.js';
+import { startMemoryWarning } from '#lib/server/memoryguard.js';
+import { unitState } from '#lib/server/systemd.js';
 
 /**
  * A server still not "Done (" this long after starting is probably hung
@@ -239,6 +242,16 @@ export const actions: Actions = {
 		}
 		// Acting by hand replaces any countdown still running.
 		cancelCountdown(instance.id);
+		// Asked again with force=on once the person chose to start anyway.
+		if (verb === 'start' && form.get('force') !== 'on') {
+			const others = await Promise.all(
+				listInstances()
+					.filter((other) => other.id !== instance.id)
+					.map(async (other) => ({ instance: other, mainPid: (await unitState(other.id)).mainPid || null }))
+			);
+			const warning = await startMemoryWarning(instance, others).catch(() => null);
+			if (warning) return fail(409, { ok: false, message: warning, memoryWarning: true });
+		}
 		const result =
 			verb === 'start'
 				? await start(instance)

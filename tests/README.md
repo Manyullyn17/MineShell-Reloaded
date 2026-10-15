@@ -130,8 +130,8 @@ is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain
 
 | Tool | Use |
 |---|---|
-| `seed-instance.mjs <data dir> <id> [--loader, --loader-version, --mc, --pack source:project:versionId[:name[:pack]], --port]` | A server row without installing anything: a pack server on an old version, a Fabric server on an old loader. Start the dev server once first (migrations) |
-| `pageshot.mjs <url> <out.png> [--width 390] [--wait-for text] [--timeout ms] [--overflow]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check |
+| `seed-instance.mjs <data dir> <id> [--loader, --loader-version, --mc, --pack source:project:versionId[:name[:pack]], --port, --memory]` | A server row without installing anything: a pack server on an old version, a Fabric server on an old loader. Start the dev server once first (migrations) |
+| `pageshot.mjs <url> <out.png> [--width 390] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--dialog accept\|dismiss]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check. `--click` presses a button first, answering any confirm() it opens (printed) |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 
 When something needed for a check would be written a second time, it goes here instead.
@@ -320,6 +320,8 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A saved preset could take a built-in preset's name (shown twice in the picker), and names of only symbols shared one id | `routes/settings/presets.test.ts` |
 | (feature) Saved presets are edited in place (name, description, flags); a rename keeps the id new-server defaults refer to | `routes/settings/presets.test.ts` |
 | Deleting the saved preset new servers got made them fall back to Aikar without a word | `routes/settings/presets.test.ts` |
+| (feature) Memory check before a start: the server's ceiling plus the running servers' room to grow against what is available | `server/memoryguard.test.ts` |
+| (feature) New-server defaults for resource limits (automatic memory limit fitted to the heap) and update checks | `flows/instance-defaults.test.ts` |
 | (feature) Update checks: newer pack version / loader build by date and channel, Cleanroom kept on its line, skip, hidden after the server moved on, retry after a failure | `server/updatecheck.test.ts` |
 | (feature) Credits: README's section lists every entry of the About page's list | `shared/credits.test.ts` |
 | A memory limit of heap + 512 MB let the kernel kill a big pack (1.5-3.3 GB outside its heap), and the kill showed as a crash with no cause | `shared/memorylimit.test.ts`, `crashdiag/crashdiag.test.ts` |

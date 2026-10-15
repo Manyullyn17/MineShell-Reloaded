@@ -11,6 +11,10 @@
  *     --wait-for <text>  wait until the page shows this text (default: 2 s after load)
  *     --timeout <ms>     give up waiting after this long (default 30000), then shoot anyway
  *     --overflow         also list elements reaching past the viewport's right edge
+ *     --click <selector> once loaded, click the first element matching this CSS selector;
+ *                        --wait-for then waits for what the click brings
+ *     --dialog <answer>  accept | dismiss a confirm() the page opens (default accept);
+ *                        its text is printed
  *
  * The whole page is captured (up to 4000 px tall). Chromium: $CHROME, else
  * Playwright's under ~/.cache/ms-playwright, else chromium/google-chrome on
@@ -39,9 +43,11 @@ const width = Number(option('--width', '1280'));
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
+const click = option('--click', null);
+const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
-	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow]');
+	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--dialog accept|dismiss]');
 	process.exit(1);
 }
 
@@ -96,16 +102,29 @@ try {
 	/** @param {string} expression */
 	const evaluate = async (expression) => (await send('Runtime.evaluate', { expression, returnByValue: true })).result?.result?.value;
 
+	ws.addEventListener('message', (event) => {
+		const message = JSON.parse(event.data);
+		if (message.method !== 'Page.javascriptDialogOpening') return;
+		console.log(`Dialog (${dialog}ed): ${message.params.message}`);
+		void send('Page.handleJavaScriptDialog', { accept: dialog === 'accept' });
+	});
+
 	await send('Page.enable');
 	await send('Page.navigate', { url });
 	let found = !waitFor;
 	const deadline = Date.now() + timeout;
+	if (click) {
+		while (Date.now() < deadline && (await evaluate('document.readyState')) !== 'complete') await sleep(200);
+		await sleep(2000);
+		const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(click)}); if (!e) return false; e.click(); return true; })()`);
+		if (!clicked) console.log(`Nothing matches ${click}.`);
+	}
 	if (waitFor) {
 		while (Date.now() < deadline && !found) {
 			found = await evaluate(`!!document.body && document.body.innerText.includes(${JSON.stringify(waitFor)})`);
 			if (!found) await sleep(500);
 		}
-	} else {
+	} else if (!click) {
 		while (Date.now() < deadline && (await evaluate('document.readyState')) !== 'complete') await sleep(200);
 		await sleep(2000);
 	}

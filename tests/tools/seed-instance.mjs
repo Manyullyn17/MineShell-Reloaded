@@ -13,8 +13,9 @@
  *     --pack <source>:<project>:<versionId>[:<version name>[:<pack name>]]
  *                                a pack server, e.g. modrinth:5FFgwNNP:Cqimd3JM:1.8.1:Cobblemon
  *     --port <n>                 game port (RCON is port + 10; default 25900 + a count)
+ *     --memory <mb>              maximum memory (default 2048)
  *
- * The folder <data dir>/instances/<id> is created empty; the EULA counts as accepted.
+ * The folder <data dir>/instances/<id> gets only an eula.txt saying yes.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,9 +37,10 @@ const loader = option('--loader', 'fabric');
 const loaderVersion = option('--loader-version');
 const pack = option('--pack');
 const portArg = option('--port');
+const memory = Number(option('--memory', '2048'));
 const [dataDir, id] = args;
 if (!dataDir || !id) {
-	console.error('Usage: node tests/tools/seed-instance.mjs <data dir> <id> [--mc v] [--loader id] [--loader-version v] [--pack source:project:versionId[:name[:pack name]]] [--port n]');
+	console.error('Usage: node tests/tools/seed-instance.mjs <data dir> <id> [--mc v] [--loader id] [--loader-version v] [--pack source:project:versionId[:name[:pack name]]] [--port n] [--memory mb]');
 	process.exit(1);
 }
 const dbFile = path.join(dataDir, 'mineshell.db');
@@ -50,13 +52,14 @@ const port = Number(portArg ?? 25900 + count + 1);
 const [packSource, packProjectId, packVersionId, packVersionName, packName] = pack ? pack.split(':') : [];
 const dir = path.join(dataDir, 'instances', id);
 fs.mkdirSync(dir, { recursive: true });
+fs.writeFileSync(path.join(dir, 'eula.txt'), 'eula=true\n');
 const now = Date.now();
 db.prepare(
 	`INSERT INTO server_instances (id, name, path, minecraft_version, modloader, modloader_version, pack_source, pack_project_id,
-		pack_version_id, pack_version_name, pack_name, server_port, rcon_port, rcon_password_enc, jvm_args, launch_args,
-		eula_accepted, created_at, updated_at)
+		pack_version_id, pack_version_name, pack_name, server_port, rcon_port, rcon_password_enc, memory_max_mb, jvm_args,
+		launch_args, eula_accepted, created_at, updated_at)
 	VALUES (@id, @id, @dir, @minecraft, @loader, @loaderVersion, @packSource, @packProjectId, @packVersionId, @packVersionName,
-		@packName, @port, @rcon, 'x', '-Xmx2G', '-jar server.jar nogui', 1, @now, @now)`
+		@packName, @port, @rcon, 'x', @memory, @jvmArgs, '-jar server.jar nogui', 1, @now, @now)`
 ).run({
 	id,
 	dir,
@@ -70,6 +73,8 @@ db.prepare(
 	packName: packName ?? null,
 	port,
 	rcon: port + 10,
+	memory,
+	jvmArgs: `-Xms1024M -Xmx${memory}M`,
 	now
 });
 console.log(`${id}: ${loader} ${loaderVersion ?? ''} on ${minecraft}${pack ? `, pack ${packName ?? packProjectId} ${packVersionName ?? packVersionId}` : ''}, port ${port}`);

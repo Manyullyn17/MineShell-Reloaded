@@ -8,6 +8,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import { describeState, formatBytes, formatDuration, formatRelative } from '#lib/shared/format.js';
 	import { isStopped, matchesDashboardFilters, needsAttention } from '#lib/shared/dashboard-filters.js';
+	import { startAnyway } from '#lib/shared/startanyway.js';
 
 	let { data } = $props();
 	/** What this account may do on a server; the server checks every action again. */
@@ -95,7 +96,13 @@
 	function inPlace(busyId: string | null = null): SubmitFunction {
 		return () => {
 			busy = busyId;
-			return async ({ result, formElement }) => {
+			return async ({ result: first, formElement, action }) => {
+				const memoryWarned = first.type === 'failure' && (first.data as { memoryWarning?: boolean } | undefined)?.memoryWarning;
+				const result = (await startAnyway(first, action)) ?? first;
+				if (memoryWarned && result === first) {
+					busy = null;
+					return;
+				}
 				if (result.type === 'success' || result.type === 'failure') {
 					message = (result.data as { ok?: boolean; message?: string }) ?? null;
 				} else if (result.type === 'error') {

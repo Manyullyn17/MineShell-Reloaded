@@ -91,7 +91,10 @@ the one the running process started with (`runningHeapMb`, its `-Xmx` from
 `/proc/<pid>/cmdline`), which differ until a restart. The floor is heap + 10% + 1 GB
 (`minMemoryLimitMb`, `lib/shared/memorylimit.ts`; the measurements are in its comment). A
 kill at the limit is systemd's "killed by the OOM killer" line in the run's journal, which
-crash diagnosis names (`memory-killed`). The template itself says `Restart=on-failure`, so a server
+crash diagnosis names (`memory-killed`). Starting by hand checks the memory first
+(`memoryguard.ts`): this server's ceiling plus what the running ones can still grow into,
+against MemAvailable; past it, the page asks before starting anyway (`force`). A start
+nobody watches (schedules, crash restarts, boot) is never held up by it. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping

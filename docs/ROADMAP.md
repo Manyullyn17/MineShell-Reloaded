@@ -175,8 +175,7 @@ back: 6.2 GB after 15 minutes). No headroom covers a native leak like that; a ha
 what stops it. ZGC's heap is shared memory (memfd) in the cgroup's accounting, so it counts
 in full.
 
-Also: add the per-server limits to the new-server defaults (`instance-defaults.ts`), which
-they are not.
+The per-server limits are in the new-server defaults (built 2026-10-15; ROADMAP-ARCHIVE).
 
 ### Pack change preview: content in data-pack-loader folders
 
@@ -231,9 +230,6 @@ Suggested, not yet confirmed or rejected:
 - **Read-only status page**, mainly worth it together with a **join page** (address,
   version, pack download).
 - **Player stats** from `<world>/stats/<uuid>.json`.
-- **RAM guard on start**: refuse or warn when the heap plus other running servers exceeds
-  free memory. Nothing reads `/proc/meminfo` today. Related: the resource cap above and the
-  memory advice (built).
 - **Sleep when empty**: `pause-when-empty-seconds` on vanilla 1.21.2+. For older and modded
   versions, it is unknown which loaders honour it.
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
