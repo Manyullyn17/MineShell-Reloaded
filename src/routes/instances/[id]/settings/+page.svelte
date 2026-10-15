@@ -17,6 +17,7 @@
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import RestartFields from '#lib/components/RestartFields.svelte';
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
@@ -26,7 +27,6 @@
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { minMemoryLimitMb, suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
-	import { UPDATE_CHANNEL_LABELS, UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
@@ -686,36 +686,13 @@
 				and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
 			{/snippet}
 			<form method="POST" action="?/updates" class="rows" bind:this={forms.updates} onsubmit={onSectionSubmit}>
-				<div class="check field">
-					<input id="updateCheck" name="updateCheck" type="checkbox" bind:checked={sv.updateCheck} />
-					<label for="updateCheck">Check for updates</label>
-				</div>
-				<div class="grid-2">
-					<div class="field">
-						<label for="updateCheckHours">How often</label>
-						<select id="updateCheckHours" name="updateCheckHours" bind:value={sv.updateCheckHours} disabled={!sv.updateCheck}>
-							{#each UPDATE_CHECK_HOURS as option (option.hours)}
-								<option value={option.hours}>{option.label}</option>
-							{/each}
-						</select>
-					</div>
-					<div class="field">
-						<label for="updateChannel">Offer</label>
-						<select id="updateChannel" name="updateChannel" bind:value={sv.updateChannel} disabled={!sv.updateCheck}>
-							{#each UPDATE_CHANNELS as channel (channel)}
-								<option value={channel}>{UPDATE_CHANNEL_LABELS[channel]}</option>
-							{/each}
-						</select>
+				<UpdateCheckFields bind:values={sv}>
+					{#snippet channelHint()}
 						{#if data.settings.modloader === 'cleanroom' && !data.pack}
 							<p class="hint">Cleanroom calls every build alpha; it is offered builds of its own line (0.5.x stays on 0.5.x).</p>
 						{/if}
-					</div>
-				</div>
-				{#if !sv.updateCheck}
-					<!-- A disabled select is not posted; the saved values go with the switch. -->
-					<input type="hidden" name="updateCheckHours" value={sv.updateCheckHours} />
-					<input type="hidden" name="updateChannel" value={sv.updateChannel} />
-				{/if}
+					{/snippet}
+				</UpdateCheckFields>
 			</form>
 			<div class="inline-row update-status">
 				<p class="faint small">

@@ -103,6 +103,23 @@ describe('defaults for new servers', () => {
 		expect(java8.jvmArgs).toContain('-XX:+UseG1GC');
 	});
 
+	it('gives new servers the default limits (the memory limit fitted to the heap) and update checks', async () => {
+		expect(await newServer()).toMatchObject({ limitMemoryMb: null, limitCpuPercent: null, updateCheck: true, updateCheckHours: 24, updateChannel: 'release' });
+		defaults.setInstanceDefaults({
+			...defaults.getInstanceDefaults(),
+			limits: { memory: 'auto', cpuPercent: 200 },
+			updates: { updateCheck: false, updateCheckHours: 168, updateChannel: 'beta' }
+		});
+		// 4096 * 1.25 + 1024, in 256 MB steps.
+		expect(await newServer({ memoryMaxMb: 4096 })).toMatchObject({
+			limitMemoryMb: 6144,
+			limitCpuPercent: 200,
+			updateCheck: false,
+			updateCheckHours: 168,
+			updateChannel: 'beta'
+		});
+	});
+
 	it('lets the add-a-server form override the memory defaults', async () => {
 		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), memoryMaxMb: 6144, memoryMinMb: 2048 });
 		expect(await newServer({ memoryMaxMb: 3072, memoryMinMb: 1024 })).toMatchObject({ memoryMaxMb: 3072, memoryMinMb: 1024 });
@@ -151,6 +168,8 @@ describe('stored defaults', () => {
 				jvmPreset: 'deleted-preset',
 				restarts: { restartSchedule: 'hourly', crashRestartLimit: 9999, restartDailyTime: '25:00' },
 				console: { consoleBufferLines: 5 },
+				limits: { memory: 'lots', cpuPercent: 1 },
+				updates: { updateCheckHours: 5, updateChannel: 'nightly' },
 				properties: { difficulty: 'impossible', 'max-players': '99999', 'level-seed': 'not defaultable', pvp: 'yes' }
 			})
 		);
@@ -158,6 +177,8 @@ describe('stored defaults', () => {
 		expect(d).toMatchObject({ memoryMaxMb: null, memoryMinMb: 1024, jvmPreset: 'aikar' });
 		expect(d.restarts).toMatchObject({ restartSchedule: 'none', crashRestartLimit: 50, restartDailyTime: '05:00' });
 		expect(d.console.consoleBufferLines).toBe(100);
+		expect(d.limits).toEqual({ memory: 'none', cpuPercent: 10 });
+		expect(d.updates).toEqual({ updateCheck: true, updateCheckHours: 24, updateChannel: 'release' });
 		expect(d.properties).toMatchObject({ difficulty: 'normal', 'max-players': '2000', pvp: 'true' });
 		expect(d.properties['level-seed']).toBeUndefined();
 

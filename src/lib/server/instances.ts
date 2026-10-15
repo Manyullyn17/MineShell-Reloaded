@@ -45,7 +45,7 @@ import { missingNotice, recordMissing } from './packs/missing';
 import { deleteMod, listInstanceMods, setModEnabled, syncMods, DISABLED_SUFFIX } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { applyCleanroomModFixes, matchFugueToCleanroom } from './cleanroom';
-import { defaultMaxMb, getInstanceDefaults } from './instance-defaults';
+import { defaultMaxMb, getInstanceDefaults, limitsFor } from './instance-defaults';
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
 import { applyMapModConfig, deleteMapData } from './worldmap';
@@ -265,6 +265,8 @@ async function insertInstanceRow(
 			memoryMaxMb: maxMb,
 			...defaults.restarts,
 			...defaults.console,
+			...defaults.updates,
+			...limitsFor(defaults.limits, maxMb),
 			javaPath: input.javaPath ?? null,
 			serverPort,
 			rconPort,

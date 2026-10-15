@@ -5,10 +5,13 @@ import {
 	DEFAULTABLE_PROPERTIES,
 	consoleFromForm,
 	getInstanceDefaults,
+	limitsFromForm,
+	maxCpuPercent,
 	resetInstanceDefaults,
 	restartsFromForm,
 	setInstanceDefaults,
-	suggestedMaxMb
+	suggestedMaxMb,
+	updatesFromForm
 } from '#lib/server/instance-defaults.js';
 import { getPreset, listPresets } from '#lib/server/jvm-presets.js';
 import { PROPERTY_GROUPS, propertiesFromForm } from '#lib/server/properties.js';
@@ -18,6 +21,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		defaults: getInstanceDefaults(),
 		suggestedMaxMb: suggestedMaxMb(),
+		maxCpuPercent: maxCpuPercent(),
 		bootNote: bootStartNote(),
 		presets: listPresets().map((p) => ({ id: p.id, name: p.name, description: p.description, minJava: p.minJava ?? null })),
 		propertyGroups: PROPERTY_GROUPS.map((group) => ({
@@ -53,6 +57,8 @@ export const actions: Actions = {
 			jvmPreset,
 			restarts: restartsFromForm(form, current.restarts),
 			console: consoleFromForm(form, current.console),
+			limits: limitsFromForm(form, current.limits),
+			updates: updatesFromForm(form, current.updates),
 			properties: { ...current.properties, ...propertiesFromForm(form, DEFAULTABLE_PROPERTIES) }
 		});
 		audit('settings.instance_defaults');

@@ -9,7 +9,7 @@ import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances, updateNotices, type ServerInstance } from '#lib/server/db/schema.js';
-import { consoleFromForm, restartsFromForm, type RestartSettings } from '#lib/server/instance-defaults.js';
+import { consoleFromForm, restartsFromForm, updatesFromForm, type RestartSettings } from '#lib/server/instance-defaults.js';
 import {
 	InstanceError,
 	JavaMissingError,
@@ -82,7 +82,6 @@ import {
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { checkForUpdates, updateKind } from '#lib/server/updatecheck.js';
-import { UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -677,18 +676,13 @@ export const actions: Actions = {
 	updates: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const hours = Number(form.get('updateCheckHours'));
-		const channel = String(form.get('updateChannel') ?? '');
-		if (!UPDATE_CHECK_HOURS.some((h) => h.hours === hours) || !UPDATE_CHANNELS.includes(channel as never)) {
-			return fail(400, { ok: false, message: 'Pick how often to check and which versions to offer from the lists.' });
-		}
-		const enabled = form.get('updateCheck') === 'on';
+		const updates = updatesFromForm(form, instance);
 		// Checked again at the scheduler's next tick, with the new channel.
 		db.update(serverInstances)
-			.set({ updateCheck: enabled, updateCheckHours: hours, updateChannel: channel, updateCheckedAt: null, updatedAt: Date.now() })
+			.set({ ...updates, updateCheckedAt: null, updatedAt: Date.now() })
 			.where(eq(serverInstances.id, instance.id))
 			.run();
-		return { ok: true, message: enabled ? 'Update checks saved; the next one runs within a minute.' : 'Update checks turned off.' };
+		return { ok: true, message: updates.updateCheck ? 'Update checks saved; the next one runs within a minute.' : 'Update checks turned off.' };
 	},
 
 	checkUpdates: async ({ params }) => {

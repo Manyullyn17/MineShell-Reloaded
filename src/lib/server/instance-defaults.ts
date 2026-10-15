@@ -1,9 +1,11 @@
-import { totalmem } from 'node:os';
+import { cpus, totalmem } from 'node:os';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings } from './db/schema';
 import { getPreset } from './jvm-presets';
 import { defaultProperties, PROPERTY_SCHEMA, type PropertyField } from './properties';
+import { suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
+import { UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
 
 /**
  * What a new instance starts with, editable on the global settings page.
@@ -36,6 +38,24 @@ export type ConsoleSettings = {
 	consoleBufferLines: number;
 };
 
+/**
+ * Resource limits for a new server. The memory limit depends on the server's
+ * heap, so the default is none or automatic: the suggested limit for its heap
+ * (suggestedMemoryLimitMb), fixed at creation.
+ */
+export type LimitSettings = {
+	memory: 'none' | 'auto';
+	/** Percent of one core; null = none. */
+	cpuPercent: number | null;
+};
+
+export type UpdateCheckSettings = {
+	updateCheck: boolean;
+	updateCheckHours: number;
+	/** release | beta | alpha */
+	updateChannel: string;
+};
+
 export type InstanceDefaults = {
 	/** Null: suggested from the machine's RAM each time (suggestedMaxMb). */
 	memoryMaxMb: number | null;
@@ -44,6 +64,8 @@ export type InstanceDefaults = {
 	jvmPreset: string;
 	restarts: RestartSettings;
 	console: ConsoleSettings;
+	limits: LimitSettings;
+	updates: UpdateCheckSettings;
 	/** server.properties values for DEFAULTABLE_PROPERTIES keys, every key present. */
 	properties: Record<string, string>;
 };
@@ -93,6 +115,8 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 		bootStart: 'if-running'
 	},
 	console: { consoleBacklogLines: 300, consoleBufferLines: 2000 },
+	limits: { memory: 'none', cpuPercent: null },
+	updates: { updateCheck: true, updateCheckHours: 24, updateChannel: 'release' },
 	properties: builtInProperties()
 };
 
@@ -134,6 +158,48 @@ export function cleanConsole(input: Partial<Record<keyof ConsoleSettings, unknow
 	return {
 		consoleBacklogLines: clampInt(input.consoleBacklogLines, 0, 10000, fallback.consoleBacklogLines),
 		consoleBufferLines: clampInt(input.consoleBufferLines, 100, 100000, fallback.consoleBufferLines)
+	};
+}
+
+/** The CPU limit's range: 10% of one core to every core. */
+export function maxCpuPercent(): number {
+	return (cpus().length || 1) * 100;
+}
+
+export function cleanLimits(input: Partial<Record<keyof LimitSettings, unknown>>, fallback: LimitSettings): LimitSettings {
+	const cpu = input.cpuPercent;
+	return {
+		memory: input.memory === 'none' || input.memory === 'auto' ? input.memory : fallback.memory,
+		cpuPercent: cpu === null || cpu === '' ? null : cpu === undefined ? fallback.cpuPercent : clampInt(cpu, 10, maxCpuPercent(), 100)
+	};
+}
+
+export function cleanUpdates(input: Partial<Record<keyof UpdateCheckSettings, unknown>>, fallback: UpdateCheckSettings): UpdateCheckSettings {
+	const hours = Number(input.updateCheckHours);
+	return {
+		updateCheck: typeof input.updateCheck === 'boolean' ? input.updateCheck : fallback.updateCheck,
+		updateCheckHours: UPDATE_CHECK_HOURS.some((h) => h.hours === hours) ? hours : fallback.updateCheckHours,
+		updateChannel: UPDATE_CHANNELS.includes(input.updateChannel as never) ? String(input.updateChannel) : fallback.updateChannel
+	};
+}
+
+/** Update check fields as the settings forms post them (UpdateCheckFields). */
+export function updatesFromForm(form: FormData, fallback: UpdateCheckSettings): UpdateCheckSettings {
+	return cleanUpdates(
+		{ updateCheck: form.get('updateCheck') === 'on', updateCheckHours: form.get('updateCheckHours'), updateChannel: form.get('updateChannel') },
+		fallback
+	);
+}
+
+export function limitsFromForm(form: FormData, fallback: LimitSettings): LimitSettings {
+	return cleanLimits({ memory: form.get('limitMemory'), cpuPercent: String(form.get('limitCpuPercent') ?? '').trim() }, fallback);
+}
+
+/** A new server's limits from the defaults and its heap. */
+export function limitsFor(limits: LimitSettings, heapMb: number): { limitMemoryMb: number | null; limitCpuPercent: number | null } {
+	return {
+		limitMemoryMb: limits.memory === 'auto' ? suggestedMemoryLimitMb(heapMb) : null,
+		limitCpuPercent: limits.cpuPercent === null ? null : Math.min(limits.cpuPercent, maxCpuPercent())
 	};
 }
 
@@ -190,6 +256,8 @@ function clean(input: Partial<InstanceDefaults>): InstanceDefaults {
 		jvmPreset: typeof input.jvmPreset === 'string' && input.jvmPreset ? input.jvmPreset : base.jvmPreset,
 		restarts: cleanRestarts((input.restarts ?? {}) as Record<string, unknown>, base.restarts),
 		console: cleanConsole((input.console ?? {}) as Record<string, unknown>, base.console),
+		limits: cleanLimits((input.limits ?? {}) as Record<string, unknown>, base.limits),
+		updates: cleanUpdates((input.updates ?? {}) as Record<string, unknown>, base.updates),
 		properties: cleanProperties(input.properties)
 	};
 }

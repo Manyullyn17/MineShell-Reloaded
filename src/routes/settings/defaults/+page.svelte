@@ -3,6 +3,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import RestartFields from '#lib/components/RestartFields.svelte';
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 
 	let { data, form } = $props();
@@ -16,6 +17,9 @@
 		jvmPreset: string;
 		restarts: typeof data.defaults.restarts;
 		console: typeof data.defaults.console;
+		limitMemory: 'none' | 'auto';
+		limitCpuPercent: number | string;
+		updates: typeof data.defaults.updates;
 		values: Record<string, string>;
 		checks: Record<string, boolean>;
 	};
@@ -36,6 +40,9 @@
 			jvmPreset: d.jvmPreset,
 			restarts: { ...d.restarts },
 			console: { ...d.console },
+			limitMemory: d.limits.memory,
+			limitCpuPercent: d.limits.cpuPercent ?? '',
+			updates: { ...d.updates },
 			values,
 			checks
 		};
@@ -104,6 +111,48 @@
 				{#if preset?.minJava}<p class="hint">A new server whose Java is older than {preset.minJava} gets Aikar instead.</p>{/if}
 			</div>
 		</div>
+	</section>
+
+	<section class="panel">
+		<h2>Resource limits</h2>
+		<fieldset>
+			<legend>Memory limit</legend>
+			<div class="check field">
+				<input id="limitNone" type="radio" name="limitMemory" value="none" bind:group={v.limitMemory} />
+				<label for="limitNone">None</label>
+			</div>
+			<div class="check field">
+				<input id="limitAuto" type="radio" name="limitMemory" value="auto" bind:group={v.limitMemory} />
+				<label for="limitAuto">Automatic: the server's maximum memory plus 25% and 1 GB, for what Java needs beyond it</label>
+			</div>
+			<p class="hint">
+				Past its limit the kernel ends the server. Set when the server is added; a server's Settings change it later, and
+				raising its maximum memory there means raising the limit first.
+			</p>
+		</fieldset>
+		<div class="field narrow">
+			<label for="limitCpuPercent">CPU limit (%)</label>
+			<input
+				id="limitCpuPercent"
+				name="limitCpuPercent"
+				type="number"
+				min="10"
+				max={data.maxCpuPercent}
+				step="10"
+				placeholder="No limit"
+				bind:value={v.limitCpuPercent}
+			/>
+			<p class="hint">100% is one core; this machine has {data.maxCpuPercent}%.</p>
+		</div>
+	</section>
+
+	<section class="panel">
+		<h2>Update checks</h2>
+		<p class="muted">
+			A pack server is checked for newer pack versions, a server set up from a loader for newer loader builds. What is found
+			shows on its overview.
+		</p>
+		<UpdateCheckFields bind:values={v.updates} />
 	</section>
 
 	<section class="panel">
