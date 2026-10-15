@@ -80,6 +80,7 @@
 
 	.advice p {
 		margin: 0;
+		max-width: none;
 		flex: 1;
 		color: var(--text-muted);
 	}
