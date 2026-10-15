@@ -123,6 +123,19 @@ await waitForTask(await changeLoaderVersion(instance, '1.2.3'));
 expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing left over
 ```
 
+## Manual tools
+
+Scripts in `tests/tools/` for trying changes by hand on a throwaway dev server (the command
+is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain node.
+
+| Tool | Use |
+|---|---|
+| `seed-instance.mjs <data dir> <id> [--loader, --loader-version, --mc, --pack source:project:versionId[:name[:pack]], --port]` | A server row without installing anything: a pack server on an old version, a Fabric server on an old loader. Start the dev server once first (migrations) |
+| `pageshot.mjs <url> <out.png> [--width 390] [--wait-for text] [--timeout ms] [--overflow]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check |
+| `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
+
+When something needed for a check would be written a second time, it goes here instead.
+
 ## Helpers
 
 `tests/helpers/fs.ts`:
