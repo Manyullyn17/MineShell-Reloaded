@@ -52,6 +52,8 @@ export type Snapshot = {
 	label: string;
 	/** World folders in the snapshot, relative to the server folder. */
 	worlds: string[];
+	/** The world (`level-name`) it was taken of; manifests from before 0.17.3 leave it out. */
+	world?: string;
 	/**
 	 * Holds only these folders (one dimension, before it was reset), not the
 	 * whole world: restoring it puts back just them.
@@ -321,6 +323,18 @@ export async function worldFolders(root: string): Promise<string[]> {
 	return found;
 }
 
+/**
+ * Whether a snapshot is of the world `level` names, the only one it can be
+ * restored onto: put back anywhere else, it lands beside the world the server
+ * loads. Without `world` in the manifest, its folders tell: that world and its
+ * Bukkit-style siblings, or folders inside them.
+ */
+export function snapshotOfWorld(snapshot: Pick<Snapshot, 'world' | 'worlds'>, level: string): boolean {
+	if (snapshot.world !== undefined) return snapshot.world === level;
+	const own = [level, `${level}_nether`, `${level}_the_end`];
+	return snapshot.worlds.length > 0 && snapshot.worlds.every((p) => own.some((w) => p === w || p.startsWith(`${w}/`)));
+}
+
 export async function worldSize(root: string): Promise<number> {
 	let total = 0;
 	for (const world of await worldFolders(root)) total += await directorySize(path.join(root, world));
@@ -457,6 +471,7 @@ function manifestFor(
 	id: string,
 	input: SnapshotInput,
 	worlds: string[],
+	world: string,
 	sizeBytes: number,
 	partial: boolean
 ): Snapshot {
@@ -466,6 +481,7 @@ function manifestFor(
 		reason: input.reason,
 		label: input.label,
 		worlds,
+		world,
 		...(partial ? { partial: true } : {}),
 		sizeBytes,
 		minecraftVersion: instance.minecraftVersion,
@@ -498,7 +514,8 @@ export async function finishSnapshot(
 	opts: { partial?: boolean } = {}
 ): Promise<Snapshot> {
 	const partial = partialPath(instance.path, id);
-	const manifest = manifestFor(instance, id, input, worlds, await directorySize(partial), opts.partial ?? false);
+	const world = await serverWorldName(instance.path);
+	const manifest = manifestFor(instance, id, input, worlds, world, await directorySize(partial), opts.partial ?? false);
 	await fs.writeFile(path.join(partial, MANIFEST), JSON.stringify(manifest, null, 2), 'utf8');
 	await fs.rename(partial, snapshotPath(instance.path, id));
 	return manifest;

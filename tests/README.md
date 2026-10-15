@@ -216,6 +216,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | An RCON refusal ("Invalid IP address…") reported as success | `flows/players.test.ts` |
 | Removing a loaded world-generation data pack broke the world | `flows/datapacks.test.ts` |
 | Restoring a one-dimension snapshot would replace the whole world | `flows/dimensions.test.ts` |
+| Restoring a snapshot taken before World folder was changed moved the current world aside and put the snapshot under its old name, so the next start made an empty world | `flows/snapshots.test.ts` |
 | Same-major Java runtimes picked in database order | `flows/java-defaults.test.ts` |
 | With a CurseForge key, a pack listed only its newest 50 files | `src/lib/server/mods/curseforge-official.test.ts` |
 | Page 2 of the mirror's browse skipped packs 21-50 | `src/lib/server/mods/modpacksch-paging.test.ts` |

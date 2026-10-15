@@ -119,10 +119,9 @@ player data, dimensions, pack data packs, the map.
   (a pack-shipped top-level folder of the same name counts as config today, the bug the
   active world had before `packworld.ts`); bisect refuses while worlds are switching and
   restores `level-name` as it does now; disk usage gets an "Inactive worlds" group.
-- **Bug this fixes**: restoring a snapshot taken under another `level-name` (after changing
-  World folder by hand) moves the current world aside and puts the snapshot back under its
-  old folder name with `level-name` untouched (`restoreSnapshot` in `world.ts`), so the next
-  start generates an empty world. Only active-world snapshots being restorable closes it.
+- **Already built**: snapshots name their world and are restored only onto it
+  (`snapshotOfWorld`); the refusal's hint says to change World folder, which becomes "switch
+  to that world".
 
 ---
 

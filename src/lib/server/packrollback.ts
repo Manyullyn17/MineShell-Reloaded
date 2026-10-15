@@ -6,7 +6,8 @@ import { packChanges, type PackChange, type ServerInstance } from './db/schema';
 import { InstanceError, requireInstance, setStatus } from './instances';
 import { listInstanceMods } from './mods';
 import { applyPackChange, rollbackOf } from './packchange';
-import { getSnapshot } from './snapshots';
+import { getSnapshot, snapshotOfWorld } from './snapshots';
+import { serverWorldName } from './packworld';
 import { restoreSnapshot } from './world';
 import type { JavaVendor } from './javadownload';
 
@@ -65,7 +66,9 @@ export async function rollbackInfo(instance: ServerInstance): Promise<RollbackIn
 			? instance.packVersionId === record.toVersionId
 			: instance.packVersionId === null && instance.packVersionName === record.toVersionName;
 	const snapshot = record.snapshotId ? await getSnapshot(instance.path, record.snapshotId) : null;
-	const fullSnapshot = snapshot && !snapshot.partial ? snapshot : null;
+	// One of another world (World folder changed since) cannot be restored onto this one.
+	const otherWorld = !!snapshot && !snapshotOfWorld(snapshot, await serverWorldName(instance.path));
+	const fullSnapshot = snapshot && !snapshot.partial && !otherWorld ? snapshot : null;
 	const needsWorld = record.fromMinecraft !== instance.minecraftVersion;
 
 	let blocked: string | null = null;
@@ -77,7 +80,7 @@ export async function rollbackInfo(instance: ServerInstance): Promise<RollbackIn
 	} else if (!instance.packSource || !instance.packProjectId) {
 		blocked = 'This server has no pack project to fetch the earlier version from.';
 	} else if (needsWorld && !fullSnapshot) {
-		blocked = `That change moved Minecraft from ${record.fromMinecraft} to ${instance.minecraftVersion}. A world that ran on the newer version does not load in the older one, and the snapshot from before the change ${record.snapshotId ? 'is gone' : 'was not taken'}.`;
+		blocked = `That change moved Minecraft from ${record.fromMinecraft} to ${instance.minecraftVersion}. A world that ran on the newer version does not load in the older one, and the snapshot from before the change ${otherWorld ? 'is of another world than the one the server uses now' : record.snapshotId ? 'is gone' : 'was not taken'}.`;
 	}
 
 	const updatedByChange = (JSON.parse(record.updatedMods) as { fileName: string; name: string }[]).map((m) => m.name);

@@ -260,6 +260,7 @@
 							{/if}
 							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
 							{#if s.partial}<span class="tag">part of the world</span>{/if}
+							{#if !s.ofThisWorld}<span class="tag warn">another world</span>{/if}
 							{#each s.tags ?? [] as tag (tag)}<span class="tag">{tag}</span>{/each}
 							<div class="faint small mono">{s.worlds.join(', ')}</div>
 						</td>
@@ -292,7 +293,8 @@
 									<button
 										type="button"
 										class="button-quiet"
-										disabled={data.running || busy}
+										disabled={data.running || busy || !s.ofThisWorld}
+										title={s.ofThisWorld ? undefined : `Taken of another world; the server uses ${data.levelName} now. Set World folder back in Settings to restore it.`}
 										onclick={() => openRow('restore', s.id)}>Restore</button
 									>
 								{/if}

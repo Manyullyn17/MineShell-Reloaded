@@ -12,6 +12,7 @@ import {
 	setSnapshotDetails,
 	setSnapshotPinned,
 	snapshotDetails,
+	snapshotOfWorld,
 	snapshotPrompt,
 	SnapshotChoiceNeeded,
 	worldFolders
@@ -50,10 +51,11 @@ export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
 	const { values } = await readProperties(instance.path);
 	const running = (await summarise(instance)).running;
+	const levelName = await serverWorldName(instance.path);
 	return {
 		running,
 		chunky: (await hasChunky(instance.path)) ? await chunkyData(instance, running) : null,
-		levelName: await serverWorldName(instance.path),
+		levelName,
 		worlds: await worldFolders(instance.path),
 		seed: values['level-seed'] ?? '',
 		/** The seed the world was made with (level.dat); with level-seed blank, the random one it got. */
@@ -63,10 +65,11 @@ export const load: PageServerLoad = async ({ params }) => {
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
 		pruneCount: lastPruneCount(instance.id),
 		snapshots: await Promise.all(
-			(await listSnapshots(instance.path)).map(async (s) => ({
-				...s,
-				dimensions: (await snapshotDimensions(instance, s)).map(dimensionOption)
-			}))
+			(await listSnapshots(instance.path)).map(async (s) => {
+				// Only one of the world the server uses can be restored (snapshotOfWorld).
+				const ofThisWorld = snapshotOfWorld(s, levelName);
+				return { ...s, ofThisWorld, dimensions: ofThisWorld ? (await snapshotDimensions(instance, s)).map(dimensionOption) : [] };
+			})
 		),
 		current: {
 			minecraftVersion: instance.minecraftVersion,

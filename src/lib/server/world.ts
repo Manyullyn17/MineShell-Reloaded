@@ -32,6 +32,7 @@ import {
 	partialPath,
 	pruneSnapshots,
 	snapshotPath,
+	snapshotOfWorld,
 	snapshotPrompt,
 	snapshotStep,
 	worldFolders,
@@ -233,10 +234,24 @@ export async function resetWorld(instance: ServerInstance, opts: { snapshot: boo
 	});
 }
 
+/**
+ * Refuses a snapshot of another world than the one `level-name` names (taken
+ * before World folder was changed): restored, it would sit beside the world
+ * the server loads, and the old world would be moved aside for nothing.
+ */
+async function requireOfActiveWorld(root: string, snapshot: Snapshot): Promise<void> {
+	const level = await serverWorldName(root);
+	if (snapshotOfWorld(snapshot, level)) return;
+	throw new InstanceError(
+		`This snapshot is of another world (${snapshot.world ?? snapshot.worlds.join(', ')}); the server now uses ${level}. Set World folder back to it in Settings to restore this snapshot.`
+	);
+}
+
 /** Put a snapshot's world back in place of the current one. */
 export async function restoreSnapshot(instance: ServerInstance, id: string, opts: { snapshot: boolean }): Promise<string> {
 	const snapshot = await getSnapshot(instance.path, id);
 	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
+	await requireOfActiveWorld(instance.path, snapshot);
 	const from = snapshotPath(instance.path, snapshot.id);
 	return runWorldChange(instance, {
 		action: 'restore',
@@ -285,6 +300,7 @@ export async function restoreDimension(
 ): Promise<string> {
 	const snapshot = await getSnapshot(instance.path, snapshotId);
 	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
+	await requireOfActiveWorld(instance.path, snapshot);
 	const from = snapshotPath(instance.path, snapshot.id);
 	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
 	if (!dimension) throw new InstanceError('That snapshot does not have this dimension.');

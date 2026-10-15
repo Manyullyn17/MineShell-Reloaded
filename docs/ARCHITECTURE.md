@@ -554,6 +554,11 @@ The overworld is the level folder's own `region/`, `entities/` and `poi/`, so re
 keeps `level.dat` and player data. A snapshot of only some folders is marked `partial` and
 restores only those.
 
+A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
+are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which
+a pack rollback's world restore also needs: after World folder changed, putting it back
+would land beside the world the server loads.
+
 How many snapshots stay is a policy (`snapshots.ts`): the newest few full and partial ones
 always, more while they fit a storage budget per server, set globally and overridable per
 server. A copy that would leave the disk nearly full is refused.

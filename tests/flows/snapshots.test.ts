@@ -19,6 +19,7 @@ const {
 	setSnapshotDetails,
 	setSnapshotPinned,
 	snapshotDetails,
+	snapshotOfWorld,
 	DEFAULT_POLICY,
 	SnapshotChoiceNeeded,
 	SNAPSHOTS_DIR
@@ -27,7 +28,7 @@ const { writeNbt } = await import('#lib/server/nbt.js');
 const { replaceWorld, resetWorld, restoreSnapshot, snapshotNow, worldSeed, zipWorlds, worldRootIn, entryTarget } = await import(
 	'#lib/server/world.js'
 );
-const { readProperties } = await import('#lib/server/properties.js');
+const { patchProperties, readProperties } = await import('#lib/server/properties.js');
 const { TMP_DIR } = await import('#lib/server/config.js');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
@@ -303,6 +304,33 @@ describe('world tools', () => {
 		});
 		// The restored snapshot is still whole.
 		expect(await snapshotTree(instance.path, first.id)).toMatchObject({ 'world/level.dat': 'my world' });
+	});
+
+	it('refuses a snapshot of another world than the one World folder names, moving nothing', async () => {
+		const instance = await instanceWithWorld();
+		await waitForTask(await snapshotNow(instance));
+		const [first] = await listSnapshots(instance.path);
+		expect(first.world).toBe('world');
+		// World folder changed by hand: the server now loads "other".
+		await patchProperties(instance.path, { 'level-name': 'other' });
+		await fs.mkdir(path.join(instance.path, 'other'));
+		await fs.writeFile(path.join(instance.path, 'other/level.dat'), 'other world');
+		const before = await tree(instance.path);
+
+		// It used to move "other" aside and put the snapshot back as "world", which the server does not load.
+		await expect(restoreSnapshot(reload(instance.id), first.id, { snapshot: true })).rejects.toThrow(/another world/);
+		expect(await tree(instance.path)).toEqual(before);
+		expect(listOperations()).toEqual([]);
+	});
+
+	it('tells which world a snapshot is of, also from manifests that do not say', () => {
+		expect(snapshotOfWorld({ world: 'world', worlds: ['world'] }, 'world')).toBe(true);
+		expect(snapshotOfWorld({ world: 'world', worlds: ['world'] }, 'other')).toBe(false);
+		expect(snapshotOfWorld({ worlds: ['world', 'world_nether'] }, 'world')).toBe(true);
+		expect(snapshotOfWorld({ worlds: ['world/DIM-1'] }, 'world')).toBe(true);
+		expect(snapshotOfWorld({ worlds: ['worlds/main/region', 'worlds/main/poi'] }, 'worlds/main')).toBe(true);
+		expect(snapshotOfWorld({ worlds: ['world'] }, 'other')).toBe(false);
+		expect(snapshotOfWorld({ worlds: ['world2'] }, 'world')).toBe(false);
 	});
 
 	it('replaces the world with one zipped inside a folder', async () => {
