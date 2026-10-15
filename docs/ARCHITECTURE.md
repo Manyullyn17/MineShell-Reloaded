@@ -826,7 +826,10 @@ server, so an action elsewhere on the page (a scheduled command added, a section
 does not wipe edits that are not saved yet. Every section stays mounted and is hidden when
 its tab is closed, so the search can look through all of them. Things that act at once
 (installing a loader version, a pack change, Cleanroom, the icon, presets, scheduled
-commands, copy and delete) keep their own buttons. JVM flag presets are shared by every
+commands, copy and delete) keep their own buttons; the ones with state of their own are
+components beside the page (`IconSection.svelte` and friends), while the sections in the
+save bar stay in the page, which holds their shared field state. Their row layout lives in
+`SettingsSection` as `:global(.settings-section ...)` rules. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
 preset" posts to `/settings?/savePreset`, and only MineShell settings edits or deletes one.
 A saved preset's id is made from its first name and kept through renames (the defaults for

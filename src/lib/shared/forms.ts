@@ -1,4 +1,4 @@
-import { enhance as kitEnhance, type SubmitFunction } from '$app/forms';
+import { deserialize, enhance as kitEnhance, type SubmitFunction } from '$app/forms';
 
 /**
  * `enhance` from `$app/forms`, except that a form posting to its own page
@@ -23,3 +23,21 @@ export function enhance<Success extends Record<string, unknown> | undefined, Fai
 		};
 	});
 }
+
+/** Posts to a form action as an enhanced form does and returns its decoded result. */
+export async function postAction(action: string, body: FormData) {
+	const res = await fetch(action, {
+		method: 'POST',
+		body,
+		headers: { accept: 'application/json', 'x-sveltekit-action': 'true' }
+	});
+	return deserialize(await res.text());
+}
+
+/** The `message` an action answered with, or `fallback`. */
+export const actionMessage = (result: Awaited<ReturnType<typeof postAction>>, fallback: string) =>
+	result.type === 'success' || result.type === 'failure'
+		? String((result.data as { message?: string } | undefined)?.message ?? fallback)
+		: result.type === 'error'
+			? (result.error?.message ?? fallback)
+			: fallback;
