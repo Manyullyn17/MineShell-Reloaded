@@ -15,6 +15,10 @@
  *     --click <selector> once loaded, click the first element matching this CSS selector;
  *                        --wait-for then waits for what the click brings. Repeatable: the
  *                        clicks happen in order, half a second apart
+ *     --eval <js>        once loaded, run this in the page (awaited) and print what it
+ *                        returns as JSON: fill a field, read state. Repeatable, and runs in
+ *                        order with the --clicks, half a second apart; each may take up to
+ *                        --timeout
  *     --dialog <answer>  accept | dismiss a confirm() the page opens (default accept);
  *                        its text is printed
  *     --element <selector>  capture only the first element matching this (plus a small
@@ -49,14 +53,17 @@ const element = option('--element', null);
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
-/** Every --click, in order: a sub-tab, then a button inside it. */
-const clicks = [];
-for (let next; (next = option('--click', null)) !== null; ) clicks.push(next);
-const click = clicks.length > 0;
+/** Every --click and --eval, in order: a sub-tab, then a button inside it. */
+const steps = [];
+for (let at = 0; at < args.length; ) {
+	if (args[at] === '--click' || args[at] === '--eval') steps.push({ kind: args[at].slice(2), value: args.splice(at, 2)[1] });
+	else at++;
+}
+const click = steps.length > 0;
 const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
-	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--dialog accept|dismiss]');
+	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--dialog accept|dismiss]');
 	process.exit(1);
 }
 
@@ -79,13 +86,16 @@ async function chromium() {
 /** @param {number} ms */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'pageshot-'));
-const port = 9300 + Math.floor(Math.random() * 600);
-const chrome = spawn(await chromium(), ['--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${fixedHeight ?? 1200}`, 'about:blank'], { stdio: 'ignore' });
+// Port 0: Chrome picks a free one and writes it into the profile. A random port
+// could be another pageshot's when several ran at once, and this one then drove
+// that Chrome and captured its page.
+const chrome = spawn(await chromium(), ['--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${profile}`, `--window-size=${width},${fixedHeight ?? 1200}`, 'about:blank'], { stdio: 'ignore' });
 
 try {
 	let targets = null;
 	for (let i = 0; i < 50 && !targets; i++) {
-		targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json(), () => null);
+		const port = (await fs.readFile(path.join(profile, 'DevToolsActivePort'), 'utf8').catch(() => '')).split('\n')[0];
+		if (port) targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json(), () => null);
 		if (!targets) await sleep(200);
 	}
 	if (!targets) throw new Error('Chromium did not open its DevTools port.');
@@ -101,11 +111,23 @@ try {
 		pending.get(message.id)?.(message);
 		pending.delete(message.id);
 	});
-	/** @param {string} method @param {object} [params] @returns {Promise<any>} */
-	const send = (method, params = {}) =>
-		new Promise((resolve) => {
+	/**
+	 * One DevTools call. Chrome can leave one unanswered (a reload replacing the
+	 * page mid-call), which used to hang the tool for good: give up after 20 s,
+	 * or `limit` ms (an --eval that waits on purpose gets --timeout).
+	 * @param {string} method @param {object} [params] @param {number} [limit] @returns {Promise<any>}
+	 */
+	const send = (method, params = {}, limit = 20000) =>
+		new Promise((resolve, reject) => {
 			const id = ++next;
-			pending.set(id, resolve);
+			const timer = setTimeout(() => {
+				pending.delete(id);
+				reject(new Error(`Chrome did not answer ${method} within ${limit / 1000} s.`));
+			}, limit);
+			pending.set(id, (/** @type {any} */ message) => {
+				clearTimeout(timer);
+				resolve(message);
+			});
 			ws.send(JSON.stringify({ id, method, params }));
 		});
 	/** @param {string} expression */
@@ -125,10 +147,16 @@ try {
 	if (click) {
 		while (Date.now() < deadline && (await evaluate('document.readyState')) !== 'complete') await sleep(200);
 		await sleep(2000);
-		for (const [i, selector] of clicks.entries()) {
+		for (const [i, step] of steps.entries()) {
 			if (i > 0) await sleep(500);
-			const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return false; e.click(); return true; })()`);
-			if (!clicked) console.log(`Nothing matches ${selector}.`);
+			if (step.kind === 'eval') {
+				const answer = await send('Runtime.evaluate', { expression: step.value, returnByValue: true, awaitPromise: true }, Math.max(timeout, 20000));
+				const thrown = answer.result?.exceptionDetails;
+				console.log(thrown ? `--eval threw: ${thrown.exception?.description ?? thrown.text}` : JSON.stringify(answer.result?.result?.value));
+				continue;
+			}
+			const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(step.value)}); if (!e) return false; e.click(); return true; })()`);
+			if (!clicked) console.log(`Nothing matches ${step.value}.`);
 		}
 	}
 	if (waitFor) {
