@@ -13,13 +13,14 @@ describe('memory advice for a server', () => {
 		const s = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1', memoryMaxMb: 16384, createdAt: Date.now() - 10 * 86_400_000 });
 		fakeProcesses(() => ({ stdout: '' }));
 		// The advice counts clock hours. Ending the samples just before one starts makes
-		// exactly 8 whole hours; ending them at Date.now() made 9 at minutes 19-39 of an hour.
+		// exactly 96 whole hours; ending them at Date.now() made one more at minutes 19-39 of an hour.
+		// Four days, more than samples used to be kept: advice wants play on three of them.
 		const now = Math.floor(Date.now() / 3_600_000) * 3_600_000 - 1;
-		const rows = Array.from({ length: 8 * 60 }, (_, m) => ({ instanceId: s.id, timestamp: now - m * 60_000, usedBytes: (1 + (m % 10) * 1.3) * GB, maxBytes: 16 * GB }));
+		const rows = Array.from({ length: 96 * 60 }, (_, m) => ({ instanceId: s.id, timestamp: now - m * 60_000, usedBytes: (1 + (m % 10) * 1.3) * GB, maxBytes: 16 * GB }));
 		db.insert(heapSamples).values(rows).run();
 		// Nobody online yet: an empty server's heap does not show what it needs.
-		expect(await memoryAdvice(reload(s.id))).toMatchObject({ kind: 'unknown', hours: 8, playedHours: 0 });
-		db.insert(playerSessions).values({ instanceId: s.id, player: 'Steve', joinedAt: now - 8 * 3_600_000, leftAt: null }).run();
+		expect(await memoryAdvice(reload(s.id))).toMatchObject({ kind: 'unknown', hours: 96, playedHours: 0 });
+		db.insert(playerSessions).values({ instanceId: s.id, player: 'Steve', joinedAt: now - 96 * 3_600_000, leftAt: null }).run();
 		expect(await memoryAdvice(reload(s.id))).toMatchObject({ kind: 'less', currentMb: 16384, suggestedMb: 3072 });
 	});
 

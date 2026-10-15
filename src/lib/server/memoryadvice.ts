@@ -5,7 +5,7 @@ import { settings, type ServerInstance } from './db/schema';
 import { heapSamplesSince, HEAP_RETENTION_MS, type HeapSample } from './heap';
 import { playedIntervals } from './history';
 import { searchJournal } from './journal';
-import { MIN_HOURS, MIN_PLAYED_HOURS, type MemoryAdvice } from '#lib/shared/memoryadvice.js';
+import { MIN_HOURS, MIN_MINUTES_PER_DAY, MIN_PLAYED_DAYS, MIN_PLAYED_HOURS, type MemoryAdvice } from '#lib/shared/memoryadvice.js';
 
 export type { MemoryAdvice };
 
@@ -20,7 +20,10 @@ export type { MemoryAdvice };
  *
  * An empty server holds far less than one with players on it, so only hours
  * with someone online can say it has more than it needs; idle hours still
- * count towards it being short.
+ * count towards it being short. Saying "less" also takes MIN_PLAYED_HOURS of
+ * actual play (sample minutes, not clock hours: 20 minutes of play made an
+ * hour count, so three short sessions passed for three hours) spread over
+ * MIN_PLAYED_DAYS days.
  */
 
 const HOUR = 60 * 60 * 1000;
@@ -49,6 +52,17 @@ export function neededHeap(samples: HeapSample[]): { neededMb: number; heapMaxMb
 	return lows.length ? { neededMb: toMb(Math.max(...lows)), heapMaxMb, hours: lows.length } : { neededMb: 0, heapMaxMb, hours: 0 };
 }
 
+/** Days (local time) with at least MIN_MINUTES_PER_DAY samples taken while players were on. */
+function countPlayedDays(samples: HeapSample[]): number {
+	const perDay = new Map<string, number>();
+	for (const s of samples) {
+		const d = new Date(s.timestamp);
+		const day = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+		perDay.set(day, (perDay.get(day) ?? 0) + 1);
+	}
+	return [...perDay.values()].filter((n) => n >= MIN_MINUTES_PER_DAY).length;
+}
+
 /**
  * The advice itself. `currentMb` is the setting (which a restart applies);
  * the samples carry the maximum the running JVM has. Suggestions are whole
@@ -65,8 +79,10 @@ export function adviseMemory(input: {
 	const { currentMb, oomAt, totalRamMb } = input;
 	const heap = neededHeap(input.samples);
 	const hours = heap?.hours ?? 0;
-	const busy = neededHeap(input.samples.filter((s) => input.played.some(([start, end]) => s.timestamp >= start && s.timestamp <= end)));
-	const playedHours = busy?.hours ?? 0;
+	const playedSamples = input.samples.filter((s) => input.played.some(([start, end]) => s.timestamp >= start && s.timestamp <= end));
+	const busy = neededHeap(playedSamples);
+	const playedHours = Math.floor(playedSamples.length / 6) / 10;
+	const playedDays = countPlayedDays(playedSamples);
 	const room = totalRamMb - 2 * GB;
 	const more = (want: number) => {
 		const suggested = Math.min(roundUpGb(want), Math.floor(room / GB) * GB);
@@ -76,13 +92,13 @@ export function adviseMemory(input: {
 		const needed = heap && hours ? heap.neededMb : null;
 		return { kind: 'more', reason: 'out-of-memory', currentMb, suggestedMb: more(Math.max(currentMb * 1.5, (needed ?? 0) * 3)), neededMb: needed, oomAt, hours };
 	}
-	if (!heap || hours < MIN_HOURS) return { kind: 'unknown', currentMb, hours, playedHours };
+	if (!heap || hours < MIN_HOURS) return { kind: 'unknown', currentMb, hours, playedHours, playedDays };
 	const { heapMaxMb } = heap;
 	const neededMb = Math.max(heap.neededMb, busy?.neededMb ?? 0);
 	if (neededMb > heapMaxMb * 0.7) {
 		return { kind: 'more', reason: 'full', currentMb, suggestedMb: more(Math.max(heapMaxMb * 1.5, neededMb * 3)), neededMb, oomAt: null, hours };
 	}
-	if (playedHours < MIN_PLAYED_HOURS) return { kind: 'unknown', currentMb, hours, playedHours };
+	if (playedHours < MIN_PLAYED_HOURS || playedDays < MIN_PLAYED_DAYS) return { kind: 'unknown', currentMb, hours, playedHours, playedDays };
 	const suggested = Math.max(roundUpGb(neededMb * 3), 2 * GB);
 	if (neededMb * 5 < heapMaxMb && currentMb - suggested >= 2 * GB) return { kind: 'less', currentMb, suggestedMb: suggested, neededMb, hours };
 	return { kind: 'ok', currentMb, neededMb, hours };

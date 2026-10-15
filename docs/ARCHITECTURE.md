@@ -337,16 +337,17 @@ makes the JVM open `/tmp/.java_pid<pid>`, read through `/proc/<pid>/root` becaus
 `PrivateTmp`; it then answers `VM.flags` (MaxHeapSize, once) and `GC.heap_info` (used, parsed for
 G1, Parallel, Serial, ZGC and Shenandoah; Java 8 to 25). An unhandled SIGQUIT ends a process,
 so it is never sent with `-Xrs`, `-XX:+ReduceSignalUsage` or attach disabled, to a JVM under a
-minute old, or twice to one that did not answer. Samples (`heap_samples`) are kept 3 days.
+minute old, or twice to one that did not answer. Samples (`heap_samples`) are kept 14 days.
 The overview's heap size is the running process's own `-Xmx`, not the saved setting, which
 applies from the next start (both are shown while they differ).
 `memoryadvice.ts` takes the highest hourly low (close to what survives a collection; G1
 lets the heap fill before collecting, so peaks say little) as what a server needs: more when
 that is over 70% of the heap or the journal has an `OutOfMemoryError` since the memory was last
 changed (`memory.changedAt:<id>` in settings), less when the heap is over five times it
-(suggesting three times, whole GB, at least 2 GB, leaving the machine 2 GB). Less needs 3
-hours with players online (`player_sessions`): an empty server holds far less than a busy
-one, so idle hours alone say nothing about what it needs, though they can show it short. Advice only: the
+(suggesting three times, whole GB, at least 2 GB, leaving the machine 2 GB). Less needs 5
+hours with players online (`player_sessions`), counted in sampled minutes, on at least 3
+days with 20 minutes or more: an empty server holds far less than a busy one, so idle hours
+alone say nothing about what it needs, though they can show it short. Advice only: the
 overview links to Settings, where "Use N GB" fills the field.
 
 ---

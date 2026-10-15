@@ -26,7 +26,8 @@ import { unitState } from './systemd';
  */
 
 const SAMPLE_EVERY_MS = 60_000;
-export const HEAP_RETENTION_MS = 3 * 24 * 60 * 60 * 1000;
+/** Long enough for memory advice to see several days with players on. */
+export const HEAP_RETENTION_MS = 14 * 24 * 60 * 60 * 1000;
 const MIN_PROCESS_AGE_S = 60;
 const ANSWER_TIMEOUT_MS = 5000;
 
