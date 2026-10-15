@@ -50,7 +50,7 @@
 		{/if}
 	</label>
 	{#if asButtons}
-		<div class="control segmented" role="radiogroup" aria-labelledby="{field.key}-label">
+		<div class="control segmented-choice" role="radiogroup" aria-labelledby="{field.key}-label">
 			{#each field.options ?? [] as option (option.value)}
 				<label class:on={value === option.value}>
 					<input type="radio" name={field.key} value={option.value} bind:group={value} />
@@ -86,39 +86,5 @@
 <style>
 	label .tag {
 		margin-left: var(--space-2);
-	}
-
-	.segmented {
-		display: inline-flex;
-		gap: 2px;
-		padding: 2px;
-		background: var(--bg-sunken);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius);
-	}
-
-	.segmented label {
-		margin: 0;
-		padding: 0.25rem 0.7rem;
-		border-radius: 3px;
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		cursor: pointer;
-		white-space: nowrap;
-	}
-
-	.segmented label.on {
-		background: var(--line-strong);
-		color: var(--text);
-	}
-
-	.segmented label:has(input:focus-visible) {
-		outline: 2px solid var(--accent-hover);
-	}
-
-	.segmented input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
 	}
 </style>

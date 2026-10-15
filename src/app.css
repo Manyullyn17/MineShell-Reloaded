@@ -289,6 +289,44 @@ input[type='checkbox'].switch:disabled {
 	cursor: not-allowed;
 }
 
+/* A short choice as a row of buttons: radios in labels, inside a form
+   (difficulty, game mode, player data access). The label of the picked one
+   gets class "on". */
+.segmented-choice {
+	display: inline-flex;
+	gap: 2px;
+	padding: 2px;
+	background: var(--bg-sunken);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius);
+}
+
+.segmented-choice label {
+	position: relative;
+	margin: 0;
+	padding: 0.25rem 0.7rem;
+	border-radius: 3px;
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.segmented-choice label.on {
+	background: var(--line-strong);
+	color: var(--text);
+}
+
+.segmented-choice label:has(input:focus-visible) {
+	outline: 2px solid var(--accent-hover);
+}
+
+.segmented-choice input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
 /* Beside a label's first line (labels are ~1.4 lines of 0.92rem). */
 .check > input.switch {
 	margin-top: 0.1rem;
@@ -718,6 +756,11 @@ tbody tr:last-child td {
 	/* The tabs get the whole row; tools beside them (search, buttons) go below. */
 	.subhead > .subtabs {
 		flex: 1 1 100%;
+	}
+
+	/* Game mode and player data access fit a phone's row on one line. */
+	.segmented-choice label {
+		padding: 0.25rem 0.5rem;
 	}
 
 	.subtabs {

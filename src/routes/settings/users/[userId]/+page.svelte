@@ -14,6 +14,11 @@
 	type Level = 'none' | 'custom' | 'admin';
 	type Scope = 'none' | 'all' | 'selected';
 	type Editor = { level: Level; playerView: Scope; playerEdit: Scope };
+	const SCOPE_CHOICES: { value: Scope; label: string }[] = [
+		{ value: 'none', label: 'Nobody' },
+		{ value: 'all', label: 'All players' },
+		{ value: 'selected', label: 'Chosen players' }
+	];
 
 	/** Each server's editor, from the saved access; re-read after every save (see CLAUDE.md, "UI pitfalls"). */
 	function editors(): Record<string, Editor> {
@@ -195,10 +200,15 @@
 							<legend>Player data (inventories, ender chest, effects, NBT)</legend>
 							{#each scopeRows(grant) as row (row.key)}
 								<div class="scope">
-									<span class="scope-label">{row.label}</span>
-									<label class="check"><input type="radio" name={row.key} value="none" bind:group={ed[row.key]} /> nobody's</label>
-									<label class="check"><input type="radio" name={row.key} value="all" bind:group={ed[row.key]} /> every player's (also later ones)</label>
-									<label class="check"><input type="radio" name={row.key} value="selected" bind:group={ed[row.key]} /> these players'</label>
+									<span class="scope-label" id="{server.id}-{row.key}-label">{row.label}</span>
+									<div class="segmented-choice" role="radiogroup" aria-labelledby="{server.id}-{row.key}-label">
+										{#each SCOPE_CHOICES as choice (choice.value)}
+											<label class:on={ed[row.key] === choice.value}>
+												<input type="radio" name={row.key} value={choice.value} bind:group={ed[row.key]} />
+												{choice.label}
+											</label>
+										{/each}
+									</div>
 								</div>
 								{#if ed[row.key] === 'selected'}
 									<div class="picks">
@@ -217,7 +227,7 @@
 									</div>
 								{/if}
 							{/each}
-							<p class="muted small">Editing a player includes seeing them.</p>
+							<p class="muted small">All players includes ones who join later. Editing a player includes seeing them.</p>
 						</fieldset>
 					{/if}
 					<button class="button-primary" type="submit">Save</button>
@@ -281,11 +291,17 @@
 		justify-items: start;
 	}
 
-	.levels,
-	.scope {
+	.levels {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1) var(--space-4);
+	}
+
+	.scope {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-3);
 	}
 
 	.scope-label {
