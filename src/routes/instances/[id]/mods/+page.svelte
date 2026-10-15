@@ -714,7 +714,7 @@
 		</div>
 		{#if data.packName}
 			<span class="pack-toggle">
-				<input id="pack-mods" type="checkbox" bind:checked={packMods} disabled={data.running} />
+				<input id="pack-mods" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={data.running} />
 				<label for="pack-mods">Allow changing single mods</label>
 				{#if data.running}<span class="faint">· stop the server first</span>{/if}
 				<InfoTip
@@ -915,7 +915,7 @@
 			<div class="button-row">
 				{#if data.packName}
 					<span class="pack-toggle">
-						<input id="pack-mods-u" type="checkbox" bind:checked={packMods} disabled={data.running} />
+						<input id="pack-mods-u" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={data.running} />
 						<label for="pack-mods-u">Allow changing single mods</label>
 						{#if data.running}<span class="faint">· stop the server first</span>{/if}
 					</span>
@@ -1473,6 +1473,21 @@
 	.switch-col {
 		width: 3.5rem;
 		padding-right: 0 !important;
+	}
+
+	/* Smaller than elsewhere: one per row of a long table. */
+	.switch-col .switch {
+		width: 32px;
+		height: 18px;
+	}
+
+	.switch-col .switch::after {
+		width: 12px;
+		height: 12px;
+	}
+
+	.switch-col .switch[aria-checked='true']::after {
+		left: 17px;
 	}
 
 	.mod-name {

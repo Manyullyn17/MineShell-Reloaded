@@ -5,6 +5,7 @@
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
@@ -711,18 +712,21 @@
 				<label for="new-world-name">Name</label>
 				<input id="new-world-name" name="name" maxlength="60" required placeholder="e.g. Season 2" />
 			</div>
-			<fieldset class="seed">
-				<legend>Seed</legend>
-				<div class="check">
-					<input id="new-seed-random" type="radio" name="seedMode" value="random" bind:group={newWorldSeed} />
-					<label for="new-seed-random">Random</label>
+			<div class="field">
+				<span class="label" id="new-seed-label">Seed</span>
+				<div class="seed-row">
+					<SegmentedChoice
+						options={[
+							{ value: 'random', label: 'Random' },
+							{ value: 'set', label: 'This seed' }
+						]}
+						bind:value={newWorldSeed}
+						name="seedMode"
+						labelledby="new-seed-label"
+					/>
+					{#if newWorldSeed === 'set'}<input name="seed" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
 				</div>
-				<div class="check">
-					<input id="new-seed-set" type="radio" name="seedMode" value="set" bind:group={newWorldSeed} />
-					<label for="new-seed-set">This seed:</label>
-					<input name="seed" aria-label="Seed" disabled={newWorldSeed !== 'set'} />
-				</div>
-			</fieldset>
+			</div>
 			{#if data.datapackCount}
 				<div class="check">
 					<input id="copy-datapacks" type="checkbox" name="copyDatapacks" checked />
@@ -872,14 +876,19 @@
 
 		{#if data.running}
 			<form method="POST" action="?/chunkyStart" use:enhance class="pregen-form">
-				<div class="field">
-					<label for="pregen-world">Dimension</label>
-					<select id="pregen-world" name="world" bind:value={pregenWorld}>
-						<option value="minecraft:overworld">Overworld</option>
-						<option value="minecraft:the_nether">The Nether</option>
-						<option value="minecraft:the_end">The End</option>
-						<option value="other">Another dimension</option>
-					</select>
+				<div class="field wide">
+					<span class="label" id="pregen-world-label">Dimension</span>
+					<SegmentedChoice
+						options={[
+							{ value: 'minecraft:overworld', label: 'Overworld' },
+							{ value: 'minecraft:the_nether', label: 'Nether' },
+							{ value: 'minecraft:the_end', label: 'End' },
+							{ value: 'other', label: 'Other' }
+						]}
+						bind:value={pregenWorld}
+						name="world"
+						labelledby="pregen-world-label"
+					/>
 				</div>
 				{#if pregenWorld === 'other'}
 					<div class="field">
@@ -887,12 +896,17 @@
 						<input id="pregen-custom" name="customWorld" class="mono" placeholder="twilightforest:twilight_forest" />
 					</div>
 				{/if}
-				<div class="field">
-					<label for="pregen-shape">Shape</label>
-					<select id="pregen-shape" name="shape" bind:value={pregenShape}>
-						<option value="square">Square</option>
-						<option value="circle">Circle</option>
-					</select>
+				<div class="field wide">
+					<span class="label" id="pregen-shape-label">Shape</span>
+					<SegmentedChoice
+						options={[
+							{ value: 'square', label: 'Square' },
+							{ value: 'circle', label: 'Circle' }
+						]}
+						bind:value={pregenShape}
+						name="shape"
+						labelledby="pregen-shape-label"
+					/>
 				</div>
 				<div class="field">
 					<label for="pregen-x">Center X</label>
@@ -1052,22 +1066,25 @@
 			if (!confirm(`Reset the world of ${data.instance.name}?`)) cancel();
 		}}
 	>
-		<fieldset class="seed">
-			<legend>Seed</legend>
-			<div class="check">
-				<input id="seed-keep" type="radio" name="seedMode" value="keep" bind:group={seedMode} />
-				<label for="seed-keep">Keep the current one{data.worldSeed || data.seed ? ` (${data.worldSeed ?? data.seed})` : ' (random)'}</label>
+		<div class="field">
+			<span class="label" id="reset-seed-label">Seed</span>
+			<div class="seed-row">
+				<SegmentedChoice
+					options={[
+						{ value: 'keep', label: 'Keep it' },
+						{ value: 'random', label: 'New random' },
+						{ value: 'set', label: 'This seed' }
+					]}
+					bind:value={seedMode}
+					name="seedMode"
+					labelledby="reset-seed-label"
+				/>
+				{#if seedMode === 'set'}<input name="seed" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
 			</div>
-			<div class="check">
-				<input id="seed-random" type="radio" name="seedMode" value="random" bind:group={seedMode} />
-				<label for="seed-random">A new random seed</label>
-			</div>
-			<div class="check">
-				<input id="seed-set" type="radio" name="seedMode" value="set" bind:group={seedMode} />
-				<label for="seed-set">This seed:</label>
-				<input name="seed" aria-label="Seed" disabled={seedMode !== 'set'} />
-			</div>
-		</fieldset>
+			{#if seedMode === 'keep'}
+				<p class="hint">{data.worldSeed || data.seed ? `The current seed: ${data.worldSeed ?? data.seed}.` : 'The current one is random: the new world gets another.'}</p>
+			{/if}
+		</div>
 		<SnapshotChoice moves prompt={data.snapshotPrompt} idPrefix="reset" />
 		{#if data.running}<p class="hint">Stop the server to reset its world.</p>{/if}
 		<button class="button-danger" type="submit" disabled={data.running || busy || !data.worlds.length}>Reset the world</button>
@@ -1191,6 +1208,10 @@
 		flex: 0 1 10rem;
 	}
 
+	.pregen-form .field.wide {
+		flex: none;
+	}
+
 	.pregen-note {
 		margin-top: var(--space-2);
 	}
@@ -1277,20 +1298,14 @@
 		background: var(--bg-sunken);
 	}
 
-	.seed {
-		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		padding: var(--space-2) var(--space-3);
-		margin: var(--space-3) 0;
+	.seed-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
-	.seed legend {
-		font-size: 0.88rem;
-		padding: 0 var(--space-1);
-	}
-
-	.seed input:not([type='radio']) {
-		max-width: 16rem;
-		margin-left: var(--space-2);
+	.seed-row > input {
+		flex: 0 1 16rem;
 	}
 </style>

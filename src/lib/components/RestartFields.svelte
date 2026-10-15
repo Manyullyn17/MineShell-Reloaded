@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SegmentedChoice from './SegmentedChoice.svelte';
+
 	/**
 	 * Crash, scheduled and after-reboot start fields, shared by an instance's
 	 * settings and the new-server defaults. Field names are what
@@ -23,17 +25,26 @@
 		/** Shown under the after-reboot choice: why it may not happen (MineShell not started at boot). */
 		bootNote?: string | null;
 	} = $props();
+
+	const BOOT_CHOICES = [
+		{ value: 'if-running', label: 'If it was running' },
+		{ value: 'always', label: 'Always' },
+		{ value: 'never', label: 'Never' }
+	];
+	const SCHEDULE_CHOICES = [
+		{ value: 'none', label: 'Never' },
+		{ value: 'interval', label: 'Every few hours' },
+		{ value: 'daily', label: 'Daily' }
+	];
 </script>
 
 <fieldset>
 	<legend>When the computer starts</legend>
 	<div class="field">
-		<label for="bootStart">Start this server</label>
-		<select id="bootStart" name="bootStart" bind:value={values.bootStart}>
-			<option value="if-running">If it was running before</option>
-			<option value="always">Always</option>
-			<option value="never">Never</option>
-		</select>
+		<span class="label" id="bootStart-label">Start this server</span>
+		<div class="control">
+			<SegmentedChoice options={BOOT_CHOICES} bind:value={values.bootStart} name="bootStart" labelledby="bootStart-label" />
+		</div>
 		<p class="hint">
 			MineShell starts these one at a time once it is up after a reboot. "Running before" means the last thing done
 			to it was a start: a stop clears it, a crash does not.
@@ -49,6 +60,8 @@
 			id="autoRestartOnCrash"
 			name="autoRestartOnCrash"
 			type="checkbox"
+			class="switch"
+			role="switch"
 			bind:checked={values.autoRestartOnCrash}
 		/>
 		<label for="autoRestartOnCrash">Bring the server back automatically if it exits badly</label>
@@ -70,12 +83,10 @@
 <fieldset>
 	<legend>On a schedule</legend>
 	<div class="field">
-		<label for="restartSchedule">Restart</label>
-		<select id="restartSchedule" name="restartSchedule" bind:value={values.restartSchedule}>
-			<option value="none">Never</option>
-			<option value="interval">Every few hours</option>
-			<option value="daily">At a fixed time each day</option>
-		</select>
+		<span class="label" id="restartSchedule-label">Restart</span>
+		<div class="control">
+			<SegmentedChoice options={SCHEDULE_CHOICES} bind:value={values.restartSchedule} name="restartSchedule" labelledby="restartSchedule-label" />
+		</div>
 	</div>
 
 	{#if values.restartSchedule === 'interval'}
@@ -104,6 +115,8 @@
 				id="restartSkipIfPlayers"
 				name="restartSkipIfPlayers"
 				type="checkbox"
+				class="switch"
+				role="switch"
 				bind:checked={values.restartSkipIfPlayers}
 			/>
 			<label for="restartSkipIfPlayers">

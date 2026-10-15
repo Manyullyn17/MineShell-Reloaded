@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import SegmentedChoice from './SegmentedChoice.svelte';
 	import { channelLabel, channelsFor, UPDATE_CHECK_HOURS, type UpdateChannel } from '#lib/shared/updatecheck.js';
 
 	/** Update check fields, shared by an instance's settings and the new-server defaults. */
@@ -16,10 +17,17 @@
 	} = $props();
 
 	const channels = $derived(channelsFor(loader));
+	const channelChoices = $derived([
+		...channels.map((channel) => ({ value: channel as string, label: channelLabel(channel, loader) })),
+		// A setting from the new-server defaults that this loader has no name for (alphas, on Forge).
+		...(channels.includes(values.updateChannel as UpdateChannel)
+			? []
+			: [{ value: values.updateChannel, label: channelLabel(values.updateChannel as UpdateChannel, null) }])
+	]);
 </script>
 
 <div class="check field">
-	<input id="updateCheck" name="updateCheck" type="checkbox" bind:checked={values.updateCheck} />
+	<input id="updateCheck" name="updateCheck" type="checkbox" class="switch" role="switch" bind:checked={values.updateCheck} />
 	<label for="updateCheck">Check for updates</label>
 </div>
 <div class="grid-2">
@@ -32,21 +40,21 @@
 		</select>
 	</div>
 	<div class="field">
-		<label for="updateChannel">Offer</label>
-		<select id="updateChannel" name="updateChannel" bind:value={values.updateChannel} disabled={!values.updateCheck}>
-			{#each channels as channel (channel)}
-				<option value={channel}>{channelLabel(channel, loader)}</option>
-			{/each}
-			{#if !channels.includes(values.updateChannel as UpdateChannel)}
-				<!-- A setting from the new-server defaults that this loader has no name for (alphas, on Forge). -->
-				<option value={values.updateChannel}>{channelLabel(values.updateChannel as UpdateChannel, null)}</option>
-			{/if}
-		</select>
+		<span class="label" id="updateChannel-label">Offer</span>
+		<div class="control">
+			<SegmentedChoice
+				options={channelChoices}
+				bind:value={values.updateChannel}
+				name="updateChannel"
+				labelledby="updateChannel-label"
+				disabled={!values.updateCheck}
+			/>
+		</div>
 		{@render channelHint?.()}
 	</div>
 </div>
 {#if !values.updateCheck}
-	<!-- A disabled select is not posted; the saved values go with the switch. -->
+	<!-- Disabled fields are not posted; the saved values go with the switch. -->
 	<input type="hidden" name="updateCheckHours" value={values.updateCheckHours} />
 	<input type="hidden" name="updateChannel" value={values.updateChannel} />
 {/if}

@@ -2,6 +2,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import OneTimePassword from '#lib/components/OneTimePassword.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { formatDateTime } from '#lib/shared/format.js';
 	import { FULL_TRUST, PERMISSION_GROUPS } from '#lib/shared/access.js';
@@ -170,14 +171,7 @@
 				<summary><strong>{server.name}</strong> <span class="muted small">{summary(server.id)}</span></summary>
 				<form method="POST" action="?/access" use:enhance={keep}>
 					<input type="hidden" name="instanceId" value={server.id} />
-					<div class="segmented-choice" role="radiogroup" aria-label="Access to {server.name}">
-						{#each LEVEL_CHOICES as choice (choice.value)}
-							<label class:on={ed.level === choice.value}>
-								<input type="radio" name="level" value={choice.value} bind:group={ed.level} />
-								{choice.label}
-							</label>
-						{/each}
-					</div>
+					<SegmentedChoice options={LEVEL_CHOICES} bind:value={ed.level} name="level" label="Access to {server.name}" />
 
 					{#if ed.level === 'admin'}
 						<p class="muted small">
@@ -209,14 +203,7 @@
 							{#each scopeRows(grant) as row (row.key)}
 								<div class="scope">
 									<span class="scope-label" id="{server.id}-{row.key}-label">{row.label}</span>
-									<div class="segmented-choice" role="radiogroup" aria-labelledby="{server.id}-{row.key}-label">
-										{#each SCOPE_CHOICES as choice (choice.value)}
-											<label class:on={ed[row.key] === choice.value}>
-												<input type="radio" name={row.key} value={choice.value} bind:group={ed[row.key]} />
-												{choice.label}
-											</label>
-										{/each}
-									</div>
+									<SegmentedChoice options={SCOPE_CHOICES} bind:value={ed[row.key]} name={row.key} labelledby="{server.id}-{row.key}-label" />
 								</div>
 								{#if ed[row.key] === 'selected'}
 									<div class="picks">

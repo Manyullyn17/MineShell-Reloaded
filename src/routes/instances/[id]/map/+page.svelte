@@ -2,6 +2,7 @@
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
@@ -162,12 +163,17 @@
 
 	{#if may('map.render')}
 	<form method="POST" action="?/schedule" use:enhance={() => async ({ update }) => update({ reset: false })} class="schedule small">
-		<label for="map-every">Update automatically</label>
-		<select id="map-every" name="every" bind:value={every}>
-			<option value="off">No, only when I ask</option>
-			<option value="interval">Every few hours</option>
-			<option value="daily">Daily</option>
-		</select>
+		<span id="map-every-label">Update automatically</span>
+		<SegmentedChoice
+			options={[
+				{ value: 'off', label: 'Only when I ask' },
+				{ value: 'interval', label: 'Every few hours' },
+				{ value: 'daily', label: 'Daily' }
+			]}
+			bind:value={every}
+			name="every"
+			labelledby="map-every-label"
+		/>
 		{#if every === 'interval'}
 			<label class="inline">every <input name="intervalHours" type="number" min="1" max="168" bind:value={intervalHours} class="hours" /> h</label>
 		{:else if every === 'daily'}

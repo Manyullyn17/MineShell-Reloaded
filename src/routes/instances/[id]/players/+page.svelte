@@ -263,7 +263,7 @@
 										{#each [4, 3, 2, 1] as level (level)}<option value={level} selected={selectedPerson.op.level === level}>Level {level}</option>{/each}
 									</select>
 								</label>
-								<label class="operator-check"><input name="bypass" type="checkbox" checked={selectedPerson.op.bypassesPlayerLimit} /> Bypasses the player limit</label>
+								<label class="operator-check"><input name="bypass" type="checkbox" class="switch" role="switch" checked={selectedPerson.op.bypassesPlayerLimit} /> Bypasses the player limit</label>
 								<button class="button-quiet">Save settings</button>
 							</form>
 						{:else}
@@ -480,37 +480,6 @@
 	}
 
 	/* A toggle switch: the form posts the opposite of the current state. */
-	.switch {
-		position: relative;
-		width: 40px;
-		height: 22px;
-		flex: none;
-		padding: 0;
-		border: 0;
-		border-radius: 11px;
-		background: var(--line-strong);
-	}
-
-	.switch::after {
-		content: '';
-		position: absolute;
-		top: 3px;
-		left: 3px;
-		width: 16px;
-		height: 16px;
-		border-radius: 50%;
-		background: var(--text);
-		transition: left 0.12s;
-	}
-
-	.switch[aria-checked='true'] {
-		background: var(--accent);
-	}
-
-	.switch[aria-checked='true']::after {
-		left: 21px;
-	}
-
 	.list-head {
 		display: flex;
 		align-items: center;
@@ -569,7 +538,6 @@
 	.operator-level { display: grid; gap: var(--space-1); max-width: 13rem; }
 	.operator-form select { width: 100%; }
 	.operator-check { display: flex; align-items: center; gap: var(--space-2); font-weight: 400; }
-	.operator-check input { width: auto; margin: 0; }
 	.operator-form button { justify-self: start; }
 	.operator-settings > .hint { margin-bottom: 0; }
 

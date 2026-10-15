@@ -677,7 +677,7 @@
 	<h2>Automatic checks</h2>
 	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
 		<div class="check field">
-			<input id="autoCheck" name="autoCheck" type="checkbox" bind:checked={autoCheck} />
+			<input id="autoCheck" name="autoCheck" type="checkbox" class="switch" role="switch" bind:checked={autoCheck} />
 			<label for="autoCheck">Look for a new version every 12 hours</label>
 		</div>
 		<p class="small muted">
@@ -767,7 +767,7 @@
 	<h2>Player editor</h2>
 	<form method="POST" action="?/itemIcons" use:enhance={() => async ({ update }) => update({ reset: false })}>
 		<div class="check field">
-			<input id="itemIcons" name="itemIcons" type="checkbox" bind:checked={itemIcons} />
+			<input id="itemIcons" name="itemIcons" type="checkbox" class="switch" role="switch" bind:checked={itemIcons} />
 			<label for="itemIcons">Show item pictures</label>
 		</div>
 		<p class="small muted">
@@ -782,7 +782,7 @@
 	<h2>Files over SFTP</h2>
 	<form method="POST" action="?/sftp" use:enhance={() => async ({ update }) => update({ reset: false })}>
 		<div class="check field">
-			<input id="sftpEnabled" name="sftpEnabled" type="checkbox" bind:checked={sftpEnabled} />
+			<input id="sftpEnabled" name="sftpEnabled" type="checkbox" class="switch" role="switch" bind:checked={sftpEnabled} />
 			<label for="sftpEnabled">Show "Open in file manager" on the Files tab</label>
 		</div>
 		<p class="small muted">

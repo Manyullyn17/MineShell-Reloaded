@@ -1460,7 +1460,7 @@
 					<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
 				{/if}
 				<div class="check field">
-					<input id="snapshotSkipIdle" name="snapshotSkipIdle" type="checkbox" bind:checked={sv.snapshotSkipIdle} />
+					<input id="snapshotSkipIdle" name="snapshotSkipIdle" type="checkbox" class="switch" role="switch" bind:checked={sv.snapshotSkipIdle} />
 					<label for="snapshotSkipIdle">Skip when nobody was online since the last snapshot</label>
 				</div>
 				<div class="field">
@@ -1745,8 +1745,8 @@
 		width: 100%;
 	}
 
-	/* Checkboxes in rows are switches. */
-	.rows :global(input[type='checkbox']) {
+	/* Checkboxes in rows are switches (ones marked .switch already are: app.css). */
+	.rows :global(input[type='checkbox']:not(.switch)) {
 		appearance: none;
 		width: 40px;
 		height: 22px;
@@ -1760,7 +1760,7 @@
 			background-color 0.12s;
 	}
 
-	.rows :global(input[type='checkbox']:checked) {
+	.rows :global(input[type='checkbox']:not(.switch):checked) {
 		background-color: var(--accent);
 		background-position: 18px 0;
 	}

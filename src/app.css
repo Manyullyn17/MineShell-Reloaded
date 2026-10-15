@@ -192,7 +192,8 @@ hr {
 
 /* ---------------------------------------------------------------- forms --- */
 
-label {
+label,
+.field > .label {
 	display: block;
 	font-size: 0.85rem;
 	color: var(--text-muted);
@@ -248,12 +249,12 @@ input[type='checkbox'] {
 input[type='checkbox'].switch {
 	position: relative;
 	flex: none;
-	width: 32px;
-	height: 18px;
+	width: 40px;
+	height: 22px;
 	margin: 0;
 	padding: 0;
 	border: 0;
-	border-radius: 9px;
+	border-radius: 11px;
 	background: var(--line-strong);
 	appearance: none;
 	cursor: pointer;
@@ -264,8 +265,8 @@ input[type='checkbox'].switch {
 	position: absolute;
 	top: 3px;
 	left: 3px;
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	border-radius: 50%;
 	background: var(--text);
 	transition: left 0.12s;
@@ -278,7 +279,7 @@ input[type='checkbox'].switch:checked {
 
 .switch[aria-checked='true']::after,
 .switch:checked::after {
-	left: 17px;
+	left: 21px;
 }
 
 .switch:hover:not(:disabled) {
@@ -327,10 +328,14 @@ input[type='checkbox'].switch:disabled {
 	pointer-events: none;
 }
 
-/* Beside a label's first line (labels are ~1.4 lines of 0.92rem). */
-.check > input.switch {
-	margin-top: 0.1rem;
+.segmented-choice[aria-disabled='true'] {
+	opacity: 0.55;
 }
+
+.segmented-choice[aria-disabled='true'] label {
+	cursor: not-allowed;
+}
+
 
 .field {
 	margin-bottom: var(--space-4);

@@ -81,8 +81,8 @@ describe('loader builds', () => {
 
 	it('says it in Forge\'s terms on a Forge server', () => {
 		expect(channelsFor('forge')).toEqual(['release', 'beta']);
-		expect(channelLabel('release', 'forge')).toBe('Recommended builds only');
-		expect(channelLabel('beta', 'fabric')).toBe('Releases and betas');
+		expect(channelLabel('release', 'forge')).toBe('Recommended');
+		expect(channelLabel('beta', 'fabric')).toBe('Betas too');
 		expect(channelNote('beta', 'forge')).toBe('not yet recommended');
 		expect(channelNote('beta', null)).toBe('beta');
 		expect(channelNote('release', 'forge')).toBeNull();

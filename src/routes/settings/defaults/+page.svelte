@@ -5,6 +5,7 @@
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
 	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 
 	let { data, form } = $props();
 
@@ -76,15 +77,19 @@
 		<h2>Memory and Java</h2>
 		<fieldset>
 			<legend>Maximum memory</legend>
-			<div class="check field">
-				<input id="memoryAuto" type="radio" name="memoryMode" value="auto" bind:group={v.memoryMode} />
-				<label for="memoryAuto">
-					Automatic: {data.suggestedMaxMb} MB on this machine (its RAM minus 2 GB, at most 16 GB)
-				</label>
-			</div>
-			<div class="check field">
-				<input id="memoryFixed" type="radio" name="memoryMode" value="fixed" bind:group={v.memoryMode} />
-				<label for="memoryFixed">A fixed amount</label>
+			<div class="field">
+				<SegmentedChoice
+					options={[
+						{ value: 'auto', label: 'Automatic' },
+						{ value: 'fixed', label: 'A fixed amount' }
+					]}
+					bind:value={v.memoryMode}
+					name="memoryMode"
+					label="Maximum memory"
+				/>
+				{#if v.memoryMode === 'auto'}
+					<p class="hint">{data.suggestedMaxMb} MB on this machine: its RAM minus 2 GB, at most 16 GB.</p>
+				{/if}
 			</div>
 			{#if v.memoryMode === 'fixed'}
 				<div class="field narrow">
@@ -117,13 +122,19 @@
 		<h2>Resource limits</h2>
 		<fieldset>
 			<legend>Memory limit</legend>
-			<div class="check field">
-				<input id="limitNone" type="radio" name="limitMemory" value="none" bind:group={v.limitMemory} />
-				<label for="limitNone">None</label>
-			</div>
-			<div class="check field">
-				<input id="limitAuto" type="radio" name="limitMemory" value="auto" bind:group={v.limitMemory} />
-				<label for="limitAuto">Automatic: the server's maximum memory plus 25% and 1 GB, for what Java needs beyond it</label>
+			<div class="field">
+				<SegmentedChoice
+					options={[
+						{ value: 'none', label: 'None' },
+						{ value: 'auto', label: 'Automatic' }
+					]}
+					bind:value={v.limitMemory}
+					name="limitMemory"
+					label="Memory limit"
+				/>
+				{#if v.limitMemory === 'auto'}
+					<p class="hint">The server's maximum memory plus 25% and 1 GB, for what Java needs beyond it.</p>
+				{/if}
 			</div>
 			<p class="hint">
 				Past its limit the kernel ends the server. Set when the server is added; a server's Settings change it later, and

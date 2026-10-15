@@ -33,9 +33,9 @@ import { startTask, getTask, type TaskHandle } from './tasks';
 export type ExportFormat = 'mrpack' | 'curseforge' | 'prism';
 
 export const FORMATS: { id: ExportFormat; label: string; extension: string }[] = [
-	{ id: 'mrpack', label: 'Modrinth (.mrpack)', extension: 'mrpack' },
-	{ id: 'curseforge', label: 'CurseForge (.zip)', extension: 'zip' },
-	{ id: 'prism', label: 'Prism Launcher instance (.zip)', extension: 'zip' }
+	{ id: 'mrpack', label: 'Modrinth', extension: 'mrpack' },
+	{ id: 'curseforge', label: 'CurseForge', extension: 'zip' },
+	{ id: 'prism', label: 'Prism Launcher', extension: 'zip' }
 ];
 
 export type ExportMod = {
@@ -511,7 +511,7 @@ export async function startExport(instance: ServerInstance, choices: ExportChoic
 	await sweepExports();
 	const format = FORMATS.find((f) => f.id === choices.format) ?? FORMATS[0];
 	const fileName = `${safeFileName(choices.name)}-${safeFileName(choices.version)}${choices.format === 'prism' ? '-prism' : ''}.${format.extension}`;
-	return startTask({ label: `Export ${instance.name} as ${format.label.replace(/ \(.*\)$/, '')}`, instanceId: instance.id }, async (task) => {
+	return startTask({ label: `Export ${instance.name} as ${format.label}`, instanceId: instance.id }, async (task) => {
 		const dir = path.join(EXPORT_DIR, task.id);
 		await fs.mkdir(dir, { recursive: true });
 		const file = path.join(dir, fileName);

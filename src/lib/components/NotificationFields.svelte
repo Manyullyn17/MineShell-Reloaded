@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SegmentedChoice from './SegmentedChoice.svelte';
 	import { NOTIFICATION_KINDS, TARGET_TYPES, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 	/**
@@ -17,17 +18,14 @@
 		idPrefix: string;
 	} = $props();
 
+	const typeChoices = TARGET_TYPES.map((t) => ({ value: t.type, label: t.label }));
 	const info = $derived(TARGET_TYPES.find((t) => t.type === values.type) ?? TARGET_TYPES[0]);
 </script>
 
 <div class="grid-2">
 	<div class="field">
-		<label for="{idPrefix}-type">Send to</label>
-		<select id="{idPrefix}-type" name="type" bind:value={values.type}>
-			{#each TARGET_TYPES as t (t.type)}
-				<option value={t.type}>{t.label}</option>
-			{/each}
-		</select>
+		<span class="label" id="{idPrefix}-type-label">Send to</span>
+		<SegmentedChoice options={typeChoices} bind:value={values.type} name="type" labelledby="{idPrefix}-type-label" />
 	</div>
 	<div class="field">
 		<label for="{idPrefix}-url">Address</label>

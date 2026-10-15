@@ -7,6 +7,7 @@
 	import { refreshAll } from '$app/navigation';
 	import NbtNode from '#lib/components/NbtNode.svelte';
 	import ItemIcon from '#lib/components/ItemIcon.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { iconKey, iconLoader } from '#lib/shared/itemicon.svelte.js';
 	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
@@ -589,8 +590,16 @@
 		{#if f.kind === 'checkbox'}
 			<label class="check"><input type="checkbox" bind:checked={values[f.key] as boolean} disabled={locked} /> {f.label}</label>
 		{:else}
-			<label for="f-{f.key}">{f.label}</label>
-			{#if f.kind === 'list'}
+			<label for="f-{f.key}" id="f-{f.key}-label">{f.label}</label>
+			{#if f.kind === 'select' && (f.options?.length ?? 0) <= 4}
+				<!-- Game mode: picked like the server's default game mode. -->
+				<SegmentedChoice
+					options={f.options ?? []}
+					bind:value={() => String(values[f.key]), (v) => (values[f.key] = v)}
+					labelledby="f-{f.key}-label"
+					disabled={locked}
+				/>
+			{:else if f.kind === 'list'}
 				<textarea
 					id="f-{f.key}"
 					class="mono"

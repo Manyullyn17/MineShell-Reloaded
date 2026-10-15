@@ -26,15 +26,15 @@ export const TARGET_TYPES: { type: TargetType; label: string; placeholder: strin
 	},
 	{
 		type: 'ntfy',
-		label: 'ntfy (phone notifications)',
+		label: 'ntfy',
 		placeholder: 'https://ntfy.sh/your-topic',
-		hint: 'In the ntfy app, subscribe to a topic; paste its address here. On ntfy.sh anyone who knows the topic can read it, so make it long and random.'
+		hint: 'Push notifications on a phone. In the ntfy app, subscribe to a topic; paste its address here. On ntfy.sh anyone who knows the topic can read it, so make it long and random.'
 	},
 	{
 		type: 'webhook',
-		label: 'Webhook (JSON)',
+		label: 'Webhook',
 		placeholder: 'https://…',
-		hint: 'A JSON POST per event: { event, server: { id, name }, title, message, at }.'
+		hint: 'Any address that takes a JSON POST per event: { event, server: { id, name }, title, message, at }.'
 	}
 ];
 

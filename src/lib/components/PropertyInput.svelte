@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SegmentedChoice from './SegmentedChoice.svelte';
+
 	/**
 	 * One guided server.properties field: a server's own properties page and
 	 * the new-server defaults. A checkbox posts a `present:` marker so "off"
@@ -39,7 +41,7 @@
 {#if field.type === 'boolean'}
 	<input type="hidden" name={`present:${field.key}`} value="1" />
 	<div class="check">
-		<input id={field.key} name={field.key} type="checkbox" bind:checked />
+		<input id={field.key} name={field.key} type="checkbox" class="switch" role="switch" bind:checked />
 		<label for={field.key}>{field.label}</label>
 	</div>
 {:else}
@@ -50,13 +52,8 @@
 		{/if}
 	</label>
 	{#if asButtons}
-		<div class="control segmented-choice" role="radiogroup" aria-labelledby="{field.key}-label">
-			{#each field.options ?? [] as option (option.value)}
-				<label class:on={value === option.value}>
-					<input type="radio" name={field.key} value={option.value} bind:group={value} />
-					{option.label}
-				</label>
-			{/each}
+		<div class="control">
+			<SegmentedChoice options={field.options ?? []} bind:value name={field.key} labelledby="{field.key}-label" />
 		</div>
 	{:else if field.type === 'select'}
 		<select id={field.key} name={field.key} bind:value>

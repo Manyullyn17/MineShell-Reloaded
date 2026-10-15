@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
@@ -98,21 +99,14 @@
 	>
 		<section class="panel block">
 			<h3>Format</h3>
-			<div class="formats" role="radiogroup" aria-label="Format">
-				{#each data.formats as f (f.id)}
-					<label class="format" class:picked={format === f.id}>
-						<input type="radio" name="format" value={f.id} bind:group={format} />
-						<span>{f.label}</span>
-					</label>
-				{/each}
-			</div>
+			<SegmentedChoice options={data.formats.map((f) => ({ value: f.id, label: f.label }))} bind:value={format} name="format" label="Format" />
 			<p class="small muted">
 				{#if format === 'mrpack'}
-					Mods on Modrinth are linked and downloaded by the launcher; the rest are bundled inside the pack.
+					A .mrpack file. Mods on Modrinth are linked and downloaded by the launcher; the rest are bundled inside the pack.
 				{:else if format === 'curseforge'}
-					Mods from CurseForge are linked by project and file; the rest, and disabled mods, are bundled inside the pack.
+					A CurseForge .zip. Mods from CurseForge are linked by project and file; the rest, and disabled mods, are bundled inside the pack.
 				{:else}
-					Every file is bundled, so the instance works offline; import it in Prism with Add Instance, Import.
+					A Prism Launcher instance (.zip). Every file is bundled, so the instance works offline; import it in Prism with Add Instance, Import.
 				{/if}
 			</p>
 			{#if plan.loaderNotes[format]}<p class="notice warning">{plan.loaderNotes[format]}</p>{/if}
@@ -249,28 +243,6 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-	}
-
-	.formats {
-		display: flex;
-		gap: var(--space-2);
-		flex-wrap: wrap;
-		margin-bottom: var(--space-2);
-	}
-
-	.format {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0.5rem 0.8rem;
-		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		cursor: pointer;
-	}
-
-	.format.picked {
-		border-color: var(--accent);
 	}
 
 	.folders {

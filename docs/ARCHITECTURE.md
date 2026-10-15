@@ -884,3 +884,10 @@ monospace is used only for machine output — paths, versions, ports, log lines,
 and never for MineShell's own writing; and motion appears only on state change, never as
 decoration, because a page that animates while a server is crashing is a page you stop
 trusting.
+
+Two shared controls stand in for plain form inputs. A setting that is on or off is a switch:
+a checkbox with `class="switch" role="switch"` (or a button with `aria-checked` where clicking
+posts at once, as on Mods and Players), styled in app.css; a checkbox for a one-off choice
+made before an action ("also delete every file", "snapshot first") stays a checkbox. A short
+choice of two to four options is a row of buttons, `SegmentedChoice.svelte` (radios in labels,
+so forms post it as before); longer lists and long labels stay selects or radio lists.

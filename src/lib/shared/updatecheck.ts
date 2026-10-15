@@ -5,9 +5,9 @@ export type UpdateChannel = 'release' | 'beta' | 'alpha';
 export const UPDATE_CHANNELS: UpdateChannel[] = ['release', 'beta', 'alpha'];
 
 export const UPDATE_CHANNEL_LABELS: Record<UpdateChannel, string> = {
-	release: 'Releases only',
-	beta: 'Releases and betas',
-	alpha: 'Everything, alphas too'
+	release: 'Releases',
+	beta: 'Betas too',
+	alpha: 'Alphas too'
 };
 
 /**
@@ -16,8 +16,8 @@ export const UPDATE_CHANNEL_LABELS: Record<UpdateChannel, string> = {
  * (its download page: Recommended, Latest).
  */
 export const FORGE_CHANNEL_LABELS: Partial<Record<UpdateChannel, string>> = {
-	release: 'Recommended builds only',
-	beta: 'Latest builds too'
+	release: 'Recommended',
+	beta: 'Latest too'
 };
 
 /** The channels a server's setting offers: Forge has two. */
