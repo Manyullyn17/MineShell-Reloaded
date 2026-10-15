@@ -225,6 +225,44 @@ const fabric: Modloader = {
 
 const QUILT_META = 'https://meta.quiltmc.org/v3';
 
+/**
+ * Semantic version order, pre-releases below their release (0.20.0-beta.9 <
+ * 0.20.0 < 0.20.1-beta.1): 1 when a is newer, -1 when older, 0 when equal.
+ */
+export function compareSemver(a: string, b: string): number {
+	const split = (v: string) => {
+		const cut = v.indexOf('-');
+		const main = (cut < 0 ? v : v.slice(0, cut)).split('+')[0].split('.').map((n) => Number.parseInt(n, 10) || 0);
+		return { main, pre: cut < 0 ? null : v.slice(cut + 1).split('+')[0].split('.') };
+	};
+	const x = split(a);
+	const y = split(b);
+	for (let i = 0; i < Math.max(x.main.length, y.main.length); i++) {
+		const d = (x.main[i] ?? 0) - (y.main[i] ?? 0);
+		if (d) return Math.sign(d);
+	}
+	if (!x.pre || !y.pre) return x.pre === y.pre ? 0 : x.pre ? -1 : 1;
+	for (let i = 0; i < Math.max(x.pre.length, y.pre.length); i++) {
+		const p = x.pre[i];
+		const q = y.pre[i];
+		if (p === undefined || q === undefined) return p === undefined ? -1 : 1;
+		const [np, nq] = [Number(p), Number(q)];
+		const d = Number.isInteger(np) && Number.isInteger(nq) ? np - nq : p.localeCompare(q);
+		if (d) return Math.sign(d);
+	}
+	return 0;
+}
+
+/**
+ * Quilt's loader list for one Minecraft version, newest first. Its meta
+ * answers that list in no order at all (0.20.0-beta.9 before 0.24.0), unlike
+ * its global list and Fabric's.
+ */
+async function quiltLoaderVersions(mc: string): Promise<string[]> {
+	const loaders = await fetchJson<{ loader: { version: string } }[]>(`${QUILT_META}/versions/loader/${encodeURIComponent(mc)}`);
+	return loaders.map((l) => l.loader.version).sort((a, b) => compareSemver(b, a));
+}
+
 const quilt: Modloader = {
 	id: 'quilt',
 	label: 'Quilt',
@@ -236,17 +274,11 @@ const quilt: Modloader = {
 		);
 		return versions.filter((v) => v.stable).map((v) => v.version);
 	},
-	listLoaderVersions: async (mc) => {
-		const loaders = await fetchJson<{ loader: { version: string } }[]>(
-			`${QUILT_META}/versions/loader/${encodeURIComponent(mc)}`
-		);
-		return loaders.map((l) => l.loader.version);
-	},
+	listLoaderVersions: quiltLoaderVersions,
 	install: async (ctx) => {
-		const loaders = await fetchJson<{ loader: { version: string } }[]>(
-			`${QUILT_META}/versions/loader/${encodeURIComponent(ctx.minecraftVersion)}`
-		);
-		const loaderVersion = ctx.loaderVersion || loaders[0]?.loader.version;
+		// Unpicked: the newest stable build, not a beta.
+		const loaders = ctx.loaderVersion ? [] : await quiltLoaderVersions(ctx.minecraftVersion);
+		const loaderVersion = ctx.loaderVersion || loaders.find((v) => !v.includes('-')) || loaders[0];
 		if (!loaderVersion) throw new Error(`No Quilt loader for Minecraft ${ctx.minecraftVersion}.`);
 
 		// Quilt has no server-jar endpoint; run the installer like Forge does.
