@@ -14,6 +14,11 @@
 	type Level = 'none' | 'custom' | 'admin';
 	type Scope = 'none' | 'all' | 'selected';
 	type Editor = { level: Level; playerView: Scope; playerEdit: Scope };
+	const LEVEL_CHOICES: { value: Level; label: string }[] = [
+		{ value: 'none', label: 'No access' },
+		{ value: 'custom', label: 'Chosen permissions' },
+		{ value: 'admin', label: 'Admin' }
+	];
 	const SCOPE_CHOICES: { value: Scope; label: string }[] = [
 		{ value: 'none', label: 'Nobody' },
 		{ value: 'all', label: 'All players' },
@@ -165,10 +170,13 @@
 				<summary><strong>{server.name}</strong> <span class="muted small">{summary(server.id)}</span></summary>
 				<form method="POST" action="?/access" use:enhance={keep}>
 					<input type="hidden" name="instanceId" value={server.id} />
-					<div class="levels" role="radiogroup" aria-label="Access to {server.name}">
-						<label class="check"><input type="radio" name="level" value="none" bind:group={ed.level} /> No access</label>
-						<label class="check"><input type="radio" name="level" value="custom" bind:group={ed.level} /> Chosen permissions</label>
-						<label class="check"><input type="radio" name="level" value="admin" bind:group={ed.level} /> Admin of this server</label>
+					<div class="segmented-choice" role="radiogroup" aria-label="Access to {server.name}">
+						{#each LEVEL_CHOICES as choice (choice.value)}
+							<label class:on={ed.level === choice.value}>
+								<input type="radio" name="level" value={choice.value} bind:group={ed.level} />
+								{choice.label}
+							</label>
+						{/each}
 					</div>
 
 					{#if ed.level === 'admin'}
@@ -289,12 +297,6 @@
 		display: grid;
 		gap: var(--space-3);
 		justify-items: start;
-	}
-
-	.levels {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1) var(--space-4);
 	}
 
 	.scope {
