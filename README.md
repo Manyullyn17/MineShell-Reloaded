@@ -250,6 +250,82 @@ MineShell's colors are defined using CSS custom properties in `src/app.css`. To 
 
 The default theme is Deep Slate.
 
+## Credits
+
+MineShell stands on a lot of other people's work. Thank you to everyone behind these. The same list is on MineShell's About page.
+
+### Libraries
+
+Open source code that ships inside MineShell. Their license texts are in THIRD-PARTY-NOTICES in every release.
+
+- [Svelte and SvelteKit](https://svelte.dev) — The web interface and the server behind it. (MIT)
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) — MineShell's database, with SQLite inside it. (MIT)
+- [SQLite](https://sqlite.org) — The database engine. (Public domain)
+- [Drizzle ORM](https://orm.drizzle.team) — Database queries and schema migrations. (Apache-2.0)
+- [marked](https://marked.js.org) — Mod and pack descriptions and release notes, from Markdown. (MIT)
+- [DOMPurify](https://github.com/cure53/DOMPurify) — Cleans those descriptions before they are shown. (Apache-2.0 or MPL-2.0)
+- [node-tar](https://github.com/isaacs/node-tar) — Unpacks Java downloads. (BlueOak-1.0.0)
+- [yauzl and yazl](https://github.com/thejoshwolfe/yauzl) — Reads and writes zip files: packs, world downloads, client exports. (MIT)
+
+### Built with
+
+Tools used to make MineShell, not shipped with it.
+
+- [Vite](https://vite.dev) — Builds MineShell and runs it while developing. (MIT)
+- [TypeScript](https://www.typescriptlang.org) — The language most of MineShell is written in. (Apache-2.0)
+- [Vitest](https://vitest.dev) — The test suite. (MIT)
+- [Drizzle Kit](https://orm.drizzle.team/docs/kit-overview) — Generates the database migrations. (MIT)
+
+### Programs
+
+Downloaded and run by MineShell when a server needs them.
+
+- [Eclipse Temurin](https://adoptium.net) — Java builds MineShell downloads for servers.
+- [Azul Zulu](https://www.azul.com/downloads/) — Java builds MineShell downloads for servers.
+- [Fabric](https://fabricmc.net) — Mod loader: its installer and server launcher.
+- [Quilt](https://quiltmc.org) — Mod loader: its installer.
+- [Minecraft Forge](https://minecraftforge.net) — Mod loader: its installer.
+- [NeoForge](https://neoforged.net) — Mod loader: its installer.
+- [Cleanroom](https://cleanroommc.com) — Mod loader for 1.12.2 packs: its installer, and the client instance for exports.
+- [BlueMap](https://bluemap.bluecolored.de) — Renders the Map tab for Minecraft 1.13 and newer.
+- [playit.gg agent](https://playit.gg) — Gives servers a public address without opening ports.
+
+### Mods
+
+Installed by MineShell or worked with when a server has them.
+
+- [Dynmap and DynmapBlockScan](https://github.com/webbukkit/dynmap) — The live map for 1.12.2 Forge and Cleanroom servers.
+- [BlueMap (mod)](https://modrinth.com/plugin/bluemap) — A live map with players on it, offered beside the rendered one.
+- [Fugue](https://modrinth.com/mod/fugue) — Added when a pack moves to Cleanroom, so older mods run on it.
+- [Scalar Legacy](https://www.curseforge.com/projects/1235372) — Added when a pack moves to Cleanroom: the Scala libraries Forge bundled.
+- [spark](https://spark.lucko.me) — Profiling from the server's overview, and its viewer.
+- [Chunky](https://github.com/pop4959/Chunky) — Pre-generating worlds from the World tab.
+- [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) — Its port is kept free and tunnelled with the server.
+
+### Services
+
+Asked by MineShell over the internet.
+
+- [Modrinth](https://modrinth.com) — Mod and pack search, downloads, updates and which mods are client-only.
+- [CurseForge](https://www.curseforge.com) — Mods and packs, and the files on its CDN.
+- [Feed The Beast (modpacks.ch)](https://feed-the-beast.com) — FTB packs, and CurseForge mods and packs without an API key.
+- [Mojang](https://www.minecraft.net) — Game versions, server jars, the Java each version needs, player names and skins.
+- [Adoptium and Azul](https://adoptium.net) — Lists of their Java builds.
+- [Fabric and Quilt meta](https://meta.fabricmc.net) — Loader versions per Minecraft version.
+- [mclo.gs](https://mclo.gs) — Sharing and analysing logs.
+- [spark's bytebin](https://spark.lucko.me) — Uploading profiles spark could not upload itself.
+- [playit.gg](https://playit.gg) — Tunnels for public access.
+- [GitHub](https://github.com) — MineShell updates and BlueMap downloads.
+
+### Thanks
+
+Work MineShell builds on.
+
+- [Aikar's flags](https://mcflags.emc.gs) — The recommended JVM preset.
+- [Prism Launcher](https://prismlauncher.org) — The instance format client exports follow.
+
+Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+
 ## License
 
 See the repository's [LICENSE](LICENSE) file for licensing information.

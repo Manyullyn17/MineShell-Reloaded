@@ -46,6 +46,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/account': { load: 'signedIn', actions: { password: 'signedIn', signOutOthers: 'signedIn' } },
 	// Where a refused page sends the browser.
 	'/denied': { load: 'signedIn' },
+	'/about': { load: 'signedIn' },
 	'/tasks': { load: 'signedIn', actions: { cancel: handler('signedIn', "admin of the task's server; global admin for others") } },
 	'/instances/new': { load: 'create', actions: { loader: 'create', upload: 'create', install: 'create' } },
 	'/settings': {

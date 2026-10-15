@@ -145,6 +145,11 @@
 					>
 						Your account
 					</a>
+				{/if}
+				<a class="rail-link" class:current={page.url.pathname === '/about'} href="/about" onclick={() => (railOpen = false)}>
+					About
+				</a>
+				{#if data.authRequired}
 					<form method="POST" action="/login?/logout">
 						<button class="rail-link rail-signout" type="submit">Sign out</button>
 					</form>

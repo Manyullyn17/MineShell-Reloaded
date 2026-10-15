@@ -25,6 +25,8 @@ cp scripts/setup.mjs scripts/doctor.mjs scripts/reset-password.mjs scripts/insta
 cp src/lib/server/unit-template.js src/lib/server/passwordhash.js "$stage/src/lib/server/"
 cp docs/DEPLOYMENT.md "$stage/docs/"
 echo "$version" > "$stage/VERSION"
+# The licenses of what the archive carries, compiled-in code included.
+node scripts/notices.mjs "$stage/THIRD-PARTY-NOTICES"
 
 # --ignore-scripts: `prepare` (svelte-kit sync) is a development step, and no
 # runtime dependency needs an install script.

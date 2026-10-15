@@ -307,4 +307,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A saved preset could take a built-in preset's name (shown twice in the picker), and names of only symbols shared one id | `routes/settings/presets.test.ts` |
 | (feature) Saved presets are edited in place (name, description, flags); a rename keeps the id new-server defaults refer to | `routes/settings/presets.test.ts` |
 | Deleting the saved preset new servers got made them fall back to Aikar without a word | `routes/settings/presets.test.ts` |
+| (feature) Credits: README's section lists every entry of the About page's list | `shared/credits.test.ts` |
 | A memory limit of heap + 512 MB let the kernel kill a big pack (1.5-3.3 GB outside its heap), and the kill showed as a crash with no cause | `shared/memorylimit.test.ts`, `crashdiag/crashdiag.test.ts` |
