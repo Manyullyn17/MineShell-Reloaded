@@ -20,6 +20,7 @@
 	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
 	import { DEFAULT_NOTIFICATION_KINDS, NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
+	import { channelNote } from '#lib/shared/updatecheck.js';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
@@ -709,7 +710,7 @@
 				and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
 			{/snippet}
 			<form method="POST" action="?/updates" class="rows" bind:this={forms.updates} onsubmit={onSectionSubmit}>
-				<UpdateCheckFields bind:values={sv}>
+				<UpdateCheckFields bind:values={sv} loader={data.updates.kind === 'loader' ? data.settings.modloader : null}>
 					{#snippet channelHint()}
 						{#if data.settings.modloader === 'cleanroom' && !data.pack}
 							<p class="hint">Cleanroom calls every build alpha; it is offered builds of its own line (0.5.x stays on 0.5.x).</p>
@@ -725,7 +726,7 @@
 						Last checked {formatDateTime(data.updates.checkedAt)}:
 						{#if !found}nothing newer.
 						{:else if found.skipped}<strong>{found.label}</strong> is out, skipped.
-						{:else}<strong>{found.label}</strong>{found.channel !== 'release' ? ` (${found.channel})` : ''} is available.{/if}
+						{:else}{@const note = channelNote(found.channel, found.kind === 'loader' ? data.settings.modloader : null)}<strong>{found.label}</strong>{note ? ` (${note})` : ''} is available.{/if}
 					{/if}
 				</p>
 				<form method="POST" action="?/checkUpdates" use:enhance>

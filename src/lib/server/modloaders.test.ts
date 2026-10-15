@@ -19,6 +19,8 @@ describe('loader version lists', () => {
 		expect(versions).toContain('14.23.5.2860');
 		expect(versions.every((v) => !v.startsWith('1.12'))).toBe(true);
 		expect(compareVersions(versions[0], versions[versions.length - 1])).toBeGreaterThan(0);
+		// The metadata is not in order (2864-2861, then 14.23.0.2486 onwards).
+		for (let i = 1; i < versions.length; i++) expect(compareVersions(versions[i - 1], versions[i])).toBeGreaterThanOrEqual(0);
 	});
 
 	it('NeoForge: maps 1.21.1 to 21.1.x and skips betas', async () => {

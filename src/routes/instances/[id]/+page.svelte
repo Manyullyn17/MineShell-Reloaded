@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { channelNote } from '#lib/shared/updatecheck.js';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import { enhance } from '#lib/shared/forms.js';
@@ -167,7 +168,7 @@
 	<div class="notice info update-notice">
 		<p>
 			<strong>{update.kind === 'pack' ? (data.instance.packName ?? 'The pack') : data.instance.modloaderLabel} {update.label}</strong>
-			is out{update.channel !== 'release' ? ` (${update.channel})` : ''}; this server runs
+			is out{channelNote(update.channel, update.kind === 'loader' ? data.instance.modloader : null) ? ` (${channelNote(update.channel, update.kind === 'loader' ? data.instance.modloader : null)})` : ''}; this server runs
 			{update.kind === 'pack' ? (data.instance.packVersionName ?? 'an older version') : data.instance.modloaderVersion}.
 		</p>
 		{#if may('software')}

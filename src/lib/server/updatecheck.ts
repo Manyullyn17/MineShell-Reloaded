@@ -2,9 +2,10 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { serverInstances, updateNotices, type ServerInstance, type UpdateNotice } from './db/schema';
 import { getProvider } from './mods/index';
-import { LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
+import { compareSemver, forgePromotions, LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
+import { compareVersions } from './java';
 import { notify } from './notifications';
-import { UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
+import { channelNote, UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
 
 /**
  * Periodic checks for something newer to install: the next pack version on a
@@ -60,18 +61,34 @@ export function loaderChannel(version: string): UpdateChannel {
 }
 
 /**
- * The newest loader build above the installed one, from a list newest first.
- * Cleanroom names every build alpha, and its 0.6 line swapped Mixin for
+ * Forge names no betas: its recommended build counts as the release, anything
+ * newer as a beta (not yet recommended). Without a recommended build for the
+ * Minecraft version, every build is a release.
+ */
+export function forgeChannel(recommended: string | null): (version: string) => UpdateChannel {
+	return (version) => (recommended && compareVersions(version, recommended) > 0 ? 'beta' : 'release');
+}
+
+/**
+ * The newest loader build above the installed one, by version number: lists
+ * from the loaders' sites are not reliably in order (Quilt's, Forge's), and
+ * going by place offered older builds as updates. Cleanroom names every build alpha, and its 0.6 line swapped Mixin for
  * CleanMix, which breaks mods: it is offered builds of its own line only.
  */
-export function pickLoaderUpdate(loader: string, versions: string[], installed: string, setting: string): string | null {
-	const at = versions.indexOf(installed);
-	if (at <= 0) return null;
+export function pickLoaderUpdate(
+	loader: string,
+	versions: string[],
+	installed: string,
+	setting: string,
+	channelOf: (version: string) => UpdateChannel = loaderChannel
+): string | null {
+	if (!versions.includes(installed)) return null;
 	const line = installed.match(/^(\d+\.\d+)\./)?.[1];
-	for (const version of versions.slice(0, at)) {
+	const newer = versions.filter((v) => compareSemver(v, installed) > 0).sort((a, b) => compareSemver(b, a));
+	for (const version of newer) {
 		if (loader === 'cleanroom') {
 			if (line && version.startsWith(`${line}.`)) return version;
-		} else if (channelAllowed(loaderChannel(version), setting)) return version;
+		} else if (channelAllowed(channelOf(version), setting)) return version;
 	}
 	return null;
 }
@@ -86,8 +103,9 @@ export async function findUpdate(instance: ServerInstance): Promise<FoundUpdate 
 	}
 	if (kind === 'loader' && instance.modloaderVersion) {
 		const versions = await pickerLoaderVersions(instance.modloader, instance.minecraftVersion);
-		const version = pickLoaderUpdate(instance.modloader, versions, instance.modloaderVersion, instance.updateChannel);
-		return version ? { kind, fromVersion: instance.modloaderVersion, versionId: version, label: version, channel: loaderChannel(version) } : null;
+		const channelOf = instance.modloader === 'forge' ? forgeChannel((await forgePromotions(instance.minecraftVersion)).recommended) : loaderChannel;
+		const version = pickLoaderUpdate(instance.modloader, versions, instance.modloaderVersion, instance.updateChannel, channelOf);
+		return version ? { kind, fromVersion: instance.modloaderVersion, versionId: version, label: version, channel: channelOf(version) } : null;
 	}
 	return null;
 }
@@ -126,7 +144,7 @@ export async function checkForUpdates(instance: ServerInstance, find = findUpdat
 				kind: 'update',
 				instance: { id: instance.id, name: instance.name },
 				title: 'Update available',
-				message: `${what} ${found.label}${found.channel !== 'release' ? ` (${found.channel})` : ''} is out; the server runs ${runs}. Its overview in MineShell has the button to review and install it.`,
+				message: `${what} ${found.label}${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null) ? ` (${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null)})` : ''} is out; the server runs ${runs}. Its overview in MineShell has the button to review and install it.`,
 				at: Date.now()
 			});
 		}

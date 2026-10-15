@@ -497,8 +497,11 @@ next pack version on a pack server and the next loader build on a server without
 a pack's author picks its loader, so pack servers are never offered one. Per server: on or
 off, every 6 hours to weekly, and the least stable channel offered (releases by default).
 A pack version is newer by its publish date (the provider's order where the mirror has no
-dates); a loader build by its place in the newest-first list, its channel read from the
-name (`-beta`, `-rc`, `-pre`). Cleanroom names every build alpha and 0.6 broke mods
+dates); a loader build by its version number (the loaders' lists are not reliably in order:
+Quilt's per-version list and Forge's maven metadata are not), its channel read from the name
+(`-beta`, `-rc`, `-pre`). Forge names no betas: its recommended build (promotions) counts as
+the release and anything newer as a beta, which its settings call "Latest builds too" and
+notices "not yet recommended". Cleanroom names every build alpha and 0.6 broke mods
 (CleanMix), so it is offered its own line only. The result is one `update_notices` row
 holding the version it was found from: once the server runs something else, the notice is
 not shown until the next check, so no install path has to clear it. A skipped version stays

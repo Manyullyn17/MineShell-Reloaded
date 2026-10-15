@@ -325,6 +325,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Notifications: routing to MineShell's and a server's own destination, encrypted addresses, Discord/ntfy/webhook bodies, old events not sent, crash loops folded; the history reports starts, stops, joins and leaves once | `server/notifications.test.ts`, `flows/history.test.ts` |
 | (feature) Memory check before a start: the server's ceiling plus the running servers' room to grow against what is available | `server/memoryguard.test.ts` |
 | (feature) New-server defaults for resource limits (automatic memory limit fitted to the heap) and update checks | `flows/instance-defaults.test.ts` |
+| Forge's update check offered 14.23.0.2486 over 2859 (its metadata is out of order) and newer-than-recommended builds as releases; Quilt's list was unordered too | `server/updatecheck.test.ts`, `server/modloaders.test.ts` |
 | (feature) Update checks: newer pack version / loader build by date and channel, Cleanroom kept on its line, skip, hidden after the server moved on, retry after a failure | `server/updatecheck.test.ts` |
 | (feature) Credits: README's section lists every entry of the About page's list | `shared/credits.test.ts` |
 | A memory limit of heap + 512 MB let the kernel kill a big pack (1.5-3.3 GB outside its heap), and the kill showed as a crash with no cause | `shared/memorylimit.test.ts`, `crashdiag/crashdiag.test.ts` |

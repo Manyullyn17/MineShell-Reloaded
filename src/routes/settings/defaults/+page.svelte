@@ -153,6 +153,10 @@
 			shows on its overview.
 		</p>
 		<UpdateCheckFields bind:values={v.updates} />
+		<p class="hint">
+			Forge names no betas: for a Forge server, its recommended build counts as a release and newer builds as betas, and its
+			Settings call them that.
+		</p>
 	</section>
 
 	<section class="panel">

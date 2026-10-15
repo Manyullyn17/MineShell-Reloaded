@@ -3,6 +3,7 @@ import {
 	checkDue,
 	checkForUpdates,
 	currentNotice,
+	forgeChannel,
 	loaderChannel,
 	pickLoaderUpdate,
 	pickPackUpdate,
@@ -11,6 +12,7 @@ import {
 	type FoundUpdate
 } from './updatecheck';
 import { createInstance, reload } from '../../../tests/helpers/instances';
+import { channelLabel, channelNote, channelsFor } from '#lib/shared/updatecheck.js';
 
 const v = (id: string, channel: string, date: string | null) => ({ id, name: id, versionNumber: id, channel, datePublished: date });
 
@@ -56,6 +58,34 @@ describe('loader builds', () => {
 		expect(pickLoaderUpdate('fabric', list, '0.16.9', 'beta')).toBe('0.17.0-beta.1');
 		expect(pickLoaderUpdate('fabric', list, '0.17.0-beta.1', 'release')).toBeNull();
 		expect(pickLoaderUpdate('fabric', list, 'unlisted', 'release')).toBeNull();
+	});
+
+	// Forge 1.12.2 recommends 14.23.5.2859; the update check offered 2864 as a plain release.
+	it("treats Forge's recommended build as the release and newer ones as betas", () => {
+		const list = ['14.23.5.2864', '14.23.5.2860', '14.23.5.2859', '14.23.5.2858'];
+		const channelOf = forgeChannel('14.23.5.2859');
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2858', 'release', channelOf)).toBe('14.23.5.2859');
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2859', 'release', channelOf)).toBeNull();
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2859', 'beta', channelOf)).toBe('14.23.5.2864');
+		// No recommended build for the version: every build is a release.
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2859', 'release', forgeChannel(null))).toBe('14.23.5.2864');
+	});
+
+	// Forge's metadata lists 1.12.2 as 2864-2861, then 14.23.0.2486 onwards: going by place offered 2486 over 2859.
+	it('goes by version number, not by where a build sits in the list', () => {
+		const list = ['14.23.5.2864', '14.23.5.2861', '14.23.0.2486', '14.23.0.2487', '14.23.5.2859'];
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2859', 'release', forgeChannel('14.23.5.2859'))).toBeNull();
+		expect(pickLoaderUpdate('forge', list, '14.23.5.2859', 'beta', forgeChannel('14.23.5.2859'))).toBe('14.23.5.2864');
+		expect(pickLoaderUpdate('quilt', ['0.20.0-beta.9', '0.24.0', '0.30.1', '0.26.4'], '0.26.4', 'release')).toBe('0.30.1');
+	});
+
+	it('says it in Forge\'s terms on a Forge server', () => {
+		expect(channelsFor('forge')).toEqual(['release', 'beta']);
+		expect(channelLabel('release', 'forge')).toBe('Recommended builds only');
+		expect(channelLabel('beta', 'fabric')).toBe('Releases and betas');
+		expect(channelNote('beta', 'forge')).toBe('not yet recommended');
+		expect(channelNote('beta', null)).toBe('beta');
+		expect(channelNote('release', 'forge')).toBeNull();
 	});
 
 	it("keeps Cleanroom on its own line: 0.6 swapped Mixin for CleanMix, which breaks mods", () => {

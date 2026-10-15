@@ -263,6 +263,12 @@ async function quiltLoaderVersions(mc: string): Promise<string[]> {
 	return loaders.map((l) => l.loader.version).sort((a, b) => compareSemver(b, a));
 }
 
+/** Forge's own picks for a Minecraft version: the recommended build (none for some versions) and the latest. */
+export async function forgePromotions(mc: string): Promise<{ recommended: string | null; latest: string | null }> {
+	const promos = await fetchJson<{ promos: Record<string, string> }>('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json');
+	return { recommended: promos.promos[`${mc}-recommended`] ?? null, latest: promos.promos[`${mc}-latest`] ?? null };
+}
+
 const quilt: Modloader = {
 	id: 'quilt',
 	label: 'Quilt',
@@ -395,21 +401,18 @@ const forge: Modloader = {
 		const xml = await fetchText(
 			'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'
 		);
+		// Not in order in the metadata (1.12.2: 2864-2861, then 14.23.0.2486 onwards): sorted here.
 		return [...xml.matchAll(/<version>([^<]+)<\/version>/g)]
 			.map((m) => m[1])
 			.filter((v) => v.startsWith(`${mc}-`))
 			.map((v) => v.slice(mc.length + 1))
-			.reverse();
+			.sort((a, b) => compareSemver(b, a));
 	},
 	install: async (ctx) => {
 		let loaderVersion = ctx.loaderVersion;
 		if (!loaderVersion) {
-			const promos = await fetchJson<{ promos: Record<string, string> }>(
-				'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'
-			);
-			loaderVersion =
-				promos.promos[`${ctx.minecraftVersion}-recommended`] ??
-				promos.promos[`${ctx.minecraftVersion}-latest`];
+			const promos = await forgePromotions(ctx.minecraftVersion);
+			loaderVersion = promos.recommended ?? promos.latest;
 		}
 		if (!loaderVersion) throw new Error(`No Forge build found for Minecraft ${ctx.minecraftVersion}.`);
 		const full = `${ctx.minecraftVersion}-${loaderVersion}`;
