@@ -9,8 +9,8 @@ whatever it leaves out stays here.
 
 The next major update is planned around plugin servers (Paper and Purpur), after the
 modded-server and general feature work is considered finished. GT New Horizons also has an
-agreed install-flow plan. Other ideas below remain later or undecided; none has a delivery
-date.
+agreed install-flow plan, and several worlds per server is agreed. Other ideas below remain
+later or undecided; none has a delivery date.
 
 External world-backup integration is a future plan, but the provider and design are not
 settled. Current snapshots remain local to the server disk. This is an accepted limitation
@@ -85,6 +85,44 @@ Work it needs:
   from GTNH (Prism zip). The server page could link the matching client download.
 - **Map**: GTNH's own Web Map (its Dynmap fork, tuned for 1.7.10 mods) comes with this
   option (ROADMAP-ARCHIVE, "A map of the world").
+
+### Several worlds per server
+
+Agreed 2026-10-15, not started. Put a world aside, start a new one without deleting the
+old, and switch back later. Today the only way is changing "World folder" (`level-name`)
+in Settings by hand, which almost everything already follows: snapshots, the World tab,
+player data, dimensions, pack data packs, the map.
+
+- **Storage** (user's call): worlds stay where they are, as folders in the server folder
+  (with Bukkit-style `_nether`/`_the_end` siblings); the active one is what `level-name`
+  says. Switching rewrites `level-name` while the server is stopped and moves nothing, so
+  it needs no copy and cannot lose a world.
+- **World manager** on the World tab: every world with size, the version it last ran on and
+  its snapshot count; new world (random or set seed, or from an uploaded zip), switch to,
+  rename, download, delete (inactive ones only).
+- **Per world**: seed, level type, generator settings and the pack data packs MineShell owns
+  (`pack_datapacks` is per server today), saved on switching away and put back on switching
+  in. Difficulty, gamemode, hardcore and other game settings stay server settings (user's
+  call: maybe per world later).
+- **Snapshots**: taken of the active world only (scheduled ones too); a world's snapshots
+  stay listed under it and can be restored only while it is active. One retention budget
+  for all of a server's worlds (user's call): the manager warns that snapshots of an
+  inactive world are not protected from being pushed out by newer ones (pin to keep).
+- **Version guard**: each world remembers the Minecraft version and loader it last ran on.
+  Switching to one last run on a newer version than the server's (possible after a pack
+  rollback) warns that it may corrupt the world, and is allowed after confirming (user's
+  call: a bypass, not a refusal).
+- **Map**: an option on the switch, "keep this world's map" (default on): BlueMap's render
+  in `$DATA/maps/<id>/` becomes per world, so switching back shows the old map at once; off
+  deletes it. Dynmap keeps tiles per world name in `dynmap/` already.
+- **What else has to know about worlds**: a pack change must never move an inactive world
+  (a pack-shipped top-level folder of the same name counts as config today, the bug the
+  active world had before `packworld.ts`); bisect refuses while worlds are switching and
+  restores `level-name` as it does now; disk usage gets an "Inactive worlds" group.
+- **Bug this fixes**: restoring a snapshot taken under another `level-name` (after changing
+  World folder by hand) moves the current world aside and puts the snapshot back under its
+  old folder name with `level-name` untouched (`restoreSnapshot` in `world.ts`), so the next
+  start generates an empty world. Only active-world snapshots being restorable closes it.
 
 ---
 
