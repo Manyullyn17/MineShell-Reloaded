@@ -109,14 +109,6 @@ replaced mod jars aside (the `mod-update` journal) so a failed update can be rol
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
-### Notifications
-
-A Discord webhook on crash loops and scheduled restarts. The event bus in `events.ts`
-already emits everything needed, so this is a settings form, a fetch, and a subscriber.
-Deliberately kept out of v1 to avoid designing a notification framework for one webhook.
-
-Moved from near term to later in October 2026.
-
 ### Duplicate detection across platforms
 
 The same mod installed from both Modrinth and CurseForge appears twice with different

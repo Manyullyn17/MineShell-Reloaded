@@ -5,6 +5,8 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
+	import NotificationFields from '#lib/components/NotificationFields.svelte';
+	import { DEFAULT_NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
 	import { blockedLabel } from '#lib/shared/downloads.js';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
@@ -25,6 +27,16 @@
 	let snap = $state({ ...data.snapshots });
 	$effect(() => {
 		snap = { ...data.snapshots };
+	});
+
+	const notificationValues = () => ({
+		type: (data.notifications?.type ?? 'discord') as TargetType,
+		kinds: [...(data.notifications?.kinds ?? DEFAULT_NOTIFICATION_KINDS)]
+	});
+	// svelte-ignore state_referenced_locally
+	let notifyValues = $state(notificationValues());
+	$effect(() => {
+		notifyValues = notificationValues();
 	});
 
 	const playitInfo = streamed(() => data.playit.status);
@@ -545,6 +557,28 @@
 		{/if}
 		<p class="muted small">The agent stays listed on playit.gg after unlinking; remove it there if you like.</p>
 	{/if}
+</section>
+{:else if tab === 'notifications'}
+<section class="panel">
+	<h2>Notifications</h2>
+	<p>
+		A message in a Discord channel, a push notification on your phone (ntfy) or a webhook call when something happens to
+		a server. A server can send to a destination of its own instead, or as well (its Settings &gt; Automation).
+	</p>
+	{#if data.notifications?.lastResult}
+		{@const last = data.notifications.lastResult}
+		<p class="small {last.ok ? 'muted' : 'warn-text'}">Last message {formatDateTime(last.at)}: {last.message}</p>
+	{/if}
+	<form method="POST" action="?/notifications" use:enhance>
+		<NotificationFields bind:values={notifyValues} savedHint={data.notifications?.hint ?? null} idPrefix="notify" />
+		<div class="button-row">
+			<button class="button-primary" type="submit">Save</button>
+			{#if data.notifications}
+				<button type="submit" formaction="?/notificationsTest">Send a test message</button>
+				<button class="button-quiet" type="submit" formaction="?/notificationsRemove">Stop sending</button>
+			{/if}
+		</div>
+	</form>
 </section>
 {:else if tab === 'security'}
 {#if data.authEnabled}

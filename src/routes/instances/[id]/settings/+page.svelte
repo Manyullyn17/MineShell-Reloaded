@@ -18,6 +18,8 @@
 	import RestartFields from '#lib/components/RestartFields.svelte';
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
 	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
+	import NotificationFields from '#lib/components/NotificationFields.svelte';
+	import { DEFAULT_NOTIFICATION_KINDS, NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
@@ -144,6 +146,27 @@
 	// The initial reads are deliberate; the effect below keeps them current.
 	// svelte-ignore state_referenced_locally
 	let sv = $state(settingsValues());
+	// Re-synced after a save, like the other bound fields.
+	const notificationValues = () => ({
+		type: (data.notifications.own?.type ?? data.notifications.global?.type ?? 'discord') as TargetType,
+		kinds: [...(data.notifications.own?.kinds ?? data.notifications.global?.kinds ?? DEFAULT_NOTIFICATION_KINDS)]
+	});
+	// svelte-ignore state_referenced_locally
+	let notifyValues = $state(notificationValues());
+	// svelte-ignore state_referenced_locally
+	let ownNotifications = $state(!!data.notifications.own);
+	// svelte-ignore state_referenced_locally
+	let alsoGlobal = $state(data.notifications.own?.alsoGlobal ?? false);
+	$effect(() => {
+		notifyValues = notificationValues();
+		ownNotifications = !!data.notifications.own;
+		alsoGlobal = data.notifications.own?.alsoGlobal ?? false;
+	});
+	const kindLabels = (kinds: string[]) =>
+		NOTIFICATION_KINDS.filter((k) => kinds.includes(k.kind))
+			.map((k) => k.label.replace(/ \(.*\)$/, '').toLowerCase())
+			.join(', ');
+
 	// The overview's "Review update" link names the loader build to install.
 	const offeredLoader = page.url.searchParams.get('loaderVersion');
 	// svelte-ignore state_referenced_locally
@@ -1328,6 +1351,49 @@
 		</p>
 	</SettingsSection>
 	{/if}
+
+	<SettingsSection tab="automation" id="notifications" title="Notifications" editable={may('admin')}>
+		{#snippet description()}
+			{#if data.notifications.own}
+				This server sends to its own destination ({data.notifications.own.hint}){data.notifications.own.alsoGlobal &&
+				data.notifications.global
+					? `, and to MineShell's (${data.notifications.global.hint}) for what is ticked there`
+					: ''}.
+			{:else if data.notifications.global}
+				Sent to MineShell's destination ({data.notifications.global.hint}) for:
+				{kindLabels(data.notifications.global.kinds) || 'nothing ticked there yet'}. MineShell settings &gt; Notifications
+				chooses. Give this server a destination of its own to send it elsewhere.
+			{:else}
+				MineShell sends no notifications yet (MineShell settings &gt; Notifications). This server can have a destination of
+				its own.
+			{/if}
+		{/snippet}
+		{#if data.notifications.own?.lastResult}
+			{@const last = data.notifications.own.lastResult}
+			<p class="small {last.ok ? 'muted' : 'warn-text'}">Last message {formatDateTime(last.at)}: {last.message}</p>
+		{/if}
+		<div class="check field">
+			<input id="ownNotifications" type="checkbox" bind:checked={ownNotifications} disabled={!!data.notifications.own} />
+			<label for="ownNotifications">Send this server's notifications to a destination of its own</label>
+		</div>
+		{#if ownNotifications}
+			<!-- Reset after saving, so the pasted address does not stay in the field. -->
+			<form method="POST" action="?/notifications" use:enhance class="block">
+				<NotificationFields bind:values={notifyValues} savedHint={data.notifications.own?.hint ?? null} idPrefix="server-notify" />
+				<div class="check field">
+					<input id="alsoGlobal" name="alsoGlobal" type="checkbox" bind:checked={alsoGlobal} />
+					<label for="alsoGlobal">Also send to MineShell's destination, for what is ticked there</label>
+				</div>
+				<div class="button-row">
+					<button class="button-primary" type="submit">Save</button>
+					{#if data.notifications.own}
+						<button type="submit" formaction="?/notificationsTest">Send a test message</button>
+						<button class="button-quiet" type="submit" formaction="?/notificationsRemove">Remove its own destination</button>
+					{/if}
+				</div>
+			</form>
+		{/if}
+	</SettingsSection>
 
 	<!-- ========================================================== Snapshots -->
 

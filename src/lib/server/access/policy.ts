@@ -66,6 +66,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			itemIcons: 'globalAdmin',
 			sftp: 'globalAdmin',
 			trashDays: 'globalAdmin',
+			notifications: 'globalAdmin',
+			notificationsTest: 'globalAdmin',
+			notificationsRemove: 'globalAdmin',
 			// Integrations: using them is up to each feature's permission; managing them is the owner's.
 			curseforgeKey: 'owner',
 			removeCurseforgeKey: 'owner',
@@ -285,6 +288,10 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			updates: on('software'),
 			checkUpdates: on('software'),
 			unskipUpdate: on('software'),
+			// The address is the server admin's to choose; requests to local ones are refused all the same.
+			notifications: on('admin'),
+			notificationsTest: on('admin'),
+			notificationsRemove: on('admin'),
 			migrateCleanroom: on('software'),
 			revertForge: on('software'),
 			cleanroomFixes: on('software'),

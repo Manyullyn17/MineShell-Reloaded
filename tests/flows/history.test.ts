@@ -41,6 +41,31 @@ describe('server history from journal events', () => {
 		});
 	});
 
+	it('reports a finished start, each join and leave once, and a stop that was no crash (for notifications)', async () => {
+		const s = await server();
+		const happened = applyEvents(s.id, [
+			ev(T0, 'Started mstest@x.service - Minecraft server'),
+			ev(T0 + 95_000, line('Done (12.3s)! For help, type "help"')),
+			ev(T0 + 5 * MIN, line('Alex joined the game')),
+			ev(T0 + 20 * MIN, line('Alex lost connection: Disconnected')),
+			ev(T0 + 20 * MIN, line('Alex left the game')),
+			ev(T0 + 30 * MIN, 'mstest@x.service: Main process exited, code=exited, status=143/n/a'),
+			ev(T0 + 30 * MIN, 'mstest@x.service: Deactivated successfully.')
+		]);
+		expect(happened).toEqual([
+			{ kind: 'start', at: T0 + 95_000, detail: '95 s' },
+			{ kind: 'join', at: T0 + 5 * MIN, detail: 'Alex' },
+			{ kind: 'leave', at: T0 + 20 * MIN, detail: 'Alex' },
+			{ kind: 'stop', at: T0 + 30 * MIN }
+		]);
+		// A crash is reported after its diagnosis, not as a stop.
+		const crashed = applyEvents(s.id, [
+			ev(T0 + 40 * MIN, 'Started mstest@x.service - Minecraft server', 2),
+			ev(T0 + 41 * MIN, "mstest@x.service: Failed with result 'exit-code'.", 2)
+		]);
+		expect(crashed).toEqual([]);
+	});
+
 	it('closes every open session when the run ends, logged or not', async () => {
 		const s = await server();
 		applyEvents(s.id, [

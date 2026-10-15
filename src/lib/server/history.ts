@@ -5,6 +5,7 @@ import { readJournalEvents, readRun, type JournalEvent } from './journal';
 import { diagnoseRun } from './crashdiag';
 import { modsDir } from './mods/index';
 import { playerEventWithName } from '#lib/shared/consolelines.js';
+import { notify } from './notifications';
 
 /**
  * What happened on each server over time, kept in the database: runs (when a
@@ -75,11 +76,15 @@ function duringBisect(instanceId: string, at: number): boolean {
 		.get();
 }
 
-/** Records how a run ended, and whether that was a crash; called for each of systemd's end lines. */
-function endRun(instanceId: string, invocation: string, at: number, message: string): void {
+/**
+ * Records how a run ended, and whether that was a crash; called for each of
+ * systemd's end lines. Says whether this was the first of them for a run that
+ * did not crash (a stop to report), not one of the bisect assistant's tests.
+ */
+function endRun(instanceId: string, invocation: string, at: number, message: string): boolean {
 	const where = and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, invocation));
 	const run = db.select().from(serverRuns).where(where).get();
-	if (!run) return;
+	if (!run) return false;
 	const status = message.match(/Main process exited, code=\w+, status=(\d+)/);
 	const exitStatus = status ? Number(status[1]) : run.exitStatus;
 	const failed = run.failed || /Failed with result/.test(message);
@@ -87,10 +92,21 @@ function endRun(instanceId: string, invocation: string, at: number, message: str
 	const crashed =
 		run.crashLoggedAt !== null || (!askedToStop && (failed || (exitStatus !== null && exitStatus !== 0) || run.doneAt === null));
 	db.update(serverRuns).set({ endedAt: at, exitStatus, failed, crashed }).where(where).run();
+	return run.endedAt === null && !crashed && !run.bisect;
 }
 
+/** How long a start took, as a message says it: 45 s, 3 min 10 s. */
+function took(ms: number): string {
+	const s = Math.max(0, Math.round(ms / 1000));
+	return s < 120 ? `${s} s` : `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}`;
+}
+
+/** What applyEvents saw that notifications report (crashes go after their diagnosis). */
+export type Happening = { kind: 'start' | 'stop' | 'join' | 'leave'; at: number; detail?: string };
+
 /** Applies journal events, oldest first, to the runs and sessions tables. */
-export function applyEvents(instanceId: string, events: JournalEvent[]): void {
+export function applyEvents(instanceId: string, events: JournalEvent[]): Happening[] {
+	const happened: Happening[] = [];
 	for (const e of events) {
 		if (isStart(e.message) && e.invocation) {
 			// A run that ended without its stop being logged (killed, power cut) leaves sessions open.
@@ -102,10 +118,10 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): void {
 			continue;
 		}
 		if (isDone(e.message) && e.invocation) {
-			db.update(serverRuns)
-				.set({ doneAt: e.at })
-				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.doneAt)))
-				.run();
+			const where = and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.doneAt));
+			const run = db.select().from(serverRuns).where(where).get();
+			db.update(serverRuns).set({ doneAt: e.at }).where(where).run();
+			if (run && !run.bisect) happened.push({ kind: 'start', at: e.at, detail: took(e.at - run.startedAt) });
 			continue;
 		}
 		if (isCrashLine(e.message) && e.invocation) {
@@ -116,7 +132,7 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): void {
 			continue;
 		}
 		if (isEnd(e.message)) {
-			if (e.invocation) endRun(instanceId, e.invocation, e.at, e.message);
+			if (e.invocation && endRun(instanceId, e.invocation, e.at, e.message)) happened.push({ kind: 'stop', at: e.at });
 			closeSessions(instanceId, e.at);
 			continue;
 		}
@@ -127,12 +143,30 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): void {
 				.from(playerSessions)
 				.where(and(eq(playerSessions.instanceId, instanceId), eq(playerSessions.player, player.name), isNull(playerSessions.leftAt)))
 				.get();
-			if (!open) db.insert(playerSessions).values({ instanceId, player: player.name, joinedAt: e.at }).run();
+			if (!open) {
+				db.insert(playerSessions).values({ instanceId, player: player.name, joinedAt: e.at }).run();
+				happened.push({ kind: 'join', at: e.at, detail: player.name });
+			}
 		} else if (player?.event === 'leave') {
+			// "lost connection" and "left the game" both come for one leave: only the first closes a session.
+			const open = db
+				.select({ id: playerSessions.id })
+				.from(playerSessions)
+				.where(and(eq(playerSessions.instanceId, instanceId), eq(playerSessions.player, player.name), isNull(playerSessions.leftAt)))
+				.get();
 			closeSessions(instanceId, e.at, player.name);
+			if (open) happened.push({ kind: 'leave', at: e.at, detail: player.name });
 		}
 	}
+	return happened;
 }
+
+const HAPPENING_TEXT: Record<Happening['kind'], (detail?: string) => { title: string; message: string }> = {
+	start: (took) => ({ title: 'Started', message: `Finished starting${took ? ` in ${took}` : ''}; players can join.` }),
+	stop: () => ({ title: 'Stopped', message: 'The server stopped.' }),
+	join: (name) => ({ title: `${name} joined`, message: `${name} joined the game.` }),
+	leave: (name) => ({ title: `${name} left`, message: `${name} left the game.` })
+};
 
 /** Reads one server's new journal entries and records them. */
 export async function recordHistory(instance: ServerInstance): Promise<void> {
@@ -140,12 +174,15 @@ export async function recordHistory(instance: ServerInstance): Promise<void> {
 		afterCursor: instance.historyCursor,
 		since: instance.createdAt
 	});
-	db.transaction(() => {
-		applyEvents(instance.id, events);
+	const happened = db.transaction(() => {
+		const seen = applyEvents(instance.id, events);
 		if (cursor !== instance.historyCursor) {
 			db.update(serverInstances).set({ historyCursor: cursor }).where(eq(serverInstances.id, instance.id)).run();
 		}
+		return seen;
 	});
+	const server = { id: instance.id, name: instance.name };
+	for (const h of happened) void notify({ kind: h.kind, instance: server, at: h.at, ...HAPPENING_TEXT[h.kind](h.detail) });
 	await diagnoseCrashes(instance);
 }
 
@@ -163,9 +200,21 @@ async function diagnoseCrashes(instance: ServerInstance): Promise<void> {
 		.limit(DIAGNOSE_PER_PASS)
 		.all();
 	for (const run of pending) {
-		const found = await diagnoseRun(await readRun(run.invocation, instance.createdAt), modsDir(instance.path)).catch(() => []);
-		const cause = (found.find((d) => d.fatal) ?? found[0])?.title ?? null;
+		const found = await diagnoseRun(await readRun(run.invocation, instance.createdAt), modsDir(instance.path), {
+			memoryLimitMb: instance.limitMemoryMb
+		}).catch(() => []);
+		const top = found.find((d) => d.fatal) ?? found[0];
+		const cause = top?.title ?? null;
 		db.update(serverRuns).set({ cause, diagnosed: true }).where(eq(serverRuns.id, run.id)).run();
+		// Reported once the cause is known; a run diagnosed long after it ended is not news.
+		const memory = top?.kind === 'memory-killed';
+		void notify({
+			kind: memory ? 'memory' : 'crash',
+			instance: { id: instance.id, name: instance.name },
+			title: memory ? 'Killed for its memory' : 'Crashed',
+			message: cause ?? 'No cause recognised; its overview in MineShell shows the last output.',
+			at: run.endedAt ?? run.crashLoggedAt ?? run.startedAt
+		});
 	}
 }
 

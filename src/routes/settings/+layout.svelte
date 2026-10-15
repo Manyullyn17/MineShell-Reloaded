@@ -11,6 +11,7 @@
 		{ id: 'defaults', label: 'New server defaults', href: '/settings/defaults' },
 		{ id: 'accounts', label: 'Accounts', href: '/settings/users' },
 		{ id: 'integrations', label: 'Integrations' },
+		{ id: 'notifications', label: 'Notifications' },
 		{ id: 'security', label: 'Security' },
 		{ id: 'updates', label: 'Updates' },
 		{ id: 'activity', label: 'Activity' }

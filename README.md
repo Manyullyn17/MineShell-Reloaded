@@ -32,6 +32,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Configure crash recovery, restart attempt limits, scheduled restarts, and scheduled console commands.
 - Delay scheduled operations while players are online.
 - Set per-server CPU and memory limits, and detect servers that never finish starting.
+- Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.
 - Get a warning before starting a server the machine may not have the memory for, counting what the running servers can still grow into.
 - Choose which servers start after a machine reboot: restore their previous state, always start, or never start automatically.
 - Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available.

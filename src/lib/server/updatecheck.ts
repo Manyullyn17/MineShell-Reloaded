@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { serverInstances, updateNotices, type ServerInstance, type UpdateNotice } from './db/schema';
 import { getProvider } from './mods/index';
-import { pickerLoaderVersions } from './modloaders';
+import { LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
+import { notify } from './notifications';
 import { UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
 
 /**
@@ -119,6 +120,15 @@ export async function checkForUpdates(instance: ServerInstance, find = findUpdat
 		} else {
 			const row = { ...found, instanceId: instance.id, foundAt: Date.now(), skipped: false };
 			tx.insert(updateNotices).values(row).onConflictDoUpdate({ target: updateNotices.instanceId, set: row }).run();
+			const what = found.kind === 'pack' ? (instance.packName ?? 'The pack') : (LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader);
+			const runs = found.kind === 'pack' ? (instance.packVersionName ?? 'an older version') : found.fromVersion;
+			void notify({
+				kind: 'update',
+				instance: { id: instance.id, name: instance.name },
+				title: 'Update available',
+				message: `${what} ${found.label}${found.channel !== 'release' ? ` (${found.channel})` : ''} is out; the server runs ${runs}. Its overview in MineShell has the button to review and install it.`,
+				at: Date.now()
+			});
 		}
 		tx.update(serverInstances).set({ updateCheckedAt: Date.now() }).where(eq(serverInstances.id, instance.id)).run();
 	});

@@ -55,7 +55,7 @@ import { authEnabled } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
 import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
-import { listInstances, syncUnit } from '#lib/server/instances.js';
+import { audit, listInstances, syncUnit } from '#lib/server/instances.js';
 import {
 	freeSpace,
 	getSnapshotPolicy,
@@ -85,6 +85,8 @@ import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js'
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 import { deleteCustomPreset, getPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
 import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
+import { globalTarget, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
+import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 /**
  * The agent, and each server's tunnel next to the ones made on playit's
@@ -111,6 +113,12 @@ async function playitOverview(owner: boolean) {
 	};
 }
 
+/** The kinds ticked on a notification form. */
+function kindsFrom(form: FormData): NotificationKind[] {
+	const known = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
+	return form.getAll('kinds').map(String).filter((k): k is NotificationKind => known.has(k as NotificationKind));
+}
+
 export const load: PageServerLoad = async ({ locals }) => {
 	const systemd = await probeSystemd();
 	return {
@@ -124,6 +132,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		systemd: { ...systemd, unitInstalled: await templateUnitInstalled() },
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
+		/** MineShell's notification destination, without its address. */
+		notifications: targetView('global', globalTarget()),
 		javaDownloads: javaDownloads(),
 		/** Saved JVM flag presets; the built-in ones are not edited. */
 		jvmPresets: listPresets().filter((p) => !p.builtIn),
@@ -404,6 +414,28 @@ export const actions: Actions = {
 		const form = await request.formData();
 		setItemIcons(form.get('itemIcons') === 'on');
 		return { ok: true, message: 'Saved.' };
+	},
+
+	notifications: async ({ request }) => {
+		const form = await request.formData();
+		const url = String(form.get('url') ?? '').trim();
+		const problem = saveGlobalTarget({ type: String(form.get('type')) as TargetType, url: url || null, kinds: kindsFrom(form) });
+		if (problem) return fail(400, { ok: false, message: problem });
+		audit('settings.notifications');
+		return { ok: true, message: 'Saved. Send a test message to see it arrive.' };
+	},
+
+	notificationsTest: async () => {
+		const target = globalTarget();
+		if (!target) return fail(400, { ok: false, message: 'Save a destination first.' });
+		const result = await sendTest('global', target, { id: 'mineshell', name: 'MineShell' });
+		return result.ok ? { ok: true, message: 'Sent; it should be there now.' } : fail(502, { ok: false, message: result.message });
+	},
+
+	notificationsRemove: async () => {
+		removeGlobalTarget();
+		audit('settings.notifications', { detail: 'removed' });
+		return { ok: true, message: 'MineShell no longer sends notifications (servers with their own destination still do).' };
 	},
 
 	trashDays: async ({ request }) => {

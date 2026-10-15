@@ -483,6 +483,24 @@ export const updateNotices = sqliteTable('update_notices', {
 	skipped: integer('skipped', { mode: 'boolean' }).notNull().default(false)
 });
 export type UpdateNotice = typeof updateNotices.$inferSelect;
+
+/**
+ * A server's own notification destination (notifications.ts), instead of or
+ * beside MineShell's. The address is stored encrypted: anyone holding a
+ * Discord webhook or an ntfy topic can post to or read it.
+ */
+export const instanceNotifications = sqliteTable('instance_notifications', {
+	instanceId: text('instance_id')
+		.primaryKey()
+		.references(() => serverInstances.id, { onDelete: 'cascade' }),
+	/** discord | ntfy | webhook */
+	type: text('type').notNull(),
+	urlEnc: text('url_enc').notNull(),
+	/** Also send to MineShell's own destination. */
+	alsoGlobal: integer('also_global', { mode: 'boolean' }).notNull().default(false),
+	/** JSON array of notification kinds sent to this destination. */
+	kinds: text('kinds').notNull()
+});
 export type NewServerInstance = typeof serverInstances.$inferInsert;
 export type Mod = typeof mods.$inferSelect;
 export type InstanceMod = typeof instanceMods.$inferSelect;

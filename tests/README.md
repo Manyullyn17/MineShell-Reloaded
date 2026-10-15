@@ -320,6 +320,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A saved preset could take a built-in preset's name (shown twice in the picker), and names of only symbols shared one id | `routes/settings/presets.test.ts` |
 | (feature) Saved presets are edited in place (name, description, flags); a rename keeps the id new-server defaults refer to | `routes/settings/presets.test.ts` |
 | Deleting the saved preset new servers got made them fall back to Aikar without a word | `routes/settings/presets.test.ts` |
+| (feature) Notifications: routing to MineShell's and a server's own destination, encrypted addresses, Discord/ntfy/webhook bodies, old events not sent, crash loops folded; the history reports starts, stops, joins and leaves once | `server/notifications.test.ts`, `flows/history.test.ts` |
 | (feature) Memory check before a start: the server's ceiling plus the running servers' room to grow against what is available | `server/memoryguard.test.ts` |
 | (feature) New-server defaults for resource limits (automatic memory limit fitted to the heap) and update checks | `flows/instance-defaults.test.ts` |
 | (feature) Update checks: newer pack version / loader build by date and channel, Cleanroom kept on its line, skip, hidden after the server moved on, retry after a failure | `server/updatecheck.test.ts` |

@@ -26,7 +26,6 @@ import { cpus } from 'node:os';
 import { primaryLanAddress } from '#lib/server/network.js';
 import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
-import { runFinishedStarting } from '#lib/server/journal.js';
 import { forgetDiagnosis, lastCrash } from '#lib/server/lastcrash.js';
 import { setModEnabled } from '#lib/server/mods/index.js';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
@@ -52,27 +51,7 @@ import { isBisecting } from '#lib/server/bisect.js';
 import { currentNotice, skipNotice } from '#lib/server/updatecheck.js';
 import { startMemoryWarning } from '#lib/server/memoryguard.js';
 import { unitState } from '#lib/server/systemd.js';
-
-/**
- * A server still not "Done (" this long after starting is probably hung
- * (crash diagnosis only covers runs that ended). MeatballCraft, the biggest
- * pack here, takes about 95 s; a first start that also generates the world
- * takes several times that.
- */
-const STUCK_AFTER_MS = 10 * 60_000;
-
-/** Runs (by start time) already seen to finish starting; their log is not read again. */
-const startedRuns = new Map<string, number>();
-
-async function stuckStarting(instanceId: string, createdAt: number, startedAt: number): Promise<boolean> {
-	if (!startedAt || Date.now() - startedAt < STUCK_AFTER_MS) return false;
-	if (startedRuns.get(instanceId) === startedAt) return false;
-	if (await runFinishedStarting(instanceId, createdAt)) {
-		startedRuns.set(instanceId, startedAt);
-		return false;
-	}
-	return true;
-}
+import { stuckStarting } from '#lib/server/stuck.js';
 
 /** The performance chart's windows; the monitor keeps a day of samples. */
 const RANGES = { '1h': 60 * 60 * 1000, '6h': 6 * 60 * 60 * 1000, '24h': 24 * 60 * 60 * 1000 } as const;

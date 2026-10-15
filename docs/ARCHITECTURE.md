@@ -94,7 +94,17 @@ kill at the limit is systemd's "killed by the OOM killer" line in the run's jour
 crash diagnosis names (`memory-killed`). Starting by hand checks the memory first
 (`memoryguard.ts`): this server's ceiling plus what the running ones can still grow into,
 against MemAvailable; past it, the page asks before starting anyway (`force`). A start
-nobody watches (schedules, crash restarts, boot) is never held up by it. The template itself says `Restart=on-failure`, so a server
+nobody watches (schedules, crash restarts, boot) is never held up by it.
+
+Notifications (`notifications.ts`) go to MineShell's destination (a `settings` row) and/or a
+server's own (`instance_notifications`, with `also_global`), each with the kinds it is sent.
+Reported by the run history (start, stop, join, leave; crash and memory kill after the crash
+diagnosis, with its cause), the scheduler (stuck starting, scheduled restart) and the update
+check. Nothing older than 5 minutes is sent (the history catches up after downtime), repeats
+of a problem within 10 minutes fold into the next message, and sending never blocks the
+caller. Addresses are encrypted, only a hint goes to the browser, and requests to local
+addresses are refused unless allowed (`assertPublicUrl`), since a server admin chooses its
+address. Discord messages set `allowed_mentions: { parse: [] }`. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping

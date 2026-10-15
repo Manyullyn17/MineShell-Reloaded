@@ -9,6 +9,25 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Notifications (Discord, ntfy, webhooks)
+
+Built 2026-10-15. The user's calls: one destination for MineShell, a server can have its own
+instead or as well ("also send to MineShell's"); crash, memory kill, stuck starting and update
+found on by default, scheduled restart, finished starting, stopped and player join/leave as
+options; generic, not Discord only (ntfy for phone pushes). The old note said the event bus
+already emitted everything: it did not (console lines, stats, unit state only). The sources
+are the run history (starts, stops, joins, leaves; crashes and memory kills once diagnosed,
+with the cause), the scheduler (stuck starting, once per run; scheduled restarts) and the
+update check. Only events from the last 5 minutes are sent, so the history catching up after
+downtime posts nothing; repeats of a problem within 10 minutes are counted into the next
+message. Addresses are stored encrypted and shown only as a hint; Discord messages allow no
+pings (player names and log text could hold @everyone); local addresses are refused unless
+allowed (the download allow-list), since a server's admin picks its address. Tried against
+ntfy.sh end to end (test message and a real "update available"); Discord's format is the
+documented one, untried against a real channel. Left: pings for problem events (a role or
+@here), a start-limit "gave up restarting" message, muting one server without an own
+destination, links back to MineShell (it does not know its public address).
+
 ### Memory check before a start, and limits and update checks as new-server defaults
 
 Built 2026-10-15 (both were open items: "RAM guard on start" undecided, the limits a line

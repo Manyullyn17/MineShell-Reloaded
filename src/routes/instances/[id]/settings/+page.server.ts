@@ -82,6 +82,8 @@ import {
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { checkForUpdates, updateKind } from '#lib/server/updatecheck.js';
+import { globalTarget, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
+import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -205,6 +207,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		running,
 		/** The heap the running process started with; a saved change applies from the next start. */
 		runningMemoryMaxMb: running ? await runningHeapMb(summary.state.mainPid) : null,
+		/** Where this server's notifications go: its own destination and MineShell's, without their addresses. */
+		notifications: {
+			own: (() => {
+				const own = serverTarget(instance.id);
+				const view = targetView(instance.id, own);
+				return view && own ? { ...view, alsoGlobal: own.alsoGlobal } : null;
+			})(),
+			global: targetView('global', globalTarget())
+		},
 		/** What the update check looks for, when it last did and what it found (skipped included). */
 		updates: {
 			kind: updateKind(instance),
@@ -690,6 +701,34 @@ export const actions: Actions = {
 		const result = await checkForUpdates(instance);
 		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
 		return { ok: true, message: result.found ? `${result.found.label} is available.` : 'Nothing newer to install.' };
+	},
+
+	notifications: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const known = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
+		const url = String(form.get('url') ?? '').trim();
+		const problem = saveServerTarget(instance.id, {
+			type: String(form.get('type')) as TargetType,
+			url: url || null,
+			kinds: form.getAll('kinds').map(String).filter((k): k is NotificationKind => known.has(k as NotificationKind)),
+			alsoGlobal: form.get('alsoGlobal') === 'on'
+		});
+		if (problem) return fail(400, { ok: false, message: problem });
+		return { ok: true, message: 'Saved. Send a test message to see it arrive.' };
+	},
+
+	notificationsTest: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		const target = serverTarget(instance.id);
+		if (!target) return fail(400, { ok: false, message: 'Save a destination for this server first.' });
+		const result = await sendTest(instance.id, target, { id: instance.id, name: instance.name });
+		return result.ok ? { ok: true, message: 'Sent; it should be there now.' } : fail(502, { ok: false, message: result.message });
+	},
+
+	notificationsRemove: async ({ params }) => {
+		removeServerTarget(requireInstance(params.id).id);
+		return { ok: true, message: "Removed; this server's notifications go to MineShell's destination again." };
 	},
 
 	unskipUpdate: async ({ params }) => {

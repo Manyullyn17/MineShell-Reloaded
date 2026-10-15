@@ -65,6 +65,7 @@ import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
+import { copyServerTarget } from './notifications';
 import { deleteMacros, getMacros, setMacros } from './macros';
 import { deleteChunkySettings } from './chunky';
 import { copyDatapackRows } from './mods/datapacks';
@@ -1526,6 +1527,7 @@ export async function cloneInstance(
 				}
 				copyScheduledCommands(source.id, id);
 				copyCustomFields(source.id, id);
+				copyServerTarget(source.id, id);
 				setMacros(id, getMacros(source.id));
 				copyDatapackRows(source.id, id);
 				copyServerSnapshotOverrides(source.id, id);

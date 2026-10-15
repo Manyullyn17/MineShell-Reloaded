@@ -11,6 +11,8 @@ import { evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedu
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
 import { runDueUpdateChecks } from './updatecheck';
+import { destinations, notify } from './notifications';
+import { notifyIfStuck } from './stuck';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -141,6 +143,7 @@ export async function evaluateRestart(instance: ServerInstance): Promise<void> {
 
 	deferredSince.delete(instance.id);
 	audit('scheduler.restart', { instanceId: instance.id, actor: 'scheduler' });
+	void notify({ kind: 'restart', instance: { id: instance.id, name: instance.name }, title: 'Scheduled restart', message: 'Restarting now, as scheduled.', at: Date.now() });
 	await restart(instance);
 	rescheduleInstance(instance.id, Date.now());
 }
@@ -167,6 +170,11 @@ async function checkAll(): Promise<void> {
 		await expireTrash(instance.path).catch((err) =>
 			console.error(`[mineshell] emptying old trash failed for ${instance.id}:`, err)
 		);
+		// Only read when someone is told: deciding reads the run's log once it is 10 minutes old.
+		if (destinations(instance.id, 'stuck').length) {
+			const state = await unitState(instance.id);
+			if (state.active === 'active') await notifyIfStuck(instance, state.activeEnterTimestamp).catch(() => {});
+		}
 	}
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 	// Not awaited: lookups on a slow provider must not hold up restarts.
