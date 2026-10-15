@@ -227,6 +227,18 @@ If you want to reach it from outside your network, put it behind Tailscale or a 
 mesh VPN. That gets you an encrypted, authenticated path without exposing anything to the
 public internet.
 
+With Tailscale on the machine, `tailscale serve --bg 3000` gives MineShell an address like
+`https://<machine>.<tailnet>.ts.net` with a real certificate, reachable from your other
+Tailscale devices (enable HTTPS certificates in the tailnet's admin console first).
+
+### Installing it as an app
+
+MineShell has a web app manifest, so a browser can install it with its own icon and window
+(Chrome/Edge: Install in the address bar; Android: Add to Home screen; iPhone: Share > Add to
+Home Screen). Browsers only offer that over https: at `http://<lan-ip>:3000` an Android
+shortcut opens as a normal tab and desktop browsers offer nothing. Over the Tailscale address
+above, or a reverse proxy with TLS, it installs everywhere.
+
 If you must expose it directly, terminate TLS at a reverse proxy and keep the app bound to
 localhost. One nginx detail: SSE needs buffering off, or the console will appear frozen
 and then dump everything at once.
