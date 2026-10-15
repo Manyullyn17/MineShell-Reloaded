@@ -41,7 +41,10 @@ const BLUEMAP_JAVA = 21;
 const RELEASES = 'https://api.github.com/repos/BlueMap-Minecraft/BlueMap/releases/latest';
 
 export const mapDir = (instanceId: string) => path.join(MAPS_DIR, instanceId);
-const webRoot = (instanceId: string) => path.join(mapDir(instanceId), 'web');
+/** The rendered map of the world the server uses: BlueMap's web app with its tiles. */
+export const webRoot = (instanceId: string) => path.join(mapDir(instanceId), 'web');
+/** Where another world's map waits while it is not the active one (worlds.ts), as its `web/`. */
+export const keptMapDir = (instanceId: string, world: string) => path.join(mapDir(instanceId), 'worlds', encodeURIComponent(world));
 
 // ----------------------------------------------------------------- settings ---
 
@@ -108,12 +111,22 @@ export function saveMapSettings(instanceId: string, changes: Partial<MapSettings
 	return next;
 }
 
-/** With the server: its settings and everything rendered. */
+/**
+ * With the server: its settings and everything rendered. `keepSettings` (the
+ * Map tab) deletes the active world's map only: the kept maps of the
+ * server's other worlds stay.
+ */
 export async function deleteMapData(instanceId: string, opts: { keepSettings?: boolean } = {}): Promise<void> {
 	if (rendering.has(instanceId)) throw new InstanceError('The map is being updated; wait for it to finish or cancel it.');
-	await fs.rm(mapDir(instanceId), { recursive: true, force: true });
-	if (!opts.keepSettings) db.delete(settings).where(eq(settings.key, KEY(instanceId))).run();
-	else saveMapSettings(instanceId, { lastRenderAt: null, sizeBytes: null });
+	if (!opts.keepSettings) {
+		await fs.rm(mapDir(instanceId), { recursive: true, force: true });
+		db.delete(settings).where(eq(settings.key, KEY(instanceId))).run();
+		return;
+	}
+	for (const name of await fs.readdir(mapDir(instanceId)).catch(() => [] as string[])) {
+		if (name !== 'worlds') await fs.rm(path.join(mapDir(instanceId), name), { recursive: true, force: true });
+	}
+	saveMapSettings(instanceId, { lastRenderAt: null, sizeBytes: null });
 }
 
 /**
@@ -126,9 +139,18 @@ export async function mapDataSize(instanceId: string): Promise<number> {
 	if (!ready) return 0;
 	const kept = getMapSettings(instanceId).sizeBytes;
 	if (kept !== null) return kept;
-	const measured = await directorySize(mapDir(instanceId)).catch(() => 0);
+	const measured = (await activeMapSize(instanceId)) ?? 0;
 	saveMapSettings(instanceId, { sizeBytes: measured });
 	return measured;
+}
+
+/** The active world's map and BlueMap's caches: the kept maps of other worlds have their own sizes (worlds.ts). */
+async function activeMapSize(instanceId: string): Promise<number | null> {
+	let total = 0;
+	for (const name of await fs.readdir(mapDir(instanceId)).catch(() => [] as string[])) {
+		if (name !== 'worlds') total += await directorySize(path.join(mapDir(instanceId), name)).catch(() => 0);
+	}
+	return total;
 }
 
 /** Sets the schedule; its first update is the next slot from now. */
@@ -362,6 +384,10 @@ export async function writeBlueMapConfig(instance: ServerInstance): Promise<stri
 /** Renders running, by server: one at a time each. */
 const rendering = new Map<string, string>();
 
+export function isRenderingMap(instanceId: string): boolean {
+	return rendering.has(instanceId);
+}
+
 /**
  * Updates the map in the background: BlueMap renders what changed since the
  * last run (`force`: everything). A running server is told to save first, so
@@ -395,7 +421,7 @@ export async function renderMap(instance: ServerInstance, opts: { force?: boolea
 			if (opts.force) args.push('-f');
 			task.setProgress(null, `Rendering ${maps.length} map${maps.length === 1 ? '' : 's'}`);
 			await runBlueMap(java, args, mapDir(instance.id), task);
-			saveMapSettings(instance.id, { lastRenderAt: Date.now(), sizeBytes: await directorySize(mapDir(instance.id)).catch(() => null) });
+			saveMapSettings(instance.id, { lastRenderAt: Date.now(), sizeBytes: await activeMapSize(instance.id) });
 			task.setProgress(100, 'Map updated');
 		} finally {
 			rendering.delete(instance.id);

@@ -74,6 +74,21 @@ export type Journal =
 			propertiesBefore: Record<string, string> | null;
 	  }
 	| {
+			/**
+			 * Another world made the active one (worlds.ts). Nothing in the server
+			 * folder moves; the map's web app swaps with the kept one of each world.
+			 */
+			kind: 'world-switch';
+			from: string;
+			to: string;
+			/** server.properties values the switch sets, as they were before. */
+			propertiesBefore: Record<string, string>;
+			/** The active map (`web/`) existed, so it was moved: kept for `from` or into `discard`. */
+			hadMap: boolean;
+			/** Absolute: maps live outside the server folder. Deleted once committed. */
+			discard: string | null;
+	  }
+	| {
 			/** The mod bisect assistant (bisect.ts): what it changes for its test runs, as it was. */
 			kind: 'bisect';
 			levelName: string;

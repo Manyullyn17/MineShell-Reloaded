@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { fail } from '@sveltejs/kit';
 import { requireAccess } from '#lib/server/access.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -27,9 +29,17 @@ import {
 	restoreSnapshot,
 	snapshotDimensions,
 	snapshotNow,
+	switchWorld,
+	createWorld,
+	renameWorld,
+	deleteWorld,
+	worldFromSnapshot,
 	worldSeed,
+	WorldVersionError,
 	type SeedChoice
 } from '#lib/server/world.js';
+import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder } from '#lib/server/worlds.js';
+import { webRoot } from '#lib/server/worldmap.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import {
 	cancelPregen,
@@ -52,6 +62,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	const { values } = await readProperties(instance.path);
 	const running = (await summarise(instance)).running;
 	const levelName = await serverWorldName(instance.path);
+	const worlds = await listWorlds(instance);
+	const folders = worlds.map((w) => w.folder);
+	const snapshots = await listSnapshots(instance.path);
 	return {
 		running,
 		chunky: (await hasChunky(instance.path)) ? await chunkyData(instance, running) : null,
@@ -65,12 +78,27 @@ export const load: PageServerLoad = async ({ params }) => {
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
 		pruneCount: lastPruneCount(instance.id),
 		snapshots: await Promise.all(
-			(await listSnapshots(instance.path)).map(async (s) => {
+			snapshots.map(async (s) => {
 				// Only one of the world the server uses can be restored (snapshotOfWorld).
 				const ofThisWorld = snapshotOfWorld(s, levelName);
-				return { ...s, ofThisWorld, dimensions: ofThisWorld ? (await snapshotDimensions(instance, s)).map(dimensionOption) : [] };
+				return {
+					...s,
+					ofThisWorld,
+					worldFolder: ofThisWorld ? levelName : snapshotWorldFolder(s, folders),
+					dimensions: ofThisWorld ? (await snapshotDimensions(instance, s)).map(dimensionOption) : []
+				};
 			})
 		),
+		serverWorlds: worlds.map((w) => ({
+			...w,
+			snapshots: snapshots.filter((s) => (snapshotOfWorld(s, levelName) ? levelName : snapshotWorldFolder(s, folders)) === w.folder).length,
+			newer: newerWorldWarning(instance, w),
+			otherLoader: otherLoaderWarning(instance, w)
+		})),
+		/** BlueMap's render of the active world exists: switching asks whether to keep it. */
+		mapRendered: await fs.access(path.join(webRoot(instance.id), 'index.html')).then(() => true, () => false),
+		datapackCount: (await fs.readdir(path.join(instance.path, levelName, 'datapacks')).catch(() => [])).length,
+		packServer: !!instance.packSource,
 		current: {
 			minecraftVersion: instance.minecraftVersion,
 			modloader: instance.modloader,
@@ -276,6 +304,76 @@ export const actions: Actions = {
 				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true })
 			});
 			return { ok: true, message: `Resetting the dimension. ${STARTED}` };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	switchWorld: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const folder = String(form.get('world') ?? '');
+		try {
+			await switchWorld(instance, folder, { keepMap: form.get('keepMap') === 'on', force: form.get('force') === 'on' });
+		} catch (err) {
+			if (err instanceof WorldVersionError) return fail(400, { ok: false, message: err.message, newerWorld: folder });
+			return refused(err);
+		}
+		const name = (await listWorlds(instance)).find((w) => w.folder === folder)?.name ?? folder;
+		return { ok: true, message: `${name} is the active world now; the server loads it on its next start.` };
+	},
+
+	createWorld: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const seed = String(form.get('seedMode')) === 'set' ? String(form.get('seed') ?? '').trim() : null;
+		if (seed === '') return fail(400, { ok: false, message: 'Enter the seed to use.' });
+		try {
+			await createWorld(instance, {
+				name: String(form.get('name') ?? ''),
+				seed,
+				copyDatapacks: form.get('copyDatapacks') === 'on',
+				keepMap: form.get('keepMap') === 'on'
+			});
+		} catch (err) {
+			return refused(err);
+		}
+		return { ok: true, message: 'The new world is the active one; the server generates it on its next start.' };
+	},
+
+	renameWorld: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await renameWorld(instance, String(form.get('world') ?? ''), String(form.get('name') ?? ''));
+		} catch (err) {
+			return refused(err);
+		}
+		return { ok: true, message: 'Renamed.' };
+	},
+
+	deleteWorld: async ({ request, params, locals }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const snapshots = form.get('snapshots') === 'on';
+		if (snapshots) requireAccess(locals, instance.id, 'backups.delete');
+		try {
+			const removed = await deleteWorld(instance, String(form.get('world') ?? ''), { snapshots });
+			return {
+				ok: true,
+				message: `World deleted; its folders are in the trash (Files) for now.${removed ? ` ${removed} snapshot${removed === 1 ? '' : 's'} of it deleted too.` : ''}`
+			};
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	worldFromSnapshot: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await worldFromSnapshot(instance, String(form.get('id') ?? ''), String(form.get('name') ?? ''));
+			return { ok: true, message: 'Copying the snapshot into a new world; it shows under Worlds when the task finishes.' };
 		} catch (err) {
 			return refused(err);
 		}

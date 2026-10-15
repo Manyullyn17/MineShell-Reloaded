@@ -9,6 +9,30 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Several worlds per server
+
+Built 2026-10-15 (World tab, Worlds). Every world is a folder in the server folder - the
+active one is what `level-name` names - so switching rewrites `level-name` (and the world's
+seed, level type and generator settings) while the server is stopped and moves no world.
+The user's calls: worlds stay where they are; one snapshot budget for all of a server's
+worlds, with a warning that an inactive world's snapshots can be pushed out (pin to keep);
+an option on each switch to keep the leaving world's map (on by default); game settings stay
+the server's for now; a world last run on a newer Minecraft is a warning with a bypass, not
+a refusal. What MineShell keeps per world (name, settings, `pack_datapacks`, last run, kept
+map's size) is `.mineshell/worlds.json`, so a server's copy has it too. Rename changes the
+name only (snapshots and kept maps know a world by its folder). Added beyond the plan: a new
+world copies the active world's data packs (with the pack's among them) unless unticked;
+any full snapshot can become a world of its own ("New world"), which is also the way back to
+a deleted world; deleting a world puts its folders in the trash. Uploading a zip as a new
+world (asked for while it was built): it arrives inactive, so it works on a running server;
+on a stopped one "Make it the active world" is offered (user's call: not shown while it
+runs), and an upload from a newer Minecraft stays inactive for the switch's warning. A world
+made and left before its first start has no folder, only its record (seed), and stays listed. Sizes are on the disk usage
+page ("Inactive worlds"), not in the list: walking every world on each page load is slow.
+The restore guard came first as a fix: a snapshot taken under another `level-name` was put
+back beside the world the server loads. Tried on a throwaway dev server (pages, phone
+width, the actions); a real server was not booted on a switched world.
+
 ### Notifications (Discord, ntfy, webhooks)
 
 Built 2026-10-15. The user's calls: one destination for MineShell, a server can have its own

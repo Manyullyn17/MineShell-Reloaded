@@ -131,7 +131,7 @@ is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain
 | Tool | Use |
 |---|---|
 | `seed-instance.mjs <data dir> <id> [--loader, --loader-version, --mc, --pack source:project:versionId[:name[:pack]], --port, --memory]` | A server row without installing anything: a pack server on an old version, a Fabric server on an old loader. Start the dev server once first (migrations) |
-| `pageshot.mjs <url> <out.png> [--width 390] [--height px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--dialog accept\|dismiss]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check. `--click` presses a button first, answering any confirm() it opens (printed) |
+| `pageshot.mjs <url> <out.png> [--width 390] [--height px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--dialog accept\|dismiss]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check. `--click` presses a button first (repeatable, in order: a sub-tab, then a button in it), answering any confirm() it opens (printed) |
 | `act.mjs <page url>?/<action> [field=value ...]` | Posts to a form action as the page does and prints the decoded answer: drives a throwaway MineShell (MINESHELL_AUTH=off) from a script |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
@@ -292,6 +292,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The overview's heap size and the memory limit's check used the saved heap while the server still ran with the old one | `heap.test.ts` |
 | Spark's upload timed out (its server answered 502): the saved profile was only a path in the list | `spark.test.ts`, `flows/spark-profile.test.ts` |
 | (feature) Snapshot names and tags: only the manifest changes, clearing removes them, tidied and limited | `flows/snapshots.test.ts` |
+| (feature) Several worlds per server: new world, switching with per-world settings, data packs and maps, snapshots only of the active world, the newer-version warning, a crash mid-switch, deleting, a world from a snapshot or an upload | `flows/worlds.test.ts` |
 | (feature) Files over SFTP: the link, sshd_config's port, what the settings accept | `sftp.test.ts` (shared and server) |
 | A jar put into mods/ by hand became a "pack mod" at the next pack change's sync, and the change after removed it | `flows/pack-change.test.ts` |
 | (feature) Pack change rollback: exact configs, user mods kept, failure restores all, world from the snapshot, Minecraft moves need it | `flows/pack-rollback.test.ts` |

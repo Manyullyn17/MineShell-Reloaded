@@ -8,6 +8,7 @@ import { serverWorldName } from './packworld';
 import { listSnapshots, SNAPSHOTS_DIR, worldFolders } from './snapshots';
 import { TRASH_DIR } from './trash';
 import { mapDataSize } from './worldmap';
+import { listWorlds } from './worlds';
 
 /**
  * Where a server's disk space goes, for the Files tab: the world split by
@@ -28,7 +29,7 @@ export type UsageItem = {
 
 export type UsageGroup = { id: GroupId; label: string; bytes: number; items: UsageItem[] };
 
-type GroupId = 'world' | 'map' | 'mineshell' | 'trash' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
+type GroupId = 'world' | 'worlds' | 'map' | 'mineshell' | 'trash' | 'old-configs' | 'logs' | 'mods' | 'loader' | 'other';
 
 export type Suggestion = {
 	text: string;
@@ -42,6 +43,7 @@ export type DiskBreakdown = { total: number; groups: UsageGroup[]; suggestions: 
 
 const GROUP_LABELS: Record<GroupId, string> = {
 	world: 'World',
+	worlds: 'Inactive worlds',
 	map: 'World map',
 	mineshell: 'Snapshots and MineShell backups',
 	trash: 'Deleted files in the trash',
@@ -179,6 +181,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 	const root = instance.path;
 	const items: Record<GroupId, UsageItem[]> = {
 		world: [],
+		worlds: [],
 		map: [],
 		mineshell: [],
 		trash: [],
@@ -193,6 +196,19 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 	const levelWorld = await serverWorldName(root);
 	const snapshots = new Map((await listSnapshots(root)).map((s) => [s.id, s]));
 	const suggestions: Suggestion[] = [];
+	// The server's other worlds, by their top-level folders (worlds.ts).
+	const inactive = new Map<string, string>();
+	const keptMaps: UsageItem[] = [];
+	for (const w of await listWorlds(instance)) {
+		if (w.active) continue;
+		if (w.mapBytes) {
+			keptMaps.push({ label: `Map of ${w.name}, kept while it is inactive`, path: '#map', bytes: w.mapBytes, outside: true });
+		}
+		for (const folder of w.folders) {
+			const suffix = SIBLING_LABELS.find(([s]) => folder === `${w.folder}${s}`);
+			if (!folder.includes('/')) inactive.set(folder, suffix ? `${w.name}: ${suffix[1]}` : w.name);
+		}
+	}
 
 	for (const entry of await entries(root)) {
 		const name = entry.name;
@@ -201,6 +217,8 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 			const sibling = SIBLING_LABELS.find(([suffix]) => name === `${levelWorld}${suffix}`);
 			if (sibling) items.world.push({ label: sibling[1], path: name, bytes: await sizeOf(full) });
 			else items.world.push(...(await worldItems(root, name)));
+		} else if (inactive.has(name)) {
+			items.worlds.push({ label: inactive.get(name)!, path: name, bytes: await sizeOf(full) });
 		} else if (name === '.mineshell') {
 			for (const sub of await entries(full)) {
 				const rel = path.join(name, sub.name);
@@ -242,6 +260,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		}
 	}
 
+	items.map.push(...keptMaps);
 	// The map MineShell renders (BlueMap) is kept in its own data folder, not the server's.
 	const rendered = await mapDataSize(instance.id).catch(() => 0);
 	if (rendered) {

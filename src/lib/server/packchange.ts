@@ -28,6 +28,7 @@ import { startTask, type TaskHandle } from './tasks';
 import { applyCleanroomModFixes, isCleanroomRequiredJar } from './cleanroom';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { datapackNames, isDatapackFile, packWorldFiles, packWorldName, serverWorldName } from './packworld';
+import { worldFolderNames } from './worlds';
 import {
 	beginOperation,
 	commitOperation,
@@ -431,7 +432,8 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 			remove,
 			keep: packRows.length - remove.length - packUpdates.length
 		},
-		configs: packTopLevel(pack, worldTopsFor(worldFolder, packFolder)),
+		// The server's other worlds are worlds too, not config folders the pack happens to name.
+		configs: packTopLevel(pack, worldTopsFor(worldFolder, packFolder, ...(await worldFolderNames(instance.path)))),
 		world: {
 			folder: worldFolder,
 			packFolder,
@@ -475,7 +477,7 @@ async function mergeBase(instance: ServerInstance, task: TaskHandle): Promise<Ba
 		const { pack } = await resolveProviderPack(instance.packSource, instance.packProjectId, instance.packVersionId);
 		await loadOverridesArchive(pack, task);
 		const world = await serverWorldName(instance.path);
-		return baseFromFiles(packFiles(pack, worldTopsFor(world, packWorldName(pack))));
+		return baseFromFiles(packFiles(pack, worldTopsFor(world, packWorldName(pack), ...(await worldFolderNames(instance.path)))));
 	} catch (err) {
 		task.log(`Could not read the installed version’s original configs: ${err instanceof Error ? err.message : 'unknown error'}.`);
 		return null;
@@ -676,7 +678,7 @@ export async function applyPackChange(
 
 			// 4. New pack files: mods not already present, plus everything outside mods/.
 			const present = new Set([...modsBefore].filter((n) => !(plan.packUpdates ?? []).includes(n)).map(baseName));
-			const worldTops = worldTopsFor(plan.world.folder, plan.world.packFolder);
+			const worldTops = worldTopsFor(plan.world.folder, plan.world.packFolder, ...(await worldFolderNames(instance.path)));
 			const packWorldPrefix = `${plan.world.packFolder}/`;
 			const newWorldFiles = new Set(plan.world.newFiles);
 			// A world file is written to the server's world folder: data packs

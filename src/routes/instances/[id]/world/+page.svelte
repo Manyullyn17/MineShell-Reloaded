@@ -14,26 +14,49 @@
 	const base = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/world`);
 	const busy = $derived(data.instance.status === 'provisioning');
 
-	let view = $state<'snapshots' | 'pregen' | 'prune' | 'reset'>('snapshots');
+	let view = $state<'snapshots' | 'worlds' | 'pregen' | 'prune' | 'reset'>('snapshots');
 	const snapshotBytes = $derived(data.snapshots.reduce((sum, s) => sum + s.sizeBytes, 0));
 	let pendingRestore = $state<string | null>(null);
 	let pendingDelete = $state<string | null>(null);
 	let pendingEdit = $state<string | null>(null);
+	let pendingNewWorld = $state<string | null>(null);
 	/** Opens one confirm/edit row under a snapshot, closing the others; again on the same one closes it. */
-	function openRow(kind: 'restore' | 'delete' | 'edit', id: string) {
-		const open = { restore: pendingRestore, delete: pendingDelete, edit: pendingEdit }[kind] !== id;
+	function openRow(kind: 'restore' | 'delete' | 'edit' | 'world', id: string) {
+		const open = { restore: pendingRestore, delete: pendingDelete, edit: pendingEdit, world: pendingNewWorld }[kind] !== id;
 		pendingRestore = open && kind === 'restore' ? id : null;
 		pendingDelete = open && kind === 'delete' ? id : null;
 		pendingEdit = open && kind === 'edit' ? id : null;
+		pendingNewWorld = open && kind === 'world' ? id : null;
 	}
+	/** A world's name by its folder; a deleted world's folder stays its name. */
+	const worldName = (folder: string) => data.serverWorlds.find((w) => w.folder === folder)?.name ?? folder;
+	// Snapshots are listed per world, the active one first.
+	let snapshotWorld = $state<string | null>(null);
+	const snapshotWorlds = $derived(
+		[data.levelName, ...new Set(data.snapshots.map((s) => s.worldFolder).filter((f) => f !== data.levelName))]
+	);
+	const shownWorld = $derived(snapshotWorld && snapshotWorlds.includes(snapshotWorld) ? snapshotWorld : data.levelName);
+	const worldSnapshots = $derived(data.snapshots.filter((s) => s.worldFolder === shownWorld));
 	// The user's tags, to show only the snapshots with one.
 	let tagFilter = $state<string | null>(null);
 	const allTags = $derived(
-		[...new Set(data.snapshots.flatMap((s) => s.tags ?? []))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+		[...new Set(worldSnapshots.flatMap((s) => s.tags ?? []))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 	);
 	const shownSnapshots = $derived(
-		tagFilter && allTags.includes(tagFilter) ? data.snapshots.filter((s) => s.tags?.includes(tagFilter!)) : data.snapshots
+		tagFilter && allTags.includes(tagFilter) ? worldSnapshots.filter((s) => s.tags?.includes(tagFilter!)) : worldSnapshots
 	);
+
+	// ---- worlds
+	let pendingWorld = $state<{ kind: 'switch' | 'rename' | 'delete'; folder: string } | null>(null);
+	function openWorldRow(kind: 'switch' | 'rename' | 'delete', folder: string) {
+		pendingWorld = pendingWorld?.kind === kind && pendingWorld.folder === folder ? null : { kind, folder };
+	}
+	const activeWorld = $derived(data.serverWorlds.find((w) => w.active));
+	let newWorldSeed = $state<'random' | 'set'>('random');
+	const closeWorldRow = () => async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+		pendingWorld = null;
+		await update();
+	};
 	let seedMode = $state<'keep' | 'random' | 'set'>('keep');
 
 	// ---- Chunky pre-generation
@@ -100,7 +123,37 @@
 	let uploadMessage = $state('');
 	let uploadError = $state('');
 
-	function uploadWorld(event: SubmitEvent) {
+	/** Sends a world zip to the endpoint; resolves with the answer's message, or the error's. */
+	function putWorld(file: File, params: URLSearchParams, onProgress: (percent: number) => void): Promise<{ ok: boolean; message?: string }> {
+		return new Promise((resolve) => {
+			const xhr = new XMLHttpRequest();
+			xhr.open('PUT', `${base}?${params}`);
+			xhr.upload.onprogress = (e) => {
+				if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+			};
+			xhr.onload = () => {
+				const body = (() => {
+					try {
+						return JSON.parse(xhr.responseText);
+					} catch {
+						return {};
+					}
+				})();
+				if (xhr.status >= 200 && xhr.status < 300) resolve({ ok: true });
+				else
+					resolve({
+						ok: false,
+						message:
+							body.message ??
+							(xhr.status === 413 ? 'The file is bigger than this MineShell accepts (BODY_SIZE_LIMIT).' : 'The upload failed.')
+					});
+			};
+			xhr.onerror = () => resolve({ ok: false, message: 'The upload failed.' });
+			xhr.send(file);
+		});
+	}
+
+	async function uploadWorld(event: SubmitEvent) {
 		event.preventDefault();
 		const formEl = event.currentTarget as HTMLFormElement;
 		const fields = new FormData(formEl);
@@ -113,40 +166,51 @@
 		const params = new URLSearchParams();
 		const snapshot = fields.get('snapshot');
 		if (snapshot) params.set('snapshot', String(snapshot));
-		const xhr = new XMLHttpRequest();
-		xhr.open('PUT', `${base}?${params}`);
-		xhr.upload.onprogress = (e) => {
-			if (e.lengthComputable) uploadPercent = Math.round((e.loaded / e.total) * 100);
-		};
-		xhr.onload = () => {
-			uploadPercent = null;
-			const body = (() => {
-				try {
-					return JSON.parse(xhr.responseText);
-				} catch {
-					return {};
-				}
-			})();
-			if (xhr.status >= 200 && xhr.status < 300) {
-				uploadError = '';
-				uploadMessage = 'Uploaded. Replacing the world; follow it in Tasks.';
-				formEl.reset();
-				void refreshAll();
-			} else {
-				uploadMessage = '';
-				uploadError =
-					body.message ??
-					(xhr.status === 413 ? 'The file is bigger than this MineShell accepts (BODY_SIZE_LIMIT).' : 'The upload failed.');
-			}
-		};
-		xhr.onerror = () => {
-			uploadPercent = null;
-			uploadError = 'The upload failed.';
-		};
 		uploadError = '';
 		uploadMessage = '';
 		uploadPercent = 0;
-		xhr.send(file);
+		const result = await putWorld(file, params, (p) => (uploadPercent = p));
+		uploadPercent = null;
+		if (result.ok) {
+			uploadMessage = 'Uploaded. Replacing the world; follow it in Tasks.';
+			formEl.reset();
+			void refreshAll();
+		} else uploadError = result.message ?? 'The upload failed.';
+	}
+
+	// An upload that becomes a new world beside the others (Worlds).
+	let newUploadPercent = $state<number | null>(null);
+	let newUploadMessage = $state('');
+	let newUploadError = $state('');
+	let uploadActivate = $state(false);
+
+	async function uploadNewWorld(event: SubmitEvent) {
+		event.preventDefault();
+		const formEl = event.currentTarget as HTMLFormElement;
+		const fields = new FormData(formEl);
+		const file = fields.get('world');
+		const name = String(fields.get('name') ?? '').trim();
+		if (!(file instanceof File) || !file.size) {
+			newUploadError = 'Choose a zip first.';
+			return;
+		}
+		newUploadError = '';
+		newUploadMessage = '';
+		newUploadPercent = 0;
+		const params = new URLSearchParams({ newWorld: name || file.name.replace(/\.zip$/i, '') });
+		const activate = fields.get('activate') === 'on';
+		if (activate) params.set('activate', '1');
+		if (fields.get('keepMap') === 'on') params.set('keepMap', '1');
+		const result = await putWorld(file, params, (p) => (newUploadPercent = p));
+		newUploadPercent = null;
+		if (result.ok) {
+			newUploadMessage = activate
+				? 'Uploaded. Unpacking it; it becomes the active world when the task finishes.'
+				: 'Uploaded. Unpacking it as a new world; it shows here when the task finishes.';
+			uploadActivate = false;
+			formEl.reset();
+			void refreshAll();
+		} else newUploadError = result.message ?? 'The upload failed.';
 	}
 
 	function differs(s: (typeof data.snapshots)[number]) {
@@ -160,7 +224,7 @@
 
 <div class="subhead">
 	<nav class="subtabs" aria-label="World sections">
-		{#each ([['snapshots', 'Snapshots'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || may('world')) as [id, label] (id)}
+		{#each ([['snapshots', 'Snapshots'], ['worlds', 'Worlds'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || id === 'worlds' || may('world')) as [id, label] (id)}
 			<button type="button" aria-current={view === id ? 'page' : undefined} onclick={() => (view = id)}>{label}</button>
 		{/each}
 	</nav>
@@ -221,6 +285,24 @@
 	{#if data.snapshots.length === 0}
 		<div class="empty"><p>No snapshots yet.</p></div>
 	{:else}
+		{#if snapshotWorlds.length > 1}
+			<div class="chips tag-filter" role="group" aria-label="Show snapshots of">
+				{#each snapshotWorlds as folder (folder)}
+					<button type="button" class="chip" aria-pressed={shownWorld === folder} onclick={() => (snapshotWorld = folder)}>
+						{worldName(folder)}{folder === data.levelName ? ' (active)' : ''}<span class="count"
+							>{data.snapshots.filter((s) => s.worldFolder === folder).length}</span
+						>
+					</button>
+				{/each}
+			</div>
+			{#if shownWorld !== data.levelName}
+				<p class="hint">
+					Snapshots of a world that is not active restore once it is active again (Worlds), or become a new world of
+					their own. They count towards this server's snapshot limits like the others, so newer snapshots can push them
+					out: pin the ones to keep.
+				</p>
+			{/if}
+		{/if}
 		{#if allTags.length}
 			<div class="chips tag-filter" role="group" aria-label="Show snapshots tagged">
 				<button type="button" class="chip" aria-pressed={!tagFilter || !allTags.includes(tagFilter)} onclick={() => (tagFilter = null)}>
@@ -233,6 +315,9 @@
 				{/each}
 			</div>
 		{/if}
+		{#if worldSnapshots.length === 0}
+			<div class="empty"><p>No snapshots of this world yet.</p></div>
+		{:else}
 		<div class="table-box">
 		<table>
 			<thead>
@@ -260,7 +345,6 @@
 							{/if}
 							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
 							{#if s.partial}<span class="tag">part of the world</span>{/if}
-							{#if !s.ofThisWorld}<span class="tag warn">another world</span>{/if}
 							{#each s.tags ?? [] as tag (tag)}<span class="tag">{tag}</span>{/each}
 							<div class="faint small mono">{s.worlds.join(', ')}</div>
 						</td>
@@ -294,8 +378,13 @@
 										type="button"
 										class="button-quiet"
 										disabled={data.running || busy || !s.ofThisWorld}
-										title={s.ofThisWorld ? undefined : `Taken of another world; the server uses ${data.levelName} now. Set World folder back in Settings to restore it.`}
+										title={s.ofThisWorld ? undefined : `Of ${worldName(s.worldFolder)}, which is not the active world: switch to it under Worlds to restore this.`}
 										onclick={() => openRow('restore', s.id)}>Restore</button
+									>
+								{/if}
+								{#if may('world') && !s.partial}
+									<button type="button" class="button-quiet" title="Copy it out as a world of its own, beside the others" onclick={() => openRow('world', s.id)}
+										>New world</button
 									>
 								{/if}
 								{#if may('backups.delete')}
@@ -352,6 +441,36 @@
 									<div class="button-row">
 										<button class="button-primary" type="submit">Restore this snapshot</button>
 										<button class="button-quiet" type="button" onclick={() => (pendingRestore = null)}>Cancel</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{:else if pendingNewWorld === s.id}
+						<tr class="confirm-row">
+							<td colspan="5">
+								<form
+									method="POST"
+									action="?/worldFromSnapshot"
+									class="snapshot-edit"
+									use:enhance={() => async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') pendingNewWorld = null;
+									}}
+								>
+									<input type="hidden" name="id" value={s.id} />
+									<div class="field">
+										<label for="snap-world-{s.id}">Name of the new world</label>
+										<input
+											id="snap-world-{s.id}"
+											name="name"
+											maxlength="60"
+											value="{worldName(s.worldFolder)}, {formatDateTime(s.createdAt)}"
+										/>
+										<p class="hint">Copied beside the other worlds, not active; switch to it under Worlds. The server may keep running.</p>
+									</div>
+									<div class="button-row">
+										<button class="button-primary" type="submit">Make the world</button>
+										<button class="button-quiet" type="button" onclick={() => (pendingNewWorld = null)}>Cancel</button>
 									</div>
 								</form>
 							</td>
@@ -415,6 +534,7 @@
 			</tbody>
 		</table>
 		</div>
+		{/if}
 	{/if}
 	{#if data.running && data.worlds.length}
 		<p class="faint small after">
@@ -423,6 +543,239 @@
 		</p>
 	{/if}
 </section>
+{:else if view === 'worlds'}
+<section class="view">
+	<div class="section-head">
+		<div>
+			<h2>Worlds</h2>
+			<p>
+				Each world is a folder in the server folder; the server loads the active one. Switching moves no world, so the
+				others stay as they were, with their own seed and data packs. Snapshots are taken of the active world; those of the
+				others wait under Snapshots until their world is active again, and share this server's snapshot limits, so pin the
+				ones to keep.
+			</p>
+		</div>
+	</div>
+
+	<div class="table-box">
+		<table>
+			<thead>
+				<tr>
+					<th>World</th>
+					<th class="nowrap">Ran on</th>
+					<th class="nowrap">Snapshots</th>
+					<th><span class="visually-hidden">Actions</span></th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.serverWorlds as w (w.folder)}
+					<tr>
+						<td>
+							<strong>{w.name}</strong>
+							{#if w.active}<span class="tag accent">active</span>{/if}
+							{#if !w.generated}<span class="tag" title="Not generated yet: the server makes it on its next start as the active world">new</span>{/if}
+							{#if w.mapKept}<span class="tag">map kept</span>{/if}
+							<div class="faint small mono">{w.folders.join(', ') || w.folder}</div>
+						</td>
+						<td class="small nowrap" class:warn-text={!!w.newer || !!w.otherLoader}>
+							{#if w.active}
+								{data.current.minecraftVersion}, {data.current.modloader}
+							{:else if w.lastRun}
+								{w.version ?? w.lastRun.minecraftVersion}, {w.lastRun.modloader}{w.lastRun.modloaderVersion ? ` ${w.lastRun.modloaderVersion}` : ''}
+								{#if w.lastRun.packVersionName}<div class="faint">{w.lastRun.packVersionName}</div>{/if}
+							{:else}
+								{w.version ?? '-'}
+							{/if}
+							{#if w.leftAt}<div class="faint">left {formatRelative(w.leftAt)}</div>{/if}
+						</td>
+						<td class="mono small">{w.snapshots || '-'}</td>
+						<td>
+							<div class="row-actions">
+								{#if may('world') && !w.active}
+									<button type="button" class="button-quiet" disabled={data.running || busy} onclick={() => openWorldRow('switch', w.folder)}>
+										Switch to
+									</button>
+								{/if}
+								{#if may('world')}
+									<button type="button" class="button-quiet" onclick={() => openWorldRow('rename', w.folder)}>Rename</button>
+								{/if}
+								{#if may('files') && w.folders.length}
+									<a class="button button-quiet" href="{base}{w.active ? '' : `?world=${encodeURIComponent(w.folder)}`}" download>Download</a>
+								{/if}
+								{#if may('world') && !w.active}
+									<button type="button" class="button-quiet" disabled={busy} onclick={() => openWorldRow('delete', w.folder)}>Delete</button>
+								{/if}
+							</div>
+						</td>
+					</tr>
+					{#if pendingWorld?.folder === w.folder && pendingWorld.kind === 'switch'}
+						<tr class="confirm-row">
+							<td colspan="4">
+								<form method="POST" action="?/switchWorld" use:enhance={closeWorldRow}>
+									<input type="hidden" name="world" value={w.folder} />
+									<p>
+										Makes {w.name} the active world; the server loads it on its next start. {activeWorld?.name ?? data.levelName}
+										stays as it is, to switch back to.
+									</p>
+									{#if w.otherLoader}<p class="warn-text small">{w.otherLoader}</p>{/if}
+									{#if w.newer}
+										<p class="warn-text small">{w.newer}</p>
+										<div class="check">
+											<input id="force-{w.folder}" type="checkbox" name="force" required />
+											<label for="force-{w.folder}">Switch anyway: I know it may damage this world</label>
+										</div>
+									{/if}
+									{#if data.packServer && !w.generated}
+										<p class="small muted">Not generated yet: it starts with the data packs it was given when it was made.</p>
+									{/if}
+									{#if data.mapRendered}
+										<div class="check">
+											<input id="keep-map-{w.folder}" type="checkbox" name="keepMap" checked />
+											<label for="keep-map-{w.folder}">Keep the map of {activeWorld?.name ?? data.levelName} for when it is active again</label>
+										</div>
+									{/if}
+									{#if w.mapKept}<p class="small muted">Its own map is kept and shows on the Map tab again.</p>{/if}
+									<div class="button-row">
+										<button class="button-primary" type="submit">Switch to {w.name}</button>
+										<button class="button-quiet" type="button" onclick={() => (pendingWorld = null)}>Cancel</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'rename'}
+						<tr class="confirm-row">
+							<td colspan="4">
+								<form
+									method="POST"
+									action="?/renameWorld"
+									class="snapshot-edit"
+									use:enhance={() => async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') pendingWorld = null;
+									}}
+								>
+									<input type="hidden" name="world" value={w.folder} />
+									<div class="field">
+										<label for="world-name-{w.folder}">Name</label>
+										<input id="world-name-{w.folder}" name="name" maxlength="60" value={w.name} />
+										<p class="hint">Its folder stays <code>{w.folder}</code>.</p>
+									</div>
+									<div class="button-row">
+										<button class="button-primary" type="submit">Save</button>
+										<button class="button-quiet" type="button" onclick={() => (pendingWorld = null)}>Cancel</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'delete'}
+						<tr class="confirm-row">
+							<td colspan="4">
+								<form method="POST" action="?/deleteWorld" use:enhance={closeWorldRow}>
+									<input type="hidden" name="world" value={w.folder} />
+									<p>Delete {w.name}? Its folders go to the trash, where Files can put them back until the trash is emptied.</p>
+									{#if w.snapshots && may('backups.delete')}
+										<div class="check">
+											<input id="delete-snaps-{w.folder}" type="checkbox" name="snapshots" />
+											<label for="delete-snaps-{w.folder}">Also delete its {w.snapshots} snapshot{w.snapshots === 1 ? '' : 's'} (pinned ones stay)</label>
+										</div>
+									{/if}
+									<div class="button-row">
+										<button class="button-danger" type="submit">Yes, delete</button>
+										<button class="button-quiet" type="button" onclick={() => (pendingWorld = null)}>Cancel</button>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{/if}
+				{/each}
+			</tbody>
+		</table>
+	</div>
+</section>
+
+{#if may('world')}
+	<section class="panel new-world">
+		<h2>New world</h2>
+		<p class="muted">
+			Starts a new world beside the others and makes it the active one; the server generates it on its next start, with the
+			current level type and generator settings.
+		</p>
+		<form method="POST" action="?/createWorld" use:enhance={() => async ({ result, update }) => {
+			await update({ reset: result.type === 'success' });
+		}}>
+			<div class="field restore-scope">
+				<label for="new-world-name">Name</label>
+				<input id="new-world-name" name="name" maxlength="60" required placeholder="e.g. Season 2" />
+			</div>
+			<fieldset class="seed">
+				<legend>Seed</legend>
+				<div class="check">
+					<input id="new-seed-random" type="radio" name="seedMode" value="random" bind:group={newWorldSeed} />
+					<label for="new-seed-random">Random</label>
+				</div>
+				<div class="check">
+					<input id="new-seed-set" type="radio" name="seedMode" value="set" bind:group={newWorldSeed} />
+					<label for="new-seed-set">This seed:</label>
+					<input name="seed" aria-label="Seed" disabled={newWorldSeed !== 'set'} />
+				</div>
+			</fieldset>
+			{#if data.datapackCount}
+				<div class="check">
+					<input id="copy-datapacks" type="checkbox" name="copyDatapacks" checked />
+					<label for="copy-datapacks">Copy the {data.datapackCount} data pack{data.datapackCount === 1 ? '' : 's'} of {activeWorld?.name ?? data.levelName}</label>
+				</div>
+				<p class="hint">
+					{data.packServer ? "The pack's data packs are among them; without them the new world has none of the pack's." : ''}
+					World-generation data packs only shape a world generated with them.
+				</p>
+			{/if}
+			{#if data.mapRendered}
+				<div class="check">
+					<input id="new-keep-map" type="checkbox" name="keepMap" checked />
+					<label for="new-keep-map">Keep the map of {activeWorld?.name ?? data.levelName} for when it is active again</label>
+				</div>
+			{/if}
+			{#if data.running}<p class="hint">Stop the server to start a new world.</p>{/if}
+			<button class="button-primary" type="submit" disabled={data.running || busy}>Make it and switch to it</button>
+		</form>
+	</section>
+
+	<section class="panel new-world" use:dropzone={{ disabled: newUploadPercent !== null, label: 'Drop the world zip here' }}>
+		<h2>Upload a world</h2>
+		<p class="muted">
+			A zipped world, e.g. a singleplayer save, becomes a world of its own beside the others; the active world stays as it
+			is.{data.running ? ' The server is running, so it arrives inactive: switch to it above once the server is stopped.' : ''}
+		</p>
+		<form onsubmit={uploadNewWorld}>
+			<div class="field restore-scope">
+				<label for="upload-world-name">Name</label>
+				<input id="upload-world-name" name="name" maxlength="60" placeholder="The zip's name" />
+			</div>
+			<div class="field">
+				<label for="upload-world-zip">World zip</label>
+				<input id="upload-world-zip" name="world" type="file" accept=".zip,application/zip" />
+			</div>
+			<!-- Only a stopped server can switch worlds; while it runs the upload always arrives inactive. -->
+			{#if !data.running}
+				<div class="check">
+					<input id="upload-activate" type="checkbox" name="activate" bind:checked={uploadActivate} />
+					<label for="upload-activate">Make it the active world</label>
+				</div>
+				{#if uploadActivate && data.mapRendered}
+					<div class="check">
+						<input id="upload-keep-map" type="checkbox" name="keepMap" checked />
+						<label for="upload-keep-map">Keep the map of {activeWorld?.name ?? data.levelName} for when it is active again</label>
+					</div>
+				{/if}
+			{/if}
+			<button class="button-primary" type="submit" disabled={newUploadPercent !== null}>
+				{newUploadPercent !== null ? `Uploading ${newUploadPercent}%` : 'Upload as a new world'}
+			</button>
+			{#if newUploadMessage}<p class="hint">{newUploadMessage}</p>{/if}
+			{#if newUploadError}<p class="hint warn-text">{newUploadError}</p>{/if}
+		</form>
+	</section>
+{/if}
 {:else if view === 'pregen'}
 {#if data.chunky}
 	<section class="view">
@@ -749,6 +1102,10 @@
 {/if}
 
 <style>
+	.new-world {
+		margin-top: var(--space-4);
+	}
+
 	.after {
 		margin: var(--space-3) 0 0;
 	}

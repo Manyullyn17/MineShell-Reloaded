@@ -8,6 +8,7 @@ import yauzl from 'yauzl';
 import type { ServerInstance } from './db/schema';
 import {
 	audit,
+	getInstance,
 	InstanceError,
 	rconPassword,
 	requireStopped,
@@ -19,6 +20,20 @@ import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
+import { deleteToTrash } from './trash';
+import { getMapSettings, isRenderingMap, keptMapDir, mapDir, saveMapSettings, webRoot } from './worldmap';
+import {
+	cleanWorldName,
+	freeWorldFolder,
+	listWorlds,
+	newerWorldWarning,
+	readWorldMeta,
+	snapshotWorldFolder,
+	WORLD_PROPERTY_KEYS,
+	worldFolderNames,
+	writeWorldMeta,
+	type WorldMeta
+} from './worlds';
 import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
@@ -30,6 +45,8 @@ import {
 	getSnapshotPolicy,
 	newSnapshotId,
 	partialPath,
+	deleteSnapshot,
+	listSnapshots,
 	pruneSnapshots,
 	snapshotPath,
 	snapshotOfWorld,
@@ -235,15 +252,15 @@ export async function resetWorld(instance: ServerInstance, opts: { snapshot: boo
 }
 
 /**
- * Refuses a snapshot of another world than the one `level-name` names (taken
- * before World folder was changed): restored, it would sit beside the world
- * the server loads, and the old world would be moved aside for nothing.
+ * Refuses a snapshot of another world than the active one: restored, it would
+ * sit beside the world the server loads, and that world would be moved aside
+ * for nothing.
  */
 async function requireOfActiveWorld(root: string, snapshot: Snapshot): Promise<void> {
 	const level = await serverWorldName(root);
 	if (snapshotOfWorld(snapshot, level)) return;
 	throw new InstanceError(
-		`This snapshot is of another world (${snapshot.world ?? snapshot.worlds.join(', ')}); the server now uses ${level}. Set World folder back to it in Settings to restore this snapshot.`
+		`This snapshot is of another world (${snapshot.world ?? snapshot.worlds.join(', ')}) than the active one (${level}). Switch to that world under Worlds to restore it, or make a new world from it.`
 	);
 }
 
@@ -506,6 +523,289 @@ export async function snapshotNow(
 	return taskId;
 }
 
+// ------------------------------------------------------------ worlds ---
+
+export type WorldSwitchJournal = Extract<Journal, { kind: 'world-switch' }>;
+
+/** Switching to a world that last ran on a newer Minecraft; the form asks, `force` goes ahead. */
+export class WorldVersionError extends Error {}
+
+const keptWeb = (instanceId: string, world: string) => path.join(keptMapDir(instanceId, world), 'web');
+
+/**
+ * Undoes a world switch from its journal: the map's web app back where it
+ * was, `level-name` and the world's settings as before. What moved is read
+ * from disk: the leaving map (kept or in `discard`) existing means it moved,
+ * and then whatever is active now is the arriving world's.
+ */
+export async function restoreWorldSwitch(instanceId: string, root: string, journal: WorldSwitchJournal): Promise<void> {
+	const web = webRoot(instanceId);
+	const arriving = keptWeb(instanceId, journal.to);
+	const putBack = async () => {
+		await fs.mkdir(path.dirname(arriving), { recursive: true });
+		await fs.rename(web, arriving);
+	};
+	if (journal.hadMap) {
+		const aside = journal.discard ?? keptWeb(instanceId, journal.from);
+		if (await exists(aside)) {
+			if (await exists(web)) await putBack();
+			await fs.rename(aside, web);
+		}
+	} else if (await exists(web)) {
+		await putBack();
+	}
+	await patchProperties(root, journal.propertiesBefore);
+}
+
+/**
+ * Makes `to` the active world: what the leaving world had is recorded for
+ * when it comes back, the map's web app swaps with the arriving world's kept
+ * one (the leaving one kept, or deleted without `keepMap`), and `level-name`
+ * and the world's own settings are written. Journalled: nothing in the
+ * server folder moves, so a failure only has the map and the properties to
+ * put back.
+ */
+async function activateWorld(
+	instance: ServerInstance,
+	to: string,
+	opts: { keepMap: boolean; properties: Record<string, string>; packDatapacks: string | null; arriving?: WorldMeta }
+): Promise<void> {
+	const root = instance.path;
+	const from = await serverWorldName(root);
+	const { values } = await readProperties(root);
+	const setting = { 'level-name': to, ...opts.properties };
+	const web = webRoot(instance.id);
+	const hadMap = await exists(web);
+	// A leftover from before would read as this switch's move.
+	await fs.rm(keptWeb(instance.id, from), { recursive: true, force: true });
+	const journal: WorldSwitchJournal = {
+		kind: 'world-switch',
+		from,
+		to,
+		propertiesBefore: Object.fromEntries(Object.keys(setting).map((k) => [k, values[k] ?? ''])),
+		hadMap,
+		discard: hadMap && !opts.keepMap ? path.join(mapDir(instance.id), `discard-${Date.now()}`) : null
+	};
+	begin(instance.id, journal);
+	try {
+		const meta = await readWorldMeta(root);
+		const arriving = { ...meta.worlds[to], ...opts.arriving };
+		const map = getMapSettings(instance.id);
+		const { map: _map, ...leaving } = meta.worlds[from] ?? {};
+		meta.worlds[from] = {
+			...leaving,
+			// Only those set: an empty level-type is not the default one to every version.
+			properties: Object.fromEntries(WORLD_PROPERTY_KEYS.filter((k) => k in values).map((k) => [k, values[k]])),
+			packDatapacks: instance.packDatapacks,
+			...((await exists(path.join(root, from, 'level.dat')))
+				? {
+						lastRun: {
+							minecraftVersion: instance.minecraftVersion,
+							modloader: instance.modloader,
+							modloaderVersion: instance.modloaderVersion,
+							packVersionName: instance.packVersionName
+						}
+					}
+				: {}),
+			leftAt: Date.now(),
+			...(hadMap && opts.keepMap ? { map: { lastRenderAt: map.lastRenderAt, sizeBytes: map.sizeBytes } } : {})
+		};
+		const { map: arrivingMap, ...arrivingRest } = arriving;
+		meta.worlds[to] = arrivingRest;
+
+		if (hadMap) {
+			const aside = journal.discard ?? keptWeb(instance.id, from);
+			await fs.mkdir(path.dirname(aside), { recursive: true });
+			await fs.rename(web, aside);
+		}
+		if (await exists(keptWeb(instance.id, to))) await fs.rename(keptWeb(instance.id, to), web);
+		await patchProperties(root, setting);
+		await writeWorldMeta(root, meta);
+		commitOperation(instance.id, { packDatapacks: opts.packDatapacks });
+		saveMapSettings(instance.id, {
+			lastRenderAt: arrivingMap?.lastRenderAt ?? null,
+			sizeBytes: arrivingMap?.sizeBytes ?? null
+		});
+	} catch (err) {
+		await restoreWorldSwitch(instance.id, root, journal);
+		endOperation(instance.id);
+		throw err;
+	}
+	if (journal.discard) await fs.rm(journal.discard, { recursive: true, force: true });
+	await fs.rm(keptMapDir(instance.id, to), { recursive: true, force: true });
+	// Only when empty: the other worlds' kept maps are in it.
+	await fs.rmdir(path.dirname(keptMapDir(instance.id, to))).catch(() => undefined);
+	audit('instance.world_switched', { instanceId: instance.id, detail: `${from} -> ${to}` });
+}
+
+async function requireSwitchable(instance: ServerInstance): Promise<void> {
+	await requireStopped(instance);
+	if (isRenderingMap(instance.id)) throw new InstanceError('The map is being updated; wait for it to finish first.');
+}
+
+/**
+ * Makes another of the server's worlds the active one. A world that last ran
+ * on a newer Minecraft is refused with WorldVersionError unless `force`.
+ */
+export async function switchWorld(instance: ServerInstance, folder: string, opts: { keepMap: boolean; force?: boolean }): Promise<void> {
+	await requireSwitchable(instance);
+	const world = (await listWorlds(instance)).find((w) => w.folder === folder);
+	if (!world) throw new InstanceError('That world is not on this server.');
+	if (world.active) throw new InstanceError(`${world.name} is already the active world.`);
+	const warning = newerWorldWarning(instance, world);
+	if (warning && !opts.force) throw new WorldVersionError(warning);
+	const own = (await readWorldMeta(instance.path)).worlds[folder];
+	await activateWorld(instance, folder, {
+		keepMap: opts.keepMap,
+		// One MineShell has never seen active: its seed is in its level.dat, not in level-seed.
+		properties: own?.properties ?? { 'level-seed': '' },
+		packDatapacks: own?.packDatapacks ?? null
+	});
+}
+
+/**
+ * Starts a new world beside the others and makes it active; the server
+ * generates it on its next start. Level type and generator settings stay as
+ * they are. `copyDatapacks` copies the current world's data packs into it
+ * (world-generation ones apply from the first start), and with them which of
+ * them came with the pack.
+ */
+export async function createWorld(
+	instance: ServerInstance,
+	opts: { name: string; seed: string | null; copyDatapacks: boolean; keepMap: boolean }
+): Promise<string> {
+	await requireSwitchable(instance);
+	const root = instance.path;
+	let name: string;
+	try {
+		name = cleanWorldName(opts.name);
+	} catch (err) {
+		throw new InstanceError((err as Error).message);
+	}
+	const folder = await freeWorldFolder(root, name);
+	const datapacks = path.join(root, await serverWorldName(root), 'datapacks');
+	const copying = opts.copyDatapacks && (await fs.readdir(datapacks).catch(() => [])).length > 0;
+	if (copying) await fs.cp(datapacks, path.join(root, folder, 'datapacks'), { recursive: true, preserveTimestamps: true });
+	try {
+		await activateWorld(instance, folder, {
+			keepMap: opts.keepMap,
+			properties: { 'level-seed': opts.seed ?? '' },
+			packDatapacks: copying ? instance.packDatapacks : null,
+			arriving: { name, createdAt: Date.now() }
+		});
+	} catch (err) {
+		await fs.rm(path.join(root, folder), { recursive: true, force: true });
+		throw err;
+	}
+	return folder;
+}
+
+/** Gives a world another name; its folder stays (snapshots and maps know it by that). */
+export async function renameWorld(instance: ServerInstance, folder: string, rawName: string): Promise<void> {
+	let name: string;
+	try {
+		name = cleanWorldName(rawName);
+	} catch (err) {
+		throw new InstanceError((err as Error).message);
+	}
+	if (!(await worldFolderNames(instance.path)).includes(folder)) throw new InstanceError('That world is not on this server.');
+	const meta = await readWorldMeta(instance.path);
+	meta.worlds[folder] = { ...meta.worlds[folder], name };
+	await writeWorldMeta(instance.path, meta);
+}
+
+/**
+ * Deletes a world that is not active: its folders go to the trash (Files can
+ * put them back for as long as the trash keeps them), its kept map is
+ * deleted, and with `snapshots` its unpinned snapshots too. Returns how many
+ * snapshots went.
+ */
+export async function deleteWorld(instance: ServerInstance, folder: string, opts: { snapshots: boolean }): Promise<number> {
+	if (instance.status === 'provisioning') throw new InstanceError('Wait for the current operation to finish.');
+	const root = instance.path;
+	const worlds = await listWorlds(instance);
+	const world = worlds.find((w) => w.folder === folder);
+	if (!world) throw new InstanceError('That world is not on this server.');
+	if (world.active) throw new InstanceError('This is the active world: switch to another one first.');
+	for (const rel of world.folders) await deleteToTrash(root, rel);
+	const meta = await readWorldMeta(root);
+	delete meta.worlds[folder];
+	await writeWorldMeta(root, meta);
+	await fs.rm(keptMapDir(instance.id, folder), { recursive: true, force: true });
+	let removed = 0;
+	if (opts.snapshots) {
+		const names = worlds.map((w) => w.folder);
+		for (const s of await listSnapshots(root)) {
+			if (s.pinned || snapshotWorldFolder(s, names) !== folder) continue;
+			await deleteSnapshot(root, s.id);
+			removed++;
+		}
+	}
+	audit('instance.world_deleted', { instanceId: instance.id, detail: folder });
+	return removed;
+}
+
+/**
+ * Copies a full snapshot out as a new world beside the others, not active:
+ * the way back to a deleted world, or a second copy of one. The server may
+ * run meanwhile, as nothing it uses is touched. Assembled in a
+ * `world-incoming-` folder, which recovery removes when cut short.
+ */
+export async function worldFromSnapshot(instance: ServerInstance, snapshotId: string, rawName: string): Promise<{ taskId: string; folder: string }> {
+	const root = instance.path;
+	const snapshot = await getSnapshot(root, snapshotId);
+	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
+	if (snapshot.partial) throw new InstanceError('That snapshot holds only part of a world.');
+	let name: string;
+	try {
+		name = cleanWorldName(rawName);
+	} catch (err) {
+		throw new InstanceError((err as Error).message);
+	}
+	const source = snapshotWorldFolder(snapshot, await worldFolderNames(root));
+	const target = (rel: string) => (rel === source || rel.startsWith(`${source}_`) ? rel.replace(source, '') : null);
+	if (snapshot.worlds.some((rel) => target(rel) === null)) throw new InstanceError('MineShell cannot tell which world that snapshot holds.');
+	const folder = await freeWorldFolder(root, name);
+	const mapped = snapshot.worlds.map((rel) => ({ from: rel, to: `${folder}${target(rel)}` }));
+	const from = snapshotPath(root, snapshot.id);
+	const taskId = startTask({ label: `New world from a snapshot: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		const incoming = path.join(root, '.mineshell', `world-incoming-${Date.now()}`);
+		try {
+			task.setProgress(null, `Copying snapshot ${snapshot.id}`);
+			for (const { from: rel, to } of mapped) {
+				await fs.mkdir(path.dirname(path.join(incoming, to)), { recursive: true });
+				await fs.cp(path.join(from, rel), path.join(incoming, to), {
+					recursive: true,
+					preserveTimestamps: true,
+					mode: fsConstants.COPYFILE_FICLONE
+				});
+			}
+			if ((await Promise.all(mapped.map(({ to }) => exists(path.join(root, to))))).some(Boolean)) {
+				throw new InstanceError(`Something named ${folder} appeared in the server folder meanwhile; try again.`);
+			}
+			for (const { to } of mapped) await fs.rename(path.join(incoming, to), path.join(root, to));
+			const meta = await readWorldMeta(root);
+			meta.worlds[folder] = {
+				name,
+				createdAt: Date.now(),
+				lastRun: {
+					minecraftVersion: snapshot.minecraftVersion,
+					modloader: snapshot.modloader,
+					modloaderVersion: snapshot.modloaderVersion,
+					packVersionName: snapshot.packVersionName
+				}
+			};
+			await writeWorldMeta(root, meta);
+			audit('instance.world_created', { instanceId: instance.id, detail: `${folder} from ${snapshot.id}` });
+			task.log(`${name} is a world of its own now (folder ${folder}); switch to it under Worlds.`);
+			task.setProgress(100, 'Ready');
+		} finally {
+			await fs.rm(incoming, { recursive: true, force: true });
+		}
+	});
+	return { taskId, folder };
+}
+
 // ------------------------------------------------------------ uploads ---
 
 function openZip(file: string): Promise<yauzl.ZipFile> {
@@ -567,12 +867,36 @@ async function zipNames(file: string): Promise<string[]> {
 	return names;
 }
 
-/**
- * Replace the world with an uploaded zip (already saved to `zipFile`, which
- * is deleted once the change has run). Checked before anything starts: the
- * zip must hold a world.
- */
-export async function replaceWorld(instance: ServerInstance, zipFile: string, opts: { snapshot: boolean }): Promise<string> {
+/** Unpacks the world inside a zip (its folder holding level.dat is `prefix`) into `target`. */
+async function unpackWorld(zipFile: string, names: string[], prefix: string, target: string, task: TaskHandle): Promise<void> {
+	task.setProgress(0, 'Unpacking the uploaded world');
+	await fs.mkdir(target, { recursive: true });
+	const total = names.length;
+	let done = 0;
+	const zip = await openZip(zipFile);
+	try {
+		await zipEntries(zip, async (entry) => {
+			done++;
+			const rel = entryTarget(entry.fileName, prefix);
+			if (!rel) return;
+			const out = path.join(target, rel);
+			if (entry.fileName.endsWith('/')) {
+				await fs.mkdir(out, { recursive: true });
+				return;
+			}
+			await fs.mkdir(path.dirname(out), { recursive: true });
+			await pipeline(await entryStream(zip, entry), createWriteStream(out));
+			if (done % 200 === 0) task.setProgress(Math.round((done / total) * 100));
+		});
+	} finally {
+		zip.close();
+	}
+	// The lock of whoever zipped it; the server writes its own.
+	await fs.rm(path.join(target, 'session.lock'), { force: true });
+}
+
+/** The zip's entry names and the folder in it holding level.dat; the zip is deleted when it holds no world. */
+async function worldInZip(zipFile: string): Promise<{ names: string[]; prefix: string }> {
 	let names: string[];
 	try {
 		names = await zipNames(zipFile);
@@ -585,6 +909,83 @@ export async function replaceWorld(instance: ServerInstance, zipFile: string, op
 		await fs.rm(zipFile, { force: true });
 		throw new InstanceError('There is no level.dat in that zip, so it is not a Minecraft world.');
 	}
+	return { names, prefix };
+}
+
+/**
+ * An uploaded zip (saved to `zipFile`, deleted afterwards) as a new world
+ * beside the others. Inactive, the server may run meanwhile; `activate` makes
+ * it the active world once unpacked, which needs a stopped server (checked
+ * before and again then). Unpacked in a `world-incoming-` folder, which
+ * recovery removes when cut short.
+ */
+export async function worldFromZip(
+	instance: ServerInstance,
+	zipFile: string,
+	rawName: string,
+	opts: { activate?: { keepMap: boolean } } = {}
+): Promise<{ taskId: string; folder: string }> {
+	let name: string;
+	try {
+		name = cleanWorldName(rawName);
+		if (opts.activate) await requireSwitchable(instance);
+	} catch (err) {
+		await fs.rm(zipFile, { force: true });
+		throw err instanceof InstanceError ? err : new InstanceError((err as Error).message);
+	}
+	const { names, prefix } = await worldInZip(zipFile);
+	const root = instance.path;
+	const folder = await freeWorldFolder(root, name);
+	const taskId = startTask({ label: `New world from an upload: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		const incoming = path.join(root, '.mineshell', `world-incoming-${Date.now()}`);
+		try {
+			await unpackWorld(zipFile, names, prefix, path.join(incoming, folder), task);
+			if (await exists(path.join(root, folder))) throw new InstanceError(`Something named ${folder} appeared in the server folder meanwhile; try again.`);
+			await fs.rename(path.join(incoming, folder), path.join(root, folder));
+			const meta = await readWorldMeta(root);
+			meta.worlds[folder] = { name, createdAt: Date.now() };
+			await writeWorldMeta(root, meta);
+			audit('instance.world_created', { instanceId: instance.id, detail: `${folder} from an upload` });
+			if (opts.activate) await activateUploaded(instance.id, folder, opts.activate.keepMap, task);
+			else task.log(`${name} is a world of its own now (folder ${folder}); switch to it under Worlds.`);
+			task.setProgress(100, 'Ready');
+		} finally {
+			await fs.rm(incoming, { recursive: true, force: true });
+			await fs.rm(zipFile, { force: true });
+		}
+	});
+	return { taskId, folder };
+}
+
+/**
+ * Makes an uploaded world active, unless that is no longer safe: the server
+ * was started during the upload, or the world is from a newer Minecraft
+ * (switching asks about that). Then it stays inactive, and the log says why.
+ */
+async function activateUploaded(instanceId: string, folder: string, keepMap: boolean, task: TaskHandle): Promise<void> {
+	const fresh = getInstance(instanceId);
+	const world = fresh && (await listWorlds(fresh)).find((w) => w.folder === folder);
+	if (!fresh || !world) return;
+	const refusal = await requireSwitchable(fresh).then(
+		() => newerWorldWarning(fresh, world),
+		(err) => (err instanceof Error ? err.message : 'It cannot be switched to now.')
+	);
+	if (refusal) {
+		task.log(`${world.name} was not made the active world: ${refusal} It is under Worlds, to switch to.`);
+		return;
+	}
+	task.setProgress(null, 'Making it the active world');
+	await activateWorld(fresh, folder, { keepMap, properties: { 'level-seed': '' }, packDatapacks: null });
+	task.log(`${world.name} is the active world now; the server loads it on its next start.`);
+}
+
+/**
+ * Replace the world with an uploaded zip (already saved to `zipFile`, which
+ * is deleted once the change has run). Checked before anything starts: the
+ * zip must hold a world.
+ */
+export async function replaceWorld(instance: ServerInstance, zipFile: string, opts: { snapshot: boolean }): Promise<string> {
+	const { names, prefix } = await worldInZip(zipFile);
 	const level = await serverWorldName(instance.path);
 	try {
 		return await runWorldChange(instance, {
@@ -592,33 +993,7 @@ export async function replaceWorld(instance: ServerInstance, zipFile: string, op
 			label: 'Replacing the world',
 			snapshot: opts.snapshot,
 			placing: [level],
-			assemble: async (incoming, task) => {
-				task.setProgress(0, 'Unpacking the uploaded world');
-				const target = path.join(incoming, level);
-				await fs.mkdir(target, { recursive: true });
-				const total = names.length;
-				let done = 0;
-				const zip = await openZip(zipFile);
-				try {
-					await zipEntries(zip, async (entry) => {
-						done++;
-						const rel = entryTarget(entry.fileName, prefix);
-						if (!rel) return;
-						const out = path.join(target, rel);
-						if (entry.fileName.endsWith('/')) {
-							await fs.mkdir(out, { recursive: true });
-							return;
-						}
-						await fs.mkdir(path.dirname(out), { recursive: true });
-						await pipeline(await entryStream(zip, entry), createWriteStream(out));
-						if (done % 200 === 0) task.setProgress(Math.round((done / total) * 100));
-					});
-				} finally {
-					zip.close();
-				}
-				// The lock of whoever zipped it; the server writes its own.
-				await fs.rm(path.join(target, 'session.lock'), { force: true });
-			},
+			assemble: (incoming, task) => unpackWorld(zipFile, names, prefix, path.join(incoming, level), task),
 			done: 'Replaced the world with the uploaded one.',
 			afterwards: () => fs.rm(zipFile, { force: true })
 		});
@@ -662,12 +1037,18 @@ export async function zipWorlds(dir: string, worlds: string[]): Promise<Readable
 export type WorldDownload = { stream: Readable; fileName: string };
 
 /**
- * The world, or one snapshot of it, as a zip. A running server is told to
- * stop writing (save-off, save-all flush) until the zip is done, and
- * save-on is sent however the download ends.
+ * The world, one snapshot of it, or one of the server's other worlds, as a
+ * zip. A running server is told to stop writing (save-off, save-all flush)
+ * until the zip of its active world is done, and save-on is sent however the
+ * download ends; the other worlds it does not touch.
  */
-export async function downloadWorld(instance: ServerInstance, snapshotId: string | null): Promise<WorldDownload> {
+export async function downloadWorld(instance: ServerInstance, snapshotId: string | null, worldFolder: string | null = null): Promise<WorldDownload> {
 	const safeName = instance.id;
+	if (worldFolder && worldFolder !== (await serverWorldName(instance.path))) {
+		const world = (await listWorlds(instance)).find((w) => w.folder === worldFolder);
+		if (!world?.folders.length) throw new InstanceError('That world is not on this server.');
+		return { stream: await zipWorlds(instance.path, world.folders), fileName: `${safeName}-${path.posix.basename(world.folder)}.zip` };
+	}
 	if (snapshotId) {
 		const snapshot: Snapshot | null = await getSnapshot(instance.path, snapshotId);
 		if (!snapshot) throw new InstanceError('That snapshot no longer exists.');

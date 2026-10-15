@@ -12,6 +12,7 @@ import { beginOperation, endOperation, listOperations, type Journal } from './op
 import { patchProperties, readProperties } from './properties';
 import { resetFailed, unitState } from './systemd';
 import { startTask, type TaskHandle } from './tasks';
+import { BISECT_WORLD } from './worlds';
 
 /**
  * The mod bisect assistant: finds the mod (or the pair of mods) a crash comes
@@ -36,7 +37,8 @@ import { startTask, type TaskHandle } from './tasks';
  * crash history and start times.
  */
 
-export const BISECT_WORLD = 'mineshell-bisect-world';
+// Defined with the server's worlds, which leave it out.
+export { BISECT_WORLD };
 const CONFIG_BACKUP = path.join('.mineshell', 'bisect-config');
 /** How often a test looks at the server, and how long after "Done (" it watches for the log text. Tests shorten them. */
 export const bisectTiming = { pollMs: 3000, textGraceMs: 30_000 };

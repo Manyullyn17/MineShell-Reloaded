@@ -188,7 +188,12 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			pruneCount: on('world'),
 			prune: on('world'),
 			resetDimension: on('world'),
-			reset: on('world')
+			reset: on('world'),
+			switchWorld: on('world'),
+			createWorld: on('world'),
+			renameWorld: on('world'),
+			deleteWorld: handler(on('world'), 'deleting its snapshots too: backups.delete'),
+			worldFromSnapshot: on('world')
 		}
 	},
 	// A world zip holds every player's data: file access.

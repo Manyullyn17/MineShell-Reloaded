@@ -16,7 +16,8 @@ import {
 import { restorePackChange } from './packchange';
 import { removePartialSnapshots } from './snapshots';
 import { recoverScheduledSnapshot } from './snapshotschedule';
-import { restoreWorldChange } from './world';
+import { restoreWorldChange, restoreWorldSwitch } from './world';
+import { mapDir } from './worldmap';
 import { restoreModUpdate } from './modupdates';
 import { restoreMigration } from './migrate';
 import { syncMods } from './mods';
@@ -53,6 +54,7 @@ const MESSAGES: Record<Journal['kind'], string> = {
 	'scheduled-snapshot':
 		'MineShell stopped during a scheduled snapshot; the unfinished snapshot was removed and the server put back as it was (saving on, started again if it was stopped for it).',
 	'world-change': 'MineShell stopped while changing the world; the previous world was put back.',
+	'world-switch': 'MineShell stopped while switching worlds; the previous world is active again.',
 	'mod-update': 'MineShell stopped while updating mods; the previous versions were put back.',
 	migrate: 'MineShell stopped while moving this server to another Minecraft version; it was put back as it was.',
 	bisect: 'MineShell stopped while searching for the mod behind a crash; the mods, world and configs were put back.'
@@ -74,6 +76,9 @@ async function restore(instance: ServerInstance, journal: Journal): Promise<void
 			break;
 		case 'world-change':
 			await restoreWorldChange(root, journal);
+			break;
+		case 'world-switch':
+			await restoreWorldSwitch(instance.id, root, journal);
 			break;
 		case 'mod-update':
 			await restoreModUpdate(instance.id, root, journal);
@@ -140,6 +145,13 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	}
 	// A snapshot copy cut short.
 	if (await removePartialSnapshots(instance.path)) removed = true;
+	// The map of a world left without keeping it, from a switch that committed.
+	for (const name of await fs.readdir(mapDir(instance.id)).catch(() => [] as string[])) {
+		if (/^discard-\d+$/.test(name)) {
+			await fs.rm(path.join(mapDir(instance.id), name), { recursive: true, force: true });
+			removed = true;
+		}
+	}
 	// A revert that committed has already moved every Forge file back; only
 	// the manifest is left. A real backup (on Cleanroom) is never touched.
 	if (instance.modloader !== 'cleanroom') {

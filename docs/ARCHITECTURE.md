@@ -559,6 +559,23 @@ are judged by their folders, `snapshotOfWorld`) and is restored only onto that w
 a pack rollback's world restore also needs: after World folder changed, putting it back
 would land beside the world the server loads.
 
+**Several worlds** (`worlds.ts` finds them, the operations are in `world.ts`): a world is a
+top-level folder with a level.dat, one MineShell made (maybe not generated yet) or the one
+`level-name` names, which is the active one; `_nether`/`_the_end` siblings belong to their
+world, the bisect world is none. Switching is a journalled `world-switch` that moves no
+world: it records what the leaving world had in `.mineshell/worlds.json` (seed, level type
+and generator settings, `pack_datapacks`, what the server ran, its map's render time),
+writes the arriving world's back with `level-name`, and swaps BlueMap's `web/` with the
+arriving world's kept one (`$DATA/maps/<id>/worlds/<folder>/web`) - the leaving map is kept
+there or deleted. A crash puts the map and the properties back (`restoreWorldSwitch`, from
+which moves are on disk). A world last saved by a newer Minecraft (level.dat's
+`Data.Version.Name`, else the recorded run) needs `force`. New worlds come empty (generated
+on the next start, the active world's data packs copied in unless unticked), from a full
+snapshot, or from an uploaded zip (the world PUT with `?newWorld=`, unpacked beside the
+others; `activate=1` only on a stopped server, checked again once unpacked). Pack changes
+count every world folder as a world (never config, never written into), disk usage lists
+the inactive ones apart, and deleting one puts its folders in the trash.
+
 How many snapshots stay is a policy (`snapshots.ts`): the newest few full and partial ones
 always, more while they fit a storage budget per server, set globally and overridable per
 server. A copy that would leave the disk nearly full is refused.
