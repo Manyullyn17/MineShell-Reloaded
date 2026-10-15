@@ -8,6 +8,7 @@
  *
  *   node tests/tools/pageshot.mjs <url> <out.png> [options]
  *     --width <px>       viewport width (default 1280; 390 for a phone)
+ *     --height <px>      exactly this tall (default: the whole page, up to 4000 px)
  *     --wait-for <text>  wait until the page shows this text (default: 2 s after load)
  *     --timeout <ms>     give up waiting after this long (default 30000), then shoot anyway
  *     --overflow         also list elements reaching past the viewport's right edge
@@ -40,6 +41,7 @@ const flag = (name) => {
 	return at >= 0;
 };
 const width = Number(option('--width', '1280'));
+const fixedHeight = option('--height', null);
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
@@ -71,7 +73,7 @@ async function chromium() {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'pageshot-'));
 const port = 9300 + Math.floor(Math.random() * 600);
-const chrome = spawn(await chromium(), ['--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},1200`, 'about:blank'], { stdio: 'ignore' });
+const chrome = spawn(await chromium(), ['--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${fixedHeight ?? 1200}`, 'about:blank'], { stdio: 'ignore' });
 
 try {
 	let targets = null;
@@ -146,14 +148,17 @@ try {
 		console.log(wide.length ? `Past the right edge (${width}px):\n  ${wide.join('\n  ')}` : `Nothing past the right edge at ${width}px.`);
 	}
 
-	const height = Math.min(await evaluate('document.documentElement.scrollHeight'), 4000);
+	const height = fixedHeight ? Number(fixedHeight) : Math.min(await evaluate('document.documentElement.scrollHeight'), 4000);
 	await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
 	await sleep(300);
-	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !fixedHeight, clip: fixedHeight ? { x: 0, y: 0, width, height, scale: 1 } : undefined });
 	await fs.writeFile(out, Buffer.from(shot.result.data, 'base64'));
 	console.log(`${out}${found ? '' : ` (gave up waiting for "${waitFor}")`}`);
 	ws.close();
 } finally {
+	// Chrome writes to its profile while it exits: wait for it before removing the folder.
+	const exited = new Promise((resolve) => chrome.once('exit', resolve));
 	chrome.kill();
-	await fs.rm(profile, { recursive: true, force: true });
+	await Promise.race([exited, sleep(5000)]);
+	await fs.rm(profile, { recursive: true, force: true, maxRetries: 5 });
 }
