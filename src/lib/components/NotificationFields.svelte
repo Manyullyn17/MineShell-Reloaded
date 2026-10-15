@@ -34,8 +34,9 @@
 		<input
 			id="{idPrefix}-url"
 			name="url"
-			type="password"
+			type="text"
 			autocomplete="off"
+			spellcheck="false"
 			data-1p-ignore
 			data-lpignore="true"
 			data-bwignore
