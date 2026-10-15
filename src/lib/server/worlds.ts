@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { directorySize } from './files';
 import { compareVersions } from './java';
 import { child, parseNbt } from './nbt';
 import { cleanWorldPath, serverWorldName } from './packworld';
@@ -47,6 +48,12 @@ export type WorldMeta = {
 	leftAt?: number;
 	/** Its map's render time and size, while its map is kept aside. */
 	map?: { lastRenderAt: number | null; sizeBytes: number | null };
+	/**
+	 * Its folders' size, measured when it stopped being active (or arrived
+	 * inactive): nothing writes to an inactive world, and walking every world
+	 * on each page load is slow. Dropped while it is active.
+	 */
+	sizeBytes?: number;
 };
 
 type MetaFile = { worlds: Record<string, WorldMeta> };
@@ -111,6 +118,13 @@ export async function foldersOfWorld(root: string, world: string): Promise<strin
 	return found;
 }
 
+/** The size of a world's folders on disk (the world and its siblings). */
+export async function worldBytes(root: string, world: string): Promise<number> {
+	let total = 0;
+	for (const folder of await foldersOfWorld(root, world)) total += await directorySize(path.join(root, folder)).catch(() => 0);
+	return total;
+}
+
 /** The Minecraft version that last saved the world (level.dat Data.Version.Name, 1.9+); null when unknown. */
 export async function levelVersion(dir: string): Promise<string | null> {
 	try {
@@ -139,6 +153,8 @@ export type WorldInfo = {
 	mapKept: boolean;
 	/** That map's size, as measured when it was rendered. */
 	mapBytes: number | null;
+	/** An inactive world's size as last measured (WorldMeta.sizeBytes); null for the active one or unmeasured. */
+	sizeBytes: number | null;
 };
 
 export async function listWorlds(instance: Pick<ServerInstance, 'path'>): Promise<WorldInfo[]> {
@@ -160,10 +176,29 @@ export async function listWorlds(instance: Pick<ServerInstance, 'path'>): Promis
 				createdAt: own.createdAt ?? null,
 				leftAt: own.leftAt ?? null,
 				mapKept: !!own.map,
-				mapBytes: own.map?.sizeBytes ?? null
+				mapBytes: own.map?.sizeBytes ?? null,
+				sizeBytes: folder === active ? null : (own.sizeBytes ?? null)
 			};
 		})
 	);
+}
+
+/**
+ * Measures, once, the inactive worlds without a size (found on disk, or left
+ * before sizes were kept) and keeps it; returns the worlds with their sizes.
+ */
+export async function withSizes(instance: Pick<ServerInstance, 'path'>, worlds: WorldInfo[]): Promise<WorldInfo[]> {
+	const unmeasured = worlds.filter((w) => !w.active && w.sizeBytes === null && w.folders.length);
+	if (!unmeasured.length) return worlds;
+	const meta = await readWorldMeta(instance.path);
+	const sizes = new Map<string, number>();
+	for (const w of unmeasured) {
+		const bytes = await worldBytes(instance.path, w.folder);
+		sizes.set(w.folder, bytes);
+		meta.worlds[w.folder] = { ...meta.worlds[w.folder], sizeBytes: bytes };
+	}
+	await writeWorldMeta(instance.path, meta);
+	return worlds.map((w) => (sizes.has(w.folder) ? { ...w, sizeBytes: sizes.get(w.folder)! } : w));
 }
 
 /**

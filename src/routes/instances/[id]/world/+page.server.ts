@@ -38,7 +38,7 @@ import {
 	WorldVersionError,
 	type SeedChoice
 } from '#lib/server/world.js';
-import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder } from '#lib/server/worlds.js';
+import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder, withSizes } from '#lib/server/worlds.js';
 import { webRoot } from '#lib/server/worldmap.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import {
@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const { values } = await readProperties(instance.path);
 	const running = (await summarise(instance)).running;
 	const levelName = await serverWorldName(instance.path);
-	const worlds = await listWorlds(instance);
+	const worlds = await withSizes(instance, await listWorlds(instance));
 	const folders = worlds.map((w) => w.folder);
 	const snapshots = await listSnapshots(instance.path);
 	return {

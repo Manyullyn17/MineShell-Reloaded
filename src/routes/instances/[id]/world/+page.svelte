@@ -563,6 +563,7 @@
 				<tr>
 					<th>World</th>
 					<th class="nowrap">Ran on</th>
+					<th class="nowrap">Size</th>
 					<th class="nowrap">Snapshots</th>
 					<th><span class="visually-hidden">Actions</span></th>
 				</tr>
@@ -588,6 +589,9 @@
 							{/if}
 							{#if w.leftAt}<div class="faint">left {formatRelative(w.leftAt)}</div>{/if}
 						</td>
+						<td class="mono small nowrap" title={w.active ? undefined : 'Measured when it was last active: an inactive world does not change'}>
+							{w.active ? (w.generated ? formatBytes(data.snapshotPrompt.worldBytes) : '-') : w.sizeBytes ? formatBytes(w.sizeBytes) : '-'}
+						</td>
 						<td class="mono small">{w.snapshots || '-'}</td>
 						<td>
 							<div class="row-actions">
@@ -610,7 +614,7 @@
 					</tr>
 					{#if pendingWorld?.folder === w.folder && pendingWorld.kind === 'switch'}
 						<tr class="confirm-row">
-							<td colspan="4">
+							<td colspan="5">
 								<form method="POST" action="?/switchWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />
 									<p>
@@ -644,7 +648,7 @@
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'rename'}
 						<tr class="confirm-row">
-							<td colspan="4">
+							<td colspan="5">
 								<form
 									method="POST"
 									action="?/renameWorld"
@@ -669,7 +673,7 @@
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'delete'}
 						<tr class="confirm-row">
-							<td colspan="4">
+							<td colspan="5">
 								<form method="POST" action="?/deleteWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />
 									<p>Delete {w.name}? Its folders go to the trash, where Files can put them back until the trash is emptied.</p>

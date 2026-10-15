@@ -30,6 +30,7 @@ import {
 	readWorldMeta,
 	snapshotWorldFolder,
 	WORLD_PROPERTY_KEYS,
+	worldBytes,
 	worldFolderNames,
 	writeWorldMeta,
 	type WorldMeta
@@ -578,6 +579,8 @@ async function activateWorld(
 	const hadMap = await exists(web);
 	// A leftover from before would read as this switch's move.
 	await fs.rm(keptWeb(instance.id, from), { recursive: true, force: true });
+	// Measured now, while nothing writes to it: it does not change until it is active again.
+	const leavingBytes = await worldBytes(root, from);
 	const journal: WorldSwitchJournal = {
 		kind: 'world-switch',
 		from,
@@ -608,9 +611,10 @@ async function activateWorld(
 					}
 				: {}),
 			leftAt: Date.now(),
+			sizeBytes: leavingBytes,
 			...(hadMap && opts.keepMap ? { map: { lastRenderAt: map.lastRenderAt, sizeBytes: map.sizeBytes } } : {})
 		};
-		const { map: arrivingMap, ...arrivingRest } = arriving;
+		const { map: arrivingMap, sizeBytes: _size, ...arrivingRest } = arriving;
 		meta.worlds[to] = arrivingRest;
 
 		if (hadMap) {
@@ -788,6 +792,7 @@ export async function worldFromSnapshot(instance: ServerInstance, snapshotId: st
 			meta.worlds[folder] = {
 				name,
 				createdAt: Date.now(),
+				sizeBytes: await worldBytes(root, folder),
 				lastRun: {
 					minecraftVersion: snapshot.minecraftVersion,
 					modloader: snapshot.modloader,
@@ -943,7 +948,7 @@ export async function worldFromZip(
 			if (await exists(path.join(root, folder))) throw new InstanceError(`Something named ${folder} appeared in the server folder meanwhile; try again.`);
 			await fs.rename(path.join(incoming, folder), path.join(root, folder));
 			const meta = await readWorldMeta(root);
-			meta.worlds[folder] = { name, createdAt: Date.now() };
+			meta.worlds[folder] = { name, createdAt: Date.now(), sizeBytes: await worldBytes(root, folder) };
 			await writeWorldMeta(root, meta);
 			audit('instance.world_created', { instanceId: instance.id, detail: `${folder} from an upload` });
 			if (opts.activate) await activateUploaded(instance.id, folder, opts.activate.keepMap, task);

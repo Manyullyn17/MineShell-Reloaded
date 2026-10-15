@@ -27,8 +27,9 @@ a deleted world; deleting a world puts its folders in the trash. Uploading a zip
 world (asked for while it was built): it arrives inactive, so it works on a running server;
 on a stopped one "Make it the active world" is offered (user's call: not shown while it
 runs), and an upload from a newer Minecraft stays inactive for the switch's warning. A world
-made and left before its first start has no folder, only its record (seed), and stays listed. Sizes are on the disk usage
-page ("Inactive worlds"), not in the list: walking every world on each page load is slow.
+made and left before its first start has no folder, only its record (seed), and stays listed. An inactive world's size is
+measured when it is left (or arrives, or is first listed) and kept (user's idea): nothing
+writes to it, and walking every world on each page load is slow.
 The restore guard came first as a fix: a snapshot taken under another `level-name` was put
 back beside the world the server loads. Tried on a throwaway dev server (pages, phone
 width, the actions); a real server was not booted on a switched world.

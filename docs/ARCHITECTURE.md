@@ -565,7 +565,8 @@ top-level folder with a level.dat, one MineShell made (maybe not generated yet) 
 world, the bisect world is none. Switching is a journalled `world-switch` that moves no
 world: it records what the leaving world had in `.mineshell/worlds.json` (seed, level type
 and generator settings, `pack_datapacks`, what the server ran, its map's render time),
-writes the arriving world's back with `level-name`, and swaps BlueMap's `web/` with the
+writes the arriving world's back with `level-name` (an inactive world's size is measured
+then, or when first listed, and kept until it is active again), and swaps BlueMap's `web/` with the
 arriving world's kept one (`$DATA/maps/<id>/worlds/<folder>/web`) - the leaving map is kept
 there or deleted. A crash puts the map and the properties back (`restoreWorldSwitch`, from
 which moves are on disk). A world last saved by a newer Minecraft (level.dat's

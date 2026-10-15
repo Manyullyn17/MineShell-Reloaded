@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { listSnapshots, saveSnapshotPolicy, DEFAULT_POLICY } = await import('#lib/server/snapshots.js');
 const { createWorld, deleteWorld, renameWorld, restoreSnapshot, snapshotNow, switchWorld, worldFromSnapshot, worldFromZip, WorldVersionError } =
 	await import('#lib/server/world.js');
-const { listWorlds, worldFolderNames, freeWorldFolder } = await import('#lib/server/worlds.js');
+const { listWorlds, worldFolderNames, freeWorldFolder, withSizes, readWorldMeta } = await import('#lib/server/worlds.js');
 const { readProperties } = await import('#lib/server/properties.js');
 const { getMapSettings, keptMapDir, mapDir, saveMapSettings, webRoot } = await import('#lib/server/worldmap.js');
 const { diskBreakdown } = await import('#lib/server/diskusage.js');
@@ -96,8 +96,14 @@ describe('several worlds per server', () => {
 		expect(worlds[1].folders).toEqual(['world', 'world_nether']);
 		expect(worlds[1].lastRun).toMatchObject({ minecraftVersion: '1.21.1', modloader: 'fabric' });
 		expect(worlds[1].version).toBe('1.21.1');
+		// Measured as it was left: everything in world/ and world_nether/.
+		const bytes = levelDat('1.21.1').length + 'chunks'.length + 'terralith'.length + 'nether chunks'.length;
+		expect(worlds[1].sizeBytes).toBe(bytes);
+		expect(worlds[0].sizeBytes).toBeNull();
 
 		await switchWorld(reload(instance.id), 'world', { keepMap: true });
+		// Active again, so it can change: its old size is dropped.
+		expect((await readWorldMeta(instance.path)).worlds.world.sizeBytes).toBeUndefined();
 		values = await props(instance.path);
 		expect(values['level-name']).toBe('world');
 		expect(values['level-seed']).toBe('1234');
@@ -233,7 +239,11 @@ describe('several worlds per server', () => {
 		expect(files['singleplayer/region/r.0.0.mca']).toBe('save chunks');
 		expect(files['singleplayer/session.lock']).toBeUndefined();
 		for (const [rel, content] of Object.entries(before)) expect(files[rel]).toEqual(content);
-		expect((await listWorlds(instance)).find((w) => w.folder === 'singleplayer')).toMatchObject({ name: 'Singleplayer', active: false });
+		expect((await listWorlds(instance)).find((w) => w.folder === 'singleplayer')).toMatchObject({
+			name: 'Singleplayer',
+			active: false,
+			sizeBytes: 'save'.length + 'save chunks'.length
+		});
 		await expect(fs.access(file)).rejects.toThrow();
 
 		const notAWorld = await upload({ 'readme.txt': 'no' });
@@ -271,6 +281,10 @@ describe('several worlds per server', () => {
 			'config/level.dat.txt': 'not a world'
 		});
 		expect(await worldFolderNames(instance.path)).toEqual(['world', 'creative']);
+		// Found on disk, never left: measured once and kept.
+		expect((await listWorlds(instance)).find((w) => w.folder === 'creative')?.sizeBytes).toBeNull();
+		expect((await withSizes(instance, await listWorlds(instance))).find((w) => w.folder === 'creative')?.sizeBytes).toBe(2);
+		expect((await readWorldMeta(instance.path)).worlds.creative.sizeBytes).toBe(2);
 		expect(await freeWorldFolder(instance.path, 'Creative')).toBe('creative-2');
 		expect(await freeWorldFolder(instance.path, 'mods')).toBe('mods-2');
 		expect(await freeWorldFolder(instance.path, 'My World_nether')).toBe('my-world');
