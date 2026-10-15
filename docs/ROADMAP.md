@@ -17,8 +17,7 @@ settled. Current snapshots remain local to the server disk. This is an accepted 
 for now, rather than a current blocker.
 
 Portability notes: Java downloads on ARM64 and musl/Alpine are not tested because development
-hardware is x64 with glibc. Quilt loader version switching should get testing, but it is
-deferred and is not a current priority.
+hardware is x64 with glibc. (Quilt loader switching was tried on a real server 2026-10-15.)
 
 ---
 
