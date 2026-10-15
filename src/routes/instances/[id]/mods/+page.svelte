@@ -1,39 +1,22 @@
 <script lang="ts">
 	import { can, type InstancePermission } from '#lib/shared/access.js';
-	import { untrack } from 'svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
-	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
-	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
-	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import InfoTip from '#lib/components/InfoTip.svelte';
-	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { formatBytes } from '#lib/shared/format.js';
+	import BisectPanel from './BisectPanel.svelte';
+	import DependencyList, { type DependencyPlan } from './DependencyList.svelte';
+	import ModBrowser, { SOURCES } from './ModBrowser.svelte';
+	import ModUpdates from './ModUpdates.svelte';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
 	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
-	// ------------------------------------------------- the mod bisect assistant
-	const bisect = $derived(data.bisect.state);
-	let bisectOpen = $state(false);
-	let keepFilter = $state('');
-	/** Mods kept on during the search, by file name; Cleanroom's own fixes start ticked. */
-	let keepOn = $state<string[]>([]);
-	$effect(() => {
-		const defaults = data.bisect.keepByDefault;
-		untrack(() => {
-			if (!keepOn.length) keepOn = [...defaults];
-		});
-	});
-	const enabledMods = $derived(data.mods.filter((m) => m.enabled && !m.missing));
-	const suspectCount = $derived(enabledMods.filter((m) => !keepOn.includes(m.fileName)).length);
-	const estimate = $derived(suspectCount <= 1 ? 2 : 2 + Math.ceil(Math.log2(suspectCount)));
-	const modName = (file: string) => data.mods.find((m) => m.fileName === file || m.fileName === `${file}.disabled`)?.name ?? file;
-	// While it searches the state changes with every test: follow it.
+	// The bisect assistant's search changes the state with every test: follow it.
 	$effect(() => {
 		if (!data.bisect.running) return;
 		const timer = setInterval(() => void refreshAll(), 5000);
@@ -44,7 +27,6 @@
 	/** Which sub-tab is open. */
 	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>('installed');
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention'>('all');
-	let showFilters = $state(false);
 	let uploadForm = $state<HTMLFormElement | null>(null);
 	let jarInput = $state<HTMLInputElement | null>(null);
 	let pendingDelete = $state<string | null>(null);
@@ -59,43 +41,6 @@
 	const changesLocked = $derived(!!data.packName && !packMods);
 	const canChange = (mod: { source: string; missing: boolean }) =>
 		(mod.source === 'modrinth' || mod.source === 'curseforge') && !mod.missing;
-
-	type UpdateCheck = {
-		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; enabled: boolean; fromPack: boolean; note: string | null }[];
-		upToDate: number;
-		skipped: { fileName: string; name: string; reason: string }[];
-		dependencies: DependencyPlan;
-		synced: string | null;
-	};
-	type DependencyPlan = {
-		install: { projectId: string; name: string; versionNumber: string; neededBy: string[] }[];
-		unresolved: { name: string; neededBy: string[]; reason: string }[];
-		conflicts: { name: string; fileName: string; declaredBy: string[] }[];
-		unneeded: { fileName: string; name: string; neededBy: string[] }[];
-	};
-	let updateCheck = $state<UpdateCheck | null>(null);
-	let checking = $state(false);
-	let checkError = $state('');
-	let chosenUpdates = $state<Record<string, boolean>>({});
-	const chosenCount = $derived(Object.values(chosenUpdates).filter(Boolean).length);
-
-	async function checkUpdates() {
-		checking = true;
-		checkError = '';
-		updateCheck = null;
-		try {
-			const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/mod-updates`);
-			const body = await res.json();
-			if (!res.ok) throw new Error(body.message ?? 'Checking for updates failed.');
-			updateCheck = body;
-			// A disabled mod is updated only when ticked: it is off for a reason.
-			chosenUpdates = Object.fromEntries(body.updates.map((u: { fileName: string; enabled: boolean }) => [u.fileName, u.enabled]));
-		} catch (err) {
-			checkError = err instanceof Error ? err.message : 'Checking for updates failed.';
-		} finally {
-			checking = false;
-		}
-	}
 
 	type VersionChoice = { id: string; versionNumber: string; channel: string; datePublished: string | null; installed: boolean };
 	let versionFor = $state<string | null>(null);
@@ -164,7 +109,6 @@
 			syncing = false;
 		};
 	};
-	let detailsTab = $state<'description' | 'versions' | 'changelog'>('description');
 
 	/** Untracked jars, records without a file and enabled client-only mods ask to be looked at. */
 	const needsAttention = (m: (typeof data.mods)[number]) => m.untracked || m.missing || (m.clientOnly && m.enabled);
@@ -186,298 +130,14 @@
 	);
 	const sourceLabel = (id: string) =>
 		({ modrinth: 'Modrinth', curseforge: 'CurseForge', manual: 'Uploaded' })[id] ?? id;
-	const isInstalled = (hit: { slug: string; id: string }) =>
-		data.mods.some((m) => m.source === source && (m.slug === hit.slug || m.slug === hit.id));
-	const downloads = (n: number | null) =>
-		n === null ? '' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M downloads` : n >= 1e3 ? `${Math.round(n / 1e3)}k downloads` : `${n} downloads`;
 
-	// ---- mod browser
-	const sources = [
-		{ id: 'modrinth', label: 'Modrinth' },
-		{ id: 'curseforge', label: 'CurseForge' }
-	];
+	// ---- the other sub-tabs: kept mounted, so a check or search outlives switching tabs
+	let browser = $state<ModBrowser | null>(null);
 	let source = $state('modrinth');
 	let term = $state('');
 	let searching = $state(false);
-	let searchError = $state('');
-	type Hit = {
-		id: string;
-		slug: string;
-		name: string;
-		author: string | null;
-		summary: string | null;
-		iconUrl: string | null;
-		downloads: number | null;
-		clientOnly?: boolean;
-	};
-	let hits = $state<Hit[]>([]);
-	let searchPage = $state(1);
-	let moreHits = $state(false);
-	let loadingMore = $state(false);
-	let lastQuery = '';
-	let selected = $state<Hit | null>(null);
-	type Version = {
-		id: string;
-		versionNumber: string;
-		channel: string;
-		clientOnly: boolean;
-		/** Installs into the world's datapacks folder rather than mods/. */
-		datapack: boolean;
-		dependencies: { type: string; name: string | null }[];
-	};
-	let versions = $state<Version[]>([]);
-	let versionId = $state('');
-	let loadingVersions = $state(false);
-	/** Versions are listed in batches: a big project has hundreds. */
-	const VERSION_BATCH = 50;
-	let shownVersions = $state(VERSION_BATCH);
-
-	type Dependency = {
-		projectId: string;
-		versionId: string | null;
-		type: string;
-		name: string;
-		summary: string | null;
-		installable: boolean;
-		alreadyInstalled: boolean;
-	};
-	let dependencies = $state<Dependency[]>([]);
-	let loadingDeps = $state(false);
-	// Required dependencies start ticked, optional ones do not.
-	let chosenDeps = $state<Record<string, boolean>>({});
-
-	// ---- filter sidebar
-	type FilterGroupData = { id: string; label: string; options: { value: string; label: string }[] };
-	let filterGroups = $state<FilterGroupData[]>([]);
-	let loadingFilters = $state(true);
-	// The $effect below keeps this in sync on instance switches - deliberate initial read.
-	// svelte-ignore state_referenced_locally
-	let filterSelections = $state<Record<string, string[]>>({
-		loaders: [...data.compatibleLoaders]
-	});
-
-	// This page persists across `/instances/[id]/mods` navigations (same
-	// route, different `id`), so a plain one-time seed above would leave the
-	// previous instance's mod-loader default checked after switching to a
-	// server on a different loader. `data.modloader` only changes when the
-	// instance actually does, unlike `data.compatibleLoaders`'s array
-	// identity, which would also flip on an incidental revalidation and
-	// wipe out filters the user picked by hand.
-	// svelte-ignore state_referenced_locally
-	let lastModloader = data.modloader;
-	$effect(() => {
-		if (data.modloader !== lastModloader) {
-			lastModloader = data.modloader;
-			filterSelections = { loaders: [...data.compatibleLoaders] };
-		}
-	});
-
-	// Results, the picked mod and categories belong to one source; the loader
-	// selection means the same thing on both and is kept. Emptying the
-	// results makes the browser below open on the new source's popular mods.
-	// svelte-ignore state_referenced_locally
-	let lastSource = source;
-	$effect(() => {
-		const current = source;
-		if (current !== lastSource) {
-			lastSource = current;
-			hits = [];
-			selected = null;
-			versions = [];
-			versionId = '';
-			searchError = '';
-			filterSelections = { loaders: filterSelections.loaders ?? [] };
-		}
-	});
-
-	$effect(() => {
-		const currentSource = source;
-		loadingFilters = true;
-		let cancelled = false;
-		fetch(`/api/mods/filters?source=${currentSource}&kind=mod`)
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error('lookup failed'))))
-			.then((body) => {
-				if (!cancelled) filterGroups = body.groups ?? [];
-			})
-			.catch(() => {
-				if (!cancelled) filterGroups = [];
-			})
-			.finally(() => {
-				if (!cancelled) loadingFilters = false;
-			});
-		return () => {
-			cancelled = true;
-		};
-	});
-
-	// CurseForge browsing takes one loader and one category per request.
-	const filterLimitNote = $derived(
-		source === 'curseforge'
-			? 'Browsing without a search term only applies the first checked loader and category. Searching by name applies every one.'
-			: ''
-	);
-
-	function searchQuery() {
-		const params = new URLSearchParams({ source, term, mc: data.minecraftVersion });
-		for (const loader of filterSelections.loaders ?? []) params.append('loader', loader);
-		for (const category of filterSelections.categories ?? []) {
-			params.append('category', category);
-		}
-		for (const type of filterSelections.projectTypes ?? []) params.append('type', type);
-		return params;
-	}
-
-	// Opening Add mods shows popular mods rather than an empty list, as the modpack browser does.
-	$effect(() => {
-		if (view === 'browse' && !hits.length && !untrack(() => searching || searchError)) void untrack(search);
-	});
-
-	async function search() {
-		searching = true;
-		searchError = '';
-		selected = null;
-		searchPage = 1;
-		try {
-			lastQuery = searchQuery().toString();
-			const res = await fetch(`/api/mods/search?${lastQuery}`);
-			if (!res.ok) throw new Error('Search failed.');
-			hits = (await res.json()).hits ?? [];
-			moreHits = hits.length > 0;
-			if (!hits.length) searchError = 'Nothing matched. Try different terms or fewer filters.';
-		} catch (err) {
-			searchError = err instanceof Error ? err.message : 'Search failed.';
-		} finally {
-			searching = false;
-		}
-	}
-
-	/** The next page of the same search, added below; stops offering more once a page brings nothing new. */
-	async function loadMore() {
-		loadingMore = true;
-		try {
-			// The search as it ran, not as the boxes read now.
-			const params = new URLSearchParams(lastQuery);
-			params.set('page', String(searchPage + 1));
-			const res = await fetch(`/api/mods/search?${params}`);
-			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Could not load more.');
-			const known = new Set(hits.map((h) => h.id));
-			const fresh = ((await res.json()).hits ?? []).filter((h: Hit) => !known.has(h.id));
-			searchPage += 1;
-			hits = [...hits, ...fresh];
-			moreHits = fresh.length > 0;
-		} catch (err) {
-			searchError = err instanceof Error ? err.message : 'Could not load more.';
-		} finally {
-			loadingMore = false;
-		}
-	}
-
-	async function choose(hit: Hit) {
-		selected = hit;
-		versions = [];
-		shownVersions = VERSION_BATCH;
-		versionId = '';
-		loadingVersions = true;
-		const params = new URLSearchParams({
-			source,
-			id: hit.id,
-			mc: data.minecraftVersion,
-			loader: data.catalogLoader
-		});
-		try {
-			const res = await fetch(`/api/mods/versions?${params}`);
-			if (res.ok) {
-				versions = (await res.json()).versions ?? [];
-				versionId = versions[0]?.id ?? '';
-			}
-		} finally {
-			loadingVersions = false;
-		}
-	}
-
-	// Resolve the picked version's dependencies to real names so each one can be
-	// listed and ticked individually, rather than hidden behind one blanket
-	// "install dependencies" checkbox.
-	$effect(() => {
-		const project = selected?.id;
-		const version = versionId;
-		const currentSource = source;
-		dependencies = [];
-		chosenDeps = {};
-		if (!project || !version) return;
-
-		let cancelled = false;
-		loadingDeps = true;
-		const params = new URLSearchParams({
-			source: currentSource,
-			id: project,
-			versionId: version,
-			mc: data.minecraftVersion,
-			loader: data.catalogLoader,
-			instance: data.instance.id
-		});
-		fetch(`/api/mods/dependencies?${params}`)
-			.then((r) => (r.ok ? r.json() : Promise.reject(new Error('lookup failed'))))
-			.then((body) => {
-				if (cancelled) return;
-				dependencies = body.dependencies ?? [];
-				const initial: Record<string, boolean> = {};
-				for (const dep of dependencies) {
-					initial[dep.projectId] =
-						dep.type === 'required' && dep.installable && !dep.alreadyInstalled;
-				}
-				chosenDeps = initial;
-			})
-			.catch(() => {
-				if (!cancelled) dependencies = [];
-			})
-			.finally(() => {
-				if (!cancelled) loadingDeps = false;
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	});
+	let updatesFound = $state(0);
 </script>
-
-{#snippet dependencyList(plan: DependencyPlan)}
-	{#if plan.install.length}
-		<p class="small">Also installs what the new versions need:</p>
-		<ul class="small deps">
-			{#each plan.install as d (d.projectId)}
-				<li><strong>{d.name}</strong> <span class="mono">{d.versionNumber}</span> <span class="muted">- for {d.neededBy.join(', ')}</span></li>
-			{/each}
-		</ul>
-	{/if}
-	{#if plan.unresolved.length}
-		<ul class="small deps warn-text">
-			{#each plan.unresolved as d (d.name)}
-				<li>{d.name}, needed by {d.neededBy.join(', ')}, cannot be installed: {d.reason}.</li>
-			{/each}
-		</ul>
-	{/if}
-	{#if plan.conflicts.length}
-		<ul class="small deps warn-text">
-			{#each plan.conflicts as c (c.fileName)}
-				<li>{c.declaredBy.join(', ')} declare{c.declaredBy.length === 1 ? 's' : ''} <strong>{c.name}</strong> incompatible; disable one of them if the server fails to start.</li>
-			{/each}
-		</ul>
-	{/if}
-	{#if plan.unneeded.length}
-		<p class="small">No longer needed by anything here once updated (only the old version required them):</p>
-		<ul class="small deps unneeded">
-			{#each plan.unneeded as u (u.fileName)}
-				<li>
-					<label>
-						<input type="checkbox" name="disableUnneeded" value={u.fileName} checked />
-						Disable <strong>{u.name}</strong> <span class="muted">- was needed by {u.neededBy.join(', ')}</span>
-					</label>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-{/snippet}
 
 <div class="subhead">
 	<nav class="subtabs" aria-label="Mods sections">
@@ -486,7 +146,7 @@
 		</button>
 		{#if may('mods')}
 			<button type="button" aria-current={view === 'updates' ? 'page' : undefined} onclick={() => (view = 'updates')}>
-				Updates{#if updateCheck?.updates.length}<span class="badge">{updateCheck.updates.length}</span>{/if}
+				Updates{#if updatesFound}<span class="badge">{updatesFound}</span>{/if}
 			</button>
 		{/if}
 		{#if may('mods') || may('datapacks')}
@@ -505,12 +165,12 @@
 				<input
 					type="search"
 					bind:value={term}
-					placeholder="Search {sources.find((s) => s.id === source)?.label}"
+					placeholder="Search {SOURCES.find((s) => s.id === source)?.label}"
 					aria-label="Search mods"
-					onkeydown={(e) => e.key === 'Enter' && search()}
+					onkeydown={(e) => e.key === 'Enter' && browser?.search()}
 				/>
 			</span>
-			<button type="button" onclick={search} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
+			<button type="button" onclick={() => browser?.search()} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
 		{:else}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>
@@ -591,119 +251,16 @@
 	</div>
 {/if}
 
-{#if view === 'installed'}
-	{#if bisect}
-		<section class="panel bisect">
-			{#if data.bisect.running}
-				<div class="panel-head">
-					<div>
-						<h2>Searching for the mod behind the crash</h2>
-						<p>
-							Test {bisect.tests.length + 1} of about {bisect.estimate} · {bisect.remaining} suspect{bisect.remaining === 1 ? '' : 's'} left of
-							{bisect.suspects}. The server starts on a throwaway world; yours is not touched.
-						</p>
-					</div>
-					{#if may('mods')}
-						<form method="POST" action="?/bisectCancel" use:enhance>
-							<button type="submit" class="button-danger">Cancel</button>
-						</form>
-					{/if}
-				</div>
-				<div class="progress" role="progressbar" aria-valuenow={Math.round((bisect.tests.length / bisect.estimate) * 100)}>
-					<span style="width: {Math.min(100, (bisect.tests.length / bisect.estimate) * 100)}%"></span>
-				</div>
-			{:else}
-				<div class="panel-head">
-					<h2>
-						{bisect.status === 'found'
-							? bisect.culprits.length === 1
-								? 'Found the mod behind the crash'
-								: 'Found the mods behind the crash, together'
-							: bisect.status === 'cancelled'
-								? 'Search cancelled'
-								: 'The search did not find a mod'}
-					</h2>
-					{#if may('mods')}
-						<form method="POST" action="?/bisectDismiss" use:enhance>
-							<button type="submit" class="button-quiet">Dismiss</button>
-						</form>
-					{/if}
-				</div>
-				{#if bisect.status === 'found'}
-					<p class="small muted">
-						{bisect.culprits.length === 1
-							? 'The problem shows whenever it is on, and not without it.'
-							: 'The problem shows only when these are on at the same time.'} Everything is back as it was; disable it here if you want it gone.
-					</p>
-					<ul class="culprits">
-						{#each bisect.culprits as file (file)}
-							<li>
-								<span><strong>{modName(file)}</strong> <span class="faint small mono">{file}</span></span>
-								{#if data.mods.some((m) => m.fileName === file) && may('mods')}
-									<form method="POST" action="?/toggle" use:enhance>
-										<input type="hidden" name="fileName" value={file} />
-										<input type="hidden" name="enabled" value="false" />
-										<button type="submit">Disable</button>
-									</form>
-								{:else if !data.mods.some((m) => m.fileName === file)}
-									<span class="faint small">disabled</span>
-								{/if}
-							</li>
-						{/each}
-					</ul>
-				{:else if bisect.message}
-					<p class="small muted">{bisect.message}</p>
-				{/if}
-			{/if}
-			{#if bisect.tests.length}
-				<details class="tests" open={data.bisect.running}>
-					<summary class="small">{bisect.tests.length} test{bisect.tests.length === 1 ? '' : 's'}</summary>
-					<ol>
-						{#each bisect.tests as t, i (i)}
-							<li class="small">
-								<span class="dot" class:failed={t.result === 'problem'} class:running={t.result === 'fine'}></span>
-								{t.enabled} on · {t.result === 'problem' ? 'the problem showed' : t.result === 'fine' ? 'fine' : 'repeated'}: {t.note}
-							</li>
-						{/each}
-					</ol>
-				</details>
-			{/if}
-		</section>
-	{:else if may('mods') && may('power')}
-		<details class="bisect-start" bind:open={bisectOpen}>
-			<summary>Find the mod behind a crash</summary>
-			<form method="POST" action="?/bisect" use:enhance class="bisect-form">
-				<p class="small muted">
-					Starts the server again and again with fewer mods, halving the suspects each time, until the mod (or the pair of
-					mods) the problem comes from is left. Every start uses a throwaway world, so yours is never opened with mods
-					missing; mods, configs and settings are put back afterwards. About {estimate} starts for {suspectCount}
-					suspects.
-				</p>
-				<div class="field">
-					<label for="bisect-text">The problem (optional)</label>
-					<input id="bisect-text" name="logText" placeholder="Text from the log, e.g. an error line" />
-					<p class="hint">Empty: a crash before the server finishes starting. With text: a start fails when that text shows in the log.</p>
-				</div>
-				<div class="field">
-					<span class="label-text">Keep these on ({keepOn.length})</span>
-					<p class="hint">Mods you trust, like libraries: they stay on in every test, so fewer starts are needed.</p>
-					<input type="search" placeholder="Filter" aria-label="Filter mods" bind:value={keepFilter} />
-					<div class="keep-list">
-						{#each enabledMods.filter((m) => !keepFilter || m.name.toLowerCase().includes(keepFilter.toLowerCase())) as m (m.fileName)}
-							<label class="check">
-								<input type="checkbox" name="keepOn" value={m.fileName} bind:group={keepOn} />
-								<span>{m.name}</span>
-							</label>
-						{/each}
-					</div>
-				</div>
-				<button type="submit" class="button-primary" disabled={data.running || suspectCount === 0}>
-					{data.running ? 'Stop the server first' : 'Start the search'}
-				</button>
-			</form>
-		</details>
-	{/if}
+<BisectPanel
+	active={view === 'installed'}
+	bisect={data.bisect}
+	mods={data.mods}
+	running={data.running}
+	mayMods={may('mods')}
+	mayStart={may('mods') && may('power')}
+/>
 
+{#if view === 'installed'}
 	<div class="list-controls">
 		<div class="chips" role="group" aria-label="Show">
 			{#each [['all', 'All'], ['enabled', 'Enabled'], ['disabled', 'Disabled'], ['attention', 'Needs attention']] as const as [id, label] (id)}
@@ -867,7 +424,7 @@
 											{#if versionDepsLoading}
 												<p class="muted small">Checking what this version needs.</p>
 											{:else if versionDeps}
-												{@render dependencyList(versionDeps)}
+												<DependencyList plan={versionDeps} />
 											{/if}
 											<div class="check">
 												<input id="ver-snap-{mod.fileName}" type="checkbox" name="snapshot" />
@@ -901,315 +458,7 @@
 		{data.counts.enabled} of {data.counts.total} enabled. Disabling renames the file to <code>.jar.disabled</code>, which is
 		what the loader looks at.
 	</p>
-{:else if view === 'updates'}
-	{#if checkError}
-		<p class="notice warning">{checkError}</p>
-	{/if}
-
-	{#if !updateCheck}
-		<div class="section-head">
-			<div>
-				<h2>Updates</h2>
-				<p>Checks every Modrinth and CurseForge mod for a newer build for this Minecraft version and loader.</p>
-			</div>
-			<div class="button-row">
-				{#if data.packName}
-					<span class="pack-toggle">
-						<input id="pack-mods-u" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={data.running} />
-						<label for="pack-mods-u">Allow changing single mods</label>
-						{#if data.running}<span class="faint">· stop the server first</span>{/if}
-					</span>
-				{/if}
-				<button
-					class="button-primary"
-					type="button"
-					onclick={checkUpdates}
-					disabled={changesLocked || checking || data.running || data.busy}
-					title={data.running ? 'Stop the server to update its mods' : changesLocked ? 'Allow changing single mods first' : undefined}
-				>
-					{checking ? 'Checking for updates' : 'Check for updates'}
-				</button>
-			</div>
-		</div>
-		{#if data.running}
-			<p class="faint small">Stop the server to update its mods.</p>
-		{/if}
-	{:else}
-		{#if updateCheck.synced}
-			<p class="hint">Untracked jars were synced first: {updateCheck.synced}.</p>
-		{/if}
-		{#if updateCheck.updates.length === 0}
-			<div class="section-head">
-				<div>
-					<h2>Up to date</h2>
-					<p>Everything that can be checked is up to date ({updateCheck.upToDate} mod{updateCheck.upToDate === 1 ? '' : 's'}).</p>
-				</div>
-				<button type="button" onclick={checkUpdates} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-			</div>
-		{:else}
-			<form
-				method="POST"
-				action="?/updateMods"
-				use:enhance={() => async ({ result, update }) => {
-					await update({ reset: false });
-					if (result.type === 'success') updateCheck = null;
-				}}
-			>
-				{#if packMods}<input type="hidden" name="packMods" value="on" />{/if}
-				<div class="section-head">
-					<div>
-						<h2>{updateCheck.updates.length} update{updateCheck.updates.length === 1 ? '' : 's'} available</h2>
-						<p>Checked against Modrinth and CurseForge.</p>
-					</div>
-					<div class="button-row">
-						<button type="button" onclick={checkUpdates} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-						<button class="button-primary" type="submit" disabled={!chosenCount || data.running}>
-							Update {chosenCount} mod{chosenCount === 1 ? '' : 's'}
-						</button>
-					</div>
-				</div>
-				<ul class="update-list">
-					{#each updateCheck.updates as u (u.fileName)}
-						<li>
-							<label class="update">
-								<input
-									type="checkbox"
-									name="change"
-									value={`${u.fileName}\n${u.targetVersionId}`}
-									bind:checked={chosenUpdates[u.fileName]}
-								/>
-								<span class="update-name">
-									<span>
-										{u.name}
-										{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
-									</span>
-									{#if u.note}<span class="muted small">{u.note}</span>{/if}
-									{#if !u.enabled}<span class="faint small">disabled: not updated unless ticked, and stays disabled</span>{/if}
-								</span>
-								<span class="mono small versions">
-									{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span>
-								</span>
-							</label>
-						</li>
-					{/each}
-				</ul>
-				{@render dependencyList(updateCheck.dependencies)}
-				<SnapshotChoice prompt={data.snapshotPrompt} idPrefix="update-mods" />
-			</form>
-		{/if}
-		{#if updateCheck.skipped.length}
-			<details class="skipped">
-				<summary class="small">{updateCheck.skipped.length} not checked</summary>
-				<ul class="small">
-					{#each updateCheck.skipped as s (s.fileName)}
-						<li>{s.name} <span class="muted">- {s.reason}</span></li>
-					{/each}
-				</ul>
-			</details>
-		{/if}
-	{/if}
-{:else if view === 'browse'}
-	<div class="browse-bar">
-		<div class="segmented" role="group" aria-label="Source">
-			{#each sources as s (s.id)}
-				<button type="button" aria-pressed={source === s.id} onclick={() => (source = s.id)}>{s.label}</button>
-			{/each}
-		</div>
-		<span class="faint small">
-			Showing mods for {data.instance.modloaderLabel} {data.minecraftVersion}. Leave the search blank to browse popular ones.
-		</span>
-		<button type="button" class="button-quiet filters-toggle" aria-expanded={showFilters} onclick={() => (showFilters = !showFilters)}>
-			{showFilters ? 'Hide filters' : 'Filters'}
-		</button>
-	</div>
-
-	{#if searchError}<p class="notice warning">{searchError}</p>{/if}
-
-	<div class="browse" class:with-filters={showFilters}>
-		{#if showFilters}
-			<FilterSidebar groups={filterGroups} bind:selected={filterSelections} loading={loadingFilters} limitNote={filterLimitNote} />
-		{/if}
-
-		<ul class="hits" use:fitToViewport={{ bottomMarginPx: 24 }}>
-			{#each hits as hit (hit.id)}
-				<li>
-					<button class="hit" aria-pressed={selected?.id === hit.id} onclick={() => choose(hit)}>
-						{#if hit.iconUrl}
-							<img src={hit.iconUrl} alt="" width="40" height="40" loading="lazy" />
-						{:else}
-							<span class="icon-fallback" aria-hidden="true"></span>
-						{/if}
-						<span class="hit-body">
-							<span class="hit-title">
-								<strong>{hit.name}</strong>
-								<span class="faint small">{downloads(hit.downloads)}</span>
-							</span>
-							<span class="small muted summary">{hit.summary ?? ''}</span>
-							{#if isInstalled(hit) || hit.clientOnly}
-								<span class="hit-tags">
-									{#if isInstalled(hit)}<span class="tag accent">installed</span>{/if}
-									{#if hit.clientOnly}<span class="tag warn">client-only</span>{/if}
-								</span>
-							{/if}
-						</span>
-					</button>
-				</li>
-			{:else}
-				<li class="faint small hits-empty">
-					{searching ? 'Searching.' : 'No mods to show yet.'}
-				</li>
-			{/each}
-			{#if hits.length && moreHits}
-				<li class="more-hits">
-					<button type="button" class="button-quiet" onclick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading' : 'Load more'}</button>
-				</li>
-			{/if}
-		</ul>
-
-		{#if selected}
-			{@const pick = versions.find((v) => v.id === versionId)}
-			<div class="detail" use:fitToViewport={{ bottomMarginPx: 24 }}>
-				<DetailsDialog
-					inline
-					{source}
-					projectId={selected.id}
-					{versionId}
-					versionLabel={pick?.versionNumber ?? ''}
-					defaultTab={detailsTab}
-					iconUrl={selected.iconUrl}
-					meta={downloads(selected.downloads)}
-					versionCount={loadingVersions ? null : versions.length}
-				>
-					{#snippet versionsTab({ showChangelog }: { showChangelog: () => void })}
-						{#if loadingVersions}
-							<p class="muted">Loading versions.</p>
-						{:else if versions.length === 0}
-							<p class="muted">No versions were returned for this mod.</p>
-						{:else}
-							<ul class="version-list plain">
-								{#each versions.slice(0, shownVersions) as v (v.id)}
-									<li>
-										<label class="version" class:picked={versionId === v.id}>
-											<input type="radio" name="version-pick" value={v.id} bind:group={versionId} />
-											<span class="version-name">
-												<span class="mono">{v.versionNumber}</span>
-												{#if v.channel !== 'release'}<span class="tag warn">{v.channel}</span>{/if}
-												{#if v.clientOnly}<span class="tag warn">client-only</span>{/if}
-												{#if v.datapack}<span class="tag">data pack</span>{/if}
-											</span>
-											<button
-												type="button"
-												class="button-quiet small"
-												onclick={() => {
-													versionId = v.id;
-													showChangelog();
-												}}>Changelog</button
-											>
-										</label>
-									</li>
-								{/each}
-							</ul>
-							{#if versions.length > shownVersions}
-								<button type="button" class="button-quiet show-more" onclick={() => (shownVersions += VERSION_BATCH)}>
-									{versions.length - shownVersions > VERSION_BATCH ? `Show ${VERSION_BATCH} more (${versions.length - shownVersions} left)` : `Show the other ${versions.length - shownVersions}`}
-								</button>
-							{/if}
-						{/if}
-					{/snippet}
-					{#snippet footer()}
-						<form
-							method="POST"
-							action="?/install"
-							class="install"
-							use:enhance={() => {
-								return async ({ result, update }) => {
-									await update();
-									// A finished install leaves the browser on the list, not on the mod just added.
-									if (result.type === 'success') {
-										selected = null;
-										versions = [];
-										versionId = '';
-									}
-								};
-							}}
-						>
-							<input type="hidden" name="source" value={source} />
-							<input type="hidden" name="projectId" value={selected?.id ?? ''} />
-							<input type="hidden" name="versionId" value={versionId} />
-
-							{#if pick?.datapack}
-								<p class="notice info small">
-									A data pack: it goes into <code>{data.datapacks.world}/datapacks</code>, not the mods folder. Packs that
-									change world generation only affect chunks generated after it is installed.
-								</p>
-							{/if}
-							{#if pick?.clientOnly}
-								<p class="notice warning small">
-									This build is marked client-only: it does nothing on a server, and some crash one. Install it only if a
-									server mod needs it.
-								</p>
-							{/if}
-
-							{#if loadingDeps}
-								<p class="muted small">Checking dependencies.</p>
-							{:else if dependencies.length}
-								<fieldset class="deps">
-									<legend>Dependencies</legend>
-									{#each dependencies as dep (dep.projectId)}
-										<div class="dep">
-											<input
-												id="dep-{dep.projectId}"
-												type="checkbox"
-												disabled={!dep.installable}
-												bind:checked={chosenDeps[dep.projectId]}
-											/>
-											{#if chosenDeps[dep.projectId] && dep.versionId}
-												<input type="hidden" name="dependency" value="{dep.projectId}:{dep.versionId}" />
-											{/if}
-											<label for="dep-{dep.projectId}">
-												<span class="dep-name">
-													{dep.name}
-													<span class="tag" class:warn={dep.type === 'required'}>{dep.type}</span>
-													{#if dep.alreadyInstalled}<span class="tag ok">installed</span>{/if}
-												</span>
-												{#if dep.alreadyInstalled}
-													<span class="small muted">Already in this instance.</span>
-												{:else if !dep.installable}
-													<span class="small warn-text">
-														No build for {data.catalogLoader}
-														{data.minecraftVersion}. Install it by hand if the mod needs it.
-													</span>
-												{/if}
-											</label>
-										</div>
-									{/each}
-								</fieldset>
-							{/if}
-
-							<div class="install-row">
-								<span class="small">
-									{#if pick}
-										Selected <span class="mono">{pick.versionNumber}</span>
-										{#if pick.channel !== 'release'}<span class="tag warn">{pick.channel}</span>{/if}
-									{:else if loadingVersions}
-										Loading versions.
-									{:else}
-										No version to install.
-									{/if}
-								</span>
-								<button class="button-primary" type="submit" disabled={!versionId}>Install</button>
-							</div>
-						</form>
-					{/snippet}
-				</DetailsDialog>
-			</div>
-		{:else}
-			<div class="detail placeholder empty">
-				<p>Pick a mod to see its description, versions and changelog.</p>
-			</div>
-		{/if}
-	</div>
-{:else}
+{:else if view === 'datapacks'}
 	<div class="section-head">
 		<div>
 			<h2>Data packs</h2>
@@ -1274,85 +523,39 @@
 	{/if}
 {/if}
 
+<ModUpdates
+	active={view === 'updates'}
+	instanceId={data.instance.id}
+	packName={data.packName}
+	running={data.running}
+	busy={data.busy}
+	snapshotPrompt={data.snapshotPrompt}
+	bind:packMods
+	bind:available={updatesFound}
+/>
+
+<ModBrowser
+	bind:this={browser}
+	active={view === 'browse'}
+	instanceId={data.instance.id}
+	modloader={data.modloader}
+	modloaderLabel={data.instance.modloaderLabel}
+	minecraftVersion={data.minecraftVersion}
+	catalogLoader={data.catalogLoader}
+	compatibleLoaders={data.compatibleLoaders}
+	mods={data.mods}
+	datapackWorld={data.datapacks.world}
+	bind:source
+	bind:term
+	bind:searching
+/>
+
 <style>
 	fieldset.plain {
 		border: 0;
 		margin: 0;
 		padding: 0;
 		min-width: 0;
-	}
-
-	.bisect {
-		margin-bottom: var(--space-4);
-	}
-
-	.bisect .progress {
-		margin: var(--space-2) 0;
-	}
-
-	.culprits {
-		list-style: none;
-		margin: var(--space-2) 0 0;
-		padding: 0;
-	}
-
-	.culprits li {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--space-3);
-		padding: 0.4rem 0;
-		border-top: 1px solid var(--line);
-	}
-
-	.tests {
-		margin-top: var(--space-2);
-	}
-
-	.tests ol {
-		margin: var(--space-2) 0 0;
-		padding-left: 1.4rem;
-	}
-
-	.tests li {
-		margin: 0.15rem 0;
-	}
-
-	.tests .dot {
-		display: inline-block;
-		margin-right: 0.3rem;
-	}
-
-	.bisect-start {
-		margin-bottom: var(--space-4);
-	}
-
-	.bisect-start summary {
-		cursor: pointer;
-		color: var(--text-muted);
-	}
-
-	.bisect-form {
-		margin-top: var(--space-3);
-		max-width: 44rem;
-	}
-
-	.keep-list {
-		max-height: 14rem;
-		overflow-y: auto;
-		margin-top: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		display: grid;
-		gap: 0.2rem;
-	}
-
-	.keep-list .check {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin: 0;
 	}
 
 	.num {
@@ -1549,307 +752,5 @@
 
 	.foot {
 		margin: var(--space-3) 0 0;
-	}
-
-	.tag.ok {
-		color: var(--accent);
-		border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
-	}
-
-	/* ---- updates and data packs */
-
-
-
-
-	.update-list {
-		list-style: none;
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.update-list li + li {
-		border-top: 1px solid var(--line);
-	}
-
-	.update {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
-		margin: 0;
-		padding: 0.75rem var(--space-4);
-		color: var(--text);
-		font-size: 0.93rem;
-		cursor: pointer;
-	}
-
-	.update-name {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.versions {
-		color: var(--text-muted);
-	}
-
-	.versions .to {
-		color: var(--accent-hover);
-	}
-
-	.skipped {
-		margin-top: var(--space-3);
-	}
-
-	/* ---- add mods */
-
-	.browse-bar {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		margin-bottom: var(--space-4);
-		flex-wrap: wrap;
-	}
-
-	.filters-toggle {
-		margin-left: auto;
-	}
-
-	.segmented {
-		display: flex;
-		gap: 2px;
-		padding: 2px;
-		background: var(--bg-sunken);
-		border: 1px solid var(--line-strong);
-		border-radius: var(--radius);
-	}
-
-	.segmented button {
-		border: 0;
-		padding: 0.25rem 0.75rem;
-		font-size: 0.88rem;
-		font-weight: 400;
-		background: transparent;
-		color: var(--text-muted);
-	}
-
-	.segmented button[aria-pressed='true'] {
-		background: var(--line-strong);
-		color: var(--text);
-	}
-
-	.browse {
-		display: grid;
-		grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
-		gap: 1.25rem;
-		align-items: start;
-	}
-
-	.browse.with-filters {
-		grid-template-columns: 12rem minmax(16rem, 22rem) minmax(0, 1fr);
-	}
-
-	.hits {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		overflow-y: auto;
-		min-height: 16rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.more-hits button {
-		width: 100%;
-	}
-
-	.hits-empty {
-		padding: var(--space-3);
-	}
-
-	.hit {
-		display: flex;
-		justify-content: flex-start;
-		align-items: flex-start;
-		gap: 0.9rem;
-		width: 100%;
-		text-align: left;
-		padding: 0.9rem var(--space-4);
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-lg);
-		font-weight: 400;
-		white-space: normal;
-	}
-
-	.hit:hover:not(:disabled) {
-		border-color: var(--line-strong);
-	}
-
-	.hit[aria-pressed='true'] {
-		border-color: var(--accent);
-	}
-
-	.hit img,
-	.icon-fallback {
-		width: 40px;
-		height: 40px;
-		flex: 0 0 40px;
-		border-radius: var(--radius);
-		background: var(--panel-raised);
-		object-fit: cover;
-	}
-
-	.hit-body {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		min-width: 0;
-		flex: 1;
-	}
-
-	.hit-title {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
-
-	.hit-title strong {
-		font-weight: 500;
-	}
-
-	.summary {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.hit-tags {
-		display: flex;
-		gap: var(--space-1);
-		margin-top: 0.2rem;
-	}
-
-	.detail {
-		display: flex;
-		flex-direction: column;
-		min-height: 20rem;
-	}
-
-	.detail > :global(.pane) {
-		flex: 1;
-	}
-
-	.detail.placeholder {
-		display: grid;
-		place-items: center;
-	}
-
-	.show-more {
-		width: 100%;
-		margin-top: var(--space-2);
-	}
-
-	.version-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.version {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		margin: 0;
-		padding: 0.45rem 0.6rem;
-		border-radius: var(--radius);
-		color: var(--text);
-		cursor: pointer;
-	}
-
-	.version.picked {
-		background: var(--panel-raised);
-	}
-
-	.version-name {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.install-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-
-	.install .notice {
-		margin-bottom: var(--space-2);
-	}
-
-	.deps {
-		margin: 0 0 var(--space-3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		padding: var(--space-2) var(--space-3);
-		max-height: 12rem;
-		overflow-y: auto;
-	}
-
-	.deps legend {
-		font-size: 0.8rem;
-		color: var(--text-faint);
-		padding: 0 var(--space-2);
-	}
-
-	ul.deps {
-		border: 0;
-		padding: 0 0 0 1.2rem;
-		max-height: none;
-	}
-
-	.dep {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-2);
-		padding: var(--space-1) 0;
-	}
-
-	.dep input[type='checkbox'] {
-		margin-top: 0.3rem;
-		flex: 0 0 auto;
-	}
-
-	.dep label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1rem;
-		margin: 0;
-		cursor: pointer;
-		min-width: 0;
-	}
-
-	.dep-name {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		color: var(--text);
-		font-size: 0.9rem;
-	}
-
-	@media (max-width: 70rem) {
-		.browse,
-		.browse.with-filters {
-			grid-template-columns: minmax(0, 1fr);
-		}
 	}
 </style>

@@ -848,6 +848,12 @@ the stored JVM arguments) and `launch` (Java binary, JVM flags, launch arguments
 can run any program on the machine, so nothing that only changes memory may change them. The
 memory fields sit between the launch form's sections and join their own empty form by its id.
 
+**The Mods page**'s Updates and Add mods sub-tabs and the bisect panel are components beside
+the page that stay mounted while another sub-tab is open (an `active` prop hides their
+markup), so an update check, search results and the bisect form's picks outlive switching
+tabs, as they did when it was all page state. The search box in the tool row drives the
+browser through `bind:term` and its exported `search()`.
+
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page
 would navigate there, so the header applies the result itself and reloads in place.
