@@ -479,6 +479,21 @@ from the instance Cleanroom publishes with each release (0.5.x on). Modrinth and
 packs cannot name Cleanroom, so they ask for Forge 1.12.2 (the version migrated from, else
 14.23.5.2860) and the page says so.
 
+Update checks (`updatecheck.ts`, from the scheduler's tick, not awaited by it) look for the
+next pack version on a pack server and the next loader build on a server without a pack;
+a pack's author picks its loader, so pack servers are never offered one. Per server: on or
+off, every 6 hours to weekly, and the least stable channel offered (releases by default).
+A pack version is newer by its publish date (the provider's order where the mirror has no
+dates); a loader build by its place in the newest-first list, its channel read from the
+name (`-beta`, `-rc`, `-pre`). Cleanroom names every build alpha and 0.6 broke mods
+(CleanMix), so it is offered its own line only. The result is one `update_notices` row
+holding the version it was found from: once the server runs something else, the notice is
+not shown until the next check, so no install path has to clear it. A skipped version stays
+hidden when found again; a newer one shows. The overview's button opens the server's
+Settings with the version picked (`?packVersion=` / `?loaderVersion=`), where the pack
+change previews at once: installing still goes through the normal review, snapshot choice
+and Java prompt. A failed lookup is retried after an hour.
+
 ---
 
 ## Worlds

@@ -15,6 +15,7 @@ Install and maintain modded Minecraft servers without having to manage every ste
 - **Multiple sources:** Browse Modrinth, CurseForge, and FTB, upload `.mrpack` or CurseForge archives, or create a server from a Minecraft version and loader.
 - **Loader support:** Vanilla, Fabric, Quilt, Forge, NeoForge, and Cleanroom.
 - **Pack updates:** Update to a different pack version, including packs originally installed from uploaded files. Configuration changes are preserved or merged, with side-by-side review when both you and the pack changed the same lines.
+- **Update notices:** Each server is checked for a newer pack version (pack servers) or loader build (servers set up from a loader) on a schedule you pick, with betas and alphas optional. The overview shows what is out, with a button to review and install it or to skip that version.
 - **Rollback:** Revert the last pack change, restoring the previous configuration and optionally the world from its pre-update snapshot.
 - **Minecraft and loader migrations:** Move eligible non-pack servers between Minecraft versions or loaders. Compatible mod builds are selected where available; unsupported mods are disabled and listed.
 - **Forge 1.12.2 / Cleanroom migration:** Switch between Forge and Cleanroom, including handling the compatible Fugue version required by Cleanroom.

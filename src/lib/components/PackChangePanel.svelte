@@ -17,12 +17,15 @@
 		pack,
 		running,
 		snapshotPrompt,
+		offeredVersionId = null,
 		form
 	}: {
 		instanceId: string;
 		pack: { source: string; projectId: string | null; name: string | null; versionId: string | null; versionName: string | null };
 		running: boolean;
 		snapshotPrompt: SnapshotPromptView;
+		/** A version the overview's update notice links to: picked and previewed at once. */
+		offeredVersionId?: string | null;
 		/** The page's action result, for the missing-Java prompt. */
 		form: { javaMissing?: { major: number; action: string }; [key: string]: unknown } | null | undefined;
 	} = $props();
@@ -62,7 +65,7 @@
 	let versions = $state<PackVersion[]>([]);
 	let versionsError = $state('');
 	// svelte-ignore state_referenced_locally
-	let versionId = $state(pack.versionId ?? '');
+	let versionId = $state(offeredVersionId ?? pack.versionId ?? '');
 	let plan = $state<Plan | null>(null);
 	let planning = $state(false);
 	let planError = $state('');
@@ -77,6 +80,7 @@
 			.then((body) => {
 				versions = body.versions ?? [];
 				if (!versionId) versionId = versions[0]?.id ?? '';
+				if (offeredVersionId && offeredVersionId === versionId && versions.some((v) => v.id === offeredVersionId)) void preview();
 			})
 			.catch(() => (versionsError = "Could not load the pack's versions."));
 	});

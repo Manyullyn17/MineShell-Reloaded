@@ -8,7 +8,7 @@ import { creatorId, requireGlobalAdmin } from '#lib/server/access.js';
 import { bootStartNote } from '#lib/server/bootstart.js';
 import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
-import { serverInstances, type ServerInstance } from '#lib/server/db/schema.js';
+import { serverInstances, updateNotices, type ServerInstance } from '#lib/server/db/schema.js';
 import { consoleFromForm, restartsFromForm, type RestartSettings } from '#lib/server/instance-defaults.js';
 import {
 	InstanceError,
@@ -81,6 +81,8 @@ import {
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
+import { checkForUpdates, updateKind } from '#lib/server/updatecheck.js';
+import { UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -172,6 +174,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			bootStart: instance.bootStart,
 			consoleBacklogLines: instance.consoleBacklogLines,
 			consoleBufferLines: instance.consoleBufferLines,
+			updateCheck: instance.updateCheck,
+			updateCheckHours: instance.updateCheckHours,
+			updateChannel: instance.updateChannel,
 			limitMemoryMb: instance.limitMemoryMb,
 			limitCpuPercent: instance.limitCpuPercent,
 			...(() => {
@@ -201,6 +206,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		running,
 		/** The heap the running process started with; a saved change applies from the next start. */
 		runningMemoryMaxMb: running ? await runningHeapMb(summary.state.mainPid) : null,
+		/** What the update check looks for, when it last did and what it found (skipped included). */
+		updates: {
+			kind: updateKind(instance),
+			checkedAt: instance.updateCheckedAt,
+			found: db.select().from(updateNotices).where(eq(updateNotices.instanceId, instance.id)).get() ?? null
+		},
 		// An uploaded pack has no project: it is updated by uploading the next version's file.
 		pack:
 			instance.packSource
@@ -661,6 +672,36 @@ export const actions: Actions = {
 		await syncUnit(requireInstance(instance.id));
 		rescheduleInstance(instance.id);
 		return { ok: true, message: 'Restart behaviour saved.' };
+	},
+
+	updates: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const hours = Number(form.get('updateCheckHours'));
+		const channel = String(form.get('updateChannel') ?? '');
+		if (!UPDATE_CHECK_HOURS.some((h) => h.hours === hours) || !UPDATE_CHANNELS.includes(channel as never)) {
+			return fail(400, { ok: false, message: 'Pick how often to check and which versions to offer from the lists.' });
+		}
+		const enabled = form.get('updateCheck') === 'on';
+		// Checked again at the scheduler's next tick, with the new channel.
+		db.update(serverInstances)
+			.set({ updateCheck: enabled, updateCheckHours: hours, updateChannel: channel, updateCheckedAt: null, updatedAt: Date.now() })
+			.where(eq(serverInstances.id, instance.id))
+			.run();
+		return { ok: true, message: enabled ? 'Update checks saved; the next one runs within a minute.' : 'Update checks turned off.' };
+	},
+
+	checkUpdates: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		const result = await checkForUpdates(instance);
+		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
+		return { ok: true, message: result.found ? `${result.found.label} is available.` : 'Nothing newer to install.' };
+	},
+
+	unskipUpdate: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		db.update(updateNotices).set({ skipped: false }).where(eq(updateNotices.instanceId, instance.id)).run();
+		return { ok: true, message: 'It shows on the overview again.' };
 	},
 
 	console: async ({ request, params }) => {

@@ -217,8 +217,10 @@ What the built entries in the archive left out, in one place:
   official API key), packwiz.
 - **Snapshots**: restoring a region of a dimension (one dimension is built); a scheduler
   hook running a script after a snapshot.
-- **Update availability**: mods have a check; a newer pack version, loader build or Java
-  update is not shown on the overview.
+- **Update availability**: pack versions and loader builds are checked periodically
+  (`updatecheck.ts`); a newer Java update is not shown, and the mod update check is still
+  run by hand from the Mods tab. Pack servers are not offered loader builds (the pack
+  picks its loader; user's call). The server list shows no update marker.
 
 ---
 

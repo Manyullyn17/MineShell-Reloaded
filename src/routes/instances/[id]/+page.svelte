@@ -161,6 +161,33 @@
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}
 
+{#if data.update}
+	{@const update = data.update}
+	{@const settings = `/instances/${data.instance.id}/settings?tab=general`}
+	<div class="notice info update-notice">
+		<p>
+			<strong>{update.kind === 'pack' ? (data.instance.packName ?? 'The pack') : data.instance.modloaderLabel} {update.label}</strong>
+			is out{update.channel !== 'release' ? ` (${update.channel})` : ''}; this server runs
+			{update.kind === 'pack' ? (data.instance.packVersionName ?? 'an older version') : data.instance.modloaderVersion}.
+		</p>
+		{#if may('software')}
+			<div class="update-actions">
+				<a
+					class="button button-primary"
+					href="{settings}&{update.kind === 'pack' ? 'packVersion' : 'loaderVersion'}={encodeURIComponent(update.versionId)}#{update.kind === 'pack'
+						? 'modpack'
+						: 'loader-version'}">Review and update</a
+				>
+				<form method="POST" action="?/skipUpdate" use:enhance>
+					<input type="hidden" name="versionId" value={update.versionId} />
+					<button class="button-quiet" type="submit">Skip this version</button>
+				</form>
+				<a class="button button-quiet" href="{settings}#updates">Update checks</a>
+			</div>
+		{/if}
+	</div>
+{/if}
+
 {#if crash.ready && crash.value}
 	<section class="panel">
 		<div class="panel-head">
@@ -598,6 +625,18 @@
 </div>
 
 <style>
+	.update-notice {
+		margin-top: var(--space-3);
+	}
+
+	.update-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+
 	.notes-text {
 		white-space: pre-wrap;
 		margin: var(--space-2) 0 0;

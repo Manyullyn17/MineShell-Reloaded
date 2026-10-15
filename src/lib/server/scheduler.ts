@@ -10,6 +10,7 @@ import { autoPauseForPlayers } from './chunky';
 import { evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
+import { runDueUpdateChecks } from './updatecheck';
 
 /**
  * Scheduled restarts are application logic, not systemd timers. Two reasons:
@@ -168,6 +169,8 @@ async function checkAll(): Promise<void> {
 		);
 	}
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
+	// Not awaited: lookups on a slow provider must not hold up restarts.
+	void runDueUpdateChecks().catch((err) => console.error('[mineshell] update checks failed:', err));
 }
 
 export function startScheduler(): void {

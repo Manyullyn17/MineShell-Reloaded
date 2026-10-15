@@ -26,6 +26,7 @@
 	import { CLEANMIX_WARNING, CLEANROOM_GUIDE_URL, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { minMemoryLimitMb, suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
+	import { UPDATE_CHANNEL_LABELS, UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
@@ -102,6 +103,9 @@
 			bootStart: d.bootStart,
 			consoleBacklogLines: d.consoleBacklogLines,
 			consoleBufferLines: d.consoleBufferLines,
+			updateCheck: d.updateCheck,
+			updateCheckHours: d.updateCheckHours,
+			updateChannel: d.updateChannel,
 			limitMemoryMb: (d.limitMemoryMb ?? '') as number | string,
 			limitCpuPercent: (d.limitCpuPercent ?? '') as number | string,
 			snapshotEvery: d.snapshotEvery as string,
@@ -140,6 +144,10 @@
 	// The initial reads are deliberate; the effect below keeps them current.
 	// svelte-ignore state_referenced_locally
 	let sv = $state(settingsValues());
+	// The overview's "Review update" link names the loader build to install.
+	const offeredLoader = page.url.searchParams.get('loaderVersion');
+	// svelte-ignore state_referenced_locally
+	if (offeredLoader) sv.modloaderVersion = offeredLoader;
 	// svelte-ignore state_referenced_locally
 	let fieldValues = $state(propertyValues());
 	// svelte-ignore state_referenced_locally
@@ -239,6 +247,7 @@
 	type Section = { id: string; tab: string; label: string; restart: boolean; dirty: () => boolean };
 	const SECTIONS: Section[] = [
 		{ id: 'identity', tab: 'general', label: 'Identity', restart: false, dirty: () => svChanged('name') },
+		{ id: 'updates', tab: 'general', label: 'Update checks', restart: false, dirty: () => svChanged('updateCheck', 'updateCheckHours', 'updateChannel') },
 		{ id: 'motd', tab: 'general', label: 'Server description', restart: true, dirty: () => PROPERTY_SECTIONS.motd.some(changedProperty) },
 		{ id: 'rules', tab: 'gameplay', label: 'Rules', restart: true, dirty: () => PROPERTY_SECTIONS.rules.some(changedProperty) },
 		{ id: 'world', tab: 'gameplay', label: 'World', restart: true, dirty: () => PROPERTY_SECTIONS.world.some(changedProperty) },
@@ -576,9 +585,16 @@
 	</SettingsSection>
 
 	{#if data.pack}
-		<SettingsSection tab="general" title="Modpack" editable={may('software')} description="Change the pack version; the world and your own mods stay.">
+		<SettingsSection tab="general" id="modpack" title="Modpack" editable={may('software')} description="Change the pack version; the world and your own mods stay.">
 			<div class="embedded">
-				<PackChangePanel instanceId={data.instance.id} pack={data.pack} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
+				<PackChangePanel
+					instanceId={data.instance.id}
+					pack={data.pack}
+					running={data.running}
+					snapshotPrompt={data.snapshotPrompt}
+					offeredVersionId={page.url.searchParams.get('packVersion')}
+					{form}
+				/>
 				{#if data.packRollback}
 					<PackRollback info={data.packRollback} running={data.running} snapshotPrompt={data.snapshotPrompt} {form} />
 				{/if}
@@ -587,6 +603,7 @@
 				{/if}
 			</div>
 		</SettingsSection>
+		{@render updateChecks()}
 	{/if}
 
 	<!-- Pack servers move with their pack; Cleanroom has its own section below. -->
@@ -611,7 +628,7 @@
 	{/if}
 
 	{#if data.settings.modloader !== 'vanilla'}
-		<SettingsSection tab="general" title="{data.instance.modloaderLabel} version" editable={may('software')}>
+		<SettingsSection tab="general" id="loader-version" title="{data.instance.modloaderLabel} version" editable={may('software')}>
 			{#snippet description()}
 				Installed: <strong>{data.settings.modloaderVersion ?? 'not recorded'}</strong>. Reinstalls the loader in place; the
 				world, configs and mods are left alone, and the current install is put back if the new one fails.
@@ -627,7 +644,7 @@
 							aria-busy={!loaderVersions}
 						>
 							{#if sv.modloaderVersion && !loaderVersions?.includes(sv.modloaderVersion)}
-								<option value={sv.modloaderVersion}>{sv.modloaderVersion} (installed)</option>
+								<option value={sv.modloaderVersion}>{sv.modloaderVersion}{sv.modloaderVersion === data.settings.modloaderVersion ? ' (installed)' : ''}</option>
 							{/if}
 							{#each (loaderVersions ?? []).slice(0, 60) as version (version)}
 								<option value={version}>{version}{version === data.settings.modloaderVersion ? ' (installed)' : ''}</option>
@@ -657,7 +674,72 @@
 				<JavaPrompt {form} action="loaderVersion" />
 			</form>
 		</SettingsSection>
+		{#if !data.pack}{@render updateChecks()}{/if}
 	{/if}
+
+	{#snippet updateChecks()}
+		{@const found = data.updates.found}
+		{#if data.updates.kind}
+		<SettingsSection tab="general" id="updates" title="Update checks" editable={may('software')} dirty={dirtyIds.has('updates')}>
+			{#snippet description()}
+				Looks for a newer {data.updates.kind === 'pack' ? 'pack version' : `${data.instance.modloaderLabel} build`} now and then
+				and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
+			{/snippet}
+			<form method="POST" action="?/updates" class="rows" bind:this={forms.updates} onsubmit={onSectionSubmit}>
+				<div class="check field">
+					<input id="updateCheck" name="updateCheck" type="checkbox" bind:checked={sv.updateCheck} />
+					<label for="updateCheck">Check for updates</label>
+				</div>
+				<div class="grid-2">
+					<div class="field">
+						<label for="updateCheckHours">How often</label>
+						<select id="updateCheckHours" name="updateCheckHours" bind:value={sv.updateCheckHours} disabled={!sv.updateCheck}>
+							{#each UPDATE_CHECK_HOURS as option (option.hours)}
+								<option value={option.hours}>{option.label}</option>
+							{/each}
+						</select>
+					</div>
+					<div class="field">
+						<label for="updateChannel">Offer</label>
+						<select id="updateChannel" name="updateChannel" bind:value={sv.updateChannel} disabled={!sv.updateCheck}>
+							{#each UPDATE_CHANNELS as channel (channel)}
+								<option value={channel}>{UPDATE_CHANNEL_LABELS[channel]}</option>
+							{/each}
+						</select>
+						{#if data.settings.modloader === 'cleanroom' && !data.pack}
+							<p class="hint">Cleanroom calls every build alpha; it is offered builds of its own line (0.5.x stays on 0.5.x).</p>
+						{/if}
+					</div>
+				</div>
+				{#if !sv.updateCheck}
+					<!-- A disabled select is not posted; the saved values go with the switch. -->
+					<input type="hidden" name="updateCheckHours" value={sv.updateCheckHours} />
+					<input type="hidden" name="updateChannel" value={sv.updateChannel} />
+				{/if}
+			</form>
+			<div class="inline-row update-status">
+				<p class="faint small">
+					{#if !data.updates.checkedAt}
+						Not checked yet.
+					{:else}
+						Last checked {formatDateTime(data.updates.checkedAt)}:
+						{#if !found}nothing newer.
+						{:else if found.skipped}<strong>{found.label}</strong> is out, skipped.
+						{:else}<strong>{found.label}</strong>{found.channel !== 'release' ? ` (${found.channel})` : ''} is available.{/if}
+					{/if}
+				</p>
+				<form method="POST" action="?/checkUpdates" use:enhance>
+					<button class="button-quiet" type="submit">Check now</button>
+				</form>
+				{#if found?.skipped}
+					<form method="POST" action="?/unskipUpdate" use:enhance>
+						<button class="button-quiet" type="submit">Show it again</button>
+					</form>
+				{/if}
+			</div>
+		</SettingsSection>
+		{/if}
+	{/snippet}
 
 	{#if data.cleanroom}
 		{@const cr = data.cleanroom}
@@ -1678,6 +1760,15 @@
 
 	.embedded :global(.panel) {
 		margin-top: 0.9rem;
+	}
+
+	.update-status {
+		margin-top: var(--space-3);
+		align-items: center;
+	}
+
+	.update-status p {
+		margin: 0;
 	}
 
 	.inline-row {

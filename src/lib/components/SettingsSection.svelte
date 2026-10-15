@@ -21,6 +21,7 @@
 	 */
 	let {
 		tab,
+		id,
 		title,
 		description,
 		dirty = false,
@@ -29,6 +30,8 @@
 		children
 	}: {
 		tab: string;
+		/** For links to the section (`#id`). */
+		id?: string;
 		title: string;
 		description?: Snippet | string;
 		/** Has unsaved changes; marks the heading. */
@@ -50,7 +53,7 @@
 	const shown = $derived(view.query ? text.includes(view.query.toLowerCase()) : view.tab === tab);
 </script>
 
-<section class="settings-section" hidden={!shown} bind:this={node}>
+<section class="settings-section" {id} hidden={!shown} bind:this={node}>
 	<div class="head">
 		<div>
 			{#if view.query}<p class="where">{view.tabLabel(tab)}</p>{/if}

@@ -78,6 +78,13 @@ export const serverInstances = sqliteTable('server_instances', {
 	consoleBacklogLines: integer('console_backlog_lines').notNull().default(300),
 	consoleBufferLines: integer('console_buffer_lines').notNull().default(2000),
 
+	/** Periodic check for a newer pack version (pack servers) or loader build (the others); see updatecheck.ts. */
+	updateCheck: integer('update_check', { mode: 'boolean' }).notNull().default(true),
+	updateCheckHours: integer('update_check_hours').notNull().default(24),
+	/** The least stable versions to offer: release | beta | alpha. */
+	updateChannel: text('update_channel').notNull().default('release'),
+	updateCheckedAt: integer('update_checked_at'),
+
 	eulaAccepted: integer('eula_accepted', { mode: 'boolean' }).notNull().default(false),
 	pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
 	notes: text('notes'),
@@ -456,6 +463,26 @@ export const playerSessions = sqliteTable(
 );
 
 export type ServerInstance = typeof serverInstances.$inferSelect;
+
+/**
+ * The newest update the last check found for a server, one row at most. It
+ * holds the version it was found from, so a server changed since then shows
+ * nothing until the next check. Skipping hides it until a newer one appears.
+ */
+export const updateNotices = sqliteTable('update_notices', {
+	instanceId: text('instance_id')
+		.primaryKey()
+		.references(() => serverInstances.id, { onDelete: 'cascade' }),
+	/** pack | loader */
+	kind: text('kind').notNull(),
+	fromVersion: text('from_version').notNull(),
+	versionId: text('version_id').notNull(),
+	label: text('label').notNull(),
+	channel: text('channel').notNull(),
+	foundAt: integer('found_at').notNull(),
+	skipped: integer('skipped', { mode: 'boolean' }).notNull().default(false)
+});
+export type UpdateNotice = typeof updateNotices.$inferSelect;
 export type NewServerInstance = typeof serverInstances.$inferInsert;
 export type Mod = typeof mods.$inferSelect;
 export type InstanceMod = typeof instanceMods.$inferSelect;

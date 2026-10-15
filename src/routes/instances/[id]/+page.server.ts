@@ -48,6 +48,7 @@ import { forgetMissing, readMissing, startRetryMissing } from '#lib/server/packs
 import { isAllowedAddress } from '#lib/server/downloadaccess.js';
 import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { isBisecting } from '#lib/server/bisect.js';
+import { currentNotice, skipNotice } from '#lib/server/updatecheck.js';
 
 /**
  * A server still not "Done (" this long after starting is probably hung
@@ -120,8 +121,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			: null
 	);
 	const missingDownloads = await readMissing(instance.path);
+	const update = currentNotice(instance);
 
 	return {
+		/** A newer pack version or loader build the periodic check found (updatecheck.ts). */
+		update: update && { kind: update.kind, versionId: update.versionId, label: update.label, channel: update.channel },
 		summary: {
 			uptimeMs: summary.uptimeMs,
 			startedAt: summary.running ? summary.state.activeEnterTimestamp : null,
@@ -380,6 +384,13 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		await forgetMissing(instance.path);
 		return { ok: true };
+	},
+
+	skipUpdate: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const versionId = String((await request.formData()).get('versionId') ?? '');
+		if (!skipNotice(instance.id, versionId)) return fail(400, { ok: false, message: 'That update is no longer the one on offer.' });
+		return { ok: true, message: 'Skipped. A newer version shows again; the server Settings can bring this one back.' };
 	},
 
 	pin: async ({ params }) => {
