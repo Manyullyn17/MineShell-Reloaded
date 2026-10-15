@@ -13,7 +13,8 @@
  *     --timeout <ms>     give up waiting after this long (default 30000), then shoot anyway
  *     --overflow         also list elements reaching past the viewport's right edge
  *     --click <selector> once loaded, click the first element matching this CSS selector;
- *                        --wait-for then waits for what the click brings
+ *                        --wait-for then waits for what the click brings. Repeatable: the
+ *                        clicks happen in order, half a second apart
  *     --dialog <answer>  accept | dismiss a confirm() the page opens (default accept);
  *                        its text is printed
  *
@@ -45,7 +46,10 @@ const fixedHeight = option('--height', null);
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
-const click = option('--click', null);
+/** Every --click, in order: a sub-tab, then a button inside it. */
+const clicks = [];
+for (let next; (next = option('--click', null)) !== null; ) clicks.push(next);
+const click = clicks.length > 0;
 const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
@@ -118,8 +122,11 @@ try {
 	if (click) {
 		while (Date.now() < deadline && (await evaluate('document.readyState')) !== 'complete') await sleep(200);
 		await sleep(2000);
-		const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(click)}); if (!e) return false; e.click(); return true; })()`);
-		if (!clicked) console.log(`Nothing matches ${click}.`);
+		for (const [i, selector] of clicks.entries()) {
+			if (i > 0) await sleep(500);
+			const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return false; e.click(); return true; })()`);
+			if (!clicked) console.log(`Nothing matches ${selector}.`);
+		}
 	}
 	if (waitFor) {
 		while (Date.now() < deadline && !found) {
