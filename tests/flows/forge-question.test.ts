@@ -39,6 +39,8 @@ let run = 0;
 let asking = true;
 let onceAtStart: (string | null)[] = [];
 let instanceId = '';
+/** Spread the question's lines over milliseconds, as a long one is (Forge 14.23.5, 380 lines over 5 ms). */
+let spread = false;
 function fakeSystemd() {
 	invalidateUnitState();
 	fakeProcesses((cmd, args) => {
@@ -64,7 +66,12 @@ function fakeSystemd() {
 		}
 		if (cmd === 'journalctl') {
 			const last = asking ? QUESTION[QUESTION.length - 1] : '[23:30:00] [Server thread/INFO] [minecraft/DedicatedServer]: Done (93.1s)! For help, type "help"';
-			if (args.some((a) => a.startsWith('--until='))) return { stdout: QUESTION.map((m) => entry(m, ASKED_US)).join('\n') + '\n' };
+			if (args.some((a) => a.startsWith('--until='))) {
+				const before = '[23:25:54] [Server thread/ERROR] [FML]:     contenttweaker:kami_cloth: 4096';
+				const lines = spread ? [before, ...QUESTION.slice(0, 8)] : QUESTION;
+				// Spread: one line per millisecond, the prompt at ASKED_US.
+				return { stdout: lines.map((m, i) => entry(m, spread ? ASKED_US - (lines.length - 1 - i) * 1000 : ASKED_US)).join('\n') + '\n' };
+			}
 			if (args.includes('-g')) {
 				if (args.some((a) => a.startsWith('--after-cursor='))) return {};
 				return { stdout: entry(asking ? QUESTION[7] : last, ASKED_US) + '\n' };
@@ -96,6 +103,7 @@ beforeEach(() => {
 	active = false;
 	run = 0;
 	asking = true;
+	spread = false;
 	forgetForgeWatches();
 	fakeSystemd();
 });
@@ -112,6 +120,16 @@ describe('a question Forge waits on at startup', () => {
 		spawnCalls.length = 0;
 		expect(await pendingForgeQuestion(s, at)).toEqual(question);
 		expect(spawnCalls.filter((c) => c.cmd === 'journalctl')).toEqual([]);
+	});
+
+	// Read on a real Forge 1.12.2 server (2026-10-15): only the prompt's millisecond was read, the
+	// question's first line was not in it, and it showed as an unknown question, all 380 lines open.
+	it('is read whole when its lines were logged over several milliseconds', async () => {
+		spread = true;
+		const s = await waitingServer();
+		const question = await pendingForgeQuestion(s, await startedAt(s.id));
+		expect(question).toMatchObject({ kind: 'missing-entries' });
+		expect(question!.groups).toEqual([{ name: 'minecraft:items', entries: ['contenttweaker:kami_cloth', 'contenttweaker:kamium_ingot'] }]);
 	});
 
 	it('is not looked for once the run got past starting, nor on loaders that never ask', async () => {

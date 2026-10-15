@@ -375,11 +375,17 @@ export async function readJournalEvents(
  */
 export async function readMessageAt(id: string, at: number): Promise<string[]> {
 	const second = Math.floor(at / 1000);
-	const out = await journalctl([...unitMatch(id), '-o', 'json', `--since=@${second}`, `--until=@${second + 1}`]);
+	// A long message's lines are logged over several milliseconds (Forge 1.12's
+	// missing-entries question: 380 lines, 5 ms), so the seconds before it are
+	// read too; the caller finds where the message starts.
+	const out = await journalctl([...unitMatch(id), '-o', 'json', `--since=@${second - MESSAGE_SPAN_S}`, `--until=@${second + 1}`]);
 	return parseEvents(out)
-		.filter((e) => e.at === at)
+		.filter((e) => e.at <= at)
 		.map((e) => e.message);
 }
+
+/** How far before its last line a message read by readMessageAt may start. */
+const MESSAGE_SPAN_S = 5;
 
 /**
  * A MESSAGE field: text, or - for a line with control characters, like the
