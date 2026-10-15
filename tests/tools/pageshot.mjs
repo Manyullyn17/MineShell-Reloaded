@@ -17,6 +17,8 @@
  *                        clicks happen in order, half a second apart
  *     --dialog <answer>  accept | dismiss a confirm() the page opens (default accept);
  *                        its text is printed
+ *     --element <selector>  capture only the first element matching this (plus a small
+ *                        margin), at full size: one part of a long phone-width page
  *
  * The whole page is captured (up to 4000 px tall). Chromium: $CHROME, else
  * Playwright's under ~/.cache/ms-playwright, else chromium/google-chrome on
@@ -43,6 +45,7 @@ const flag = (name) => {
 };
 const width = Number(option('--width', '1280'));
 const fixedHeight = option('--height', null);
+const element = option('--element', null);
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
@@ -158,7 +161,17 @@ try {
 	const height = fixedHeight ? Number(fixedHeight) : Math.min(await evaluate('document.documentElement.scrollHeight'), 4000);
 	await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
 	await sleep(300);
-	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !fixedHeight, clip: fixedHeight ? { x: 0, y: 0, width, height, scale: 1 } : undefined });
+	let clip = fixedHeight ? { x: 0, y: 0, width, height, scale: 1 } : undefined;
+	if (element) {
+		const box = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(element)}); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }; })()`);
+		if (box) {
+			const margin = 8;
+			const x = Math.max(0, box.x - margin);
+			const y = Math.max(0, box.y - margin);
+			clip = { x, y, width: Math.min(width - x, box.width + 2 * margin), height: box.height + 2 * margin, scale: 1 };
+		} else console.log(`Nothing matches ${element}; the whole page is captured.`);
+	}
+	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !fixedHeight || !!element, clip });
 	await fs.writeFile(out, Buffer.from(shot.result.data, 'base64'));
 	console.log(`${out}${found ? '' : ` (gave up waiting for "${waitFor}")`}`);
 	ws.close();
