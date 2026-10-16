@@ -128,7 +128,9 @@ pages. Zoomed out, every region at once as a cheap tile from its header (chunk g
 InhabitedTime), with a coordinate grid; zoomed in, a region's coloured tile loads as it
 comes into view (lazy, one by one). Chunks are selected by click or drag, across regions;
 regions holding selected chunks stay marked when zoomed out. A coordinate field jumps to a
-block position. Fallback if the seamless map turns out costly: an overview of region tiles,
+block position. Selected chunks look like Xaero's minimap claims (user's call): a
+translucent fill in the accent colour, bordered on the selection's outer edge only, so
+neighbouring chunks read as one area. Fallback if the seamless map turns out costly: an overview of region tiles,
 a region view opened from it with steps to the four neighbours.
 
 ### Pausing empty servers
