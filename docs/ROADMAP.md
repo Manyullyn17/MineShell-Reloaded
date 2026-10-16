@@ -14,8 +14,7 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: duplicate detection across platforms and hash-based mod caching; from the
-  leftovers, data pack updates.
+- **Sooner**: duplicate detection across platforms and hash-based mod caching.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -150,10 +149,8 @@ What the built entries in the archive left out, in one place:
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
-  does not search; the mirror's coverage of it is unchecked). Updates for data packs:
-  `instance_datapacks` has project and version ids, so the mod update check could cover
-  them; a world-generation pack the world has loaded needs care on update (removed or
-  renamed biomes break loading, the same way removing the pack does).
+  does not search; the mirror's coverage of it is unchecked). Data pack updates are checked
+  by hand in the Data packs sub-tab (built 2026-10-16), not in the periodic check.
 - **Item icons and names**: 1.12 mod damage variants whose model names only the mod's code
   maps (AE2 material/part, IE metal, Botania manaresource; user's call: decide later), names
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),

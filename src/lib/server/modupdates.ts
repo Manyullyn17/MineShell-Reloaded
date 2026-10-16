@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from './db';
-import { instanceMods, type ServerInstance } from './db/schema';
+import { instanceDatapacks, instanceMods, type ServerInstance } from './db/schema';
 import {
 	audit,
 	InstanceError,
@@ -34,6 +34,7 @@ import { clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
 import { indexMods } from './crashdiag';
+import { installDatapackVersion, isDatapackVersion, listDatapacks } from './mods/datapacks';
 
 /**
  * Updating mods outside a pack version change: all of them at once ("Update
@@ -244,6 +245,103 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 	}
 	result.synced = synced;
 	return result;
+}
+
+export type DatapackUpdate = {
+	fileName: string;
+	name: string;
+	currentVersion: string | null;
+	targetVersionId: string;
+	targetVersion: string;
+	channel: string;
+	/** Adds or changes world generation, and this world has loaded it: a newer version can break loading. */
+	worldgenInUse: boolean;
+};
+
+/** A tracked data pack's data pack builds for this Minecraft version, newest first. */
+async function datapackVersions(instance: ServerInstance, source: string, projectId: string): Promise<ProjectVersion[]> {
+	const versions = await compatibleVersions(source, projectId, { minecraftVersion: instance.minecraftVersion, loaders: ['datapack'] });
+	return versions.filter((v) => isDatapackVersion(v, instance.modloader));
+}
+
+/**
+ * Which data packs from the mod browser (instance_datapacks) have a newer
+ * build for this Minecraft version; a release stays on releases. Ones put
+ * there by hand or by the modpack have nothing to look up.
+ */
+export async function checkDatapackUpdates(
+	instance: ServerInstance
+): Promise<{ updates: DatapackUpdate[]; upToDate: number; skipped: { fileName: string; name: string; reason: string }[] }> {
+	const { packs } = await listDatapacks(instance);
+	const present = new Map(packs.map((p) => [p.fileName, p]));
+	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all();
+	const result = { updates: [] as DatapackUpdate[], upToDate: 0, skipped: [] as { fileName: string; name: string; reason: string }[] };
+	await eachLimited(
+		rows.filter((r) => present.has(r.fileName)),
+		async (row) => {
+			try {
+				const target = pickUpdate(await datapackVersions(instance, row.source, row.projectId), row);
+				if (!target) {
+					result.upToDate++;
+					return;
+				}
+				const pack = present.get(row.fileName)!;
+				result.updates.push({
+					fileName: row.fileName,
+					name: row.name,
+					currentVersion: row.version,
+					targetVersionId: target.id,
+					targetVersion: target.versionNumber,
+					channel: target.channel,
+					worldgenInUse: pack.worldgen && pack.loadedByWorld
+				});
+			} catch (err) {
+				result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });
+			}
+		}
+	);
+	result.updates.sort((a, b) => a.name.localeCompare(b.name));
+	return result;
+}
+
+/**
+ * Installs the picked data pack versions, each replacing its older file
+ * (installDatapackVersion downloads first, so a failed download leaves the
+ * old one). A world-generation pack the world has loaded can stop it loading
+ * when a biome it named goes away: that needs the server stopped, and the
+ * snapshot (`snapshot`) is taken first.
+ */
+export async function applyDatapackUpdates(instance: ServerInstance, changes: VersionChange[], opts: { snapshot: boolean }): Promise<string> {
+	if (!changes.length) throw new InstanceError('Nothing to update.');
+	const rows = new Map(
+		db
+			.select()
+			.from(instanceDatapacks)
+			.where(eq(instanceDatapacks.instanceId, instance.id))
+			.all()
+			.map((r) => [r.fileName, r])
+	);
+	const unknown = changes.find((c) => !rows.has(c.fileName));
+	if (unknown) throw new InstanceError(`${unknown.fileName} is not a data pack MineShell installed.`);
+	const { packs } = await listDatapacks(instance);
+	const risky = changes.filter((c) => packs.some((p) => p.fileName === c.fileName && p.worldgen && p.loadedByWorld));
+	if (risky.length) await requireStopped(instance);
+	const label = `Updating ${changes.length} data pack${changes.length === 1 ? '' : 's'}`;
+	return startTask({ label: `${label}: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		if (risky.length && opts.snapshot) await snapshotStep(instance, { reason: 'mod-update', label: `Before ${label.toLowerCase()}` }, task);
+		let n = 0;
+		for (const change of changes) {
+			const row = rows.get(change.fileName)!;
+			task.setProgress(Math.round((n++ / changes.length) * 100), `Updating ${row.name}`);
+			const version = (await datapackVersions(instance, row.source, row.projectId)).find((v) => v.id === change.versionId);
+			if (!version) throw new Error(`${row.name}: that version is no longer listed.`);
+			const project = { id: row.projectId, slug: row.slug, name: row.name, projectUrl: row.projectUrl, iconUrl: row.iconUrl };
+			await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version);
+			task.log(`${row.name}: ${row.version ?? '?'} -> ${version.versionNumber}`);
+		}
+		audit('instance.datapacks_updated', { instanceId: instance.id, detail: changes.map((c) => rows.get(c.fileName)!.name).join(', ') });
+		task.setProgress(100, 'Done');
+	});
 }
 
 /** Every version of a project that runs on this server, newest first, across the loaders it accepts. */

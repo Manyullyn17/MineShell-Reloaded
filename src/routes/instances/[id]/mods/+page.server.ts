@@ -6,7 +6,7 @@ import { OperationInProgressError } from '#lib/server/operations.js';
 import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { fileVersionPairs } from '#lib/server/formvalues.js';
-import { changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
+import { applyDatapackUpdates, changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import {
@@ -302,6 +302,22 @@ export const actions: Actions = {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Install failed.'
 			});
+		}
+	},
+
+	/** "Update data packs": each `change` field being "<fileName>\n<versionId>", as for mods. */
+	updateDatapacks: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const changes = fileVersionPairs(form);
+		if (!changes.length) return fail(400, { ok: false, message: 'Tick at least one data pack to update.' });
+		try {
+			await applyDatapackUpdates(instance, changes, { snapshot: await decideSnapshot(instance, form.get('snapshot')) });
+			return { ok: true, message: 'Updating data packs. Follow it in Tasks; the world loads them at its next start or /reload.' };
+		} catch (err) {
+			return refused(err);
 		}
 	},
 

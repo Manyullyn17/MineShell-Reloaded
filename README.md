@@ -62,7 +62,7 @@ Manage server mods and prepare matching client installations from the same inter
 - Enable, disable, delete, and change mod versions.
 - Detect mods added outside MineShell and identify them rather than silently ignoring them.
 - Detect and disable client-only mods after pack installation.
-- Browse and install data pack releases directly into a world's `datapacks/` directory.
+- Browse and install data pack releases directly into a world's `datapacks/` directory, and update them (a world-generation pack the world uses only with the server stopped, after a snapshot).
 - Export client installations as Modrinth `.mrpack` files, CurseForge ZIP archives, or Prism Launcher instances.
 - Choose which mods and folders to include in an export. For servers installed from modpacks, include the original pack's client-side files that were not needed on the server.
 

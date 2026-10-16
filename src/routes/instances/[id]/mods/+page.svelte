@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import DatapackUpdates from './DatapackUpdates.svelte';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
@@ -471,6 +472,9 @@
 			</p>
 		</div>
 	</div>
+	{#if may('datapacks') && data.datapacks.packs.some((p) => p.tracked)}
+		<DatapackUpdates instanceId={data.instance.id} running={data.running} busy={data.busy} snapshotPrompt={data.snapshotPrompt} />
+	{/if}
 	{#if data.datapacks.packs.length === 0}
 		<div class="empty"><p>No data packs. Data pack releases from Add mods land here.</p></div>
 	{:else}

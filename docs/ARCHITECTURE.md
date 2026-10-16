@@ -409,7 +409,13 @@ Details worth keeping:
   the next install or pack change replaces it.
 - Data packs from the mod browser (Modrinth releases tagged `datapack`) go into the world's
   `datapacks/` folder and are tracked in `instance_datapacks`, apart from `instance_mods`,
-  whose rows all live in `mods/`.
+  whose rows all live in `mods/`. Their updates (`checkDatapackUpdates`/`applyDatapackUpdates`
+  in modupdates.ts, the Data packs sub-tab) list the project's data pack builds for the
+  Minecraft version and pick as for mods; installing a version replaces the older file
+  after downloading the new one. A world-generation pack the world has loaded can stop it
+  loading when a biome it named goes away: it starts unticked, needs the server stopped,
+  and takes the snapshot first. Not journalled: one file per pack, old one kept until the
+  new one is in.
 
 Operations that rework an instance's files - pack version change, loader version change,
 moving to another Minecraft version or loader (`migrate.ts`), Cleanroom migration and

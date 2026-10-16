@@ -169,10 +169,12 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			upload: on('mods'),
 			sync: on('mods'),
 			install: handler({ any: [on('mods'), on('datapacks')] }, 'mods for a mod, datapacks for a data pack'),
-			removeDatapack: on('datapacks')
+			removeDatapack: on('datapacks'),
+			updateDatapacks: on('datapacks')
 		}
 	},
 	'/api/instances/[id]/mod-updates': { methods: { GET: on('mods') } },
+	'/api/instances/[id]/datapack-updates': { methods: { GET: on('datapacks') } },
 	'/api/instances/[id]/mod-versions': { methods: { GET: on('mods') } },
 
 	'/instances/[id]/world': {
