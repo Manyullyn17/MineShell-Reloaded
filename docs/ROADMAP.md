@@ -10,8 +10,18 @@ whatever it leaves out stays here.
 Versions (user's call, 2026-10-16): MineShell is in beta (0.x). 1.0 comes when all basic
 functionality is there and stable. After it, maybe a few minor additions, then plugin
 servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
-has an agreed install-flow plan. Other ideas below remain later or undecided; none has a
-delivery date.
+has an agreed install-flow plan. None of this has a delivery date.
+
+Beta order (user's call, 2026-10-16), for the entries under "Later":
+
+- **Sooner**: resource cap for all servers together; duplicate detection across platforms
+  and hash-based mod caching; multi-instance port management; the pack change preview
+  for data-pack-loader folders; remote access docs (for completeness); from the leftovers,
+  data pack updates and scheduled mod update checks (custom servers only: pack mods are
+  not usually updated one by one, and the manual check stays).
+- **End of beta**: world backups (external), instance export and import.
+- **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
+  settings.
 
 External world-backup integration is a future plan, but the provider and design are not
 settled. Current snapshots remain local to the server disk. This is an accepted limitation
@@ -120,8 +130,9 @@ code.
 ### Hash-based mod caching
 
 Check a content hash before downloading and copy from an existing instance if it matches.
-Explicitly deferred: it is an optimisation, not a correctness fix, and it partially
-reverses the deliberate decision to always download fresh. If it happens, it must key on
+Deferred at first (an optimisation, not a correctness fix, and it partially reverses the
+deliberate decision to always download fresh); moved up with duplicate detection (user's
+call, 2026-10-16), since both read the same jar hashes. It must key on
 *content* hash, never on version label — the whole reason for downloading fresh is that
 packs ship patched jars under upstream version numbers.
 
