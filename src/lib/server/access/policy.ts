@@ -64,6 +64,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			snapshots: 'globalAdmin',
 			installUnit: 'globalAdmin',
 			serverCap: 'globalAdmin',
+			portChange: 'globalAdmin',
 			itemIcons: 'globalAdmin',
 			sftp: 'globalAdmin',
 			trashDays: 'globalAdmin',

@@ -35,6 +35,7 @@ import {
 } from '#lib/server/systemd.js';
 import { applyServerCap, capProblem, getServerCap, inServerSlice, maxCpuPercent, MIN_CAP_MEMORY_MB, saveServerCap, totalMemoryMb } from '#lib/server/servercap.js';
 import { runningCeilings } from '#lib/server/memoryguard.js';
+import { freePortFor, MOVABLE, portOverview, setServerPort, type PortKind } from '#lib/server/portmap.js';
 import {
 	addManualJava,
 	getJavaDefaults,
@@ -59,7 +60,7 @@ import { authEnabled } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
 import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
-import { audit, listInstances, syncUnit } from '#lib/server/instances.js';
+import { audit, getInstance, InstanceError, listInstances, syncUnit } from '#lib/server/instances.js';
 import {
 	freeSpace,
 	getSnapshotPolicy,
@@ -147,7 +148,7 @@ function kindsFrom(form: FormData): NotificationKind[] {
 	return form.getAll('kinds').map(String).filter((k): k is NotificationKind => known.has(k as NotificationKind));
 }
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const systemd = await probeSystemd();
 	return {
 		paths: {
@@ -159,6 +160,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		},
 		systemd: { ...systemd, unitInstalled: await templateUnitInstalled() },
 		serverCap: await serverCapView(),
+		// Streamed, and only on its tab: it reads every process's sockets.
+		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
 		/** MineShell's notification destination, without its address. */
@@ -465,6 +468,24 @@ export const actions: Actions = {
 					? 'Cap saved and applied to the running servers.'
 					: 'Cap removed.'
 		};
+	},
+
+	// A port from the Ports tab: the number typed, or the first free one (`free`).
+	portChange: async ({ request }) => {
+		const form = await request.formData();
+		const instance = getInstance(String(form.get('instanceId') ?? ''));
+		const kind = String(form.get('kind') ?? '') as PortKind;
+		if (!instance) return fail(404, { ok: false, message: 'No server with that name.' });
+		if (!MOVABLE.includes(kind)) return fail(400, { ok: false, message: 'That port follows the game port; change the game port instead.' });
+		try {
+			const port = form.get('free') === 'on' ? await freePortFor(instance, kind) : Number(String(form.get('port') ?? '').trim() || NaN);
+			await setServerPort(instance, kind, port);
+			const running = (await unitState(instance.id)).active === 'active';
+			return { ok: true, message: `${instance.name} now has port ${port}${running ? '; restart it to use it' : ''}.` };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	itemIcons: async ({ request }) => {

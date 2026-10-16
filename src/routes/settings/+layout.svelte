@@ -6,6 +6,7 @@
 	/** Tabs are links, so each one has an address; New server defaults and Accounts are pages of their own. */
 	const TABS = [
 		{ id: 'system', label: 'System' },
+		{ id: 'ports', label: 'Ports' },
 		{ id: 'java', label: 'Java' },
 		{ id: 'snapshots', label: 'Snapshots' },
 		{ id: 'defaults', label: 'New server defaults', href: '/settings/defaults' },

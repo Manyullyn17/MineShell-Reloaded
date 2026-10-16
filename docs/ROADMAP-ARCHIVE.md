@@ -9,6 +9,20 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Multi-instance port management
+
+Built 2026-10-16 (`portmap.ts`, MineShell settings > Ports; ARCHITECTURE, Simple Voice
+Chat). User's calls: a settings tab, global admins only, other programs' ports shown, and
+clashes changeable by hand or moved to a free port automatically. Found on the way: new
+ports avoided only game and RCON ports, not voice chat or map ports (fixed in the same
+change). Tried on the throwaway dev server: the installed MineShell's irithyll was named by
+its unit on all four of its ports, two servers given its voice port showed the clash and
+"held by", and "Free port" moved them to 24455/24456. The original note:
+
+Ports are allocated automatically and conflicts are detected (start refuses a port taken by
+something else), but there is no view showing what is bound where across all instances.
+Cosmetic until you are running enough servers to lose track.
+
 ### Resource cap for all servers together
 
 Built 2026-10-16 (`servercap.ts`, MineShell settings > System; ARCHITECTURE, "Drop-ins"),

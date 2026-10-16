@@ -332,3 +332,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Update checks: newer pack version / loader build by date and channel, Cleanroom kept on its line, skip, hidden after the server moved on, retry after a failure | `server/updatecheck.test.ts` |
 | (feature) Credits: README's section lists every entry of the About page's list | `shared/credits.test.ts` |
 | A memory limit of heap + 512 MB let the kernel kill a big pack (1.5-3.3 GB outside its heap), and the kill showed as a crash with no cause | `shared/memorylimit.test.ts`, `crashdiag/crashdiag.test.ts` |
+| A new server could be given a stopped server's voice chat or map mod port (only game and RCON ports were avoided) | `flows/ports.test.ts` |
+| (feature) Cap on all servers: soft memory cap and CPU quota on the shared slice, a slice file MineShell did not write left alone, the start warning past the cap | `server/servercap.test.ts` |
+| (feature) Ports tab: each server's ports, /proc/net listeners and their units, clashes, ports held by others, a server on its old port, changing a port where it is configured | `flows/ports.test.ts` |

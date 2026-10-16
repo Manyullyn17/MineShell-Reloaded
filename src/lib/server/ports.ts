@@ -20,20 +20,25 @@ export const DEFAULT_SERVER_PORT = 25565;
 export const RCON_OFFSET = 1000;
 export const DEFAULT_RCON_PORT = DEFAULT_SERVER_PORT + RCON_OFFSET;
 
-function claimedPorts(excludeInstanceId?: string): Set<number> {
-	const rows = db
-		.select({
-			id: serverInstances.id,
-			serverPort: serverInstances.serverPort,
-			rconPort: serverInstances.rconPort
-		})
-		.from(serverInstances)
-		.all();
+/**
+ * Every port a server has, whether it runs or not: game and RCON, and the
+ * ports its mods are given (Simple Voice Chat's UDP port, a map mod's web
+ * server). Only game and RCON counted before October 2026, so a new server
+ * could be given a stopped server's voice chat port. Imported when needed:
+ * voicechat and worldmap reach back into much of MineShell.
+ */
+export async function claimedPorts(excludeInstanceId?: string): Promise<Set<number>> {
 	const claimed = new Set<number>();
-	for (const row of rows) {
+	const { voiceChat } = await import('./voicechat');
+	const { getMapSettings } = await import('./worldmap');
+	for (const row of db.select().from(serverInstances).all()) {
 		if (row.id === excludeInstanceId) continue;
 		claimed.add(row.serverPort);
 		claimed.add(row.rconPort);
+		const voice = await voiceChat(row).catch(() => null);
+		if (voice) claimed.add(voice.port);
+		const map = getMapSettings(row.id).modPort;
+		if (map) claimed.add(map);
 	}
 	return claimed;
 }
@@ -48,7 +53,7 @@ export function portIsFree(port: number): Promise<boolean> {
 }
 
 export async function allocatePort(start: number, excludeInstanceId?: string): Promise<number> {
-	const claimed = claimedPorts(excludeInstanceId);
+	const claimed = await claimedPorts(excludeInstanceId);
 	for (let port = start; port < start + 500; port++) {
 		if (claimed.has(port)) continue;
 		if (await portIsFree(port)) return port;

@@ -8,6 +8,7 @@
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
 	import { DEFAULT_NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
 	import { blockedLabel } from '#lib/shared/downloads.js';
+	import { PORT_KIND_LABELS } from '#lib/shared/ports.js';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { invalidateAll } from '$app/navigation';
@@ -103,6 +104,15 @@
 		if (!confirm(`Stop allowing downloads from ${address}?`)) return;
 		await fetch(`/api/downloads/allowed?address=${encodeURIComponent(address)}`, { method: 'DELETE' });
 		await invalidateAll();
+	}
+
+	const portsInfo = streamed(() => data.ports);
+	const ports = $derived(portsInfo.ready ? portsInfo.value : null);
+	/** The port row whose number is being typed, `<server>:<kind>`. */
+	let editingPort = $state<string | null>(null);
+	function holderLabel(holder: { pid: number | null; process: string | null; unit: string | null } | null): string {
+		if (!holder?.pid) return "another account's program";
+		return `${holder.process ?? 'a program'} (pid ${holder.pid}${holder.unit ? `, ${holder.unit}` : ''})`;
 	}
 
 	const formatMb = (mb: number) => `${(mb / 1024).toFixed(1)} GB`;
@@ -378,6 +388,105 @@
 		</table>
 		{#if data.freeBytes !== null}
 			<p class="faint small">{formatBytes(data.freeBytes)} free on the disk holding the servers.</p>
+		{/if}
+	{/if}
+</section>
+{:else if tab === 'ports'}
+<section class="panel">
+	<h2>Ports</h2>
+	<p class="small muted">
+		Every port the servers have, and what listens on it now. Two servers with the same port cannot run at once, and a
+		port another program holds keeps its server from starting. A changed port is written to the server's config and
+		used from its next start.
+	</p>
+	{#if !ports}
+		<p class="muted">Reading the ports...</p>
+	{:else}
+		{@const clashes = ports.rows.filter((r) => r.clashes.length)}
+		{@const taken = ports.rows.filter((r) => r.status === 'taken')}
+		{#if clashes.length || taken.length}
+			<div class="notice warning">
+				<p>
+					{#if clashes.length}{clashes.length} {clashes.length === 1 ? 'port is' : 'ports are'} shared between servers.{/if}
+					{#if taken.length}{taken.length} {taken.length === 1 ? 'port is' : 'ports are'} held by another program.{/if}
+					"Free port" gives one the first port nothing else has.
+				</p>
+			</div>
+		{:else}
+			<div class="notice success"><p>No two servers share a port, and no other program holds one of theirs.</p></div>
+		{/if}
+		<table class="ports">
+			<thead>
+				<tr><th class="num">Port</th><th>Server</th><th>For</th><th>Now</th><th></th></tr>
+			</thead>
+			<tbody>
+				{#each ports.rows as row (`${row.instanceId}:${row.kind}`)}
+					<tr class:problem={row.clashes.length || row.status === 'taken'}>
+						<td class="num mono">{row.port}<span class="faint">/{row.protocol}</span></td>
+						<td><a href="/instances/{encodeURIComponent(row.instanceId)}/settings?tab=network">{row.name}</a></td>
+						<td>
+							{PORT_KIND_LABELS[row.kind]}
+							{#if row.followsGame}<span class="faint small">(the game port's number)</span>{/if}
+						</td>
+						<td>
+							{#if row.clashes.length}
+								<span class="tag bad">also {row.clashes.map((c) => `${c.name} (${PORT_KIND_LABELS[c.kind]})`).join(', ')}</span>
+							{/if}
+							{#if row.status === 'listening'}
+								<span class="tag accent">listening</span>
+							{:else if row.status === 'taken'}
+								<span class="tag warn">held by {holderLabel(row.holder)}</span>
+							{:else}
+								<span class="faint small">{row.running ? 'not listening' : 'free'}</span>
+							{/if}
+						</td>
+						<td class="port-actions">
+							{#if !row.followsGame && row.kind !== 'query'}
+								{#if editingPort === `${row.instanceId}:${row.kind}`}
+									<form method="POST" action="?/portChange" use:enhance={() => async ({ result, update }) => { if (result.type === 'success') editingPort = null; await update({ reset: false }); }} class="port-form">
+										<input type="hidden" name="instanceId" value={row.instanceId} />
+										<input type="hidden" name="kind" value={row.kind} />
+										<input name="port" type="number" min="1" max="65535" value={row.port} aria-label="New port" />
+										<button type="submit">Save</button>
+										<button type="button" class="button-quiet" onclick={() => (editingPort = null)}>Cancel</button>
+									</form>
+								{:else}
+									<form method="POST" action="?/portChange" use:enhance class="port-form">
+										<input type="hidden" name="instanceId" value={row.instanceId} />
+										<input type="hidden" name="kind" value={row.kind} />
+										<input type="hidden" name="free" value="on" />
+										{#if row.clashes.length || row.status === 'taken'}<button type="submit">Free port</button>{/if}
+										<button type="button" class="button-quiet" onclick={() => (editingPort = `${row.instanceId}:${row.kind}`)}>Change</button>
+									</form>
+								{/if}
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+
+		{#if ports.others.length}
+			<h3 class="usage-heading">Other programs listening nearby</h3>
+			<table>
+				<thead>
+					<tr><th class="num">Port</th><th>Program</th></tr>
+				</thead>
+				<tbody>
+					{#each ports.others as other (`${other.protocol}:${other.port}`)}
+						<tr>
+							<td class="num mono">{other.port}<span class="faint">/{other.protocol}</span></td>
+							<td>
+								{#if other.oldPortOf}
+									{other.oldPortOf}, still on a port it no longer has: restart it to move
+								{:else}
+									{holderLabel(other.holder)}
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		{/if}
 	{/if}
 </section>
@@ -950,6 +1059,28 @@
 	.refused-at {
 		margin: calc(-1 * var(--space-2)) 0 var(--space-3);
 		overflow-wrap: anywhere;
+	}
+
+	.ports {
+		margin-top: var(--space-3);
+	}
+
+	.ports tr.problem td {
+		background: color-mix(in srgb, var(--warning) 6%, transparent);
+	}
+
+	.port-actions {
+		text-align: right;
+	}
+
+	.port-form {
+		display: inline-flex;
+		gap: var(--space-2);
+		align-items: center;
+	}
+
+	.port-form input[type='number'] {
+		width: 7rem;
 	}
 
 	.trash-days {

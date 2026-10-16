@@ -31,6 +31,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Perform graceful shutdowns using RCON to save the world before stopping Java, with signal-based fallbacks.
 - Configure crash recovery, restart attempt limits, scheduled restarts, and scheduled console commands.
 - Delay scheduled operations while players are online.
+- See every server's ports (game, RCON, query, voice chat, map) and what listens on each, with clashes between servers and ports other programs hold, and move one to a free port.
 - Set per-server CPU and memory limits, and a cap on all servers together (a soft memory cap that slows the servers down instead of killing one), and detect servers that never finish starting.
 - Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.
 - Get a warning before starting a server the machine may not have the memory for, counting what the running servers can still grow into.

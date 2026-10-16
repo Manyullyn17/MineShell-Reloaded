@@ -14,11 +14,10 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: duplicate detection across platforms and hash-based mod caching;
-  multi-instance port management; the pack change preview for data-pack-loader folders;
-  remote access docs (for completeness); from the leftovers, data pack updates and
-  scheduled mod update checks (custom servers only: pack mods are not usually updated one
-  by one, and the manual check stays).
+- **Sooner**: duplicate detection across platforms and hash-based mod caching; the pack
+  change preview for data-pack-loader folders; remote access docs (for completeness); from
+  the leftovers, data pack updates and scheduled mod update checks (custom servers only:
+  pack mods are not usually updated one by one, and the manual check stays).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -156,12 +155,6 @@ Folders like `config/paxi/datapacks`, `config/openloader`, `global_packs/` or `k
 are pack config folders, so a pack change moves them whole to `old-configs/` - including a
 data pack the user added there. Correct by the configs policy, but easy to miss for a data
 pack; the preview could point out non-pack files in those folders.
-
-### Multi-instance port management
-
-Ports are allocated automatically and conflicts are detected (start refuses a port taken by
-something else), but there is no view showing what is bound where across all instances.
-Cosmetic until you are running enough servers to lose track.
 
 ### Leftovers of built features
 

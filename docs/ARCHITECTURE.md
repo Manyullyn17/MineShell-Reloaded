@@ -643,6 +643,21 @@ a pack install gets a free port written into the config (from 24454 up, none ano
 or bound; before the mod's first start the file holds just that key, which the mod fills in).
 The overview's firewall hint and the server's Network settings show the port.
 
+All the servers' ports in one place (`portmap.ts`, MineShell settings > Ports, global
+admins): game, RCON, query (the game port's number over UDP, when `enable-query` is on),
+voice chat and the map mod's port, next to what listens on each now. Listening sockets come
+from `/proc/net/{tcp,udp}[6]` (TCP in LISTEN, UDP bound and unconnected), their processes
+from matching socket inodes in `/proc/<pid>/fd` (this account's processes only; others' show
+without a process), and the server from the process's cgroup unit (`<prefix>@<id>.service`;
+another MineShell's servers have another prefix and count as other programs). Rows show
+clashes between servers (same number and protocol) and ports another program holds, with
+"Free port" (the first one no server has and nothing holds, from where that kind starts)
+and a typed number; a port following the game port (query, voice chat's `-1`) is changed
+with it. Other programs are listed when they listen near the ranges ports are given from, or
+are a server on a port it no longer has (changed, not restarted yet). New ports
+(`allocatePort`) avoid every server's ports of every kind; before October 2026 only game and
+RCON ports counted, so a stopped server's voice chat port could be given out again.
+
 ### playit.gg tunnels
 
 `playit.ts`. One playit agent per machine, a user unit `<prefix>-playit.service` (enabled,
