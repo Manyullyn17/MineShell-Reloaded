@@ -123,6 +123,14 @@ map item or uNmINeD. Layers, each usable on its own:
 Drawn per region (512x512) on demand and cached; the snapshot's own files can be drawn too,
 so the picker can show what comes back beside what is there now.
 
+Picker (user's sketch, 2026-10-17): one scrollable, zoomable map rather than separate
+pages. Zoomed out, every region at once as a cheap tile from its header (chunk grid,
+InhabitedTime), with a coordinate grid; zoomed in, a region's coloured tile loads as it
+comes into view (lazy, one by one). Chunks are selected by click or drag, across regions;
+regions holding selected chunks stay marked when zoomed out. A coordinate field jumps to a
+block position. Fallback if the seamless map turns out costly: an overview of region tiles,
+a region view opened from it with steps to the four neighbours.
+
 ### Pausing empty servers
 
 Vanilla 1.21.2+ has `pause-when-empty-seconds` (default 60; irithyll on Fabric 1.21.11
