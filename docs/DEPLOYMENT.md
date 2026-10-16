@@ -218,31 +218,69 @@ tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `c
 
 ---
 
-## Network exposure
+## Remote access
 
 MineShell is designed for a LAN. It has no rate limiting beyond the login throttle, its
 accounts are separated only by its own permissions (every server runs as the same system
-account), and anyone with Files on a server can read every file in its directory.
+account), and anyone with Files on a server can read every file in its directory. So the
+way to reach it from elsewhere is, in order of preference:
 
-If you want to reach it from outside your network, put it behind Tailscale or a similar
-mesh VPN. That gets you an encrypted, authenticated path without exposing anything to the
-public internet.
+1. **Tailscale** (or another mesh VPN): nothing is exposed to the internet, only your own
+   devices (and people you invite) can connect, and you get https with a real certificate.
+2. **A reverse proxy with TLS** on a public address, if it really has to be reachable
+   without a VPN. Follow the checklist below.
 
-With Tailscale on the machine, `tailscale serve --bg 3000` gives MineShell an address like
-`https://<machine>.<tailnet>.ts.net` with a real certificate, reachable from your other
-Tailscale devices (enable HTTPS certificates in the tailnet's admin console first).
+Never forward port 3000 itself through your router: that is plain http, passwords included.
 
-### Installing it as an app
+### Tailscale
 
-MineShell has a web app manifest, so a browser can install it with its own icon and window
-(Chrome/Edge: Install in the address bar; Android: Add to Home screen; iPhone: Share > Add to
-Home Screen). Browsers only offer that over https: at `http://<lan-ip>:3000` an Android
-shortcut opens as a normal tab and desktop browsers offer nothing. Over the Tailscale address
-above, or a reverse proxy with TLS, it installs everywhere.
+1. Install Tailscale on the MineShell machine and on each device you want to use it from
+   (<https://tailscale.com/download>; phones have an app), and sign them in to the same
+   tailnet: `sudo tailscale up` on the machine.
+2. In the tailnet's admin console, under DNS, turn on MagicDNS and HTTPS certificates.
+3. On the machine: `tailscale serve --bg 3000`. MineShell is now at
+   `https://<machine>.<tailnet>.ts.net` on your devices. `--bg` keeps it across reboots;
+   `tailscale serve status` shows it, `tailscale serve reset` stops it. Not `tailscale
+   funnel`: that puts it on the public internet.
 
-If you must expose it directly, terminate TLS at a reverse proxy and keep the app bound to
-localhost. One nginx detail: SSE needs buffering off, or the console will appear frozen
-and then dump everything at once.
+Optional: with `HOST=127.0.0.1` in MineShell's settings file (then
+`systemctl --user restart mineshell`), it no longer answers on the LAN address at all, only
+through Tailscale. Don't do that if devices without Tailscale still need it.
+
+Friends who help run servers: invite them to the tailnet, or share just this machine with
+them from the admin console (Share), and give each a MineShell account (MineShell settings,
+Accounts) with only the servers they should see. Tailscale decides who can connect,
+MineShell's accounts what they can do.
+
+### A reverse proxy with TLS
+
+Before putting MineShell on a public address:
+
+- Bind it to the machine only: `HOST=127.0.0.1` in the settings file, so the proxy is the
+  only way in. Open only 80 and 443 in the firewall, never 3000 (`sudo ufw allow 443/tcp`).
+- Let the login throttle see who is signing in: behind a proxy every request comes from
+  127.0.0.1, so ten wrong passwords from anyone lock everyone out for 15 minutes, and a
+  guesser is throttled only per account. Set `ADDRESS_HEADER=X-Forwarded-For` (and
+  `XFF_DEPTH=1` for one proxy in front; one more per extra proxy, such as a CDN) in the
+  settings file. Only with a proxy that sets that header: without one, a client could
+  write any address into it.
+- Keep `MINESHELL_AUTH=on`, give every account a long password, and keep MineShell up to
+  date (MineShell settings, Updates, with automatic checks on).
+
+Restart MineShell after changing the settings file. Caddy is the shortest setup: it gets
+the certificate by itself, passes the headers MineShell needs and sends the console's event
+stream through as it comes.
+
+```caddy
+mineshell.example.com {
+    reverse_proxy 127.0.0.1:3000
+}
+```
+
+With nginx (and a certificate from certbot or similar), three details matter: SSE needs
+buffering off, or the console appears frozen and then dumps everything at once; the default
+1 MB request limit refuses mod, pack and world uploads; and request buffering would copy a
+multi-gigabyte world upload to nginx's disk before MineShell sees any of it.
 
 ```nginx
 location / {
@@ -252,6 +290,8 @@ location / {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_buffering off;
+    proxy_request_buffering off;
+    client_max_body_size 0;
     proxy_read_timeout 3600s;
 }
 ```
@@ -260,6 +300,16 @@ Keep both `Host` and `X-Forwarded-Proto`: MineShell refuses form submissions who
 `Origin` names a different host from the one the request was sent to (`Host`, or
 `X-Forwarded-Host` if your proxy sets it), which stops other sites driving your panel, and
 marks the login cookie `Secure` when the browser used https.
+
+### Installing it as an app
+
+MineShell has a web app manifest, so a browser can install it with its own icon and window
+(Chrome/Edge: Install in the address bar; Android: Add to Home screen; iPhone: Share > Add to
+Home Screen). Browsers only offer that over https: at `http://<lan-ip>:3000` an Android
+shortcut opens as a normal tab and desktop browsers offer nothing. Over the Tailscale address
+above, or a reverse proxy with TLS, it installs everywhere.
+
+### Players, and RCON
 
 For players outside your network without opening ports, link playit.gg (MineShell settings,
 Integrations) and make the server public in its settings: playit's agent runs as the user unit

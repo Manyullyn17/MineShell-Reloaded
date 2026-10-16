@@ -9,6 +9,21 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Remote access
+
+Written up 2026-10-16 (DEPLOYMENT, "Remote access"): Tailscale first (steps, `HOST=127.0.0.1`
+for Tailscale-only, friends through tailnet sharing plus MineShell accounts), then a public
+reverse proxy with a checklist (bound to localhost, firewall, `ADDRESS_HEADER`/`XFF_DEPTH`
+so the login throttle sees clients instead of 127.0.0.1, auth and updates) and Caddy and
+nginx examples. Found while writing it: the nginx example lacked `client_max_body_size 0`
+(nginx refuses bodies over 1 MB, so every upload failed) and `proxy_request_buffering off`.
+No code change. The original note:
+
+The auth question the notes left open is now settled: password plus session cookie, on by
+default. That was the blocker for designing remote access, so it can proceed whenever it
+is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
+reverse proxy — is where this should land unless there is a specific reason otherwise.
+
 ### Pack change preview: your own files in the folders that move
 
 Built 2026-10-16 (`ownFiles`/`keepOwn` in packchange.ts; ARCHITECTURE, "Config edits across

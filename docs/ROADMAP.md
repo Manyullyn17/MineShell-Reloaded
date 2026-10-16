@@ -14,10 +14,9 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: duplicate detection across platforms and hash-based mod caching; remote
-  access docs (for completeness); from the leftovers, data pack updates and scheduled mod
-  update checks (custom servers only: pack mods are not usually updated one by one, and the
-  manual check stays).
+- **Sooner**: duplicate detection across platforms and hash-based mod caching; from the
+  leftovers, data pack updates and scheduled mod update checks (custom servers only: pack
+  mods are not usually updated one by one, and the manual check stays).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -141,13 +140,6 @@ The original design specified a `.jcpack` bundle containing mod metadata, overri
 configs and instance settings, for moving an instance between machines. Still a good idea,
 still not built. Its natural moment was after mod updating, since both depend on the mod
 metadata being trustworthy; that is built now.
-
-### Remote access
-
-The auth question the notes left open is now settled: password plus session cookie, on by
-default. That was the blocker for designing remote access, so it can proceed whenever it
-is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
-reverse proxy — is where this should land unless there is a specific reason otherwise.
 
 ### Leftovers of built features
 

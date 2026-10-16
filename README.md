@@ -226,6 +226,8 @@ See [`.env.example`](.env.example) for the complete list.
 | `MINESHELL_AUTH` | `on` | Authentication toggle. Disable only on a network you fully trust. |
 | `MINESHELL_UNIT_PREFIX` | `minecraft` in development; `mineshell` in the installer | Prefix for systemd instance units. |
 | `CURSEFORGE_API_KEY` | Unset | Optional CurseForge API key for improved metadata access. Can also be configured in MineShell. |
+| `PORT`, `HOST` | `3000`, `0.0.0.0` | Where the web interface listens. `HOST=127.0.0.1` answers only on this machine (behind a reverse proxy or Tailscale serve). |
+| `ADDRESS_HEADER`, `XFF_DEPTH` | Unset, `1` | Behind a reverse proxy: read the client's address from `X-Forwarded-For`, so the login throttle works per client. See [Remote access](docs/DEPLOYMENT.md#remote-access). |
 | `BODY_SIZE_LIMIT` | `Infinity` in the example configuration and installer settings | Controls request body size. Production rejects uploads larger than 512 KB when this is unset. |
 
 ## Documentation
