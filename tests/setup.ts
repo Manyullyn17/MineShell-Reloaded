@@ -36,6 +36,11 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 afterEach(() => resetProcesses());
 
+// Earlier downloads stand in for new ones with the same hash (filecache.ts). All test
+// files share one database, so one file's download could stand in for another's and a
+// download a test makes fail would not fail; filecache.test.ts turns it back on.
+(globalThis as { __mineshellFileCache?: boolean }).__mineshellFileCache = false;
+
 // Downloads check where a host resolves (download.ts, assertPublicUrl). Every
 // name resolves to a public documentation address instead of asking DNS;
 // download.test.ts makes it answer otherwise. One function for the whole run:

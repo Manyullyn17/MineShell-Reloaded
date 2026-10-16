@@ -9,6 +9,23 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Hash-based mod caching
+
+Built 2026-10-16 (`filecache.ts`; ARCHITECTURE, after the pack rollback). Not from
+`instance_mods.hash` as once planned: that column holds whichever hash was at hand (sha512
+computed from the jar for pack mods, sha1 from CurseForge), while a CurseForge download comes
+with a sha1, so most lookups would have missed. Every verified download records its path and
+hash instead, and a match is re-hashed before and after copying. Tried on the throwaway dev
+server: the same Fabric API version installed on a second server was copied (215 ms). The
+original note:
+
+Check a content hash before downloading and copy from an existing instance if it matches.
+Deferred at first (an optimisation, not a correctness fix, and it partially reverses the
+deliberate decision to always download fresh); moved up with duplicate detection (user's
+call, 2026-10-16), since both read the same jar hashes. It must key on
+*content* hash, never on version label — the whole reason for downloading fresh is that
+packs ship patched jars under upstream version numbers.
+
 ### Remote access
 
 Written up 2026-10-16 (DEPLOYMENT, "Remote access"): Tailscale first (steps, `HOST=127.0.0.1`

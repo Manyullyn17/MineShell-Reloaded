@@ -14,7 +14,7 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: duplicate detection across platforms and hash-based mod caching.
+- **Sooner**: duplicate detection across platforms.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -97,9 +97,8 @@ Work it needs:
 
 ## Later
 
-Some of these unlock others: duplicate detection and the hash-based mod cache both build on
-mod updates (built), notifications need no new infrastructure (the event bus exists), and
-remote access needed the auth model (settled, accounts built). The rest is independent.
+Duplicate detection builds on the jar inspection crash diagnosis already does; the rest
+is independent.
 
 ### World backups
 
@@ -122,15 +121,6 @@ filenames and no shared identifier. Detecting this needs jar inspection — read
 `fabric.mod.json` or `META-INF/mods.toml` for the real mod id — rather than trusting
 platform metadata. Worth doing after mod updates, since both want the same jar-inspection
 code.
-
-### Hash-based mod caching
-
-Check a content hash before downloading and copy from an existing instance if it matches.
-Deferred at first (an optimisation, not a correctness fix, and it partially reverses the
-deliberate decision to always download fresh); moved up with duplicate detection (user's
-call, 2026-10-16), since both read the same jar hashes. It must key on
-*content* hash, never on version label — the whole reason for downloading fresh is that
-packs ship patched jars under upstream version numbers.
 
 ### Instance export and import
 

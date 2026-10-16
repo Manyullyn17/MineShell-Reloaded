@@ -612,3 +612,20 @@ export const packChanges = sqliteTable(
 );
 
 export type PackChange = typeof packChanges.$inferSelect;
+
+/** Files downloaded with a known hash, which later downloads of the same content copy (filecache.ts). */
+export const downloadedFiles = sqliteTable(
+	'downloaded_files',
+	{
+		/** Absolute, where the download was written. */
+		path: text('path').primaryKey(),
+		algo: text('algo').notNull(),
+		/** Lower-case hex. */
+		hash: text('hash').notNull(),
+		size: integer('size').notNull(),
+		recordedAt: integer('recorded_at').notNull()
+	},
+	(t) => ({
+		byHash: index('downloaded_files_hash_idx').on(t.algo, t.hash)
+	})
+);

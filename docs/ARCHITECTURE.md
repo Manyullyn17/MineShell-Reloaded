@@ -466,11 +466,16 @@ world-change restore of the snapshot runs as its own task after the commit. A ch
 moved Minecraft can only be rolled back with that world; one from an uploaded file cannot
 be (the file is not kept), nor one whose server is no longer on the version it went to.
 
-Mods are always downloaded fresh per instance. No shared cache, no symlinks. This is
-deliberate: modpacks sometimes ship a patched jar under the same version label as the
-upstream one, and a shared cache would serve the wrong file with no way to tell. Disk is
-cheaper than that bug. A `hash` column exists on `instance_mods` for a future opt-in
-cache-by-hash, but nothing reads it yet (the update check hashes the jars on disk).
+Downloads that come with a hash (mods, packs' files, data packs, loader jars, Fugue) are
+recorded with it (`downloaded_files`, `filecache.ts`); a later download of the same content
+copies one of those files instead of fetching it: a second server on the same pack, a copy's
+pack change, a reinstall. Keyed on content only, never on a name or version label: packs ship
+patched jars under upstream version numbers, which is why every mod used to be downloaded
+fresh. A recorded file is hashed again before it is used and the copy hashed once more, so
+one changed, replaced or moved since is never copied (its record goes), and a download
+without a hash is always fetched. Copies are reflinks where the filesystem has them; no
+symlinks, so servers never share a file. Tests share one database across files, so the
+lookup is off in them except in `filecache.test.ts` (`tests/setup.ts`).
 
 **The mod bisect assistant** (`bisect.ts`, Mods tab) finds the mod, or pair of mods, a crash
 comes from. Suspects are the enabled mods minus a keep-on list (Cleanroom's own fixes ticked

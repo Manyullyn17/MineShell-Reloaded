@@ -7,6 +7,7 @@ import dns from 'node:dns/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { addressKind, BlockedDownloadError, isAllowedAddress, refuse } from './downloadaccess';
+import { copyFromEarlierDownload, recordDownload } from './filecache';
 
 export { BlockedDownloadError };
 
@@ -80,6 +81,15 @@ export async function downloadFile(
 	opts: DownloadOptions = {}
 ): Promise<void> {
 	await fs.mkdir(path.dirname(destination), { recursive: true });
+	const temp = `${destination}.part`;
+	// The same content downloaded before, still where it was put: copied, not fetched (filecache.ts).
+	if (opts.hash && (await copyFromEarlierDownload(opts.hash, temp, destination))) {
+		await fs.rename(temp, destination);
+		await recordDownload(destination, opts.hash);
+		const size = (await fs.stat(destination)).size;
+		opts.onProgress?.(size, size);
+		return;
+	}
 	const res = await fetchPublic(url);
 	if (!res.ok || !res.body) {
 		throw new Error(`Download failed (${res.status}) for ${url}`);
@@ -96,7 +106,6 @@ export async function downloadFile(
 		opts.onProgress?.(received, total);
 	});
 
-	const temp = `${destination}.part`;
 	await pipeline(source, createWriteStream(temp));
 
 	if (opts.hash && hasher) {
@@ -110,6 +119,7 @@ export async function downloadFile(
 	}
 
 	await fs.rename(temp, destination);
+	if (opts.hash) await recordDownload(destination, opts.hash);
 }
 
 export async function hashFile(
