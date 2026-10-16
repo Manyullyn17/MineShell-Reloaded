@@ -13,9 +13,12 @@ import {
 	unitName,
 	unitOnceArgsFile
 } from './config';
-import { installedTemplateUnit, renderTemplateUnit as renderTemplate } from './unit-template.js';
+import { installedTemplateUnit, renderTemplateUnit as renderTemplate, serverSliceName } from './unit-template.js';
 
 const TEMPLATE_PATHS = { prefix: UNIT_PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR };
+
+/** The slice all servers run in (unit-template.js). */
+export const SERVER_SLICE = serverSliceName(UNIT_PREFIX);
 
 export type UnitState = {
 	/** active | inactive | failed | activating | deactivating | unknown */
@@ -29,6 +32,8 @@ export type UnitState = {
 	mainPid: number;
 	nRestarts: number;
 	result: string;
+	/** The unit's cgroup path, '' when it has none (stopped). */
+	controlGroup: string;
 };
 
 export const UNKNOWN_STATE: UnitState = {
@@ -39,7 +44,8 @@ export const UNKNOWN_STATE: UnitState = {
 	memoryBytes: 0,
 	mainPid: 0,
 	nRestarts: 0,
-	result: 'unknown'
+	result: 'unknown',
+	controlGroup: ''
 };
 
 /** System boot wall-clock time, needed to turn systemd's monotonic stamps into dates. */
@@ -318,7 +324,8 @@ async function readUnitState(id: string): Promise<UnitState> {
 		),
 		mainPid: num(props.MainPID),
 		nRestarts: num(props.NRestarts),
-		result: props.Result || 'unknown'
+		result: props.Result || 'unknown',
+		controlGroup: props.ControlGroup ?? ''
 	};
 }
 

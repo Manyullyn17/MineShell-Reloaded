@@ -9,6 +9,7 @@ import { stopAllTails } from './journal';
 import { recoverInterruptedOperations } from './recovery';
 import { removePartialJava } from './javadownload';
 import { refreshTemplateUnit } from './systemd';
+import { applyServerCap } from './servercap';
 import { startUpdateChecks } from './selfupdate';
 
 /**
@@ -35,7 +36,9 @@ export function boot(): void {
 
 	void refreshTemplateUnit()
 		.then((refreshed) => refreshed && console.log('[mineshell] updated the systemd template unit'))
-		.catch((err) => console.warn('[mineshell] refreshing the template unit failed:', err instanceof Error ? err.message : err));
+		.catch((err) => console.warn('[mineshell] refreshing the template unit failed:', err instanceof Error ? err.message : err))
+		.then(() => applyServerCap())
+		.catch((err) => console.warn('[mineshell] setting the cap on all servers failed:', err instanceof Error ? err.message : err));
 
 	startMonitor();
 	startHeapSampling();

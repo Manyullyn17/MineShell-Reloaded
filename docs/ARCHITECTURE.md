@@ -93,8 +93,21 @@ the one the running process started with (`runningHeapMb`, its `-Xmx` from
 kill at the limit is systemd's "killed by the OOM killer" line in the run's journal, which
 crash diagnosis names (`memory-killed`). Starting by hand checks the memory first
 (`memoryguard.ts`): this server's ceiling plus what the running ones can still grow into,
-against MemAvailable; past it, the page asks before starting anyway (`force`). A start
-nobody watches (schedules, crash restarts, boot) is never held up by it.
+against MemAvailable, and all their ceilings against the cap on all servers below; past
+either, the page asks before starting anyway (`force`). A start nobody watches (schedules,
+crash restarts, boot) is never held up by it.
+
+One cap on all servers together (`servercap.ts`, MineShell settings > System) sits on the
+slice they share: the template says `Slice=app-<prefix>.slice` (`serverSliceName`, escaped
+as systemd escapes a '-'), which is the slice systemd's user manager gives a template's
+instances by default, so running servers are already in it (checked on systemd 255; an
+older default moves them at their next start, and the settings list any running server
+whose cgroup is outside it). The slice unit file carries `MemoryHigh=` (soft: past it the
+kernel reclaims and throttles inside the slice, nothing is killed; it cannot shrink a heap
+Java holds) and `CPUQuota=`; with neither set the file is removed and systemd makes the
+slice by itself. Like the drop-ins it applies to running servers on daemon-reload (checked
+both ways, and for removing it). Written when saved, at boot and when the template is
+installed; a slice file MineShell did not write is never replaced.
 
 Notifications (`notifications.ts`) go to MineShell's destination (a `settings` row) and/or a
 server's own (`instance_notifications`, with `also_global`), each with the kinds it is sent.

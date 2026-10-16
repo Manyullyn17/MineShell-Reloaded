@@ -29,8 +29,12 @@ import {
 	installTemplateUnit,
 	probeSystemd,
 	renderTemplateUnit,
-	templateUnitInstalled
+	SERVER_SLICE,
+	templateUnitInstalled,
+	unitState
 } from '#lib/server/systemd.js';
+import { applyServerCap, capProblem, getServerCap, inServerSlice, maxCpuPercent, MIN_CAP_MEMORY_MB, saveServerCap, totalMemoryMb } from '#lib/server/servercap.js';
+import { runningCeilings } from '#lib/server/memoryguard.js';
 import {
 	addManualJava,
 	getJavaDefaults,
@@ -113,6 +117,30 @@ async function playitOverview(owner: boolean) {
 	};
 }
 
+/**
+ * The cap on all servers together, and each running server's ceiling (heap
+ * plus what Java needs beyond it, or its own limit) to hold against it.
+ * A running server outside the slice (an older systemd's default) is under
+ * the cap only from its next start.
+ */
+async function serverCapView() {
+	const states = await Promise.all(listInstances().map(async (instance) => ({ instance, state: await unitState(instance.id) })));
+	const ceilings = await runningCeilings(states.map((s) => ({ instance: s.instance, mainPid: s.state.mainPid || null })));
+	return {
+		...getServerCap(),
+		slice: SERVER_SLICE,
+		totalMemoryMb: totalMemoryMb(),
+		maxCpu: maxCpuPercent(),
+		minMemoryMb: MIN_CAP_MEMORY_MB,
+		running: ceilings.map((c) => ({
+			id: c.instance.id,
+			name: c.instance.name,
+			ceilingMb: c.ceilingMb,
+			underCap: inServerSlice(states.find((s) => s.instance.id === c.instance.id)!.state.controlGroup)
+		}))
+	};
+}
+
 /** The kinds ticked on a notification form. */
 function kindsFrom(form: FormData): NotificationKind[] {
 	const known = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
@@ -130,6 +158,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			templateUnit: TEMPLATE_UNIT
 		},
 		systemd: { ...systemd, unitInstalled: await templateUnitInstalled() },
+		serverCap: await serverCapView(),
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
 		/** MineShell's notification destination, without its address. */
@@ -284,6 +313,7 @@ export const actions: Actions = {
 	installUnit: async () => {
 		const result = await installTemplateUnit();
 		if (!result.ok) return fail(500, { ok: false, message: result.message });
+		await applyServerCap().catch(() => undefined);
 
 		// Re-render every instance's env file and drop-in so a fresh unit is
 		// immediately usable rather than needing each instance saved by hand.
@@ -408,6 +438,33 @@ export const actions: Actions = {
 	removeCurseforgeKey: async () => {
 		const result = await setCurseforgeApiKey('');
 		return { ok: result.ok, message: result.message };
+	},
+
+	serverCap: async ({ request }) => {
+		const form = await request.formData();
+		const optional = (key: string) => {
+			const raw = String(form.get(key) ?? '').trim();
+			return raw ? Number(raw) : null;
+		};
+		const cap = { memoryMb: optional('capMemoryMb'), cpuPercent: optional('capCpuPercent') };
+		const problem = capProblem(cap);
+		if (problem) return fail(400, { ok: false, message: problem });
+		try {
+			await applyServerCap(cap);
+		} catch (err) {
+			return fail(500, { ok: false, message: err instanceof Error ? err.message : 'Could not set the cap.' });
+		}
+		saveServerCap(cap);
+		audit('settings.serverCap', { detail: cap.memoryMb || cap.cpuPercent ? `memory ${cap.memoryMb ?? '-'} MB, CPU ${cap.cpuPercent ?? '-'}%` : 'removed' });
+		const installed = await templateUnitInstalled();
+		return {
+			ok: true,
+			message: !installed
+				? 'Saved. It applies once the unit file is installed.'
+				: cap.memoryMb || cap.cpuPercent
+					? 'Cap saved and applied to the running servers.'
+					: 'Cap removed.'
+		};
 	},
 
 	itemIcons: async ({ request }) => {

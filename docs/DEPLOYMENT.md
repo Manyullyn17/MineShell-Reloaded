@@ -181,7 +181,8 @@ From a git checkout: `git pull && npm ci && npm run build && systemctl --user re
 
 `systemctl --user disable --now mineshell`, then remove `~/.config/systemd/user/mineshell.service`,
 `~/mineshell` and, if you want, the settings file and the data directory. Stop the servers
-first: their template unit is `~/.config/systemd/user/mineshell@.service`.
+first: their template unit is `~/.config/systemd/user/mineshell@.service` (with a cap on
+all servers set, also `app-mineshell.slice` there).
 
 ### Publishing a release
 

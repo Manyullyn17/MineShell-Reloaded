@@ -105,6 +105,12 @@
 		await invalidateAll();
 	}
 
+	const formatMb = (mb: number) => `${(mb / 1024).toFixed(1)} GB`;
+	const capRunningMb = $derived(data.serverCap.running.reduce((sum, s) => sum + s.ceilingMb, 0));
+	const capOutside = $derived(
+		data.serverCap.memoryMb || data.serverCap.cpuPercent ? data.serverCap.running.filter((s) => !s.underCap) : []
+	);
+
 	const CLAIM_TEXT: Record<string, string> = {
 		waiting: 'Waiting for you to open the link.',
 		visited: 'Waiting for you to approve it on playit.gg.',
@@ -761,6 +767,74 @@
 	{#if showUnit}
 		<pre class="unit">{data.unitPreview}</pre>
 	{/if}
+</section>
+
+<section class="panel">
+	<h2>All servers together</h2>
+	<p class="small muted">
+		One cap on every server combined, on top of each server's own limits, so a few big packs cannot take the whole
+		machine. Applied at once, also to running servers. The memory cap is soft: past it the system holds the servers
+		back (it frees cache, then swaps or stalls them) instead of killing one, which shows as lag on all of them. Java
+		does not give memory back under pressure, so the cap cannot shrink what the servers already hold. The CPU cap
+		slows them down: 100% is one full core, {data.serverCap.maxCpu}% all of them. Blank means no cap.
+	</p>
+	<form method="POST" action="?/serverCap" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="sftp-fields">
+			<div class="field">
+				<label for="capMemoryMb">Memory cap (MB)</label>
+				<input
+					id="capMemoryMb"
+					name="capMemoryMb"
+					type="number"
+					min={data.serverCap.minMemoryMb}
+					max={data.serverCap.totalMemoryMb}
+					step="256"
+					placeholder="No cap"
+					value={data.serverCap.memoryMb ?? ''}
+				/>
+				<p class="hint">This machine has {formatMb(data.serverCap.totalMemoryMb)}.</p>
+			</div>
+			<div class="field">
+				<label for="capCpuPercent">CPU cap (%)</label>
+				<input
+					id="capCpuPercent"
+					name="capCpuPercent"
+					type="number"
+					min="10"
+					max={data.serverCap.maxCpu}
+					step="10"
+					placeholder="No cap"
+					value={data.serverCap.cpuPercent ?? ''}
+				/>
+			</div>
+		</div>
+		{#if data.serverCap.running.length}
+			<p class="small">
+				Running now, at most (heap plus what Java needs beyond it, or the server's own limit):
+				{#each data.serverCap.running as server, i (server.id)}{i ? ', ' : ''}<a href="/instances/{server.id}">{server.name}</a>
+					{formatMb(server.ceilingMb)}{/each}; together {formatMb(capRunningMb)}.
+			</p>
+			{#if data.serverCap.memoryMb && capRunningMb > data.serverCap.memoryMb}
+				<div class="notice warning">
+					<p>
+						The running servers can take {formatMb(capRunningMb)}, past the {formatMb(data.serverCap.memoryMb)} cap: once they
+						grow into it, all of them slow down.
+					</p>
+				</div>
+			{/if}
+			{#if capOutside.length}
+				<div class="notice warning">
+					<p>
+						{capOutside.map((s) => s.name).join(', ')}
+						{capOutside.length === 1 ? 'was' : 'were'} started outside the servers' slice
+						(<code>{data.serverCap.slice}</code>) and {capOutside.length === 1 ? 'comes' : 'come'} under the cap from the next
+						start.
+					</p>
+				</div>
+			{/if}
+		{/if}
+		<button class="button" type="submit">Save</button>
+	</form>
 </section>
 
 <section class="panel">

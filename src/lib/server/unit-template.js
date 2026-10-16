@@ -10,6 +10,19 @@
 export const RESTART_PLACEHOLDER = '${MS_RESTART_POLICY}';
 
 /**
+ * The slice every server runs in, where the cap on all servers together goes
+ * (servercap.ts). It is the one systemd's user manager gives a template's
+ * instances by default (app-<prefix>.slice), so naming it changes nothing for
+ * servers already running; an older systemd moves them at their next start.
+ * A '-' in a slice name means a child slice, hence systemd's escaping.
+ * @param {string} prefix
+ */
+export function serverSliceName(prefix) {
+	const escaped = prefix.replace(/[^A-Za-z0-9:_.]|^\./g, (c) => '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0'));
+	return `app-${escaped}.slice`;
+}
+
+/**
  * @param {{ prefix: string; instancesDir: string; unitsDir: string }} paths
  * @returns {string} the template, with Restart= still the placeholder
  */
@@ -49,6 +62,8 @@ RestartSec=15
 
 CPUAccounting=yes
 MemoryAccounting=yes
+# Every server shares this slice; a cap on all of them together is set on it.
+Slice=${serverSliceName(prefix)}
 
 StandardOutput=journal
 StandardError=journal

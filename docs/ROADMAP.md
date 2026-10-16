@@ -14,11 +14,11 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: resource cap for all servers together; duplicate detection across platforms
-  and hash-based mod caching; multi-instance port management; the pack change preview
-  for data-pack-loader folders; remote access docs (for completeness); from the leftovers,
-  data pack updates and scheduled mod update checks (custom servers only: pack mods are
-  not usually updated one by one, and the manual check stays).
+- **Sooner**: duplicate detection across platforms and hash-based mod caching;
+  multi-instance port management; the pack change preview for data-pack-loader folders;
+  remote access docs (for completeness); from the leftovers, data pack updates and
+  scheduled mod update checks (custom servers only: pack mods are not usually updated one
+  by one, and the manual check stays).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -149,36 +149,6 @@ The auth question the notes left open is now settled: password plus session cook
 default. That was the blocker for designing remote access, so it can proceed whenever it
 is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
 reverse proxy — is where this should land unless there is a specific reason otherwise.
-
-### Resource cap for all servers together
-
-Per-server memory and CPU limits exist (server Settings, `limits.conf` drop-in with
-`MemoryMax`/`CPUQuota`, heap + 512 MB checked). Wanted (October 2026): one cap on all
-servers combined, mainly RAM and CPU, so a few big packs cannot take the whole machine.
-systemd does this with a slice: the template unit gets `Slice=<prefix>.slice`, and a
-`<prefix>.slice` unit carries the limits, which then bound the sum of every server under
-it. Same controller delegation as the per-server limits (user units, memory and cpu
-delegated by default). A running server picks up a new `Slice=` only after a restart.
-
-Decided (2026-10-05): the all-server memory cap is a **soft** cap, `MemoryHigh=` on the
-slice, not `MemoryMax=`. Past it the kernel throttles and reclaims inside the slice instead
-of killing a server. What that means for Java, so the UI says it honestly: the kernel first
-drops page cache (cheap), then swaps or stalls the JVMs' own memory, which shows as lag on
-every server in the slice. The JVM does not hand heap back under pressure (G1 only uncommits
-after a periodic GC, and never below `-Xms`, the server's min memory), so the cap
-cannot shrink what the servers already hold. CPU: `CPUQuota=` on the slice, which is a
-throttle anyway. Warn when the running servers' heaps plus headroom add up past the cap.
-
-Headroom over the heap: the per-server limit's floor is heap + 10% + 1 GB
-(`minMemoryLimitMb`); the cap's warning should use the same. Measured outside the heap:
-`irithyll` (Fabric, 65 mods, 10 GB heap) 890 MB; MeatballCraft (Cleanroom, 16 GB heap, ZGC,
-2026-10-15) 1.5 GB after starting, 3.3 GB three minutes in, then growing ~400 MB a minute
-while Dynmap 3.7-beta-6 did a full render (stopped when the render was paused, never handed
-back: 6.2 GB after 15 minutes). No headroom covers a native leak like that; a hard limit is
-what stops it. ZGC's heap is shared memory (memfd) in the cgroup's accounting, so it counts
-in full.
-
-The per-server limits are in the new-server defaults (built 2026-10-15; ROADMAP-ARCHIVE).
 
 ### Pack change preview: content in data-pack-loader folders
 

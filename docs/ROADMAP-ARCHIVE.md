@@ -9,6 +9,44 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Resource cap for all servers together
+
+Built 2026-10-16 (`servercap.ts`, MineShell settings > System; ARCHITECTURE, "Drop-ins"),
+as decided below: `MemoryHigh=` and `CPUQuota=` on the servers' slice, and the start check
+warns when the new server's ceiling plus the running ones' is past the cap. The slice is
+`app-<prefix>.slice`, the one systemd 255 already put every template instance in, so no
+restart was needed here. Tried on a throwaway dev server: the cap reached the cgroup
+(`memory.high`, `cpu.max`) at once, the start warned, the server ran inside the slice, and
+removing the cap removed the file. The original notes:
+
+Per-server memory and CPU limits exist (server Settings, `limits.conf` drop-in with
+`MemoryMax`/`CPUQuota`, heap + 512 MB checked). Wanted (October 2026): one cap on all
+servers combined, mainly RAM and CPU, so a few big packs cannot take the whole machine.
+systemd does this with a slice: the template unit gets `Slice=<prefix>.slice`, and a
+`<prefix>.slice` unit carries the limits, which then bound the sum of every server under
+it. Same controller delegation as the per-server limits (user units, memory and cpu
+delegated by default). A running server picks up a new `Slice=` only after a restart.
+
+Decided (2026-10-05): the all-server memory cap is a **soft** cap, `MemoryHigh=` on the
+slice, not `MemoryMax=`. Past it the kernel throttles and reclaims inside the slice instead
+of killing a server. What that means for Java, so the UI says it honestly: the kernel first
+drops page cache (cheap), then swaps or stalls the JVMs' own memory, which shows as lag on
+every server in the slice. The JVM does not hand heap back under pressure (G1 only uncommits
+after a periodic GC, and never below `-Xms`, the server's min memory), so the cap
+cannot shrink what the servers already hold. CPU: `CPUQuota=` on the slice, which is a
+throttle anyway. Warn when the running servers' heaps plus headroom add up past the cap.
+
+Headroom over the heap: the per-server limit's floor is heap + 10% + 1 GB
+(`minMemoryLimitMb`); the cap's warning should use the same. Measured outside the heap:
+`irithyll` (Fabric, 65 mods, 10 GB heap) 890 MB; MeatballCraft (Cleanroom, 16 GB heap, ZGC,
+2026-10-15) 1.5 GB after starting, 3.3 GB three minutes in, then growing ~400 MB a minute
+while Dynmap 3.7-beta-6 did a full render (stopped when the render was paused, never handed
+back: 6.2 GB after 15 minutes). No headroom covers a native leak like that; a hard limit is
+what stops it. ZGC's heap is shared memory (memfd) in the cgroup's accounting, so it counts
+in full.
+
+The per-server limits are in the new-server defaults (built 2026-10-15; ROADMAP-ARCHIVE).
+
 ### Several worlds per server
 
 Built 2026-10-15 (World tab, Worlds). Every world is a folder in the server folder - the

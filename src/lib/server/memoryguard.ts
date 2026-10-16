@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import type { ServerInstance } from './db/schema';
 import { parseHeapArg, runningHeapMb } from './heap';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
+import { capWarning, getServerCap } from './servercap';
 
 /**
  * Before a start asked for by hand: does the machine have the memory for this
@@ -62,25 +63,46 @@ function configuredHeapMb(instance: ServerInstance): number | null {
 	return bytes === null ? null : Math.round(bytes / 1024 ** 2);
 }
 
+/** What each running server among `servers` can take at most (its heap as started, else as saved), and holds now. */
+export async function runningCeilings(
+	servers: { instance: ServerInstance; mainPid: number | null }[]
+): Promise<{ instance: ServerInstance; ceilingMb: number; usedMb: number | null }[]> {
+	const out: { instance: ServerInstance; ceilingMb: number; usedMb: number | null }[] = [];
+	for (const server of servers) {
+		if (!server.mainPid) continue;
+		const heap = (await runningHeapMb(server.mainPid)) ?? configuredHeapMb(server.instance);
+		if (!heap) continue;
+		out.push({ instance: server.instance, ceilingMb: ceilingMb(heap, server.instance.limitMemoryMb), usedMb: await residentMb(server.mainPid) });
+	}
+	return out;
+}
+
 /**
  * The warning for starting `instance` now, given the other servers and their
- * main processes. Null when it fits or anything needed cannot be read: this
- * check must never be the reason a server does not start.
+ * main processes: past what the machine has available, or past the memory cap
+ * on all servers together (servercap.ts). Null when it fits or anything needed
+ * cannot be read: this check must never be the reason a server does not start.
  */
 export async function startMemoryWarning(
 	instance: ServerInstance,
-	others: { instance: ServerInstance; mainPid: number | null }[]
+	others: { instance: ServerInstance; mainPid: number | null }[],
+	capMb: number | null = getServerCap().memoryMb
 ): Promise<string | null> {
 	const heapMb = configuredHeapMb(instance);
+	if (!heapMb) return null;
+	const needMb = ceilingMb(heapMb, instance.limitMemoryMb);
+	const running = await runningCeilings(others.filter((o) => o.instance.id !== instance.id));
 	const available = await availableMb();
-	if (!heapMb || available === null) return null;
-	const running: RunningUse[] = [];
-	for (const other of others) {
-		if (other.instance.id === instance.id || !other.mainPid) continue;
-		const used = await residentMb(other.mainPid);
-		const heap = (await runningHeapMb(other.mainPid)) ?? configuredHeapMb(other.instance);
-		if (used === null || !heap) continue;
-		running.push({ name: other.instance.name, ceilingMb: ceilingMb(heap, other.instance.limitMemoryMb), usedMb: used });
-	}
-	return memoryWarning({ name: instance.name, heapMb, needMb: ceilingMb(heapMb, instance.limitMemoryMb), availableMb: available, running });
+	const machine =
+		available === null
+			? null
+			: memoryWarning({
+					name: instance.name,
+					heapMb,
+					needMb,
+					availableMb: available,
+					running: running.flatMap((r) => (r.usedMb === null ? [] : [{ name: r.instance.name, ceilingMb: r.ceilingMb, usedMb: r.usedMb }]))
+				});
+	const cap = capMb ? capWarning({ name: instance.name, needMb, capMb, running: running.map((r) => ({ name: r.instance.name, ceilingMb: r.ceilingMb })) }) : null;
+	return [machine, cap].filter(Boolean).join(' ') || null;
 }

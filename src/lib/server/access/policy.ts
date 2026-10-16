@@ -63,6 +63,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			deletePreset: 'globalAdmin',
 			snapshots: 'globalAdmin',
 			installUnit: 'globalAdmin',
+			serverCap: 'globalAdmin',
 			itemIcons: 'globalAdmin',
 			sftp: 'globalAdmin',
 			trashDays: 'globalAdmin',
