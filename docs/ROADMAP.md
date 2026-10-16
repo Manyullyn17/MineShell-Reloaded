@@ -15,8 +15,8 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
 built: ROADMAP-ARCHIVE):
 
-- **Next** (user's call, 2026-10-17), in this order: restoring a region of a dimension
-  from a snapshot, pausing empty servers, the status page, player stats.
+- **Next** (user's call, 2026-10-17), in this order: pausing empty servers, the status
+  page, player stats (restoring chunks, first on the list, is built: ROADMAP-ARCHIVE).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -101,53 +101,6 @@ Work it needs:
 
 None of these depends on another.
 
-### Restoring a region of a dimension
-
-Wanted (user, 2026-10-17): put back part of a dimension from a snapshot (griefing, a broken
-build, a corrupted chunk) without rolling back the rest. Restoring a whole dimension is built
-(`restoreDimension`); chunk-level rewriting of region files is too (`chunkprune.ts`), so
-the restore itself is the smaller half: copy the picked chunks from the snapshot's region/,
-entities/ and poi/ files into the live ones, as a world change into a partial snapshot.
-
-The area is picked on a map (user's preference over typing region numbers), which means
-MineShell draws one. Not BlueMap: a flat top-down map, one pixel per block column, like a
-map item or uNmINeD. Layers, each usable on its own:
-1. **Chunk grid** from the region files' headers, shaded by InhabitedTime (what pruning
-   reads already). Works on every version and every mod, and is already enough to pick on.
-2. **Colours**: the top block of each column, coloured by the average of its top texture,
-   shaded by height. Textures come from the item icon index (`itemicons.ts`, mod jars +
-   client jar); a block it cannot find stays grey. Grass, leaves and water need a tint.
-   Needs block decoding per format: 1.13+ section palettes (bit-packed; the packing changed
-   in 1.16), 1.12 numeric ids + metadata through the world's FML block registry, heightmaps
-   where present. LZ4-compressed chunks (as for pruning) stay grid-only.
-Drawn per region (512x512) on demand and cached; the snapshot's own files can be drawn too,
-so the picker can show what comes back beside what is there now.
-
-Picker (user's sketch, 2026-10-17): one scrollable, zoomable map rather than separate
-pages. Zoomed out, every region at once as a cheap tile from its header (chunk grid,
-InhabitedTime), with a coordinate grid; zoomed in, a region's coloured tile loads as it
-comes into view (lazy, one by one). Chunks are selected by click or drag, across regions;
-regions holding selected chunks stay marked when zoomed out. A coordinate field jumps to a
-block position. Selected chunks look like Xaero's minimap claims (user's call): a
-translucent fill in the accent colour, bordered on the selection's outer edge only, so
-neighbouring chunks read as one area. A chunk grid over the map once zoomed in far enough
-for it to be readable; region lines (and the coordinate grid) when zoomed out.
-
-Pointer position (user, 2026-10-17): a tooltip with block x/z, chunk x/z (block >> 4), the
-region file (`r.<cx >> 5>.<cz >> 5>.mca`) and, on the coloured view, the top block. Only
-where `(hover: hover) and (pointer: fine)` matches; touch shows the last tapped spot in a
-fixed readout instead. Input (suggested, not settled): drag pans, a click without moving
-toggles a chunk, shift-drag selects a rectangle (with a deselect modifier); right click is
-out (context menu, trackpads, phones). On touch: one finger pans, a tap toggles, pinch
-zooms, and a Select toggle turns one-finger drags into rectangles.
-
-Place: a "Restore chunks" sub-tab on the World tab (`world` permission, like Prune), its
-map as its own route so the World page does not load it. Above the map: the dimension and
-the snapshot to restore from (only snapshots of the active world that hold that
-dimension; partial ones only for their folders). A snapshot's row could link there with
-itself picked. Fallback if the seamless map turns out costly: an overview of region tiles,
-a region view opened from it with steps to the four neighbours.
-
 ### Pausing empty servers
 
 Vanilla 1.21.2+ has `pause-when-empty-seconds` (default 60; irithyll on Fabric 1.21.11
@@ -215,8 +168,14 @@ What the built entries in the archive left out, in one place:
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.
-- **Snapshots**: a scheduler hook running a script after a snapshot (region restore is
-  under Later).
+- **Snapshots**: a scheduler hook running a script after a snapshot.
+- **Restoring chunks**: a setting for other map controls (user's call, 2026-10-17: kept
+  open; built is drag to pan, click to toggle, Shift/Ctrl-drag); a snapshot row's link to
+  the page with that snapshot picked; undoing a restore leaves a region file the restore
+  created (the live world had none there). Map colours: blocks a mod tints in code
+  (Forestry/ExtraTrees leaves, Tinkers' slime grass) are grey or untinted, and so are ones
+  whose model only the mod's code names (Chisel's variants); the overview is chunk
+  presence only, not shaded by InhabitedTime as first planned.
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); Chunky's saved tasks
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished

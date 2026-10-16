@@ -9,6 +9,67 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Restoring chunks from a snapshot
+
+Built 2026-10-17 (World > Restore chunks; ARCHITECTURE, "Worlds"). As planned below, with
+these differences: the page needs `backups.restore` (it restores, like the snapshot list's
+Restore), not `world`; the replaced region files are always kept as a snapshot with no
+question (a rename of a few MB; the world-size question made no sense for it); the overview
+shows which chunks exist, without InhabitedTime shading (the header alone is what makes a
+whole world cheap). Desktop and touch see only their own control hints (user, 2026-10-17).
+Tried on the throwaway dev server with a copy of irithyll (Fabric 1.21.11, 760 regions):
+the map drew in about a second a region, a pruned area was restored through the page's
+action and came back, the snapshot held only the three changed files. Reading checked on
+copies of MeatballCraft (Cleanroom 1.12.2, RoughlyEnoughIDs: 488 block kinds in one region,
+104 without a colour, mostly Forestry/ExtraTrees leaves and Chisel) and ATM10. The mouse
+tooltip was not seen (headless Chrome has no hover). The plan:
+
+
+Wanted (user, 2026-10-17): put back part of a dimension from a snapshot (griefing, a broken
+build, a corrupted chunk) without rolling back the rest. Restoring a whole dimension is built
+(`restoreDimension`); chunk-level rewriting of region files is too (`chunkprune.ts`), so
+the restore itself is the smaller half: copy the picked chunks from the snapshot's region/,
+entities/ and poi/ files into the live ones, as a world change into a partial snapshot.
+
+The area is picked on a map (user's preference over typing region numbers), which means
+MineShell draws one. Not BlueMap: a flat top-down map, one pixel per block column, like a
+map item or uNmINeD. Layers, each usable on its own:
+1. **Chunk grid** from the region files' headers, shaded by InhabitedTime (what pruning
+   reads already). Works on every version and every mod, and is already enough to pick on.
+2. **Colours**: the top block of each column, coloured by the average of its top texture,
+   shaded by height. Textures come from the item icon index (`itemicons.ts`, mod jars +
+   client jar); a block it cannot find stays grey. Grass, leaves and water need a tint.
+   Needs block decoding per format: 1.13+ section palettes (bit-packed; the packing changed
+   in 1.16), 1.12 numeric ids + metadata through the world's FML block registry, heightmaps
+   where present. LZ4-compressed chunks (as for pruning) stay grid-only.
+Drawn per region (512x512) on demand and cached; the snapshot's own files can be drawn too,
+so the picker can show what comes back beside what is there now.
+
+Picker (user's sketch, 2026-10-17): one scrollable, zoomable map rather than separate
+pages. Zoomed out, every region at once as a cheap tile from its header (chunk grid,
+InhabitedTime), with a coordinate grid; zoomed in, a region's coloured tile loads as it
+comes into view (lazy, one by one). Chunks are selected by click or drag, across regions;
+regions holding selected chunks stay marked when zoomed out. A coordinate field jumps to a
+block position. Selected chunks look like Xaero's minimap claims (user's call): a
+translucent fill in the accent colour, bordered on the selection's outer edge only, so
+neighbouring chunks read as one area. A chunk grid over the map once zoomed in far enough
+for it to be readable; region lines (and the coordinate grid) when zoomed out.
+
+Pointer position (user, 2026-10-17): a tooltip with block x/z, chunk x/z (block >> 4), the
+region file (`r.<cx >> 5>.<cz >> 5>.mca`) and, on the coloured view, the top block. Only
+where `(hover: hover) and (pointer: fine)` matches; touch shows the last tapped spot in a
+fixed readout instead. Input (suggested, not settled): drag pans, a click without moving
+toggles a chunk, shift-drag selects a rectangle (with a deselect modifier); right click is
+out (context menu, trackpads, phones). On touch: one finger pans, a tap toggles, pinch
+zooms, and a Select toggle turns one-finger drags into rectangles.
+
+Place: a "Restore chunks" sub-tab on the World tab (`world` permission, like Prune), its
+map as its own route so the World page does not load it. Above the map: the dimension and
+the snapshot to restore from (only snapshots of the active world that hold that
+dimension; partial ones only for their folders). A snapshot's row could link there with
+itself picked. Fallback if the seamless map turns out costly: an overview of region tiles,
+a region view opened from it with steps to the four neighbours.
+
 ### Duplicate detection across platforms
 
 Built 2026-10-16 (`duplicateMods`; ARCHITECTURE, "The same mod twice"), on crash diagnosis's

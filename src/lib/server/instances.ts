@@ -49,6 +49,7 @@ import { defaultMaxMb, getInstanceDefaults, limitsFor } from './instance-default
 import { datapackNames, mapWorldPath, packLevelName, packWorldFiles, packWorldName } from './packworld';
 import { BASE_FILE, baseTag, packFiles, writeBase } from './configmerge';
 import { applyMapModConfig, deleteMapData } from './worldmap';
+import { deleteChunkMapCache } from './chunkmap';
 import { deletePlayitData, syncTunnels } from './playit';
 import {
 	beginOperation,
@@ -1408,6 +1409,7 @@ export async function deleteInstance(
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
+	await deleteChunkMapCache(instance.id).catch(() => undefined);
 	await deletePlayitData(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,

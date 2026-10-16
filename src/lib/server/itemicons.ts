@@ -1142,6 +1142,64 @@ export function variantModels(ns: string, itemPath: string, damage: number | nul
 	return [...new Set(out)];
 }
 
+// --------------------------------------------------------- placed blocks ---
+
+/**
+ * A placed block's model (the chunk map, chunkmap.ts): the blockstate
+ * variant whose properties match (1.13+ chunks name them; a key's property
+ * the block does not have counts as matching), or for multipart blocks the
+ * part that always applies (a fence's post). A model with nothing to draw
+ * (fluids, some mods' blocks) shows its particle texture.
+ */
+async function placedSpec(res: Resources, ns: string, blockPath: string, state: Record<string, unknown>, props: Record<string, string>): Promise<IconSpec | null> {
+	const first = (v: unknown): Variant | null => (Array.isArray(v) ? (v[0] as Variant) : v && typeof v === 'object' ? (v as Variant) : null);
+	let chosen: Variant | null = null;
+	if (state.variants && typeof state.variants === 'object') {
+		const entries = Object.entries(state.variants as Record<string, unknown>);
+		const matches = ([key]: [string, unknown]) =>
+			key === '' || key === 'normal' || key.split(',').every((pair) => {
+				const [k, v] = pair.split('=');
+				return props[k] === undefined || props[k] === v;
+			});
+		chosen = first((entries.find(matches) ?? entries[0])?.[1]);
+	} else if (Array.isArray(state.multipart)) {
+		const parts = state.multipart as { when?: unknown; apply?: unknown }[];
+		chosen = first((parts.find((part) => !part.when) ?? parts[0])?.apply);
+	}
+	if (!chosen?.model) return null;
+	const loaded = await loadBlockstateModel(res, ns, chosen.model);
+	if (!loaded) return null;
+	const spec = specOf(loaded, [], legacyTint(blockPath));
+	if (spec) return spec;
+	const particle = texture(loaded, '#particle');
+	return particle ? { kind: 'flat', layers: [{ texture: particle, tint: null }] } : null;
+}
+
+/**
+ * How a placed block looks, and its name: from its blockstate (1.13+ by
+ * `props`, older by damage as the item pictures do), else the item's
+ * picture. The spec is the same shape as an item icon's; the chunk map takes
+ * its top face.
+ */
+export async function blockLook(
+	res: Resources,
+	id: string,
+	damage: number | null,
+	props: Record<string, string> | null
+): Promise<{ spec: IconSpec | null; name: string }> {
+	const [ns0, blockPath] = split(id);
+	const ns = domain(ns0);
+	const state = await res.json(`${ns}/blockstates/${blockPath}.json`);
+	const icon = await resolveIcon(res, id, damage).catch((): ItemIcon => ({ spec: null, exact: true }));
+	let spec: IconSpec | null = null;
+	// Vanilla 1.12's variants by damage are known (granite is stone 1); its blockstate files do not list them in that order.
+	if (icon.variant && ns === 'minecraft') spec = icon.spec;
+	else if (state && props) spec = await placedSpec(res, ns, blockPath, state, props);
+	else if (state) spec = (await blockstateIcon(res, ns, blockPath, damage ?? 0, legacyTint(blockPath)))?.spec ?? null;
+	const named = await withVariantName(res, id, damage, icon);
+	return { spec: spec ?? icon.spec, name: named.name ?? itemName(id, await res.lang()) };
+}
+
 // ------------------------------------------------------------- the API ---
 
 const resolved = new WeakMap<Resources, Map<string, Promise<ItemIcon>>>();

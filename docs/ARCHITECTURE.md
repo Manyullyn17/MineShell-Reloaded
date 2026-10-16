@@ -572,7 +572,7 @@ folders at their relative paths and a `manifest.json`; one is assembled as `<id>
 and only counts once renamed. Pinning, the user's name (`note`) and tags only rewrite the
 manifest (`updateManifest`). Before MineShell's own risky operations the world is copied
 into one (reflinks where the filesystem has them). The World tab's operations - reset,
-replace, restore, reset or restore one dimension, prune chunks - instead move what they
+replace, restore, reset or restore one dimension, restore chunks, prune chunks - instead move what they
 replace into the snapshot, so keeping the old world costs no copy; they share one journalled
 shape (`world-change` in `world.ts`), which a crash rolls back.
 
@@ -605,6 +605,30 @@ Dimensions are found on disk (`dimensions.ts`): a folder holding `region/` or `e
 The overworld is the level folder's own `region/`, `entities/` and `poi/`, so resetting it
 keeps `level.dat` and player data. A snapshot of only some folders is marked `partial` and
 restores only those.
+
+**Restoring chunks** (World > Restore chunks; `chunkrestore.ts`, `restoreChunks` in
+`world.ts`): every region file holding a chosen chunk is rebuilt from the live file and the
+snapshot's (`assembleRegion` in `regionfile.ts` copies chunks as stored, sectors and
+timestamp, never decoded), in `region/`, `entities/` and `poi/` alike; a chosen chunk the
+snapshot lacks goes and generates again; `.mcc` files of oversized chunks move with them.
+It is a world change whose `moving`/`placing` are those files, planned from the headers
+while the server is stopped. The replaced files are always kept as a partial snapshot (a
+rename, a few MB; no question asked), which restores them. A region file the restore created
+(the live world had none) is not in that snapshot, so restoring it leaves that file.
+
+**The chunk map** (`chunkmap.ts`, `ChunkMap.svelte`, `lib/shared/chunkmap.ts`) is drawn in
+the browser from two endpoints: the overview (every region header's chunk list, cheap for
+a whole world) and one region's top block per column with height and water depth. Block
+data is read in every format: 1.18+ `sections`, 1.13-1.17 `Level.Sections` (indices span
+longs before 1.16, DataVersion 2527), 1.12 and older `Blocks`/`Add`/`Data` named through
+Forge's registry in level.dat (`legacyBlockIds`) or vanilla's numbers, and
+RoughlyEnoughIDs/JEID sections, whose `Palette` int array holds `id << 4 | meta` and whose
+Blocks/Add/Data hold the index into it (`(add << 12) | (blocks << 4) | data`). Decoded
+columns are cached per server and folder in `cache/chunkmap/` by file size and time.
+Colours are the block's top face texture, averaged (`png.ts`) and tinted, through the item
+icon index (`blockLook`: the blockstate's model, else the item's picture); a block without
+a texture is plain grey and the height shading still shows the land. LZ4 and damaged chunks
+are drawn as grey squares. Item pictures turned off means no colours.
 
 A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
 are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which

@@ -3,6 +3,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
+	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
@@ -15,7 +16,10 @@
 	const base = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/world`);
 	const busy = $derived(data.instance.status === 'provisioning');
 
-	let view = $state<'snapshots' | 'worlds' | 'pregen' | 'prune' | 'reset'>('snapshots');
+	const VIEWS = ['snapshots', 'worlds', 'pregen', 'prune', 'reset'] as const;
+	// ?view= opens a tab: Restore chunks is a page of its own and links back to the others.
+	const asked = page.url.searchParams.get('view');
+	let view = $state<(typeof VIEWS)[number]>(VIEWS.find((v) => v === asked) ?? 'snapshots');
 	const snapshotBytes = $derived(data.snapshots.reduce((sum, s) => sum + s.sizeBytes, 0));
 	let pendingRestore = $state<string | null>(null);
 	let pendingDelete = $state<string | null>(null);
@@ -228,6 +232,9 @@
 		{#each ([['snapshots', 'Snapshots'], ['worlds', 'Worlds'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || id === 'worlds' || may('world')) as [id, label] (id)}
 			<button type="button" aria-current={view === id ? 'page' : undefined} onclick={() => (view = id)}>{label}</button>
 		{/each}
+		{#if may('backups.restore')}
+			<a href="/instances/{encodeURIComponent(data.instance.id)}/world/chunks">Restore chunks</a>
+		{/if}
 	</nav>
 </div>
 
@@ -411,7 +418,12 @@
 									}}
 								>
 									<input type="hidden" name="id" value={s.id} />
-									{#if s.partial}
+									{#if s.reason === 'world-restore-chunks'}
+										<p>
+											Puts back the {s.worlds.length} region file{s.worlds.length === 1 ? '' : 's'} a chunk restore changed, as they were on
+											{formatDateTime(s.createdAt)}. The rest of the world stays as it is.
+										</p>
+									{:else if s.partial}
 										<p>
 											Puts back {s.dimensions.map((d) => d.label).join(', ') || s.worlds.join(', ')} as it was on
 											{formatDateTime(s.createdAt)}. The rest of the world stays as it is.

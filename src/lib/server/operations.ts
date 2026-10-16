@@ -59,7 +59,7 @@ export type Journal =
 	| {
 			/** Reset, replace or restore the world, or one dimension of it (world.ts). */
 			kind: 'world-change';
-			action: 'reset' | 'replace' | 'restore' | 'reset-dimension' | 'restore-dimension' | 'prune';
+			action: 'reset' | 'replace' | 'restore' | 'reset-dimension' | 'restore-dimension' | 'restore-chunks' | 'prune';
 			/** Where the current world folders move: a snapshot being assembled, or a folder deleted afterwards. */
 			aside: string;
 			/** The snapshot `aside` is renamed to once complete, when one was wanted. */

@@ -38,6 +38,7 @@ import {
 import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
+import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
 import { child, parseNbt } from './nbt';
 import { constants as fsConstants } from 'node:fs';
 import {
@@ -339,6 +340,73 @@ export async function restoreDimension(
 	});
 }
 
+/** Most chunks one restore takes: 64 region files' worth. */
+export const MAX_RESTORE_CHUNKS = 64 * 1024;
+
+/**
+ * Put chosen chunks of one dimension back from a snapshot (chunkrestore.ts),
+ * leaving every other chunk as it is. Only the region files holding a chosen
+ * chunk move aside - into a partial snapshot of just those files when wanted.
+ */
+export async function restoreChunks(
+	instance: ServerInstance,
+	snapshotId: string,
+	key: string,
+	chunks: [number, number][],
+	opts: { snapshot: boolean }
+): Promise<string> {
+	if (!chunks.length) throw new InstanceError('Pick the chunks to restore first.');
+	if (chunks.length > MAX_RESTORE_CHUNKS) throw new InstanceError(`That is more than ${MAX_RESTORE_CHUNKS} chunks; restore the whole dimension instead.`);
+	if (!chunks.every((c) => c.length === 2 && c.every((n) => Number.isInteger(n) && Math.abs(n) < 2 ** 21))) throw new InstanceError('Those are not chunk positions.');
+	await requireStopped(instance);
+	const snapshot = await getSnapshot(instance.path, snapshotId);
+	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
+	await requireOfActiveWorld(instance.path, snapshot);
+	const from = snapshotPath(instance.path, snapshot.id);
+	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
+	if (!dimension) throw new InstanceError('That snapshot does not have this dimension.');
+	const base = path.relative(instance.path, dimensionBase(instance.path, dimension));
+	const plan = await planChunkRestore(instance.path, base, from, base, chunks);
+	if (!plan.moving.length && !plan.placing.length) throw new InstanceError('Neither the world nor the snapshot has any of those chunks.');
+	const count = `${chunks.length} chunk${chunks.length === 1 ? '' : 's'}`;
+	return runWorldChange(instance, {
+		action: 'restore-chunks',
+		label: `Restoring ${count} of ${dimension.label}`,
+		snapshot: opts.snapshot,
+		moving: plan.moving,
+		placing: plan.placing,
+		assemble: async (incoming, task) => {
+			task.setProgress(null, `Copying ${count} from snapshot ${snapshot.id}`);
+			await assembleChunkRestore(instance.path, from, incoming, plan);
+			task.log(
+				`${plan.restored} chunk${plan.restored === 1 ? '' : 's'} come back from the snapshot${plan.removed ? `; ${plan.removed} it did not have yet go and generate again` : ''}.`
+			);
+		},
+		done: `Restored ${count} of ${dimension.label} from ${snapshot.id}.`
+	});
+}
+
+/**
+ * Where the chunk map reads a dimension: the live world (`source` "live") or
+ * a snapshot of the active world. Null when that has no such dimension.
+ */
+export async function chunkMapFolder(instance: ServerInstance, source: string, key: string): Promise<{ base: string; worldDir: string; dimension: Dimension } | null> {
+	const level = await serverWorldName(instance.path);
+	if (source === 'live') {
+		const dimension = await findDimension(instance.path, key);
+		return dimension ? { base: dimensionBase(instance.path, dimension), worldDir: path.join(instance.path, level), dimension } : null;
+	}
+	const snapshot = await getSnapshot(instance.path, source);
+	if (!snapshot || !snapshotOfWorld(snapshot, level)) return null;
+	const root = snapshotPath(instance.path, snapshot.id);
+	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
+	if (!dimension) return null;
+	// A partial snapshot has no level.dat: the live world's names the same block numbers.
+	const own = path.join(root, level);
+	const worldDir = (await exists(path.join(own, 'level.dat'))) ? own : path.join(instance.path, level);
+	return { base: dimensionBase(root, dimension), worldDir, dimension };
+}
+
 /** The dimensions a snapshot holds, found the way the live world's are. */
 export async function snapshotDimensions(instance: ServerInstance, snapshot: Snapshot): Promise<Dimension[]> {
 	return listDimensions(snapshotPath(instance.path, snapshot.id), await serverWorldName(instance.path));
@@ -387,7 +455,7 @@ export async function worldSeed(root: string): Promise<string | null> {
 }
 
 /** The world spawn from level.dat (Data.SpawnX/SpawnZ); null when unreadable. */
-async function worldSpawn(root: string): Promise<{ x: number; z: number } | null> {
+export async function worldSpawn(root: string): Promise<{ x: number; z: number } | null> {
 	try {
 		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
 		const data = child(level.root, 'Data');
@@ -400,7 +468,7 @@ async function worldSpawn(root: string): Promise<{ x: number; z: number } | null
 }
 
 /** The folder holding a dimension's region/: the world folder for the overworld, else the dimension's own. */
-function dimensionBase(root: string, dimension: Dimension): string {
+export function dimensionBase(root: string, dimension: Dimension): string {
 	return path.join(root, dimension.overworld ? path.dirname(dimension.paths[0]) : dimension.paths[0]);
 }
 

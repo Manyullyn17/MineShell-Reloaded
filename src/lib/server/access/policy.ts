@@ -204,6 +204,10 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	},
 	// A world zip holds every player's data: file access.
 	'/api/instances/[id]/world': { methods: { GET: on('files'), PUT: on('world') } },
+	'/instances/[id]/world/chunks': { load: on('backups.restore'), actions: { restore: on('backups.restore') } },
+	// The chunk map shows the world from above: drawn for the page that restores chunks.
+	'/api/instances/[id]/chunkmap': { methods: { GET: on('backups.restore') } },
+	'/api/instances/[id]/chunkmap/region': { methods: { GET: on('backups.restore') } },
 
 	'/instances/[id]/map': {
 		load: on('view'),

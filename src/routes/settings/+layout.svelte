@@ -57,28 +57,7 @@
 		margin: 0.3rem 0 1rem;
 	}
 
-	/* Scrolling, underline overlap and the right-edge fade on phones come from app.css's .subtabs. */
-
-	.subtabs a {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		padding: 0.55rem 0.8rem 0.7rem;
-		border-bottom: 2px solid transparent;
-		color: var(--text-muted);
-		text-decoration: none;
-		white-space: nowrap;
-		font-size: 0.93rem;
-	}
-
-	.subtabs a:hover {
-		color: var(--text);
-	}
-
-	.subtabs a[aria-current='page'] {
-		color: var(--text);
-		border-bottom-color: var(--accent);
-	}
+	/* The tabs' look, scrolling and the right-edge fade on phones come from app.css's .subtabs. */
 
 	.warn-dot {
 		width: 7px;

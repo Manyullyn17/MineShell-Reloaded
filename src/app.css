@@ -735,6 +735,27 @@ tbody tr:last-child td {
 	border-bottom-color: var(--accent);
 }
 
+/* A tab that is a page of its own (Settings, World > Restore chunks): a link drawn like the buttons. */
+.subtabs a {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.55rem 0.8rem 0.7rem;
+	border-bottom: 2px solid transparent;
+	color: var(--text-muted);
+	text-decoration: none;
+	font-size: 0.93rem;
+}
+
+.subtabs a:hover {
+	color: var(--text);
+}
+
+.subtabs a[aria-current='page'] {
+	color: var(--text);
+	border-bottom-color: var(--accent);
+}
+
 .count {
 	font-family: var(--font-mono);
 	font-size: 0.75rem;
