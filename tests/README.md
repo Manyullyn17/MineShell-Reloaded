@@ -338,3 +338,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Pack change preview: the user's own files in moved folders, keeping them over the new version's, and bringing them back without a base; only offered paths are copied | `flows/pack-change.test.ts` |
 | (feature) Where new ports start: saved starts for game, RCON distance, voice chat and map mod ports, RCON kept out of 32768+, invalid ranges refused and ignored | `flows/ports.test.ts` |
 | (feature) Mod updates in the periodic check: servers without a pack only, enabled mods, skipped until a different set, cleared by updating | `server/updatecheck.test.ts`, `flows/mod-updates.test.ts` |
+| "Update mods" refused every mod from the browser: the review's "<file>\n<version>" values arrive with CRLF, and the split left "\r" on the file name | `server/formvalues.test.ts` |

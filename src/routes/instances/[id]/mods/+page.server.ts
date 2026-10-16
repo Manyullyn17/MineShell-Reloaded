@@ -5,6 +5,7 @@ import { bisectState, cancelBisect, clearBisectState, isBisecting, startBisect }
 import { OperationInProgressError } from '#lib/server/operations.js';
 import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
+import { fileVersionPairs } from '#lib/server/formvalues.js';
 import { changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
@@ -133,12 +134,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const guard = packGuard(instance, form);
 		if (guard) return guard;
-		const changes = form
-			.getAll('change')
-			.map(String)
-			.map((v) => v.split('\n'))
-			.filter((p) => p.length === 2 && p[0] && p[1])
-			.map(([fileName, versionId]) => ({ fileName, versionId }));
+		const changes = fileVersionPairs(form);
 		if (!changes.length) return fail(400, { ok: false, message: 'Tick at least one mod to update.' });
 		try {
 			await changeModVersions(instance, changes, {
