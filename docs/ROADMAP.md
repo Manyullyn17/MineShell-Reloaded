@@ -133,6 +133,14 @@ translucent fill in the accent colour, bordered on the selection's outer edge on
 neighbouring chunks read as one area. A chunk grid over the map once zoomed in far enough
 for it to be readable; region lines (and the coordinate grid) when zoomed out.
 
+Pointer position (user, 2026-10-17): a tooltip with block x/z, chunk x/z (block >> 4), the
+region file (`r.<cx >> 5>.<cz >> 5>.mca`) and, on the coloured view, the top block. Only
+where `(hover: hover) and (pointer: fine)` matches; touch shows the last tapped spot in a
+fixed readout instead. Input (suggested, not settled): drag pans, a click without moving
+toggles a chunk, shift-drag selects a rectangle (with a deselect modifier); right click is
+out (context menu, trackpads, phones). On touch: one finger pans, a tap toggles, pinch
+zooms, and a Select toggle turns one-finger drags into rectangles.
+
 Place: a "Restore chunks" sub-tab on the World tab (`world` permission, like Prune), its
 map as its own route so the World page does not load it. Above the map: the dimension and
 the snapshot to restore from (only snapshots of the active world that hold that
