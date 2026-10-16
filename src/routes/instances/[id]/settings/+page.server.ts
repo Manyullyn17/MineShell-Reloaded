@@ -369,6 +369,7 @@ export const actions: Actions = {
 		try {
 			await applyPackChange(instance, versionId, {
 				updateMods: form.getAll('updateMod').map(String),
+				keepOwn: form.getAll('keepOwn').map(String),
 				confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
 				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)

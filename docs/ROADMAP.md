@@ -14,10 +14,10 @@ has an agreed install-flow plan. None of this has a delivery date.
 
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
-- **Sooner**: duplicate detection across platforms and hash-based mod caching; the pack
-  change preview for data-pack-loader folders; remote access docs (for completeness); from
-  the leftovers, data pack updates and scheduled mod update checks (custom servers only:
-  pack mods are not usually updated one by one, and the manual check stays).
+- **Sooner**: duplicate detection across platforms and hash-based mod caching; remote
+  access docs (for completeness); from the leftovers, data pack updates and scheduled mod
+  update checks (custom servers only: pack mods are not usually updated one by one, and the
+  manual check stays).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -149,17 +149,13 @@ default. That was the blocker for designing remote access, so it can proceed whe
 is wanted. The recommendation in `docs/DEPLOYMENT.md` — Tailscale rather than a public
 reverse proxy — is where this should land unless there is a specific reason otherwise.
 
-### Pack change preview: content in data-pack-loader folders
-
-Folders like `config/paxi/datapacks`, `config/openloader`, `global_packs/` or `kubejs/`
-are pack config folders, so a pack change moves them whole to `old-configs/` - including a
-data pack the user added there. Correct by the configs policy, but easy to miss for a data
-pack; the preview could point out non-pack files in those folders.
-
 ### Leftovers of built features
 
 What the built entries in the archive left out, in one place:
 
+- **Pack change preview**: a warning when the new version drops the mod that loads a folder
+  of the user's data packs (Paxi, OpenLoader): the files come back but nothing loads them,
+  and a world-generation one going away can stop the world loading.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser

@@ -60,6 +60,7 @@
 			newFiles: string[];
 		};
 		manual: ManualMod[];
+		ownFiles: { known: boolean; back: string[]; packWins: string[]; stays: string[] };
 	};
 
 	let versions = $state<PackVersion[]>([]);
@@ -92,6 +93,20 @@
 		planError = '';
 		confirmMinecraft = false;
 	});
+
+	/** The user's own files ticked to keep (plan.ownFiles); none until ticked, as each preview starts. */
+	let keepOwn = $state<string[]>([]);
+	$effect(() => {
+		void plan;
+		keepOwn = [];
+	});
+	/** `back` by top-level folder, for the count line. */
+	const backByFolder = $derived.by(() => {
+		const counts = new Map<string, number>();
+		for (const rel of plan?.ownFiles.back ?? []) counts.set(rel.split('/')[0], (counts.get(rel.split('/')[0]) ?? 0) + 1);
+		return [...counts];
+	});
+	const looksLikeDatapack = (rel: string) => /\/datapacks\/|\.zip$/i.test(rel);
 
 	let currentLabel = $derived(
 		versions.find((v) => v.id === pack.versionId)?.versionNumber ?? pack.versionName ?? pack.versionId ?? 'unknown'
@@ -140,6 +155,21 @@
 	);
 	let canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
+
+{#snippet ownList(files: string[])}
+	<div class="own-actions">
+		<button type="button" class="button-quiet" onclick={() => (keepOwn = [...new Set([...keepOwn, ...files])])}>Keep all</button>
+		<button type="button" class="button-quiet" onclick={() => (keepOwn = keepOwn.filter((f) => !files.includes(f)))}>Keep none</button>
+	</div>
+	<ul class="files own">
+		{#each files as f (f)}
+			<li class="check">
+				<input id="keep-{f}" type="checkbox" name="keepOwn" value={f} bind:group={keepOwn} />
+				<label for="keep-{f}">{f}{#if looksLikeDatapack(f)} <span class="tag">data pack</span>{/if}</label>
+			</li>
+		{/each}
+	</ul>
+{/snippet}
 
 <section class="panel" use:dropzone={{ input: uploadInput, disabled: uploading || planning, label: 'Drop the new version’s pack file (.mrpack or .zip)' }}>
 	<div class="panel-head">
@@ -303,6 +333,38 @@
 				</details>
 			{/if}
 
+			{#if plan.ownFiles.packWins.length || plan.ownFiles.stays.length || plan.ownFiles.back.length}
+				<h3>Your own files in the folders that move</h3>
+				{#if plan.ownFiles.back.length}
+					<p class="small muted">
+						{plan.ownFiles.back.length} file(s) the installed version did not ship (added by you, or written by a mod) come
+						back as they are:
+						{backByFolder.map(([folder, n]) => `${n} in ${folder}/`).join(', ')}.
+					</p>
+					<details>
+						<summary>Files that come back</summary>
+						<ul class="files">
+							{#each plan.ownFiles.back as f (f)}<li>{f}</li>{/each}
+						</ul>
+					</details>
+				{/if}
+				{#if plan.ownFiles.packWins.length}
+					<p class="small">
+						The new version ships its own file where you have one. The pack's goes in place unless you keep yours (yours
+						stays in <code>old-configs/</code> either way, and can be picked later under the merge review):
+					</p>
+					{@render ownList(plan.ownFiles.packWins)}
+				{/if}
+				{#if plan.ownFiles.stays.length}
+					<p class="notice warning small">
+						MineShell has no record of the files the installed version shipped, so it cannot tell yours from the pack's,
+						and nothing is merged. These {plan.ownFiles.stays.length} file(s) are not in the new version and stay only in
+						<code>old-configs/</code> unless ticked; tick the ones you added.
+					</p>
+					{@render ownList(plan.ownFiles.stays)}
+				{/if}
+			{/if}
+
 			{#if plan.mods.add.length || plan.mods.update.length || plan.mods.remove.length}
 				<details>
 					<summary>Pack mod changes</summary>
@@ -399,6 +461,16 @@
 
 	.added {
 		color: var(--success, inherit);
+	}
+
+	.files.own {
+		list-style: none;
+		padding-left: 0;
+	}
+
+	.own-actions {
+		display: flex;
+		gap: var(--space-2);
 	}
 
 	.removed,

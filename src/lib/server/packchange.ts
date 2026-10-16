@@ -17,7 +17,7 @@ import {
 } from './mods';
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep, type Snapshot } from './snapshots';
-import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, writeBase, type Base } from './configmerge';
+import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, walk, writeBase, type Base } from './configmerge';
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
 import { missingNotice, recordMissing } from './packs/missing';
 import { hashFile } from './download';
@@ -255,11 +255,67 @@ export type PackChangePlan = {
 		newFiles: string[];
 	};
 	manual: ManualModCheck[];
+	/** The user's own files in the folders that move (ownConfigFiles). */
+	ownFiles: OwnFiles;
 	/** Reached into while applying; not sent to the client. On-disk names of `mods.update`. */
 	packUpdates?: string[];
 	/** Reached into while applying; not sent to the client. */
 	updates?: Map<string, { source: string; project: { id: string; slug: string; name: string; projectUrl: string | null; iconUrl: string | null }; version: ProjectVersion }>;
 };
+
+/**
+ * Files in the folders a change moves to old-configs that the installed
+ * version did not ship: added by hand, or written by a mod at its first start.
+ * After the change (configmerge.ts) they come back (`back`), unless the new
+ * version ships its own, different file at that path, which is put in place
+ * instead (`packWins`); the person can keep theirs (`keepOwn`). Without a
+ * record of the installed version's files (`known: false`), nothing tells
+ * them from the pack's and nothing is merged: the ones the new version does
+ * not ship stay in old-configs only (`stays`), unless kept.
+ */
+export type OwnFiles = { known: boolean; back: string[]; packWins: string[]; stays: string[] };
+
+/** The installed version's file paths outside mods/: the saved base, else read from the version once. */
+const installedPathsCache = new Map<string, Set<string> | null>();
+async function installedPackPaths(instance: ServerInstance): Promise<((rel: string) => boolean) | null> {
+	const saved = await readBase(instance.path);
+	if (saved?.tag === baseTag(instance)) return (rel) => saved.hash(rel) !== undefined;
+	if (!instance.packSource || !instance.packProjectId || !instance.packVersionId) return null;
+	const key = baseTag(instance);
+	if (!installedPathsCache.has(key)) {
+		const paths = await resolveProviderPack(instance.packSource, instance.packProjectId, instance.packVersionId)
+			.then(async ({ pack }) => {
+				await loadOverridesArchive(pack);
+				const world = await serverWorldName(instance.path);
+				return new Set(packFiles(pack, worldTopsFor(world, packWorldName(pack), ...(await worldFolderNames(instance.path)))).keys());
+			})
+			.catch(() => null);
+		installedPathsCache.set(key, paths);
+	}
+	const paths = installedPathsCache.get(key);
+	return paths ? (rel) => paths.has(rel) : null;
+}
+
+async function ownConfigFiles(instance: ServerInstance, tops: string[], targetFiles: Map<string, Buffer>): Promise<OwnFiles> {
+	const files: string[] = [];
+	for (const top of tops) {
+		const full = path.join(instance.path, top);
+		const stat = await fs.stat(full).catch(() => null);
+		if (stat?.isDirectory()) await walk(full, top, files);
+		else if (stat?.isFile()) files.push(top);
+	}
+	const own: OwnFiles = { known: false, back: [], packWins: [], stays: [] };
+	if (!files.length) return { ...own, known: true };
+	const installed = await installedPackPaths(instance);
+	own.known = installed !== null;
+	for (const rel of files.sort()) {
+		if (installed?.(rel)) continue;
+		const theirs = targetFiles.get(rel);
+		if (!theirs) (installed ? own.back : own.stays).push(rel);
+		else if (installed && !theirs.equals(await fs.readFile(path.join(instance.path, rel)))) own.packWins.push(rel);
+	}
+	return own;
+}
 
 async function checkManualMod(
 	row: ModRow,
@@ -403,6 +459,9 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 	for (const f of worldFiles) {
 		if (!isDatapackFile(f.rel) && !(await exists(path.join(instance.path, worldFolder, f.rel)))) newFiles.push(f.rel);
 	}
+	// The server's other worlds are worlds too, not config folders the pack happens to name.
+	const worldTops = worldTopsFor(worldFolder, packFolder, ...(await worldFolderNames(instance.path)));
+	const configs = packTopLevel(pack, worldTops);
 
 	return {
 		versionId,
@@ -432,8 +491,7 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 			remove,
 			keep: packRows.length - remove.length - packUpdates.length
 		},
-		// The server's other worlds are worlds too, not config folders the pack happens to name.
-		configs: packTopLevel(pack, worldTopsFor(worldFolder, packFolder, ...(await worldFolderNames(instance.path)))),
+		configs,
 		world: {
 			folder: worldFolder,
 			packFolder,
@@ -446,6 +504,7 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 			newFiles: newFiles.sort()
 		},
 		manual: checks.map((c) => c.check),
+		ownFiles: await ownConfigFiles(instance, configs, packFiles(pack, worldTops)),
 		updates,
 		packUpdates
 	};
@@ -482,6 +541,26 @@ async function mergeBase(instance: ServerInstance, task: TaskHandle): Promise<Ba
 		task.log(`Could not read the installed version’s original configs: ${err instanceof Error ? err.message : 'unknown error'}.`);
 		return null;
 	}
+}
+
+/**
+ * Copies the files the person chose (`keep`, limited to `offered`) from
+ * old-configs back into place, over the new version's where it has one.
+ * Inside the journalled change: a rollback removes the moved folders' new
+ * contents, these with them.
+ */
+async function keepOwnFiles(root: string, oldConfigs: string, offered: string[], keep: string[] | undefined): Promise<string[]> {
+	const allowed = new Set(offered);
+	const kept: string[] = [];
+	for (const rel of new Set(keep ?? [])) {
+		if (!allowed.has(rel)) continue;
+		const data = await fs.readFile(path.join(oldConfigs, rel)).catch(() => null);
+		if (!data) continue;
+		await fs.mkdir(path.dirname(path.join(root, rel)), { recursive: true });
+		await fs.writeFile(path.join(root, rel), data);
+		kept.push(rel);
+	}
+	return kept;
 }
 
 function stampFor(label: string | null): string {
@@ -552,6 +631,8 @@ export async function applyPackChange(
 		downloadJava?: JavaVendor;
 		/** Undo this change: its configs come back exactly (packrollback.ts). */
 		rollback?: RollbackOf;
+		/** The user's own files to keep over the new version's, or to bring back (plan.ownFiles). */
+		keepOwn?: string[];
 		/** Runs after the change has committed and the server is ready. */
 		then?: (task: TaskHandle) => Promise<void>;
 	}
@@ -734,7 +815,13 @@ export async function applyPackChange(
 			} else if (base && movedConfigs.length) {
 				task.setProgress(null, 'Bringing back your config edits');
 				const report = await mergeConfigs(root, oldConfigs, movedConfigs, base, path.join(staging, 'config-merge'), path.basename(journal.oldConfigs));
-				const count = (o: string) => report.entries.filter((e) => e.outcome === o).length;
+				const kept = await keepOwnFiles(root, oldConfigs, plan.ownFiles.packWins, opts.keepOwn);
+				for (const entry of report.entries) if (kept.includes(entry.path)) entry.resolved = 'mine';
+				if (kept.length) {
+					await fs.writeFile(path.join(staging, 'config-merge', 'report.json'), JSON.stringify(report, null, '\t'));
+					task.log(`Kept ${kept.length} of your own file(s) over the new version's, as asked.`);
+				}
+				const count = (o: string) => report.entries.filter((e) => e.outcome === o && !e.resolved).length;
 				const parts = [
 					[count('kept') + count('carried'), 'kept as you had them'],
 					[count('merged'), 'merged with the pack’s changes'],
@@ -746,6 +833,8 @@ export async function applyPackChange(
 				}
 			} else if (movedConfigs.length) {
 				task.log('No record of the installed pack version’s own configs, so your edits stay in old-configs/ only.');
+				const kept = await keepOwnFiles(root, oldConfigs, plan.ownFiles.stays, opts.keepOwn);
+				if (kept.length) task.log(`Brought back ${kept.length} file(s) the new version does not ship, as asked.`);
 			}
 			// This version's originals, the base for the next change, tagged with
 			// the version the commit records (a rollback leaves a base whose tag no

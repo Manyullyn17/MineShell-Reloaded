@@ -672,6 +672,52 @@ describe('your config edits across a pack change', () => {
 		expect(await mergeView(instance.path, '../x', 'config/c.cfg')).toBeNull();
 	});
 
+	// cfg4 ships a file where the user has their own, and kubejs again (so kubejs/ moves too).
+	definePack('cfg4', '1.20.1', ['a.jar'], {
+		'config/a.cfg': lines('a1', 'a2', 'a3'),
+		'config/mine.cfg': 'the pack’s own',
+		'kubejs/x.js': 'x v2'
+	});
+
+	it('lists the user’s own files in the folders that move, and keeps the ones ticked over the pack’s', async () => {
+		const instance = await edited();
+		await fs.mkdir(path.join(instance.path, 'config/paxi/datapacks'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, 'config/paxi/datapacks/mine.zip'), 'my data pack');
+		const plan = await planPackChange(instance, 'cfg4');
+		expect(plan.ownFiles).toEqual({
+			known: true,
+			back: ['config/paxi/datapacks/mine.zip', 'kubejs/mine.js'],
+			packWins: ['config/mine.cfg'],
+			stays: []
+		});
+		// A path the plan did not offer is not copied, whatever the form says.
+		const task = await waitForTask(await applyPackChange(instance, 'cfg4', { updateMods: [], confirmMinecraftChange: false, keepOwn: ['config/mine.cfg', 'config/a.cfg'] }));
+		expect(task.state).toBe('done');
+		expect(await tree(instance.path, /^(\.mineshell|old-configs)\//)).toMatchObject({
+			'config/mine.cfg': 'only mine',
+			'config/a.cfg': lines('a1', 'a2 mine', 'a3'),
+			'config/paxi/datapacks/mine.zip': 'my data pack',
+			'kubejs/mine.js': 'my script'
+		});
+		const entry = (await latestMergeReport(instance.path))!.entries.find((e) => e.path === 'config/mine.cfg')!;
+		expect(entry).toMatchObject({ outcome: 'both-added', resolved: 'mine' });
+	});
+
+	it('without a record of the installed version’s files, brings back only the files ticked', async () => {
+		const instance = await edited();
+		await fs.rm(path.join(instance.path, BASE_FILE));
+		// Nothing to read the installed version from either: it is gone from the provider.
+		db.update(serverInstances).set({ packVersionId: 'gone' }).where(eq(serverInstances.id, instance.id)).run();
+		const plan = await planPackChange(reload(instance.id), 'cfg4');
+		expect(plan.ownFiles).toMatchObject({ known: false, back: [], packWins: [] });
+		expect(plan.ownFiles.stays).toEqual(['config/b.cfg', 'config/c.cfg', 'kubejs/mine.js']);
+		const task = await waitForTask(await applyPackChange(reload(instance.id), 'cfg4', { updateMods: [], confirmMinecraftChange: false, keepOwn: ['kubejs/mine.js'] }));
+		expect(task.state).toBe('done');
+		const files = await tree(instance.path, /^(\.mineshell|old-configs)\//);
+		expect(files['kubejs/mine.js']).toBe('my script');
+		expect(files['config/b.cfg']).toBeUndefined();
+	});
+
 	it('reads the installed version’s originals once when a server has none saved', async () => {
 		// Installed before MineShell kept them.
 		const instance = await edited();

@@ -9,6 +9,24 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Pack change preview: your own files in the folders that move
+
+Built 2026-10-16 (`ownFiles`/`keepOwn` in packchange.ts; ARCHITECTURE, "Config edits across
+a pack change"). By then the config merge already carried users' own files back, binary
+ones too, so a data pack added to `config/paxi/datapacks` survived; what was missing was
+seeing it, the case where the new version ships its own file there (the pack's won), and
+servers with no base (nothing merged, everything left in old-configs). User's calls: all
+files added by hand, not only data packs, with a choice to keep them. Mods' own generated
+configs count as the user's too (nothing tells them apart), hence counts per folder. Seen on
+the throwaway dev server with Cobblemon 1.8.1 -> 1.8.2 (installed version read from
+Modrinth). Not built: a warning when the new version drops the mod that loads such a
+folder. The original note:
+
+Folders like `config/paxi/datapacks`, `config/openloader`, `global_packs/` or `kubejs/`
+are pack config folders, so a pack change moves them whole to `old-configs/` - including a
+data pack the user added there. Correct by the configs policy, but easy to miss for a data
+pack; the preview could point out non-pack files in those folders.
+
 ### Multi-instance port management
 
 Built 2026-10-16 (`portmap.ts`, MineShell settings > Ports; ARCHITECTURE, Simple Voice

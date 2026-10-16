@@ -276,7 +276,8 @@ export type MergeEntry = { path: string; outcome: MergeOutcome; resolved: 'mine'
 
 export type MergeReport = { stamp: string; oldConfigs: string; createdAt: number; entries: MergeEntry[] };
 
-async function walk(dir: string, rel: string, out: string[]): Promise<void> {
+/** Every file under `dir`, as paths starting with `rel`. */
+export async function walk(dir: string, rel: string, out: string[]): Promise<void> {
 	for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
 		const child = rel ? `${rel}/${entry.name}` : entry.name;
 		if (entry.isDirectory()) await walk(path.join(dir, entry.name), child, out);

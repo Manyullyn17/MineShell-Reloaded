@@ -435,6 +435,15 @@ new version ships one there). A server without a base reads its installed versio
 overrides once. The merge runs inside the journalled change; its report, with the base and
 pack sides of every file a review needs, goes to `.mineshell/config-merges/<stamp>/`, and
 the Modpack settings show it with a compare view and "use mine / use the pack's".
+The preview lists the user's own files in the folders that move (`ownFiles`: not in the
+installed version, so added by hand or written by a mod at its first start; mod-written
+configs are why it is a count per folder plus a list): the ones that come back, and the ones
+where the new version ships a different file, each with a "keep mine" tick (`keepOwn`,
+default off, so the pack wins as before; a kept one is recorded as resolved `mine` in the
+report). Without any base nothing tells the user's files from the pack's and no merge runs:
+the files the new version does not ship are offered to bring back, otherwise they stay in
+old-configs only. Only paths the plan offered are copied, from old-configs, inside the
+journalled change.
 
 **Rolling a pack change back** (`packrollback.ts`). Each committed change writes a
 `pack_changes` row in its commit transaction (`commitOperation`'s `also`): the version and
