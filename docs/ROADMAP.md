@@ -7,10 +7,11 @@ whatever it leaves out stays here.
 
 ## Current direction
 
-The next major update is planned around plugin servers (Paper and Purpur), after the
-modded-server and general feature work is considered finished. GT New Horizons also has an
-agreed install-flow plan. Other ideas below remain later or undecided; none has a delivery
-date.
+Versions (user's call, 2026-10-16): MineShell is in beta (0.x). 1.0 comes when all basic
+functionality is there and stable. After it, maybe a few minor additions, then plugin
+servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
+has an agreed install-flow plan. Other ideas below remain later or undecided; none has a
+delivery date.
 
 External world-backup integration is a future plan, but the provider and design are not
 settled. Current snapshots remain local to the server disk. This is an accepted limitation
