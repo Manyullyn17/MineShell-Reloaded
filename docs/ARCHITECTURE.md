@@ -499,6 +499,15 @@ Mods tab's changes. All of it is journalled (`bisect`) and put back by the same
 state. Runs started during a search are marked (`bisect_sessions`, `server_runs.bisect`) and
 stay out of crash history, start times, the last-crash box and diagnosis.
 
+**The same mod twice** (`duplicateMods` in `crashdiag.ts`, Mods tab): enabled jars that
+declare one mod id in their own metadata (fabric.mod.json, quilt.mod.json, mods.toml
+`[[mods]]` blocks, mcmod.info), typically one copy from Modrinth and one from CurseForge
+under other file names; platform metadata shares no id between the two. Forge, NeoForge and
+Fabric refuse to start with an id present twice. Template ids unrelated mods keep
+(`examplemod`, `modid`, ...) do not count, nor ids inside nested jars (libraries). Shown
+above the Installed list (streamed: a big pack's jars take a while the first time) with a
+Disable button per copy, and counted under "Needs attention".
+
 **Server icons** must be 64x64 PNGs. Scaling happens in the browser (`lib/shared/servericon.ts`),
 which decodes every format pack icons come in (PNG, WebP, JPEG); the server has no image
 library. A pack server's first overview without an icon applies the pack's icon (`packicon.ts`:

@@ -12,9 +12,9 @@ functionality is there and stable. After it, maybe a few minor additions, then p
 servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
-Beta order (user's call, 2026-10-16), for the entries under "Later":
+Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
+built: ROADMAP-ARCHIVE):
 
-- **Sooner**: duplicate detection across platforms.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -97,8 +97,7 @@ Work it needs:
 
 ## Later
 
-Duplicate detection builds on the jar inspection crash diagnosis already does; the rest
-is independent.
+None of these depends on another.
 
 ### World backups
 
@@ -113,14 +112,6 @@ Note there is already a *different* backup mechanism in the codebase: an update 
 replaced mod jars aside (the `mod-update` journal) so a failed update can be rolled back. That operates on the
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
-
-### Duplicate detection across platforms
-
-The same mod installed from both Modrinth and CurseForge appears twice with different
-filenames and no shared identifier. Detecting this needs jar inspection — reading
-`fabric.mod.json` or `META-INF/mods.toml` for the real mod id — rather than trusting
-platform metadata. Worth doing after mod updates, since both want the same jar-inspection
-code.
 
 ### Instance export and import
 

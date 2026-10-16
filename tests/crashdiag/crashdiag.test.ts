@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagnoseLog, indexMods, type ModJar } from '#lib/server/crashdiag.js';
+import { diagnoseLog, duplicateMods, indexMods, type ModJar } from '#lib/server/crashdiag.js';
 import { mcmodInfo, tempDir, writeJar, zipBuffer } from '../helpers/fs';
 
 /**
@@ -86,5 +86,28 @@ describe('indexMods', () => {
 		});
 		const [jar] = await indexMods(dir);
 		expect(jar).toMatchObject({ ids: ['checker'], names: ['Checker'] });
+	});
+});
+
+describe('the same mod installed twice', () => {
+	it('finds enabled jars with one mod id by what the jars declare, not by name', async () => {
+		const dir = await tempDir('dupes-');
+		const fabric = (id: string, name: string) => JSON.stringify({ schemaVersion: 1, id, name, version: '1' });
+		// Once from Modrinth, once from CurseForge, under other file names.
+		await writeJar(dir, 'sodium-fabric-0.6.0+mc1.21.1.jar', { 'fabric.mod.json': fabric('sodium', 'Sodium') });
+		await writeJar(dir, 'sodium-mc1.21.1-0.6.0.jar', { 'fabric.mod.json': fabric('sodium', 'Sodium') });
+		// A disabled copy does not count; the loader skips it.
+		await writeJar(dir, 'lithium-a.jar', { 'fabric.mod.json': fabric('lithium', 'Lithium') });
+		await writeJar(dir, 'lithium-b.jar.disabled', { 'fabric.mod.json': fabric('lithium', 'Lithium') });
+		// Template ids that unrelated 1.12 mods keep (Born in a Barn says "examplemod").
+		await writeJar(dir, 'borninabarn.jar', { 'mcmod.info': mcmodInfo('examplemod', 'Born in a Barn') });
+		await writeJar(dir, 'other.jar', { 'mcmod.info': mcmodInfo('examplemod', 'Something Else') });
+		// A Forge jar whose dependency blocks name the same mod is not a copy of it.
+		await writeJar(dir, 'addon.jar', {
+			'META-INF/mods.toml': '[[mods]]\nmodId="addon"\n[[dependencies.addon]]\nmodId="sodium"\nmandatory=true\n'
+		});
+		expect(duplicateMods(await indexMods(dir))).toEqual([
+			{ id: 'sodium', name: 'Sodium', files: ['sodium-fabric-0.6.0+mc1.21.1.jar', 'sodium-mc1.21.1-0.6.0.jar'] }
+		]);
 	});
 });

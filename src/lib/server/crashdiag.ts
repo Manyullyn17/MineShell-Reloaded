@@ -183,6 +183,41 @@ export async function indexMods(modsDir: string): Promise<ModJar[]> {
 	return jars;
 }
 
+/**
+ * Ids mod templates ship with, which unrelated mods keep (Born in a Barn says
+ * "examplemod"): two jars sharing one of these are not the same mod.
+ */
+const PLACEHOLDER_IDS = new Set(['examplemod', 'examplemodid', 'modid', 'mod_id', 'yourmodid', 'template', 'example']);
+
+export type DuplicateMod = { id: string; name: string; files: string[] };
+
+/**
+ * Enabled jars that declare the same mod id: the same mod twice, often once
+ * from Modrinth and once from CurseForge under other file names. Forge,
+ * NeoForge and Fabric all refuse to start with a mod id present twice. By
+ * the jars' own ids (fabric.mod.json, mods.toml, mcmod.info), not platform
+ * metadata, which has no id the two platforms share.
+ */
+export function duplicateMods(jars: ModJar[]): DuplicateMod[] {
+	const byId = new Map<string, ModJar[]>();
+	for (const jar of jars) {
+		if (!jar.enabled) continue;
+		for (const id of jar.ids) {
+			if (PLACEHOLDER_IDS.has(id)) continue;
+			byId.set(id, [...(byId.get(id) ?? []), jar]);
+		}
+	}
+	const groups = new Map<string, DuplicateMod>();
+	for (const [id, found] of byId) {
+		if (found.length < 2) continue;
+		const files = found.map((j) => j.fileName).sort();
+		// A jar declaring several ids would show the same pair once per id.
+		const key = files.join('\n');
+		if (!groups.has(key)) groups.set(key, { id, name: found.find((j) => j.names.length)?.names[0] ?? id, files });
+	}
+	return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 // ---------------------------------------------------------------- diagnosis ---
 
 export type DiagnosisKind =

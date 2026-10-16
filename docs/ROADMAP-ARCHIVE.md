@@ -9,6 +9,19 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Duplicate detection across platforms
+
+Built 2026-10-16 (`duplicateMods`; ARCHITECTURE, "The same mod twice"), on crash diagnosis's
+jar index, which already read the real ids. Placeholder ids are left out (1.12 mods that kept
+`examplemod`), and only enabled jars count. Seen on the throwaway dev server with two copies of
+a jar under Modrinth's and CurseForge's file names; Disable cleared it. The original note:
+
+The same mod installed from both Modrinth and CurseForge appears twice with different
+filenames and no shared identifier. Detecting this needs jar inspection — reading
+`fabric.mod.json` or `META-INF/mods.toml` for the real mod id — rather than trusting
+platform metadata. Worth doing after mod updates, since both want the same jar-inspection
+code.
+
 ### Hash-based mod caching
 
 Built 2026-10-16 (`filecache.ts`; ARCHITECTURE, after the pack rollback). Not from

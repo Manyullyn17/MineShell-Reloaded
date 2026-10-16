@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import DatapackUpdates from './DatapackUpdates.svelte';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import type { SubmitFunction } from '$app/forms';
@@ -114,8 +115,12 @@
 		};
 	};
 
-	/** Untracked jars, records without a file and enabled client-only mods ask to be looked at. */
-	const needsAttention = (m: (typeof data.mods)[number]) => m.untracked || m.missing || (m.clientOnly && m.enabled);
+	const duplicatesInfo = streamed(() => data.duplicates);
+	const duplicates = $derived((duplicatesInfo.ready ? duplicatesInfo.value : null) ?? []);
+	const duplicateFiles = $derived(new Set(duplicates.flatMap((d) => d.files)));
+	/** Untracked jars, records without a file, enabled client-only mods and duplicates ask to be looked at. */
+	const needsAttention = (m: (typeof data.mods)[number]) =>
+		m.untracked || m.missing || (m.clientOnly && m.enabled) || duplicateFiles.has(m.fileName);
 	const filterCounts = $derived({
 		all: data.mods.length,
 		enabled: data.mods.filter((m) => m.enabled && !m.missing).length,
@@ -263,6 +268,31 @@
 	mayMods={may('mods')}
 	mayStart={may('mods') && may('power')}
 />
+
+{#if view === 'installed' && duplicates.length}
+	<div class="notice warning duplicates">
+		<p>
+			<strong>{duplicates.length === 1 ? 'A mod is' : `${duplicates.length} mods are`} in mods/ twice.</strong> The loader refuses to
+			start with the same mod twice (often one copy from Modrinth and one from CurseForge, under different file names). Keep
+			one of each and disable the other.
+		</p>
+		<ul>
+			{#each duplicates as dup (dup.files.join('|'))}
+				<li>
+					<span class="dup-name">{dup.name} <span class="faint mono small">({dup.id})</span></span>
+					{#each dup.files as file (file)}
+						<form method="POST" action="?/toggle" use:enhance class="dup-file">
+							<input type="hidden" name="fileName" value={file} />
+							<input type="hidden" name="enabled" value="false" />
+							<span class="mono small">{file}</span>
+							{#if may('mods')}<button class="button-quiet" type="submit">Disable</button>{/if}
+						</form>
+					{/each}
+				</li>
+			{/each}
+		</ul>
+	</div>
+{/if}
 
 {#if view === 'installed'}
 	<div class="list-controls">
@@ -559,6 +589,27 @@
 />
 
 <style>
+	.duplicates ul {
+		list-style: none;
+		margin: var(--space-2) 0 0;
+		padding: 0;
+	}
+
+	.duplicates li + li {
+		margin-top: var(--space-2);
+	}
+
+	.dup-name {
+		display: block;
+	}
+
+	.dup-file {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
 	fieldset.plain {
 		border: 0;
 		margin: 0;
