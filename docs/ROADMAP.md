@@ -15,6 +15,8 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
 built: ROADMAP-ARCHIVE):
 
+- **Next** (user's call, 2026-10-17), in this order: restoring a region of a dimension
+  from a snapshot, pausing empty servers, the status page, player stats.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -99,6 +101,49 @@ Work it needs:
 
 None of these depends on another.
 
+### Restoring a region of a dimension
+
+Wanted (user, 2026-10-17): put back part of a dimension from a snapshot (griefing, a broken
+build, a corrupted chunk) without rolling back the rest. Restoring a whole dimension is built
+(`restoreDimension`); chunk-level rewriting of region files is too (`chunkprune.ts`), so
+the restore itself is the smaller half: copy the picked chunks from the snapshot's region/,
+entities/ and poi/ files into the live ones, as a world change into a partial snapshot.
+
+The area is picked on a map (user's preference over typing region numbers), which means
+MineShell draws one. Not BlueMap: a flat top-down map, one pixel per block column, like a
+map item or uNmINeD. Layers, each usable on its own:
+1. **Chunk grid** from the region files' headers, shaded by InhabitedTime (what pruning
+   reads already). Works on every version and every mod, and is already enough to pick on.
+2. **Colours**: the top block of each column, coloured by the average of its top texture,
+   shaded by height. Textures come from the item icon index (`itemicons.ts`, mod jars +
+   client jar); a block it cannot find stays grey. Grass, leaves and water need a tint.
+   Needs block decoding per format: 1.13+ section palettes (bit-packed; the packing changed
+   in 1.16), 1.12 numeric ids + metadata through the world's FML block registry, heightmaps
+   where present. LZ4-compressed chunks (as for pruning) stay grid-only.
+Drawn per region (512x512) on demand and cached; the snapshot's own files can be drawn too,
+so the picker can show what comes back beside what is there now.
+
+### Pausing empty servers
+
+Vanilla 1.21.2+ has `pause-when-empty-seconds` (default 60; irithyll on Fabric 1.21.11
+pauses by it, "Server empty for 60 seconds, pausing" in its log). MineShell part: the
+setting in Settings and new-server defaults, and "paused (empty)" on the overview from that
+log line. Older versions have nothing in the game: a mod per loader, not yet researched.
+Stopping instead was rejected (idle auto-stop, below).
+
+### Status page
+
+Optional, off by default, for players without an account (accounts already cover users):
+the owner turns it on per server and ticks what it shows (online, player count and names,
+version or pack, address, TPS, maybe the client pack download, which makes it the join
+page).
+
+### Player stats
+
+From `<world>/stats/<uuid>.json` on the Players page (play time, deaths, kills, distance,
+blocks mined), maybe a leaderboard. Before 1.13 the file is a flat key list
+(`stat.mineBlock.minecraft.stone`); mod stats come as ids and need names.
+
 ### World backups
 
 Not implemented yet. External backup integration is planned for the future; its provider
@@ -145,8 +190,8 @@ What the built entries in the archive left out, in one place:
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.
-- **Snapshots**: restoring a region of a dimension (one dimension is built); a scheduler
-  hook running a script after a snapshot.
+- **Snapshots**: a scheduler hook running a script after a snapshot (region restore is
+  under Later).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); Chunky's saved tasks
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished
@@ -163,11 +208,6 @@ What the built entries in the archive left out, in one place:
 
 Suggested, not yet confirmed or rejected:
 
-- **Read-only status page**, mainly worth it together with a **join page** (address,
-  version, pack download).
-- **Player stats** from `<world>/stats/<uuid>.json`.
-- **Sleep when empty**: `pause-when-empty-seconds` on vanilla 1.21.2+. For older and modded
-  versions, it is unknown which loaders honour it.
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
