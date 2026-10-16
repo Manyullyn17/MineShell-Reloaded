@@ -16,7 +16,8 @@
 		busy,
 		snapshotPrompt,
 		packMods = $bindable(),
-		available = $bindable(0)
+		available = $bindable(0),
+		checkOnOpen = false
 	}: {
 		active: boolean;
 		instanceId: string;
@@ -28,6 +29,8 @@
 		packMods: boolean;
 		/** How many updates the last check found, for the tab's badge. */
 		available?: number;
+		/** Run the check at once (arriving from the overview's notice). */
+		checkOnOpen?: boolean;
 	} = $props();
 
 	const changesLocked = $derived(!!packName && !packMods);
@@ -46,6 +49,13 @@
 	const chosenCount = $derived(Object.values(chosenUpdates).filter(Boolean).length);
 	$effect(() => {
 		available = updateCheck?.updates.length ?? 0;
+	});
+
+	let checkedOnOpen = false;
+	$effect(() => {
+		if (!checkOnOpen || !active || checkedOnOpen) return;
+		checkedOnOpen = true;
+		void checkUpdates();
 	});
 
 	async function checkUpdates() {

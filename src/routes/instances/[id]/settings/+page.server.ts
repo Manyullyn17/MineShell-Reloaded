@@ -81,7 +81,7 @@ import {
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
-import { checkForUpdates, updateKind } from '#lib/server/updatecheck.js';
+import { checkForUpdates, checkModsForUpdates, modsChecked, updateKind } from '#lib/server/updatecheck.js';
 import { globalTarget, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
@@ -178,6 +178,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			updateCheck: instance.updateCheck,
 			updateCheckHours: instance.updateCheckHours,
 			updateChannel: instance.updateChannel,
+			modUpdateCheck: instance.modUpdateCheck,
 			limitMemoryMb: instance.limitMemoryMb,
 			limitCpuPercent: instance.limitCpuPercent,
 			...(() => {
@@ -701,7 +702,9 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const result = await checkForUpdates(instance);
 		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
-		return { ok: true, message: result.found ? `${result.found.label} is available.` : 'Nothing newer to install.' };
+		const mods = modsChecked(instance) ? await checkModsForUpdates(instance) : null;
+		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${mods.count} mod update(s) found; they are on the overview.` : ' The mods are up to date.';
+		return { ok: true, message: (result.found ? `${result.found.label} is available.` : 'Nothing newer to install.') + modPart };
 	},
 
 	notifications: async ({ request, params }) => {

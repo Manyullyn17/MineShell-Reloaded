@@ -189,6 +189,25 @@
 	</div>
 {/if}
 
+{#if data.modUpdates}
+	{@const mods = data.modUpdates}
+	<div class="notice info update-notice">
+		<p>
+			<strong>{mods.updates.length === 1 ? 'A mod has' : `${mods.updates.length} mods have`} a newer build:</strong>
+			{mods.updates.slice(0, 4).map((u) => `${u.name} ${u.to}`).join(', ')}{mods.updates.length > 4 ? ` and ${mods.updates.length - 4} more` : ''}.
+		</p>
+		{#if may('mods')}
+			<div class="update-actions">
+				<a class="button button-primary" href="/instances/{data.instance.id}/mods?view=updates">Review mod updates</a>
+				<form method="POST" action="?/skipModUpdates" use:enhance>
+					<input type="hidden" name="fingerprint" value={mods.fingerprint} />
+					<button class="button-quiet" type="submit">Skip these</button>
+				</form>
+			</div>
+		{/if}
+	</div>
+{/if}
+
 {#if crash.ready && crash.value}
 	<section class="panel">
 		<div class="panel-head">

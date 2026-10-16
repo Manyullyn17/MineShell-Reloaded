@@ -104,11 +104,11 @@ describe('defaults for new servers', () => {
 	});
 
 	it('gives new servers the default limits (the memory limit fitted to the heap) and update checks', async () => {
-		expect(await newServer()).toMatchObject({ limitMemoryMb: null, limitCpuPercent: null, updateCheck: true, updateCheckHours: 24, updateChannel: 'release' });
+		expect(await newServer()).toMatchObject({ limitMemoryMb: null, limitCpuPercent: null, updateCheck: true, updateCheckHours: 24, updateChannel: 'release', modUpdateCheck: true });
 		defaults.setInstanceDefaults({
 			...defaults.getInstanceDefaults(),
 			limits: { memory: 'auto', cpuPercent: 200 },
-			updates: { updateCheck: false, updateCheckHours: 168, updateChannel: 'beta' }
+			updates: { updateCheck: false, updateCheckHours: 168, updateChannel: 'beta', modUpdateCheck: false }
 		});
 		// 4096 * 1.25 + 1024, in 256 MB steps.
 		expect(await newServer({ memoryMaxMb: 4096 })).toMatchObject({
@@ -116,7 +116,8 @@ describe('defaults for new servers', () => {
 			limitCpuPercent: 200,
 			updateCheck: false,
 			updateCheckHours: 168,
-			updateChannel: 'beta'
+			updateChannel: 'beta',
+			modUpdateCheck: false
 		});
 	});
 
@@ -178,7 +179,7 @@ describe('stored defaults', () => {
 		expect(d.restarts).toMatchObject({ restartSchedule: 'none', crashRestartLimit: 50, restartDailyTime: '05:00' });
 		expect(d.console.consoleBufferLines).toBe(100);
 		expect(d.limits).toEqual({ memory: 'none', cpuPercent: 10 });
-		expect(d.updates).toEqual({ updateCheck: true, updateCheckHours: 24, updateChannel: 'release' });
+		expect(d.updates).toEqual({ updateCheck: true, updateCheckHours: 24, updateChannel: 'release', modUpdateCheck: true });
 		expect(d.properties).toMatchObject({ difficulty: 'normal', 'max-players': '2000', pvp: 'true' });
 		expect(d.properties['level-seed']).toBeUndefined();
 

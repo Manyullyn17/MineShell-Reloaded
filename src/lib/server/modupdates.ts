@@ -30,6 +30,7 @@ import { resolveProviderPack } from './packs/resolve';
 import { hashFile } from './download';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
+import { clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
 import { indexMods } from './crashdiag';
@@ -166,7 +167,7 @@ export function trackable(row: ModRow): boolean {
  * of are synced first (identified as Modrinth/CurseForge where possible),
  * so a folder filled by hand can be updated too.
  */
-export async function checkModUpdates(instance: ServerInstance): Promise<UpdateCheck> {
+export async function checkModUpdates(instance: ServerInstance, opts: { dependencies?: boolean } = {}): Promise<UpdateCheck> {
 	const filter = filterFor(instance);
 	let synced: string | null = null;
 	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) synced = await syncInstanceMods(instance);
@@ -233,11 +234,14 @@ export async function checkModUpdates(instance: ServerInstance): Promise<UpdateC
 	});
 	result.updates.sort((a, b) => a.name.localeCompare(b.name));
 	result.skipped.sort((a, b) => a.name.localeCompare(b.name));
-	const deps = await resolveDependencies(instance, targets);
-	result.dependencies = {
-		...deps.plan,
-		unneeded: await unneededDependencies(instance, changes, [...changes.map((c) => c.version), ...deps.resolved.map((d) => d.version)])
-	};
+	// The scheduled check only counts updates; dependencies matter once someone applies them.
+	if (opts.dependencies !== false) {
+		const deps = await resolveDependencies(instance, targets);
+		result.dependencies = {
+			...deps.plan,
+			unneeded: await unneededDependencies(instance, changes, [...changes.map((c) => c.version), ...deps.resolved.map((d) => d.version)])
+		};
+	}
 	result.synced = synced;
 	return result;
 }
@@ -656,6 +660,8 @@ async function applyChanges(
 			done.push(`Disabled ${u.name}: only the old version of ${u.neededBy.join(', ')} needed it`);
 		}
 		commitOperation(instance.id, {});
+		// What the periodic check found is out of date now; its next run finds what is left.
+		clearModNotice(instance.id);
 	} catch (err) {
 		task.log('The change failed; putting the mods back.');
 		await restoreModUpdate(instance.id, root, journal);

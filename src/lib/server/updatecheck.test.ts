@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
 	checkDue,
 	checkForUpdates,
+	checkModsForUpdates,
+	modsChecked,
 	currentNotice,
 	forgeChannel,
 	loaderChannel,
@@ -12,6 +14,7 @@ import {
 	type FoundUpdate
 } from './updatecheck';
 import { createInstance, reload } from '../../../tests/helpers/instances';
+import { currentModNotice, skipModNotice } from './modnotice';
 import { channelLabel, channelNote, channelsFor } from '#lib/shared/updatecheck.js';
 
 const v = (id: string, channel: string, date: string | null) => ({ id, name: id, versionNumber: id, channel, datePublished: date });
@@ -149,5 +152,35 @@ describe('update notices', () => {
 		const failed = reload(instance.id);
 		expect(checkDue(failed, Date.now() + 30 * 60_000)).toBe(false);
 		expect(checkDue(failed, Date.now() + 61 * 60_000)).toBe(true);
+	});
+});
+
+describe('mod update notices', () => {
+	const update = (fileName: string, to: string, enabled = true) => ({ fileName, name: fileName.replace(/-.*/, ''), currentVersion: '1', targetVersion: to, enabled });
+	const found = (...updates: ReturnType<typeof update>[]) => async () => ({ updates });
+
+	it('checks mods only on servers without a pack, when asked', () => {
+		expect(modsChecked({ packSource: null, packProjectId: null, modloader: 'fabric', modUpdateCheck: true })).toBe(true);
+		expect(modsChecked({ packSource: null, packProjectId: null, modloader: 'fabric', modUpdateCheck: false })).toBe(false);
+		expect(modsChecked({ packSource: 'modrinth', packProjectId: 'p', modloader: 'fabric', modUpdateCheck: true })).toBe(false);
+		expect(modsChecked({ packSource: null, packProjectId: null, modloader: 'vanilla', modUpdateCheck: true })).toBe(false);
+	});
+
+	it('shows enabled mods’ updates until skipped, and a different set again', async () => {
+		const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' });
+		expect(await checkModsForUpdates(instance, found(update('sodium-1.jar', '2'), update('off-1.jar', '2', false)))).toEqual({ ok: true, count: 1 });
+		const notice = currentModNotice(instance.id)!;
+		expect(notice.updates).toEqual([{ fileName: 'sodium-1.jar', name: 'sodium', from: '1', to: '2' }]);
+
+		expect(skipModNotice(instance.id, notice.fingerprint)).toBe(true);
+		await checkModsForUpdates(instance, found(update('sodium-1.jar', '2')));
+		expect(currentModNotice(instance.id)).toBeNull();
+
+		await checkModsForUpdates(instance, found(update('sodium-1.jar', '3')));
+		expect(currentModNotice(instance.id)?.updates[0].to).toBe('3');
+
+		await checkModsForUpdates(instance, found());
+		expect(currentModNotice(instance.id)).toBeNull();
+		expect(await checkModsForUpdates(instance, async () => Promise.reject(new Error('offline')))).toEqual({ ok: false, error: 'offline' });
 	});
 });

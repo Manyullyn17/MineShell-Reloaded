@@ -15,8 +15,7 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's call, 2026-10-16), for the entries under "Later":
 
 - **Sooner**: duplicate detection across platforms and hash-based mod caching; from the
-  leftovers, data pack updates and scheduled mod update checks (custom servers only: pack
-  mods are not usually updated one by one, and the manual check stays).
+  leftovers, data pack updates.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -175,10 +174,10 @@ What the built entries in the archive left out, in one place:
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished
   pre-generation shows for the next world too; the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
-- **Update availability**: pack versions and loader builds are checked periodically
-  (`updatecheck.ts`); a newer Java update is not shown, and the mod update check is still
-  run by hand from the Mods tab. Pack servers are not offered loader builds (the pack
-  picks its loader; user's call). The server list shows no update marker.
+- **Update availability**: pack versions, loader builds and (servers without a pack) mods
+  are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
+  servers are not offered loader builds or single mod updates (the pack picks them; user's
+  calls). The server list shows no update marker.
 
 ---
 

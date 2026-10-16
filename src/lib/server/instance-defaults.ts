@@ -54,6 +54,8 @@ export type UpdateCheckSettings = {
 	updateCheckHours: number;
 	/** release | beta | alpha */
 	updateChannel: string;
+	/** Mods too, on servers without a pack. */
+	modUpdateCheck: boolean;
 };
 
 export type InstanceDefaults = {
@@ -116,7 +118,7 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 	},
 	console: { consoleBacklogLines: 300, consoleBufferLines: 2000 },
 	limits: { memory: 'none', cpuPercent: null },
-	updates: { updateCheck: true, updateCheckHours: 24, updateChannel: 'release' },
+	updates: { updateCheck: true, updateCheckHours: 24, updateChannel: 'release', modUpdateCheck: true },
 	properties: builtInProperties()
 };
 
@@ -179,14 +181,20 @@ export function cleanUpdates(input: Partial<Record<keyof UpdateCheckSettings, un
 	return {
 		updateCheck: typeof input.updateCheck === 'boolean' ? input.updateCheck : fallback.updateCheck,
 		updateCheckHours: UPDATE_CHECK_HOURS.some((h) => h.hours === hours) ? hours : fallback.updateCheckHours,
-		updateChannel: UPDATE_CHANNELS.includes(input.updateChannel as never) ? String(input.updateChannel) : fallback.updateChannel
+		updateChannel: UPDATE_CHANNELS.includes(input.updateChannel as never) ? String(input.updateChannel) : fallback.updateChannel,
+		modUpdateCheck: typeof input.modUpdateCheck === 'boolean' ? input.modUpdateCheck : fallback.modUpdateCheck
 	};
 }
 
 /** Update check fields as the settings forms post them (UpdateCheckFields). */
 export function updatesFromForm(form: FormData, fallback: UpdateCheckSettings): UpdateCheckSettings {
 	return cleanUpdates(
-		{ updateCheck: form.get('updateCheck') === 'on', updateCheckHours: form.get('updateCheckHours'), updateChannel: form.get('updateChannel') },
+		{
+			updateCheck: form.get('updateCheck') === 'on',
+			updateCheckHours: form.get('updateCheckHours'),
+			updateChannel: form.get('updateChannel'),
+			modUpdateCheck: form.get('modUpdateCheck') === 'on'
+		},
 		fallback
 	);
 }

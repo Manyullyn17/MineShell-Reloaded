@@ -10,6 +10,7 @@ const { checkModUpdates, changeModVersions, listModVersions, pickUpdate } = awai
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { listSnapshots } = await import('#lib/server/snapshots.js');
+const { currentModNotice, saveModNotice } = await import('#lib/server/modnotice.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { useRecordedHttp } = await import('../helpers/http');
@@ -166,9 +167,12 @@ describe('mod updates', () => {
 
 	it('swaps the jars and keeps each mod disabled, locked or from the pack as it was', async () => {
 		const instance = await server();
+		// The overview's notice from the periodic check goes with the update.
+		saveModNotice(instance.id, [{ fileName: 'sodium-0.5.0.jar', name: 'Sodium', from: '0.5.0', to: '0.6.0' }]);
 		expect((await waitForTask(await changeModVersions(instance, both, { snapshot: false, label: 'Updating 2 mods' }))).state).toBe('done');
 		const files = await tree(instance.path);
 		expect(files['mods/sodium-0.6.0.jar']).toBe('sodium 0.6.0');
+		expect(currentModNotice(instance.id)).toBeNull();
 		expect(files['mods/lithium-2.0.jar.disabled']).toBe('lithium 2.0');
 		expect(files['mods/sodium-0.5.0.jar']).toBeUndefined();
 		expect(files['mods/mine.jar']).toBe('my own jar');

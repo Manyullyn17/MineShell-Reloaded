@@ -5,6 +5,8 @@ import { getProvider } from './mods/index';
 import { compareSemver, forgePromotions, LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
 import { compareVersions } from './java';
 import { notify } from './notifications';
+import { checkModUpdates } from './modupdates';
+import { saveModNotice, type ModNoticeEntry } from './modnotice';
 import { channelNote, UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
 
 /**
@@ -180,6 +182,41 @@ export function checkDue(instance: ServerInstance, now = Date.now()): boolean {
 	return instance.updateCheckedAt === null || now - instance.updateCheckedAt >= instance.updateCheckHours * 3600_000;
 }
 
+/** Mods are in the check on servers without a pack (a pack's mods change with the pack). */
+export function modsChecked(instance: Pick<ServerInstance, 'packSource' | 'packProjectId' | 'modloader' | 'modUpdateCheck'>): boolean {
+	return instance.modUpdateCheck && updateKind(instance) === 'loader';
+}
+
+/**
+ * Looks for mod updates and keeps what it found (modnotice.ts); a set not
+ * seen before is notified once. Enabled mods only.
+ */
+export async function checkModsForUpdates(
+	instance: ServerInstance,
+	check: (instance: ServerInstance) => Promise<{ updates: { fileName: string; name: string; currentVersion: string | null; targetVersion: string; enabled: boolean }[] }> = (i) =>
+		checkModUpdates(i, { dependencies: false })
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+	let updates: ModNoticeEntry[];
+	try {
+		updates = (await check(instance)).updates
+			.filter((u) => u.enabled)
+			.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+	} catch (err) {
+		return { ok: false, error: err instanceof Error ? err.message : 'The lookup failed.' };
+	}
+	if (saveModNotice(instance.id, updates)) {
+		const names = updates.slice(0, 5).map((u) => u.name).join(', ') + (updates.length > 5 ? ` and ${updates.length - 5} more` : '');
+		void notify({
+			kind: 'update',
+			instance: { id: instance.id, name: instance.name },
+			title: 'Mod updates available',
+			message: `${updates.length === 1 ? 'A mod has' : `${updates.length} mods have`} a newer build: ${names}. The server's Mods tab in MineShell has them to review and install.`,
+			at: Date.now()
+		});
+	}
+	return { ok: true, count: updates.length };
+}
+
 let checking = false;
 
 /** From the scheduler's tick: every due server, one after another; a tick while that runs does nothing. */
@@ -188,7 +225,9 @@ export async function runDueUpdateChecks(now = Date.now()): Promise<void> {
 	checking = true;
 	try {
 		for (const instance of db.select().from(serverInstances).all()) {
-			if (checkDue(instance, now)) await checkForUpdates(instance);
+			if (!checkDue(instance, now)) continue;
+			await checkForUpdates(instance);
+			if (modsChecked(instance)) await checkModsForUpdates(instance);
 		}
 	} finally {
 		checking = false;

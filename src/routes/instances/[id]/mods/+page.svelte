@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
@@ -25,7 +26,9 @@
 
 	let filter = $state('');
 	/** Which sub-tab is open. */
-	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>('installed');
+	// The overview's mod update notice links to ?view=updates.
+	// svelte-ignore state_referenced_locally
+	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(page.url.searchParams.get('view') === 'updates' ? 'updates' : 'installed');
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention'>('all');
 	let uploadForm = $state<HTMLFormElement | null>(null);
 	let jarInput = $state<HTMLInputElement | null>(null);
@@ -532,6 +535,7 @@
 	snapshotPrompt={data.snapshotPrompt}
 	bind:packMods
 	bind:available={updatesFound}
+	checkOnOpen={page.url.searchParams.get('view') === 'updates'}
 />
 
 <ModBrowser

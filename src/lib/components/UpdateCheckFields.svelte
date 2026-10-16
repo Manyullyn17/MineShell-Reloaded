@@ -4,16 +4,19 @@
 	import { channelLabel, channelsFor, UPDATE_CHECK_HOURS, type UpdateChannel } from '#lib/shared/updatecheck.js';
 
 	/** Update check fields, shared by an instance's settings and the new-server defaults. */
-	type UpdateValues = { updateCheck: boolean; updateCheckHours: number; updateChannel: string };
+	type UpdateValues = { updateCheck: boolean; updateCheckHours: number; updateChannel: string; modUpdateCheck: boolean };
 	let {
 		values = $bindable(),
 		channelHint,
-		loader = null
+		loader = null,
+		mods = false
 	}: {
 		values: UpdateValues;
 		channelHint?: Snippet;
 		/** For a server checked for loader builds: Forge's channels are its recommended build and newer ones. */
 		loader?: string | null;
+		/** Show "Include mods": servers without a pack, and the new-server defaults. */
+		mods?: boolean;
 	} = $props();
 
 	const channels = $derived(channelsFor(loader));
@@ -53,8 +56,21 @@
 		{@render channelHint?.()}
 	</div>
 </div>
+{#if mods}
+	<div class="check field">
+		<input id="modUpdateCheck" name="modUpdateCheck" type="checkbox" class="switch" role="switch" bind:checked={values.modUpdateCheck} disabled={!values.updateCheck} />
+		<label for="modUpdateCheck">Include mods</label>
+	</div>
+	<p class="hint">
+		Servers without a pack: the check also looks for newer builds of the Modrinth and CurseForge mods (releases stay on
+		releases). A pack's mods change with the pack, and the Mods tab can still check them by hand.
+	</p>
+{/if}
 {#if !values.updateCheck}
 	<!-- Disabled fields are not posted; the saved values go with the switch. -->
 	<input type="hidden" name="updateCheckHours" value={values.updateCheckHours} />
 	<input type="hidden" name="updateChannel" value={values.updateChannel} />
+{/if}
+{#if (!values.updateCheck || !mods) && values.modUpdateCheck}
+	<input type="hidden" name="modUpdateCheck" value="on" />
 {/if}

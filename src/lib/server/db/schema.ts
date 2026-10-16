@@ -84,6 +84,8 @@ export const serverInstances = sqliteTable('server_instances', {
 	/** The least stable versions to offer: release | beta | alpha. */
 	updateChannel: text('update_channel').notNull().default('release'),
 	updateCheckedAt: integer('update_checked_at'),
+	/** The same check also looks for mod updates (servers without a pack only). */
+	modUpdateCheck: integer('mod_update_check', { mode: 'boolean' }).notNull().default(true),
 
 	eulaAccepted: integer('eula_accepted', { mode: 'boolean' }).notNull().default(false),
 	pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
@@ -483,6 +485,19 @@ export const updateNotices = sqliteTable('update_notices', {
 	skipped: integer('skipped', { mode: 'boolean' }).notNull().default(false)
 });
 export type UpdateNotice = typeof updateNotices.$inferSelect;
+
+/** Mod updates the periodic check found on a server without a pack (updatecheck.ts). */
+export const modUpdateNotices = sqliteTable('mod_update_notices', {
+	instanceId: text('instance_id')
+		.primaryKey()
+		.references(() => serverInstances.id, { onDelete: 'cascade' }),
+	/** JSON: [{ fileName, name, from, to }] */
+	updates: text('updates').notNull(),
+	/** Each mod and its target version: the same set found again keeps `skipped`. */
+	fingerprint: text('fingerprint').notNull(),
+	foundAt: integer('found_at').notNull(),
+	skipped: integer('skipped', { mode: 'boolean' }).notNull().default(false)
+});
 
 /**
  * A server's own notification destination (notifications.ts), instead of or

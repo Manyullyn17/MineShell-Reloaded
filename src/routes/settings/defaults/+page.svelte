@@ -163,7 +163,7 @@
 			A pack server is checked for newer pack versions, a server set up from a loader for newer loader builds. What is found
 			shows on its overview.
 		</p>
-		<UpdateCheckFields bind:values={v.updates} />
+		<UpdateCheckFields bind:values={v.updates} mods />
 		<p class="hint">
 			Forge names no betas: for a Forge server, its recommended build counts as a release and newer builds as betas, and its
 			Settings call them that.

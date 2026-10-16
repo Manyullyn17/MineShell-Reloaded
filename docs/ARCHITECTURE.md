@@ -533,6 +533,16 @@ Settings with the version picked (`?packVersion=` / `?loaderVersion=`), where th
 change previews at once: installing still goes through the normal review, snapshot choice
 and Java prompt. A failed lookup is retried after an hour.
 
+On a server without a pack the same check also looks for mod updates (`modUpdateCheck`,
+"Include mods", on by default and in the new-server defaults): `checkModUpdates` without
+the dependency resolution, which only matters when updating. A pack's mods change with the
+pack (user's call), and the Mods tab still checks any server by hand. Enabled mods only (the
+review starts disabled ones unticked). The result is one `mod_update_notices` row
+(`modnotice.ts`) with each mod and its target and a fingerprint of that set: the same set
+found again keeps its skipped flag and is notified once; applying updates
+(`changeModVersions`) deletes the row. The overview's button opens the Mods tab at
+`?view=updates`, which runs the check on arrival.
+
 ---
 
 ## Worlds

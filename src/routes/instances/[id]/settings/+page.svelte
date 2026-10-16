@@ -110,6 +110,7 @@
 			updateCheck: d.updateCheck,
 			updateCheckHours: d.updateCheckHours,
 			updateChannel: d.updateChannel,
+			modUpdateCheck: d.modUpdateCheck,
 			limitMemoryMb: (d.limitMemoryMb ?? '') as number | string,
 			limitCpuPercent: (d.limitCpuPercent ?? '') as number | string,
 			snapshotEvery: d.snapshotEvery as string,
@@ -244,7 +245,7 @@
 	type Section = { id: string; tab: string; label: string; restart: boolean; dirty: () => boolean };
 	const SECTIONS: Section[] = [
 		{ id: 'identity', tab: 'general', label: 'Identity', restart: false, dirty: () => svChanged('name') },
-		{ id: 'updates', tab: 'general', label: 'Update checks', restart: false, dirty: () => svChanged('updateCheck', 'updateCheckHours', 'updateChannel') },
+		{ id: 'updates', tab: 'general', label: 'Update checks', restart: false, dirty: () => svChanged('updateCheck', 'updateCheckHours', 'updateChannel', 'modUpdateCheck') },
 		{ id: 'motd', tab: 'general', label: 'Server description', restart: true, dirty: () => PROPERTY_SECTIONS.motd.some(changedProperty) },
 		{ id: 'rules', tab: 'gameplay', label: 'Rules', restart: true, dirty: () => PROPERTY_SECTIONS.rules.some(changedProperty) },
 		{ id: 'world', tab: 'gameplay', label: 'World', restart: true, dirty: () => PROPERTY_SECTIONS.world.some(changedProperty) },
@@ -584,7 +585,7 @@
 				and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
 			{/snippet}
 			<form method="POST" action="?/updates" class="rows" bind:this={forms.updates} onsubmit={onSectionSubmit}>
-				<UpdateCheckFields bind:values={sv} loader={data.updates.kind === 'loader' ? data.settings.modloader : null}>
+				<UpdateCheckFields bind:values={sv} loader={data.updates.kind === 'loader' ? data.settings.modloader : null} mods={data.updates.kind === 'loader'}>
 					{#snippet channelHint()}
 						{#if data.settings.modloader === 'cleanroom' && !data.pack}
 							<p class="hint">Cleanroom calls every build alpha; it is offered builds of its own line (0.5.x stays on 0.5.x).</p>
