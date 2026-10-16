@@ -130,7 +130,14 @@ comes into view (lazy, one by one). Chunks are selected by click or drag, across
 regions holding selected chunks stay marked when zoomed out. A coordinate field jumps to a
 block position. Selected chunks look like Xaero's minimap claims (user's call): a
 translucent fill in the accent colour, bordered on the selection's outer edge only, so
-neighbouring chunks read as one area. Fallback if the seamless map turns out costly: an overview of region tiles,
+neighbouring chunks read as one area. A chunk grid over the map once zoomed in far enough
+for it to be readable; region lines (and the coordinate grid) when zoomed out.
+
+Place: a "Restore chunks" sub-tab on the World tab (`world` permission, like Prune), its
+map as its own route so the World page does not load it. Above the map: the dimension and
+the snapshot to restore from (only snapshots of the active world that hold that
+dimension; partial ones only for their folders). A snapshot's row could link there with
+itself picked. Fallback if the seamless map turns out costly: an overview of region tiles,
 a region view opened from it with steps to the four neighbours.
 
 ### Pausing empty servers
