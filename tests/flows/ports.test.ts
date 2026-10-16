@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 const { movePortAside } = await import('#lib/server/instances.js');
 const { portUser, rconPortFor, RCON_OFFSET } = await import('#lib/server/ports.js');
@@ -126,5 +126,34 @@ describe('ports of every kind', () => {
 			[25700, null],
 			[30009, 'D']
 		]);
+	});
+});
+
+const { allocatePortPair, DEFAULT_PORT_RANGES, portRanges, portRangesProblem, rconStart, savePortRanges } = await import('#lib/server/ports.js');
+
+describe('where new ports start', () => {
+	afterEach(() => savePortRanges(DEFAULT_PORT_RANGES));
+
+	it('gives new servers ports from the saved starts', async () => {
+		fakeProcesses(() => ({ stdout: 'ActiveState=inactive\n' }));
+		savePortRanges({ game: base + 1500, rconOffset: 7, voice: base + 1600, map: base + 1700 });
+		expect(await allocatePortPair()).toEqual({ serverPort: base + 1500, rconPort: base + 1507 });
+		const v = await createInstance({ name: 'V', modloader: 'fabric', minecraftVersion: '1.21.1', serverPort: base + 1550, rconPort: base + 1551 });
+		expect(await freePortFor(v, 'voice')).toBe(base + 1600);
+		expect(await freePortFor(v, 'map')).toBe(base + 1700);
+	});
+
+	it('keeps RCON clear of the outgoing-connection ports, and refuses ranges that do not fit', () => {
+		const r = { ...DEFAULT_PORT_RANGES };
+		expect(rconStart(25565, r)).toBe(26565);
+		// 31800 + 1000 would land in 32768+: back to the first RCON port.
+		expect(rconStart(31800, r)).toBe(26565);
+		// Starts already up there: no such limit.
+		expect(rconStart(61500, { ...r, game: 61000 })).toBe(62500);
+		expect(portRangesProblem({ ...r, game: 80 })).toMatch(/Game ports/);
+		expect(portRangesProblem({ ...r, rconOffset: 0 })).toMatch(/RCON/);
+		expect(portRangesProblem({ ...r, game: 65000, rconOffset: 1000 })).toMatch(/below 65536/);
+		savePortRanges({ ...r, game: 5 });
+		expect(portRanges()).toEqual(DEFAULT_PORT_RANGES);
 	});
 });

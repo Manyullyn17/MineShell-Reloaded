@@ -666,6 +666,12 @@ with it. Other programs are listed when they listen near the ranges ports are gi
 are a server on a port it no longer has (changed, not restarted yet). New ports
 (`allocatePort`) avoid every server's ports of every kind; before October 2026 only game and
 RCON ports counted, so a stopped server's voice chat port could be given out again.
+Where new ports start is a setting on the same tab (`portRanges`, a `settings` row): the
+first game port (25565), RCON's distance above its game port (1000), and the first voice chat
+(24454) and map mod (8123) ports; only new ports follow it. RCON falls back to the first game
+port plus the distance when its own would land in 32768+ (Linux's outgoing-connection
+ports, `EPHEMERAL`) and the starts do not (`rconStart`). The page leads with a warning that
+the defaults suit almost everyone, and warns while a typed start is in 32768-60999.
 
 ### playit.gg tunnels
 

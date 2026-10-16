@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
-import { allocatePort, DEFAULT_SERVER_PORT, portIsFree, portUser, RCON_OFFSET } from '#lib/server/ports.js';
+import { allocatePort, portIsFree, portRanges, portUser, rconStart } from '#lib/server/ports.js';
 import { unitState } from '#lib/server/systemd.js';
 import { can } from '#lib/shared/access.js';
 
@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	const other = port === current ? null : portUser(port, instance.id);
 	let freeTo: number | null = null;
 	if (other) {
-		const start = other.kind === 'game' ? DEFAULT_SERVER_PORT : (getInstance(other.instanceId)?.serverPort ?? DEFAULT_SERVER_PORT) + RCON_OFFSET;
+		const start = other.kind === 'game' ? portRanges().game : rconStart(getInstance(other.instanceId)?.serverPort ?? portRanges().game);
 		const avoid = new Set([port, instance.serverPort, instance.rconPort]);
 		freeTo = await allocatePort(start, other.instanceId).catch(() => null);
 		while (freeTo !== null && avoid.has(freeTo)) freeTo = await allocatePort(freeTo + 1, other.instanceId).catch(() => null);

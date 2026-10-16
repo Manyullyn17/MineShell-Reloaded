@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
 import { DISABLED_SUFFIX, modsDir } from './mods';
+import { portRanges } from './ports';
 
 /**
  * Simple Voice Chat: players' clients connect to it on a UDP port of its own
@@ -118,14 +119,14 @@ export async function voicePortProblem(
 	return null;
 }
 
-/** The first port from 24454 up that no other server's voice chat has and nothing holds. */
-export async function freeVoicePort(instanceId: string, others: Other[], from = DEFAULT_VOICE_PORT): Promise<number> {
+/** The first port from where voice chat ports start (24454) that no other server's voice chat has and nothing holds. */
+export async function freeVoicePort(instanceId: string, others: Other[], from = portRanges().voice): Promise<number> {
 	const taken = await otherVoicePorts(instanceId, others);
 	const game = new Set(others.map((o) => o.serverPort));
 	for (let port = from; port < from + 1000; port++) {
 		if (!taken.has(port) && !game.has(port) && (await udpPortIsFree(port))) return port;
 	}
-	throw new Error('No free UDP port for voice chat near 24454.');
+	throw new Error(`No free UDP port for voice chat near ${from}.`);
 }
 
 /**

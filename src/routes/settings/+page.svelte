@@ -115,6 +115,23 @@
 		return `${holder.process ?? 'a program'} (pid ${holder.pid}${holder.unit ? `, ${holder.unit}` : ''})`;
 	}
 
+	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
+	// svelte-ignore state_referenced_locally
+	let ranges = $state<Record<'game' | 'rconOffset' | 'voice' | 'map', number | string>>({ ...data.portRanges.current });
+	$effect(() => {
+		ranges = { ...data.portRanges.current };
+	});
+	const rangesInEphemeral = $derived.by(() => {
+		const [from, to] = data.portRanges.ephemeral;
+		const inside = (p: number) => p >= from && p <= to;
+		const out: string[] = [];
+		if (inside(Number(ranges.game))) out.push('Game ports');
+		if (inside(Number(ranges.game) + Number(ranges.rconOffset))) out.push('RCON ports');
+		if (inside(Number(ranges.voice))) out.push('Voice chat ports');
+		if (inside(Number(ranges.map))) out.push('Map mod ports');
+		return out;
+	});
+
 	const formatMb = (mb: number) => `${(mb / 1024).toFixed(1)} GB`;
 	const capRunningMb = $derived(data.serverCap.running.reduce((sum, s) => sum + s.ceilingMb, 0));
 	const capOutside = $derived(
@@ -489,6 +506,56 @@
 			</table>
 		{/if}
 	{/if}
+</section>
+<section class="panel">
+	<h2>Where new ports start</h2>
+	<div class="notice warning">
+		<p>
+			The defaults work for almost every setup. Change these only if you know what you are doing and have a reason to, for
+			example a firewall or router that only forwards certain ports.
+		</p>
+	</div>
+	<p class="small muted">
+		New servers, copies and "Free port" take the first port from here that no server has and nothing holds. Servers keep
+		the ports they have. Blank goes back to the default.
+	</p>
+	<form method="POST" action="?/portRanges" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="sftp-fields">
+			<div class="field">
+				<label for="rangeGame">Game ports from</label>
+				<input id="rangeGame" name="game" type="number" min="1024" max="65535" bind:value={ranges.game} placeholder={String(data.portRanges.defaults.game)} />
+			</div>
+			<div class="field">
+				<label for="rangeRcon">RCON above the game port by</label>
+				<input id="rangeRcon" name="rconOffset" type="number" min="1" max="30000" bind:value={ranges.rconOffset} placeholder={String(data.portRanges.defaults.rconOffset)} />
+				{#if Number(ranges.game) && Number(ranges.rconOffset)}
+					<p class="hint">Game port {ranges.game} gets RCON {Number(ranges.game) + Number(ranges.rconOffset)}.</p>
+				{/if}
+			</div>
+			<div class="field">
+				<label for="rangeVoice">Voice chat ports from</label>
+				<input id="rangeVoice" name="voice" type="number" min="1024" max="65535" bind:value={ranges.voice} placeholder={String(data.portRanges.defaults.voice)} />
+			</div>
+			<div class="field">
+				<label for="rangeMap">Map mod ports from</label>
+				<input id="rangeMap" name="map" type="number" min="1024" max="65535" bind:value={ranges.map} placeholder={String(data.portRanges.defaults.map)} />
+			</div>
+		</div>
+		{#if rangesInEphemeral.length}
+			<div class="notice warning">
+				<p>
+					{rangesInEphemeral.join(', ')} start above 32767. Linux lends ports from
+					{data.portRanges.ephemeral[0]} to {data.portRanges.ephemeral[1]} to outgoing connections (downloads, RCON
+					clients, the server's own connections), so one of them can be holding a port just when its server starts,
+					and the start fails. Keep ports below 32768 unless you have a reason not to.
+				</p>
+			</div>
+		{/if}
+		<div class="range-actions">
+			<button class="button" type="submit">Save</button>
+			<button class="button-quiet" type="button" onclick={() => (ranges = { ...data.portRanges.defaults })}>Back to the defaults</button>
+		</div>
+	</form>
 </section>
 {:else if tab === 'integrations'}
 <section class="panel">
@@ -1081,6 +1148,12 @@
 
 	.port-form input[type='number'] {
 		width: 7rem;
+	}
+
+	.range-actions {
+		display: flex;
+		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 
 	.trash-days {

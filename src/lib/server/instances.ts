@@ -9,7 +9,7 @@ import { decryptSecret, encryptSecret, randomPassword } from './crypto';
 import { copyGrants, makeCreatorAdmin } from './accounts';
 import { currentActor } from './requestcontext';
 import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, presetFlags, presetRunsOn, stripJava8OnlyFlags } from './jvm-presets';
-import { allocatePort, allocatePortPair, DEFAULT_SERVER_PORT, portConflict, portIsFree, portUser, RCON_OFFSET, rconPortFor } from './ports';
+import { allocatePort, allocatePortPair, portConflict, portIsFree, portRanges, portUser, rconPortFor, rconStart } from './ports';
 import {
 	defaultProperties,
 	fillPropertyDefaults,
@@ -1609,7 +1609,7 @@ export async function movePortAside(
 	} else {
 		// Neither the port being freed nor this server's ports.
 		const avoid = new Set([port, self.serverPort, self.rconPort]);
-		to = await allocatePort(user.kind === 'game' ? DEFAULT_SERVER_PORT : other.serverPort + RCON_OFFSET, other.id);
+		to = await allocatePort(user.kind === 'game' ? portRanges().game : rconStart(other.serverPort), other.id);
 		while (avoid.has(to)) to = await allocatePort(to + 1, other.id);
 	}
 	db.update(serverInstances)

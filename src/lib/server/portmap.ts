@@ -5,10 +5,10 @@ import { serverInstances } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { UNIT_PREFIX } from './config';
 import { audit, getInstance, InstanceError, listInstances, syncPortsToProperties } from './instances';
-import { claimedPorts, DEFAULT_SERVER_PORT, portIsFree, RCON_OFFSET } from './ports';
+import { claimedPorts, portIsFree, portRanges, rconStart, type PortRanges } from './ports';
 import { readProperties } from './properties';
 import { unitState } from './systemd';
-import { DEFAULT_VOICE_PORT, setVoiceConfig, udpPortIsFree, voiceChat } from './voicechat';
+import { setVoiceConfig, udpPortIsFree, voiceChat } from './voicechat';
 import { getMapSettings, saveMapSettings } from './worldmap';
 import { PORT_KIND_LABELS, type PortKind } from '#lib/shared/ports.js';
 
@@ -149,10 +149,11 @@ export type PortRow = PortEntry & {
 };
 
 /** Where servers' ports are given out from, and a margin: other programs here are worth showing. */
-const NEAR = [
-	[8123, 8623],
-	[DEFAULT_VOICE_PORT, DEFAULT_VOICE_PORT + 1000],
-	[DEFAULT_SERVER_PORT, DEFAULT_SERVER_PORT + RCON_OFFSET + 1000]
+const near = (r: PortRanges) => [
+	[r.map, r.map + 500],
+	[r.voice, r.voice + 1000],
+	[r.game, r.game + 1000],
+	[r.game + r.rconOffset, r.game + r.rconOffset + 1000]
 ];
 
 export type PortOverview = {
@@ -172,9 +173,10 @@ export function buildOverview(entries: PortEntry[], heard: (Listener & { holder:
 		return { ...entry, running: running.has(entry.instanceId), status, holder: status === 'taken' ? listener!.holder : null, clashes };
 	});
 	const configured = new Set(entries.map((e) => `${e.protocol}:${e.port}`));
+	const ranges = near(portRanges());
 	const others = heard
 		.filter((l) => !configured.has(`${l.protocol}:${l.port}`))
-		.filter((l) => l.holder.instanceId || NEAR.some(([from, to]) => l.port >= from && l.port <= to))
+		.filter((l) => l.holder.instanceId || ranges.some(([from, to]) => l.port >= from && l.port <= to))
 		.map((l) => ({ port: l.port, protocol: l.protocol, holder: l.holder, oldPortOf: l.holder.instanceId ? (names.get(l.holder.instanceId) ?? l.holder.instanceId) : null }))
 		.sort((a, b) => a.port - b.port);
 	return { rows: rows.sort((a, b) => a.port - b.port || a.name.localeCompare(b.name)), others };
@@ -220,7 +222,8 @@ export async function freePortFor(instance: ServerInstance, kind: PortKind): Pro
 	const claimed = await claimedPorts(instance.id);
 	const voice = await voiceChat(instance).catch(() => null);
 	const own = new Set([instance.serverPort, instance.rconPort, voice?.port, getMapSettings(instance.id).modPort].filter((p): p is number => !!p));
-	const start = { game: DEFAULT_SERVER_PORT, rcon: instance.serverPort + RCON_OFFSET <= 32767 ? instance.serverPort + RCON_OFFSET : DEFAULT_SERVER_PORT + RCON_OFFSET, voice: DEFAULT_VOICE_PORT, map: 8123, query: DEFAULT_SERVER_PORT }[kind];
+	const r = portRanges();
+	const start = { game: r.game, rcon: rconStart(instance.serverPort, r), voice: r.voice, map: r.map, query: r.game }[kind];
 	const free = protocolOf(kind) === 'udp' ? udpPortIsFree : portIsFree;
 	for (let port = start; port < start + 1000 && port <= 65535; port++) {
 		if (claimed.has(port) || own.has(port)) continue;

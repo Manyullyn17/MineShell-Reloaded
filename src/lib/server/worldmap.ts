@@ -14,7 +14,7 @@ import { installJava, type JavaVendor } from './javadownload';
 import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
 import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods } from './mods';
 import { compatibleVersions, filterFor } from './modupdates';
-import { allocatePort } from './ports';
+import { allocatePort, portRanges } from './ports';
 import { nextSnapshotAt } from './snapshotschedule';
 import { startTask, type TaskHandle } from './tasks';
 
@@ -524,7 +524,6 @@ const DYNMAP: Record<string, { blockScan: string }> = {
 };
 const BLUEMAP_PROJECT = 'bluemap';
 /** Where map mods' web servers get their ports from; the same range Dynmap uses by default. */
-const MOD_PORT_START = 8123;
 
 export type MapMods = { dynmap: boolean; blockScan: boolean; blueMap: boolean };
 
@@ -547,7 +546,7 @@ async function modPort(instance: ServerInstance): Promise<number> {
 			.filter((r) => r.key.startsWith('map:') && r.key !== KEY(instance.id))
 			.map((r) => getMapSettings(r.key.slice('map:'.length)).modPort)
 	);
-	let port = await allocatePort(MOD_PORT_START, instance.id);
+	let port = await allocatePort(portRanges().map, instance.id);
 	while (taken.has(port)) port = await allocatePort(port + 1, instance.id);
 	saveMapSettings(instance.id, { modPort: port });
 	return port;

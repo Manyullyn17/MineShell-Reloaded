@@ -1,6 +1,7 @@
 import net from 'node:net';
+import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { serverInstances } from './db/schema';
+import { serverInstances, settings } from './db/schema';
 
 /**
  * Port picking is deliberately dumb: take everything already claimed in the DB,
@@ -18,7 +19,53 @@ export const DEFAULT_SERVER_PORT = 25565;
  * Existing servers keep what they have.
  */
 export const RCON_OFFSET = 1000;
-export const DEFAULT_RCON_PORT = DEFAULT_SERVER_PORT + RCON_OFFSET;
+
+/**
+ * Where new ports are looked for, per kind (MineShell settings > Ports):
+ * the first game port, how far above its game port a server's RCON port
+ * sits, and the first voice chat and map mod ports. Only new ports follow
+ * a change; servers keep the ones they have.
+ */
+export type PortRanges = { game: number; rconOffset: number; voice: number; map: number };
+export const DEFAULT_PORT_RANGES: PortRanges = { game: DEFAULT_SERVER_PORT, rconOffset: RCON_OFFSET, voice: 24454, map: 8123 };
+const RANGES_KEY = 'ports.ranges';
+/** Linux's ports for outgoing connections (net.ipv4.ip_local_port_range). */
+export const EPHEMERAL = [32768, 60999] as const;
+
+/** Why these ranges cannot be saved, or null. */
+export function portRangesProblem(r: PortRanges): string | null {
+	for (const [key, label] of [['game', 'Game'], ['voice', 'Voice chat'], ['map', 'Map mod']] as const) {
+		if (!Number.isInteger(r[key]) || r[key] < 1024 || r[key] > 65535) return `${label} ports start between 1024 and 65535.`;
+	}
+	if (!Number.isInteger(r.rconOffset) || r.rconOffset < 1 || r.rconOffset > 30000) return 'RCON ports sit 1 to 30000 above the game port.';
+	if (r.game + r.rconOffset > 65535) return 'The first game port plus the RCON distance has to stay below 65536.';
+	return null;
+}
+
+export function portRanges(): PortRanges {
+	const raw = db.select().from(settings).where(eq(settings.key, RANGES_KEY)).get()?.value;
+	try {
+		const ranges = { ...DEFAULT_PORT_RANGES, ...(raw ? (JSON.parse(raw) as Partial<PortRanges>) : {}) };
+		return portRangesProblem(ranges) ? { ...DEFAULT_PORT_RANGES } : ranges;
+	} catch {
+		return { ...DEFAULT_PORT_RANGES };
+	}
+}
+
+export function savePortRanges(r: PortRanges): void {
+	const value = JSON.stringify(r);
+	db.insert(settings).values({ key: RANGES_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
+
+/**
+ * Where a server's RCON port is looked for: the distance above its game
+ * port, or above the first game port when that would run into Linux's
+ * outgoing ports (or past 65535) where the first one does not.
+ */
+export function rconStart(serverPort: number, r: PortRanges = portRanges()): number {
+	const limit = r.game + r.rconOffset < EPHEMERAL[0] ? EPHEMERAL[0] - 1 : 65535;
+	return serverPort + r.rconOffset <= limit ? serverPort + r.rconOffset : r.game + r.rconOffset;
+}
 
 /**
  * Every port a server has, whether it runs or not: game and RCON, and the
@@ -62,13 +109,13 @@ export async function allocatePort(start: number, excludeInstanceId?: string): P
 }
 
 export async function allocatePortPair(excludeInstanceId?: string) {
-	const serverPort = await allocatePort(DEFAULT_SERVER_PORT, excludeInstanceId);
+	const serverPort = await allocatePort(portRanges().game, excludeInstanceId);
 	return { serverPort, rconPort: await rconPortFor(serverPort, excludeInstanceId) };
 }
 
-/** The game port + 1000 if it is free, else the next free one from there (never the game port itself). */
+/** The game port + the RCON distance if it is free, else the next free one from there (never the game port itself). */
 export async function rconPortFor(serverPort: number, excludeInstanceId?: string): Promise<number> {
-	const start = serverPort + RCON_OFFSET <= 32767 ? serverPort + RCON_OFFSET : DEFAULT_RCON_PORT;
+	const start = rconStart(serverPort);
 	const port = await allocatePort(start, excludeInstanceId);
 	return port === serverPort ? allocatePort(port + 1, excludeInstanceId) : port;
 }

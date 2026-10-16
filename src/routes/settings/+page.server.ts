@@ -36,6 +36,7 @@ import {
 import { applyServerCap, capProblem, getServerCap, inServerSlice, maxCpuPercent, MIN_CAP_MEMORY_MB, saveServerCap, totalMemoryMb } from '#lib/server/servercap.js';
 import { runningCeilings } from '#lib/server/memoryguard.js';
 import { freePortFor, MOVABLE, portOverview, setServerPort, type PortKind } from '#lib/server/portmap.js';
+import { DEFAULT_PORT_RANGES, EPHEMERAL, portRanges, portRangesProblem, savePortRanges } from '#lib/server/ports.js';
 import {
 	addManualJava,
 	getJavaDefaults,
@@ -162,6 +163,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		serverCap: await serverCapView(),
 		// Streamed, and only on its tab: it reads every process's sockets.
 		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,
+		portRanges: { current: portRanges(), defaults: DEFAULT_PORT_RANGES, ephemeral: EPHEMERAL },
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
 		/** MineShell's notification destination, without its address. */
@@ -486,6 +488,27 @@ export const actions: Actions = {
 			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
+	},
+
+	// Where new ports start, per kind; servers keep the ports they have.
+	portRanges: async ({ request }) => {
+		const form = await request.formData();
+		const num = (key: keyof typeof DEFAULT_PORT_RANGES) => {
+			const raw = String(form.get(key) ?? '').trim();
+			return raw ? Number(raw) : DEFAULT_PORT_RANGES[key];
+		};
+		const ranges = { game: num('game'), rconOffset: num('rconOffset'), voice: num('voice'), map: num('map') };
+		const problem = portRangesProblem(ranges);
+		if (problem) return fail(400, { ok: false, message: problem });
+		savePortRanges(ranges);
+		audit('settings.portRanges', { detail: JSON.stringify(ranges) });
+		const inEphemeral = [ranges.game, ranges.game + ranges.rconOffset, ranges.voice, ranges.map].some((p) => p >= EPHEMERAL[0] && p <= EPHEMERAL[1]);
+		return {
+			ok: true,
+			message: `Saved: new ports follow these, servers keep theirs.${
+				inEphemeral ? ` Some start between ${EPHEMERAL[0]} and ${EPHEMERAL[1]}, where Linux picks ports for outgoing connections: one could be holding a port when its server starts.` : ''
+			}`
+		};
 	},
 
 	itemIcons: async ({ request }) => {

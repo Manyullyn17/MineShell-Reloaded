@@ -12,7 +12,7 @@ import { takeProviderPack } from '#lib/server/packs/preview.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
 import { defaultMaxMb, getInstanceDefaults } from '#lib/server/instance-defaults.js';
-import { allocatePort, DEFAULT_SERVER_PORT } from '#lib/server/ports.js';
+import { allocatePort, portRanges } from '#lib/server/ports.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 
@@ -39,7 +39,7 @@ export const load: PageServerLoad = async () => {
 		suggestedMaxMb: defaultMaxMb(defaults),
 		defaultMinMb: defaults.memoryMinMb,
 		// The port a new server would get, and the ones the others use, for the port field.
-		nextPort: await allocatePort(DEFAULT_SERVER_PORT).catch(() => DEFAULT_SERVER_PORT),
+		nextPort: await allocatePort(portRanges().game).catch(() => portRanges().game),
 		usedPorts: db
 			.select({ port: serverInstances.serverPort })
 			.from(serverInstances)

@@ -336,3 +336,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Cap on all servers: soft memory cap and CPU quota on the shared slice, a slice file MineShell did not write left alone, the start warning past the cap | `server/servercap.test.ts` |
 | (feature) Ports tab: each server's ports, /proc/net listeners and their units, clashes, ports held by others, a server on its old port, changing a port where it is configured | `flows/ports.test.ts` |
 | (feature) Pack change preview: the user's own files in moved folders, keeping them over the new version's, and bringing them back without a base; only offered paths are copied | `flows/pack-change.test.ts` |
+| (feature) Where new ports start: saved starts for game, RCON distance, voice chat and map mod ports, RCON kept out of 32768+, invalid ranges refused and ignored | `flows/ports.test.ts` |
