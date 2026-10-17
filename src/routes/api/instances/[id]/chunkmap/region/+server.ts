@@ -5,13 +5,14 @@ import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
 import { compareVersions } from '#lib/server/java.js';
 import { itemIconsEnabled, serverResources } from '#lib/server/itemicons.js';
-import { blockInfo, legacyBlockIds, regionColumns, type BlockInfo } from '#lib/server/chunkmap.js';
+import { blockInfo, legacyBlockIds, regionColumns, shrinkColumns, type BlockInfo } from '#lib/server/chunkmap.js';
 import { regionName } from '#lib/server/regionfile.js';
 import { chunkMapFolder } from '#lib/server/world.js';
 
 /**
  * One region of the chunk map: the top block of each of its 512x512 columns
- * with names and colours (lib/shared/chunkmap.ts reads it). Binary, gzipped:
+ * (or 64x64 of them, `size=64`, zoomed out) with names and colours
+ * (lib/shared/chunkmap.ts reads it). Binary, gzipped:
  * a little-endian u32 length, that much JSON (padded to 4 bytes), then the
  * block indices (u16), heights (i16) and water depths (u8), row by row.
  */
@@ -25,8 +26,10 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	const folder = await chunkMapFolder(instance, url.searchParams.get('source') ?? 'live', url.searchParams.get('dimension') ?? '');
 	if (!folder) error(404, 'No such dimension there.');
 	const legacy = compareVersions(instance.minecraftVersion, '1.13') < 0;
-	const columns = await regionColumns(instance.id, path.join(folder.base, 'region'), regionName(x, z), legacy ? await legacyBlockIds(folder.worldDir) : null);
-	if (!columns) return new Response(null, { status: 204 });
+	const full = await regionColumns(instance.id, path.join(folder.base, 'region'), regionName(x, z), legacy ? await legacyBlockIds(folder.worldDir) : null);
+	if (!full) return new Response(null, { status: 204 });
+	// `size=64`: the zoomed-out picture, an eighth of the columns each way (about 20 KB instead of 1.3 MB).
+	const columns = url.searchParams.get('size') === '64' ? shrinkColumns(full, 8) : { ...full, size: 512 };
 	// Pictures turned off in MineShell's settings: names from the ids, no colours.
 	let info: Record<string, BlockInfo> = {};
 	let vanilla = false;
@@ -38,6 +41,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	let json = JSON.stringify({
 		blocks: columns.keys.map((key) => ({ key, name: info[key]?.name ?? null, color: info[key]?.color ?? null })),
 		unreadable: columns.unreadable,
+		size: columns.size,
 		vanilla
 	});
 	json += ' '.repeat((4 - (Buffer.byteLength(json) % 4)) % 4);

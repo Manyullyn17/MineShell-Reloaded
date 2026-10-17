@@ -618,7 +618,12 @@ rename, a few MB; no question asked), which restores them. A region file the res
 
 **The chunk map** (`chunkmap.ts`, `ChunkMap.svelte`, `lib/shared/chunkmap.ts`) is drawn in
 the browser from two endpoints: the overview (every region header's chunk list, cheap for
-a whole world) and one region's top block per column with height and water depth. Block
+a whole world) and one region's top block per column with height and water depth, full
+(512x512) or, zoomed out, every eighth column (64x64, ~6 KB) for every region in view, so a
+whole world fills in. Reading is on the main thread, so regions are read one at a time
+across all maps (`inTurn`) and yield after every chunk: a cold region takes ~0.5 s and other
+pages stay at a few hundred ms meanwhile (two at once with coarse yields made them wait
+15 s); cached ones answer in ms. Block
 data is read in every format: 1.18+ `sections`, 1.13-1.17 `Level.Sections` (indices span
 longs before 1.16, DataVersion 2527), 1.12 and older `Blocks`/`Add`/`Data` named through
 Forge's registry in level.dat (`legacyBlockIds`) or vanilla's numbers, and

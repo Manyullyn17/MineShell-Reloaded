@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { chunkTops, regionOverview } from './chunkmap';
+import { chunkTops, regionOverview, shrinkColumns, type RegionColumns } from './chunkmap';
 import { decodePng } from './png';
 import type { Tag } from './nbt';
 
@@ -149,6 +149,22 @@ describe('chunk map: overview', () => {
 		expect(bits[0]).toBe(1);
 		expect(bits[4]).toBe(2);
 		await fs.rm(dir, { recursive: true, force: true });
+	});
+});
+
+describe('chunk map: the zoomed-out picture', () => {
+	it('keeps the middle column of every 8x8 cell', () => {
+		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
+		// Cell (1, 2) has its middle at x 12, z 20; the cell's corner is different and must not show.
+		full.blocks[20 * 512 + 12] = 2;
+		full.heights[20 * 512 + 12] = 70;
+		full.depths[20 * 512 + 12] = 3;
+		full.blocks[16 * 512 + 8] = 1;
+		const small = shrinkColumns(full, 8);
+		expect(small.size).toBe(64);
+		expect([small.blocks[2 * 64 + 1], small.heights[2 * 64 + 1], small.depths[2 * 64 + 1]]).toEqual([2, 70, 3]);
+		expect(small.blocks.filter((b) => b).length).toBe(1);
+		expect(small.unreadable).toEqual([3]);
 	});
 });
 

@@ -23,7 +23,9 @@ action and came back, the snapshot held only the three changed files. Reading ch
 copies of MeatballCraft (Cleanroom 1.12.2, RoughlyEnoughIDs: 488 block kinds in one region,
 104 without a colour, mostly Forestry/ExtraTrees leaves and Chisel) and ATM10. The user
 tried it on a phone over Tailscale (2026-10-17): selecting and restoring work. The mouse
-tooltip was not seen yet (headless Chrome has no hover). The plan:
+tooltip works (the user, on a PC). Zoomed out, regions first showed only their chunks until
+zoomed in ("hard to find a location", the user): now every region in view gets a small
+picture, a whole world filling in from the middle (irithyll cold: ~6 minutes, then seconds). The plan:
 
 
 Wanted (user, 2026-10-17): put back part of a dimension from a snapshot (griefing, a broken

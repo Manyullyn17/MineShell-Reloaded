@@ -6,9 +6,10 @@
 
 	/**
 	 * A flat map of one dimension to pick chunks on (World > Restore chunks).
-	 * Zoomed out it shows every region file at once, each chunk that exists as
-	 * a grey square; zoomed in, a region's picture (top blocks, shaded by
-	 * height) loads as it comes into view. A chunk grid shows once chunks are
+	 * Every region in view gets its picture (top blocks, shaded by height),
+	 * nearest the middle first: zoomed out a small one, so a whole world fills
+	 * in, zoomed in the full one. Until then a region shows its chunks as grey
+	 * squares. A chunk grid shows once chunks are
 	 * big enough to see, region lines and coordinates at every zoom.
 	 *
 	 * Selection, like a minimap's claims: an accent fill, bordered on the
@@ -39,9 +40,14 @@
 
 	const MIN_SCALE = 1 / 32;
 	const MAX_SCALE = 16;
-	/** Below this many pixels per block, region pictures are not fetched (each is 512 blocks). */
+	/**
+	 * From this many pixels per block (a region 128 pixels wide) full region
+	 * pictures are fetched; below it the small ones (64x64, every eighth
+	 * column), for every region in view: zoomed out, the whole world fills in.
+	 */
 	const DETAIL_SCALE = 1 / 4;
 	const KEEP_DETAILS = 40;
+	const KEEP_SMALL = 6000;
 	const PARALLEL = 3;
 
 	let wrap: HTMLDivElement;
@@ -57,8 +63,11 @@
 	/** Overview per region "x,z": chunk presence, drawn into a 32x32 picture once. */
 	type Summary = { present: Uint8Array; picture: HTMLCanvasElement };
 	let summaries = new Map<string, Summary>();
-	/** Region pictures by "x,z", most recently used last. */
-	const details = new Map<string, { detail: RegionDetail; picture: HTMLCanvasElement }>();
+	type Picture = { detail: RegionDetail; picture: HTMLCanvasElement };
+	/** Region pictures by "x,z", most recently used last: full ones and the zoomed-out ones. */
+	const details = new Map<string, Picture>();
+	const small = new Map<string, Picture>();
+	/** By "full:x,z" / "small:x,z". */
 	const loading = new Set<string>();
 	const failed = new Set<string>();
 	let wanted: string[] = [];
@@ -75,7 +84,8 @@
 		if (!shown) return null;
 		const cx = Math.floor(shown.x / 16);
 		const cz = Math.floor(shown.z / 16);
-		const region = details.get(`${Math.floor(shown.x / REGION)},${Math.floor(shown.z / REGION)}`);
+		const at = `${Math.floor(shown.x / REGION)},${Math.floor(shown.z / REGION)}`;
+		const region = details.get(at) ?? small.get(at);
 		return { x: shown.x, z: shown.z, cx, cz, file: regionFile(cx, cz), top: region ? blockAt(region.detail, shown.x, shown.z) : null };
 	});
 
@@ -102,6 +112,7 @@
 		untrack(() => {
 			summaries = next;
 			details.clear();
+			small.clear();
 			loading.clear();
 			failed.clear();
 			generation++;
@@ -128,11 +139,13 @@
 	function pump() {
 		while (loading.size < PARALLEL && wanted.length) {
 			const key = wanted.shift()!;
-			if (details.has(key) || loading.has(key) || failed.has(key)) continue;
-			const [x, z] = key.split(',').map(Number);
+			const [kind, at] = key.split(':');
+			const store = kind === 'full' ? details : small;
+			if (store.has(at) || loading.has(key) || failed.has(key)) continue;
+			const [x, z] = at.split(',').map(Number);
 			const gen = generation;
 			loading.add(key);
-			fetch(regionUrl(x, z))
+			fetch(kind === 'full' ? regionUrl(x, z) : `${regionUrl(x, z)}&size=64`)
 				.then(async (res) => {
 					if (gen !== generation) return;
 					if (res.status === 204 || !res.ok) {
@@ -142,10 +155,11 @@
 					const detail = readRegion(await res.arrayBuffer());
 					if (gen !== generation) return;
 					const picture = document.createElement('canvas');
-					picture.width = picture.height = REGION;
+					picture.width = picture.height = detail.size;
 					picture.getContext('2d')!.putImageData(detail.image, 0, 0);
-					details.set(key, { detail, picture });
-					while (details.size > KEEP_DETAILS) details.delete(details.keys().next().value!);
+					store.set(at, { detail, picture });
+					const keep = kind === 'full' ? KEEP_DETAILS : KEEP_SMALL;
+					while (store.size > keep) store.delete(store.keys().next().value!);
 					tick++;
 					redraw();
 				})
@@ -201,21 +215,25 @@
 				const size = REGION * scale;
 				const x = sx(rx * REGION);
 				const z = sz(rz * REGION);
-				const detail = details.get(key);
-				if (detail) {
+				const full = details.get(key);
+				// Zoomed in, the full picture (the small one meanwhile); zoomed out, the small one.
+				const drawn = scale >= DETAIL_SCALE ? (full ?? small.get(key)) : (small.get(key) ?? full);
+				if (drawn) {
 					// Most recently used last: kept the longest.
-					details.delete(key);
-					details.set(key, detail);
-					ctx.drawImage(detail.picture, x, z, size, size);
+					const store = drawn === full ? details : small;
+					store.delete(key);
+					store.set(key, drawn);
+					ctx.drawImage(drawn.picture, x, z, size, size);
 					ctx.fillStyle = 'rgba(127, 135, 144, 0.55)';
-					for (const i of detail.detail.unreadable) ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
+					for (const i of drawn.detail.unreadable) ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
 				} else {
 					ctx.drawImage(summary.picture, x, z, size, size);
-					if (scale >= DETAIL_SCALE && !failed.has(key)) {
-						const dx = (rx + 0.5) * REGION - viewX;
-						const dz = (rz + 0.5) * REGION - viewZ;
-						want.push({ key, d: dx * dx + dz * dz });
-					}
+				}
+				const kind = scale >= DETAIL_SCALE ? 'full' : 'small';
+				if (!(kind === 'full' ? full : small.get(key)) && !failed.has(`${kind}:${key}`)) {
+					const dx = (rx + 0.5) * REGION - viewX;
+					const dz = (rz + 0.5) * REGION - viewZ;
+					want.push({ key: `${kind}:${key}`, d: dx * dx + dz * dz });
 				}
 			}
 		}
@@ -242,13 +260,14 @@
 		};
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = text;
-		// Chunk lines once a chunk is 8 pixels; region lines once a region is 16.
+		// Chunk lines once a chunk is 8 pixels.
 		if (16 * scale >= 8) {
 			ctx.globalAlpha = Math.min(0.18, (16 * scale - 8) / 40 + 0.06);
 			lines(16);
 		}
-		if (REGION * scale >= 16) {
-			ctx.globalAlpha = 0.35;
+		// Region lines fade in from 24 pixels apart: closer, they would hide the map.
+		if (REGION * scale >= 24) {
+			ctx.globalAlpha = Math.min(0.35, (REGION * scale - 24) / 80 + 0.08);
 			lines(REGION);
 		}
 		// Coordinates along the top and left, every power of two that leaves 90 pixels between them.
@@ -493,6 +512,7 @@
 		bind:this={canvas}
 		tabindex="0"
 		aria-label="Map of the dimension: arrow keys move, plus and minus zoom"
+		onkeydown={onKey}
 		onpointerdown={onDown}
 		onpointermove={onMove}
 		onpointerup={onUp}

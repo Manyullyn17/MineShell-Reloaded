@@ -294,7 +294,9 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 	const keys: string[] = [];
 	const keyIndex = new Map<string, number>();
 	const out: RegionColumns = { keys, blocks: new Uint16Array(AREA), heights: new Int16Array(AREA), depths: new Uint8Array(AREA), unreadable: [] };
-	for (const loc of locations(file.subarray(0, HEADER))) {
+	for (const [n, loc] of locations(file.subarray(0, HEADER)).entries()) {
+		// A region is about a second of work on the one thread every request shares: let them in after each chunk.
+		if (n) await new Promise((resolve) => setImmediate(resolve));
 		const data = await readChunk(dir, file, region, loc);
 		let tops: (Top | null)[] | null = null;
 		try {
@@ -358,6 +360,46 @@ function decodeColumns(buf: Buffer): RegionColumns | null {
 }
 
 /**
+ * Regions read at once, across every map open: the rest wait (a whole world
+ * asks for all of them). One: reading is all on the main thread, so a second
+ * one adds no speed, only makes every other page wait twice as long.
+ */
+const READING = 1;
+let reading = 0;
+const waiting: (() => void)[] = [];
+
+async function inTurn<T>(work: () => Promise<T>): Promise<T> {
+	if (reading >= READING) await new Promise<void>((resolve) => waiting.push(resolve));
+	reading++;
+	try {
+		return await work();
+	} finally {
+		reading--;
+		waiting.shift()?.();
+	}
+}
+
+/**
+ * A smaller copy of a region's columns for the zoomed-out map: every
+ * `factor`-th column of every `factor`-th row (a map shows one block per
+ * pixel, so sampling keeps colours true where averaging would muddy them).
+ */
+export function shrinkColumns(c: RegionColumns, factor: number): RegionColumns & { size: number } {
+	const size = SIZE / factor;
+	const out = { keys: c.keys, unreadable: c.unreadable, size, blocks: new Uint16Array(size * size), heights: new Int16Array(size * size), depths: new Uint8Array(size * size) };
+	for (let z = 0; z < size; z++) {
+		for (let x = 0; x < size; x++) {
+			// The middle of each cell: its edges are chunk borders, often the least typical column.
+			const from = (z * factor + (factor >> 1)) * SIZE + x * factor + (factor >> 1);
+			out.blocks[z * size + x] = c.blocks[from];
+			out.heights[z * size + x] = c.heights[from];
+			out.depths[z * size + x] = c.depths[from];
+		}
+	}
+	return out;
+}
+
+/**
  * A region's columns, from the disk cache when the file has not changed
  * since (size and time), else read and cached: per server, per folder (the
  * live world and each snapshot apart).
@@ -372,7 +414,7 @@ export async function regionColumns(instanceId: string, dir: string, name: strin
 		const columns = decodeColumns(zlib.gunzipSync(hit));
 		if (columns) return columns;
 	}
-	const columns = await readRegionColumns(dir, name, legacyIds);
+	const columns = await inTurn(() => readRegionColumns(dir, name, legacyIds));
 	if (!columns) return null;
 	await fs.mkdir(path.dirname(cached), { recursive: true });
 	// One cached copy per region file: older ones are stale.
