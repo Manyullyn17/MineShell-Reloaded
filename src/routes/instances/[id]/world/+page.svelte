@@ -534,7 +534,7 @@
 									}}
 								>
 									<input type="hidden" name="id" value={s.id} />
-									<div class="button-row">
+									<div class="button-row at-end">
 										<span class="small">Delete this snapshot for good?</span>
 										<button class="button-danger" type="submit">Yes, delete</button>
 										<button class="button-quiet" type="button" onclick={() => (pendingDelete = null)}>Cancel</button>
@@ -696,7 +696,7 @@
 											<label for="delete-snaps-{w.folder}">Also delete its {w.snapshots} snapshot{w.snapshots === 1 ? '' : 's'} (pinned ones stay)</label>
 										</div>
 									{/if}
-									<div class="button-row">
+									<div class="button-row at-end">
 										<button class="button-danger" type="submit">Yes, delete</button>
 										<button class="button-quiet" type="button" onclick={() => (pendingWorld = null)}>Cancel</button>
 									</div>
@@ -1308,6 +1308,12 @@
 
 	.confirm-row td {
 		background: var(--bg-sunken);
+	}
+
+	/* Under the Delete button that opened it, at the row's end: no trip across the table. */
+	.confirm-row .at-end {
+		justify-content: flex-end;
+		align-items: center;
 	}
 
 	.seed-row {
