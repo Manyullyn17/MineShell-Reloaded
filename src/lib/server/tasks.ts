@@ -28,7 +28,14 @@ export type Task = {
 	finishedAt: number | null;
 };
 
-const tasks = new Map<string, Task>();
+/**
+ * Shared by every copy of this module: dev HMR re-evaluates it, and the layout
+ * and the task stream then each read their own list (the stream never saw a
+ * task started after a reload of the code).
+ */
+const globals = globalThis as { __mineshellTasks?: { tasks: Map<string, Task>; cancelled: Set<string> } };
+const shared = (globals.__mineshellTasks ??= { tasks: new Map(), cancelled: new Set() });
+const tasks = shared.tasks;
 const MAX_LOG_LINES = 400;
 const KEEP_FINISHED_MS = 30 * 60_000;
 
@@ -39,7 +46,7 @@ export type TaskHandle = {
 	isCancelled: () => boolean;
 };
 
-const cancelled = new Set<string>();
+const cancelled = shared.cancelled;
 
 /** The task the current work belongs to, through awaits and timers. */
 const current = new AsyncLocalStorage<Task>();

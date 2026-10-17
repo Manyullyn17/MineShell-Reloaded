@@ -27,5 +27,11 @@ class TypedBus extends EventEmitter {
 	}
 }
 
-export const bus = new TypedBus();
+/**
+ * Shared by every copy of this module: dev HMR re-evaluates it (and the ones
+ * importing it), and streams opened on the old bus heard nothing published on
+ * the new one - the notification center missed every task until a page reload.
+ */
+const globals = globalThis as { __mineshellBus?: TypedBus };
+export const bus = (globals.__mineshellBus ??= new TypedBus());
 bus.setMaxListeners(0);

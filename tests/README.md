@@ -200,6 +200,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Bug | Test |
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
+| On the dev server, a reload of server code left open pages' task streams deaf (a second task list and event bus): no progress, no page reload when a snapshot finished, its button greyed | `server/tasks.test.ts` |
 | A task that started and finished before the task stream's first payload (a small world's snapshot) got no toast and no page reload: the list stayed without the new snapshot | `shared/taskwatch.test.ts` |
 | Overlapping RCON commands got each other's output (player list held the tick report) | `rcon.test.ts` |
 | A new RCON connection per command: two log lines each, several a minute | `rcon.test.ts` |
