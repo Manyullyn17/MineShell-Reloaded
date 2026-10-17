@@ -498,8 +498,27 @@ async function lookUp(res: Resources, key: string, modern: boolean): Promise<Blo
 	}
 	const face = topFace(look.spec);
 	const colour = face ? await averageColour(res, face.texture) : null;
-	if (colour === null) return { name: look.name, color: null };
-	return { name: look.name, color: face?.tint ? tinted(colour, parseInt(face.tint.slice(1), 16)) : colour };
+	if (colour !== null) return { name: look.name, color: face?.tint ? tinted(colour, parseInt(face.tint.slice(1), 16)) : colour };
+	return { name: look.name, color: await fluidColour(res, id) };
+}
+
+/**
+ * A mod's fluid block has no model of its own on 1.12: the mod names its
+ * texture in code, mostly after the block (AbyssalCraft's cwater is
+ * blocks/cwater_still, BuildCraft's fluid_block_oil_heat_0 is
+ * blocks/fluids/oil_heat_0_still). Fluids tinted in code from one shared
+ * texture (Tinkers' molten metals) stay without a colour.
+ */
+async function fluidColour(res: Resources, id: string): Promise<number | null> {
+	const [ns, blockPath] = id.includes(':') ? id.split(':') : ['minecraft', id];
+	const names = new Set([blockPath, blockPath.replace(/^(fluid_?block|block_?fluid|fluid|block)_?/i, '').replace(/_?(fluid|block)$/i, '')]);
+	for (const name of names) {
+		const texture = name ? res.fluidTexture(`${ns.toLowerCase()}:${name}`) : null;
+		if (!texture) continue;
+		const colour = await averageColour(res, texture);
+		if (colour !== null) return colour;
+	}
+	return null;
 }
 
 /** Names and colours for block keys; looked up once per set of resources. */

@@ -173,7 +173,7 @@ What the built entries in the archive left out, in one place:
   open; built is drag to pan, click to toggle, Shift/Ctrl-drag); a snapshot row's link to
   the page with that snapshot picked; undoing a restore leaves a region file the restore
   created (the live world had none there). Map colours: blocks a mod tints in code
-  (Forestry/ExtraTrees leaves, Tinkers' slime grass) are grey or untinted, and so are ones
+  (Forestry/ExtraTrees leaves, Tinkers' slime grass and molten metals) are grey or untinted, and so are ones
   whose model only the mod's code names (Chisel's variants); the overview is chunk
   presence only, not shaded by InhabitedTime as first planned.
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world

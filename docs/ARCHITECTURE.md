@@ -632,7 +632,8 @@ RoughlyEnoughIDs/JEID sections, whose `Palette` int array holds `id << 4 | meta`
 Blocks/Add/Data hold the index into it (`(add << 12) | (blocks << 4) | data`). Decoded
 columns are cached per server and folder in `cache/chunkmap/` by file size and time.
 Colours are the block's top face texture, averaged (`png.ts`) and tinted, through the item
-icon index (`blockLook`: the blockstate's model, else the item's picture); a block without
+icon index (`blockLook`: the blockstate's model, else the item's picture); 1.12 mod fluid blocks without a model by the
+texture named after them (`fluidColour`: cwater -> cwater_still); a block without
 a texture is plain grey and the height shading still shows the land. LZ4 and damaged chunks
 are drawn as grey squares. Item pictures turned off means no colours.
 
