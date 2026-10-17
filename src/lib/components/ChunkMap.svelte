@@ -46,7 +46,15 @@
 	 * column), for every region in view: zoomed out, the whole world fills in.
 	 */
 	const DETAIL_SCALE = 1 / 4;
-	const KEEP_DETAILS = 40;
+	/** Full pictures kept (about 2.3 MB each: the picture, and the columns for the tooltip). */
+	const KEEP_DETAILS = 64;
+	/**
+	 * Regions in view drawn from full pictures at once, nearest the middle:
+	 * fewer than are kept, so none in view is pushed out (more made them push
+	 * each other out and load again, flickering). A 1440p screen shows ~45 at
+	 * the zoom where full pictures start.
+	 */
+	const FULL_IN_VIEW = 56;
 	const KEEP_SMALL = 6000;
 	const PARALLEL = 3;
 
@@ -156,7 +164,9 @@
 					if (gen !== generation) return;
 					const picture = document.createElement('canvas');
 					picture.width = picture.height = detail.size;
-					picture.getContext('2d')!.putImageData(detail.image, 0, 0);
+					picture.getContext('2d')!.putImageData(detail.image!, 0, 0);
+					// Drawn into the canvas: the pixels need not be kept twice.
+					detail.image = null;
 					store.set(at, { detail, picture });
 					const keep = kind === 'full' ? KEEP_DETAILS : KEEP_SMALL;
 					while (store.size > keep) store.delete(store.keys().next().value!);
@@ -206,39 +216,45 @@
 		const rx1 = Math.floor(wx(width) / REGION);
 		const rz0 = Math.floor(wz(0) / REGION);
 		const rz1 = Math.floor(wz(height) / REGION);
-		const want: { key: string; d: number }[] = [];
+		// Regions in view, nearest the middle first.
+		const inView: { rx: number; rz: number; key: string; d: number }[] = [];
 		for (let rz = rz0; rz <= rz1; rz++) {
 			for (let rx = rx0; rx <= rx1; rx++) {
 				const key = `${rx},${rz}`;
-				const summary = summaries.get(key);
-				if (!summary) continue;
-				const size = REGION * scale;
-				const x = sx(rx * REGION);
-				const z = sz(rz * REGION);
-				const full = details.get(key);
-				// Zoomed in, the full picture (the small one meanwhile); zoomed out, the small one.
-				const drawn = scale >= DETAIL_SCALE ? (full ?? small.get(key)) : (small.get(key) ?? full);
-				if (drawn) {
-					// Most recently used last: kept the longest.
-					const store = drawn === full ? details : small;
-					store.delete(key);
-					store.set(key, drawn);
-					ctx.drawImage(drawn.picture, x, z, size, size);
-					ctx.fillStyle = 'rgba(127, 135, 144, 0.55)';
-					for (const i of drawn.detail.unreadable) ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
-				} else {
-					ctx.drawImage(summary.picture, x, z, size, size);
-				}
-				const kind = scale >= DETAIL_SCALE ? 'full' : 'small';
-				if (!(kind === 'full' ? full : small.get(key)) && !failed.has(`${kind}:${key}`)) {
-					const dx = (rx + 0.5) * REGION - viewX;
-					const dz = (rz + 0.5) * REGION - viewZ;
-					want.push({ key: `${kind}:${key}`, d: dx * dx + dz * dz });
-				}
+				if (!summaries.has(key)) continue;
+				const dx = (rx + 0.5) * REGION - viewX;
+				const dz = (rz + 0.5) * REGION - viewZ;
+				inView.push({ rx, rz, key, d: dx * dx + dz * dz });
 			}
 		}
-		// Nearest the middle first.
-		wanted = want.sort((a, b) => a.d - b.d).map((w) => w.key);
+		inView.sort((a, b) => a.d - b.d);
+		// Zoomed in, full pictures for as many as are kept, nearest the middle; the rest stay
+		// small. More than are kept would push each other out and load again, over and over.
+		const fullBudget = scale >= DETAIL_SCALE ? FULL_IN_VIEW : 0;
+		const want: string[] = [];
+		for (const [n, { rx, rz, key }] of inView.entries()) {
+			const size = REGION * scale;
+			const x = sx(rx * REGION);
+			const z = sz(rz * REGION);
+			const full = details.get(key);
+			const lowRes = small.get(key);
+			const wantsFull = n < fullBudget;
+			const drawn = wantsFull ? (full ?? lowRes) : (lowRes ?? full);
+			if (drawn) {
+				// Most recently used last: kept the longest. A full picture outside the budget is
+				// drawn while it is there but not kept for it.
+				if (drawn === lowRes) (small.delete(key), small.set(key, lowRes));
+				else if (wantsFull) (details.delete(key), details.set(key, full!));
+				ctx.drawImage(drawn.picture, x, z, size, size);
+				ctx.fillStyle = 'rgba(127, 135, 144, 0.55)';
+				for (const i of drawn.detail.unreadable) ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
+			} else {
+				ctx.drawImage(summaries.get(key)!.picture, x, z, size, size);
+			}
+			if (wantsFull && !full && !failed.has(`full:${key}`)) want.push(`full:${key}`);
+			if (!wantsFull && !lowRes && !failed.has(`small:${key}`)) want.push(`small:${key}`);
+		}
+		wanted = want;
 		pump();
 
 		drawGrid(ctx, colour('--text'), colour('--text-muted'), colour('--bg-sunken'));

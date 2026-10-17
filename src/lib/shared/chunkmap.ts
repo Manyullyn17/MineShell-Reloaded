@@ -19,7 +19,8 @@ export type RegionDetail = {
 	unreadable: number[];
 	/** Minecraft's own textures were there (its EULA answered): vanilla blocks have colours. */
 	vanilla: boolean;
-	image: ImageData;
+	/** The picture; let go once drawn into a canvas. */
+	image: ImageData | null;
 };
 
 /** Chunk presence per region, from the overview: 1024 bits by index. */
