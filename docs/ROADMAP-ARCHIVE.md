@@ -21,8 +21,9 @@ Tried on the throwaway dev server with a copy of irithyll (Fabric 1.21.11, 760 r
 the map drew in about a second a region, a pruned area was restored through the page's
 action and came back, the snapshot held only the three changed files. Reading checked on
 copies of MeatballCraft (Cleanroom 1.12.2, RoughlyEnoughIDs: 488 block kinds in one region,
-104 without a colour, mostly Forestry/ExtraTrees leaves and Chisel) and ATM10. The mouse
-tooltip was not seen (headless Chrome has no hover). The plan:
+104 without a colour, mostly Forestry/ExtraTrees leaves and Chisel) and ATM10. The user
+tried it on a phone over Tailscale (2026-10-17): selecting and restoring work. The mouse
+tooltip was not seen yet (headless Chrome has no hover). The plan:
 
 
 Wanted (user, 2026-10-17): put back part of a dimension from a snapshot (griefing, a broken
