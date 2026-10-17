@@ -129,7 +129,7 @@
 	<div class="bar">
 		<p class="small muted">
 			{#if map.taskId}
-				Updating now - follow it in Tasks.
+				Updating now - follow it in Activity.
 			{:else if map.settings.lastRenderAt}
 				Updated <span title={formatDateTime(map.settings.lastRenderAt)}>{formatRelative(map.settings.lastRenderAt)}</span>
 				· {formatBytes(map.sizeBytes)}

@@ -274,7 +274,7 @@ export const actions: Actions = {
 		if (!Number.isInteger(major) || major < 8 || major > 99) return fail(400, { ok: false, message: 'Pick a Java version.' });
 		startJavaDownload(vendor, major);
 		const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
-		return { ok: true, message: `Downloading ${label} ${major}. Follow it in Tasks; it shows up here when done.` };
+		return { ok: true, message: `Downloading ${label} ${major}. Follow it in Activity; it shows up here when done.` };
 	},
 
 	deleteJava: async ({ request }) => {

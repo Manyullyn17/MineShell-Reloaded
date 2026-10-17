@@ -177,7 +177,7 @@
 		const result = await putWorld(file, params, (p) => (uploadPercent = p));
 		uploadPercent = null;
 		if (result.ok) {
-			uploadMessage = 'Uploaded. Replacing the world; follow it in Tasks.';
+			uploadMessage = 'Uploaded. Replacing the world; follow it in Activity.';
 			formEl.reset();
 			void refreshAll();
 		} else uploadError = result.message ?? 'The upload failed.';

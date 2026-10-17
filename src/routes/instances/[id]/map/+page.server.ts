@@ -26,7 +26,7 @@ export const actions: Actions = {
 		saveMapSettings(instance.id, { eulaAccepted: true });
 		try {
 			await renderMap(instance, { downloadJava: vendorFrom(form) });
-			return { ok: true, message: 'Rendering the map. Follow it in Tasks; the first time takes longest.' };
+			return { ok: true, message: 'Rendering the map. Follow it in Activity; the first time takes longest.' };
 		} catch (err) {
 			return refused(err, 'setup');
 		}
@@ -37,7 +37,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			await renderMap(instance, { force: form.get('force') === 'on', downloadJava: vendorFrom(form) });
-			return { ok: true, message: 'Updating the map. Follow it in Tasks.' };
+			return { ok: true, message: 'Updating the map. Follow it in Activity.' };
 		} catch (err) {
 			return refused(err, 'render');
 		}

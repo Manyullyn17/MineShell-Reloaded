@@ -72,7 +72,7 @@ export const actions: Actions = {
 		try {
 			// Always kept: the snapshot is only the region files that change, moved aside, never a copy of the world.
 			await restoreChunks(instance, String(form.get('id') ?? ''), String(form.get('dimension') ?? ''), chunks, { snapshot: true });
-			return { ok: true, message: 'Restoring the chunks. Follow it in Tasks; once it is done, Reload map shows the result.' };
+			return { ok: true, message: 'Restoring the chunks. Follow it in Activity; once it is done, Reload map shows the result.' };
 		} catch (err) {
 			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;

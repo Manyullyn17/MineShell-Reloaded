@@ -145,7 +145,7 @@ export const actions: Actions = {
 				label: `Updating ${changes.length} mod${changes.length === 1 ? '' : 's'}`,
 				disableUnneeded: form.getAll('disableUnneeded').map(String)
 			});
-			return { ok: true, message: 'Updating mods. Follow it in Tasks; the server stays stopped until it finishes.' };
+			return { ok: true, message: 'Updating mods. Follow it in Activity; the server stays stopped until it finishes.' };
 		} catch (err) {
 			return refused(err);
 		}
@@ -169,7 +169,7 @@ export const actions: Actions = {
 				label: `Switching ${label}`,
 				disableUnneeded: form.getAll('disableUnneeded').map(String)
 			});
-			return { ok: true, message: `Switching ${label}. Follow it in Tasks.` };
+			return { ok: true, message: `Switching ${label}. Follow it in Activity.` };
 		} catch (err) {
 			return refused(err);
 		}
@@ -318,7 +318,7 @@ export const actions: Actions = {
 		if (!changes.length) return fail(400, { ok: false, message: 'Tick at least one data pack to update.' });
 		try {
 			await applyDatapackUpdates(instance, changes, { snapshot: await decideSnapshot(instance, form.get('snapshot')) });
-			return { ok: true, message: 'Updating data packs. Follow it in Tasks; the world loads them at its next start or /reload.' };
+			return { ok: true, message: 'Updating data packs. Follow it in Activity; the world loads them at its next start or /reload.' };
 		} catch (err) {
 			return refused(err);
 		}

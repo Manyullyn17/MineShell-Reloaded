@@ -142,7 +142,7 @@ function refused(err: unknown) {
 	throw err;
 }
 
-const STARTED = 'Follow it in Tasks; the server stays stopped until it finishes.';
+const STARTED = 'Follow it in Activity; the server stays stopped until it finishes.';
 
 export const actions: Actions = {
 	chunkyStart: async ({ request, params }) => {

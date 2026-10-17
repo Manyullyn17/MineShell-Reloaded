@@ -356,7 +356,7 @@ export const actions: Actions = {
 					downloadJava: downloadJavaFrom(form)
 				}
 			);
-			return { ok: true, message: 'Moving the server. Follow it in Tasks; it stays stopped until it finishes.' };
+			return { ok: true, message: 'Moving the server. Follow it in Activity; it stays stopped until it finishes.' };
 		} catch (err) {
 			return refused(err, 'migrate') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not move the server.' });
 		}
@@ -377,7 +377,7 @@ export const actions: Actions = {
 			});
 			return {
 				ok: true,
-				message: 'Changing the pack version. Follow it in Tasks; the server stays stopped until it finishes.'
+				message: 'Changing the pack version. Follow it in Activity; the server stays stopped until it finishes.'
 			};
 		} catch (err) {
 			return refused(err, 'changePack') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not change the pack version.' });
@@ -397,7 +397,7 @@ export const actions: Actions = {
 			});
 			return {
 				ok: true,
-				message: `Rolling back the pack${restoreWorld ? ', then the world' : ''}. Follow it in Tasks; the server stays stopped until it finishes.`
+				message: `Rolling back the pack${restoreWorld ? ', then the world' : ''}. Follow it in Activity; the server stays stopped until it finishes.`
 			};
 		} catch (err) {
 			return refused(err, 'rollbackPack') ?? fail(502, { ok: false, message: err instanceof Error ? err.message : 'Could not roll back the pack.' });
@@ -416,7 +416,7 @@ export const actions: Actions = {
 				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)
 			});
-			return { ok: true, message: 'Reinstalling the loader. Follow it in Tasks; the server stays stopped until it finishes.' };
+			return { ok: true, message: 'Reinstalling the loader. Follow it in Activity; the server stays stopped until it finishes.' };
 		} catch (err) {
 			const failure = refused(err, 'loaderVersion');
 			if (failure) return failure;
@@ -801,7 +801,7 @@ export const actions: Actions = {
 				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)
 			});
-			return { ok: true, message: 'Migration started. Follow it in Tasks; the server stays stopped until it finishes.' };
+			return { ok: true, message: 'Migration started. Follow it in Activity; the server stays stopped until it finishes.' };
 		} catch (err) {
 			const failure = refused(err, 'migrateCleanroom');
 			if (failure) return failure;
@@ -814,7 +814,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			await revertToForge(instance, { snapshot: await decideSnapshot(instance, form.get('snapshot')) });
-			return { ok: true, message: 'Reverting to Forge. Follow it in Tasks.' };
+			return { ok: true, message: 'Reverting to Forge. Follow it in Activity.' };
 		} catch (err) {
 			const failure = refused(err);
 			if (failure) return failure;

@@ -197,5 +197,5 @@ export async function answerForgeQuestion(
 			await startOnce();
 		}
 	});
-	return { message: 'Snapshotting the world, then starting with the answer given. Follow it in Tasks.', taskId };
+	return { message: 'Snapshotting the world, then starting with the answer given. Follow it in Activity.', taskId };
 }
