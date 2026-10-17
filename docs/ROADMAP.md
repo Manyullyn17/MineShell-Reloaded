@@ -192,6 +192,12 @@ What the built entries in the archive left out, in one place:
 
 Suggested, not yet confirmed or rejected:
 
+- **The chunk map as a map of its own** (user, 2026-10-17: ideas kept for later, a full
+  release addition or a 2.0 feature if at all): Restore chunks' flat map (`chunkmap.ts`)
+  as a built-in map option where BlueMap and Dynmap do not reach (pre-1.13 versions other
+  than 1.12.2, or 1.12.2 without adding a mod), with "save as image" (one block a pixel, no
+  grid; copying the canvas already gives the view as it is). Probably not worth it beside
+  a fully built map; it could grow into its own map tool.
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
