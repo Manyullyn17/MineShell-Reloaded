@@ -983,7 +983,9 @@ log picked).
 (`/api/tasks?stream=1&brief=1`, without logs) on every page: running tasks with progress
 and Cancel, tasks finished in the last half hour (the server keeps them that long),
 an unread count kept per browser. A task that finishes while the panel is closed becomes a
-toast and reloads the page data. Toasts (`lib/shared/toasts.svelte.ts`) are also where
+toast, and any finish reloads the page data. What counts as finished since the page loaded is
+measured against the layout data's `finishedTasks`, not the stream's first payload: a
+snapshot of a small world can start and finish before the stream connects (`taskwatch.ts`). Toasts (`lib/shared/toasts.svelte.ts`) are also where
 results go that have no place on the page, like a save in the player editor: closable,
 and anything but an error closes itself after 8 s. The Activity page keeps the logs.
 

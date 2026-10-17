@@ -200,6 +200,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Bug | Test |
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
+| A task that started and finished before the task stream's first payload (a small world's snapshot) got no toast and no page reload: the list stayed without the new snapshot | `shared/taskwatch.test.ts` |
 | Overlapping RCON commands got each other's output (player list held the tick report) | `rcon.test.ts` |
 | A new RCON connection per command: two log lines each, several a minute | `rcon.test.ts` |
 | Forge 1.12 waited forever on "/fml confirm" at startup (missing blocks/items after a pack update) | `flows/forge-question.test.ts`, `src/lib/server/forgequery.test.ts` |

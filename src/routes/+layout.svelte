@@ -58,7 +58,7 @@
 						Update {data.updateAvailable}
 					</a>
 				{/if}
-				<NotificationCenter running={data.runningTasks} access={data.access} />
+				<NotificationCenter running={data.runningTasks} finished={data.finishedTasks} access={data.access} />
 				<span class="topbar-theme">
 					<label class="visually-hidden" for="theme-select">Theme</label>
 					{@render themeSelect('theme-select')}

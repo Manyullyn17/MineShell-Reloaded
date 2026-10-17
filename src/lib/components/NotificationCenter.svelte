@@ -4,6 +4,8 @@
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { formatRelative } from '#lib/shared/format.js';
+	import { finishWatcher } from '#lib/shared/taskwatch.js';
+	import { untrack } from 'svelte';
 	import { dismissToast, holdToast, resumeToast, toast, toasts } from '#lib/shared/toasts.svelte.js';
 
 	/**
@@ -14,8 +16,15 @@
 	 * A finished task also changes what the current page shows (a server leaving
 	 * "provisioning", mods appearing), so a completion reloads the page data.
 	 */
-	/** `access`: the account's, for which tasks it may cancel (the server checks again). */
-	let { running: initialRunning = 0, access }: { running?: number; access: Access } = $props();
+	/**
+	 * `access`: the account's, for which tasks it may cancel (the server checks again).
+	 * `finished`: the tasks already finished when the page loaded, never announced.
+	 */
+	let {
+		running: initialRunning = 0,
+		finished: initialFinished = [],
+		access
+	}: { running?: number; finished?: string[]; access: Access } = $props();
 
 	type Task = {
 		id: string;
@@ -88,30 +97,17 @@
 		const source = new EventSource('/api/tasks?stream=1&brief=1');
 		// Signed out or disabled elsewhere: reloading the page's data sends it to sign-in.
 		whenClosedForGood(source, () => void refreshAll());
-		/** Task states already announced, so a reconnect does not announce them again. */
-		const seen = new Set<string>();
-		let primed = false;
+		// Only what finished after the page loaded is news, also in the first payload;
+		// read once, or every layout reload would reopen the stream.
+		const newlyFinished = finishWatcher(untrack(() => initialFinished));
 
 		source.addEventListener('tasks', (event) => {
 			const list: Task[] = JSON.parse((event as MessageEvent).data);
 			tasks = list;
 
-			// The first payload holds whatever finished before this page loaded;
-			// recording it without announcing avoids a burst of stale toasts.
-			if (!primed) {
-				for (const task of list) if (task.state !== 'running') seen.add(task.id);
-				primed = true;
-				return;
-			}
-
-			let finished = false;
-			for (const task of list) {
-				if (task.state === 'running' || seen.has(task.id)) continue;
-				seen.add(task.id);
-				if (!open) announce(task);
-				finished = true;
-			}
-			if (finished) void refreshAll();
+			const finished = newlyFinished(list);
+			if (!open) for (const task of finished) announce(task);
+			if (finished.length) void refreshAll();
 		});
 
 		return () => source.close();
