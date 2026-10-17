@@ -237,9 +237,13 @@
 {/if}
 
 <style>
+	/* The text sits above and below a map as wide as the page: wrapped at the reading width it ended halfway across. */
+	p {
+		max-width: none;
+	}
+
 	.intro {
 		margin: 0 0 1rem;
-		max-width: 60rem;
 	}
 
 	.controls {

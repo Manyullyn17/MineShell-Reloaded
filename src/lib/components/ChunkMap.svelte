@@ -636,6 +636,7 @@
 
 	.readout {
 		margin: 0.4rem 0 0;
+		max-width: none;
 		min-height: 1.4em;
 		overflow-wrap: anywhere;
 	}
