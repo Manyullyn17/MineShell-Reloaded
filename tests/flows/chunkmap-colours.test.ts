@@ -61,4 +61,18 @@ describe('chunk map colours', () => {
 		expect(info['buildcraftenergy:fluid_block_oil_heat_0@0'].color).toBe(0x030303);
 		expect(info['nothing:here@0'].color).toBeNull();
 	});
+
+	it("gives Minecraft's own blocks rough colours when its textures are not there", async () => {
+		// No client jar: the server's EULA question is unanswered.
+		const res = await Resources.load([], null);
+		const info = await blockInfo(res, ['minecraft:grass_block', 'minecraft:oak_leaves', 'minecraft:cherry_leaves', 'minecraft:sand', 'minecraft:red_sand', 'minecraft:water', 'minecraft:stone', 'minecraft:frobnicator'], true);
+		expect(info['minecraft:grass_block'].color).toBe(0x476d3e);
+		expect(info['minecraft:oak_leaves'].color).toBe(0x2a650e);
+		expect(info['minecraft:cherry_leaves'].color).toBe(0xe5adc2);
+		expect(info['minecraft:sand'].color).toBe(0xdbcfa3);
+		expect(info['minecraft:red_sand'].color).toBe(0xbe6621);
+		expect(info['minecraft:water'].color).toBe(0x3f76e4);
+		expect(info['minecraft:stone'].color).toBe(0x7e7e7e);
+		expect(info['minecraft:frobnicator'].color).toBeNull();
+	});
 });

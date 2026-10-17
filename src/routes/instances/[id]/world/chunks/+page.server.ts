@@ -6,6 +6,8 @@ import { listSnapshots, snapshotOfWorld } from '#lib/server/snapshots.js';
 import { MAX_RESTORE_CHUNKS, restoreChunks, snapshotDimensions, worldSpawn } from '#lib/server/world.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import { compareVersions } from '#lib/server/java.js';
+import { itemIconsEnabled } from '#lib/server/itemicons.js';
+import { getMapSettings, saveMapSettings } from '#lib/server/worldmap.js';
 
 const dimensionOption = (d: Dimension) => ({ key: d.paths[0], label: d.label, overworld: d.overworld });
 
@@ -36,7 +38,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		snapshots,
 		spawn: await worldSpawn(instance.path),
 		legacy: compareVersions(instance.minecraftVersion, '1.13') < 0,
-		maxChunks: MAX_RESTORE_CHUNKS
+		maxChunks: MAX_RESTORE_CHUNKS,
+		/** Block colours come with item pictures; Minecraft's own blocks need its client (the EULA answer). */
+		colours: itemIconsEnabled(),
+		vanillaColours: getMapSettings(instance.id).eulaAccepted
 	};
 };
 
@@ -53,6 +58,12 @@ function parseChunks(text: string): [number, number][] | null {
 }
 
 export const actions: Actions = {
+	/** Minecraft's own block textures need its client jar: the same per-server EULA answer as the Map tab and item pictures. */
+	iconEula: async ({ params }) => {
+		saveMapSettings(requireInstance(params.id).id, { eulaAccepted: true });
+		return { ok: true };
+	},
+
 	restore: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();

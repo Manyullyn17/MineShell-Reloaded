@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
@@ -89,6 +90,15 @@
 		if (jumpX.trim() !== '' && jumpZ.trim() !== '' && Number.isFinite(x) && Number.isFinite(z)) jump = { x, z };
 	}
 
+	async function acceptEula() {
+		const res = await fetch('?/iconEula', { method: 'POST', headers: { 'x-sveltekit-action': 'true' }, body: new FormData() });
+		if (res.ok) {
+			await invalidateAll();
+			// The regions again, now with Minecraft's own textures.
+			reloads++;
+		}
+	}
+
 	const snapshotLabel = (s: (typeof data.snapshots)[number]) => `${formatDateTime(s.createdAt)} · ${s.note ?? s.label}${s.partial ? ' (part of the world)' : ''}`;
 </script>
 
@@ -168,6 +178,19 @@
 		</div>
 	</div>
 
+	{#if !data.colours}
+		<p class="hint small">
+			Blocks are drawn without their colours: item pictures are turned off under MineShell settings > System, and the map
+			takes its colours from the same textures.
+		</p>
+	{:else if !data.vanillaColours}
+		<p class="hint small">
+			Minecraft's own blocks get rough colours: their textures come from its client, which means accepting the
+			<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab
+			and item pictures).
+			<button type="button" class="button-quiet small" onclick={acceptEula}>Accept and use them</button>
+		</p>
+	{/if}
 	{#if overviewError}
 		<p class="error-text">{overviewError}</p>
 	{:else if !overview.length}

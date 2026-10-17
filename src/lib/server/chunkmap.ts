@@ -499,8 +499,49 @@ async function lookUp(res: Resources, key: string, modern: boolean): Promise<Blo
 	const face = topFace(look.spec);
 	const colour = face ? await averageColour(res, face.texture) : null;
 	if (colour !== null) return { name: look.name, color: face?.tint ? tinted(colour, parseInt(face.tint.slice(1), 16)) : colour };
-	return { name: look.name, color: await fluidColour(res, id) };
+	const fallback = id.startsWith('minecraft:') ? VANILLA_COLOURS.find(([test]) => test.test(path_))?.[1] : undefined;
+	return { name: look.name, color: fallback ?? (await fluidColour(res, id)) };
 }
+
+/**
+ * Minecraft's commonest surface blocks when its own textures are not there
+ * (the server's EULA question unanswered, so no client jar): about their
+ * textures' averages, first match wins. The land reads as land; the page
+ * says how to get the real colours.
+ */
+const VANILLA_COLOURS: [RegExp, number][] = [
+	[/^cherry_leaves$/, 0xe5adc2],
+	[/leaves|^vines?$|^waterlily$|^lily_pad$/, 0x2a650e],
+	[/^(grass|grass_block|short_grass|tall_grass|tallgrass|double_plant|fern|large_fern)$/, 0x476d3e],
+	[/^red_sand/, 0xbe6621],
+	[/sand/, 0xdbcfa3],
+	[/^(snow|snow_block|snow_layer|powder_snow)$/, 0xf0fbfb],
+	[/ice$/, 0x8db4fa],
+	[/^podzol$/, 0x5c3f18],
+	[/^mycelium$/, 0x6f6265],
+	[/^mud$/, 0x3c393d],
+	[/dirt|farmland|grass_path/, 0x866043],
+	[/^moss/, 0x596e2d],
+	[/^gravel$/, 0x847f7f],
+	[/^diorite|^calcite$/, 0xbdbcbd],
+	[/^granite/, 0x956756],
+	[/deepslate/, 0x505053],
+	[/^tuff/, 0x6c6d66],
+	[/terracotta|hardened_clay/, 0x985e43],
+	[/^clay$/, 0xa1a6b3],
+	[/^dark_oak|^big_oak/, 0x42301a],
+	[/^spruce/, 0x725430],
+	[/^birch/, 0xc0af79],
+	[/log|wood|planks|_stem$/, 0x8f7748],
+	[/^netherrack$/, 0x622626],
+	[/^soul_(sand|soil)$/, 0x513e32],
+	[/^end_stone/, 0xdbde9e],
+	[/^obsidian$/, 0x0f0a18],
+	[/^(sugar_cane|reeds)$/, 0x94c065],
+	[/^bamboo/, 0x5e9014],
+	[/^cactus$/, 0x557f2b],
+	[/stone|cobble|andesite|bedrock|ore$/, 0x7e7e7e]
+];
 
 /**
  * A mod's fluid block has no model of its own on 1.12: the mod names its
