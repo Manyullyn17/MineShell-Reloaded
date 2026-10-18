@@ -5,6 +5,7 @@ import type { ServerInstance } from './db/schema';
 import { vanillaEnchantmentTable, type EnchantmentInfo } from './enchantnames';
 import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
 import { serverWorldName } from './packworld';
+import { deleteToTrash } from './trash';
 import { parseSnbt, SnbtError } from './snbt';
 import { legacyItemIds, type ItemIds } from './itemids';
 import {
@@ -31,7 +32,7 @@ import { addEffect, LIST_ITEMS, playerEffects, playerFields, type EffectsView, t
 import type { Path, TreeTag } from '#lib/shared/nbt.js';
 
 export type { Path, TreeTag };
-import { rconPassword } from './instances';
+import { audit, rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { cachedProfileNames, isOfflineUuid, lookUpProfileNames, lookUpProfiles } from './profiles';
@@ -778,6 +779,41 @@ export async function savePlayerData(instance: ServerInstance, uuid: string, ver
 	await requireOffline(instance, id, name);
 	applyEdits(file, edits, await legacyItemIds(instance));
 	return replaceFile(instance, id, name, version, writeNbt(file), false);
+}
+
+/**
+ * Removes what the world keeps about a player: their player file (and the
+ * game's .dat_old), stats and advancements, and MineShell's backups of the
+ * file. Into the trash (Files), so it can be put back. The player drops out of
+ * the player list unless a list (whitelist, ops, bans) still names them, and
+ * starts over if they join again. Never while they are online: the server
+ * writes everything back when they leave. Returns the paths moved, relative
+ * to the server folder.
+ */
+export async function removePlayerFiles(instance: ServerInstance, uuid: string): Promise<string[]> {
+	const id = checkUuid(uuid);
+	const online = await onlinePlayerIds(instance);
+	if (online === null) {
+		throw new PlayerDataError('The server is running and MineShell cannot tell who is online (RCON is not answering). Stop the server to remove a player.');
+	}
+	if (online.has(id)) throw new PlayerDataError('That player is online, and the server would write their files back when they leave. Kick them first.');
+	const world = await serverWorldName(instance.path);
+	const candidates = [
+		path.join(world, 'playerdata', `${id}.dat`),
+		path.join(world, 'playerdata', `${id}.dat_old`),
+		path.join(world, 'stats', `${id}.json`),
+		path.join(world, 'advancements', `${id}.json`),
+		path.relative(instance.path, backupDir(instance, id))
+	];
+	const removed: string[] = [];
+	for (const rel of candidates) {
+		if (!(await fs.lstat(path.join(instance.path, rel)).catch(() => null))) continue;
+		await deleteToTrash(instance.path, rel);
+		removed.push(rel.split(path.sep).join('/'));
+	}
+	if (!removed.length) throw new PlayerDataError('This world has no files for that player.');
+	audit('player.removed', { instanceId: instance.id, detail: id });
+	return removed;
 }
 
 /** Put a backup back (the current file is backed up first). */

@@ -13,7 +13,7 @@ import {
 	type ListName
 } from '#lib/server/players.js';
 import { onlinePlayers } from '#lib/server/instances.js';
-import { listPlayerData } from '#lib/server/playerdata.js';
+import { listPlayerData, PlayerDataError, removePlayerFiles } from '#lib/server/playerdata.js';
 import { lookUpProfiles } from '#lib/server/profiles.js';
 import { playtimes } from '#lib/server/history.js';
 import { leaderboard } from '#lib/server/playerstats.js';
@@ -92,6 +92,19 @@ export const actions: Actions = {
 				? 'Whitelist is on. Only listed players can join.'
 				: 'Whitelist is off. Anyone can join.'
 		};
+	},
+
+	removeFiles: async ({ request, params, locals }) => {
+		const instance = requireInstance(params.id);
+		const uuid = String((await request.formData()).get('uuid') ?? '').toLowerCase();
+		requireAccess(locals, instance.id, 'players.data.edit', uuid);
+		try {
+			const removed = await removePlayerFiles(instance, uuid);
+			return { ok: true, removed: true, message: `Removed ${removed.length} ${removed.length === 1 ? 'file' : 'files'} to the trash (Files).` };
+		} catch (err) {
+			if (err instanceof PlayerDataError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	kick: async ({ request, params }) => {

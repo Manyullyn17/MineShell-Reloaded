@@ -237,7 +237,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			remove: handler(on('players.manage'), 'the ops list also needs console.command'),
 			opOptions: { all: [on('players.manage'), on('console.command')] },
 			whitelist: on('players.manage'),
-			kick: on('players.manage')
+			kick: on('players.manage'),
+			// The player is in the posted form.
+			removeFiles: handler(on('players.data.edit', 'any'), 'the player is posted, checked against players.data.edit')
 		}
 	},
 	'/instances/[id]/players/[uuid]': {

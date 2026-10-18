@@ -121,9 +121,20 @@
 		panelMode = 'add';
 		focusDrawer();
 	}
+	/** Remove player's second step, asked inside the panel. */
+	let confirmRemove = $state(false);
+	/** After removing, the player is gone from the list: close the panel and show the result there. */
+	const afterRemove = () => async ({ result, update }: { result: { type: string }; update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+		await update({ reset: false });
+		if (result.type === 'success') {
+			closePanel();
+			hideActionNotice = false;
+		}
+	};
 	function openManage(person: Person, event: MouseEvent) {
 		panelOpener = event.currentTarget as HTMLElement;
 		hideActionNotice = true;
+		confirmRemove = false;
 		selectedPersonKey = person.key;
 		newReason = '';
 		kickReason = '';
@@ -301,6 +312,30 @@
 					{#if selectedPerson.online}<form method="POST" action="?/add" use:enhance class="drawer-form"><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="ipBans" /><button class="button-danger">Ban this player’s IP address</button></form>{/if}
 				{/if}
 			</section>
+			{#if selectedPerson.file && can(data.access, data.instance.id, 'players.data.edit', selectedPerson.file.uuid)}
+				<section class="drawer-section">
+					<h3>Remove player</h3>
+					<p class="small muted">
+						Moves their player file, stats and advancements to the trash (Files), so they leave this list{selectedPerson.whitelisted || selectedPerson.op || selectedPerson.ban
+							? ' once no whitelist, operator or ban entry names them'
+							: ''}. If they join again, they start over. Mods' own per-player data stays.
+					</p>
+					{#if selectedPerson.online}
+						<p class="hint">They are online: kick them first, or the server writes their files back when they leave.</p>
+					{:else if !confirmRemove}
+						<button type="button" class="button-danger" onclick={() => (confirmRemove = true)}>Remove player…</button>
+					{:else}
+						<form method="POST" action="?/removeFiles" use:enhance={afterRemove} class="drawer-form">
+							<input type="hidden" name="uuid" value={selectedPerson.file.uuid} />
+							<p><strong>Remove {selectedPerson.name}'s files from this world?</strong></p>
+							<div class="drawer-actions">
+								<button class="button-danger">Remove</button>
+								<button type="button" class="button-quiet" onclick={() => (confirmRemove = false)}>Cancel</button>
+							</div>
+						</form>
+					{/if}
+				</section>
+			{/if}
 		{/if}
 	</div>
 {/if}

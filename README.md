@@ -91,6 +91,7 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 Administer players and inspect their saved data, including inventories containing modded items.
 
 - Manage whitelists, operators and operator levels, bans with reasons, and IP bans.
+- Remove a player from a world (their player file, stats and advancements go to the trash), for someone who joined once and should not stay in the list.
 - Update player lists through RCON while the server is running, or edit the relevant JSON files while it is stopped.
 - Resolve player names to UUIDs through Mojang and identify players in imported worlds using their current account names.
 - Inspect offline player inventories, effects, and other saved data.

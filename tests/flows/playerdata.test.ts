@@ -14,7 +14,8 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	})
 }));
 
-const { listPlayerData, listBackups, readPlayerData, restorePlayerBackup, savePlayerData, playerView } = await import('#lib/server/playerdata.js');
+const { listPlayerData, listBackups, readPlayerData, removePlayerFiles, restorePlayerBackup, savePlayerData, playerView } = await import('#lib/server/playerdata.js');
+const { listTrash } = await import('#lib/server/trash.js');
 const { writeNbt } = await import('#lib/server/nbt.js');
 const { addCustomField, copyCustomFields, listCustomFields, remapCustomField, removeCustomField } = await import('#lib/server/playerfields.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
@@ -131,6 +132,34 @@ describe('player data', () => {
 		const steve = await readPlayerData(instance, STEVE);
 		await savePlayerData(instance, STEVE, steve.version, [{ op: 'set', path: ['XpLevel'], value: '1' }]);
 		expect(await xpOf(instance, STEVE)).toBe(1);
+	});
+
+	it("removes a player's files into the trash, so they leave the list, never while they are online", async () => {
+		const instance = await server();
+		await fs.mkdir(path.join(instance.path, 'survival/stats'), { recursive: true });
+		await fs.mkdir(path.join(instance.path, 'survival/advancements'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, `survival/stats/${ALEX}.json`), '{"stats":{}}');
+		await fs.writeFile(path.join(instance.path, `survival/advancements/${ALEX}.json`), '{}');
+		await fs.writeFile(path.join(instance.path, `survival/stats/${STEVE}.json`), '{"stats":{}}');
+		const { version } = await readPlayerData(instance, ALEX);
+		await savePlayerData(instance, ALEX, version, [{ op: 'set', path: ['XpLevel'], value: '4' }]);
+
+		running();
+		rcon.answers['list uuids'] = `There are 1 of a max of 20 players online: Alex (${ALEX})`;
+		await expect(removePlayerFiles(instance, ALEX)).rejects.toThrow(/online/);
+		rcon.down = true;
+		await expect(removePlayerFiles(instance, ALEX)).rejects.toThrow(/cannot tell who is online/);
+
+		rcon.down = false;
+		rcon.answers['list uuids'] = 'There are 0 of a max of 20 players online: ';
+		expect((await removePlayerFiles(instance, ALEX)).sort()).toEqual(
+			[`.mineshell/playerdata-backups/${ALEX}`, `survival/advancements/${ALEX}.json`, `survival/playerdata/${ALEX}.dat`, `survival/stats/${ALEX}.json`].sort()
+		);
+		expect((await listPlayerData(instance)).map((f) => f.uuid)).toEqual([STEVE]);
+		expect((await listTrash(instance.path)).map((t) => t.path).sort()).toContain(`survival/playerdata/${ALEX}.dat`);
+		// Steve's files are untouched, and there is nothing left of Alex to remove.
+		await expect(fs.access(path.join(instance.path, `survival/stats/${STEVE}.json`))).resolves.toBeUndefined();
+		await expect(removePlayerFiles(instance, ALEX)).rejects.toThrow(/no files/);
 	});
 
 	it('maps names to UUIDs when the server cannot list UUIDs (1.12), and refuses when it cannot tell', async () => {
