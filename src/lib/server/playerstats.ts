@@ -244,15 +244,14 @@ const VANILLA_NAMES: Record<string, string> = {
 	walk_under_water_one_cm: 'Distance Walked under Water'
 };
 
-/** "villager_killed", "ItemsInserted", "PigZombie" -> words, first letter up. */
+/** "villager_killed", "ItemsInserted", "PigZombie" -> words in title case, as the game's own names are. */
 function tidy(text: string): string {
-	const words = text
+	return text
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.split(/[_\s]+/)
 		.filter(Boolean)
-		.join(' ')
-		.toLowerCase();
-	return words.charAt(0).toUpperCase() + words.slice(1);
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+		.join(' ');
 }
 
 const last = (id: string) => id.split(/[:.]/).pop() ?? id;

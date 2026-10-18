@@ -84,8 +84,8 @@ describe('reading stats files', () => {
 		]);
 		expect(customStatName('minecraft:play_time', lang)).toBe('Time Played');
 		expect(customStatName('create:wrench_used', lang)).toBe('Wrench Uses');
-		expect(customStatName('tombstone:villager_killed', lang)).toBe('Villager killed');
-		expect(customStatName('stat.ae2.ItemsInserted', lang)).toBe('Items inserted');
+		expect(customStatName('tombstone:villager_killed', lang)).toBe('Villager Killed');
+		expect(customStatName('stat.ae2.ItemsInserted', lang)).toBe('Items Inserted');
 		expect(entityName('minecraft:pillager', lang)).toBe('Pillager');
 		expect(entityName('PigZombie', lang)).toBe('Zombie Pigman');
 		expect(entityName('twilightforest.naga', lang)).toBe('Naga');

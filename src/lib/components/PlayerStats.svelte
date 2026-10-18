@@ -17,7 +17,7 @@
 
 	/**
 	 * A player's statistics (lib/server/playerstats.ts): the headline numbers,
-	 * then one category at a time as a list, biggest first.
+	 * then one category at a time as a list: general stats by name, the rest biggest first.
 	 */
 	let {
 		stats,
@@ -50,8 +50,13 @@
 		return Object.entries(stats.stats[category])
 			.map(([id, value]) => ({ id, value, name: names[id] ?? id }))
 			.filter((r) => !q || r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q))
-			// Overflowed counters went past every other value: first.
-			.sort((a, b) => Number(overflowed(b.value)) - Number(overflowed(a.value)) || b.value - a.value || a.name.localeCompare(b.name));
+			// General stats by name, so kinds group (Distance by Boat, Distance Climbed, ...);
+			// items and mobs biggest first, an overflowed counter (past every value) on top.
+			.sort((a, b) =>
+				category === 'custom'
+					? a.name.localeCompare(b.name)
+					: Number(overflowed(b.value)) - Number(overflowed(a.value)) || b.value - a.value || a.name.localeCompare(b.name)
+			);
 	});
 	const shown = $derived(showAll ? rows : rows.slice(0, FIRST_ROWS));
 	const total = (c: StatCategory) => (stats ? Object.values(stats.stats[c]).reduce((a, b) => a + b, 0) : 0);
