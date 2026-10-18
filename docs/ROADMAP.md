@@ -225,6 +225,10 @@ console commands, reads who is online, edits player lists live and stops servers
 over RCON; without it most of the server tabs stop working. It stays managed: port and
 password are MineShell's, `enable-rcon` is not offered.
 
+**A "Restarting" status** (user's call, 2026-10-18). A restart already reads as Stopping
+(systemd's `deactivating`), Starting (until `Done (`), Running; one label for the whole thing
+would hide which part it is at.
+
 **A versioned REST API.** No second consumer exists — no CLI, no bot, no mobile app. Form
 actions and a few endpoints cover it. Revisit only if a second consumer actually appears,
 not in anticipation of one.
