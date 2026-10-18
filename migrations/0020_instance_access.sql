@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- What accounts other than the owner may do (access.ts). Global admin and
 -- "may create servers" are flags on the account; everything per server is a
 -- row in instance_access. An instance admin is a flag on that row, kept apart

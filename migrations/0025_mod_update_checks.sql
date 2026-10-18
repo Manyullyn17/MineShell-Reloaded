@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Mods in the periodic update check (updatecheck.ts), for servers without a
 -- pack: on by default. What the last check found, one row per server.
 ALTER TABLE server_instances ADD COLUMN mod_update_check INTEGER NOT NULL DEFAULT 1;

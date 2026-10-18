@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Console commands run on a schedule (announcements, save-all), per server.
 -- Exactly one of every_minutes / daily_time is set. next_at is when it runs
 -- next; while the server is stopped it rolls forward without running.

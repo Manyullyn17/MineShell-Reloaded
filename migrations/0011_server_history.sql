@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- What happened on each server over time, read from its journal by history.ts:
 -- runs (when a start began, reached "Done (", ended) for start times, and
 -- player sessions (join to leave) for peak players, time online and playtime.

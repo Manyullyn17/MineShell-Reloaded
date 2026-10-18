@@ -74,10 +74,16 @@ import {
 	availableUpdate,
 	autoCheckEnabled,
 	checkForUpdate,
+	compareVersions,
 	currentVersion,
+	DB_BACKUP_DIR,
+	HISTORY_SINCE,
 	installInfo,
 	lastCheck,
+	planDowngrade,
+	releaseHistory,
 	setAutoCheck,
+	startDowngrade,
 	startUpdate,
 	UpdateRefused,
 	updateBlocker,
@@ -213,6 +219,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			autoCheck: autoCheckEnabled(),
 			check: lastCheck(),
 			available: availableUpdate(),
+			releases: releaseHistory().map((r) => ({ ...r, olderThanCurrent: compareVersions(r.version, currentVersion()) < 0 })),
+			historySince: HISTORY_SINCE,
+			backupDir: DB_BACKUP_DIR(),
 			run: await updateRunState(),
 			blocker: updateBlocker()
 		}
@@ -578,6 +587,28 @@ export const actions: Actions = {
 	update: async () => {
 		try {
 			return { ok: true, updateTask: startUpdate() };
+		} catch (err) {
+			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	// Going back: first what it means (shown to confirm), then doing it, which checks again.
+	downgradePlan: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			return { ok: true, downgrade: await planDowngrade(String(form.get('version') ?? '')) };
+		} catch (err) {
+			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	downgrade: async ({ request }) => {
+		const form = await request.formData();
+		if (form.get('understood') !== 'on') return fail(400, { ok: false, message: 'Tick that you understand the risks first.' });
+		try {
+			return { ok: true, updateTask: await startDowngrade(String(form.get('version') ?? '')) };
 		} catch (err) {
 			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
 			throw err;

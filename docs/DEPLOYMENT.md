@@ -164,11 +164,32 @@ that is what lets it update itself.
 
 Running the installer again: it installs the newest release next to the running one, switches
 `current` over, rewrites `mineshell.service` and restarts it; the settings file and the data
-are left alone, and the two previous releases stay in `releases/`. To go back, run it with
-`MINESHELL_VERSION=v<older>`. Restarting MineShell does not touch running servers.
+are left alone, and the two previous releases stay in `releases/`. Restarting MineShell does
+not touch running servers.
 
-Database migrations run automatically at startup. Back up
-`$MINESHELL_DATA/mineshell.db` first if you want to be careful; it is a single file.
+Going back: Settings > Updates lists every release with its notes, and "Go back to this
+version" on an older one installs it the same way (or run the installer with
+`MINESHELL_VERSION=v<older>`; the page's checks below do not apply then). Releases are made
+to read what older ones left, not the reverse, so going back can cause problems: settings or
+files a newer version wrote may be read wrongly or not at all. The page refuses a version that
+cannot work with the database as newer releases changed it (anything before 0.13.0, whose
+accounts change moved the password), and lists the database changes the older version will
+ignore. Versions before 0.24.0 have no release list: from there, Update brings you to the
+newest release.
+
+Database migrations run automatically at startup. Before every update or downgrade from the
+page, the database is copied to `$MINESHELL_DATA/db-backups/mineshell-<date>-<from>-to-<to>.db`
+(the newest five are kept). To put one back by hand - servers created or changed since then
+will be missing from it, their folders still on disk:
+
+```sh
+systemctl --user stop mineshell
+cp ~/.local/share/mineshell/db-backups/mineshell-<...>.db ~/.local/share/mineshell/mineshell.db
+rm -f ~/.local/share/mineshell/mineshell.db-wal ~/.local/share/mineshell/mineshell.db-shm
+systemctl --user start mineshell
+```
+
+Do that while the version it was taken from (`<from>` in the name) is installed.
 
 The template unit does not need reinstalling: at startup MineShell rewrites an installed
 template that an older MineShell wrote. Reinstalling it is safe anyway — the Settings page

@@ -82,7 +82,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			// Updating MineShell runs its installer.
 			checkUpdate: 'owner',
 			updateAuto: 'owner',
-			update: 'owner'
+			update: 'owner',
+			downgradePlan: 'owner',
+			downgrade: 'owner'
 		}
 	},
 	'/settings/defaults': { load: 'globalAdmin', actions: { save: 'globalAdmin', reset: 'globalAdmin' } },

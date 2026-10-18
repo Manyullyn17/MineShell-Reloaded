@@ -12,7 +12,6 @@
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { invalidateAll } from '$app/navigation';
-	import { browser } from '$app/env';
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 
@@ -70,10 +69,25 @@
 	});
 	const updateTask = $derived((form as { updateTask?: string } | null)?.updateTask ?? null);
 	const updateRun = $derived(data.update.run);
-	const releaseNotes = $derived.by(() => {
-		const notes = data.update.available?.notes;
-		if (!browser || !notes) return '';
-		return DOMPurify.sanitize(marked.parse(notes, { async: false }) as string);
+	// Release notes are Markdown rendered in the browser; hydration keeps the server's empty {@html}, so only after it.
+	let hydrated = $state(false);
+	$effect(() => {
+		hydrated = true;
+	});
+	const notesHtml = (notes: string) => (hydrated && notes ? DOMPurify.sanitize(marked.parse(notes, { async: false }) as string) : '');
+	const releaseNotes = $derived(notesHtml(data.update.available?.notes ?? ''));
+	// Going back: the plan the server worked out, shown to confirm.
+	type DowngradePlan = {
+		release: { version: string };
+		missing: { name: string; safe: boolean }[];
+		refusal: string | null;
+		beforeHistory: boolean;
+	};
+	const downgrade = $derived((form as { downgrade?: DowngradePlan } | null)?.downgrade ?? null);
+	let understood = $state(false);
+	$effect(() => {
+		void downgrade;
+		understood = false;
 	});
 	let updateSlow = $state(false);
 	// The installer restarts MineShell: ask until the server answers with another
@@ -795,7 +809,7 @@
 	{#if updateTask || updateRun?.outcome === 'running'}
 		<div class="notice info">
 			<p>
-				Updating to {updateRun?.to ?? u.available?.version}. MineShell restarts on its own; this page loads again when it
+				Installing {updateRun?.to ?? u.available?.version}. MineShell restarts on its own; this page loads again when it
 				is back. Your servers keep running.
 			</p>
 			{#if updateSlow}
@@ -806,11 +820,11 @@
 		</div>
 	{:else if updateRun?.outcome === 'failed'}
 		<div class="notice error">
-			<p>The update from {updateRun.from} to {updateRun.to} failed ({formatDateTime(updateRun.finishedAt)}); {u.current} is still running.</p>
+			<p>Installing {updateRun.to} (from {updateRun.from}) failed ({formatDateTime(updateRun.finishedAt)}); {u.current} is still running.</p>
 			{#if updateRun.log.length}<pre class="update-log">{updateRun.log.join('\n')}</pre>{/if}
 		</div>
 	{:else if updateRun?.outcome === 'done' && updateRun.to === u.current}
-		<p class="small muted">Updated from {updateRun.from} on {formatDateTime(updateRun.finishedAt)}.</p>
+		<p class="small muted">Switched from {updateRun.from} on {formatDateTime(updateRun.finishedAt)}.</p>
 	{/if}
 
 	{#if u.available}
@@ -852,6 +866,92 @@
 			{/if}
 		</span>
 	</form>
+</section>
+
+{#snippet downgradePanel(downgrade: DowngradePlan)}
+	<div class="notice {downgrade.refusal ? 'error' : 'warning'} downgrade">
+		<h3>Go back to {downgrade.release.version}?</h3>
+		{#if downgrade.refusal}
+			<p>{downgrade.refusal}</p>
+			<p class="small">
+				A newer MineShell changed the database in a way {downgrade.release.version} would not cope with, so it cannot
+				go back that far.
+			</p>
+		{:else}
+			<ul>
+				<li>
+					Going back can cause problems. Releases are built to read what older ones left, not the other way round:
+					settings, server files or database entries a newer release wrote may be read wrongly or not at all, which
+					can show as lost settings, errors or features misbehaving.
+				</li>
+				<li>
+					The database is copied to <code>{data.update.backupDir}</code> first. MineShell does not put it back by itself:
+					servers created or changed since then would be missing from it.
+				</li>
+				{#if downgrade.missing.length}
+					<li>
+						The database has {downgrade.missing.length} change{downgrade.missing.length === 1 ? '' : 's'}
+						{downgrade.release.version} does not know ({downgrade.missing.map((m) => m.name.replace(/\.sql$/, '')).join(', ')}).
+						They only add things, so it should run with them; what is stored there is unused until you come back.
+					</li>
+				{/if}
+				{#if downgrade.beforeHistory}
+					<li>
+						{downgrade.release.version} is older than {data.update.historySince}, which brought this list. From there MineShell
+						only updates to the newest release; to pick a version again, run the installer with
+						<code>MINESHELL_VERSION=v&lt;version&gt;</code>.
+					</li>
+				{/if}
+			</ul>
+			<form method="POST" action="?/downgrade" use:enhance={() => async ({ update }) => update({ reset: false })}>
+				<input type="hidden" name="version" value={downgrade.release.version} />
+				<div class="check field">
+					<input id="understood" name="understood" type="checkbox" bind:checked={understood} />
+					<label for="understood">I understand, go back to {downgrade.release.version}</label>
+				</div>
+				<button class="button-danger" type="submit" disabled={!understood || !!data.update.blocker || !!updateTask}>
+					Go back to {downgrade.release.version}
+				</button>
+				{#if data.update.blocker}<p class="small muted">{data.update.blocker}</p>{/if}
+			</form>
+		{/if}
+	</div>
+{/snippet}
+
+<section class="panel">
+	<h2>Release history</h2>
+	{#if u.releases.length === 0}
+		<p class="muted">{u.check ? 'No releases found.' : 'Check for updates to see the releases.'}</p>
+	{:else}
+		<p class="small muted">
+			Every release, newest first. Going back to an older one is meant for stepping back from a release that brought a
+			problem; the version after it is one update away again.
+		</p>
+		<ul class="release-list">
+			{#each u.releases as r (r.tag)}
+				<li>
+					<details open={r.version === u.current || downgrade?.release.version === r.version}>
+						<summary>
+							<strong>{r.name}</strong>
+							{#if r.version === u.current}<span class="tag accent">running</span>{/if}
+							<span class="small muted">{formatDateTime(Date.parse(r.publishedAt))}</span>
+						</summary>
+						{#if r.notes}<div class="release-notes">{@html notesHtml(r.notes)}</div>{/if}
+						<div class="release-actions">
+							<a class="small" href={r.url} target="_blank" rel="noreferrer">On GitHub</a>
+							{#if data.access.owner && u.installed && r.olderThanCurrent}
+								<form method="POST" action="?/downgradePlan" use:enhance={() => async ({ update }) => update({ reset: false })}>
+									<input type="hidden" name="version" value={r.version} />
+									<button class="button" type="submit" disabled={!!updateTask}>Go back to this version…</button>
+								</form>
+							{/if}
+						</div>
+						{#if downgrade?.release.version === r.version}{@render downgradePanel(downgrade)}{/if}
+					</details>
+				</li>
+			{/each}
+		</ul>
+	{/if}
 </section>
 
 {#if data.access.owner}
@@ -1190,6 +1290,57 @@
 
 	.release-notes :global(h2) {
 		font-size: 0.95rem;
+	}
+
+	.release-list {
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+	}
+
+	.release-list > li + li {
+		border-top: 1px solid var(--line);
+	}
+
+	.release-list summary {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.3rem 0.8rem;
+		padding: var(--space-2) 0;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.release-list summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.release-list summary::before {
+		content: '▸';
+		font-size: 0.7rem;
+		color: var(--text-faint);
+		transition: transform 0.15s ease;
+	}
+
+	.release-list details[open] summary::before {
+		transform: rotate(90deg);
+	}
+
+	.downgrade {
+		margin-bottom: var(--space-3);
+	}
+
+	.release-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		margin-bottom: var(--space-3);
+	}
+
+	.downgrade ul {
+		padding-left: 1.2rem;
 	}
 
 	.update-log {

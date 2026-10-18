@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Periodic checks for a newer pack version or loader build (updatecheck.ts),
 -- on by default, daily, releases only.
 ALTER TABLE server_instances ADD COLUMN update_check INTEGER NOT NULL DEFAULT 1;

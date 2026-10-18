@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Crash history on the runs history.ts keeps: how each run ended, whether
 -- that was a crash, and the crash analyzer's verdict (diagnosed once).
 ALTER TABLE server_runs ADD COLUMN exit_status INTEGER;

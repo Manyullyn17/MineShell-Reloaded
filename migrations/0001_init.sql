@@ -1,3 +1,4 @@
+-- downgrade: safe
 CREATE TABLE server_instances (
   id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,

@@ -1,3 +1,4 @@
+-- downgrade: safe
 CREATE TABLE server_tags (
   id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL

@@ -11,6 +11,22 @@ const files = import.meta.glob('/migrations/*.sql', {
 	eager: true
 }) as Record<string, string>;
 
+/** This version's migration with that file name, or null. */
+export function migrationSql(name: string): string | null {
+	return files[`/migrations/${name}`] ?? null;
+}
+
+/**
+ * Whether an older MineShell still works with this migration applied
+ * (selfupdate.ts, going back to a release): the first line says
+ * `-- downgrade: safe` or `-- downgrade: unsafe - <why>`. Safe = it only adds
+ * (tables, nullable or defaulted columns, indexes) and changes no data an
+ * older version reads. Without the line it counts as unsafe.
+ */
+export function downgradeSafe(sql: string): boolean {
+	return /^--\s*downgrade:\s*safe\b/.test(sql);
+}
+
 export function runMigrations(sqlite: BetterSqlite3.Database): void {
 	sqlite.exec(
 		`CREATE TABLE IF NOT EXISTS _migrations (

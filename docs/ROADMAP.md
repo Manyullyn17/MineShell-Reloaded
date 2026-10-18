@@ -136,16 +136,6 @@ replaced mod jars aside (the `mod-update` journal) so a failed update can be rol
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
-### Release history and downgrades
-
-Idea of 2026-10-18 (user's): Settings > Updates lists every release with its notes, in order
-(the GitHub releases; a one-off page of them was made from the API), and offers going back to
-one: mainly to step back a single release that brought a problem. The installer already
-installs a given version (`MINESHELL_VERSION`), so a downgrade is the self-update path with an
-older archive. Open: what an older release does with a database a newer one migrated (Drizzle
-migrations only go forward), so either refuse past a schema change or snapshot the database
-before every update and restore it with the downgrade.
-
 ### Instance export and import
 
 The original design specified a `.jcpack` bundle containing mod metadata, overrides,
@@ -173,8 +163,8 @@ What the built entries in the archive left out, in one place:
   skins.
 - **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's under Planned).
 - **Installer and updates**: installing Node for the user (the installer says how to get
-  it), installing updates automatically; going back to an older release from the page is under
-  "Release history and downgrades" (Later).
+  it), installing updates automatically; restoring a database backup from the page (by hand
+  in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.

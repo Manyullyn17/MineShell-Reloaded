@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Committed pack version changes, for rolling one back (packrollback.ts): the
 -- version the server was on, where its configs went, the snapshot taken first.
 CREATE TABLE pack_changes (

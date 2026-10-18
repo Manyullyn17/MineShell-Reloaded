@@ -3,9 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import * as env from '$app/env/private';
-import { db } from './db';
+import { db, raw } from './db';
+import { downgradeSafe, migrationSql } from './db/migrate';
 import { settings } from './db/schema';
-import { TMP_DIR } from './config';
+import { DATA_DIR, TMP_DIR } from './config';
 import { downloadFile, fetchJson, fetchText } from './download';
 import { listOperations } from './operations';
 import { run } from './systemd';
@@ -22,6 +23,12 @@ import { listTasks, startTask } from './tasks';
  * anything it had started itself. Whether it worked is settled by the restarted
  * MineShell (settleUpdateRun), or, when the installer failed before restarting
  * anything, by the unit having ended (updateRunState).
+ *
+ * The same path installs an older release (startDowngrade). Migrations only go
+ * forward, so the older version runs on the database as this one left it; a
+ * migration it lacks must be marked safe for that (db/migrate.ts,
+ * downgradeSafe), else going back is refused. The database is copied to
+ * db-backups/ before every install.
  */
 
 export const UPDATE_REPO = 'Manyullyn17/MineShell-Reloaded';
@@ -31,6 +38,9 @@ const TICK_MS = 60 * 60_000;
 const CHECK_KEY = 'update.check';
 const RUN_KEY = 'update.run';
 const AUTO_KEY = 'update.autoCheck';
+/** The first release with the release list and going back; an older one only updates to the latest. */
+export const HISTORY_SINCE = '0.24.0';
+const DB_BACKUPS_KEPT = 5;
 
 export type Release = {
 	tag: string;
@@ -42,7 +52,8 @@ export type Release = {
 	archiveUrl: string;
 	checksumUrl: string;
 };
-export type UpdateCheck = { checkedAt: number; latest: Release | null; error: string | null };
+/** `releases`: every published release, newest first (absent in checks stored before 0.24). */
+export type UpdateCheck = { checkedAt: number; latest: Release | null; releases?: Release[]; error: string | null };
 export type UpdateRun = {
 	from: string;
 	to: string;
@@ -134,17 +145,48 @@ function toRelease(raw: GithubRelease): Release {
 	};
 }
 
-/** Asks GitHub for the latest release (drafts and pre-releases are never "latest") and keeps the answer. */
+async function fetchReleases(): Promise<GithubRelease[]> {
+	const all: GithubRelease[] = [];
+	for (let page = 1; page <= 10; page++) {
+		const batch = await fetchJson<GithubRelease[]>(`https://api.github.com/repos/${UPDATE_REPO}/releases?per_page=100&page=${page}`, {
+			headers: { Accept: 'application/vnd.github+json' }
+		});
+		all.push(...batch);
+		if (batch.length < 100) break;
+	}
+	return all;
+}
+
+/**
+ * Asks GitHub for every release and keeps the answer: the newest is the latest
+ * (drafts and pre-releases never count), the rest is the release list.
+ */
 export async function checkForUpdate(): Promise<UpdateCheck> {
 	let result: UpdateCheck;
 	try {
-		const raw = await fetchJson<GithubRelease>(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, {
-			headers: { Accept: 'application/vnd.github+json' }
+		const published = (await fetchReleases())
+			.filter((r) => !r.draft && !r.prerelease)
+			.sort((a, b) => compareVersions(b.tag_name, a.tag_name));
+		if (!published.length) throw new Error(`${UPDATE_REPO} has no releases.`);
+		const latest = toRelease(published[0]);
+		// An older release without its archive cannot be installed, so it is not listed.
+		const releases = published.flatMap((r) => {
+			try {
+				return [toRelease(r)];
+			} catch {
+				return [];
+			}
 		});
-		result = { checkedAt: Date.now(), latest: toRelease(raw), error: null };
+		result = { checkedAt: Date.now(), latest, releases, error: null };
 	} catch (err) {
 		// A failed check keeps what the last one found.
-		result = { checkedAt: Date.now(), latest: lastCheck()?.latest ?? null, error: err instanceof Error ? err.message : String(err) };
+		const last = lastCheck();
+		result = {
+			checkedAt: Date.now(),
+			latest: last?.latest ?? null,
+			releases: last?.releases ?? [],
+			error: err instanceof Error ? err.message : String(err)
+		};
 	}
 	writeJson(CHECK_KEY, result);
 	return result;
@@ -172,14 +214,100 @@ export function updateBlocker(): string | null {
 	return null;
 }
 
+/** Every release the last check found, newest first. */
+export function releaseHistory(): Release[] {
+	return lastCheck()?.releases ?? [];
+}
+
+export type DowngradePlan = {
+	release: Release;
+	/** Migrations this database has that the release does not know, oldest first. */
+	missing: { name: string; safe: boolean }[];
+	/** Why it cannot be done, or null. */
+	refusal: string | null;
+	/** Older than the release list: from there, only an update to the latest comes back. */
+	beforeHistory: boolean;
+};
+
+async function releaseMigrations(release: Release): Promise<Set<string>> {
+	const entries = await fetchJson<{ name: string }[]>(
+		`https://api.github.com/repos/${UPDATE_REPO}/contents/migrations?ref=${encodeURIComponent(release.tag)}`,
+		{ headers: { Accept: 'application/vnd.github+json' } }
+	);
+	return new Set(entries.map((e) => e.name).filter((n) => n.endsWith('.sql')));
+}
+
+/** A migration's text: this version's own, else (one applied by a newer release, after going back once) GitHub's. */
+async function readMigration(name: string): Promise<string | null> {
+	const own = migrationSql(name);
+	if (own !== null) return own;
+	try {
+		return await fetchText(`https://raw.githubusercontent.com/${UPDATE_REPO}/HEAD/migrations/${encodeURIComponent(name)}`);
+	} catch {
+		return null;
+	}
+}
+
+/** What going back to `version` means for the database, and whether it may be done. */
+export async function planDowngrade(version: string): Promise<DowngradePlan> {
+	const release = releaseHistory().find((r) => r.version === version);
+	if (!release) throw new UpdateRefused(`${version} is not in the release list: check for updates first.`);
+	if (compareVersions(version, currentVersion()) >= 0) throw new UpdateRefused(`${version} is not older than the running ${currentVersion()}.`);
+	const plan: DowngradePlan = { release, missing: [], refusal: null, beforeHistory: compareVersions(version, HISTORY_SINCE) < 0 };
+
+	let known: Set<string>;
+	try {
+		known = await releaseMigrations(release);
+	} catch (err) {
+		plan.refusal = `Could not read which database changes ${version} has: ${err instanceof Error ? err.message : String(err)}`;
+		return plan;
+	}
+	const applied = (raw.prepare('SELECT name FROM _migrations').all() as { name: string }[]).map((r) => r.name).sort();
+	for (const name of applied.filter((n) => !known.has(n))) {
+		const sql = await readMigration(name);
+		plan.missing.push({ name, safe: sql !== null && downgradeSafe(sql) });
+	}
+	const unsafe = plan.missing.filter((m) => !m.safe);
+	if (unsafe.length)
+		plan.refusal = `${version} cannot work with database changes made since: ${unsafe.map((m) => m.name.replace(/\.sql$/, '')).join(', ')}.`;
+	return plan;
+}
+
+export const DB_BACKUP_DIR = () => path.join(DATA_DIR, 'db-backups');
+
+/** A copy of the database before installing another version, and only the newest few kept. */
+async function backupDatabase(from: string, to: string): Promise<string> {
+	const dir = DB_BACKUP_DIR();
+	await fs.mkdir(dir, { recursive: true });
+	const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+	const file = path.join(dir, `mineshell-${stamp}-${from}-to-${to}.db`);
+	await raw.backup(file);
+	const old = (await fs.readdir(dir)).filter((f) => /^mineshell-.*\.db$/.test(f)).sort().reverse().slice(DB_BACKUPS_KEPT);
+	for (const f of old) await fs.rm(path.join(dir, f), { force: true });
+	return file;
+}
+
 export function startUpdate(): string {
 	const blocker = updateBlocker();
 	if (blocker) throw new UpdateRefused(blocker);
 	const release = availableUpdate();
 	if (!release) throw new UpdateRefused('There is no newer version to install.');
+	return install(release, `Update MineShell to ${release.version}`);
+}
+
+/** Goes back to an older release; refused when planDowngrade says so. */
+export async function startDowngrade(version: string): Promise<string> {
+	const blocker = updateBlocker();
+	if (blocker) throw new UpdateRefused(blocker);
+	const plan = await planDowngrade(version);
+	if (plan.refusal) throw new UpdateRefused(plan.refusal);
+	return install(plan.release, `Go back to MineShell ${version}`);
+}
+
+function install(release: Release, label: string): string {
 	const install = installInfo()!;
 
-	return startTask({ label: `Update MineShell to ${release.version}` }, async (task) => {
+	return startTask({ label }, async (task) => {
 		const dir = DOWNLOAD_DIR();
 		await fs.rm(dir, { recursive: true, force: true });
 		await fs.mkdir(dir, { recursive: true });
@@ -194,6 +322,9 @@ export function startUpdate(): string {
 		});
 
 		// The new release's own installer, from the archive just checked.
+		task.setProgress(91, 'Backing up the database');
+		await backupDatabase(currentVersion(), release.version);
+
 		task.setProgress(92, 'Unpacking the installer');
 		const inner = `mineshell-${release.version}/scripts/install.sh`;
 		const untar = await run(['tar', '-xzf', archive, '-C', dir, inner]);
@@ -227,7 +358,7 @@ export function startUpdate(): string {
 			`--unit=${unit}`,
 			'--collect',
 			'--quiet',
-			`--description=MineShell update to ${release.version}`,
+			`--description=MineShell install of ${release.version}`,
 			...Object.entries(setenv).map(([k, v]) => `--setenv=${k}=${v}`),
 			'bash',
 			path.join(dir, inner)

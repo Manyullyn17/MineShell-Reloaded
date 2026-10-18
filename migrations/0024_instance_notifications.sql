@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- A server's own notification destination, instead of or beside MineShell's
 -- (notifications.ts). MineShell's own is a row in settings.
 CREATE TABLE instance_notifications (

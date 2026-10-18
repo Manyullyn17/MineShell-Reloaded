@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Data packs installed from the mod browser into <level-name>/datapacks/.
 -- Kept apart from instance_mods, whose rows all live in mods/ (the Mods list
 -- and sync read that folder). file_name is relative to the datapacks folder,

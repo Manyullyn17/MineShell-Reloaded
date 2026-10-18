@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Set when an installed jar is known not to belong on a dedicated server:
 -- Modrinth's environment says client_only, the source flags the file, or the
 -- jar declares a client environment. Per installed file, not per mod record:

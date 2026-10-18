@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Journal of operations in progress on an instance (pack change, loader
 -- switch, Cleanroom migration/revert, first install), so one interrupted by
 -- MineShell itself stopping can be restored on the next start. A row exists

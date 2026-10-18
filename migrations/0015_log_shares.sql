@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Logs shared on mclo.gs (mclogs.ts): the public link and the token that
 -- deletes it, per run (key = invocation id) or log file (key = its path).
 CREATE TABLE log_shares (

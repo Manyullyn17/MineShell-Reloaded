@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
@@ -25,7 +26,12 @@ const {
 	checkForUpdate,
 	compareVersions,
 	currentVersion,
+	DB_BACKUP_DIR,
+	HISTORY_SINCE,
 	lastUpdateRun,
+	planDowngrade,
+	releaseHistory,
+	startDowngrade,
 	startUpdate,
 	updateBlocker,
 	updateRunState,
@@ -39,13 +45,18 @@ const { db } = await import('./db');
 const { settings } = await import('./db/schema');
 const { like } = await import('drizzle-orm');
 
-const API = 'https://api.github.com/repos/Manyullyn17/MineShell-Reloaded/releases/latest';
+const API = 'https://api.github.com/repos/Manyullyn17/MineShell-Reloaded/releases?per_page=100&page=1';
+const CONTENTS = (tag: string) => `https://api.github.com/repos/Manyullyn17/MineShell-Reloaded/contents/migrations?ref=${tag}`;
 const DL = 'https://github.com/Manyullyn17/MineShell-Reloaded/releases/download';
 const ARCHIVE = Buffer.from('pretend release archive');
 const SUM = crypto.createHash('sha256').update(ARCHIVE).digest('hex');
 
 let latest: Record<string, unknown> | number = 404;
+let older: Record<string, unknown>[] = [];
 let checksum = `${SUM}  mineshell-9.0.0.tar.gz\n`;
+// The migrations each older release has, as GitHub lists them; absent = GitHub fails.
+const ALL_MIGRATIONS = fs.readdirSync('migrations').filter((f) => f.endsWith('.sql')).sort();
+let releaseMigrations: Record<string, string[]> = {};
 
 function release(version: string, assets = true) {
 	const file = `mineshell-${version}.tar.gz`;
@@ -68,15 +79,29 @@ function release(version: string, assets = true) {
 
 useRecordedHttp('selfupdate', {
 	extra: {
-		[API]: () => (typeof latest === 'number' ? new Response('nope', { status: latest }) : Response.json(latest)),
+		[API]: () => (typeof latest === 'number' ? new Response('nope', { status: latest }) : Response.json([...older, latest])),
 		[`${DL}/v9.0.0/mineshell-9.0.0.tar.gz`]: () => new Response(new Uint8Array(ARCHIVE)),
-		[`${DL}/v9.0.0/mineshell-9.0.0.tar.gz.sha256`]: () => new Response(checksum)
+		[`${DL}/v9.0.0/mineshell-9.0.0.tar.gz.sha256`]: () => new Response(checksum),
+		[`${DL}/v0.20.0/mineshell-0.20.0.tar.gz`]: () => new Response(new Uint8Array(ARCHIVE)),
+		[`${DL}/v0.20.0/mineshell-0.20.0.tar.gz.sha256`]: () => new Response(`${SUM}  mineshell-0.20.0.tar.gz\n`),
+		...Object.fromEntries(
+			['v0.1.0', 'v0.12.0', 'v0.20.0', 'v0.23.0'].map((tag) => [
+				CONTENTS(tag),
+				() =>
+					releaseMigrations[tag]
+						? Response.json(releaseMigrations[tag].map((name) => ({ name, type: 'file' })))
+						: new Response('rate limited', { status: 403 })
+			])
+		)
 	}
 });
 
 afterEach(() => {
 	install.on = true;
 	latest = 404;
+	older = [];
+	releaseMigrations = {};
+	fs.rmSync(DB_BACKUP_DIR(), { recursive: true, force: true });
 	checksum = `${SUM}  mineshell-9.0.0.tar.gz\n`;
 	db.delete(settings).where(like(settings.key, 'update.%')).run();
 });
@@ -113,6 +138,20 @@ describe('checking for updates', () => {
 		latest = 503;
 		const result = await checkForUpdate();
 		expect(result.error).toContain('503');
+		expect(availableUpdate()?.version).toBe('9.0.0');
+	});
+
+	it('lists every published release newest first, without drafts, pre-releases or ones that cannot be installed', async () => {
+		latest = release('9.0.0');
+		older = [
+			release('0.20.0'),
+			{ ...release('8.0.0'), draft: true },
+			{ ...release('8.5.0'), prerelease: true },
+			release('0.1.0', false),
+			release('0.23.0')
+		];
+		await checkForUpdate();
+		expect(releaseHistory().map((r) => r.version)).toEqual(['9.0.0', '0.23.0', '0.20.0']);
 		expect(availableUpdate()?.version).toBe('9.0.0');
 	});
 
@@ -213,5 +252,71 @@ describe('the result, after the restart', () => {
 		running('9.0.0');
 		fakeProcesses(() => ({ stdout: 'active\n' }));
 		expect((await updateRunState())?.outcome).toBe('running');
+	});
+});
+
+describe('going back to an older release', () => {
+	// The release list with 0.20.0 (migrations up to 0022) and 0.12.0 (before the accounts migration).
+	async function listed() {
+		latest = release(currentVersion());
+		older = [release('0.23.0'), release('0.20.0'), release('0.12.0'), release('0.1.0')];
+		await checkForUpdate();
+	}
+	const upTo = (last: string) => ALL_MIGRATIONS.filter((f) => f.slice(0, 4) <= last);
+
+	it('allows it when every migration the release lacks only adds, and says what it lacks', async () => {
+		await listed();
+		releaseMigrations['v0.20.0'] = upTo('0022');
+		const plan = await planDowngrade('0.20.0');
+		expect(plan.refusal).toBeNull();
+		expect(plan.missing.length).toBeGreaterThan(0);
+		expect(plan.missing.every((m) => m.safe)).toBe(true);
+		expect(plan.missing[0].name).toMatch(/^0023/);
+		expect(plan.beforeHistory).toBe(compareVersions('0.20.0', HISTORY_SINCE) < 0);
+	});
+
+	it('refuses one that lacks a migration marked unsafe (the accounts one: an older MineShell finds no password)', async () => {
+		await listed();
+		releaseMigrations['v0.12.0'] = upTo('0018');
+		const plan = await planDowngrade('0.12.0');
+		expect(plan.refusal).toContain('0019_users');
+		expect(plan.missing.find((m) => m.name === '0019_users.sql')?.safe).toBe(false);
+		await expect(startDowngrade('0.12.0')).rejects.toThrow(UpdateRefused);
+	});
+
+	it('refuses when GitHub does not say which migrations the release has', async () => {
+		await listed();
+		const plan = await planDowngrade('0.20.0');
+		expect(plan.refusal).toContain('Could not read');
+	});
+
+	it('refuses a version that is not older, or not in the list', async () => {
+		await listed();
+		await expect(planDowngrade(currentVersion())).rejects.toThrow('not older');
+		await expect(planDowngrade('0.5.5')).rejects.toThrow('not in the release list');
+	});
+
+	it('backs up the database, then runs the older release\'s installer', async () => {
+		await listed();
+		releaseMigrations['v0.20.0'] = upTo('0022');
+		fakeProcesses(() => ({}));
+		const task = await waitForTask(await startDowngrade('0.20.0'));
+		expect(task.error).toBeNull();
+		expect(spawnCalls.find((c) => c.cmd === 'systemd-run')!.args.at(-1)).toMatch(/mineshell-0\.20\.0\/scripts\/install\.sh$/);
+		expect(lastUpdateRun()).toMatchObject({ from: currentVersion(), to: '0.20.0', outcome: 'running' });
+		const backups = fs.readdirSync(DB_BACKUP_DIR()).filter((f) => f.endsWith(`-${currentVersion()}-to-0.20.0.db`));
+		expect(backups).toHaveLength(1);
+	});
+
+	it('keeps only the newest five database backups', async () => {
+		await listed();
+		releaseMigrations['v0.20.0'] = upTo('0022');
+		fs.mkdirSync(DB_BACKUP_DIR(), { recursive: true });
+		for (let i = 0; i < 6; i++) fs.writeFileSync(`${DB_BACKUP_DIR()}/mineshell-2000-01-0${i + 1}-old.db`, '');
+		fakeProcesses(() => ({}));
+		await waitForTask(await startDowngrade('0.20.0'));
+		const left = fs.readdirSync(DB_BACKUP_DIR()).sort();
+		expect(left).toHaveLength(5);
+		expect(left.filter((f) => f.startsWith('mineshell-2000'))).toHaveLength(4);
 	});
 });

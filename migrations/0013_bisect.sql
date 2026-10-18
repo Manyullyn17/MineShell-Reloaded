@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- The mod bisect assistant (bisect.ts): when a search ran on a server, so the
 -- runs it started are marked as tests (server_runs.bisect) and kept out of
 -- crash history and start times.

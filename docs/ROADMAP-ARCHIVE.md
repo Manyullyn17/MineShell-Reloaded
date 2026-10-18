@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Release history and downgrades
+
+Built 2026-10-18 (Settings > Updates; ARCHITECTURE, "Updating itself"), the user's idea of the
+same day: every release with its notes, and going back to an older one, mainly to step back
+from a release that brought a problem. Decisions (user's calls): the database stays as it is
+(a backup is taken before every install, restored only by hand); a migration an older version
+cannot work with refuses going back past it, with no override; every downgrade warns that it
+can cause problems, and one before 0.24.0 that the list and picking a version are gone from
+there. Releases have no pre-releases, so none are listed. Tried on the throwaway dev server
+against GitHub's real releases (with faked install variables): the list, 0.23.0 offered with
+its warnings, 0.12.0 refused for 0019_users, phone width. A real downgrade only in tests.
+
 ### Previewing a prune on the map
 
 Built 2026-10-18 (World > Prune chunks; ARCHITECTURE, "Worlds"), the user's flow: analyse the

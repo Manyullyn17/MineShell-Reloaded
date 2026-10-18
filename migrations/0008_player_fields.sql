@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Fields someone mapped onto a path in a player's NBT (a mod's mana, a quest
 -- counter), shown in the player editor for every player of the server.
 -- path is a JSON array of compound keys and list indices; kind is how the

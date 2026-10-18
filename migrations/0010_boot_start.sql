@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- What MineShell does with a server after the computer starts (bootstart.ts):
 -- if-running | always | never. wanted_running: the last thing asked of the
 -- server was a start (start, restart) rather than a stop; a crash leaves it.

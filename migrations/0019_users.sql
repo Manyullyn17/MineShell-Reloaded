@@ -1,3 +1,4 @@
+-- downgrade: unsafe - moves the admin password into users; an older MineShell finds none and cannot sign anyone in
 -- Accounts (auth.ts). One is the owner: it cannot be deleted, demoted or
 -- disabled, which the triggers enforce below the app too. Its id, not its
 -- name, is what identifies it.

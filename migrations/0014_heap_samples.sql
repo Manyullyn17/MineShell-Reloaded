@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Memory advice (memoryadvice.ts): how much of the Java heap a running server
 -- uses, read once a minute through the JVM's attach socket (heap.ts). The
 -- cgroup memory in resource_samples cannot say: Java keeps heap it no longer

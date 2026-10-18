@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- Files MineShell downloaded with a known hash (filecache.ts): a later download
 -- of the same content copies one of them instead, after checking its hash.
 CREATE TABLE downloaded_files (

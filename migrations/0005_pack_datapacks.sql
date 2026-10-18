@@ -1,3 +1,4 @@
+-- downgrade: safe
 -- The data packs the installed pack version put into the world's datapacks/
 -- folder (JSON array of names), so a pack version change knows which ones the
 -- pack owns - and can remove those the new version dropped - without touching

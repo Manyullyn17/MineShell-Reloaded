@@ -281,14 +281,31 @@ rename and the running process keeps its open files; DEPLOYMENT.md has the rest.
 Updating itself (`selfupdate.ts`, Settings > Updates): the installer writes
 `MINESHELL_INSTALL_HOME/CONFIG/SERVICE` into the service's environment, and only with those
 does MineShell offer to update (a source checkout updates with git). The check reads
-GitHub's `releases/latest` (never drafts or pre-releases) every 12 hours, keeping the answer
-in `settings` (`update.check`). The update downloads the archive, checks it against the
+GitHub's release list (drafts and pre-releases left out; the highest version is the latest)
+every 12 hours, keeping the answer in `settings` (`update.check`): the latest, and every
+release that has its archive, which Settings > Updates lists with their notes. The update downloads the archive, checks it against the
 published SHA-256, takes `install.sh` out of that archive and runs it with `systemd-run
 --user` as a transient unit (`<service>-update-<ms>`): the installer restarts MineShell,
 which kills its own children. `update.run` records it before it starts; the restarted
 MineShell settles it as done when it runs the new version, and the running one as failed
 (with the unit's journal) once that unit has ended without a restart. It refuses while a
-task or a journalled operation runs: the restart would leave those to recovery.
+task or a journalled operation runs: the restart would leave those to recovery. Before the
+installer runs, the database is copied (SQLite's online backup) to `$DATA/db-backups/`,
+newest five kept.
+
+Going back to an older release (`startDowngrade`) is the same install with the older archive
+and its own installer (whose environment variables have not changed since 0.13). Migrations
+only go forward and the older version runs on the database as it is: it skips `_migrations`
+rows it does not know, and Drizzle's selects name their columns, so added tables and columns
+go unnoticed. Each migration's first line says whether that holds for it (`-- downgrade:
+safe` or `-- downgrade: unsafe - <why>`; no line counts as unsafe, and a test requires the
+line). `planDowngrade` asks GitHub for the target tag's `migrations/` list; applied ones it
+lacks are read from this version's own files (or GitHub's, for ones a newer release applied
+before going back once) and any unsafe one refuses. Only 0019_users is unsafe: it moves the
+admin password into `users`, so nothing before 0.13 can be gone back to. The backup is not
+restored by MineShell (servers made since would be missing from it); DEPLOYMENT says how by
+hand. Releases before 0.24.0 (`HISTORY_SINCE`) have no list: from there only "update to the
+latest" or the installer with `MINESHELL_VERSION`.
 
 Tables: `server_instances`, `mods`, `instance_mods`, `instance_datapacks`,
 `resource_samples`, `java_runtimes`, `settings`, `scheduled_commands`, `operations`,
