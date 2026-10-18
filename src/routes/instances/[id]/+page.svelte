@@ -32,6 +32,7 @@
 	const disk = streamed(() => data.disk, key);
 	const sparkInfo = streamed(() => data.spark, key);
 	const spark = $derived(sparkInfo.ready ? sparkInfo.value : null);
+	const adviceInfo = streamed(() => data.memoryAdvice, key);
 
 	// A server installed from a pack gets the pack's icon (what Prism shows), the first time
 	// it is opened without one; scaled here, since the browser decodes every format.
@@ -385,13 +386,12 @@
 					/>
 				{/if}
 			</div>
-			{#await data.memoryAdvice then advice}
-				{#if advice}
-					<div class="memory-advice">
-						<MemoryAdvice {advice} settingsHref="/instances/{data.instance.id}/settings?tab=java" />
-					</div>
-				{/if}
-			{/await}
+			<!-- Only advice that says something: the others draw nothing here, and an empty box still has its margin. -->
+			{#if adviceInfo.ready && (adviceInfo.value?.kind === 'more' || adviceInfo.value?.kind === 'less')}
+				<div class="memory-advice">
+					<MemoryAdvice advice={adviceInfo.value} settingsHref="/instances/{data.instance.id}/settings?tab=java" />
+				</div>
+			{/if}
 		</section>
 
 		{#if data.running}
