@@ -59,9 +59,18 @@
 	const protect = new SvelteSet<string>();
 
 	// Following the analysis under way, on the same stream as the notification center. Its id comes
-	// from the server, so it shows again when the page is opened during one.
+	// from the action's answer (the page's data reloads later), or from the server's data when the
+	// page is opened during one.
 	let task = $state<TaskState | null>(untrack(() => analysing?.task ?? null));
-	const followed = $derived(analysing?.taskId ?? null);
+	/** Clicked, the answer not back yet; then the task the action started, until the page has its result. */
+	let submitting = $state(false);
+	let startedTask = $state<string | null>(null);
+	let analysedBefore: number | null = null;
+	const followed = $derived(startedTask ?? analysing?.taskId ?? null);
+	$effect(() => {
+		// The new analysis is in the page's data: the map takes over.
+		if (startedTask && (analysis?.at ?? null) !== analysedBefore) startedTask = null;
+	});
 	$effect(() => {
 		const taskId = followed;
 		task = untrack(() => analysing?.task ?? null);
@@ -75,7 +84,7 @@
 		return () => source.close();
 	});
 	// The page reloads when the task finishes; until its data has the result, the button stays off.
-	const inProgress = $derived(!!followed && task?.state !== 'failed' && task?.state !== 'cancelled');
+	const inProgress = $derived(submitting || (!!followed && task?.state !== 'failed' && task?.state !== 'cancelled'));
 
 	// The analysis's chunks, fetched when there is one of this dimension.
 	const current = $derived(analysis && analysis.dimension === dimension ? analysis : null);
@@ -205,7 +214,18 @@
 	<form
 		method="POST"
 		action="?/pruneAnalyse"
-		use:enhance={() => async ({ update }) => update({ reset: false })}
+		use:enhance={() => {
+			submitting = true;
+			analysedBefore = analysis?.at ?? null;
+			return async ({ result, update }) => {
+				if (result.type === 'success' && typeof result.data?.taskId === 'string') {
+					task = null;
+					startedTask = result.data.taskId;
+				}
+				submitting = false;
+				await update({ reset: false });
+			};
+		}}
 	>
 		<input type="hidden" name="dimension" value={dimension} />
 		<button type="submit" class={current ? '' : 'button-primary'} disabled={busy || inProgress}>

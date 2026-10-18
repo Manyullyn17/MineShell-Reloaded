@@ -288,9 +288,8 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		try {
-			// Its progress shows by the button (PruneMap, from the page's data), not as a message.
-			await analysePrunable(instance, String(form.get('dimension') ?? ''));
-			return { ok: true };
+			// Its progress shows by the button (PruneMap follows the task at once), not as a message.
+			return { ok: true, taskId: await analysePrunable(instance, String(form.get('dimension') ?? '')) };
 		} catch (err) {
 			return refused(err);
 		}

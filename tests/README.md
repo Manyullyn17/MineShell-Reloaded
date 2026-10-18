@@ -345,3 +345,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Data pack updates: newer releases of browser-installed packs, file swapped, hand-added ones left out; a loaded world-generation pack only stopped, after a snapshot | `flows/datapack-updates.test.ts` |
 | (feature) Earlier downloads with the same hash copied instead of fetched; never a file changed since, never by name, never without a hash | `server/filecache.test.ts` |
 | (feature) The same mod twice: enabled jars sharing a declared mod id, not disabled copies, template ids or dependency blocks | `crashdiag/crashdiag.test.ts` |
+| Pruning's Analyse button showed nothing until a manual reload: reading a region awaited only microtasks, so the page's data reload waited behind the analysis (seconds per region) | `flows/chunk-prune.test.ts` ("lets other requests in") |
+| A second analysis of the same server could start while one ran: the check came after an await | `flows/chunk-prune.test.ts` ("reports the analysis under way") |
+| (feature) Prune from an analysis: only chunks it marked and the user did not protect, still under the threshold on disk; an older analysis refused | `flows/chunk-prune.test.ts`, `shared/chunkprune.test.ts` |
+| 1.21.9+ worlds: the spawn radius kept nothing, Restore chunks opened at 0,0 (spawn moved to Data.spawn.pos) | `flows/chunk-prune.test.ts` ("reads the spawn") |

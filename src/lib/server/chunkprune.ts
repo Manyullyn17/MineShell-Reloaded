@@ -66,6 +66,14 @@ async function chunkTicks(dir: string, file: Buffer, region: [number, number], l
 	}
 }
 
+/**
+ * Lets other requests in: reading a chunk awaits only microtasks once its
+ * file is in memory, so a region would hold the one thread every request
+ * shares for up to a second (the page waited seconds to learn an analysis had
+ * started). As the chunk map does, after every chunk.
+ */
+const breathe = () => new Promise((resolve) => setImmediate(resolve));
+
 const regionFiles = async (dir: string) =>
 	(await fs.readdir(dir).catch(() => [] as string[])).filter((n) => REGION_NAME.test(n)).sort();
 
@@ -85,6 +93,7 @@ export async function analyseRegions(base: string, progress?: (done: number, tot
 		const ticks = new Uint32Array(1024).fill(NO_CHUNK);
 		const sectors = new Uint16Array(1024);
 		for (const loc of locations(file.subarray(0, HEADER))) {
+			await breathe();
 			const t = await chunkTicks(dir, file, region, loc);
 			ticks[loc.index] = t === null ? UNREADABLE : Math.min(Math.max(0, t), UNREADABLE - 1);
 			sectors[loc.index] = Math.min(loc.sectors, 0xffff);
@@ -117,6 +126,7 @@ export async function planPrune(
 			plan.chunks++;
 			const [cx, cz] = chunkCoords(region, loc.index);
 			if (keptBySpawn(opts.keep, cx, cz) || (opts.allow && !opts.allow(cx, cz))) continue;
+			await breathe();
 			const ticks = await chunkTicks(dir, file, region, loc);
 			if (ticks === null) {
 				plan.unreadable++;

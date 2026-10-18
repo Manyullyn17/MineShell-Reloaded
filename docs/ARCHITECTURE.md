@@ -644,7 +644,9 @@ are drawn as grey squares. Item pictures turned off means no colours.
 InhabitedTime and size in one dimension (`analysePrunable`, read only, so also while the
 server runs) and keeps it in memory, one per server; one runs at a time per server (reserved
 before anything is awaited), and the page shows its task's progress by the button, from its own
-data on the first paint and then from the task stream; `/api/instances/[id]/prune-analysis`
+data on the first paint and then from the task stream (the action answers with the task's id,
+so a click does not wait for the page's data to reload). Reading yields after every chunk, as the
+chunk map does: a region is up to a second of parsing, and the page's requests wait behind it; `/api/instances/[id]/prune-analysis`
 sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
 chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
 chunks the threshold and spawn radius pick, the error colour, worked out in the browser on

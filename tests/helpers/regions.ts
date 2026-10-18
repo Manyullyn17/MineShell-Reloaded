@@ -12,7 +12,16 @@ import { parseNbt, writeNbt, type Tag } from '#lib/server/nbt.js';
 
 const SECTOR = 4096;
 
-export type ChunkSpec = { index: number; ticks?: number; legacy?: boolean; compression?: number; external?: boolean; pad?: number };
+export type ChunkSpec = {
+	index: number;
+	ticks?: number;
+	legacy?: boolean;
+	compression?: number;
+	external?: boolean;
+	pad?: number;
+	/** Small compounds to parse, as a real chunk's sections and block entities make it slow to read. */
+	busy?: number;
+};
 
 /** A chunk's NBT: 1.18+ keeps InhabitedTime at the top, 1.12-1.17 under Level. */
 function chunkNbt(spec: ChunkSpec): Buffer {
@@ -20,6 +29,10 @@ function chunkNbt(spec: ChunkSpec): Buffer {
 		['InhabitedTime', { type: 'long', value: BigInt(spec.ticks ?? 0) }],
 		['Padding', { type: 'byteArray', value: new Array(spec.pad ?? 0).fill(1) }]
 	];
+	if (spec.busy) {
+		const entry = (n: number): Tag => ({ type: 'compound', value: [['x', { type: 'int', value: n }], ['id', { type: 'string', value: `minecraft:stone_${n}` }]] });
+		fields.push(['Busy', { type: 'list', itemType: 'compound', value: Array.from({ length: spec.busy }, (_, n) => entry(n)) } as Tag]);
+	}
 	const root: Tag = spec.legacy
 		? { type: 'compound', value: [['Level', { type: 'compound', value: fields }]] }
 		: { type: 'compound', value: [['DataVersion', { type: 'int', value: 3955 }], ...fields] };

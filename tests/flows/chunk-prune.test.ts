@@ -99,6 +99,31 @@ describe('chunk pruning', () => {
 		expect(region.sectors[1]).toBe(0);
 	});
 
+	it('lets other requests in while it reads a region', async () => {
+		const root = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		const base = path.join(root.path, 'world');
+		await writeRegion(path.join(base, 'region'), 0, 0, Array.from({ length: 300 }, (_, index) => ({ index, busy: 2000 })));
+		// Reading a region awaited only microtasks: nothing else ran until the next file, and the
+		// page waited seconds to learn an analysis had started. The longest wait is now a chunk's.
+		let longest = 0;
+		let last = performance.now();
+		let done = false;
+		const turn = () => {
+			const now = performance.now();
+			longest = Math.max(longest, now - last);
+			last = now;
+			if (!done) setImmediate(turn);
+		};
+		setImmediate(turn);
+		const start = performance.now();
+		await analyseRegions(base);
+		const took = performance.now() - start;
+		done = true;
+		// The turn waiting behind the last stretch measures it.
+		await new Promise((resolve) => setImmediate(resolve));
+		expect(longest).toBeLessThan(took / 10);
+	});
+
 	it('analyses, then prunes into a partial snapshot that restores the chunks', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'server.properties': 'level-name=world\n' });
 		await writeRegion(path.join(instance.path, 'world', 'region'), 0, 0, [
