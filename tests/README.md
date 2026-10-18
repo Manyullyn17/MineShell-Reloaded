@@ -354,3 +354,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | "Snapshot now" was refused while the server ran, though scheduled snapshots copied running servers live | `flows/snapshot-schedule.test.ts` ("Snapshot now" on a running server) |
 | (feature) Recent crashes cleared from the overview only after a clean start, by hand or on their own after a one-click fix | `flows/history.test.ts` ("clears crashes") |
 | (feature) Exported packs list the server in the game's multiplayer list (servers.dat) in each format's game folder | `flows/pack-export.test.ts` ("multiplayer list") |
+| (feature) Roofs on the chunk map: found by height whatever they are made of, the floor under the first open space, walls, missing sections as air; not superflat or oceans; dimensions open where their chunks are | `server/chunkmap.test.ts` ("below a roof"), `shared/chunkmap.test.ts` |

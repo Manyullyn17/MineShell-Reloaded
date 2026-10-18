@@ -179,6 +179,9 @@ What the built entries in the archive left out, in one place:
 - **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; an install
   or pack change cancelled stops downloading but still finishes, with the rest listed as
   missing (no rollback to before it).
+- **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
+  few columns under the roof shows its surface; a free height slider (caves anywhere) was
+  talked about, 2026-10-18, not built.
 - **Pruning chunks**: protection is per prune (named areas every prune skips were talked
   about, 2026-10-17, not built); the analysis lives in memory, so a MineShell restart means
   analysing again; decompression is now most of an analysis (~20 s for 500 regions) and

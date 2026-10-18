@@ -15,6 +15,8 @@ import { chunkMapFolder } from '#lib/server/world.js';
  * (lib/shared/chunkmap.ts reads it). Binary, gzipped:
  * a little-endian u32 length, that much JSON (padded to 4 bytes), then the
  * block indices (u16), heights (i16) and water depths (u8), row by row.
+ * Under a roof (the Nether's, a mod dimension's) the columns are what is below
+ * it, unless `view=surface` asks for the roof and anything built on it.
  */
 export const GET: RequestHandler = async ({ params, url, locals }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
@@ -29,7 +31,8 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	const full = await regionColumns(instance.id, path.join(folder.base, 'region'), regionName(x, z), legacy ? await legacyBlockIds(folder.worldDir) : null);
 	if (!full) return new Response(null, { status: 204 });
 	// `size=64`: the zoomed-out picture, an eighth of the columns each way (about 20 KB instead of 1.3 MB).
-	const columns = url.searchParams.get('size') === '64' ? shrinkColumns(full, 8) : { ...full, size: 512 };
+	const sized = url.searchParams.get('size') === '64' ? shrinkColumns(full, 8) : { ...full, size: 512 };
+	const columns = sized.under && url.searchParams.get('view') !== 'surface' ? { ...sized, ...sized.under } : sized;
 	// Pictures turned off in MineShell's settings: names from the ids, no colours.
 	let info: Record<string, BlockInfo> = {};
 	let vanilla = false;
@@ -42,6 +45,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		blocks: columns.keys.map((key) => ({ key, name: info[key]?.name ?? null, color: info[key]?.color ?? null })),
 		unreadable: columns.unreadable,
 		bare: columns.bare,
+		roof: columns.roof,
 		size: columns.size,
 		vanilla
 	});

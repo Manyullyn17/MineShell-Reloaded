@@ -31,8 +31,8 @@ import { HEADER, locations, presentChunks, readChunk, REGION_NAME, regionOf } fr
 const CACHE = path.join(CACHE_DIR, 'chunkmap');
 const SIZE = 512;
 const AREA = SIZE * SIZE;
-/** Bumped when the cached format changes (2: `bare`). */
-const CACHE_VERSION = 2;
+/** Bumped when the cached format changes (2: `bare`; 3: `roof` and `under`). */
+const CACHE_VERSION = 3;
 
 // ------------------------------------------------------------- overview ---
 
@@ -241,8 +241,8 @@ function legacySection(sec: Tag, ids: Map<number, string>): Section | null {
 	return { y, block: (i) => named((((a ? nibble(a, i) : 0) << 8) | (b[i] & 255)) * 16 + (d ? nibble(d, i) : 0)) };
 }
 
-/** The 256 column tops of one chunk (index z*16 + x); null when it has no block data. */
-export function chunkTops(root: Tag, legacyIds: Map<number, string> | null): (Top | null)[] | null {
+/** A chunk's sections, highest first, and what counts as a block to draw; null without block data. */
+function chunkSections(root: Tag, legacyIds: Map<number, string> | null): { sections: Section[]; visible: (key: string) => boolean } | null {
 	const level = child(root, 'Level');
 	const list = child(root, 'sections') ?? child(level, 'Sections');
 	if (list?.type !== 'list') return null;
@@ -254,6 +254,14 @@ export function chunkTops(root: Tag, legacyIds: Map<number, string> | null): (To
 		.filter((s): s is Section => !!s)
 		.sort((a, b) => b.y - a.y);
 	const visible = modern ? (k: string) => !INVISIBLE.has(k) : (k: string) => k !== 'minecraft:air';
+	return { sections, visible };
+}
+
+/** The 256 column tops of one chunk (index z*16 + x); null when it has no block data. */
+export function chunkTops(root: Tag, legacyIds: Map<number, string> | null): (Top | null)[] | null {
+	const read = chunkSections(root, legacyIds);
+	if (!read) return null;
+	const { sections, visible } = read;
 	const tops: (Top | null)[] = new Array(256).fill(null);
 	for (let col = 0; col < 256; col++) {
 		let top: Top | null = null;
@@ -274,6 +282,61 @@ export function chunkTops(root: Tag, legacyIds: Map<number, string> | null): (To
 	return tops;
 }
 
+/** Tuning for the view below a roof; tests and the prototype change it. */
+export const roofTuning = {
+	/** Share of a region's columns whose first solid block must be at one height for it to count as a roof. */
+	share: 0.6,
+	/** Open spaces shorter than this (air pockets in the roof's mass) are passed through, not taken as the floor. */
+	minGap: 1,
+	/** Share of the roof's columns that must have a floor under it: superflat worlds have none. */
+	floors: 0.2
+};
+
+/**
+ * What a column looks like below a roof at `roofY` (the Nether's at 127, a mod's
+ * dimension with bedrock top and bottom): down through solid blocks, whatever
+ * they are (bedrock, the netherrack under it), to the first open space at least
+ * minGap tall, and the first block under it - the floor one walks on. A column
+ * with no such space shows the block right under the roof (a wall up to it).
+ * Missing sections are air. `floor` says whether an open space was found.
+ */
+export function chunkUnderRoof(root: Tag, legacyIds: Map<number, string> | null, roofY: number, minGap: number): ({ top: Top; floor: boolean } | null)[] | null {
+	const read = chunkSections(root, legacyIds);
+	if (!read) return null;
+	const { sections, visible } = read;
+	const byY = new Map(sections.map((s) => [s.y, s]));
+	const lowest = sections.length ? sections[sections.length - 1].y * 16 : 0;
+	const at = (col: number, y: number) => {
+		const s = byY.get(Math.floor(y / 16));
+		return s ? s.block((((y % 16) + 16) % 16) * 256 + col) : 'minecraft:air';
+	};
+	const out: ({ top: Top; floor: boolean } | null)[] = new Array(256).fill(null);
+	for (let col = 0; col < 256; col++) {
+		let y = roofY;
+		let found: Top | null = null;
+		while (y >= lowest && !found) {
+			// Through the roof's mass.
+			while (y >= lowest && visible(at(col, y))) y--;
+			const gapTop = y;
+			while (y >= lowest && !visible(at(col, y))) y--;
+			if (y < lowest) break;
+			if (gapTop - y < minGap) continue;
+			const key = at(col, y);
+			found = { key, y, depth: 0 };
+			if (isWater(key)) {
+				for (let d = y - 1; d >= lowest && isWater(at(col, d)); d--) found.depth++;
+			}
+		}
+		if (found) {
+			out[col] = { top: found, floor: true };
+			continue;
+		}
+		const under = at(col, roofY - 1);
+		if (visible(under)) out[col] = { top: { key: under, y: roofY - 1, depth: 0 }, floor: false };
+	}
+	return out;
+}
+
 // ----------------------------------------------------------- a region ---
 
 export type RegionColumns = {
@@ -291,7 +354,14 @@ export type RegionColumns = {
 	 * world's chunks: drawn faintly, so the map keeps the shape of what is on disk.
 	 */
 	bare: Record<number, string>;
+	/** The height of a roof over the region (the Nether's, a mod dimension's), when it has one. */
+	roof: number | null;
+	/** With a roof: what is below it, column by column (chunkUnderRoof), drawn instead of the roof. */
+	under: Layer | null;
 };
+
+/** One picture's columns: block index plus one (0 = nothing), height, water depth. */
+type Layer = { blocks: Uint16Array; heights: Int16Array; depths: Uint8Array };
 
 /** A chunk's generation status: Status at the top from 1.18, Level.Status before ('' without one). */
 function chunkStatus(root: Tag): string {
@@ -306,15 +376,41 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 	if (!region || !file || file.length < HEADER) return null;
 	const keys: string[] = [];
 	const keyIndex = new Map<string, number>();
-	const out: RegionColumns = { keys, blocks: new Uint16Array(AREA), heights: new Int16Array(AREA), depths: new Uint8Array(AREA), unreadable: [], bare: {} };
-	for (const [n, loc] of locations(file.subarray(0, HEADER)).entries()) {
-		// A region is about a second of work on the one thread every request shares: let them in after each chunk.
-		if (n) await new Promise((resolve) => setImmediate(resolve));
+	const out: RegionColumns = {
+		keys,
+		blocks: new Uint16Array(AREA),
+		heights: new Int16Array(AREA),
+		depths: new Uint8Array(AREA),
+		unreadable: [],
+		bare: {},
+		roof: null,
+		under: null
+	};
+	const put = (layer: Layer, index: number, col: number, top: Top) => {
+		let k = keyIndex.get(top.key);
+		if (k === undefined) {
+			k = keys.length;
+			keys.push(top.key);
+			keyIndex.set(top.key, k);
+		}
+		const at = (Math.floor(index / 32) * 16 + (col >> 4)) * SIZE + (index % 32) * 16 + (col & 15);
+		layer.blocks[at] = k + 1;
+		layer.heights[at] = top.y;
+		layer.depths[at] = Math.min(255, top.depth);
+	};
+	const chunks = locations(file.subarray(0, HEADER));
+	// A region is about a second of work on the one thread every request shares: let them in after each chunk.
+	const breathe = () => new Promise((resolve) => setImmediate(resolve));
+	const parse = async (loc: (typeof chunks)[number]) => {
 		const data = await readChunk(dir, file, region, loc);
+		return data ? parseNbt(data).root : null;
+	};
+	for (const loc of chunks) {
+		await breathe();
 		let tops: (Top | null)[] | null = null;
 		let root: Tag | null = null;
 		try {
-			root = data ? parseNbt(data).root : null;
+			root = await parse(loc);
 			// A chunk generated only partway can have no sections yet: nothing to draw, not unreadable.
 			tops = root ? (chunkTops(root, legacyIds) ?? new Array(256).fill(null)) : null;
 		} catch {
@@ -328,37 +424,74 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 			out.bare[loc.index] = chunkStatus(root);
 			continue;
 		}
-		const ox = (loc.index % 32) * 16;
-		const oz = Math.floor(loc.index / 32) * 16;
-		for (let col = 0; col < 256; col++) {
-			const top = tops[col];
-			if (!top) continue;
-			let k = keyIndex.get(top.key);
-			if (k === undefined) {
-				k = keys.length;
-				keys.push(top.key);
-				keyIndex.set(top.key, k);
-			}
-			const at = (oz + (col >> 4)) * SIZE + ox + (col & 15);
-			out.blocks[at] = k + 1;
-			out.heights[at] = top.y;
-			out.depths[at] = Math.min(255, top.depth);
+		for (let col = 0; col < 256; col++) if (tops[col]) put(out, loc.index, col, tops[col]!);
+	}
+	// A roof: the view below it takes a second pass, only for regions that have one.
+	const roofY = roofHeight(out);
+	if (roofY === null) return out;
+	const under: Layer = { blocks: new Uint16Array(AREA), heights: new Int16Array(AREA), depths: new Uint8Array(AREA) };
+	let columns = 0;
+	let floors = 0;
+	for (const loc of chunks) {
+		if (out.unreadable.includes(loc.index) || loc.index in out.bare) continue;
+		await breathe();
+		let cols: ReturnType<typeof chunkUnderRoof> = null;
+		try {
+			const root = await parse(loc);
+			cols = root ? chunkUnderRoof(root, legacyIds, roofY, roofTuning.minGap) : null;
+		} catch {
+			cols = null;
 		}
+		for (let col = 0; col < 256; col++) {
+			const c = cols?.[col];
+			if (!c) continue;
+			columns++;
+			if (c.floor) floors++;
+			put(under, loc.index, col, c.top);
+		}
+	}
+	// Solid all the way down (superflat): a flat top, but nothing under it to show.
+	if (columns && floors / columns >= roofTuning.floors) {
+		out.roof = roofY;
+		out.under = under;
 	}
 	return out;
 }
 
+/**
+ * The height of a roof over this region, or null: the height most columns' first
+ * block is at, when that is at least roofTuning.share of them and not water (an
+ * ocean is flat on top too). Anything built on a roof is above it, so it does not count.
+ */
+function roofHeight(c: RegionColumns): number | null {
+	const counts = new Map<number, number>();
+	let total = 0;
+	const watery = c.keys.map((k) => isWater(k));
+	for (let i = 0; i < AREA; i++) {
+		const b = c.blocks[i];
+		if (!b) continue;
+		total++;
+		if (!watery[b - 1]) counts.set(c.heights[i], (counts.get(c.heights[i]) ?? 0) + 1);
+	}
+	let best: number | null = null;
+	let most = 0;
+	for (const [y, n] of counts) if (n > most) [best, most] = [y, n];
+	return best !== null && total && most / total >= roofTuning.share ? best : null;
+}
+
+const layerBytes = (l: Layer) => [Buffer.from(l.blocks.buffer), Buffer.from(l.heights.buffer), Buffer.from(l.depths.buffer)];
+
 function encodeColumns(c: RegionColumns): Buffer {
-	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable, bare: c.bare }));
+	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable, bare: c.bare, roof: c.roof }));
 	const len = Buffer.alloc(4);
 	len.writeUInt32LE(head.length);
-	return Buffer.concat([len, head, Buffer.from(c.blocks.buffer), Buffer.from(c.heights.buffer), Buffer.from(c.depths.buffer)]);
+	return Buffer.concat([len, head, ...layerBytes(c), ...(c.under ? layerBytes(c.under) : [])]);
 }
 
 function decodeColumns(buf: Buffer): RegionColumns | null {
 	try {
 		const len = buf.readUInt32LE(0);
-		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as { v: number; keys: string[]; unreadable: number[]; bare: Record<number, string> };
+		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as { v: number; keys: string[]; unreadable: number[]; bare: Record<number, string>; roof: number | null };
 		if (head.v !== CACHE_VERSION) return null;
 		let at = 4 + len;
 		const take = (bytes: number) => {
@@ -367,14 +500,9 @@ function decodeColumns(buf: Buffer): RegionColumns | null {
 			at += bytes;
 			return part.buffer;
 		};
-		return {
-			keys: head.keys,
-			unreadable: head.unreadable,
-			bare: head.bare,
-			blocks: new Uint16Array(take(AREA * 2)),
-			heights: new Int16Array(take(AREA * 2)),
-			depths: new Uint8Array(take(AREA))
-		};
+		const layer = (): Layer => ({ blocks: new Uint16Array(take(AREA * 2)), heights: new Int16Array(take(AREA * 2)), depths: new Uint8Array(take(AREA)) });
+		const top = layer();
+		return { keys: head.keys, unreadable: head.unreadable, bare: head.bare, roof: head.roof, ...top, under: head.roof !== null ? layer() : null };
 	} catch {
 		return null;
 	}
@@ -407,17 +535,20 @@ async function inTurn<T>(work: () => Promise<T>): Promise<T> {
  */
 export function shrinkColumns(c: RegionColumns, factor: number): RegionColumns & { size: number } {
 	const size = SIZE / factor;
-	const out = { keys: c.keys, unreadable: c.unreadable, bare: c.bare, size, blocks: new Uint16Array(size * size), heights: new Int16Array(size * size), depths: new Uint8Array(size * size) };
-	for (let z = 0; z < size; z++) {
-		for (let x = 0; x < size; x++) {
-			// The middle of each cell: its edges are chunk borders, often the least typical column.
-			const from = (z * factor + (factor >> 1)) * SIZE + x * factor + (factor >> 1);
-			out.blocks[z * size + x] = c.blocks[from];
-			out.heights[z * size + x] = c.heights[from];
-			out.depths[z * size + x] = c.depths[from];
+	const shrink = (l: Layer): Layer => {
+		const out = { blocks: new Uint16Array(size * size), heights: new Int16Array(size * size), depths: new Uint8Array(size * size) };
+		for (let z = 0; z < size; z++) {
+			for (let x = 0; x < size; x++) {
+				// The middle of each cell: its edges are chunk borders, often the least typical column.
+				const from = (z * factor + (factor >> 1)) * SIZE + x * factor + (factor >> 1);
+				out.blocks[z * size + x] = l.blocks[from];
+				out.heights[z * size + x] = l.heights[from];
+				out.depths[z * size + x] = l.depths[from];
+			}
 		}
-	}
-	return out;
+		return out;
+	};
+	return { keys: c.keys, unreadable: c.unreadable, bare: c.bare, roof: c.roof, size, ...shrink(c), under: c.under ? shrink(c.under) : null };
 }
 
 /**

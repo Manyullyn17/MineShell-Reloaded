@@ -147,6 +147,7 @@
 		}
 		untrack(() => {
 			summaries = next;
+			roofed = false;
 			details.clear();
 			small.clear();
 			loading.clear();
@@ -160,9 +161,27 @@
 		if (!jump) return;
 		viewX = jump.x;
 		viewZ = jump.z;
-		scale = Math.max(scale, 2);
+		if (jump.zoom !== false) scale = Math.max(scale, 2);
 		untrack(redraw);
 	});
+
+	/**
+	 * Under a roof (the Nether's, a mod dimension's: regionColumns finds it) regions show
+	 * what is below it; `surface` asks for the roof and what is built on it instead.
+	 * The switch shows once a region with a roof has loaded.
+	 */
+	let surface = $state(false);
+	let roofed = $state(false);
+	function setSurface(on: boolean) {
+		if (surface === on) return;
+		surface = on;
+		details.clear();
+		small.clear();
+		loading.clear();
+		failed.clear();
+		generation++;
+		redraw();
+	}
 
 	// Turning the terrain or the layer on or off, or a new layer, redraws.
 	$effect(() => {
@@ -191,7 +210,8 @@
 			loading.add(key);
 			const url = regionUrl;
 			if (!url) break;
-			fetch(kind === 'full' ? url(x, z) : `${url(x, z)}&size=64`)
+			const view = surface ? '&view=surface' : '';
+			fetch(kind === 'full' ? `${url(x, z)}${view}` : `${url(x, z)}&size=64${view}`)
 				.then(async (res) => {
 					if (gen !== generation) return;
 					if (res.status === 204 || !res.ok) {
@@ -206,6 +226,7 @@
 					// Drawn into the canvas: the pixels need not be kept twice.
 					detail.image = null;
 					store.set(at, { detail, picture });
+					if (detail.roof !== null) roofed = true;
 					const keep = kind === 'full' ? KEEP_DETAILS : KEEP_SMALL;
 					while (store.size > keep) store.delete(store.keys().next().value!);
 					tick++;
@@ -641,6 +662,12 @@
 			redraw();
 		}}
 	></canvas>
+	{#if roofed && regionUrl}
+		<div class="roof" role="group" aria-label="Under a roof">
+			<button type="button" class="button-quiet" aria-pressed={!surface} class:on={!surface} onclick={() => setSurface(false)}>Below the roof</button>
+			<button type="button" class="button-quiet" aria-pressed={surface} class:on={surface} onclick={() => setSurface(true)}>Roof surface</button>
+		</div>
+	{/if}
 	<div class="zoom">
 		<button type="button" class="button-quiet" aria-label="Zoom in" onclick={() => zoom(1.6)}>+</button>
 		<button type="button" class="button-quiet" aria-label="Zoom out" onclick={() => zoom(1 / 1.6)}>−</button>
@@ -703,6 +730,27 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	.roof {
+		position: absolute;
+		left: 0.5rem;
+		bottom: 0.5rem;
+		display: flex;
+		gap: 2px;
+	}
+
+	.roof button {
+		padding: 0.2rem 0.55rem;
+		background: var(--panel);
+		border: 1px solid var(--line-strong);
+		font-size: 0.8rem;
+	}
+
+	.roof button.on {
+		color: var(--accent-contrast);
+		background: var(--accent);
+		border-color: var(--accent);
 	}
 
 	.zoom button {

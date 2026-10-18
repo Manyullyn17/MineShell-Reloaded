@@ -649,6 +649,20 @@ are drawn as grey squares; chunks with nothing to draw (from 1.18 a ring generat
 status structure_starts, biomes and the like, surrounds everything loaded: a third of irithyll's
 chunks) faintly, with their status in the tooltip, so a region keeps its placeholder's shape. Item pictures turned off means no colours.
 
+**Roofs** (the Nether's, mod dimensions' with bedrock top and bottom) are found from the
+heights, never by block or dimension: a region whose columns' first block is at one height for
+at least 60% of them (not water: an ocean is flat too) gets a second pass (`chunkUnderRoof`):
+down through solid blocks, whatever they are (MeatballCraft's Nether roof is often netherrack,
+the Deep Dark's three layers of bedrock and stone under them, Arcana's one bedrock layer), to the
+first open space, and the first block under it. A column solid to the bottom (a dungeon's wall)
+shows the block under the roof. Kept only when a fifth of the columns have such a floor
+(superflat is flat on top and solid below). The map shows that view under a roof, with a switch
+to the roof's surface (`view=surface`: what is built on top). Open spaces of every size count:
+ignoring ones under 4 blocks (pockets in the roof's mass) also hid the Nether fortresses'
+corridors and changed little else, compared on MeatballCraft's Nether (2026-10-18). A dimension
+other than the overworld opens on the region with the most chunks (`busiestRegion`): a mod's
+can have two chunks near 0,0 and the rest kilometres away.
+
 **Pruning** (`chunkprune.ts`, `PruneMap.svelte`, rules shared with the browser in
 `lib/shared/chunkprune.ts`) starts with an analysis: a task reads every chunk's
 InhabitedTime and size in one dimension (`analysePrunable`, read only, so also while the

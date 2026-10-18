@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { chunkTops, readRegionColumns, regionOverview, shrinkColumns, type RegionColumns } from './chunkmap';
+import { chunkTops, chunkUnderRoof, readRegionColumns, regionOverview, roofTuning, shrinkColumns, type RegionColumns } from './chunkmap';
 import { writeRegion } from '../../../tests/helpers/regions';
 import { decodePng } from './png';
 import type { Tag } from './nbt';
@@ -134,6 +134,67 @@ describe('chunk map: top blocks', () => {
 	});
 });
 
+/**
+ * A 1.18+ chunk whose blocks depend only on height (and x, for walls): `at(y, x)` names the block.
+ * Sections that are all air are left out, as the game does.
+ */
+function layered(at: (y: number, x: number) => string, sectionsY: number[]): Compound {
+	const sections = sectionsY.map((sy) => {
+		const names: string[] = [];
+		const index = indices((x, y) => {
+			const name = at(sy * 16 + y, x);
+			if (!names.includes(name)) names.push(name);
+			return names.indexOf(name);
+		});
+		const palette = [...names, ...Array.from({ length: Math.max(0, 17 - names.length) }, (_, i) => `minecraft:pad_${i}`)];
+		return compound([['Y', byte(sy)], ['block_states', compound([['palette', list(palette.map(state))], ['data', { type: 'longArray', value: pack(index, 5, false) }]])]]);
+	});
+	return compound([['DataVersion', int(3955)], ['sections', list(sections.filter((sec) => {
+		const pal = (sec.value[1][1] as Compound).value[0][1] as Extract<Tag, { type: 'list' }>;
+		return pal.value.some((st) => !((st as Compound).value[0][1] as { value: string }).value.match(/air|pad_/));
+	}))]]);
+}
+
+describe('chunk map: below a roof', () => {
+	// A Nether in 32 blocks: roof at 31, its mass down to 20 with a 2-block pocket at 26-27, a cavern 10-19, a floor of stone.
+	const nether = (y: number) =>
+		y === 31 ? 'minecraft:bedrock' : y >= 28 ? 'minecraft:netherrack' : y >= 26 ? 'minecraft:air' : y >= 20 ? 'minecraft:netherrack' : y >= 10 ? 'minecraft:air' : 'minecraft:stone';
+
+	it('goes down through the roof, whatever it is made of, to the floor under the first open space', () => {
+		const root = layered(nether, [0, 1]);
+		expect(chunkUnderRoof(root, null, 31, 1)![0]).toEqual({ top: { key: 'minecraft:netherrack', y: 25, depth: 0 }, floor: true });
+		// Pockets shorter than minGap are passed through: the cavern's floor.
+		expect(chunkUnderRoof(root, null, 31, 3)![0]).toEqual({ top: { key: 'minecraft:stone', y: 9, depth: 0 }, floor: true });
+	});
+
+	it('shows a wall up to the roof by the block under it, and counts a missing section as air', () => {
+		// The roof (47) and section 2 solid, section 1 missing (all air, so not in the file), stone up to 15.
+		const root = layered((y) => (y === 47 ? 'minecraft:bedrock' : y >= 32 ? 'minecraft:netherrack' : y <= 15 ? 'minecraft:stone' : 'minecraft:air'), [0, 2]);
+		expect(chunkUnderRoof(root, null, 47, 1)![0]).toEqual({ top: { key: 'minecraft:stone', y: 15, depth: 0 }, floor: true });
+		// Solid from the roof to the bottom (a dungeon's wall): the block under the roof.
+		const solid = layered((y) => (y === 15 ? 'minecraft:bedrock' : 'minecraft:bricks'), [0]);
+		expect(chunkUnderRoof(solid, null, 15, 1)![0]).toEqual({ top: { key: 'minecraft:bricks', y: 14, depth: 0 }, floor: false });
+	});
+
+	it('finds a roof over a region, but not on a superflat world or an ocean', async () => {
+		const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'chunkmap-roof-'));
+		const region = async (at: (y: number) => string) => {
+			await writeRegion(dir, 0, 0, [0, 1, 2, 3].map((index) => ({ index, root: layered(at, [0, 1]) })));
+			return (await readRegionColumns(dir, 'r.0.0.mca', null))!;
+		};
+		const roofed = await region(nether);
+		expect(roofed.roof).toBe(31);
+		expect(roofed.keys[roofed.under!.blocks[0] - 1]).toBe('minecraft:netherrack');
+		expect(roofed.keys[roofed.blocks[0] - 1]).toBe('minecraft:bedrock');
+		// Flat on top too, but solid all the way down: nothing to show under it.
+		expect((await region((y) => (y <= 4 ? 'minecraft:grass_block' : 'minecraft:air'))).roof).toBeNull();
+		// Flat water, with air below would not be one either.
+		expect((await region((y) => (y >= 20 && y <= 25 ? 'minecraft:water' : y < 5 ? 'minecraft:sand' : 'minecraft:air'))).roof).toBeNull();
+		expect(roofTuning.minGap).toBe(1);
+		await fs.rm(dir, { recursive: true, force: true });
+	});
+});
+
 describe('chunk map: a region', () => {
 	it('tells chunks generated only partway from unreadable ones, with how far they got', async () => {
 		const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'chunkmap-'));
@@ -177,7 +238,7 @@ describe('chunk map: overview', () => {
 
 describe('chunk map: the zoomed-out picture', () => {
 	it('keeps the middle column of every 8x8 cell', () => {
-		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], bare: { 5: 'biomes' }, blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
+		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], bare: { 5: 'biomes' }, roof: null, under: null, blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
 		// Cell (1, 2) has its middle at x 12, z 20; the cell's corner is different and must not show.
 		full.blocks[20 * 512 + 12] = 2;
 		full.heights[20 * 512 + 12] = 70;
