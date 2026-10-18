@@ -17,6 +17,7 @@ built: ROADMAP-ARCHIVE):
 
 - **Next** (user's call, 2026-10-17), in this order: the status page, player stats
   (restoring chunks and pausing empty servers, first on the list, are built: ROADMAP-ARCHIVE).
+  The status page is parked on its open questions (2026-10-18), so player stats come first.
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -104,9 +105,34 @@ None of these depends on another.
 ### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
-the owner turns it on per server and ticks what it shows (online, player count and names,
-version or pack, address, TPS, maybe the client pack download, which makes it the join
-page).
+the owner turns it on per server and ticks what it shows. Parked (user's call, 2026-10-18)
+with the open questions below; the user is thinking them over.
+
+Proposal (not agreed):
+- **Where it lives**: (A) a path on MineShell's own port, `/status/<server>`: least work,
+  fine on the LAN or a tailnet, but sharing it on the internet exposes the panel, against
+  the LAN-only stance. (B, recommended) a second listener on its own port, off until turned
+  on in MineShell settings, that serves only the status pages (no login, forms or panel
+  routes): plain server-rendered HTML refreshed by a few lines of JS, safe to forward or
+  put behind a proxy. playit.gg's HTTP/TCP tunnels are premium, so a free account shares it
+  by port forward or Tailscale.
+- **Fields, ticked per server**: status (online / starting / offline / "sleeping, join to
+  wake it"; a crash only reads offline), MOTD with colours and the icon, player count; off
+  by default: player names with faces (privacy), TPS, uptime and the next scheduled restart.
+  On by default also version (Minecraft, loader, pack) and address (playit's, else typed in;
+  voice chat's too). An owner's notice in free text ("down for the update until 8 pm").
+- **Client pack download** (makes it the join page): the owner builds the export once (Mods
+  tab's export) and publishes it; the page serves that file with short join steps for Prism,
+  the CurseForge app and Modrinth, and says when the server's pack is newer than the export.
+  Never built per visit (heavy, and anyone could set it off).
+- **Details**: one URL per server plus an optional index of enabled ones; a ~15 s server-side
+  cache so visitors cause no RCON traffic; its own simple light/dark look, phone first.
+  Maybe a JSON of the same ticked fields beside each page (for a Discord bot or a website):
+  the page's own data, not the rejected REST API.
+- **Later**: a public map (BlueMap is behind the login), join history, player stats.
+
+Open questions: A or B; are those field defaults right (names off); client pack download
+in the first version or later; the JSON or not.
 
 ### Player stats
 
