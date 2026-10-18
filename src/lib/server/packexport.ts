@@ -13,6 +13,7 @@ import { serverWorldName } from './packworld';
 import { readForgeBackup } from './instances';
 import { openZipBuffer, type ZipArchive } from './zip';
 import { startTask, getTask, type TaskHandle } from './tasks';
+import { writeNbt } from './nbt';
 
 /**
  * A pack players import into their launcher, built from a server: Modrinth
@@ -188,7 +189,33 @@ export type ExportChoices = {
 	mods: string[];
 	/** Top-level entries to include. */
 	folders: string[];
+	/** Put in the game's multiplayer list (servers.dat), so players can join without typing the address. */
+	serverEntry: { name: string; address: string } | null;
 };
+
+/**
+ * The game's multiplayer list with one server: servers.dat in the game folder,
+ * uncompressed NBT ({servers: [{name, ip}]}), as every version since 1.3 reads it.
+ */
+export function serversDat(name: string, address: string): Buffer {
+	return writeNbt({
+		name: '',
+		gzipped: false,
+		root: {
+			type: 'compound',
+			value: [
+				[
+					'servers',
+					{
+						type: 'list',
+						itemType: 'compound',
+						value: [{ type: 'compound', value: [['name', { type: 'string', value: name }], ['ip', { type: 'string', value: address }]] }]
+					}
+				]
+			]
+		}
+	});
+}
 
 /** One file in the pack, by its path inside the game folder (e.g. mods/foo.jar). */
 type Entry = {
@@ -467,6 +494,12 @@ export async function buildExport(instance: ServerInstance, choices: ExportChoic
 				await downloadFile(entry.from.url, file, { hash: entry.from.sha1 ? { algo: 'sha1', value: entry.from.sha1 } : null });
 				zip.addFile(file, target);
 			}
+		}
+
+		// Unless the server folder had one of its own to ship.
+		if (choices.serverEntry && !seen.has('servers.dat')) {
+			zip.addBuffer(serversDat(choices.serverEntry.name, choices.serverEntry.address), `${root}/servers.dat`);
+			task.log(`Added ${choices.serverEntry.name} (${choices.serverEntry.address}) to the server list.`);
 		}
 
 		if (choices.format === 'mrpack') {

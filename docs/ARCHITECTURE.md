@@ -528,7 +528,10 @@ ones, which come back enabled; the folders ticked; and for a server installed fr
 provider pack, the pack's client-side files the server never got - mods the pack marks
 client-only (`env.server: unsupported` in a .mrpack, `clientonly` in the mirror's lists)
 and override files the server lacks (`client-overrides/`, options.txt, shaders). A pack mod
-missing on the server that is not client-only was removed on purpose and stays out. Files
+missing on the server that is not client-only was removed on purpose and stays out. With the
+server list ticked (the default), a `servers.dat` in the game folder (`overrides/`, Prism's
+`.minecraft/`) lists the server: uncompressed NBT `{servers: [{name, ip}]}`, the address
+prefilled with playit.gg's when the server has a tunnel, else the LAN one. Files
 are linked where the format can: Modrinth's CDN URL (found by the jar's sha512) in a
 .mrpack, whose spec allows only cdn.modrinth.com, GitHub and GitLab hosts; project and file
 id in a CurseForge manifest, which cannot say "disabled", so disabled mods are bundled as

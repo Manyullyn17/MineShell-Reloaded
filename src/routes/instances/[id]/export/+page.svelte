@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
 
@@ -17,6 +19,18 @@
 	let excludedMods = $state<Set<string> | null>(null);
 	let excludedFolders = $state<Set<string> | null>(null);
 	let submitting = $state(false);
+
+	// The server list: on by default, with the address players would type. playit's public address
+	// when the server has a tunnel (it comes in late), else this network's; typing one keeps it.
+	let serverList = $state(true);
+	let serverName = $state(untrack(() => data.instance.name));
+	let serverAddress = $state(untrack(() => data.lanAddress));
+	let addressTyped = false;
+	const publicInfo = streamed(() => data.publicAddress, () => data.instance.id);
+	const publicAddress = $derived(publicInfo.ready ? (publicInfo.value?.address ?? null) : null);
+	$effect(() => {
+		if (publicAddress && !addressTyped) serverAddress = publicAddress;
+	});
 
 	function prime(plan: Plan) {
 		if (excludedMods) return;
@@ -131,6 +145,46 @@
 		</section>
 
 		<section class="panel block">
+			<h3>Server list</h3>
+			<label class="check server-list">
+				<input type="checkbox" name="serverList" bind:checked={serverList} />
+				Add this server to the game's multiplayer list, so players can join without typing the address
+			</label>
+			{#if serverList}
+				<div class="grid-2">
+					<div class="field">
+						<label for="export-server-name">Name in the list</label>
+						<input id="export-server-name" name="serverName" bind:value={serverName} />
+					</div>
+					<div class="field">
+						<label for="export-server-address">Address</label>
+						<input
+							id="export-server-address"
+							name="serverAddress"
+							list="export-addresses"
+							bind:value={serverAddress}
+							oninput={() => (addressTyped = true)}
+							autocomplete="off"
+						/>
+						<datalist id="export-addresses">
+							{#if publicAddress}<option value={publicAddress}>playit.gg, from anywhere</option>{/if}
+							<option value={data.lanAddress}>This network only</option>
+						</datalist>
+					</div>
+				</div>
+				<p class="small muted">
+					{#if publicAddress && serverAddress === publicAddress}
+						The playit.gg address works from anywhere.
+					{:else if serverAddress === data.lanAddress}
+						This address works only on your own network{publicAddress ? '' : '; for friends elsewhere, give the address they use (a domain, your public IP, or a playit.gg tunnel)'}.
+					{:else}
+						Players' list gets this entry the first time they import the pack.
+					{/if}
+				</p>
+			{/if}
+		</section>
+
+		<section class="panel block">
 			<h3>Folders and files</h3>
 			<p class="small muted">The world, logs and the server's own files are never included.</p>
 			{#if plan.folders.length === 0}
@@ -232,6 +286,10 @@
 {/await}
 
 <style>
+	.server-list {
+		margin-bottom: var(--space-3);
+	}
+
 	.block {
 		padding: var(--space-4);
 		margin-bottom: var(--space-4);

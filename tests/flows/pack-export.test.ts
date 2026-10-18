@@ -2,10 +2,12 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import type { ServerInstance } from '#lib/server/db/schema.js';
+import type { ExportChoices } from '#lib/server/packexport.js';
 
 const { exportResult, planExport, startExport } = await import('#lib/server/packexport.js');
 const { recordInstanceMod, upsertMod } = await import('#lib/server/mods/index.js');
 const { openZipBuffer } = await import('#lib/server/zip.js');
+const { child, parseNbt, str } = await import('#lib/server/nbt.js');
 const { createInstance, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
@@ -119,14 +121,15 @@ async function server(fields: Partial<ServerInstance> = {}) {
 	return instance;
 }
 
-async function exported(instance: ServerInstance, format: 'mrpack' | 'curseforge' | 'prism') {
+async function exported(instance: ServerInstance, format: 'mrpack' | 'curseforge' | 'prism', serverEntry: ExportChoices['serverEntry'] = null) {
 	const plan = await planExport(instance);
 	const taskId = await startExport(instance, {
 		format,
 		name: 'My Pack',
 		version: '1.0',
 		mods: plan.mods.map((m) => m.file),
-		folders: plan.folders.filter((f) => f.include).map((f) => f.name)
+		folders: plan.folders.filter((f) => f.include).map((f) => f.name),
+		serverEntry
 	});
 	const task = await waitForTask(taskId);
 	expect(task.error).toBeNull();
@@ -186,6 +189,21 @@ describe('client pack export', () => {
 		expect(names).toContain('overrides/mods/sodium.jar');
 		expect(names).toContain('overrides/mods/spare.jar.disabled');
 		expect(names).not.toContain('overrides/mods/jei.jar');
+	});
+
+	it("puts the server in the game's multiplayer list, where each format's game folder is", async () => {
+		const instance = await server();
+		for (const [format, at] of [['mrpack', 'overrides/servers.dat'], ['curseforge', 'overrides/servers.dat'], ['prism', '.minecraft/servers.dat']] as const) {
+			const { zip, names } = await exported(instance, format, { name: 'Our server', address: 'play.example.com:25570' });
+			expect(names).toContain(at);
+			// Uncompressed, as the game writes it.
+			const file = parseNbt(zip.readFile(at)!);
+			expect(file.gzipped).toBe(false);
+			const servers = child(file.root, 'servers');
+			expect(servers?.type === 'list' && servers.value.map((s) => [str(child(s, 'name')), str(child(s, 'ip'))])).toEqual([['Our server', 'play.example.com:25570']]);
+		}
+		// Left out unless asked for.
+		expect((await exported(instance, 'mrpack')).names.some((n) => n.endsWith('servers.dat'))).toBe(false);
 	});
 
 	it('Prism: everything bundled under .minecraft, with the loader as components', async () => {
