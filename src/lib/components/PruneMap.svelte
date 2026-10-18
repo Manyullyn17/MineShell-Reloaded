@@ -223,49 +223,52 @@
 			{/each}
 		</select>
 	</div>
-	<form
-		method="POST"
-		action="?/pruneAnalyse"
-		use:enhance={() => {
-			submitting = true;
-			analysedBefore = analysis?.at ?? null;
-			return async ({ result, update }) => {
-				if (result.type === 'success' && typeof result.data?.taskId === 'string') {
-					task = null;
-					startedTask = result.data.taskId;
-				}
-				submitting = false;
-				await update({ reset: false });
-			};
-		}}
-	>
-		<input type="hidden" name="dimension" value={dimension} />
-		<button type="submit" class={current ? '' : 'button-primary'} disabled={busy || inProgress}>
-			{inProgress ? 'Analysing…' : current ? 'Analyse again' : 'Analyse'}
-		</button>
-	</form>
-	{#if inProgress}
-		<div class="analysing" aria-live="polite">
-			<div class="small muted">
-				{task?.step ?? 'Starting'}{#if task?.progress != null}<span class="faint"> · {task.progress}%</span>{/if}
+	<!-- Its own row, so the status lines up with the button rather than with the labelled fields. -->
+	<div class="analyse-row">
+		<form
+			method="POST"
+			action="?/pruneAnalyse"
+			use:enhance={() => {
+				submitting = true;
+				analysedBefore = analysis?.at ?? null;
+				return async ({ result, update }) => {
+					if (result.type === 'success' && typeof result.data?.taskId === 'string') {
+						task = null;
+						startedTask = result.data.taskId;
+					}
+					submitting = false;
+					await update({ reset: false });
+				};
+			}}
+		>
+			<input type="hidden" name="dimension" value={dimension} />
+			<button type="submit" class={current ? '' : 'button-primary'} disabled={busy || inProgress}>
+				{inProgress ? 'Analysing…' : current ? 'Analyse again' : 'Analyse'}
+			</button>
+		</form>
+		{#if inProgress}
+			<div class="analysing" aria-live="polite">
+				<div class="small muted">
+					{task?.step ?? 'Starting'}{#if task?.progress != null}<span class="faint"> · {task.progress}%</span>{/if}
+				</div>
+				<div class="progress" role="progressbar" aria-label="Analysing" aria-valuenow={task?.progress ?? undefined}>
+					<span class:indeterminate={task?.progress == null} style="width: {task?.progress ?? 100}%"></span>
+				</div>
 			</div>
-			<div class="progress" role="progressbar" aria-label="Analysing" aria-valuenow={task?.progress ?? undefined}>
-				<span class:indeterminate={task?.progress == null} style="width: {task?.progress ?? 100}%"></span>
-			</div>
-		</div>
-		{#if mayCancel && followed && task?.state === 'running'}
-			<button type="button" class="button-quiet" onclick={cancelAnalysis}>Cancel</button>
+			{#if mayCancel && followed && task?.state === 'running'}
+				<button type="button" class="button-quiet" onclick={cancelAnalysis}>Cancel</button>
+			{/if}
+			{#if cancelError}<p class="error-text small analysed">{cancelError}</p>{/if}
+		{:else if followed && task?.state === 'failed'}
+			<p class="error-text small analysed">The analysis failed{task.error ? `: ${task.error}` : '.'}</p>
+		{:else if current}
+			<p class="hint small analysed">
+				{current.chunks.toLocaleString()} chunks, analysed {formatRelative(current.at)}{current.unreadable
+					? `; ${current.unreadable.toLocaleString()} could not be read and stay`
+					: ''}.
+			</p>
 		{/if}
-		{#if cancelError}<p class="error-text small analysed">{cancelError}</p>{/if}
-	{:else if followed && task?.state === 'failed'}
-		<p class="error-text small analysed">The analysis failed{task.error ? `: ${task.error}` : '.'}</p>
-	{:else if current}
-		<p class="hint small analysed">
-			{current.chunks.toLocaleString()} chunks, analysed {formatRelative(current.at)}{current.unreadable
-				? `; ${current.unreadable.toLocaleString()} could not be read and stay`
-				: ''}.
-		</p>
-	{/if}
+	</div>
 </div>
 
 {#if !current}
@@ -389,15 +392,23 @@
 		margin: 0;
 	}
 
+	.analyse-row {
+		/* The free width beside the dimension: a shrink-to-fit row put Cancel on a line of its own. */
+		flex: 1 1 20rem;
+		min-width: 0;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+	}
+
 	.analysed {
 		margin: 0;
-		align-self: center;
 	}
 
 	.analysing {
 		flex: 0 1 18rem;
 		min-width: 10rem;
-		align-self: center;
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
