@@ -349,3 +349,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A second analysis of the same server could start while one ran: the check came after an await | `flows/chunk-prune.test.ts` ("reports the analysis under way") |
 | (feature) Prune from an analysis: only chunks it marked and the user did not protect, still under the threshold on disk; an older analysis refused | `flows/chunk-prune.test.ts`, `shared/chunkprune.test.ts` |
 | 1.21.9+ worlds: the spawn radius kept nothing, Restore chunks opened at 0,0 (spawn moved to Data.spawn.pos) | `flows/chunk-prune.test.ts` ("reads the spawn") |
+| (feature) One number out of NBT without parsing it (`peekNumber`): every tag kind skipped, both chunk layouts, damaged files refused | `server/nbt.test.ts` |

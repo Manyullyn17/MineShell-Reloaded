@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { child, parseNbt, type Tag } from './nbt';
+import { child, peekNumber, type Tag } from './nbt';
 import {
 	assembleRegion,
 	chunkCoords,
@@ -56,11 +56,14 @@ export function inhabitedTime(root: Tag): number | null {
 	return null;
 }
 
+/** Where a chunk keeps InhabitedTime: at the top from 1.18, under Level before. */
+const INHABITED = [['InhabitedTime'], ['Level', 'InhabitedTime']];
+
 /** The InhabitedTime of one stored chunk; null when it cannot be read (LZ4, damaged). */
 async function chunkTicks(dir: string, file: Buffer, region: [number, number], loc: Location): Promise<number | null> {
 	try {
 		const data = await readChunk(dir, file, region, loc);
-		return data ? inhabitedTime(parseNbt(data).root) : null;
+		return data ? peekNumber(data, INHABITED) : null;
 	} catch {
 		return null;
 	}

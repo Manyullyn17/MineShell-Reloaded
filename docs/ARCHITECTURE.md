@@ -646,7 +646,9 @@ server runs) and keeps it in memory, one per server; one runs at a time per serv
 before anything is awaited), and the page shows its task's progress by the button, from its own
 data on the first paint and then from the task stream (the action answers with the task's id,
 so a click does not wait for the page's data to reload). Reading yields after every chunk, as the
-chunk map does: a region is up to a second of parsing, and the page's requests wait behind it; `/api/instances/[id]/prune-analysis`
+chunk map does, and takes only InhabitedTime out of each chunk (`peekNumber` in nbt.ts skips
+everything else by its length instead of building the tree: ~9x faster, decompression is now
+most of it); the terrain view reads its regions separately, as Restore chunks does; `/api/instances/[id]/prune-analysis`
 sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
 chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
 chunks the threshold and spawn radius pick, the error colour, worked out in the browser on

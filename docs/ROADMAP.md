@@ -178,8 +178,10 @@ What the built entries in the archive left out, in one place:
   presence only, not shaded by InhabitedTime as first planned.
 - **Pruning chunks**: protection is per prune (named areas every prune skips were talked
   about, 2026-10-17, not built); the analysis lives in memory, so a MineShell restart means
-  analysing again; it is read on the main thread like the chunk map (a big world takes
-  minutes, other pages stay responsive).
+  analysing again; decompression is now most of an analysis (~20 s for 500 regions) and
+  runs on the main thread; zlib's thread pool could take it (async inflate, several chunks at
+  once). The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
+  analysis, terrain only for the regions looked at).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); Chunky's saved tasks
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished

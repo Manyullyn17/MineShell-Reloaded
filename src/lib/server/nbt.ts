@@ -210,6 +210,117 @@ export function parseNbt(data: Buffer): NbtFile {
 	return { name, root, gzipped };
 }
 
+/** Payload sizes of the fixed-size tags, by id (byte to double). */
+const FIXED_SIZES = [0, 1, 2, 4, 8, 4, 8];
+
+/**
+ * One number out of uncompressed NBT, without building the tree: the first
+ * int or long found at any of `paths` (compound names from the root, e.g.
+ * ['Level', 'InhabitedTime']), everything else skipped by its length. Many
+ * times faster than parseNbt, which makes a JS value of every array element;
+ * for reading one field out of every chunk of a world. Null when no path is
+ * there or holds another type; NbtError for a damaged file.
+ */
+export function peekNumber(raw: Buffer, paths: string[][]): number | null {
+	let pos = 0;
+	const need = (n: number) => {
+		if (n < 0 || pos + n > raw.length) throw new NbtError('The file ends in the middle of a tag.');
+	};
+	const u8 = () => {
+		need(1);
+		return raw[pos++];
+	};
+	const u16 = () => {
+		need(2);
+		pos += 2;
+		return raw.readUInt16BE(pos - 2);
+	};
+	const count = () => {
+		need(4);
+		pos += 4;
+		const n = raw.readInt32BE(pos - 4);
+		if (n < 0) throw new NbtError('A negative length in the file.');
+		return n;
+	};
+	// Names compared as bytes: the paths are ASCII, and no other modified UTF-8 reads as ASCII.
+	const name = () => {
+		const n = u16();
+		need(n);
+		pos += n;
+		return raw.toString('latin1', pos - n, pos);
+	};
+	const skip = (id: number, depth: number): void => {
+		if (depth > 512) throw new NbtError('Tags nested too deeply.');
+		if (id >= 1 && id <= 6) {
+			need(FIXED_SIZES[id]);
+			pos += FIXED_SIZES[id];
+			return;
+		}
+		switch (id) {
+			case 7: {
+				const n = count();
+				need(n);
+				pos += n;
+				return;
+			}
+			case 8: {
+				const n = u16();
+				need(n);
+				pos += n;
+				return;
+			}
+			case 9: {
+				const item = u8();
+				const n = count();
+				if (item >= 1 && item <= 6) {
+					need(n * FIXED_SIZES[item]);
+					pos += n * FIXED_SIZES[item];
+				} else if (n > 0) {
+					for (let i = 0; i < n; i++) skip(item, depth + 1);
+				}
+				return;
+			}
+			case 10:
+				for (let t = u8(); t !== 0; t = u8()) {
+					name();
+					skip(t, depth + 1);
+				}
+				return;
+			case 11:
+			case 12: {
+				const n = count();
+				need(n * (id === 11 ? 4 : 8));
+				pos += n * (id === 11 ? 4 : 8);
+				return;
+			}
+			default:
+				throw new NbtError(`Unknown tag type ${id}.`);
+		}
+	};
+	// Reads a compound's entries for the paths still wanted at this depth; stops at the first number found.
+	const walk = (wanted: string[][], depth: number): number | null => {
+		for (let t = u8(); t !== 0; t = u8()) {
+			const key = name();
+			const here = wanted.filter((p) => p[depth] === key);
+			if (here.some((p) => p.length === depth + 1) && (t === 3 || t === 4)) {
+				need(t === 3 ? 4 : 8);
+				pos += t === 3 ? 4 : 8;
+				return t === 3 ? raw.readInt32BE(pos - 4) : Number(raw.readBigInt64BE(pos - 8));
+			}
+			const deeper = here.filter((p) => p.length > depth + 1);
+			if (t === 10 && deeper.length) {
+				if (depth > 512) throw new NbtError('Tags nested too deeply.');
+				const found = walk(deeper, depth + 1);
+				if (found !== null) return found;
+			} else skip(t, depth + 1);
+		}
+		return null;
+	};
+	if (u8() !== 10) throw new NbtError('The file does not start with a compound tag.');
+	name();
+	return walk(paths, 0);
+}
+
 // ------------------------------------------------------------------ writing ---
 
 class Writer {
