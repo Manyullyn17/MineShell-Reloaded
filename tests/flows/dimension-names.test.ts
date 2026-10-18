@@ -70,6 +70,25 @@ describe('names for numbered dimensions', () => {
 				[623, 'Tardis Planet']
 			])
 		);
+		// What 1.12 really sends over RCON (MeatballCraft, Cleanroom): every line run together.
+		const rcon =
+			'Currently registered dimensions by type:gallifrey: {624}AetherI: {4}The Abyssal Wasteland: {50}planet: {145, 146}' +
+			'Storage Cell: {-26}Deep Dark: {-11325}divinerpg:skythern: {423}ExtraUtils2_Quarry_Dim: {-9999}overworld: {0}Nether: {-1}';
+		expect(names.parseForgeDimensions(rcon)).toEqual(
+			new Map([
+				[624, 'Gallifrey'],
+				[4, 'Aether I'],
+				[50, 'The Abyssal Wasteland'],
+				[145, 'Planet'],
+				[146, 'Planet'],
+				[-26, 'Storage Cell'],
+				[-11325, 'Deep Dark'],
+				[423, 'Skythern'],
+				[-9999, 'Extra Utils2 Quarry Dim'],
+				[0, 'Overworld'],
+				[-1, 'Nether']
+			])
+		);
 	});
 
 	it('guesses from configs until Forge was asked, then uses its names, asking once per run', async () => {

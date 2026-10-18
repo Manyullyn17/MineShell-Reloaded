@@ -41,13 +41,19 @@ export function deleteDimensionNames(instanceId: string): void {
 	db.delete(settings).where(eq(settings.key, KEY(instanceId))).run();
 }
 
-/** `forge dimensions`' answer: dimension ids by number, named by their type ("deep_dark" -> Deep Dark). */
+/**
+ * `forge dimensions`' answer: dimension ids by number, named by their type ("deep_dark" -> Deep Dark).
+ * Over RCON, 1.12 runs the lines together ("...by type:gallifrey: {624}AetherI: {4}The Abyssal
+ * Wasteland: {50}..."), so entries are found by their `{ids}`, not by line. Type names can have
+ * spaces and a namespace ("divinerpg:skythern: {423}").
+ */
 export function parseForgeDimensions(text: string): Map<number, string> {
 	const out = new Map<number, string>();
-	for (const line of text.split(/\r?\n/)) {
-		const m = line.match(/^\s*([\w.:-]+):\s*(.*)$/);
-		if (!m || /registered dimensions/i.test(line)) continue;
-		for (const id of m[2].match(/-?\d+/g) ?? []) out.set(Number(id), words(m[1].replace(/^\w+:/, '')));
+	const body = text.replace(/^[\s\S]*?registered dimensions by type:/i, '');
+	for (const m of body.matchAll(/([^{}\r\n]+?):\s*\{([-\d,\s]*)\}/g)) {
+		const name = words(m[1].trim().replace(/^\w+:/, ''));
+		if (!name) continue;
+		for (const id of m[2].match(/-?\d+/g) ?? []) out.set(Number(id), name);
 	}
 	return out;
 }
