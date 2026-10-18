@@ -13,7 +13,7 @@
 	}: {
 		board: { players: { uuid: string; values: Record<string, number> }[]; others: { id: string; name: string; unit: StatUnit }[] } | null;
 		loading: boolean;
-		/** A player's name and face, and where their own stats are (null when this account may not look). */
+		/** A player's name and face, and their page (null when this account may not look). */
 		player: (uuid: string) => { name: string | null; skin: string | null; href: string | null };
 	} = $props();
 

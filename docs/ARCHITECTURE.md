@@ -766,8 +766,8 @@ never writes it. 1.13+ nests categories; 1.12 and older are flat keys (`stat.min
 (`lib/shared/playerstats.ts`: ticks, centimetres, tenths of health). Names: vanilla general
 stats from a built-in table, everything else from the server's lang files when item pictures
 are on (the same jars), else the id tidied up. Parsed files are kept per path while size and
-time stay the same. A stats file can exist without a player file (someone who joined
-briefly): the leaderboard names it but links only players with a file.
+time stay the same. The leaderboard ranks only players with a player file, as the player
+list shows them: a stats file outlives a player file deleted to drop someone.
 
 ### The world map
 

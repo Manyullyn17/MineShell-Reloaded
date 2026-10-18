@@ -102,12 +102,11 @@
 	);
 	const playerUrl = (uuid: string) => `/instances/${encodeURIComponent(data.instance.id)}/players/${uuid}`;
 	const board = streamed(() => data.leaderboard);
-	/** For the leaderboard: a stats file's player by UUID. */
+	/** For the leaderboard: a listed player by UUID. */
 	const boardPlayer = (uuid: string) => ({
 		name: people.find((p) => p.uuid?.toLowerCase() === uuid)?.name ?? playerFiles.find((f) => f.uuid === uuid)?.name ?? profiles[uuid]?.name ?? null,
 		skin: profiles[uuid]?.skin ?? null,
-		// The player's page reads their player file; a stats file can be there without one.
-		href: playerFiles.some((f) => f.uuid === uuid) && can(data.access, data.instance.id, 'players.data.view', uuid) ? playerUrl(uuid) : null
+		href: can(data.access, data.instance.id, 'players.data.view', uuid) ? playerUrl(uuid) : null
 	});
 	function focusDrawer() {
 		void tick().then(() => drawerEl?.querySelector<HTMLElement>('button, input:not([type="hidden"]), select, textarea')?.focus());

@@ -140,12 +140,6 @@ export async function readPlayerStats(instance: ServerInstance, uuid: string): P
 	return readFile(path.join(await statsDir(instance), `${id}.json`), id);
 }
 
-/** The UUIDs with a stats file in the active world (names are looked up for them too). */
-export async function statsPlayers(instance: ServerInstance): Promise<string[]> {
-	const entries = await fs.readdir(await statsDir(instance)).catch(() => [] as string[]);
-	return entries.map((e) => e.slice(0, -5).toLowerCase()).filter((e, i) => entries[i].endsWith('.json') && UUID.test(e));
-}
-
 /** Every player's stats in the active world. */
 export async function allPlayerStats(instance: ServerInstance): Promise<PlayerStats[]> {
 	const dir = await statsDir(instance);
@@ -312,9 +306,13 @@ export type Leaderboard = {
 	others: { id: string; name: string; unit: StatUnit }[];
 };
 
-/** What the Players page ranks players by. */
-export async function leaderboard(instance: ServerInstance): Promise<Leaderboard> {
-	const all = await allPlayerStats(instance);
+/**
+ * What the Players page ranks players by: the players it lists, those with a
+ * player file. A stats file can outlive one (deleted to drop someone who
+ * joined once), and its player stays gone from the ranking too.
+ */
+export async function leaderboard(instance: ServerInstance, players: ReadonlySet<string>): Promise<Leaderboard> {
+	const all = (await allPlayerStats(instance)).filter((p) => players.has(p.uuid));
 	const names = await statNames(instance, all.map((p) => p.stats), ['custom']);
 	const headlines = new Set(HEADLINES.map((h) => h.id));
 	return {
