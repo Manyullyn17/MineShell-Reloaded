@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
-import { dimensionLabel, isDimensionFolder } from './dimensions';
+import { dimensionLabel, isDimensionFolder, listDimensions } from './dimensions';
+import { dimensionNames, namedLabel } from './dimensionnames';
 import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
 import { serverWorldName } from './packworld';
@@ -72,7 +73,7 @@ async function sizeOf(full: string): Promise<number> {
  * DIM<n> and named folders (AoA_Abyss), 1.16+ `dimensions/<namespace>/<name>`.
  * The rest (the overworld's regions, player data, mod data) is one item.
  */
-async function worldItems(root: string, world: string): Promise<UsageItem[]> {
+async function worldItems(root: string, world: string, label: (folder: string) => string = dimensionLabel): Promise<UsageItem[]> {
 	const items: UsageItem[] = [];
 	const dir = path.join(root, world);
 	let rest = 0;
@@ -93,7 +94,7 @@ async function worldItems(root: string, world: string): Promise<UsageItem[]> {
 		}
 		const bytes = await sizeOf(full);
 		if (entry.isDirectory() && (await isDimensionFolder(full))) {
-			items.push({ label: dimensionLabel(entry.name), path: rel, bytes });
+			items.push({ label: label(entry.name), path: rel, bytes });
 		} else rest += bytes;
 	}
 	items.push({ label: 'Overworld and world data', path: world, bytes: rest, note: 'Regions, player data and what mods store in the world' });
@@ -194,6 +195,8 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 
 	const worlds = new Set(await worldFolders(root));
 	const levelWorld = await serverWorldName(root);
+	// 1.12 mods' DIM<n> folders by their names (Deep Dark), where known.
+	const names = await dimensionNames(instance, await listDimensions(root));
 	const snapshots = new Map((await listSnapshots(root)).map((s) => [s.id, s]));
 	const suggestions: Suggestion[] = [];
 	// The server's other worlds, by their top-level folders (worlds.ts).
@@ -216,7 +219,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		if (worlds.has(name)) {
 			const sibling = SIBLING_LABELS.find(([suffix]) => name === `${levelWorld}${suffix}`);
 			if (sibling) items.world.push({ label: sibling[1], path: name, bytes: await sizeOf(full) });
-			else items.world.push(...(await worldItems(root, name)));
+			else items.world.push(...(await worldItems(root, name, (folder) => namedLabel(folder, names))));
 		} else if (inactive.has(name)) {
 			items.worlds.push({ label: inactive.get(name)!, path: name, bytes: await sizeOf(full) });
 		} else if (name === '.mineshell') {

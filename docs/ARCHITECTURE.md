@@ -614,6 +614,19 @@ The overworld is the level folder's own `region/`, `entities/` and `poi/`, so re
 keeps `level.dat` and player data. A snapshot of only some folders is marked `partial` and
 restores only those.
 
+1.12 mods' dimensions are folders with only a number (`DIM-11325`); `dimensionnames.ts` names
+them on the World tab, Restore chunks and disk usage. Forge 1.12 and Cleanroom list every
+dimension type with its ids (`forge dimensions`: the header, then "deep_dark: {-11325}" per
+type, read from the command's bytecode), so a running server is asked once per run, in the
+background (page loads never wait), and the answer kept (`dimensions.names:<id>`): "Deep Dark
+(DIM-11325)". Until then a guess from Forge configs, shown as one ("DIM-11325 (Deep Dark?)"):
+an integer entry equal to the number whose key says dimension, or an id key in a dimension
+category, or the category alone (ExtraUtils2's `"dimension ids" { I:"Deep Dark"=-11325 }`),
+in that order; keys about biomes, ores, counts and the like never (biome ids share the
+numbers); a one-word name gets the mod in front. On MeatballCraft's 21 numbered dimensions it
+named 16, Twilight Forest and Erebus among them; DIM20 is claimed by two mods' configs, which
+only Forge's answer settles.
+
 **Restoring chunks** (World > Restore chunks; `chunkrestore.ts`, `restoreChunks` in
 `world.ts`): every region file holding a chosen chunk is rebuilt from the live file and the
 snapshot's (`assembleRegion` in `regionfile.ts` copies chunks as stored, sectors and

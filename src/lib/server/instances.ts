@@ -65,6 +65,7 @@ import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotSte
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
 import { deleteCrashMarks } from './history';
+import { deleteDimensionNames } from './dimensionnames';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
@@ -1411,6 +1412,7 @@ export async function deleteInstance(
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
 	deleteCrashMarks(instance.id);
+	deleteDimensionNames(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
 	await deleteChunkMapCache(instance.id).catch(() => undefined);
 	await deletePlayitData(instance.id);

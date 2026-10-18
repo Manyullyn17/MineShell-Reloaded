@@ -44,6 +44,7 @@ import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder,
 import { webRoot } from '#lib/server/worldmap.js';
 import { snapshotWhileRunning } from '#lib/server/snapshotschedule.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
+import { withDimensionNames } from '#lib/server/dimensionnames.js';
 import { getTask } from '#lib/server/tasks.js';
 import {
 	cancelPregen,
@@ -79,7 +80,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		worldSeed: await worldSeed(instance.path),
 		snapshotPrompt: await snapshotPrompt(instance),
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
-		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
+		dimensions: (await withDimensionNames(instance, await listDimensions(instance.path))).map(dimensionOption),
 		pruneAnalysis: pruneAnalysisSummary(instance.id),
 		pruneAnalysing: analysingNow(instance.id),
 		snapshots: await Promise.all(
@@ -90,7 +91,7 @@ export const load: PageServerLoad = async ({ params }) => {
 					...s,
 					ofThisWorld,
 					worldFolder: ofThisWorld ? levelName : snapshotWorldFolder(s, folders),
-					dimensions: ofThisWorld ? (await snapshotDimensions(instance, s)).map(dimensionOption) : []
+					dimensions: ofThisWorld ? (await withDimensionNames(instance, await snapshotDimensions(instance, s))).map(dimensionOption) : []
 				};
 			})
 		),

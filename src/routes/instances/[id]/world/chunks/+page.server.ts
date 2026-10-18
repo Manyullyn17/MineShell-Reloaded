@@ -5,6 +5,7 @@ import { serverWorldName } from '#lib/server/packworld.js';
 import { listSnapshots, snapshotOfWorld } from '#lib/server/snapshots.js';
 import { MAX_RESTORE_CHUNKS, restoreChunks, snapshotDimensions, worldSpawn } from '#lib/server/world.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
+import { withDimensionNames } from '#lib/server/dimensionnames.js';
 import { compareVersions } from '#lib/server/java.js';
 import { itemIconsEnabled } from '#lib/server/itemicons.js';
 import { getMapSettings, saveMapSettings } from '#lib/server/worldmap.js';
@@ -27,14 +28,14 @@ export const load: PageServerLoad = async ({ params }) => {
 					partial: !!s.partial,
 					/** Only the region files a chunk restore changed: offered, but not picked first. */
 					beforeChunkRestore: s.reason === 'world-restore-chunks',
-					dimensions: (await snapshotDimensions(instance, s)).map(dimensionOption)
+					dimensions: (await withDimensionNames(instance, await snapshotDimensions(instance, s))).map(dimensionOption)
 				}))
 		)
 	).filter((s) => s.dimensions.length);
 	return {
 		running: (await summarise(instance)).running,
 		levelName,
-		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
+		dimensions: (await withDimensionNames(instance, await listDimensions(instance.path))).map(dimensionOption),
 		snapshots,
 		spawn: await worldSpawn(instance.path),
 		legacy: compareVersions(instance.minecraftVersion, '1.13') < 0,
