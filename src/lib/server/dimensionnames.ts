@@ -195,9 +195,12 @@ export function namedLabel(folder: string, names: Map<number, DimensionName>): s
 	return found.guess ? `${folder} (${found.name}?)` : `${found.name} (${folder})`;
 }
 
-/** The dimensions with their names in the labels. */
+/** The dimensions with their names in the labels; only numbered ones change (the overworld's first folder is region/). */
 export async function withDimensionNames<T extends Dimension>(instance: ServerInstance, dimensions: T[]): Promise<T[]> {
 	const names = await dimensionNames(instance, dimensions);
 	if (!names.size) return dimensions;
-	return dimensions.map((d) => ({ ...d, label: namedLabel(path.basename(d.paths[0]), names) }));
+	return dimensions.map((d) => {
+		const folder = path.basename(d.paths[0]);
+		return /^DIM-?\d+$/.test(folder) && !d.overworld ? { ...d, label: namedLabel(folder, names) } : d;
+	});
 }

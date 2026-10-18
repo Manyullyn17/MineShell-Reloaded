@@ -356,3 +356,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Exported packs list the server in the game's multiplayer list (servers.dat) in each format's game folder | `flows/pack-export.test.ts` ("multiplayer list") |
 | (feature) Roofs on the chunk map: found by height whatever they are made of, the floor under the first open space, walls, missing sections as air; not superflat or oceans; dimensions open where their chunks are | `server/chunkmap.test.ts` ("below a roof"), `shared/chunkmap.test.ts` |
 | (feature) Names for 1.12 numbered dimensions: Forge's `forge dimensions` once per run, else ranked guesses from configs (biome ids and counts never) | `flows/dimension-names.test.ts` |
+| The overworld was labelled "region" once a world had named dimensions: every label was rebuilt from the first folder | `flows/dimension-names.test.ts` |

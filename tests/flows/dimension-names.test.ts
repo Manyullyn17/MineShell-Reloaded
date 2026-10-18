@@ -78,6 +78,8 @@ describe('names for numbered dimensions', () => {
 		fakeUnit();
 		const labels = async () => Object.fromEntries((await names.withDimensionNames(s, await listDimensions(s.path))).map((d) => [path.basename(d.paths[0]), d.label]));
 		expect(await labels()).toMatchObject({
+			// The overworld's first folder is region/: it keeps its own label (it read "region").
+			region: 'Overworld',
 			'DIM-1': 'The Nether',
 			'DIM-11325': 'DIM-11325 (Deep Dark?)',
 			'DIM-9999': 'DIM-9999 (Extra Utils2 Quarry?)',
