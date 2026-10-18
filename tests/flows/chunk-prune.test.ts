@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyseRegions, applyPrune, planPrune } from '#lib/server/chunkprune.js';
 import { NO_CHUNK, UNREADABLE } from '#lib/shared/chunkprune.js';
 import { listSnapshots } from '#lib/server/snapshots.js';
-import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, type PruneSettings } from '#lib/server/world.js';
+import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, worldSpawn, type PruneSettings } from '#lib/server/world.js';
+import { writeNbt, type Tag } from '#lib/server/nbt.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import { createInstance, systemdStopped, tree, waitForTask } from '../helpers/instances';
 import { restartMineShell, runAndDieAtMove } from '../helpers/crash';
@@ -67,6 +68,20 @@ describe('chunk pruning', () => {
 			expect((await fs.readdir(path.join(base, folder))).sort()).toEqual(['r.0.0.mca']);
 		}
 		expect((await fs.stat(path.join(base, 'region', 'r.0.0.mca'))).size).toBeLessThan(sizeBefore);
+	});
+
+	it('reads the spawn kept around from level.dat, 1.21.9 and later too', async () => {
+		const compound = (value: [string, Tag][]) => ({ type: 'compound' as const, value });
+		const levelDat = (data: [string, Tag][]) => writeNbt({ name: '', gzipped: true, root: compound([['Data', compound(data)]]) });
+		const old = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, {
+			'world/level.dat': levelDat([['SpawnX', { type: 'int', value: 40 }], ['SpawnY', { type: 'int', value: 64 }], ['SpawnZ', { type: 'int', value: -8 }]])
+		});
+		expect(await worldSpawn(old.path)).toEqual({ x: 40, z: -8 });
+		// 1.21.9 moved it into Data.spawn, where SpawnX/SpawnZ no longer are: the radius kept nothing.
+		const recent = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.11' }, {
+			'world/level.dat': levelDat([['spawn', compound([['pos', { type: 'intArray', value: [0, 106, -64] }], ['dimension', { type: 'string', value: 'minecraft:overworld' }]])]])
+		});
+		expect(await worldSpawn(recent.path)).toEqual({ x: 0, z: -64 });
 	});
 
 	it('analyses every chunk: its time, its size, and which could not be read', async () => {

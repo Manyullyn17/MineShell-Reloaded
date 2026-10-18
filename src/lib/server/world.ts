@@ -469,11 +469,16 @@ export async function worldSeed(root: string): Promise<string | null> {
 	}
 }
 
-/** The world spawn from level.dat (Data.SpawnX/SpawnZ); null when unreadable. */
+/**
+ * The world spawn from level.dat: Data.spawn.pos [x, y, z] from 1.21.9,
+ * Data.SpawnX/SpawnZ before; null when unreadable.
+ */
 export async function worldSpawn(root: string): Promise<{ x: number; z: number } | null> {
 	try {
 		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
 		const data = child(level.root, 'Data');
+		const pos = child(child(data, 'spawn'), 'pos');
+		if (pos?.type === 'intArray' && pos.value.length === 3) return { x: pos.value[0], z: pos.value[2] };
 		const x = child(data, 'SpawnX');
 		const z = child(data, 'SpawnZ');
 		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, z: z.value } : null;
