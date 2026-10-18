@@ -337,6 +337,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Forge's update check offered 14.23.0.2486 over 2859 (its metadata is out of order) and newer-than-recommended builds as releases; Quilt's list was unordered too | `server/updatecheck.test.ts`, `server/modloaders.test.ts` |
 | (feature) Update checks: newer pack version / loader build by date and channel, Cleanroom kept on its line, skip, hidden after the server moved on, retry after a failure | `server/updatecheck.test.ts` |
 | (feature) Credits: README's section lists every entry of the About page's list | `shared/credits.test.ts` |
+| (feature) Player stats: 1.13+ and 1.12 files read into one shape (old stat names mapped), names from lang files, times/distances/damage shown readably, distance without falling | `server/playerstats.test.ts`, `flows/playerstats.test.ts` |
 | A memory limit of heap + 512 MB let the kernel kill a big pack (1.5-3.3 GB outside its heap), and the kill showed as a crash with no cause | `shared/memorylimit.test.ts`, `crashdiag/crashdiag.test.ts` |
 | A new server could be given a stopped server's voice chat or map mod port (only game and RCON ports were avoided) | `flows/ports.test.ts` |
 | (feature) Cap on all servers: soft memory cap and CPU quota on the shared slice, a slice file MineShell did not write left alone, the start warning past the cap | `server/servercap.test.ts` |
