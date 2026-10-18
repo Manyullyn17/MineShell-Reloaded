@@ -759,6 +759,16 @@ The server is stopped for all of this; only downloading a running world does `sa
 
 ---
 
+**Player stats.** `playerstats.ts` reads `<world>/stats/<uuid>.json` of the active world,
+never writes it. 1.13+ nests categories; 1.12 and older are flat keys (`stat.mineBlock.minecraft.stone`,
+`stat.walkOneCm`, `stat.killEntity.Husk`), mapped onto 1.13+'s categories and ids
+(`playOneMinute` is `play_time`, in ticks) so units and names are shared
+(`lib/shared/playerstats.ts`: ticks, centimetres, tenths of health). Names: vanilla general
+stats from a built-in table, everything else from the server's lang files when item pictures
+are on (the same jars), else the id tidied up. Parsed files are kept per path while size and
+time stay the same. A stats file can exist without a player file (someone who joined
+briefly): the leaderboard names it but links only players with a file.
+
 ### The world map
 
 `worldmap.ts`, the server's Map tab. For Minecraft 1.13 and newer MineShell runs BlueMap's

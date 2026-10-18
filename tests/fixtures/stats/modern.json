@@ -1,0 +1,123 @@
+{
+ "stats": {
+  "minecraft:killed": {
+   "minecraft:pillager": 66285,
+   "minecraft:cave_spider": 12426,
+   "minecraft:creeper": 8078,
+   "minecraft:enderman": 3757,
+   "minecraft:chicken": 2197
+  },
+  "minecraft:dropped": {
+   "minecraft:spider_eye": 21318,
+   "minecraft:netherrack": 11807,
+   "minecraft:cobblestone": 8285,
+   "minecraft:chicken": 2548,
+   "minecraft:ender_pearl": 2535
+  },
+  "minecraft:used": {
+   "minecraft:netherite_pickaxe": 283345,
+   "minecraft:netherite_shovel": 78468,
+   "minecraft:stone_button": 22878,
+   "minecraft:stone": 22253,
+   "minecraft:egg": 20157
+  },
+  "minecraft:custom": {
+   "minecraft:aviate_one_cm": 188836315,
+   "minecraft:walk_one_cm": 50597105,
+   "minecraft:fly_one_cm": 33553886,
+   "minecraft:sprint_one_cm": 27168124,
+   "minecraft:total_world_time": 26476229,
+   "minecraft:play_time": 26476229,
+   "minecraft:crouch_one_cm": 10920230,
+   "minecraft:time_since_death": 9410341,
+   "minecraft:walk_under_water_one_cm": 7232474,
+   "minecraft:fall_one_cm": 6559830,
+   "minecraft:swim_one_cm": 3580200,
+   "minecraft:boat_one_cm": 2928205,
+   "minecraft:walk_on_water_one_cm": 2878191,
+   "minecraft:sneak_time": 2032071,
+   "minecraft:damage_dealt": 1256642,
+   "minecraft:climb_one_cm": 1116909,
+   "minecraft:jump": 191803,
+   "minecraft:damage_taken": 126235,
+   "minecraft:mob_kills": 97068,
+   "minecraft:time_since_rest": 18123,
+   "minecraft:open_chest": 15444,
+   "minecraft:damage_blocked_by_shield": 6395,
+   "minecraft:drop": 5393,
+   "minecraft:horse_one_cm": 3943,
+   "minecraft:traded_with_villager": 3642,
+   "minecraft:open_shulker_box": 2253,
+   "minecraft:talked_to_villager": 1337,
+   "minecraft:interact_with_furnace": 1126,
+   "minecraft:interact_with_crafting_table": 1047,
+   "minecraft:fish_caught": 815,
+   "minecraft:sleep_in_bed": 808,
+   "minecraft:damage_absorbed": 724,
+   "minecraft:inspect_hopper": 626,
+   "minecraft:enchant_item": 582,
+   "minecraft:open_enderchest": 346,
+   "minecraft:leave_game": 329,
+   "minecraft:interact_with_anvil": 322,
+   "minecraft:inspect_dispenser": 318,
+   "minecraft:interact_with_smoker": 152,
+   "minecraft:open_barrel": 149,
+   "minecraft:interact_with_grindstone": 139,
+   "minecraft:interact_with_blast_furnace": 138,
+   "minecraft:damage_resisted": 131,
+   "minecraft:interact_with_brewingstand": 91,
+   "minecraft:interact_with_smithing_table": 68,
+   "minecraft:interact_with_stonecutter": 60,
+   "minecraft:interact_with_beacon": 41,
+   "minecraft:inspect_dropper": 32,
+   "minecraft:animals_bred": 30,
+   "minecraft:raid_trigger": 29,
+   "minecraft:tune_noteblock": 15,
+   "minecraft:deaths": 14,
+   "minecraft:bell_ring": 11,
+   "minecraft:raid_win": 10,
+   "minecraft:play_record": 8,
+   "minecraft:interact_with_lectern": 7,
+   "minecraft:use_cauldron": 3,
+   "minecraft:interact_with_cartography_table": 2,
+   "minecraft:player_kills": 1,
+   "minecraft:interact_with_loom": 1
+  },
+  "minecraft:broken": {
+   "minecraft:iron_shovel": 3,
+   "minecraft:stone_axe": 2,
+   "minecraft:iron_pickaxe": 2,
+   "minecraft:stone_pickaxe": 2,
+   "minecraft:iron_helmet": 1
+  },
+  "minecraft:mined": {
+   "minecraft:stone": 108031,
+   "minecraft:netherrack": 83195,
+   "minecraft:ice": 44609,
+   "minecraft:dirt": 41036,
+   "minecraft:grass_block": 21687
+  },
+  "minecraft:crafted": {
+   "minecraft:spruce_planks": 27384,
+   "minecraft:stone_button": 22847,
+   "minecraft:stick": 12079,
+   "minecraft:iron_ingot": 8094,
+   "minecraft:firework_rocket": 7045
+  },
+  "minecraft:picked_up": {
+   "minecraft:stone": 100133,
+   "minecraft:dirt": 45395,
+   "minecraft:ice": 35243,
+   "minecraft:netherrack": 19793,
+   "minecraft:grass_block": 17391
+  },
+  "minecraft:killed_by": {
+   "minecraft:vindicator": 3,
+   "minecraft:piglin_brute": 2,
+   "minecraft:warden": 2,
+   "minecraft:skeleton": 1,
+   "minecraft:creeper": 1
+  }
+ },
+ "DataVersion": 4671
+}

@@ -16,6 +16,7 @@ import { onlinePlayers } from '#lib/server/instances.js';
 import { listPlayerData } from '#lib/server/playerdata.js';
 import { lookUpProfiles } from '#lib/server/profiles.js';
 import { playtimes } from '#lib/server/history.js';
+import { leaderboard, statsPlayers } from '#lib/server/playerstats.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const instance = requireInstance(params.id);
@@ -26,7 +27,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const playerFiles = await listPlayerData(instance);
 	const uuids = [
 		...playerFiles.map((f) => f.uuid),
-		...[...lists.whitelist, ...lists.ops, ...lists.bans].map((e) => e.uuid).filter((u): u is string => !!u)
+		...[...lists.whitelist, ...lists.ops, ...lists.bans].map((e) => e.uuid).filter((u): u is string => !!u),
+		// The leaderboard's: a stats file can outlive its player file.
+		...(await statsPlayers(instance))
 	];
 	return {
 		lists,
@@ -34,7 +37,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		playerFiles,
 		// Streamed, from Mojang (cached): skins for the faces, and names for player files the server has none for.
 		profiles: uuids.length ? lookUpProfiles(uuids).then((found) => Object.fromEntries(found)) : {},
-		playtimes: playtimes(instance.id)
+		playtimes: playtimes(instance.id),
+		// Streamed: every player's stats file, for the leaderboard.
+		leaderboard: leaderboard(instance).catch(() => null)
 	};
 };
 

@@ -8,6 +8,7 @@
 	import NbtNode from '#lib/components/NbtNode.svelte';
 	import ItemIcon from '#lib/components/ItemIcon.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import PlayerStats from '#lib/components/PlayerStats.svelte';
 	import { iconKey, iconLoader } from '#lib/shared/itemicon.svelte.js';
 	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
@@ -15,6 +16,7 @@
 
 	let { data } = $props();
 	const skin = streamed(() => data.skin);
+	const stats = streamed(() => data.stats);
 
 	// Item pictures (lib/server/itemicons.ts): drawn once per item, the name kept as text where there is none.
 	// svelte-ignore state_referenced_locally
@@ -252,13 +254,14 @@
 	// ---- inventory and containers
 	let tab = $state<'inventory' | 'ender'>('inventory');
 	/** The editor's tabs; Inventory and Ender chest share the grid view. */
-	type View = 'inventory' | 'ender' | 'player' | 'effects' | 'data' | 'backups';
+	type View = 'inventory' | 'ender' | 'player' | 'effects' | 'stats' | 'data' | 'backups';
 	let view = $state<View>('inventory');
 	const VIEWS: { id: View; label: string }[] = [
 		{ id: 'inventory', label: 'Inventory' },
 		{ id: 'ender', label: 'Ender chest' },
 		{ id: 'player', label: 'Player' },
 		{ id: 'effects', label: 'Effects' },
+		{ id: 'stats', label: 'Stats' },
 		{ id: 'data', label: 'All data' }
 	];
 	function show(next: View) {
@@ -997,6 +1000,8 @@
 		{/each}
 	</ul>
 </section>
+{:else if view === 'stats'}
+<PlayerStats stats={stats.value ?? null} loading={!stats.ready} {icons} />
 {:else if view === 'backups'}
 <section class="panel">
 	<h2>Backups</h2>

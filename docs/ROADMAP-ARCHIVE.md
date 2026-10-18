@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Player stats
+
+Built 2026-10-18 (Players; ARCHITECTURE, "Player stats"). A Stats tab on each player's page:
+headline numbers (time played, deaths, mob and player kills, distance travelled without
+falling, blocks mined, items crafted, damage dealt and taken), then every category as a
+searchable list, biggest first, with item pictures. A leaderboard on the Players page ranks by
+a headline or any general stat. Units per the user (2026-10-18): time to the second under an
+hour, to the minute under a day, then days and hours; distance in cm, m and km; damage in
+hearts. Tried on the throwaway dev server with copies of irithyll's (1.21.11) and
+MeatballCraft's (1.12.2) stats and player files, desktop and phone. Leftovers: ROADMAP,
+"Leftovers of built features".
+
 ### Pausing empty servers
 
 Built 2026-10-18 (ARCHITECTURE, "Starting vs running"). As planned: Minecraft 1.21.2+'s own

@@ -15,9 +15,9 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
 built: ROADMAP-ARCHIVE):
 
-- **Next** (user's call, 2026-10-17), in this order: the status page, player stats
-  (restoring chunks and pausing empty servers, first on the list, are built: ROADMAP-ARCHIVE).
-  The status page is parked on its open questions (2026-10-18), so player stats come first.
+- **Next** (user's call, 2026-10-17): the status page, parked on its open questions
+  (2026-10-18). Restoring chunks, pausing empty servers and player stats are built
+  (ROADMAP-ARCHIVE).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -134,12 +134,6 @@ Proposal (not agreed):
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
 
-### Player stats
-
-From `<world>/stats/<uuid>.json` on the Players page (play time, deaths, kills, distance,
-blocks mined), maybe a leaderboard. Before 1.13 the file is a flat key list
-(`stat.mineBlock.minecraft.stone`); mod stats come as ids and need names.
-
 ### World backups
 
 Not implemented yet. External backup integration is planned for the future; its provider
@@ -215,6 +209,10 @@ What the built entries in the archive left out, in one place:
   after a switch (Dynmap names its worlds by folder).
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
   researched). Whether pre-generation (Chunky) keeps running while paused is unchecked.
+- **Player stats**: read only (no editing or resetting), no history over time; 1.12 mob
+  names come from lang files (no pictures for mobs); pre-1.8 numeric ids and achievements are
+  shown raw or left out (not checked on a real world). Stats on the status page, once that is
+  decided.
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's

@@ -20,6 +20,7 @@ import { serverWorldName } from '#lib/server/packworld.js';
 import { addCustomField, customFieldViews, listCustomFields, remapCustomField, removeCustomField } from '#lib/server/playerfields.js';
 import { lookUpProfiles } from '#lib/server/profiles.js';
 import { itemIconsEnabled } from '#lib/server/itemicons.js';
+import { readPlayerStats, statNames } from '#lib/server/playerstats.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const instance = requireInstance(params.id);
@@ -47,6 +48,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		backups: await listBackups(instance, uuid),
 		file: await playerFileInfo(instance, uuid),
 		online: online?.has(uuid) ?? false,
+		// Streamed: the game's statistics, named from the server's jars (read once, kept).
+		stats: readPlayerStats(instance, uuid)
+			.then(async (found) => found && { stats: found.stats, modifiedAt: found.modifiedAt, names: await statNames(instance, [found.stats]) })
+			.catch(() => null),
 		// Streamed: the skin, from Mojang (cached), for the face.
 		skin: lookUpProfiles([uuid]).then((found) => found.get(uuid)?.skin ?? null),
 		/** Mojang's EULA answered yes for this server (shared with the Map tab): vanilla item pictures. */

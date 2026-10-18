@@ -94,6 +94,7 @@ Administer players and inspect their saved data, including inventories containin
 - Update player lists through RCON while the server is running, or edit the relevant JSON files while it is stopped.
 - Resolve player names to UUIDs through Mojang and identify players in imported worlds using their current account names.
 - Inspect offline player inventories, effects, and other saved data.
+- See each player's statistics (time played, deaths, kills, distance, blocks mined and every item, block and mob the game counts) with readable times and distances, and rank players by any of them.
 - Edit modded inventories, including backpacks and Curios or Trinkets equipment slots, with slots grouped and named where supported.
 - Select enchantments by name from the world's own enchantment table, including modded enchantments on Minecraft 1.12 and older.
 - Browse vanilla and modded items by name instead of having to type their identifiers.
