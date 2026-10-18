@@ -61,6 +61,7 @@ import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, public
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
 	PROPERTY_SCHEMA,
+	fieldsForVersion,
 	levelTypeOptionsFor,
 	parseProperties,
 	propertiesFromForm,
@@ -264,7 +265,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		properties: {
 			values: shownProperties,
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k)).map((key) => ({ key, value: parsed.values[key] })),
-			schema: editableProperties().map((field) =>
+			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) =>
 				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
 			),
 			raw: serialiseProperties(shownProperties)

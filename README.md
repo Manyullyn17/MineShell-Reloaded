@@ -31,6 +31,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Perform graceful shutdowns using RCON to save the world before stopping Java, with signal-based fallbacks.
 - Configure crash recovery, restart attempt limits, scheduled restarts, and scheduled console commands.
 - Delay scheduled operations while players are online.
+- Let Minecraft 1.21.2+ pause an empty server (its `pause-when-empty-seconds`, in settings and new-server defaults); the status shows it paused until someone joins.
 - See every server's ports (game, RCON, query, voice chat, map) and what listens on each, with clashes between servers and ports other programs hold, and move one to a free port. Where new ports start can be changed for setups that need it.
 - Set per-server CPU and memory limits, and a cap on all servers together (a soft memory cap that slows the servers down instead of killing one), and detect servers that never finish starting.
 - Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.

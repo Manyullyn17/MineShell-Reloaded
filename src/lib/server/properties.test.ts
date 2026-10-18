@@ -3,9 +3,11 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
 	defaultProperties,
+	fieldsForVersion,
 	fillPropertyDefaults,
 	levelTypeOptionsFor,
 	parseProperties,
+	PROPERTY_SCHEMA,
 	patchProperties,
 	readProperties,
 	serialiseProperties,
@@ -59,5 +61,18 @@ describe('level types', () => {
 		expect(defaultProperties({ port: 1, rconPort: 2, rconPassword: '', motd: '', minecraftVersion: '1.20.1' })['level-type']).toBe('minecraft:normal');
 		expect(levelTypeOptionsFor('1.12.2').map((o) => o.value)).toContain('FLAT');
 		expect(levelTypeOptionsFor('1.21').map((o) => o.value)).toContain('minecraft:flat');
+	});
+});
+
+describe('fields by Minecraft version', () => {
+	const pause = (version: string) => fieldsForVersion(PROPERTY_SCHEMA, version).some((f) => f.key === 'pause-when-empty-seconds');
+
+	it('offers pausing an empty server from 1.21.2 on, and every field when the version is unknown', () => {
+		expect(pause('1.21.1')).toBe(false);
+		expect(pause('1.12.2')).toBe(false);
+		expect(pause('1.21.2')).toBe(true);
+		expect(pause('1.21.11')).toBe(true);
+		expect(pause('26.1')).toBe(true);
+		expect(pause('')).toBe(true);
 	});
 });

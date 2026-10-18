@@ -369,7 +369,12 @@ yet" for 2 s (pages poll). Uptime counts from `Done (`, and the overview says "s
 only for the running server's own start, "last start took" for an earlier one. The other
 way round, a server told to `stop` over RCON (the Stop button, or `stop` typed in the console)
 is "Stopping" while MineShell waits for its process to exit (`pendingStops`, `awaitStop`), which
-on a big pack's save takes a while; systemd's own stop shows as its `deactivating`.
+on a big pack's save takes a while; systemd's own stop shows as its `deactivating`. A running
+server that logged "Server empty for N seconds, pausing" (Minecraft 1.21.2+'s
+`pause-when-empty-seconds`, offered in Settings > Performance only from that version) is
+"Paused (empty)": history.ts keeps the time on the run (`server_runs.paused_at`) and a join
+clears it, since the game logs nothing when a player wakes it; `pausedSince` reads it for
+`summarise`, so it lags by up to a history read (30 s) both ways.
 
 **Heap and memory advice.** The cgroup's memory says nothing about the Java heap: the JVM
 keeps heap it took, all of it at start with `-Xms` = `-Xmx`. `heap.ts` asks the JVM itself,

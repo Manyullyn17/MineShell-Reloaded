@@ -19,6 +19,8 @@ export type PropertyField = {
 	group: string;
 	/** Changing this needs a restart to take effect. */
 	restartRequired?: boolean;
+	/** The first Minecraft version that reads it; older servers do not get the field. */
+	since?: string;
 };
 
 export const PROPERTY_GROUPS = ['World', 'Players', 'Gameplay', 'Performance', 'Network'] as const;
@@ -105,12 +107,28 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'view-distance', label: 'View distance (chunks)', type: 'number', min: 2, max: 32, group: 'Performance' },
 	{ key: 'simulation-distance', label: 'Simulation distance (chunks)', type: 'number', min: 2, max: 32, group: 'Performance' },
 	{ key: 'max-tick-time', label: 'Watchdog tick limit (ms)', type: 'number', min: -1, max: 600000, group: 'Performance', help: '-1 disables the watchdog. Useful on heavy modpacks that stall during chunk generation.' },
+	{
+		key: 'pause-when-empty-seconds',
+		label: 'Pause when empty after (seconds)',
+		type: 'number',
+		min: 0,
+		max: 86400,
+		group: 'Performance',
+		help: 'Stops ticking the world once nobody has been online this long; the next player to join wakes it. 0 never pauses. Minecraft 1.21.2 and newer.',
+		since: '1.21.2'
+	},
 	{ key: 'sync-chunk-writes', label: 'Synchronous chunk writes', type: 'boolean', group: 'Performance', help: 'Off is faster; on is safer against sudden power loss.' },
 	{ key: 'network-compression-threshold', label: 'Network compression threshold', type: 'number', min: -1, max: 65535, group: 'Performance' },
 	{ key: 'entity-broadcast-range-percentage', label: 'Entity broadcast range (%)', type: 'number', min: 10, max: 1000, group: 'Performance' }
 ];
 
 const SCHEMA_KEYS = new Set(PROPERTY_SCHEMA.map((f) => f.key));
+
+/** The fields a server on this Minecraft version reads (an unknown version gets them all). */
+export function fieldsForVersion(fields: PropertyField[], minecraftVersion: string): PropertyField[] {
+	const version = minecraftVersion.trim();
+	return fields.filter((f) => !f.since || !version || compareVersions(version, f.since) >= 0);
+}
 
 /**
  * The guided form's values for `fields`. Unchecked boxes are absent from the
@@ -276,6 +294,8 @@ export function defaultProperties(opts: {
 		// Doesn't exist before 1.18; harmless if written for an older server,
 		// since Minecraft ignores server.properties keys it doesn't recognise.
 		'simulation-distance': '10',
+		// Minecraft's own default from 1.21.2; older versions ignore the key.
+		'pause-when-empty-seconds': '60',
 		'max-tick-time': '60000',
 		'sync-chunk-writes': 'true',
 		'network-compression-threshold': '256',

@@ -6,7 +6,7 @@
 		sub,
 		phase = null,
 		compact = false
-	}: { active: string; sub: string; phase?: 'starting' | 'stopping' | null; compact?: boolean } = $props();
+	}: { active: string; sub: string; phase?: 'starting' | 'stopping' | 'paused' | null; compact?: boolean } = $props();
 
 	const state = $derived(describeState(active, sub, phase));
 </script>

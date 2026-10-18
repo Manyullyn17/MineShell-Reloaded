@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const { applyEvents, clearCrashes, crashCausesByRun, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
+const { applyEvents, clearCrashes, crashCausesByRun, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, pausedSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { db } = await import('#lib/server/db/index.js');
 const { bisectSessions } = await import('#lib/server/db/schema.js');
@@ -105,6 +105,25 @@ describe('server history from journal events', () => {
 			ev(T0 + 2 * MIN, line('Alex joined the game'))
 		]);
 		expect(peakPlayers(s.id, T0, T0 + 5 * MIN)).toBe(1);
+	});
+
+	it('knows the running server paused itself for being empty until a player joins', async () => {
+		const s = await server();
+		applyEvents(s.id, [
+			ev(T0, 'Started x.service'),
+			ev(T0 + MIN, line('Done (12.3s)! For help, type "help"')),
+			ev(T0 + 2 * MIN, line('Server empty for 60 seconds, pausing'))
+		]);
+		expect(pausedSince(s.id, T0)).toBe(T0 + 2 * MIN);
+		// Chat cannot fake it.
+		applyEvents(s.id, [ev(T0 + 3 * MIN, line('Alex joined the game')), ev(T0 + 4 * MIN, line('<Alex> Server empty for 60 seconds, pausing'))]);
+		expect(pausedSince(s.id, T0)).toBeNull();
+		applyEvents(s.id, [ev(T0 + 5 * MIN, line('Alex left the game')), ev(T0 + 6 * MIN, line('Server empty for 60 seconds, pausing'))]);
+		expect(pausedSince(s.id, T0)).toBe(T0 + 6 * MIN);
+		// Another run (systemd's start is not the paused one's), and a stopped one, are not paused.
+		expect(pausedSince(s.id, T0 + 20 * MIN)).toBeNull();
+		applyEvents(s.id, [ev(T0 + 7 * MIN, 'Stopped x.service.')]);
+		expect(pausedSince(s.id, T0)).toBeNull();
 	});
 });
 

@@ -64,7 +64,7 @@ import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
-import { deleteCrashMarks } from './history';
+import { deleteCrashMarks, pausedSince } from './history';
 import { doneStartingAt } from './startphase';
 import { deleteDimensionNames } from './dimensionnames';
 import { installJava, type JavaVendor } from './javadownload';
@@ -1430,7 +1430,7 @@ export async function deleteInstance(
 
 // ------------------------------------------------------------------ summary ---
 
-export type ServerPhase = 'starting' | 'stopping' | null;
+export type ServerPhase = 'starting' | 'stopping' | 'paused' | null;
 
 export type InstanceSummary = {
 	instance: ServerInstance;
@@ -1582,13 +1582,15 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 	const doneAt = running ? await doneStartingAt(instance.id, instance.createdAt, state.activeEnterTimestamp) : null;
 	const stopping = running && pendingStops.has(instance.id);
 	const starting = running && doneAt === null;
+	// Paused for being empty (1.21.2+): still running, players can join and wake it.
+	const paused = running && !starting && !stopping && pausedSince(instance.id, state.activeEnterTimestamp) !== null;
 	return {
 		instance,
 		state,
 		running,
 		starting,
 		stopping,
-		phase: stopping ? 'stopping' : starting ? 'starting' : null,
+		phase: stopping ? 'stopping' : starting ? 'starting' : paused ? 'paused' : null,
 		doneAt,
 		uptimeMs: doneAt !== null ? Date.now() - doneAt : 0,
 		javaWarning: java.warning,

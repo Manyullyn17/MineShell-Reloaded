@@ -215,7 +215,7 @@
 		permissions: ['pvp', 'op-permission-level'],
 		connection: ['server-ip', 'online-mode', 'enable-query'],
 		distances: ['view-distance', 'simulation-distance', 'entity-broadcast-range-percentage'],
-		ticking: ['max-tick-time', 'sync-chunk-writes', 'network-compression-threshold']
+		ticking: ['max-tick-time', 'pause-when-empty-seconds', 'sync-chunk-writes', 'network-compression-threshold']
 	};
 	const placed = new Set(Object.values(PROPERTY_SECTIONS).flat());
 	const fieldsOf = (section: string) =>

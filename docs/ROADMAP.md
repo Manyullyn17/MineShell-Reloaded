@@ -15,8 +15,8 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
 built: ROADMAP-ARCHIVE):
 
-- **Next** (user's call, 2026-10-17), in this order: pausing empty servers, the status
-  page, player stats (restoring chunks, first on the list, is built: ROADMAP-ARCHIVE).
+- **Next** (user's call, 2026-10-17), in this order: the status page, player stats
+  (restoring chunks and pausing empty servers, first on the list, are built: ROADMAP-ARCHIVE).
 - **End of beta**: world backups (external), instance export and import.
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
@@ -100,14 +100,6 @@ Work it needs:
 ## Later
 
 None of these depends on another.
-
-### Pausing empty servers
-
-Vanilla 1.21.2+ has `pause-when-empty-seconds` (default 60; irithyll on Fabric 1.21.11
-pauses by it, "Server empty for 60 seconds, pausing" in its log). MineShell part: the
-setting in Settings and new-server defaults, and "paused (empty)" on the overview from that
-log line. Older versions have nothing in the game: a mod per loader, not yet researched.
-Stopping instead was rejected (idle auto-stop, below).
 
 ### Status page
 
@@ -195,6 +187,8 @@ What the built entries in the archive left out, in one place:
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished
   pre-generation shows for the next world too; the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
+- **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
+  researched). Whether pre-generation (Chunky) keeps running while paused is unchecked.
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's

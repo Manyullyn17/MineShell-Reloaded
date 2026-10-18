@@ -31,7 +31,9 @@ import { notify } from './notifications';
 const POLL_MS = 30_000;
 /** The game's own crash lines (every loader): the server thread is gone, whether or not the process exits. */
 const CRASH_LINES = '\\]: Encountered an unexpected exception|\\]: This crash report has been saved to: ';
-const PATTERN = `joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed |${CRASH_LINES}`;
+/** Minecraft 1.21.2+ with pause-when-empty-seconds; nothing is logged when a join ends the pause. */
+const PAUSE_LINE = '\\]: Server empty for \\d+ seconds, pausing$';
+const PATTERN = `joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed |${CRASH_LINES}|${PAUSE_LINE}`;
 
 const isStart = (m: string) => /^Started /.test(m);
 /**
@@ -43,6 +45,8 @@ const isStart = (m: string) => /^Started /.test(m);
 const isEnd = (m: string) => /^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed /.test(m);
 const isDone = (m: string) => /\]: Done \(/.test(m);
 const crashLine = new RegExp(CRASH_LINES);
+const pauseLine = new RegExp(PAUSE_LINE);
+const isPause = (m: string) => pauseLine.test(m);
 /** A log line saying the server crashed. */
 export const isCrashLine = (m: string) => crashLine.test(m);
 
@@ -137,6 +141,13 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): Happeni
 				.run();
 			continue;
 		}
+		if (isPause(e.message) && e.invocation) {
+			db.update(serverRuns)
+				.set({ pausedAt: e.at })
+				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation)))
+				.run();
+			continue;
+		}
 		if (isEnd(e.message)) {
 			if (e.invocation && endRun(instanceId, e.invocation, e.at, e.message)) happened.push({ kind: 'stop', at: e.at });
 			closeSessions(instanceId, e.at);
@@ -144,6 +155,13 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): Happeni
 		}
 		const player = playerEventWithName(e.message);
 		if (player?.event === 'join') {
+			// A join ends the pause (the game logs nothing for that).
+			if (e.invocation) {
+				db.update(serverRuns)
+					.set({ pausedAt: null })
+					.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation)))
+					.run();
+			}
 			const open = db
 				.select({ id: playerSessions.id })
 				.from(playerSessions)
@@ -265,6 +283,18 @@ export function hungAfterCrash(instanceId: string, startedAt: number, now = Date
 	// The run history may not have seen this start yet: an older run is not this one.
 	if (!run || run.endedAt !== null || run.crashLoggedAt === null || Math.abs(run.startedAt - startedAt) > 10_000) return null;
 	return now - run.crashLoggedAt >= HUNG_AFTER_CRASH_MS ? run.crashLoggedAt : null;
+}
+
+/**
+ * When the current run (the one systemd started at `startedAt`) paused itself
+ * for being empty, if no player joined since; null otherwise. Lags the game
+ * by up to the 30 s between history reads, both ways.
+ */
+export function pausedSince(instanceId: string, startedAt: number): number | null {
+	if (!startedAt) return null;
+	const run = db.select().from(serverRuns).where(eq(serverRuns.instanceId, instanceId)).orderBy(desc(serverRuns.startedAt)).limit(1).get();
+	if (!run || run.endedAt !== null || Math.abs(run.startedAt - startedAt) > 10_000) return null;
+	return run.pausedAt;
 }
 
 export type StartTimes = {

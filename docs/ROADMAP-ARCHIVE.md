@@ -9,6 +9,16 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Pausing empty servers
+
+Built 2026-10-18 (ARCHITECTURE, "Starting vs running"). As planned: Minecraft 1.21.2+'s own
+`pause-when-empty-seconds` in a server's Settings (Performance > Ticking and disk, shown only
+from 1.21.2) and in the new-server defaults (60, the game's own), and "Paused (empty)" in the
+status from the game's log line until a player joins. Tried on the throwaway dev server with
+vanilla 1.21.11: paused 60 s after Done, shown on the overview and in the server list within
+the history read. Nothing for older versions (a mod per loader; stopping instead was
+rejected). Leftovers: ROADMAP, "Leftovers of built features".
+
 ### Release history and downgrades
 
 Built 2026-10-18 (Settings > Updates; ARCHITECTURE, "Updating itself"), the user's idea of the

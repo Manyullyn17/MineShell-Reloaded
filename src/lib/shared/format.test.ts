@@ -71,4 +71,8 @@ describe('describeState', () => {
 		expect(describeState('active', 'running', 'starting')).toEqual({ label: 'Starting', tone: 'busy' });
 		expect(describeState('active', 'running', 'stopping')).toEqual({ label: 'Stopping', tone: 'busy' });
 	});
+
+	it('calls a server that paused itself for being empty paused, still in the running tone', () => {
+		expect(describeState('active', 'running', 'paused')).toEqual({ label: 'Paused (empty)', tone: 'running' });
+	});
 });

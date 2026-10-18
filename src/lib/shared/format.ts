@@ -64,9 +64,10 @@ export function describeState(
 	sub: string,
 	/**
 	 * What systemd cannot tell: running but not yet "Done (" (it calls the unit active as
-	 * soon as Java runs), or told to stop over RCON and still saving.
+	 * soon as Java runs), told to stop over RCON and still saving, or paused for being
+	 * empty (Minecraft 1.21.2+'s pause-when-empty-seconds).
 	 */
-	phase: 'starting' | 'stopping' | null = null
+	phase: 'starting' | 'stopping' | 'paused' | null = null
 ): {
 	label: string;
 	tone: 'running' | 'stopped' | 'busy' | 'failed';
@@ -74,6 +75,7 @@ export function describeState(
 	if (active === 'active' && sub === 'running') {
 		if (phase === 'stopping') return { label: 'Stopping', tone: 'busy' };
 		if (phase === 'starting') return { label: 'Starting', tone: 'busy' };
+		if (phase === 'paused') return { label: 'Paused (empty)', tone: 'running' };
 		return { label: 'Running', tone: 'running' };
 	}
 	if (active === 'activating') return { label: 'Starting', tone: 'busy' };
