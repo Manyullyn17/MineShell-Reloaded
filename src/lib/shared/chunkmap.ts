@@ -17,6 +17,8 @@ export type RegionDetail = {
 	heights: Int16Array;
 	/** Chunk indices (x + 32 * z) present but unreadable. */
 	unreadable: number[];
+	/** Chunks present with nothing to draw (generated only partway), by index: their status ('' unknown). */
+	bare: Record<number, string>;
 	/** Minecraft's own textures were there (its EULA answered): vanilla blocks have colours. */
 	vanilla: boolean;
 	/** The picture; let go once drawn into a canvas. */
@@ -42,6 +44,7 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 	const head = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, length))) as {
 		blocks: BlockEntry[];
 		unreadable: number[];
+		bare?: Record<number, string>;
 		size?: number;
 		vanilla: boolean;
 	};
@@ -79,7 +82,16 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 			pixels[i * 4 + 3] = 255;
 		}
 	}
-	return { size, blocks: head.blocks, ids, heights, unreadable: head.unreadable, vanilla: head.vanilla, image: new ImageData(pixels, size, size) };
+	return {
+		size,
+		blocks: head.blocks,
+		ids,
+		heights,
+		unreadable: head.unreadable,
+		bare: head.bare ?? {},
+		vanilla: head.vanilla,
+		image: new ImageData(pixels, size, size)
+	};
 }
 
 /** The top block at a position inside a region, for the tooltip. */
@@ -92,6 +104,16 @@ export function blockAt(detail: RegionDetail, x: number, z: number): { name: str
 	if (!id) return null;
 	const block = detail.blocks[id - 1];
 	return { name: block.name ?? block.key.split('@')[0], y: detail.heights[i] };
+}
+
+/** What a chunk without a picture is, for the tooltip: generated only partway, empty, or unreadable. */
+export function chunkState(detail: RegionDetail, cx: number, cz: number): string | null {
+	const index = (cx & 31) + 32 * (cz & 31);
+	if (detail.unreadable.includes(index)) return 'Could not be read';
+	const status = detail.bare[index];
+	if (status === undefined) return null;
+	if (!status || status === 'full') return 'Nothing to draw: no blocks';
+	return `Not fully generated: stopped at ${status.replaceAll('_', ' ')}`;
 }
 
 export const chunkKey = (cx: number, cz: number) => `${cx},${cz}`;

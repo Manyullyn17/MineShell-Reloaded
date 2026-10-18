@@ -3,7 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { chunkTops, regionOverview, shrinkColumns, type RegionColumns } from './chunkmap';
+import { chunkTops, readRegionColumns, regionOverview, shrinkColumns, type RegionColumns } from './chunkmap';
+import { writeRegion } from '../../../tests/helpers/regions';
 import { decodePng } from './png';
 import type { Tag } from './nbt';
 
@@ -133,6 +134,28 @@ describe('chunk map: top blocks', () => {
 	});
 });
 
+describe('chunk map: a region', () => {
+	it('tells chunks generated only partway from unreadable ones, with how far they got', async () => {
+		const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'chunkmap-'));
+		const stone = compound([['Y', byte(0)], ['block_states', compound([['palette', list([state('minecraft:stone')])]])]]);
+		const air = compound([['Y', byte(0)], ['block_states', compound([['palette', list([state('minecraft:air')])]])]]);
+		const chunk = (status: string, sections: Tag[]) =>
+			compound([['DataVersion', int(4671)], ['Status', string(status)], ...(sections.length ? [['sections', list(sections)] as [string, Tag]] : [])]);
+		await writeRegion(dir, 0, 0, [
+			{ index: 0, root: chunk('minecraft:full', [stone]) },
+			// The ring 1.18+ leaves around loaded chunks: biomes but no blocks, or no sections at all yet.
+			{ index: 1, root: chunk('minecraft:biomes', [air]) },
+			{ index: 2, root: chunk('minecraft:structure_starts', []) },
+			{ index: 3, compression: 4 }
+		]);
+		const columns = (await readRegionColumns(dir, 'r.0.0.mca', null))!;
+		expect(columns.keys).toEqual(['minecraft:stone']);
+		expect(columns.bare).toEqual({ 1: 'biomes', 2: 'structure_starts' });
+		expect(columns.unreadable).toEqual([3]);
+		await fs.rm(dir, { recursive: true, force: true });
+	});
+});
+
 describe('chunk map: overview', () => {
 	it('lists region files with the chunks they hold', async () => {
 		const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'chunkmap-'));
@@ -154,7 +177,7 @@ describe('chunk map: overview', () => {
 
 describe('chunk map: the zoomed-out picture', () => {
 	it('keeps the middle column of every 8x8 cell', () => {
-		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
+		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], bare: { 5: 'biomes' }, blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
 		// Cell (1, 2) has its middle at x 12, z 20; the cell's corner is different and must not show.
 		full.blocks[20 * 512 + 12] = 2;
 		full.heights[20 * 512 + 12] = 70;
@@ -163,6 +186,7 @@ describe('chunk map: the zoomed-out picture', () => {
 		const small = shrinkColumns(full, 8);
 		expect(small.size).toBe(64);
 		expect([small.blocks[2 * 64 + 1], small.heights[2 * 64 + 1], small.depths[2 * 64 + 1]]).toEqual([2, 70, 3]);
+		expect([small.unreadable, small.bare]).toEqual([[3], { 5: 'biomes' }]);
 		expect(small.blocks.filter((b) => b).length).toBe(1);
 		expect(small.unreadable).toEqual([3]);
 	});

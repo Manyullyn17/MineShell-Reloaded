@@ -31,8 +31,8 @@ import { HEADER, locations, presentChunks, readChunk, REGION_NAME, regionOf } fr
 const CACHE = path.join(CACHE_DIR, 'chunkmap');
 const SIZE = 512;
 const AREA = SIZE * SIZE;
-/** Bumped when the cached format changes. */
-const CACHE_VERSION = 1;
+/** Bumped when the cached format changes (2: `bare`). */
+const CACHE_VERSION = 2;
 
 // ------------------------------------------------------------- overview ---
 
@@ -284,7 +284,20 @@ export type RegionColumns = {
 	depths: Uint8Array;
 	/** Chunk indices present but not readable (LZ4, damaged): drawn as plain chunks. */
 	unreadable: number[];
+	/**
+	 * Chunks present with nothing to draw, by index: their generation status (without
+	 * `minecraft:`; '' when they have none). From 1.18 a ring of chunks generated only
+	 * partway (structure_starts, biomes...) surrounds everything loaded, about a third of a
+	 * world's chunks: drawn faintly, so the map keeps the shape of what is on disk.
+	 */
+	bare: Record<number, string>;
 };
+
+/** A chunk's generation status: Status at the top from 1.18, Level.Status before ('' without one). */
+function chunkStatus(root: Tag): string {
+	const status = child(root, 'Status') ?? child(child(root, 'Level'), 'Status');
+	return status?.type === 'string' ? status.value.replace(/^minecraft:/, '') : '';
+}
 
 /** Reads the top of every column of one region file. */
 export async function readRegionColumns(dir: string, name: string, legacyIds: Map<number, string> | null): Promise<RegionColumns | null> {
@@ -293,19 +306,26 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 	if (!region || !file || file.length < HEADER) return null;
 	const keys: string[] = [];
 	const keyIndex = new Map<string, number>();
-	const out: RegionColumns = { keys, blocks: new Uint16Array(AREA), heights: new Int16Array(AREA), depths: new Uint8Array(AREA), unreadable: [] };
+	const out: RegionColumns = { keys, blocks: new Uint16Array(AREA), heights: new Int16Array(AREA), depths: new Uint8Array(AREA), unreadable: [], bare: {} };
 	for (const [n, loc] of locations(file.subarray(0, HEADER)).entries()) {
 		// A region is about a second of work on the one thread every request shares: let them in after each chunk.
 		if (n) await new Promise((resolve) => setImmediate(resolve));
 		const data = await readChunk(dir, file, region, loc);
 		let tops: (Top | null)[] | null = null;
+		let root: Tag | null = null;
 		try {
-			tops = data ? chunkTops(parseNbt(data).root, legacyIds) : null;
+			root = data ? parseNbt(data).root : null;
+			// A chunk generated only partway can have no sections yet: nothing to draw, not unreadable.
+			tops = root ? (chunkTops(root, legacyIds) ?? new Array(256).fill(null)) : null;
 		} catch {
 			tops = null;
 		}
-		if (!tops) {
+		if (!tops || !root) {
 			out.unreadable.push(loc.index);
+			continue;
+		}
+		if (tops.every((t) => !t)) {
+			out.bare[loc.index] = chunkStatus(root);
 			continue;
 		}
 		const ox = (loc.index % 32) * 16;
@@ -329,7 +349,7 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 }
 
 function encodeColumns(c: RegionColumns): Buffer {
-	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable }));
+	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable, bare: c.bare }));
 	const len = Buffer.alloc(4);
 	len.writeUInt32LE(head.length);
 	return Buffer.concat([len, head, Buffer.from(c.blocks.buffer), Buffer.from(c.heights.buffer), Buffer.from(c.depths.buffer)]);
@@ -338,7 +358,7 @@ function encodeColumns(c: RegionColumns): Buffer {
 function decodeColumns(buf: Buffer): RegionColumns | null {
 	try {
 		const len = buf.readUInt32LE(0);
-		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as { v: number; keys: string[]; unreadable: number[] };
+		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as { v: number; keys: string[]; unreadable: number[]; bare: Record<number, string> };
 		if (head.v !== CACHE_VERSION) return null;
 		let at = 4 + len;
 		const take = (bytes: number) => {
@@ -350,6 +370,7 @@ function decodeColumns(buf: Buffer): RegionColumns | null {
 		return {
 			keys: head.keys,
 			unreadable: head.unreadable,
+			bare: head.bare,
 			blocks: new Uint16Array(take(AREA * 2)),
 			heights: new Int16Array(take(AREA * 2)),
 			depths: new Uint8Array(take(AREA))
@@ -386,7 +407,7 @@ async function inTurn<T>(work: () => Promise<T>): Promise<T> {
  */
 export function shrinkColumns(c: RegionColumns, factor: number): RegionColumns & { size: number } {
 	const size = SIZE / factor;
-	const out = { keys: c.keys, unreadable: c.unreadable, size, blocks: new Uint16Array(size * size), heights: new Int16Array(size * size), depths: new Uint8Array(size * size) };
+	const out = { keys: c.keys, unreadable: c.unreadable, bare: c.bare, size, blocks: new Uint16Array(size * size), heights: new Int16Array(size * size), depths: new Uint8Array(size * size) };
 	for (let z = 0; z < size; z++) {
 		for (let x = 0; x < size; x++) {
 			// The middle of each cell: its edges are chunk borders, often the least typical column.

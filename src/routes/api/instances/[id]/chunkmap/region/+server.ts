@@ -41,6 +41,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	let json = JSON.stringify({
 		blocks: columns.keys.map((key) => ({ key, name: info[key]?.name ?? null, color: info[key]?.color ?? null })),
 		unreadable: columns.unreadable,
+		bare: columns.bare,
 		size: columns.size,
 		vanilla
 	});

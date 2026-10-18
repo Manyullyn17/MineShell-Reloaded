@@ -21,10 +21,13 @@ export type ChunkSpec = {
 	pad?: number;
 	/** Small compounds to parse, as a real chunk's sections and block entities make it slow to read. */
 	busy?: number;
+	/** The chunk's NBT as given, instead of one made from the fields above. */
+	root?: Extract<Tag, { type: 'compound' }>;
 };
 
 /** A chunk's NBT: 1.18+ keeps InhabitedTime at the top, 1.12-1.17 under Level. */
 function chunkNbt(spec: ChunkSpec): Buffer {
+	if (spec.root) return writeNbt({ name: '', gzipped: false, root: spec.root });
 	const fields: [string, Tag][] = [
 		['InhabitedTime', { type: 'long', value: BigInt(spec.ticks ?? 0) }],
 		['Padding', { type: 'byteArray', value: new Array(spec.pad ?? 0).fill(1) }]

@@ -2,7 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
-	import { blockAt, chunkKey, presence, readRegion, REGION, regionFile, type RegionDetail } from '#lib/shared/chunkmap.js';
+	import { blockAt, chunkKey, chunkState, presence, readRegion, REGION, regionFile, type RegionDetail } from '#lib/shared/chunkmap.js';
 
 	/**
 	 * A flat map of one dimension to pick chunks on (World > Restore chunks).
@@ -120,6 +120,7 @@
 			cz,
 			file: regionFile(cx, cz),
 			top: region ? blockAt(region.detail, shown.x, shown.z) : null,
+			state: region ? chunkState(region.detail, cx, cz) : null,
 			note: describe?.(cx, cz) ?? null
 		};
 	});
@@ -283,8 +284,12 @@
 				if (drawn === lowRes) (small.delete(key), small.set(key, lowRes));
 				else if (wantsFull) (details.delete(key), details.set(key, full!));
 				ctx.drawImage(drawn.picture, x, z, size, size);
+				const chunk = (i: number) => ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
 				ctx.fillStyle = 'rgba(127, 135, 144, 0.55)';
-				for (const i of drawn.detail.unreadable) ctx.fillRect(x + (i % 32) * 16 * scale, z + Math.floor(i / 32) * 16 * scale, 16 * scale, 16 * scale);
+				for (const i of drawn.detail.unreadable) chunk(i);
+				// Generated only partway: faint, so the region keeps the shape its placeholder had.
+				ctx.fillStyle = 'rgba(127, 135, 144, 0.28)';
+				for (const i of Object.keys(drawn.detail.bare)) chunk(Number(i));
 			} else {
 				ctx.drawImage(summaries.get(key)!.picture, x, z, size, size);
 			}
@@ -643,6 +648,7 @@
 	{#if hoverCapable && info && pointer}
 		<div class="tip" style:left="{Math.min(pointer.px + 14, width - 230)}px" style:top="{Math.min(pointer.py + 14, height - 90)}px">
 			{#if info.top}<div class="top">{info.top.name} <span class="faint">y {info.top.y}</span></div>{/if}
+			{#if info.state}<div class="muted-line">{info.state}</div>{/if}
 			{#if info.note}<div>{info.note}</div>{/if}
 			<div class="mono">x {info.x}, z {info.z}</div>
 			<div class="mono faint">chunk {info.cx}, {info.cz} · {info.file}</div>
@@ -653,6 +659,7 @@
 	<p class="readout small" aria-live="polite">
 		{#if info}
 			{#if info.top}<strong>{info.top.name}</strong> <span class="faint">y {info.top.y}</span> ·{/if}
+			{#if info.state}{info.state} ·{/if}
 			{#if info.note}{info.note} ·{/if}
 			<span class="mono">x {info.x}, z {info.z} · chunk {info.cx}, {info.cz} · {info.file}</span>
 		{:else}
@@ -723,6 +730,10 @@
 
 	.top {
 		font-weight: 600;
+	}
+
+	.muted-line {
+		color: var(--text-muted);
 	}
 
 	.faint {
