@@ -176,6 +176,10 @@ What the built entries in the archive left out, in one place:
   (Forestry/ExtraTrees leaves, Tinkers' slime grass and molten metals) are grey or untinted, and so are ones
   whose model only the mod's code names (Chisel's variants); the overview is chunk
   presence only, not shaded by InhabitedTime as first planned.
+- **Pruning chunks**: protection is per prune (named areas every prune skips were talked
+  about, 2026-10-17, not built); the analysis lives in memory, so a MineShell restart means
+  analysing again; it is read on the main thread like the chunk map (a big world takes
+  minutes, other pages stay responsive).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); Chunky's saved tasks
   (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished

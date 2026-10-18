@@ -27,6 +27,15 @@
 	--info: #61afef;
 	--success: #4da08f;
 
+	/* Chunk pruning's heatmap, by time players spent in a chunk: one hue, receding toward the background for least. */
+	--heat-1: #184f95;
+	--heat-2: #1c5cab;
+	--heat-3: #2a78d6;
+	--heat-4: #5598e7;
+	--heat-5: #86b6ef;
+	--heat-6: #b7d3f6;
+	--heat-7: #cde2fb;
+
 	color-scheme: dark;
 }
 
@@ -52,6 +61,15 @@
 	--info: #6cb8f5;
 	--success: #57c2a8;
 
+	/* Chunk pruning's heatmap, by time players spent in a chunk: one hue, receding toward the background for least. */
+	--heat-1: #184f95;
+	--heat-2: #1c5cab;
+	--heat-3: #2a78d6;
+	--heat-4: #5598e7;
+	--heat-5: #86b6ef;
+	--heat-6: #b7d3f6;
+	--heat-7: #cde2fb;
+
 	color-scheme: dark;
 }
 
@@ -75,6 +93,15 @@
 	--warning: #9a6a08;
 	--info: #1f6fb2;
 	--success: #2f7d6e;
+
+	/* Chunk pruning's heatmap, by time players spent in a chunk: one hue, receding toward the background for least. */
+	--heat-1: #b7d3f6;
+	--heat-2: #86b6ef;
+	--heat-3: #5598e7;
+	--heat-4: #2a78d6;
+	--heat-5: #1c5cab;
+	--heat-6: #184f95;
+	--heat-7: #0d366b;
 
 	color-scheme: light;
 }

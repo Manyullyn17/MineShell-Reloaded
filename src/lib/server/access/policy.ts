@@ -191,7 +191,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			chunkyContinue: on('world'),
 			chunkyCancel: on('world'),
 			chunkyAuto: on('world'),
-			pruneCount: on('world'),
+			pruneAnalyse: on('world'),
 			prune: on('world'),
 			resetDimension: on('world'),
 			reset: on('world'),
@@ -207,7 +207,10 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/instances/[id]/world/chunks': { load: on('backups.restore'), actions: { restore: on('backups.restore'), iconEula: on('backups.restore') } },
 	// The chunk map shows the world from above: drawn for the page that restores chunks.
 	'/api/instances/[id]/chunkmap': { methods: { GET: on('backups.restore') } },
-	'/api/instances/[id]/chunkmap/region': { methods: { GET: on('backups.restore') } },
+	// Pruning shows the terrain under its heatmap.
+	'/api/instances/[id]/chunkmap/region': { methods: { GET: { any: [on('backups.restore'), on('world')] } } },
+	// Every chunk's InhabitedTime, from the last analysis: the heatmap on World > Prune chunks.
+	'/api/instances/[id]/prune-analysis': { methods: { GET: on('world') } },
 
 	'/instances/[id]/map': {
 		load: on('view'),

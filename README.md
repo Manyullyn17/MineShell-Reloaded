@@ -78,7 +78,7 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 - Keep several worlds per server: start a new one without deleting the old, upload one, switch between them, and turn any snapshot into a world of its own. Each world keeps its seed, data packs and map.
 - Reset or restore individual dimensions.
 - Restore chosen chunks from a snapshot, picked on a map of the dimension drawn from the world's own files (top blocks with their textures' colours, modded blocks too).
-- Prune chunks that have not actually been visited.
+- Prune chunks that have not actually been visited, previewed on a heatmap of where players spent time, with chunks to keep picked on the map.
 - Pre-generate terrain with Chunky and monitor its progress.
 - Coordinate snapshots and scheduled restarts so they do not interfere with each other.
 

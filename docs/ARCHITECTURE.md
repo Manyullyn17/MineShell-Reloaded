@@ -639,6 +639,19 @@ as item pictures) by a short table of rough colours (`VANILLA_COLOURS`); a block
 a texture is plain grey and the height shading still shows the land. LZ4 and damaged chunks
 are drawn as grey squares. Item pictures turned off means no colours.
 
+**Pruning** (`chunkprune.ts`, `PruneMap.svelte`, rules shared with the browser in
+`lib/shared/chunkprune.ts`) starts with an analysis: a task reads every chunk's
+InhabitedTime and size in one dimension (`analysePrunable`, read only, so also while the
+server runs) and keeps it in memory, one per server; `/api/instances/[id]/prune-analysis`
+sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
+chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
+chunks the threshold and spawn radius pick, the error colour, worked out in the browser on
+every change. Chunks picked on the map are protected. The prune posts the analysis's time and
+the protected list; `pruneChunks` refuses an analysis that is no longer the latest, and
+removes a chunk only when the analysis showed it going, it is not protected, and on the copy
+being pruned it is still under the threshold, so a chunk generated or visited after the
+analysis stays. A finished prune drops the analysis.
+
 A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
 are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which
 a pack rollback's world restore also needs: after World folder changed, putting it back

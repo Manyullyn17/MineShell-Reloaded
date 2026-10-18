@@ -37,7 +37,8 @@ import {
 } from './worlds';
 import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
-import { applyPrune, planPrune, type PruneOptions } from './chunkprune';
+import { analyseRegions, applyPrune, planPrune } from './chunkprune';
+import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
 import { child, parseNbt } from './nbt';
 import { constants as fsConstants } from 'node:fs';
@@ -421,21 +422,35 @@ export type PruneSettings = {
 	keepAroundSpawn: number;
 };
 
-export type PruneCount = PruneSettings & {
+/** What an analysis read: every chunk's InhabitedTime, for the map that previews pruning. */
+export type PruneAnalysis = {
 	dimension: string;
 	label: string;
-	chunks: number;
-	remove: number;
-	unreadable: number;
-	bytes: number;
 	at: number;
+	spawn: { x: number; z: number } | null;
+	regions: AnalysedRegion[];
+	chunks: number;
+	unreadable: number;
 };
 
-/** The last count per server, for the World tab; in memory, a count is quick to redo. */
-const pruneCounts = new Map<string, PruneCount>();
+/**
+ * The last analysis per server, for the World tab. In memory: it is a
+ * picture of a moment, quick to redo, and a few MB for a big world. On
+ * globalThis, so a dev reload does not lose it.
+ */
+const analysisGlobals = globalThis as { __mineshellPruneAnalyses?: Map<string, PruneAnalysis> };
+const pruneAnalyses = (analysisGlobals.__mineshellPruneAnalyses ??= new Map());
 
-export function lastPruneCount(instanceId: string): PruneCount | null {
-	return pruneCounts.get(instanceId) ?? null;
+export function pruneAnalysis(instanceId: string): PruneAnalysis | null {
+	return pruneAnalyses.get(instanceId) ?? null;
+}
+
+/** The analysis without its chunks, for the page's data. */
+export function pruneAnalysisSummary(instanceId: string) {
+	const found = pruneAnalyses.get(instanceId);
+	if (!found) return null;
+	const { regions, ...summary } = found;
+	return { ...summary, regionCount: regions.length };
 }
 
 /**
@@ -472,7 +487,7 @@ export function dimensionBase(root: string, dimension: Dimension): string {
 	return path.join(root, dimension.overworld ? path.dirname(dimension.paths[0]) : dimension.paths[0]);
 }
 
-async function pruneOptions(root: string, dimension: Dimension, settings: PruneSettings): Promise<PruneOptions> {
+async function pruneOptions(root: string, dimension: Dimension, settings: PruneSettings): Promise<PruneRule> {
 	const spawn = dimension.overworld && settings.keepAroundSpawn > 0 ? await worldSpawn(root) : null;
 	return { maxTicks: settings.maxTicks, keep: spawn ? { ...spawn, radius: settings.keepAroundSpawn } : null };
 }
@@ -484,30 +499,65 @@ function validSettings(settings: PruneSettings): PruneSettings {
 }
 
 /**
- * Counts what pruning would remove, without changing anything. Reads only, so
- * it also runs while the server is up (the count is then a moment's picture).
+ * Reads every chunk's InhabitedTime in a dimension, without changing
+ * anything, so the World tab can draw the heatmap and show what a threshold
+ * would prune. Reads only, so it also runs while the server is up (it is then
+ * a moment's picture; the prune checks every chunk again).
  */
-export async function countPrunable(instance: ServerInstance, key: string, settings: PruneSettings): Promise<string> {
-	validSettings(settings);
+export async function analysePrunable(instance: ServerInstance, key: string): Promise<string> {
 	const dimension = await findDimension(instance.path, key);
 	if (!dimension) throw new InstanceError('That dimension is not in the world.');
-	const opts = await pruneOptions(instance.path, dimension, settings);
-	return startTask({ label: `Counting chunks to prune in ${dimension.label}: ${instance.name}`, instanceId: instance.id }, async (task) => {
-		const plan = await planPrune(dimensionBase(instance.path, dimension), opts, (done, total) =>
+	const spawn = dimension.overworld ? await worldSpawn(instance.path) : null;
+	return startTask({ label: `Analysing ${dimension.label} for pruning: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		const regions = await analyseRegions(dimensionBase(instance.path, dimension), (done, total) =>
 			task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`)
 		);
-		pruneCounts.set(instance.id, {
-			...settings,
-			dimension: key,
-			label: dimension.label,
-			chunks: plan.chunks,
-			remove: plan.remove,
-			unreadable: plan.unreadable,
-			bytes: plan.bytes,
-			at: Date.now()
-		});
-		task.log(`${plan.remove} of ${plan.chunks} chunks would go${plan.unreadable ? `; ${plan.unreadable} could not be read and stay` : ''}.`);
+		let chunks = 0;
+		let unreadable = 0;
+		for (const r of regions) {
+			for (const t of r.ticks) {
+				if (t === NO_CHUNK) continue;
+				chunks++;
+				if (t === UNREADABLE) unreadable++;
+			}
+		}
+		pruneAnalyses.set(instance.id, { dimension: key, label: dimension.label, at: Date.now(), spawn, regions, chunks, unreadable });
+		task.log(`Read ${chunks} chunks in ${regions.length} region files${unreadable ? `; ${unreadable} could not be read and stay` : ''}.`);
 	});
+}
+
+/**
+ * The chunks a prune may remove: the ones the analysis showed would go under
+ * these settings, minus the protected ones. Anything generated or visited
+ * since stays, whatever the threshold says.
+ */
+function analysedPrunable(analysis: PruneAnalysis, rule: PruneRule, protect: Set<string>) {
+	const allowed = new Set<string>();
+	let protectedCount = 0;
+	for (const r of analysis.regions) {
+		for (let i = 0; i < 1024; i++) {
+			const t = r.ticks[i];
+			if (t === NO_CHUNK || t === UNREADABLE) continue;
+			const cx = r.x * 32 + (i % 32);
+			const cz = r.z * 32 + Math.floor(i / 32);
+			if (!prunes(t, cx, cz, rule)) continue;
+			if (protect.has(`${cx},${cz}`)) protectedCount++;
+			else allowed.add(`${cx},${cz}`);
+		}
+	}
+	return { allowed, protectedCount };
+}
+
+/** Protected chunks as the form sends them: "x,z;x,z;...". */
+export function parseChunkList(value: string): Set<string> {
+	const out = new Set<string>();
+	for (const part of value.split(';')) {
+		if (!part) continue;
+		const [x, z] = part.split(',').map(Number);
+		if (!Number.isInteger(x) || !Number.isInteger(z)) throw new InstanceError('The protected chunks could not be read.');
+		out.add(`${x},${z}`);
+	}
+	return out;
 }
 
 /**
@@ -521,12 +571,18 @@ export async function pruneChunks(
 	instance: ServerInstance,
 	key: string,
 	settings: PruneSettings,
-	opts: { snapshot: boolean }
+	opts: { snapshot: boolean; analysedAt: number; protect: Set<string> }
 ): Promise<string> {
 	validSettings(settings);
 	const dimension = await findDimension(instance.path, key);
 	if (!dimension) throw new InstanceError('That dimension is not in the world.');
-	const pruneOpts = await pruneOptions(instance.path, dimension, settings);
+	const analysis = pruneAnalyses.get(instance.id);
+	if (!analysis || analysis.dimension !== key || analysis.at !== opts.analysedAt) {
+		throw new InstanceError(`Analyse ${dimension.label} again: the map this was picked on is no longer the latest.`);
+	}
+	const rule = await pruneOptions(instance.path, dimension, settings);
+	const { allowed, protectedCount } = analysedPrunable(analysis, rule, opts.protect);
+	if (!allowed.size) throw new InstanceError('No chunk would go: every one the threshold picks is protected.');
 	return runWorldChange(instance, {
 		action: 'prune',
 		label: `Pruning ${dimension.label}`,
@@ -544,14 +600,16 @@ export async function pruneChunks(
 				});
 			}
 			const base = dimensionBase(incoming, dimension);
-			const plan = await planPrune(base, pruneOpts, (done, total) =>
+			const plan = await planPrune(base, { ...rule, allow: (cx, cz) => allowed.has(`${cx},${cz}`) }, (done, total) =>
 				task.setProgress(total ? (done / total) * 90 : null, `Reading region file ${done} of ${total}`)
 			);
 			task.setProgress(null, `Removing ${plan.remove} chunks`);
 			await applyPrune(base, plan);
-			pruneCounts.delete(instance.id);
+			// The world changed under it: the map is drawn again from a new analysis.
+			if (pruneAnalyses.get(instance.id) === analysis) pruneAnalyses.delete(instance.id);
+			const kept = allowed.size - plan.remove;
 			task.log(
-				`Removed ${plan.remove} of ${plan.chunks} chunks${plan.unreadable ? `; ${plan.unreadable} could not be read and stayed` : ''}.`
+				`Removed ${plan.remove} of ${plan.chunks} chunks${protectedCount ? `; ${protectedCount} protected` : ''}${kept ? `; ${kept} picked on the map were visited or changed since and stayed` : ''}.`
 			);
 		},
 		done: `${dimension.label} is pruned; removed chunks generate again when someone goes there.`

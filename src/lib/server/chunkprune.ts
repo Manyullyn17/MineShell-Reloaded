@@ -12,8 +12,10 @@ import {
 	readChunk,
 	REGION_NAME,
 	regionOf,
-	SECTOR
+	SECTOR,
+	type Location
 } from './regionfile';
+import { keptBySpawn, NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 
 /**
  * Chunk pruning: deleting chunks that were generated but barely visited, so
@@ -30,11 +32,9 @@ import {
  * left empty is deleted. A chunk that cannot be read (LZ4, damaged) is kept.
  */
 
-export type PruneOptions = {
-	/** Chunks with InhabitedTime below this many ticks go (20 ticks a second). */
-	maxTicks: number;
-	/** Kept regardless, in block coordinates: everything within `radius` of the center. */
-	keep: { x: number; z: number; radius: number } | null;
+export type PruneOptions = PruneRule & {
+	/** Only these may go: the chunks the analysis showed would, minus the protected ones. */
+	allow?: (cx: number, cz: number) => boolean;
 };
 
 export type PrunePlan = {
@@ -56,12 +56,43 @@ export function inhabitedTime(root: Tag): number | null {
 	return null;
 }
 
-function kept(keep: PruneOptions['keep'], cx: number, cz: number): boolean {
-	if (!keep || keep.radius <= 0) return false;
-	// Any part of the chunk within the radius keeps it.
-	const nearestX = Math.max(cx * 16, Math.min(keep.x, cx * 16 + 15));
-	const nearestZ = Math.max(cz * 16, Math.min(keep.z, cz * 16 + 15));
-	return (nearestX - keep.x) ** 2 + (nearestZ - keep.z) ** 2 <= keep.radius ** 2;
+/** The InhabitedTime of one stored chunk; null when it cannot be read (LZ4, damaged). */
+async function chunkTicks(dir: string, file: Buffer, region: [number, number], loc: Location): Promise<number | null> {
+	try {
+		const data = await readChunk(dir, file, region, loc);
+		return data ? inhabitedTime(parseNbt(data).root) : null;
+	} catch {
+		return null;
+	}
+}
+
+const regionFiles = async (dir: string) =>
+	(await fs.readdir(dir).catch(() => [] as string[])).filter((n) => REGION_NAME.test(n)).sort();
+
+/**
+ * Every chunk's InhabitedTime and size in a dimension, for the map that
+ * previews pruning. Reads only. `base` holds its region/ folder.
+ */
+export async function analyseRegions(base: string, progress?: (done: number, total: number) => void): Promise<AnalysedRegion[]> {
+	const dir = path.join(base, 'region');
+	const names = await regionFiles(dir);
+	const out: AnalysedRegion[] = [];
+	for (const [i, name] of names.entries()) {
+		progress?.(i, names.length);
+		const region = regionOf(name)!;
+		const file = await fs.readFile(path.join(dir, name));
+		if (file.length < HEADER) continue;
+		const ticks = new Uint32Array(1024).fill(NO_CHUNK);
+		const sectors = new Uint16Array(1024);
+		for (const loc of locations(file.subarray(0, HEADER))) {
+			const t = await chunkTicks(dir, file, region, loc);
+			ticks[loc.index] = t === null ? UNREADABLE : Math.min(Math.max(0, t), UNREADABLE - 1);
+			sectors[loc.index] = Math.min(loc.sectors, 0xffff);
+		}
+		out.push({ x: region[0], z: region[1], ticks, sectors });
+	}
+	progress?.(names.length, names.length);
+	return out;
 }
 
 /**
@@ -74,7 +105,7 @@ export async function planPrune(
 	progress?: (done: number, total: number) => void
 ): Promise<PrunePlan> {
 	const dir = path.join(base, 'region');
-	const names = (await fs.readdir(dir).catch(() => [] as string[])).filter((n) => REGION_NAME.test(n)).sort();
+	const names = await regionFiles(dir);
 	const plan: PrunePlan = { files: new Map(), chunks: 0, remove: 0, unreadable: 0, bytes: 0 };
 	for (const [i, name] of names.entries()) {
 		progress?.(i, names.length);
@@ -85,19 +116,13 @@ export async function planPrune(
 		for (const loc of locations(file.subarray(0, HEADER))) {
 			plan.chunks++;
 			const [cx, cz] = chunkCoords(region, loc.index);
-			if (kept(opts.keep, cx, cz)) continue;
-			const data = await readChunk(dir, file, region, loc);
-			let ticks: number | null = null;
-			try {
-				ticks = data ? inhabitedTime(parseNbt(data).root) : null;
-			} catch {
-				ticks = null;
-			}
+			if (keptBySpawn(opts.keep, cx, cz) || (opts.allow && !opts.allow(cx, cz))) continue;
+			const ticks = await chunkTicks(dir, file, region, loc);
 			if (ticks === null) {
 				plan.unreadable++;
 				continue;
 			}
-			if (ticks < opts.maxTicks) {
+			if (prunes(ticks, cx, cz, opts)) {
 				remove.add(loc.index);
 				plan.bytes += loc.sectors * SECTOR;
 			}

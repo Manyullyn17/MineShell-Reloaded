@@ -20,8 +20,9 @@ import {
 	worldFolders
 } from '#lib/server/snapshots.js';
 import {
-	countPrunable,
-	lastPruneCount,
+	analysePrunable,
+	parseChunkList,
+	pruneAnalysisSummary,
 	pruneChunks,
 	resetDimension,
 	resetWorld,
@@ -76,7 +77,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		snapshotPrompt: await snapshotPrompt(instance),
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
-		pruneCount: lastPruneCount(instance.id),
+		pruneAnalysis: pruneAnalysisSummary(instance.id),
 		snapshots: await Promise.all(
 			snapshots.map(async (s) => {
 				// Only one of the world the server uses can be restored (snapshotOfWorld).
@@ -272,12 +273,12 @@ export const actions: Actions = {
 		return { ok: true, message: 'Snapshot deleted.' };
 	},
 
-	pruneCount: async ({ request, params }) => {
+	pruneAnalyse: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		try {
-			await countPrunable(instance, String(form.get('dimension') ?? ''), pruneSettings(form));
-			return { ok: true, message: 'Counting; the result shows here when the task finishes.' };
+			await analysePrunable(instance, String(form.get('dimension') ?? ''));
+			return { ok: true, message: 'Analysing; the map shows here when the task finishes.' };
 		} catch (err) {
 			return refused(err);
 		}
@@ -288,7 +289,9 @@ export const actions: Actions = {
 		const form = await request.formData();
 		try {
 			await pruneChunks(instance, String(form.get('dimension') ?? ''), pruneSettings(form), {
-				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true })
+				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true }),
+				analysedAt: Number(form.get('analysedAt')),
+				protect: parseChunkList(String(form.get('protect') ?? ''))
 			});
 			return { ok: true, message: `Pruning. ${STARTED}` };
 		} catch (err) {

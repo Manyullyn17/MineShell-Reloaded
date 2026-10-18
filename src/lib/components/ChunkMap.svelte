@@ -17,6 +17,9 @@
 	 * or tap toggles a chunk; Shift-drag adds a rectangle, Ctrl-drag removes
 	 * one, and `selecting` (the page's Select button, for touch) makes a plain
 	 * drag a rectangle.
+	 *
+	 * World > Prune chunks lays a colour per chunk over it (`layer`: the
+	 * heatmap, the chunks that would go), with or without the terrain under it.
 	 */
 	let {
 		overview,
@@ -24,18 +27,34 @@
 		selected,
 		center,
 		selecting = false,
-		jump = null
+		jump = null,
+		layer = null,
+		circle = null,
+		describe = null,
+		tapHint = 'Tap a chunk to select it and see what is there.'
 	}: {
 		/** Region files and their chunks, from the overview endpoint. */
 		overview: { x: number; z: number; chunks: string }[];
-		/** Where one region's picture comes from. */
-		regionUrl: (x: number, z: number) => string;
+		/** Where one region's picture comes from; null draws no terrain. */
+		regionUrl: ((x: number, z: number) => string) | null;
 		selected: SvelteSet<string>;
 		/** Block position shown first. */
 		center: { x: number; z: number };
 		selecting?: boolean;
 		/** Set to move the view (the page's coordinate field); a new object each time. */
 		jump?: { x: number; z: number } | null;
+		/**
+		 * A colour per chunk over the terrain: per region "x,z", a code per chunk
+		 * index (x + 32 * z), 0 for none; `colours[code]` names its custom property.
+		 * A new array for a region draws it again.
+		 */
+		layer?: { regions: Map<string, Uint8Array>; colours: string[]; alpha: number } | null;
+		/** A circle in block coordinates (the radius pruning keeps around spawn), dashed. */
+		circle?: { x: number; z: number; radius: number } | null;
+		/** A line about a chunk for the tooltip. */
+		describe?: ((cx: number, cz: number) => string | null) | null;
+		/** Under the map on touch screens, before anything is tapped. */
+		tapHint?: string;
 	} = $props();
 
 	const MIN_SCALE = 1 / 32;
@@ -94,7 +113,15 @@
 		const cz = Math.floor(shown.z / 16);
 		const at = `${Math.floor(shown.x / REGION)},${Math.floor(shown.z / REGION)}`;
 		const region = details.get(at) ?? small.get(at);
-		return { x: shown.x, z: shown.z, cx, cz, file: regionFile(cx, cz), top: region ? blockAt(region.detail, shown.x, shown.z) : null };
+		return {
+			x: shown.x,
+			z: shown.z,
+			cx,
+			cz,
+			file: regionFile(cx, cz),
+			top: region ? blockAt(region.detail, shown.x, shown.z) : null,
+			note: describe?.(cx, cz) ?? null
+		};
 	});
 
 	function summaryPicture(present: Uint8Array): HTMLCanvasElement {
@@ -136,6 +163,14 @@
 		untrack(redraw);
 	});
 
+	// Turning the terrain or the layer on or off, or a new layer, redraws.
+	$effect(() => {
+		void regionUrl;
+		void layer;
+		void circle;
+		untrack(redraw);
+	});
+
 	// Selection changes from outside (Clear) redraw too.
 	$effect(() => {
 		void selected.size;
@@ -153,7 +188,9 @@
 			const [x, z] = at.split(',').map(Number);
 			const gen = generation;
 			loading.add(key);
-			fetch(kind === 'full' ? regionUrl(x, z) : `${regionUrl(x, z)}&size=64`)
+			const url = regionUrl;
+			if (!url) break;
+			fetch(kind === 'full' ? url(x, z) : `${url(x, z)}&size=64`)
 				.then(async (res) => {
 					if (gen !== generation) return;
 					if (res.status === 204 || !res.ok) {
@@ -239,7 +276,7 @@
 			const full = details.get(key);
 			const lowRes = small.get(key);
 			const wantsFull = n < fullBudget;
-			const drawn = wantsFull ? (full ?? lowRes) : (lowRes ?? full);
+			const drawn = !regionUrl ? undefined : wantsFull ? (full ?? lowRes) : (lowRes ?? full);
 			if (drawn) {
 				// Most recently used last: kept the longest. A full picture outside the budget is
 				// drawn while it is there but not kept for it.
@@ -251,16 +288,77 @@
 			} else {
 				ctx.drawImage(summaries.get(key)!.picture, x, z, size, size);
 			}
+			if (!regionUrl) continue;
 			if (wantsFull && !full && !failed.has(`full:${key}`)) want.push(`full:${key}`);
 			if (!wantsFull && !lowRes && !failed.has(`small:${key}`)) want.push(`small:${key}`);
 		}
 		wanted = want;
 		pump();
+		if (layer) drawLayer(ctx, inView, layer, style);
+		if (circle) drawCircle(ctx, circle, colour('--text'));
 
 		drawGrid(ctx, colour('--text'), colour('--text-muted'), colour('--bg-sunken'));
 		drawSelection(ctx, colour('--accent'));
 		drawHover(ctx, colour('--text'));
 		if (drag?.rect) drawRect(ctx, colour('--accent'));
+	}
+
+	/** Layer pictures (32x32, a pixel a chunk), redrawn when the codes or the colours change. */
+	const layerPictures = new WeakMap<Uint8Array, { colours: string; picture: HTMLCanvasElement }>();
+
+	/** A colour property as red, green, blue, through the canvas (any CSS colour works). */
+	function rgb(ctx: CanvasRenderingContext2D, value: string): [number, number, number] {
+		ctx.fillStyle = '#000';
+		ctx.fillStyle = value || '#8c8c8c';
+		const hex = String(ctx.fillStyle);
+		if (hex.startsWith('#')) return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+		const m = hex.match(/\d+(\.\d+)?/g)?.map(Number) ?? [140, 140, 140];
+		return [m[0], m[1], m[2]];
+	}
+
+	function drawLayer(
+		ctx: CanvasRenderingContext2D,
+		inView: { rx: number; rz: number; key: string }[],
+		over: NonNullable<typeof layer>,
+		style: CSSStyleDeclaration
+	) {
+		const values = over.colours.map((name) => (name ? style.getPropertyValue(name).trim() : ''));
+		const colourKey = values.join(';');
+		const table = values.map((v) => (v ? rgb(ctx, v) : null));
+		ctx.globalAlpha = over.alpha;
+		for (const { rx, rz, key } of inView) {
+			const codes = over.regions.get(key);
+			if (!codes) continue;
+			let cached = layerPictures.get(codes);
+			if (!cached || cached.colours !== colourKey) {
+				const picture = document.createElement('canvas');
+				picture.width = picture.height = 32;
+				const pctx = picture.getContext('2d')!;
+				const image = pctx.createImageData(32, 32);
+				for (let i = 0; i < 1024; i++) {
+					const c = table[codes[i]];
+					if (c) image.data.set([c[0], c[1], c[2], 255], i * 4);
+				}
+				pctx.putImageData(image, 0, 0);
+				cached = { colours: colourKey, picture };
+				layerPictures.set(codes, cached);
+			}
+			ctx.drawImage(cached.picture, sx(rx * REGION), sz(rz * REGION), REGION * scale, REGION * scale);
+		}
+		ctx.globalAlpha = 1;
+	}
+
+	function drawCircle(ctx: CanvasRenderingContext2D, c: NonNullable<typeof circle>, text: string) {
+		if (c.radius <= 0) return;
+		ctx.beginPath();
+		ctx.arc(sx(c.x), sz(c.z), c.radius * scale, 0, Math.PI * 2);
+		ctx.strokeStyle = text;
+		ctx.globalAlpha = 0.85;
+		ctx.lineWidth = 1.5;
+		ctx.setLineDash([6, 4]);
+		ctx.stroke();
+		ctx.setLineDash([]);
+		ctx.globalAlpha = 1;
 	}
 
 	function drawGrid(ctx: CanvasRenderingContext2D, text: string, muted: string, bg: string) {
@@ -545,6 +643,7 @@
 	{#if hoverCapable && info && pointer}
 		<div class="tip" style:left="{Math.min(pointer.px + 14, width - 230)}px" style:top="{Math.min(pointer.py + 14, height - 90)}px">
 			{#if info.top}<div class="top">{info.top.name} <span class="faint">y {info.top.y}</span></div>{/if}
+			{#if info.note}<div>{info.note}</div>{/if}
 			<div class="mono">x {info.x}, z {info.z}</div>
 			<div class="mono faint">chunk {info.cx}, {info.cz} · {info.file}</div>
 		</div>
@@ -554,9 +653,10 @@
 	<p class="readout small" aria-live="polite">
 		{#if info}
 			{#if info.top}<strong>{info.top.name}</strong> <span class="faint">y {info.top.y}</span> ·{/if}
+			{#if info.note}{info.note} ·{/if}
 			<span class="mono">x {info.x}, z {info.z} · chunk {info.cx}, {info.cz} · {info.file}</span>
 		{:else}
-			<span class="faint">Tap a chunk to select it and see what is there.</span>
+			<span class="faint">{tapHint}</span>
 		{/if}
 	</p>
 {/if}

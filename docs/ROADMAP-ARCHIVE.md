@@ -9,6 +9,19 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Previewing a prune on the map
+
+Built 2026-10-18 (World > Prune chunks; ARCHITECTURE, "Worlds"), the user's flow: analyse the
+dimension first, which draws a heatmap of the time players spent in each chunk; picking a
+threshold (or the radius kept around spawn) marks the chunks that would go at once; chunks
+are protected on the map (clicks and drags as on Restore chunks); then Prune. It replaced
+"Count", which gave only a number. The prune removes only chunks the analysis marked and
+the user did not protect, and only if they are still under the threshold on disk: anything
+generated or visited since stays. The map shows the heatmap alone (no terrain to read) or the
+terrain with the marked chunks over it. Tried on the throwaway dev server with 138 regions of
+irithyll (Fabric 1.21.11): 114,835 chunks analysed in seconds, both views, protecting an
+area, Daylight and phone width. Leftovers: ROADMAP, "Leftovers of built features".
+
 ### Restoring chunks from a snapshot
 
 Built 2026-10-17 (World > Restore chunks; ARCHITECTURE, "Worlds"). As planned below, with
