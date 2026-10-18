@@ -18,8 +18,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const emptyTable = (): StatTable => Object.fromEntries(STAT_CATEGORIES.map((c) => [c, {}])) as unknown as StatTable;
 
+/**
+ * The game only ever adds to a stat, so a negative one went past the top of
+ * its 32-bit counter and wrapped (1.12 counts a hit of 214.7 million health or
+ * more as the counter's maximum: one such hit does it). How far is lost, so it
+ * is kept as NaN, which every total over it inherits (lib/shared/playerstats.ts).
+ */
 const add = (into: Record<string, number>, id: string, value: number) => {
-	into[id] = (into[id] ?? 0) + value;
+	into[id] = (into[id] ?? 0) + (value < 0 ? NaN : value);
 };
 
 /** 1.12's flat key prefixes per category. */

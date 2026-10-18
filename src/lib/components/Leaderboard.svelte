@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
-	import { formatStat, HEADLINES, type StatUnit } from '#lib/shared/playerstats.js';
+	import { formatStat, HEADLINES, OVERFLOW_NOTE, overflowed, type StatUnit } from '#lib/shared/playerstats.js';
 
 	/**
 	 * Players ranked by one of their stats (lib/server/playerstats.ts,
@@ -33,6 +33,8 @@
 			.sort((a, b) => b.value - a.value)
 	);
 	const shown = $derived(showAll ? ranked : ranked.slice(0, TOP));
+	/** Players whose counter for this wrapped: no value to rank them by. */
+	const lost = $derived((board?.players ?? []).filter((p) => overflowed(p.values[statId] ?? 0)));
 </script>
 
 <div class="board">
@@ -72,6 +74,11 @@
 			<button type="button" class="button-quiet" onclick={() => (showAll = true)}>Show all {ranked.length}</button>
 		{/if}
 	{/if}
+	{#if board && lost.length}
+		<p class="faint small">
+			Not ranked, their counter <span class="overflow" title={OVERFLOW_NOTE}>overflowed</span>: {lost.map((p) => player(p.uuid).name ?? p.uuid.slice(0, 8)).join(', ')}
+		</p>
+	{/if}
 </div>
 
 <style>
@@ -109,6 +116,11 @@
 	.rank {
 		width: 1.75rem;
 		text-align: right;
+	}
+	.overflow {
+		color: var(--warning);
+		cursor: help;
+		text-decoration: underline dotted;
 	}
 	.value {
 		margin-left: auto;

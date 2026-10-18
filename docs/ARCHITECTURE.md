@@ -766,7 +766,10 @@ never writes it. 1.13+ nests categories; 1.12 and older are flat keys (`stat.min
 (`lib/shared/playerstats.ts`: ticks, centimetres, tenths of health). Names: vanilla general
 stats from a built-in table, everything else from the server's lang files when item pictures
 are on (the same jars), else the id tidied up. Parsed files are kept per path while size and
-time stay the same. The leaderboard ranks only players with a player file, as the player
+time stay the same. Counters are 32-bit and only ever added to, so a negative one wrapped
+(1.12 counts any hit of 214.7 million health or more as the counter's maximum, so one hit
+from a mod's instant kill does it): it is kept as NaN, shown as "overflowed", inherited by
+totals over it and left out of the ranking, since how far it went is lost. The leaderboard ranks only players with a player file, as the player
 list shows them: a stats file outlives a player file deleted to drop someone.
 
 ### The world map

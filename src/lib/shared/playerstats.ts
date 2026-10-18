@@ -66,7 +66,13 @@ export function formatDamage(tenths: number): string {
 	return `${count(hearts, hearts < 100 ? 1 : 0)} ${hearts === 1 ? 'heart' : 'hearts'}`;
 }
 
+/** A stat whose counter went past 2.1 billion and wrapped (lib/server/playerstats.ts): its value is lost. */
+export const overflowed = (value: number) => Number.isNaN(value);
+export const OVERFLOW_NOTE =
+	"The game's counter for this went past 2.1 billion and wrapped around, usually from one enormous hit by a mod. The real total cannot be worked out from the file.";
+
 export function formatStat(value: number, unit: StatUnit): string {
+	if (overflowed(value)) return 'overflowed';
 	if (unit === 'time') return formatTicks(value);
 	if (unit === 'distance') return formatCm(value);
 	if (unit === 'damage') return formatDamage(value);
@@ -90,7 +96,8 @@ const sum = (values: Record<string, number>) => Object.values(values).reduce((a,
 
 /**
  * A headline's value: a general stat, or a total. Distance travelled is every
- * way of moving except falling, which is not getting anywhere.
+ * way of moving except falling, which is not getting anywhere. A total over
+ * an overflowed stat is overflowed too (NaN).
  */
 export function headlineValue(stats: StatTable, id: string): number {
 	if (id === 'total:distance') {

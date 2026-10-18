@@ -239,6 +239,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Runs that exited cleanly never ended in the history on systemd 255 (only "Consumed" logged), so exit-0 startup crashes went uncounted | `flows/history.test.ts` |
 | A server that crashed but whose process hung on showed as running; stopping it hid the crash | `flows/history.test.ts`, `src/lib/server/lastcrash.test.ts` |
 | The leaderboard ranked a player whose player file had been deleted (their stats file stays), so someone dropped from the player list still showed | `flows/playerstats.test.ts` |
+| A stat counter that wrapped past 2.1 billion (erzark's damage taken on MeatballCraft, one enormous mod hit) showed as -107 million hearts and dropped the player from the leaderboard | `server/playerstats.test.ts` |
 | A server still loading showed "Running" and counted uptime before "Done ("; the overview said "started in" about an earlier run | `flows/start-phase.test.ts` |
 | A server saving after an RCON stop (button or console) showed "Running" until its process exited | `flows/start-phase.test.ts` |
 | (feature) The world map: BlueMap config per dimension, the EULA gate, serving rules and confinement | `flows/worldmap.test.ts` |

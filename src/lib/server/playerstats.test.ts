@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { customStatName, entityName, parseStats } from './playerstats';
-import { formatCm, formatDamage, formatStat, formatTicks, headlineValue, statUnit } from '#lib/shared/playerstats.js';
+import { formatCm, formatDamage, formatStat, formatTicks, headlineValue, overflowed, statUnit } from '#lib/shared/playerstats.js';
 
 describe('reading stats files', () => {
 	it('reads 1.13+ categories, and 1.13-1.16 play_one_minute as play time', () => {
@@ -52,6 +52,23 @@ describe('reading stats files', () => {
 		expect(stats.picked_up).toEqual({ 'minecraft:dirt': 9 });
 		expect(stats.killed).toEqual({ Husk: 3, 'twilightforest.naga': 1 });
 		expect(stats.killed_by).toEqual({ PigZombie: 2 });
+	});
+
+	it("marks a counter that wrapped past 2.1 billion as overflowed, and every total over it (erzark's damage on MeatballCraft)", () => {
+		const stats = parseStats({
+			'stat.damageTaken': -2147399778,
+			'stat.damageDealt': 3698585,
+			'stat.walkOneCm': 100,
+			'stat.flyOneCm': -5,
+			'stat.mineBlock.minecraft.stone': -1,
+			'stat.mineBlock.minecraft.dirt': 4
+		});
+		expect(overflowed(headlineValue(stats, 'minecraft:damage_taken'))).toBe(true);
+		expect(formatStat(headlineValue(stats, 'minecraft:damage_taken'), 'damage')).toBe('overflowed');
+		expect(headlineValue(stats, 'minecraft:damage_dealt')).toBe(3698585);
+		expect(overflowed(headlineValue(stats, 'total:distance'))).toBe(true);
+		expect(overflowed(headlineValue(stats, 'total:mined'))).toBe(true);
+		expect(stats.mined['minecraft:dirt']).toBe(4);
 	});
 
 	it('reads nothing from something that is not a stats file', () => {

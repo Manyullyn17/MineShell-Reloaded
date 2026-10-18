@@ -7,6 +7,8 @@
 		formatStat,
 		HEADLINES,
 		headlineValue,
+		OVERFLOW_NOTE,
+		overflowed,
 		STAT_CATEGORIES,
 		statUnit,
 		type StatCategory,
@@ -48,7 +50,8 @@
 		return Object.entries(stats.stats[category])
 			.map(([id, value]) => ({ id, value, name: names[id] ?? id }))
 			.filter((r) => !q || r.name.toLowerCase().includes(q) || r.id.toLowerCase().includes(q))
-			.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+			// Overflowed counters went past every other value: first.
+			.sort((a, b) => Number(overflowed(b.value)) - Number(overflowed(a.value)) || b.value - a.value || a.name.localeCompare(b.name));
 	});
 	const shown = $derived(showAll ? rows : rows.slice(0, FIRST_ROWS));
 	const total = (c: StatCategory) => (stats ? Object.values(stats.stats[c]).reduce((a, b) => a + b, 0) : 0);
@@ -67,9 +70,10 @@
 {:else}
 	<dl class="strip">
 		{#each HEADLINES as h (h.id)}
+			{@const value = headlineValue(stats.stats, h.id)}
 			<div>
 				<dt>{h.label}</dt>
-				<dd class="mono">{formatStat(headlineValue(stats.stats, h.id), h.unit)}</dd>
+				<dd class="mono" class:overflow={overflowed(value)} title={overflowed(value) ? OVERFLOW_NOTE : undefined}>{formatStat(value, h.unit)}</dd>
 			</div>
 		{/each}
 	</dl>
@@ -83,7 +87,7 @@
 			<nav class="chips" aria-label="Stat categories">
 				{#each categories as c (c)}
 					<button type="button" aria-pressed={category === c} onclick={() => (category = c)}>
-						{CATEGORY_LABELS[c]}{#if c !== 'custom'}<span class="faint"> · {total(c).toLocaleString('en-US')}</span>{/if}
+						{CATEGORY_LABELS[c]}{#if c !== 'custom'}<span class="faint"> · {formatStat(total(c), 'count')}</span>{/if}
 					</button>
 				{/each}
 			</nav>
@@ -106,7 +110,7 @@
 										<span class="faint small mono id">{row.id}</span>
 									</div>
 								</td>
-								<td class="value mono">{formatStat(row.value, unitOf(row.id))}</td>
+								<td class="value mono" class:overflow={overflowed(row.value)} title={overflowed(row.value) ? OVERFLOW_NOTE : undefined}>{formatStat(row.value, unitOf(row.id))}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -174,6 +178,10 @@
 	.value {
 		text-align: right;
 		white-space: nowrap;
+	}
+	.overflow {
+		color: var(--warning);
+		cursor: help;
 	}
 	.more {
 		margin-top: 0.5rem;
