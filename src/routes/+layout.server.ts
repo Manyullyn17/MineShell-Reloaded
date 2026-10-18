@@ -30,7 +30,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 				iconVersion: s.iconVersion,
 				active: s.state.active,
 				sub: s.state.sub,
-				starting: s.starting,
+				phase: s.phase,
 				pinned: s.instance.pinned,
 				status: s.instance.status,
 				players: s.running ? await recentPlayerCount(s.instance) : null,

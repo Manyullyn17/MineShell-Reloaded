@@ -67,7 +67,8 @@ describe('describeState', () => {
 		expect(describeState(active, sub)).toEqual({ label, tone });
 	});
 
-	it('calls a running server that has not logged "Done (" yet starting', () => {
-		expect(describeState('active', 'running', true)).toEqual({ label: 'Starting', tone: 'busy' });
+	it('calls a running server that has not logged "Done (" yet starting, and one saving after a stop stopping', () => {
+		expect(describeState('active', 'running', 'starting')).toEqual({ label: 'Starting', tone: 'busy' });
+		expect(describeState('active', 'running', 'stopping')).toEqual({ label: 'Stopping', tone: 'busy' });
 	});
 });

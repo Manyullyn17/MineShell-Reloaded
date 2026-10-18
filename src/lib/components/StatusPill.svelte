@@ -4,11 +4,11 @@
 	let {
 		active,
 		sub,
-		starting = false,
+		phase = null,
 		compact = false
-	}: { active: string; sub: string; starting?: boolean; compact?: boolean } = $props();
+	}: { active: string; sub: string; phase?: 'starting' | 'stopping' | null; compact?: boolean } = $props();
 
-	const state = $derived(describeState(active, sub, starting));
+	const state = $derived(describeState(active, sub, phase));
 </script>
 
 <span class="pill" data-tone={state.tone} class:compact>

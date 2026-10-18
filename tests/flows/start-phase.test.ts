@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const rcon = vi.hoisted(() => ({ commands: [] as string[] }));
+vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
+	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
+		rcon.commands.push(...commands);
+		return commands.map(() => '');
+	})
+}));
 
 const { applyEvents, startTimes } = await import('#lib/server/history.js');
 const { doneStartingAt } = await import('#lib/server/startphase.js');
-const { summarise } = await import('#lib/server/instances.js');
+const { sendCommand, stop, summarise } = await import('#lib/server/instances.js');
+const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
@@ -18,12 +28,16 @@ async function server() {
 	return createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2', createdAt: T0 - 60 * MIN });
 }
 
-/** systemd: active since boot + `monotonicUs`; the journal's "Done (" search answers `journal`. */
-function running(monotonicUs: number, journal: () => string) {
+/** systemd: active since boot + `monotonicUs` (while `up()`); the journal's "Done (" search answers `journal`. */
+function running(monotonicUs: number, journal: () => string, up = () => true) {
 	invalidateUnitState();
 	fakeProcesses((cmd, args) => {
 		if (cmd === 'systemctl' && args.includes('show'))
-			return { stdout: `ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=${monotonicUs}\nResult=success\n` };
+			return {
+				stdout: up()
+					? `ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=${monotonicUs}\nResult=success\n`
+					: 'ActiveState=inactive\nSubState=dead\nResult=success\n'
+			};
 		if (cmd === 'journalctl' && args.includes('-g')) return { stdout: journal() };
 		return {};
 	});
@@ -57,6 +71,32 @@ describe('a running server that has not finished starting', () => {
 		spawnCalls.length = 0;
 		expect(await doneStartingAt(s.id, s.createdAt, startedAt, Date.now() + 5000)).toBe(startedAt + 95_000);
 		expect(spawnCalls.filter((c) => c.cmd === 'journalctl')).toEqual([]);
+	});
+});
+
+describe('a server told to stop', () => {
+	afterEach(() => vi.useRealTimers());
+
+	// Like starting: the RCON stop leaves systemd calling the unit active while the
+	// server saves, which can take minutes on a big pack, so it showed "Running".
+	it.each([
+		['the Stop button', (s: Awaited<ReturnType<typeof server>>) => stop(s)],
+		['stop in the console', (s: Awaited<ReturnType<typeof server>>) => sendCommand(s, 'stop')]
+	])('is stopping from %s until the process is gone', async (_how, stopIt) => {
+		const s = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPasswordEnc: encryptSecret('pw') });
+		let up = true;
+		running(1_000_000, () => doneEntry(Date.now() - 10 * MIN), () => up);
+		expect((await summarise(s)).phase).toBe(null);
+
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+		await stopIt(s);
+		expect(rcon.commands).toContain('stop');
+		expect(await summarise(s)).toMatchObject({ running: true, stopping: true, phase: 'stopping' });
+
+		up = false;
+		invalidateUnitState();
+		await vi.advanceTimersByTimeAsync(3500);
+		expect(await summarise(s)).toMatchObject({ running: false, stopping: false, phase: null });
 	});
 });
 

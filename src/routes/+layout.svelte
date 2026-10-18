@@ -83,7 +83,7 @@
 				{:else}
 					<ul>
 						{#each instances as instance (instance.id)}
-							{@const state = describeState(instance.active, instance.sub, instance.starting)}
+							{@const state = describeState(instance.active, instance.sub, instance.phase)}
 							<li>
 								<a
 									class="rail-instance"

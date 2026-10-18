@@ -1270,7 +1270,7 @@ export function clearStopIntent(id: string): void {
 export const GRACEFUL_STOP_MS = 5 * 60_000;
 const STOP_POLL_MS = 3000;
 
-/** Servers told to stop over RCON whose exit is being waited for. */
+/** Servers told to stop over RCON whose exit is being waited for: shown as stopping meanwhile. */
 const pendingStops = new Map<string, NodeJS.Timeout>();
 
 function cancelPendingStop(id: string): void {
@@ -1354,8 +1354,13 @@ export async function sendCommand(instance: ServerInstance, command: string): Pr
 	const password = rconPassword(instance);
 	if (!password) throw new InstanceError('No RCON password is set for this instance.');
 	const [response] = await rconExec({ port: instance.rconPort, password }, [command]);
-	// Stopped from the console: it stays stopped after a reboot too.
-	if (/^\/?stop\s*$/i.test(command.trim())) setWantedRunning(instance.id, false);
+	// Stopped from the console: it stays stopped after a reboot too, and shows as stopping
+	// (with systemd's stop if the save hangs) like the Stop button's.
+	if (/^\/?stop\s*$/i.test(command.trim())) {
+		setWantedRunning(instance.id, false);
+		cancelPendingStop(instance.id);
+		awaitStop(instance.id, Date.now() + GRACEFUL_STOP_MS);
+	}
 	return response;
 }
 
@@ -1425,12 +1430,18 @@ export async function deleteInstance(
 
 // ------------------------------------------------------------------ summary ---
 
+export type ServerPhase = 'starting' | 'stopping' | null;
+
 export type InstanceSummary = {
 	instance: ServerInstance;
 	state: UnitState;
 	running: boolean;
 	/** Running but not yet "Done (": players cannot join yet. */
 	starting: boolean;
+	/** Told to stop over RCON and saving on its way out; systemd still calls it active. */
+	stopping: boolean;
+	/** What the status says beyond systemd's state (format.ts, describeState). */
+	phase: ServerPhase;
 	/** When the running server finished starting; null while starting or stopped. */
 	doneAt: number | null;
 	/** Since it finished starting. */
@@ -1569,11 +1580,15 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 	});
 	const running = state.active === 'active';
 	const doneAt = running ? await doneStartingAt(instance.id, instance.createdAt, state.activeEnterTimestamp) : null;
+	const stopping = running && pendingStops.has(instance.id);
+	const starting = running && doneAt === null;
 	return {
 		instance,
 		state,
 		running,
-		starting: running && doneAt === null,
+		starting,
+		stopping,
+		phase: stopping ? 'stopping' : starting ? 'starting' : null,
 		doneAt,
 		uptimeMs: doneAt !== null ? Date.now() - doneAt : 0,
 		javaWarning: java.warning,

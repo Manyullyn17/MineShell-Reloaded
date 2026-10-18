@@ -248,7 +248,7 @@
 		</div>
 	{:else}<div class="cards">
 		{#each visibleInstances as instance (instance.id)}
-			{@const tone = describeState(instance.active, instance.sub, instance.starting).tone}
+			{@const tone = describeState(instance.active, instance.sub, instance.phase).tone}
 			<article class="panel card" data-tone={tone} data-instance-id={instance.id}>
 				<div class="card-head">
 					<div class="title">
@@ -256,7 +256,7 @@
 						<a href="/instances/{instance.id}"><h2>{instance.name}</h2></a>
 					</div>
 					<div class="status">
-						<StatusPill active={instance.active} sub={instance.sub} starting={instance.starting} />
+						<StatusPill active={instance.active} sub={instance.sub} phase={instance.phase} />
 						{#if may(instance.id, 'settings.edit')}
 							<form method="POST" action={action(instance.id, 'pin')} use:enhance={inPlace()}>
 								<button

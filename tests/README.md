@@ -239,6 +239,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Runs that exited cleanly never ended in the history on systemd 255 (only "Consumed" logged), so exit-0 startup crashes went uncounted | `flows/history.test.ts` |
 | A server that crashed but whose process hung on showed as running; stopping it hid the crash | `flows/history.test.ts`, `src/lib/server/lastcrash.test.ts` |
 | A server still loading showed "Running" and counted uptime before "Done ("; the overview said "started in" about an earlier run | `flows/start-phase.test.ts` |
+| A server saving after an RCON stop (button or console) showed "Running" until its process exited | `flows/start-phase.test.ts` |
 | (feature) The world map: BlueMap config per dimension, the EULA gate, serving rules and confinement | `flows/worldmap.test.ts` |
 | (feature) Item icons: 1.21.4 definitions, 1.12 parent chains, variant table, Forge blockstates, guesses flagged, EULA gate, confinement | `flows/itemicons.test.ts` |
 | Inventory blocks turned the wrong way (furnace front, stairs): the model's GUI rotation was ignored and turned backwards | `flows/itemicons.test.ts` |

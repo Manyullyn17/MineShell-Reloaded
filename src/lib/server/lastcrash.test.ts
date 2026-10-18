@@ -24,6 +24,8 @@ const summary = (instance: Instance, active: string, running = false, activeEnte
 	instance,
 	running,
 	starting: false,
+	stopping: false,
+	phase: null,
 	doneAt: null,
 	uptimeMs: 0,
 	javaWarning: null,
