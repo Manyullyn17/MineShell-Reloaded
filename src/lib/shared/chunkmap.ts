@@ -19,6 +19,8 @@ export type RegionDetail = {
 	unreadable: number[];
 	/** Chunks present with nothing to draw (generated only partway), by index: their status ('' unknown). */
 	bare: Record<number, string>;
+	/** The height of a roof over the region: the picture is what is below it, unless the surface was asked for. */
+	roof: number | null;
 	/** Minecraft's own textures were there (its EULA answered): vanilla blocks have colours. */
 	vanilla: boolean;
 	/** The picture; let go once drawn into a canvas. */
@@ -33,6 +35,22 @@ export function presence(base64: string): Uint8Array {
 	return out;
 }
 
+/**
+ * Where to open a dimension without a spawn to start at (anything but the
+ * overworld): the middle of the region holding the most chunks. A mod's
+ * dimension can keep its few chunks near 0,0 and its bulk thousands of
+ * blocks away (MeatballCraft's Deep Dark), or in two clusters (Arcana).
+ */
+export function busiestRegion(overview: { x: number; z: number; chunks: string }[]): { x: number; z: number } | null {
+	let best: { x: number; z: number } | null = null;
+	let most = 0;
+	for (const r of overview) {
+		const n = presence(r.chunks).reduce((sum, v) => sum + v, 0);
+		if (n > most) [best, most] = [{ x: r.x * REGION + REGION / 2, z: r.z * REGION + REGION / 2 }, n];
+	}
+	return best;
+}
+
 /** Plain grey for blocks without a picture: the shading still shows the land. */
 const UNKNOWN = 0x8c8c8c;
 const WATERY = /(^|:)(flowing_)?water(@|$)|seagrass|kelp|bubble_column/;
@@ -45,6 +63,7 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 		blocks: BlockEntry[];
 		unreadable: number[];
 		bare?: Record<number, string>;
+		roof?: number | null;
 		size?: number;
 		vanilla: boolean;
 	};
@@ -89,6 +108,7 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 		heights,
 		unreadable: head.unreadable,
 		bare: head.bare ?? {},
+		roof: head.roof ?? null,
 		vanilla: head.vanilla,
 		image: new ImageData(pixels, size, size)
 	};

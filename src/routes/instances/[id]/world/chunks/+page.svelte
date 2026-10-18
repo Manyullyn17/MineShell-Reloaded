@@ -6,6 +6,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import ChunkMap from '#lib/components/ChunkMap.svelte';
+	import { busiestRegion } from '#lib/shared/chunkmap.js';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatDateTime } from '#lib/shared/format.js';
 
@@ -54,7 +55,9 @@
 		fetch(url)
 			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`${res.status}`))))
 			.then((body: { regions: typeof overview }) => {
-				if (!stale) overview = body.regions;
+				if (stale) return;
+				overview = body.regions;
+				place();
 			})
 			.catch(() => {
 				if (!stale) overviewError = 'The map could not be read.';
@@ -80,9 +83,20 @@
 	// Jumping to a block position.
 	let jumpX = $state('');
 	let jumpZ = $state('');
-	let jump = $state<{ x: number; z: number } | null>(null);
+	let jump = $state<{ x: number; z: number; zoom?: boolean } | null>(null);
 	// Where the map opens: the world spawn. Later data does not move it.
 	const center = untrack(() => data.spawn ?? { x: 0, z: 0 });
+	// Another dimension opens where it has chunks: the overworld at spawn, the rest where most are.
+	// Only when the dimension changes (not on Reload map or switching to the snapshot).
+	let placedFor = '';
+	function place() {
+		if (dimension === placedFor) return;
+		const first = !placedFor;
+		placedFor = dimension;
+		const overworld = allDimensions.find((d) => d.key === dimension)?.overworld ?? false;
+		const target = (overworld ? data.spawn : null) ?? busiestRegion(overview);
+		if (target && !(first && overworld)) jump = { ...target, zoom: false };
+	}
 	function go(e: SubmitEvent) {
 		e.preventDefault();
 		const x = Number(jumpX);

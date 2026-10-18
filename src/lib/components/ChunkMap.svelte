@@ -41,8 +41,8 @@
 		/** Block position shown first. */
 		center: { x: number; z: number };
 		selecting?: boolean;
-		/** Set to move the view (the page's coordinate field); a new object each time. */
-		jump?: { x: number; z: number } | null;
+		/** Set to move the view (the page's coordinate field); a new object each time. `zoom: false` keeps the zoom. */
+		jump?: { x: number; z: number; zoom?: boolean } | null;
 		/**
 		 * A colour per chunk over the terrain: per region "x,z", a code per chunk
 		 * index (x + 32 * z), 0 for none; `colours[code]` names its custom property.

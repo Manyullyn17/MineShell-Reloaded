@@ -5,7 +5,7 @@
 	import ChunkMap from '#lib/components/ChunkMap.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
-	import { chunkKey } from '#lib/shared/chunkmap.js';
+	import { busiestRegion, chunkKey } from '#lib/shared/chunkmap.js';
 	import {
 		decodeAnalysis,
 		formatTicks,
@@ -201,7 +201,8 @@
 			: null
 	);
 	const circle = $derived(rule.keep);
-	const center = $derived(current?.spawn ?? { x: 0, z: 0 });
+	// The overworld opens at spawn; other dimensions where most of their chunks are.
+	const center = $derived((isOverworld ? current?.spawn : null) ?? busiestRegion(overview) ?? { x: 0, z: 0 });
 
 	function describe(cx: number, cz: number): string | null {
 		const r = byRegion.get(`${Math.floor(cx / 32)},${Math.floor(cz / 32)}`);
