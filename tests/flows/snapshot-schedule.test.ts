@@ -114,6 +114,22 @@ describe('scheduled snapshots', () => {
 		expect(active).toBe(true);
 	});
 
+	it('"Snapshot now" on a running server copies it the same way, and refuses while it is not ready', async () => {
+		// It used to refuse whenever the server ran, though the schedule took live snapshots.
+		const s = await server();
+		const task = await waitForTask(await sched.snapshotWhileRunning(s));
+		expect(task.error).toBeNull();
+		expect(rcon.commands).toEqual(['save-off', 'save-all flush', 'save-on']);
+		const [snapshot] = await listSnapshots(s.path);
+		expect(snapshot).toMatchObject({ reason: 'manual', label: 'Taken by hand, while running', worlds: ['world'] });
+		expect(listOperations()).toEqual([]);
+
+		started = false;
+		fakeUnit();
+		await expect(sched.snapshotWhileRunning(s)).rejects.toThrow('Not right now: the server has not finished starting.');
+		expect(await listSnapshots(s.path)).toHaveLength(1);
+	});
+
 	it('turns saving back on when the copy fails', async () => {
 		const s = await server();
 		await fs.chmod(path.join(s.path, 'world/region'), 0o000);

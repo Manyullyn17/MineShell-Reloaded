@@ -3,14 +3,14 @@ import path from 'node:path';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
 import { db } from './db';
 import { playerSessions, settings, type ServerInstance } from './db/schema';
-import { beginOperation, endOperation, listOperations } from './operations';
-import { audit, getInstance, onlinePlayers, rconPassword, setStatus, start, stop } from './instances';
+import { beginOperation, endOperation, listOperations, OperationInProgressError } from './operations';
+import { audit, getInstance, InstanceError, onlinePlayers, rconPassword, setStatus, start, stop } from './instances';
 import { runFinishedStarting } from './journal';
 import { getCountdown } from './countdown';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { startTask, type TaskHandle } from './tasks';
-import { getSnapshotPolicy, listSnapshots, pruneSnapshots, takeSnapshot, worldFolders } from './snapshots';
+import { getSnapshotPolicy, listSnapshots, pruneSnapshots, snapshotPrompt, takeSnapshot, worldFolders, type SnapshotInput } from './snapshots';
 import { formatBytes } from '#lib/shared/format.js';
 
 /**
@@ -285,7 +285,7 @@ export function scheduledSnapshot(instance: ServerInstance, mode: 'stopped' | 'l
 		try {
 			if (mode === 'live') await liveSnapshot(instance, task);
 			else if (mode === 'stop') await stoppingSnapshot(instance, task);
-			else await copy(instance, task, 'Scheduled, server stopped');
+			else await copy(instance, task, { reason: 'scheduled', label: 'Scheduled, server stopped' });
 		} finally {
 			endOperation(instance.id);
 			running.delete(instance.id);
@@ -294,9 +294,40 @@ export function scheduledSnapshot(instance: ServerInstance, mode: 'stopped' | 'l
 	});
 }
 
-async function copy(instance: ServerInstance, task: TaskHandle, label: string): Promise<void> {
+/**
+ * "Snapshot now" while the server runs: copied as a scheduled live snapshot is,
+ * saving paused for the copy, journalled the same way (recovery turns saving back
+ * on). It used to be refused while running, though the schedule took them.
+ */
+export async function snapshotWhileRunning(instance: ServerInstance): Promise<string> {
+	if (running.has(instance.id)) throw new InstanceError('A snapshot is already being taken.');
+	if (!(await worldFolders(instance.path)).length) throw new InstanceError('There is no world to snapshot yet.');
+	if (!rconPassword(instance)) throw new InstanceError('RCON is not set up for this server, so saving cannot be paused for a copy; stop it to snapshot.');
+	const state = await unitState(instance.id, { fresh: true });
+	const notNow = await waitReason(instance, state.active, Date.now());
+	if (notNow) throw new InstanceError(`Not right now: ${notNow.replace(/\bwas\b/, 'is').replace(/\bhad\b/, 'has')}. Try again in a moment.`);
+	if ((await snapshotPrompt(instance)).lowSpace) throw new InstanceError('Too little disk space is free for a copy of the world (Settings > Snapshots says how much is kept free).');
+	try {
+		beginOperation(instance.id, { kind: 'scheduled-snapshot', mode: 'live', restart: false });
+	} catch (err) {
+		if (err instanceof OperationInProgressError) throw new InstanceError(err.message);
+		throw err;
+	}
+	running.add(instance.id);
+	return startTask({ label: `Snapshot ${instance.name}`, instanceId: instance.id }, async (task) => {
+		try {
+			await liveSnapshot(instance, task, { reason: 'manual', label: 'Taken by hand, while running' });
+		} finally {
+			endOperation(instance.id);
+			running.delete(instance.id);
+		}
+		task.setProgress(100, 'Done');
+	});
+}
+
+async function copy(instance: ServerInstance, task: TaskHandle, input: SnapshotInput): Promise<void> {
 	task.setProgress(null, 'Copying the world');
-	const snapshot = await takeSnapshot(instance, { reason: 'scheduled', label });
+	const snapshot = await takeSnapshot(instance, input);
 	if (!snapshot) {
 		task.log('No world yet; nothing to snapshot.');
 		return;
@@ -306,7 +337,11 @@ async function copy(instance: ServerInstance, task: TaskHandle, label: string): 
 	if (removed.length) task.log(`Deleted older snapshot${removed.length === 1 ? '' : 's'}: ${removed.join(', ')}.`);
 }
 
-async function liveSnapshot(instance: ServerInstance, task: TaskHandle): Promise<void> {
+async function liveSnapshot(
+	instance: ServerInstance,
+	task: TaskHandle,
+	input: SnapshotInput = { reason: 'scheduled', label: 'Scheduled, while running' }
+): Promise<void> {
 	const password = rconPassword(instance);
 	if (!password) throw new Error('RCON is not set up for this server, so saving cannot be paused for a copy while it runs.');
 	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
@@ -326,7 +361,7 @@ async function liveSnapshot(instance: ServerInstance, task: TaskHandle): Promise
 		task.setProgress(null, 'Waiting for the world files to settle');
 		const settled = await waitForQuiet(instance.path, await worldFolders(instance.path));
 		if (!settled) task.log(`Files were still being written after ${scheduleTiming.quietMaxMs / 1000} s; copying anyway.`);
-		await copy(instance, task, 'Scheduled, while running');
+		await copy(instance, task, input);
 	} finally {
 		try {
 			await rcon(['save-on']);
@@ -334,7 +369,7 @@ async function liveSnapshot(instance: ServerInstance, task: TaskHandle): Promise
 		} catch {
 			const now = await unitState(instance.id, { fresh: true }).catch(() => null);
 			if (now?.active === 'active' && now.activeEnterTimestamp === run) {
-				setStatus(instance.id, 'ready', 'Saving was paused for a scheduled snapshot and could not be turned back on. Run "save-on" in the console.');
+				setStatus(instance.id, 'ready', 'Saving was paused for a snapshot and could not be turned back on. Run "save-on" in the console.');
 				task.log('Could not turn saving back on: run "save-on" in the console.');
 			} else {
 				// Stopped or started again meanwhile: a server always starts with saving on.
@@ -353,7 +388,7 @@ async function stoppingSnapshot(instance: ServerInstance, task: TaskHandle): Pro
 	// Not startable meanwhile: a start would copy a world being written.
 	setStatus(instance.id, 'provisioning', 'Taking a scheduled snapshot; it starts again right after.');
 	try {
-		await copy(instance, task, 'Scheduled, server stopped for it');
+		await copy(instance, task, { reason: 'scheduled', label: 'Scheduled, server stopped for it' });
 	} finally {
 		setStatus(instance.id, 'ready', null);
 		task.setProgress(null, 'Starting the server again');

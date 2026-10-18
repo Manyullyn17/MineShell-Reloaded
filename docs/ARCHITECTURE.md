@@ -586,6 +586,8 @@ mods can write late), the copy, `save-on` in a `finally` - or warned at 15/10/5/
 stopped, copied (the server marked busy, so nothing starts it mid-copy) and started again
 whether or not the copy worked. Both run as a task under a `scheduled-snapshot` journal;
 recovery sends `save-on` to a server left with saving paused and starts one left stopped.
+"Snapshot now" on a running server takes the live path too (`snapshotWhileRunning`, same journal),
+refused while the server is starting, stopping or about to restart.
 Retention is the ordinary policy, so frequent scheduled snapshots push out older
 pre-operation ones once over the limits (pin one to keep it).
 

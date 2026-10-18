@@ -42,6 +42,7 @@ import {
 } from '#lib/server/world.js';
 import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder, withSizes } from '#lib/server/worlds.js';
 import { webRoot } from '#lib/server/worldmap.js';
+import { snapshotWhileRunning } from '#lib/server/snapshotschedule.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import { getTask } from '#lib/server/tasks.js';
 import {
@@ -223,8 +224,11 @@ export const actions: Actions = {
 	},
 
 	snapshot: async ({ params }) => {
+		const instance = requireInstance(params.id);
 		try {
-			await snapshotNow(requireInstance(params.id));
+			// Running: copied with saving paused, as scheduled snapshots are.
+			if ((await summarise(instance)).running) await snapshotWhileRunning(instance);
+			else await snapshotNow(instance);
 			return { ok: true, message: `Snapshotting the world. ${STARTED}` };
 		} catch (err) {
 			return refused(err);

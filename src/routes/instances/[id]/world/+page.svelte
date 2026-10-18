@@ -248,7 +248,7 @@
 				{#if may('files')}<a class="button" href={base} download>Download as zip</a>{/if}
 				{#if may('backups.create')}
 					<form method="POST" action="?/snapshot" use:enhance>
-						<button type="submit" disabled={data.running || busy}>Snapshot now</button>
+						<button type="submit" disabled={busy} title={data.running ? 'Saving pauses for the copy, as for scheduled snapshots' : undefined}>Snapshot now</button>
 					</form>
 				{/if}
 			</div>
