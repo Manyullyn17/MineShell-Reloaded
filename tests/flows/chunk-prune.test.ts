@@ -122,7 +122,9 @@ describe('chunk pruning', () => {
 		done = true;
 		// The turn waiting behind the last stretch measures it.
 		await new Promise((resolve) => setImmediate(resolve));
-		expect(longest).toBeLessThan(took / 10);
+		// Blocking, the longest wait is nearly the whole read; yielding, one chunk's. A third leaves room for a
+		// garbage collection or a busy CI machine (a tenth failed once there: a 5 ms pause in a 46 ms read).
+		expect(longest).toBeLessThan(took / 3);
 	});
 
 	it('analyses, then prunes into a partial snapshot that restores the chunks', async () => {
