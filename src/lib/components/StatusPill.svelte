@@ -1,10 +1,14 @@
 <script lang="ts">
 	import { describeState } from '#lib/shared/format.js';
 
-	let { active, sub, compact = false }: { active: string; sub: string; compact?: boolean } =
-		$props();
+	let {
+		active,
+		sub,
+		starting = false,
+		compact = false
+	}: { active: string; sub: string; starting?: boolean; compact?: boolean } = $props();
 
-	const state = $derived(describeState(active, sub));
+	const state = $derived(describeState(active, sub, starting));
 </script>
 
 <span class="pill" data-tone={state.tone} class:compact>

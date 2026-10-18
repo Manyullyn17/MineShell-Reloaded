@@ -284,9 +284,11 @@
 <dl class="stats">
 	<div>
 		<dt>Uptime</dt>
-		<dd class="mono">{data.running ? formatDuration(data.summary.uptimeMs) : '-'}</dd>
+		<dd class="mono">{data.summary.startedAt ? formatDuration(data.summary.uptimeMs) : '-'}</dd>
 		<dd class="sub">
-			{#if data.summary.startedAt}since {formatDateTime(data.summary.startedAt)}{:else}stopped{/if}{data.summary.restarts
+			{#if data.summary.startedAt}since {formatDateTime(data.summary.startedAt)}{:else if data.summary.startingSince}starting since {formatDateTime(
+					data.summary.startingSince
+				)}{:else}stopped{/if}{data.summary.restarts
 				? ` · ${data.summary.restarts} crash restart${data.summary.restarts === 1 ? '' : 's'}`
 				: ''}
 		</dd>
@@ -294,7 +296,7 @@
 			{@const s = data.history.start}
 			<!-- A start much slower than usual is worth noticing: a pack update or a new mod. -->
 			<dd class="sub" class:warn-text={s.usualMs !== null && s.lastMs > s.usualMs * 1.5 && s.lastMs - s.usualMs > 20_000}>
-				{data.running ? 'started in' : 'last start took'} {formatSeconds(s.lastMs)}{s.usualMs !== null ? `, usually ${formatSeconds(s.usualMs)}` : ''}
+				{s.current ? 'started in' : 'last start took'} {formatSeconds(s.lastMs)}{s.usualMs !== null ? `, usually ${formatSeconds(s.usualMs)}` : ''}
 			</dd>
 		{/if}
 	</div>

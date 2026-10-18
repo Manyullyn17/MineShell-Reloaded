@@ -344,6 +344,13 @@ crashes can be cleared once a start after the newest one got to `Done (` (a time
 settings, `crashes.cleared:<id>`; the runs stay, Logs lists them all), and clear on their own
 when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix`).
 
+**Starting vs running.** systemd calls the unit active as soon as Java runs; a server is
+"Starting" until its run logged `Done (` (`startphase.ts`, used by `summarise`): the run's
+`server_runs.done_at` when the history has it, otherwise `journalctl -g` from the run's start
+(milliseconds, as it reads only that run's time). A finished start is remembered per run, "not
+yet" for 2 s (pages poll). Uptime counts from `Done (`, and the overview says "started in"
+only for the running server's own start, "last start took" for an earlier one.
+
 **Heap and memory advice.** The cgroup's memory says nothing about the Java heap: the JVM
 keeps heap it took, all of it at start with `-Xms` = `-Xmx`. `heap.ts` asks the JVM itself,
 once a minute, over its attach socket as `jcmd <pid> GC.heap_info` does - without a JDK and

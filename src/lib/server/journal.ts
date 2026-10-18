@@ -210,6 +210,17 @@ export async function runFinishedStarting(id: string, since = 0): Promise<boolea
 	return found.trim().length > 0;
 }
 
+/**
+ * When the unit first logged "Done (" at or after `since` (ms), or null. A
+ * run's start is passed as `since`, so a match is that run's: only one runs
+ * at a time. Reads from that second on only, so it stays cheap for a server
+ * that has been running for days.
+ */
+export async function doneLoggedSince(id: string, since: number): Promise<number | null> {
+	const out = await journalctl([...unitMatch(id), '-o', 'json', '-g', '\\]: Done \\(', sinceArg(since)]);
+	return parseEvents(out)[0]?.at ?? null;
+}
+
 export type RunSummary = {
 	invocation: string;
 	startedAt: number;

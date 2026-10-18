@@ -1,4 +1,4 @@
-import { runFinishedStarting } from './journal';
+import { doneStartingAt } from './startphase';
 import { notify } from './notifications';
 import type { ServerInstance } from './db/schema';
 
@@ -10,17 +10,9 @@ import type { ServerInstance } from './db/schema';
  */
 export const STUCK_AFTER_MS = 10 * 60_000;
 
-/** Runs (by start time) already seen to finish starting; their log is not read again. */
-const startedRuns = new Map<string, number>();
-
 export async function stuckStarting(instanceId: string, createdAt: number, startedAt: number): Promise<boolean> {
 	if (!startedAt || Date.now() - startedAt < STUCK_AFTER_MS) return false;
-	if (startedRuns.get(instanceId) === startedAt) return false;
-	if (await runFinishedStarting(instanceId, createdAt)) {
-		startedRuns.set(instanceId, startedAt);
-		return false;
-	}
-	return true;
+	return (await doneStartingAt(instanceId, createdAt, startedAt)) === null;
 }
 
 /** The run (by start time) whose being stuck was reported, per server. */

@@ -65,6 +65,7 @@ import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotSte
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
 import { deleteCrashMarks } from './history';
+import { doneStartingAt } from './startphase';
 import { deleteDimensionNames } from './dimensionnames';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
@@ -1428,6 +1429,11 @@ export type InstanceSummary = {
 	instance: ServerInstance;
 	state: UnitState;
 	running: boolean;
+	/** Running but not yet "Done (": players cannot join yet. */
+	starting: boolean;
+	/** When the running server finished starting; null while starting or stopped. */
+	doneAt: number | null;
+	/** Since it finished starting. */
 	uptimeMs: number;
 	javaWarning: string | null;
 	eulaAccepted: boolean;
@@ -1562,11 +1568,14 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 		modloaderVersion: instance.modloaderVersion
 	});
 	const running = state.active === 'active';
+	const doneAt = running ? await doneStartingAt(instance.id, instance.createdAt, state.activeEnterTimestamp) : null;
 	return {
 		instance,
 		state,
 		running,
-		uptimeMs: running && state.activeEnterTimestamp ? Date.now() - state.activeEnterTimestamp : 0,
+		starting: running && doneAt === null,
+		doneAt,
+		uptimeMs: doneAt !== null ? Date.now() - doneAt : 0,
 		javaWarning: java.warning,
 		eulaAccepted: await eulaIsAccepted(instance),
 		iconVersion: await iconVersion(instance)

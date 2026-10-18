@@ -106,7 +106,7 @@
 			<div class="title">
 				<ServerIcon id={data.instance.id} name={data.instance.name} iconVersion={data.iconVersion} size={40} />
 				<h1>{data.instance.name}</h1>
-				<StatusPill active={data.state.active} sub={data.state.sub} />
+				<StatusPill active={data.state.active} sub={data.state.sub} starting={data.starting} />
 			</div>
 			<div class="tags">
 				<span class="tag">{data.instance.minecraftVersion}</span>

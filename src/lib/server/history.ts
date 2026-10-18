@@ -267,17 +267,33 @@ export function hungAfterCrash(instanceId: string, startedAt: number, now = Date
 	return now - run.crashLoggedAt >= HUNG_AFTER_CRASH_MS ? run.crashLoggedAt : null;
 }
 
-export type StartTimes = { lastMs: number; lastAt: number; usualMs: number | null; runs: number };
+export type StartTimes = {
+	lastMs: number;
+	lastAt: number;
+	usualMs: number | null;
+	runs: number;
+	/** The newest start is the running server's own, not an earlier run's. */
+	current: boolean;
+};
 
-/** How long the newest start took to reach "Done (", against the usual (median of the five before). */
-export function startTimes(instanceId: string): StartTimes | null {
-	const runs = db
-		.select()
+/**
+ * How long the newest start took to reach "Done (", against the usual (median
+ * of the five before). `running` is the running server's start (systemd's) and
+ * when it finished starting, if it did: that start is the newest even before
+ * the history (read every 30 s) has it.
+ */
+export function startTimes(instanceId: string, running?: { startedAt: number; doneAt: number | null }): StartTimes | null {
+	const rows = db
+		.select({ startedAt: serverRuns.startedAt, doneAt: serverRuns.doneAt })
 		.from(serverRuns)
 		.where(and(eq(serverRuns.instanceId, instanceId), isNotNull(serverRuns.doneAt), eq(serverRuns.bisect, false)))
 		.orderBy(desc(serverRuns.startedAt))
 		.limit(6)
 		.all();
+	// The history's start is systemd's "Started" line, a moment off the unit's own timestamp.
+	const isRunning = (r: { startedAt: number }) => !!running?.startedAt && Math.abs(r.startedAt - running.startedAt) <= 10_000;
+	const runs =
+		running?.doneAt && !rows.some(isRunning) ? [{ startedAt: running.startedAt, doneAt: running.doneAt }, ...rows].slice(0, 6) : rows;
 	if (!runs.length) return null;
 	const took = (r: (typeof runs)[number]) => r.doneAt! - r.startedAt;
 	const before = runs.slice(1).map(took).sort((a, b) => a - b);
@@ -285,7 +301,8 @@ export function startTimes(instanceId: string): StartTimes | null {
 		lastMs: took(runs[0]),
 		lastAt: runs[0].startedAt,
 		usualMs: before.length >= 2 ? before[Math.floor(before.length / 2)] : null,
-		runs: runs.length
+		runs: runs.length,
+		current: !!running?.doneAt && isRunning(runs[0])
 	};
 }
 

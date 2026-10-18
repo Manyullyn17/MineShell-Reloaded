@@ -114,7 +114,10 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		modUpdates: modNotice,
 		summary: {
 			uptimeMs: summary.uptimeMs,
-			startedAt: summary.running ? summary.state.activeEnterTimestamp : null,
+			/** When it finished starting, which uptime counts from; null while starting or stopped. */
+			startedAt: summary.doneAt,
+			/** When the process started, while it has not finished starting. */
+			startingSince: summary.starting ? summary.state.activeEnterTimestamp : null,
 			javaWarning: summary.javaWarning,
 			restarts: summary.state.nRestarts,
 			mainPid: summary.state.mainPid,
@@ -161,7 +164,10 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		history: {
 			peakToday: peakPlayers(instance.id),
 			onlineSince: onlineSince(instance.id),
-			start: startTimes(instance.id),
+			start: startTimes(
+				instance.id,
+				summary.running ? { startedAt: summary.state.activeEnterTimestamp, doneAt: summary.doneAt } : undefined
+			),
 			crashes: recentCrashes(instance.id),
 			/** A start after the newest crash got to "Done": the list can be cleared. */
 			crashesClearable: crashesClearable(instance.id),

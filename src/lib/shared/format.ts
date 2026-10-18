@@ -59,11 +59,16 @@ export function gaveUpAfter(active: string, result: string, limit: number): numb
 	return active === 'failed' && result === 'start-limit-hit' ? limit : null;
 }
 
-export function describeState(active: string, sub: string): {
+export function describeState(
+	active: string,
+	sub: string,
+	/** Running, but not yet "Done (": systemd calls it active as soon as Java runs. */
+	starting = false
+): {
 	label: string;
 	tone: 'running' | 'stopped' | 'busy' | 'failed';
 } {
-	if (active === 'active' && sub === 'running') return { label: 'Running', tone: 'running' };
+	if (active === 'active' && sub === 'running') return starting ? { label: 'Starting', tone: 'busy' } : { label: 'Running', tone: 'running' };
 	if (active === 'activating') return { label: 'Starting', tone: 'busy' };
 	if (active === 'deactivating') return { label: 'Stopping', tone: 'busy' };
 	if (sub === 'auto-restart') return { label: 'Restarting after a crash', tone: 'busy' };

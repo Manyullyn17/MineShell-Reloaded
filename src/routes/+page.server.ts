@@ -55,6 +55,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				active: summary.state.active,
 				sub: summary.state.sub,
 				running: summary.running,
+				starting: summary.starting,
 				gaveUpAfter: gaveUpAfter(summary.state.active, summary.state.result, summary.instance.crashRestartLimit),
 				uptimeMs: summary.uptimeMs,
 				eulaAccepted: summary.eulaAccepted,

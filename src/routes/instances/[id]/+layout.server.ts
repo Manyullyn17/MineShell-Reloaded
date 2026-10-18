@@ -34,6 +34,7 @@ export const load: LayoutServerLoad = async ({ params, url }) => {
 		},
 		state: { active: summary.state.active, sub: summary.state.sub },
 		running: summary.running,
+		starting: summary.starting,
 		eulaAccepted: summary.eulaAccepted,
 		iconVersion: summary.iconVersion,
 		// The header's actions work from every tab, so what they need is here.

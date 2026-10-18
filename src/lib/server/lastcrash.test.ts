@@ -23,6 +23,8 @@ type Instance = Awaited<ReturnType<typeof createInstance>>;
 const summary = (instance: Instance, active: string, running = false, activeEnterTimestamp = 0): Summary => ({
 	instance,
 	running,
+	starting: false,
+	doneAt: null,
 	uptimeMs: 0,
 	javaWarning: null,
 	eulaAccepted: true,
