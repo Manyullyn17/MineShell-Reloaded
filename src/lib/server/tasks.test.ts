@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listTasks, startTask } from './tasks';
+import { cancelTask, getTask, listTasks, startTask } from './tasks';
 import { bus } from './events';
 
 // A second evaluation of a module, as dev HMR makes one: a query makes it a module of its own
@@ -23,5 +23,29 @@ describe('module state across re-evaluations (dev HMR)', () => {
 		fresh.bus.publish('task:update', { id: 'after-reload' });
 		unsubscribe();
 		expect(heard).toEqual(['after-reload']);
+	});
+});
+
+describe('cancelling', () => {
+	const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+	it('only stops work that said it can, and says what cancelling does', async () => {
+		let finish = () => {};
+		const stuck = startTask({ label: 'Install' }, () => new Promise<void>((resolve) => (finish = resolve)));
+		expect(cancelTask(stuck)).toBeNull();
+		expect(getTask(stuck)?.cancel).toBeNull();
+		finish();
+
+		let checked = false;
+		const stoppable = startTask({ label: 'Analyse', cancel: 'Stops the analysis.' }, async (task) => {
+			while (!task.isCancelled()) await settle();
+			checked = true;
+		});
+		expect(cancelTask(stoppable)).toBe('Stops the analysis.');
+		while (getTask(stoppable)?.state === 'running') await settle();
+		expect(checked).toBe(true);
+		expect(getTask(stoppable)).toMatchObject({ state: 'cancelled', step: 'Cancelled' });
+		// Finished: nothing left to cancel.
+		expect(cancelTask(stoppable)).toBeNull();
 	});
 });

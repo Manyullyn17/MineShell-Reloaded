@@ -82,13 +82,19 @@ const regionFiles = async (dir: string) =>
 
 /**
  * Every chunk's InhabitedTime and size in a dimension, for the map that
- * previews pruning. Reads only. `base` holds its region/ folder.
+ * previews pruning. Reads only. `base` holds its region/ folder. Null when
+ * `cancelled` says so, checked between region files.
  */
-export async function analyseRegions(base: string, progress?: (done: number, total: number) => void): Promise<AnalysedRegion[]> {
+export async function analyseRegions(
+	base: string,
+	progress?: (done: number, total: number) => void,
+	cancelled?: () => boolean
+): Promise<AnalysedRegion[] | null> {
 	const dir = path.join(base, 'region');
 	const names = await regionFiles(dir);
 	const out: AnalysedRegion[] = [];
 	for (const [i, name] of names.entries()) {
+		if (cancelled?.()) return null;
 		progress?.(i, names.length);
 		const region = regionOf(name)!;
 		const file = await fs.readFile(path.join(dir, name));

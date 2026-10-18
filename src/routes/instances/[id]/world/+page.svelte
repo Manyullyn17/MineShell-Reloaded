@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { can, type InstancePermission } from '#lib/shared/access.js';
+	import { can, mayCancelTask, type InstancePermission } from '#lib/shared/access.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
@@ -954,6 +954,7 @@
 			dimensions={data.dimensions}
 			analysis={data.pruneAnalysis}
 			analysing={data.pruneAnalysing}
+			mayCancel={mayCancelTask(data.access, { instanceId: data.instance.id })}
 			running={data.running}
 			{busy}
 			snapshotPrompt={data.snapshotPrompt}

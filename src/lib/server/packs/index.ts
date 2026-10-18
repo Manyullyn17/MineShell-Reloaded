@@ -351,6 +351,9 @@ export type FailedDownload = {
 	blocked?: BlockedDownload;
 };
 
+/** What cancelling a task does while it downloads pack files (downloadPackFiles). */
+export const PACK_DOWNLOAD_CANCEL = 'Stops after the files being downloaded now; the rest are listed as missing on the overview, to download later.';
+
 /** Fetch every file the pack lists, in small batches, into the instance. */
 export async function downloadPackFiles(
 	pack: ParsedPack,
@@ -424,7 +427,16 @@ export async function downloadPackFiles(
 	}
 
 	await Promise.all(Array.from({ length: Math.min(concurrency, total || 1) }, worker));
-	return { installed: done - failures.length, failures };
+	const installed = done - failures.length;
+	// Cancelled: the files never started are missing like failed ones, so they are listed to fetch
+	// later (they used to be dropped, and a retry of missing files then counted them as done).
+	const skipped = queue.filter((item) => item.required);
+	for (const item of skipped) {
+		const label = item.curseforge && !item.target ? `CurseForge file ${item.curseforge.fileId}` : item.target || 'unknown file';
+		failures.push({ file: label, error: 'Not downloaded: cancelled', download: item });
+	}
+	if (skipped.length) task?.log(`Cancelled: ${skipped.length} files not downloaded, listed as missing.`);
+	return { installed, failures };
 }
 
 

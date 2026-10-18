@@ -1000,13 +1000,20 @@ log picked).
 
 **The notification center** (top bar, `NotificationCenter.svelte`) follows the task stream
 (`/api/tasks?stream=1&brief=1`, without logs) on every page: running tasks with progress
-and Cancel, tasks finished in the last half hour (the server keeps them that long),
+and, for the ones that can stop, Cancel, tasks finished in the last half hour (the server keeps them that long),
 an unread count kept per browser. A task that finishes while the panel is closed becomes a
 toast, and any finish reloads the page data. What counts as finished since the page loaded is
 measured against the layout data's `finishedTasks`, not the stream's first payload: a
 snapshot of a small world can start and finish before the stream connects (`taskwatch.ts`). Toasts (`lib/shared/toasts.svelte.ts`) are also where
 results go that have no place on the page, like a save in the player editor: closable,
 and anything but an error closes itself after 8 s. The Activity page keeps the logs.
+
+**Cancelling** is cooperative: work checks `task.isCancelled()` and stops. A task offers
+Cancel only when it was started with `cancel` (what cancelling does, said back to whoever
+cancels): pack downloads (installs, pack changes and the missing-files retry stop after
+the files under way, and the rest are listed as missing, as failed downloads are; before,
+they were forgotten and a retry counted them as done), the map render, a Spark profile, the
+prune analysis. Everything else runs to the end: most operations cannot stop halfway.
 
 Phones: layout changes for narrow windows sit under `@media (max-width: 60rem)` (the rail
 slides in, the instance header stops sticking, tab bars scroll with a fade, tables scroll

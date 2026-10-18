@@ -143,6 +143,34 @@ describe('parsePack', () => {
 });
 
 describe('downloadPackFiles', () => {
+	it('lists the files a cancel left undownloaded as missing, not as installed', async () => {
+		// Cancelled after the first file: the rest used to vanish, so a retry of missing files counted them as done.
+		let cancelled = false;
+		globalThis.fetch = (async () => {
+			cancelled = true;
+			return new Response('x');
+		}) as typeof fetch;
+		try {
+			const dir = await tempDir();
+			const file = (name: string, required = true) => ({ target: `mods/${name}`, urls: [`https://cdn.example.com/${name}`], hash: null, required });
+			const pack = {
+				kind: 'mrpack', name: 'T', version: null, minecraftVersion: '1.21.1', modloader: 'vanilla', modloaderVersion: null,
+				downloads: [file('a.jar'), file('b.jar'), file('c.jar'), file('optional.jar', false)],
+				overrideEntries: [], zip: null
+			} satisfies ParsedPack;
+			const task = { id: 't', setProgress: () => {}, log: () => {}, isCancelled: () => cancelled };
+			const result = await downloadPackFiles(pack, dir, task, 1);
+			expect(result.installed).toBe(1);
+			expect(result.failures.map((f) => [f.file, f.error])).toEqual([
+				['mods/b.jar', 'Not downloaded: cancelled'],
+				['mods/c.jar', 'Not downloaded: cancelled']
+			]);
+			expect(await ls(path.join(dir, 'mods'))).toEqual(['a.jar']);
+		} finally {
+			globalThis.fetch = guard;
+		}
+	});
+
 	it('never writes outside the instance, whatever the target says', async () => {
 		// Targets also come from CurseForge file names and the world mapping, not only from parsePack.
 		globalThis.fetch = (async () => new Response('x')) as typeof fetch;

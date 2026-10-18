@@ -88,10 +88,13 @@ describe('access checked in handlers', () => {
 
 	it("cancelling a task needs admin of its server; one of no server needs a global admin", async () => {
 		const { id } = await server();
-		const stuck = startTask({ label: 'test', instanceId: id }, () => new Promise(() => undefined));
-		const global = startTask({ label: 'test', instanceId: null }, () => new Promise(() => undefined));
+		const stuck = startTask({ label: 'test', instanceId: id, cancel: 'Stops.' }, () => new Promise(() => undefined));
+		const global = startTask({ label: 'test', instanceId: null, cancel: 'Stops.' }, () => new Promise(() => undefined));
+		const unstoppable = startTask({ label: 'test', instanceId: id }, () => new Promise(() => undefined));
 		expect(await post(tasks.actions.cancel, undefined, access(id, { permissions: ['power', 'mods'] }), { id: stuck })).toEqual({ refused: 403 });
 		expect(await post(tasks.actions.cancel, undefined, access(id, { admin: true }), { id: stuck })).toMatchObject({ ok: true });
 		expect(await post(tasks.actions.cancel, undefined, access(id, { admin: true }), { id: global })).toEqual({ refused: 403 });
+		// Work that cannot stop has no Cancel, and the action says so instead of claiming it cancels.
+		expect(await post(tasks.actions.cancel, undefined, access(id, { admin: true }), { id: unstoppable })).toMatchObject({ status: 400 });
 	});
 });

@@ -26,6 +26,8 @@ export type Task = {
 	blocked: BlockedDownload[];
 	startedAt: number;
 	finishedAt: number | null;
+	/** What cancelling does, for the ones whose work stops when asked; null: no Cancel. */
+	cancel: string | null;
 };
 
 /**
@@ -67,8 +69,12 @@ export function getTask(id: string): Task | undefined {
 	return tasks.get(id);
 }
 
-export function cancelTask(id: string): void {
-	if (tasks.get(id)?.state === 'running') cancelled.add(id);
+/** Asks a running task to stop; what that does, or null when it cannot be cancelled (or is not running). */
+export function cancelTask(id: string): string | null {
+	const task = tasks.get(id);
+	if (task?.state !== 'running' || !task.cancel) return null;
+	cancelled.add(id);
+	return task.cancel;
 }
 
 function touch(task: Task) {
@@ -91,7 +97,15 @@ function sweep() {
  * not awaited by callers - they get the id and redirect to a progress view.
  */
 export function startTask(
-	opts: { label: string; instanceId?: string | null },
+	opts: {
+		label: string;
+		instanceId?: string | null;
+		/**
+		 * Set for work that checks isCancelled() and stops: what cancelling does, said to whoever
+		 * cancels. Without it there is no Cancel (most work cannot stop halfway).
+		 */
+		cancel?: string;
+	},
 	work: (handle: TaskHandle) => Promise<void>
 ): string {
 	sweep();
@@ -107,7 +121,8 @@ export function startTask(
 		error: null,
 		blocked: [],
 		startedAt: Date.now(),
-		finishedAt: null
+		finishedAt: null,
+		cancel: opts.cancel ?? null
 	};
 	touch(task);
 

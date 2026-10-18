@@ -38,6 +38,7 @@ import {
 	curseforgeOrigins,
 	downloadPackFiles,
 	loadOverridesArchive,
+	PACK_DOWNLOAD_CANCEL,
 	parsePack,
 	type ParsedPack
 } from './packs';
@@ -465,7 +466,7 @@ function provisionFromPack(
 	choices: Pick<CreateInstanceInput, 'startWhenReady' | 'acceptEula' | 'disableMods' | 'keepMods' | 'enableMods'> = {}
 ): string {
 	return startTask(
-		{ label: `Install ${pack.name}`, instanceId: instance.id },
+		{ label: `Install ${pack.name}`, instanceId: instance.id, cancel: PACK_DOWNLOAD_CANCEL },
 		(task) => endJournalOnFailure(instance.id, async () => {
 			for (const note of notes) task.log(note);
 			task.setProgress(null, 'Resolving Java');

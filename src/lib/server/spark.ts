@@ -223,7 +223,7 @@ export function startProfile(instance: ServerInstance, seconds: number, timing: 
 	const startedAt = Date.now();
 	const profile: ActiveProfile = { taskId: '', startedAt, endsAt: startedAt + seconds * 1000 };
 	active.set(instance.id, profile);
-	profile.taskId = startTask({ label: `Profile ${instance.name}`, instanceId: instance.id }, async (task) => {
+	profile.taskId = startTask({ label: `Profile ${instance.name}`, instanceId: instance.id, cancel: 'Stops the profiler; Spark discards the profile.' }, async (task) => {
 		try {
 			await runProfile(instance, target, seconds, startedAt, task, timing);
 		} finally {

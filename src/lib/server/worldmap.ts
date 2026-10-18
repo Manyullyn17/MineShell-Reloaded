@@ -404,7 +404,8 @@ export async function renderMap(instance: ServerInstance, opts: { force?: boolea
 	// Settled before the task starts, so a missing Java is a question on the page.
 	if (!opts.downloadJava) await blueMapJava();
 
-	const taskId = startTask({ label: `Update the map of ${instance.name}`, instanceId: instance.id }, async (task) => {
+	const cancel = 'Stops the render; what is drawn so far stays on the map.';
+	const taskId = startTask({ label: `Update the map of ${instance.name}`, instanceId: instance.id, cancel }, async (task) => {
 		try {
 			const java = await blueMapJava(opts.downloadJava, task);
 			const jar = await blueMapJar(task);

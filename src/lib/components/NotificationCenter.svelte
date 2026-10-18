@@ -36,6 +36,8 @@
 		error: string | null;
 		startedAt: number;
 		finishedAt: number | null;
+		/** What cancelling does; null: the task cannot be cancelled. */
+		cancel: string | null;
 	};
 
 	const READ_KEY = 'mineshell.notifications.read';
@@ -212,7 +214,7 @@
 									<div class="small faint">{ended(task)}</div>
 								{/if}
 							</div>
-							{#if task.state === 'running' && mayCancelTask(access, task)}
+							{#if task.state === 'running' && task.cancel && mayCancelTask(access, task)}
 								<button type="button" class="button-quiet button-danger cancel" onclick={() => cancel(task)}>Cancel</button>
 							{/if}
 						</li>

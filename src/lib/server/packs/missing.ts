@@ -8,7 +8,7 @@ import { curseforgeModProvider as mirrorMods } from '../mods/modpacksch';
 import { syncMods } from '../mods';
 import { startTask, type TaskHandle } from '../tasks';
 import type { BlockedDownload } from '#lib/shared/downloads.js';
-import { curseforgeOrigins, downloadPackFiles, type FailedDownload, type PackDownload, type ParsedPack } from './index';
+import { curseforgeOrigins, downloadPackFiles, PACK_DOWNLOAD_CANCEL, type FailedDownload, type PackDownload, type ParsedPack } from './index';
 
 /**
  * Pack files an install or pack change could not download, kept with the
@@ -100,7 +100,7 @@ const retrying = new Set<string>();
 export function startRetryMissing(instance: ServerInstance): string | null {
 	if (retrying.has(instance.id)) return null;
 	retrying.add(instance.id);
-	return startTask({ label: `Downloading missing pack files for ${instance.name}`, instanceId: instance.id }, async (task) => {
+	return startTask({ label: `Downloading missing pack files for ${instance.name}`, instanceId: instance.id, cancel: PACK_DOWNLOAD_CANCEL }, async (task) => {
 		try {
 			if ((await retryMissing(instance, task)) === 0) {
 				const current = db.select().from(serverInstances).where(eq(serverInstances.id, instance.id)).get();

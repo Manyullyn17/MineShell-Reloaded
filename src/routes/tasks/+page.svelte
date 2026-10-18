@@ -64,7 +64,7 @@
 						</div>
 					</div>
 					<div class="row">
-						{#if task.state === 'running' && mayCancelTask(data.access, task)}
+						{#if task.state === 'running' && task.cancel && mayCancelTask(data.access, task)}
 							<form method="POST" action="?/cancel" use:enhance>
 								<input type="hidden" name="id" value={task.id} />
 								<button class="button-quiet button-danger">Cancel</button>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack, type ComponentProps } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { enhance } from '#lib/shared/forms.js';
+	import { actionMessage, enhance, postAction } from '#lib/shared/forms.js';
 	import ChunkMap from '#lib/components/ChunkMap.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
@@ -33,6 +33,7 @@
 		dimensions,
 		analysis,
 		analysing,
+		mayCancel,
 		running,
 		busy,
 		snapshotPrompt
@@ -43,6 +44,8 @@
 		analysis: { dimension: string; label: string; at: number; chunks: number; unreadable: number; spawn: { x: number; z: number } | null } | null;
 		/** The analysis under way, from the server: shown by the button until the page reloads with its result. */
 		analysing: { taskId: string; task: TaskState } | null;
+		/** May cancel this server's tasks (its admins). */
+		mayCancel: boolean;
 		running: boolean;
 		busy: boolean;
 		snapshotPrompt: ComponentProps<typeof SnapshotChoice>['prompt'];
@@ -83,6 +86,15 @@
 		});
 		return () => source.close();
 	});
+	let cancelError = $state<string | null>(null);
+	async function cancelAnalysis() {
+		if (!followed) return;
+		const body = new FormData();
+		body.set('id', followed);
+		const result = await postAction('/tasks?/cancel', body).catch(() => null);
+		cancelError = result?.type === 'success' ? null : result ? actionMessage(result, 'Could not cancel it.') : 'Could not reach MineShell.';
+	}
+
 	// The page reloads when the task finishes; until its data has the result, the button stays off.
 	const inProgress = $derived(submitting || (!!followed && task?.state !== 'failed' && task?.state !== 'cancelled'));
 
@@ -241,6 +253,10 @@
 				<span class:indeterminate={task?.progress == null} style="width: {task?.progress ?? 100}%"></span>
 			</div>
 		</div>
+		{#if mayCancel && followed && task?.state === 'running'}
+			<button type="button" class="button-quiet" onclick={cancelAnalysis}>Cancel</button>
+		{/if}
+		{#if cancelError}<p class="error-text small analysed">{cancelError}</p>{/if}
 	{:else if followed && task?.state === 'failed'}
 		<p class="error-text small analysed">The analysis failed{task.error ? `: ${task.error}` : '.'}</p>
 	{:else if current}

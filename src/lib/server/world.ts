@@ -534,11 +534,19 @@ export async function analysePrunable(instance: ServerInstance, key: string): Pr
 		throw err;
 	}
 	const found = dimension;
-	const taskId = startTask({ label: `Analysing ${found.label} for pruning: ${instance.name}`, instanceId: instance.id }, async (task) => {
+	const label = `Analysing ${found.label} for pruning: ${instance.name}`;
+	const cancel = 'Stops the analysis; nothing in the world changes, and the last finished analysis stays.';
+	const taskId = startTask({ label, instanceId: instance.id, cancel }, async (task) => {
 		try {
-			const regions = await analyseRegions(dimensionBase(instance.path, found), (done, total) =>
-				task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`)
+			const regions = await analyseRegions(
+				dimensionBase(instance.path, found),
+				(done, total) => task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`),
+				task.isCancelled
 			);
+			if (!regions) {
+				task.log('Cancelled.');
+				return;
+			}
 			let chunks = 0;
 			let unreadable = 0;
 			for (const r of regions) {

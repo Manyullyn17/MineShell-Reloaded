@@ -5,6 +5,7 @@ import { analyseRegions, applyPrune, planPrune } from '#lib/server/chunkprune.js
 import { NO_CHUNK, UNREADABLE } from '#lib/shared/chunkprune.js';
 import { listSnapshots } from '#lib/server/snapshots.js';
 import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, runningPruneAnalysis, worldSpawn, type PruneSettings } from '#lib/server/world.js';
+import { cancelTask } from '#lib/server/tasks.js';
 import { writeNbt, type Tag } from '#lib/server/nbt.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import { createInstance, systemdStopped, tree, waitForTask } from '../helpers/instances';
@@ -92,7 +93,7 @@ describe('chunk pruning', () => {
 			{ index: 33, ticks: 3 * MINUTE, legacy: true, pad: 9000, compression: 3 },
 			{ index: 2, compression: 4 }
 		]);
-		const [region] = await analyseRegions(base);
+		const [region] = (await analyseRegions(base))!;
 		expect(region).toMatchObject({ x: -1, z: 0 });
 		expect([region.ticks[0], region.ticks[33], region.ticks[2], region.ticks[1]]).toEqual([7, 3 * MINUTE, UNREADABLE, NO_CHUNK]);
 		expect(region.sectors[33]).toBeGreaterThan(1);
@@ -162,6 +163,17 @@ describe('chunk pruning', () => {
 		await fs.rm(path.join(instance.path, 'world', 'region', 'r.0.0.mca'));
 		await fs.mkdir(path.join(instance.path, 'world', 'region', 'r.0.0.mca'));
 		expect((await waitForTask(await analysePrunable(instance, 'world/region'))).state).toBe('failed');
+		expect(runningPruneAnalysis(instance.id)).toBeNull();
+	});
+
+	it('stops an analysis when cancelled, keeping the last finished one', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		for (let x = 0; x < 6; x++) await writeRegion(path.join(instance.path, 'world', 'region'), x, 0, [{ index: 0 }]);
+		const before = await analyse(instance);
+		const taskId = await analysePrunable(instance, 'world/region');
+		expect(cancelTask(taskId)).toMatch(/Stops the analysis/);
+		expect((await waitForTask(taskId)).state).toBe('cancelled');
+		expect(pruneAnalysis(instance.id)?.at).toBe(before);
 		expect(runningPruneAnalysis(instance.id)).toBeNull();
 	});
 

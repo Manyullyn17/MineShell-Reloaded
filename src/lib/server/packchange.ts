@@ -18,7 +18,7 @@ import {
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep, type Snapshot } from './snapshots';
 import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, walk, writeBase, type Base } from './configmerge';
-import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
+import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, PACK_DOWNLOAD_CANCEL, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
 import { missingNotice, recordMissing } from './packs/missing';
 import { hashFile } from './download';
 import { resolveProviderPack } from './packs/resolve';
@@ -691,7 +691,7 @@ export async function applyPackChange(
 		throw err;
 	}
 	setStatus(instance.id, 'provisioning', `Changing pack to ${label}`);
-	const taskId = startTask({ label: `Change ${instance.name} to ${label}`, instanceId: instance.id }, async (task) => {
+	const taskId = startTask({ label: `Change ${instance.name} to ${label}`, instanceId: instance.id, cancel: PACK_DOWNLOAD_CANCEL }, async (task) => {
 		const staging = path.join(root, journal.staging);
 		const oldConfigs = path.join(root, journal.oldConfigs);
 		const modsBefore = new Set(journal.modsBefore);
