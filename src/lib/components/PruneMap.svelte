@@ -20,6 +20,8 @@
 	} from '#lib/shared/chunkprune.js';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
 
+	type TaskState = { id: string; state: string; progress: number | null; step: string; error: string | null };
+
 	/**
 	 * World > Prune chunks: analyse a dimension, see the time players spent in
 	 * each chunk as a heatmap, pick a threshold (the chunks that would go are
@@ -30,6 +32,7 @@
 		instanceId,
 		dimensions,
 		analysis,
+		analysing,
 		running,
 		busy,
 		snapshotPrompt
@@ -38,6 +41,8 @@
 		dimensions: { key: string; label: string; overworld: boolean }[];
 		/** The last analysis, without its chunks (those come from the endpoint). */
 		analysis: { dimension: string; label: string; at: number; chunks: number; unreadable: number; spawn: { x: number; z: number } | null } | null;
+		/** The analysis under way, from the server: shown by the button until the page reloads with its result. */
+		analysing: { taskId: string; task: TaskState } | null;
 		running: boolean;
 		busy: boolean;
 		snapshotPrompt: ComponentProps<typeof SnapshotChoice>['prompt'];
@@ -52,6 +57,25 @@
 	let showing = $state<'heat' | 'terrain'>('heat');
 	let selecting = $state(false);
 	const protect = new SvelteSet<string>();
+
+	// Following the analysis under way, on the same stream as the notification center. Its id comes
+	// from the server, so it shows again when the page is opened during one.
+	let task = $state<TaskState | null>(untrack(() => analysing?.task ?? null));
+	const followed = $derived(analysing?.taskId ?? null);
+	$effect(() => {
+		const taskId = followed;
+		task = untrack(() => analysing?.task ?? null);
+		if (!taskId) return;
+		const source = new EventSource('/api/tasks?stream=1&brief=1');
+		source.addEventListener('tasks', (event) => {
+			const found = (JSON.parse((event as MessageEvent).data) as TaskState[]).find((t) => t.id === taskId);
+			if (found) task = found;
+			if (found && found.state !== 'running') source.close();
+		});
+		return () => source.close();
+	});
+	// The page reloads when the task finishes; until its data has the result, the button stays off.
+	const inProgress = $derived(!!followed && task?.state !== 'failed' && task?.state !== 'cancelled');
 
 	// The analysis's chunks, fetched when there is one of this dimension.
 	const current = $derived(analysis && analysis.dimension === dimension ? analysis : null);
@@ -178,11 +202,28 @@
 			{/each}
 		</select>
 	</div>
-	<form method="POST" action="?/pruneAnalyse" use:enhance={() => async ({ update }) => update({ reset: false })}>
+	<form
+		method="POST"
+		action="?/pruneAnalyse"
+		use:enhance={() => async ({ update }) => update({ reset: false })}
+	>
 		<input type="hidden" name="dimension" value={dimension} />
-		<button type="submit" class={current ? '' : 'button-primary'} disabled={busy}>{current ? 'Analyse again' : 'Analyse'}</button>
+		<button type="submit" class={current ? '' : 'button-primary'} disabled={busy || inProgress}>
+			{inProgress ? 'Analysing…' : current ? 'Analyse again' : 'Analyse'}
+		</button>
 	</form>
-	{#if current}
+	{#if inProgress}
+		<div class="analysing" aria-live="polite">
+			<div class="small muted">
+				{task?.step ?? 'Starting'}{#if task?.progress != null}<span class="faint"> · {task.progress}%</span>{/if}
+			</div>
+			<div class="progress" role="progressbar" aria-label="Analysing" aria-valuenow={task?.progress ?? undefined}>
+				<span class:indeterminate={task?.progress == null} style="width: {task?.progress ?? 100}%"></span>
+			</div>
+		</div>
+	{:else if followed && task?.state === 'failed'}
+		<p class="error-text small analysed">The analysis failed{task.error ? `: ${task.error}` : '.'}</p>
+	{:else if current}
 		<p class="hint small analysed">
 			{current.chunks.toLocaleString()} chunks, analysed {formatRelative(current.at)}{current.unreadable
 				? `; ${current.unreadable.toLocaleString()} could not be read and stay`
@@ -315,6 +356,15 @@
 	.analysed {
 		margin: 0;
 		align-self: center;
+	}
+
+	.analysing {
+		flex: 0 1 18rem;
+		min-width: 10rem;
+		align-self: center;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
 	}
 
 	.label {

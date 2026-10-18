@@ -953,6 +953,7 @@
 			instanceId={data.instance.id}
 			dimensions={data.dimensions}
 			analysis={data.pruneAnalysis}
+			analysing={data.pruneAnalysing}
 			running={data.running}
 			{busy}
 			snapshotPrompt={data.snapshotPrompt}

@@ -642,7 +642,9 @@ are drawn as grey squares. Item pictures turned off means no colours.
 **Pruning** (`chunkprune.ts`, `PruneMap.svelte`, rules shared with the browser in
 `lib/shared/chunkprune.ts`) starts with an analysis: a task reads every chunk's
 InhabitedTime and size in one dimension (`analysePrunable`, read only, so also while the
-server runs) and keeps it in memory, one per server; `/api/instances/[id]/prune-analysis`
+server runs) and keeps it in memory, one per server; one runs at a time per server (reserved
+before anything is awaited), and the page shows its task's progress by the button, from its own
+data on the first paint and then from the task stream; `/api/instances/[id]/prune-analysis`
 sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
 chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
 chunks the threshold and spawn radius pick, the error colour, worked out in the browser on

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyseRegions, applyPrune, planPrune } from '#lib/server/chunkprune.js';
 import { NO_CHUNK, UNREADABLE } from '#lib/shared/chunkprune.js';
 import { listSnapshots } from '#lib/server/snapshots.js';
-import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, worldSpawn, type PruneSettings } from '#lib/server/world.js';
+import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, runningPruneAnalysis, worldSpawn, type PruneSettings } from '#lib/server/world.js';
 import { writeNbt, type Tag } from '#lib/server/nbt.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import { createInstance, systemdStopped, tree, waitForTask } from '../helpers/instances';
@@ -123,6 +123,21 @@ describe('chunk pruning', () => {
 
 		expect((await waitForTask(await restoreSnapshot(instance, snapshot.id, { snapshot: false }))).state).toBe('done');
 		expect(await readRegion(path.join(instance.path, 'world/region/r.0.0.mca'))).toEqual({ 0: 0, 1: 30 * MINUTE });
+	});
+
+	it('reports the analysis under way, refuses a second one meanwhile, and clears it when done', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		await writeRegion(path.join(instance.path, 'world', 'region'), 0, 0, [{ index: 0 }]);
+		const taskId = await analysePrunable(instance, 'world/region');
+		expect(runningPruneAnalysis(instance.id)).toEqual({ taskId, dimension: 'world/region' });
+		await expect(analysePrunable(instance, 'world/region')).rejects.toThrow(/already running/);
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(runningPruneAnalysis(instance.id)).toBeNull();
+		// A failed one is cleared too.
+		await fs.rm(path.join(instance.path, 'world', 'region', 'r.0.0.mca'));
+		await fs.mkdir(path.join(instance.path, 'world', 'region', 'r.0.0.mca'));
+		expect((await waitForTask(await analysePrunable(instance, 'world/region'))).state).toBe('failed');
+		expect(runningPruneAnalysis(instance.id)).toBeNull();
 	});
 
 	it('keeps the chunks protected on the map', async () => {

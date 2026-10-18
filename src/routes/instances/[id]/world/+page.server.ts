@@ -23,6 +23,7 @@ import {
 	analysePrunable,
 	parseChunkList,
 	pruneAnalysisSummary,
+	runningPruneAnalysis,
 	pruneChunks,
 	resetDimension,
 	resetWorld,
@@ -42,6 +43,7 @@ import {
 import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder, withSizes } from '#lib/server/worlds.js';
 import { webRoot } from '#lib/server/worldmap.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
+import { getTask } from '#lib/server/tasks.js';
 import {
 	cancelPregen,
 	chunkyLanguage,
@@ -78,6 +80,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await listDimensions(instance.path)).map(dimensionOption),
 		pruneAnalysis: pruneAnalysisSummary(instance.id),
+		pruneAnalysing: analysingNow(instance.id),
 		snapshots: await Promise.all(
 			snapshots.map(async (s) => {
 				// Only one of the world the server uses can be restored (snapshotOfWorld).
@@ -122,6 +125,14 @@ async function chunkyData(instance: ReturnType<typeof requireInstance>, running:
 		pauseForPlayers: pausesForPlayers(instance.id),
 		pausedForPlayers: pausedForPlayers(instance.id)
 	};
+}
+
+/** The analysis under way with its task's state, so the page's first paint already shows how far it is. */
+function analysingNow(instanceId: string) {
+	const running = runningPruneAnalysis(instanceId);
+	const task = running?.taskId ? getTask(running.taskId) : undefined;
+	if (!running || !task) return null;
+	return { taskId: running.taskId, task: { id: task.id, state: task.state, progress: task.progress, step: task.step, error: task.error } };
 }
 
 const dimensionOption = (d: Dimension) => ({ key: d.paths[0], label: d.label, overworld: d.overworld });
@@ -277,8 +288,9 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		try {
+			// Its progress shows by the button (PruneMap, from the page's data), not as a message.
 			await analysePrunable(instance, String(form.get('dimension') ?? ''));
-			return { ok: true, message: 'Analysing; the map shows here when the task finishes.' };
+			return { ok: true };
 		} catch (err) {
 			return refused(err);
 		}

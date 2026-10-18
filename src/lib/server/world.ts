@@ -438,8 +438,17 @@ export type PruneAnalysis = {
  * picture of a moment, quick to redo, and a few MB for a big world. On
  * globalThis, so a dev reload does not lose it.
  */
-const analysisGlobals = globalThis as { __mineshellPruneAnalyses?: Map<string, PruneAnalysis> };
+const analysisGlobals = globalThis as {
+	__mineshellPruneAnalyses?: Map<string, PruneAnalysis>;
+	__mineshellAnalysing?: Map<string, { taskId: string; dimension: string }>;
+};
 const pruneAnalyses = (analysisGlobals.__mineshellPruneAnalyses ??= new Map());
+/** The analysis running per server, so the page shows its progress by the button, also when opened again. */
+const analysing = (analysisGlobals.__mineshellAnalysing ??= new Map());
+
+export function runningPruneAnalysis(instanceId: string): { taskId: string; dimension: string } | null {
+	return analysing.get(instanceId) ?? null;
+}
 
 export function pruneAnalysis(instanceId: string): PruneAnalysis | null {
 	return pruneAnalyses.get(instanceId) ?? null;
@@ -510,25 +519,43 @@ function validSettings(settings: PruneSettings): PruneSettings {
  * a moment's picture; the prune checks every chunk again).
  */
 export async function analysePrunable(instance: ServerInstance, key: string): Promise<string> {
-	const dimension = await findDimension(instance.path, key);
-	if (!dimension) throw new InstanceError('That dimension is not in the world.');
-	const spawn = dimension.overworld ? await worldSpawn(instance.path) : null;
-	return startTask({ label: `Analysing ${dimension.label} for pruning: ${instance.name}`, instanceId: instance.id }, async (task) => {
-		const regions = await analyseRegions(dimensionBase(instance.path, dimension), (done, total) =>
-			task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`)
-		);
-		let chunks = 0;
-		let unreadable = 0;
-		for (const r of regions) {
-			for (const t of r.ticks) {
-				if (t === NO_CHUNK) continue;
-				chunks++;
-				if (t === UNREADABLE) unreadable++;
+	// Taken before anything is awaited, so two quick clicks cannot both start one.
+	if (analysing.has(instance.id)) throw new InstanceError('An analysis of this server is already running.');
+	const reserved = { taskId: '', dimension: key };
+	analysing.set(instance.id, reserved);
+	let dimension: Dimension | null;
+	let spawn: { x: number; z: number } | null;
+	try {
+		dimension = await findDimension(instance.path, key);
+		if (!dimension) throw new InstanceError('That dimension is not in the world.');
+		spawn = dimension.overworld ? await worldSpawn(instance.path) : null;
+	} catch (err) {
+		analysing.delete(instance.id);
+		throw err;
+	}
+	const found = dimension;
+	const taskId = startTask({ label: `Analysing ${found.label} for pruning: ${instance.name}`, instanceId: instance.id }, async (task) => {
+		try {
+			const regions = await analyseRegions(dimensionBase(instance.path, found), (done, total) =>
+				task.setProgress(total ? (done / total) * 100 : null, `Reading region file ${done} of ${total}`)
+			);
+			let chunks = 0;
+			let unreadable = 0;
+			for (const r of regions) {
+				for (const t of r.ticks) {
+					if (t === NO_CHUNK) continue;
+					chunks++;
+					if (t === UNREADABLE) unreadable++;
+				}
 			}
+			pruneAnalyses.set(instance.id, { dimension: key, label: found.label, at: Date.now(), spawn, regions, chunks, unreadable });
+			task.log(`Read ${chunks} chunks in ${regions.length} region files${unreadable ? `; ${unreadable} could not be read and stay` : ''}.`);
+		} finally {
+			analysing.delete(instance.id);
 		}
-		pruneAnalyses.set(instance.id, { dimension: key, label: dimension.label, at: Date.now(), spawn, regions, chunks, unreadable });
-		task.log(`Read ${chunks} chunks in ${regions.length} region files${unreadable ? `; ${unreadable} could not be read and stay` : ''}.`);
 	});
+	reserved.taskId = taskId;
+	return taskId;
 }
 
 /**
