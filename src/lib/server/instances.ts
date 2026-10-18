@@ -64,6 +64,7 @@ import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
+import { deleteCrashMarks } from './history';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
@@ -1409,6 +1410,7 @@ export async function deleteInstance(
 	deleteServerSnapshotOverrides(instance.id);
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
+	deleteCrashMarks(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
 	await deleteChunkMapCache(instance.id).catch(() => undefined);
 	await deletePlayitData(instance.id);

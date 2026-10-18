@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const { applyEvents, crashCausesByRun, hungAfterCrash, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
+const { applyEvents, clearCrashes, crashCausesByRun, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { db } = await import('#lib/server/db/index.js');
 const { bisectSessions } = await import('#lib/server/db/schema.js');
@@ -131,6 +131,45 @@ describe('crash history', () => {
 			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4)
 		]);
 		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
+	});
+
+	it('clears crashes from the overview only once a start after them got through, and shows new ones again', async () => {
+		const s = await server();
+		const at = Date.now() - 3 * 3600_000;
+		const crash = (n: number, t: number) => [ev(t, 'Started mstest@x.service - Minecraft server', n), ev(t + MIN, 'mstest@x.service: Main process exited, code=exited, status=1/FAILURE', n)];
+		const clean = (n: number, t: number) => [ev(t, 'Started mstest@x.service - Minecraft server', n), ev(t + MIN, line('Done (3.1s)! For help, type "help"'), n)];
+		applyEvents(s.id, [...crash(1, at), ...crash(2, at + 10 * MIN)]);
+		// Still crashing: nothing to clear yet.
+		expect(crashesClearable(s.id)).toBe(false);
+		expect(clearCrashes(s.id)).toBe(false);
+		expect(recentCrashes(s.id)).toHaveLength(2);
+
+		applyEvents(s.id, clean(3, at + 20 * MIN));
+		expect(crashesClearable(s.id)).toBe(true);
+		expect(clearCrashes(s.id)).toBe(true);
+		expect(recentCrashes(s.id)).toEqual([]);
+
+		// A crash after clearing shows again, and is not clearable until another clean start.
+		applyEvents(s.id, crash(4, Date.now() + MIN));
+		expect(recentCrashes(s.id).map((c) => c.invocation)).toEqual([inv(4)]);
+		expect(crashesClearable(s.id)).toBe(false);
+	});
+
+	it('clears crashes on its own when the start after a one-click fix gets through', async () => {
+		const s = await server();
+		const at = Date.now() - 3 * 3600_000;
+		applyEvents(s.id, [ev(at, 'Started mstest@x.service - Minecraft server', 1), ev(at + MIN, 'mstest@x.service: Main process exited, code=exited, status=1/FAILURE', 1)]);
+		noteCrashFix(s.id);
+		expect(crashFixPending(s.id)).toBe(true);
+		// The fix did not help: crashed again, still listed, still waiting.
+		const later = Date.now() + MIN;
+		applyEvents(s.id, [ev(later, 'Started mstest@x.service - Minecraft server', 2), ev(later + MIN, 'mstest@x.service: Main process exited, code=exited, status=1/FAILURE', 2)]);
+		expect(recentCrashes(s.id)).toHaveLength(2);
+		expect(crashFixPending(s.id)).toBe(true);
+		// It started cleanly: both go.
+		applyEvents(s.id, [ev(later + 5 * MIN, 'Started mstest@x.service - Minecraft server', 3), ev(later + 6 * MIN, line('Done (3.1s)! For help, type "help"'), 3)]);
+		expect(recentCrashes(s.id)).toEqual([]);
+		expect(crashFixPending(s.id)).toBe(false);
 	});
 
 	it('counts a run that logged a crash, also when its process hung and had to be stopped', async () => {

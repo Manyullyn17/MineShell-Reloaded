@@ -434,8 +434,18 @@
 						<h2>Recent crashes</h2>
 						<p>{crashes.length} in the last 30 days{crashes.length === 10 ? ' (newest ten)' : ''}.</p>
 					</div>
-					{#if may('console.read')}<a class="small" href="/instances/{data.instance.id}/logs">Logs →</a>{/if}
+					<div class="crash-tools">
+						{#if data.history.crashesClearable && may('power')}
+							<form method="POST" action="?/clearCrashes" use:enhance={() => async ({ update }) => update({ reset: false })}>
+								<button type="submit" class="button-quiet small" title="The server started cleanly since; the Logs tab keeps every run">Clear</button>
+							</form>
+						{/if}
+						{#if may('console.read')}<a class="small" href="/instances/{data.instance.id}/logs">Logs →</a>{/if}
+					</div>
 				</div>
+				{#if data.history.crashFixPending}
+					<p class="faint small">A fix was applied: these clear once the server starts cleanly.</p>
+				{/if}
 				{#if repeated && repeated[1] > 1}
 					<p class="notice warning repeat">The same cause {repeated[1]} times: {repeated[0]}</p>
 				{/if}
@@ -688,6 +698,12 @@
 		display: flex;
 		gap: var(--space-4);
 		white-space: nowrap;
+	}
+
+	.crash-tools {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
 	}
 
 	.crash-list {

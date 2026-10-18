@@ -124,6 +124,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			cancelCountdown: on('power'),
 			eula: on('power'),
 			dismissNotice: on('power'),
+			clearCrashes: on('power'),
 			// Starts with fml.queryResult=confirm, which can drop registry entries from the world.
 			forgeAnswer: on('software'),
 			retryDownloads: on('software'),

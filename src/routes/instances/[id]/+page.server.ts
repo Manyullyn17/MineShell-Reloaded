@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
 import { packIconPending } from '#lib/server/packicon.js';
-import { hungAfterCrash, onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
+import { clearCrashes, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -162,7 +162,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			peakToday: peakPlayers(instance.id),
 			onlineSince: onlineSince(instance.id),
 			start: startTimes(instance.id),
-			crashes: recentCrashes(instance.id)
+			crashes: recentCrashes(instance.id),
+			/** A start after the newest crash got to "Done": the list can be cleared. */
+			crashesClearable: crashesClearable(instance.id),
+			/** A one-click fix was applied: the next clean start clears the list. */
+			crashFixPending: crashFixPending(instance.id)
 		},
 		/** A pack server without an icon yet: the page puts the pack's icon on it, once. */
 		packIconPending: await packIconPending(instance),
@@ -269,6 +273,13 @@ export const actions: Actions = {
 		}
 	},
 
+	/** Takes the crashes off the overview, once the server started cleanly after them. */
+	clearCrashes: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		if (!clearCrashes(instance.id)) return fail(400, { ok: false, message: 'Start the server cleanly first: crashes clear once a start after them gets through.' });
+		return { ok: true, message: 'Crashes cleared from the overview; the Logs tab still has every run.' };
+	},
+
 	/** One-click fix from a crash diagnosis: disable the culprit or re-enable a dependency. */
 	modFix: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
@@ -287,6 +298,7 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: `${fileName} is no longer in the mods folder.` });
 		}
 		forgetDiagnosis(instance.id);
+		noteCrashFix(instance.id);
 		const name = fileName.replace(/\.jar(\.disabled)?$/i, '');
 		return { ok: true, message: `${enable ? 'Enabled' : 'Disabled'} ${name}. Start the server to try again.` };
 	},

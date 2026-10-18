@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, gte, isNotNull, isNull, lte, or } from 'drizzle-orm';
 import { db } from './db';
-import { bisectSessions, playerSessions, serverInstances, serverRuns, type ServerInstance } from './db/schema';
+import { bisectSessions, playerSessions, serverInstances, serverRuns, settings, type ServerInstance } from './db/schema';
 import { readJournalEvents, readRun, type JournalEvent } from './journal';
 import { diagnoseRun } from './crashdiag';
 import { modsDir } from './mods/index';
@@ -122,6 +122,12 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): Happeni
 			const run = db.select().from(serverRuns).where(where).get();
 			db.update(serverRuns).set({ doneAt: e.at }).where(where).run();
 			if (run && !run.bisect) happened.push({ kind: 'start', at: e.at, detail: took(e.at - run.startedAt) });
+			// Started cleanly after a one-click fix: the crashes it fixed leave the overview.
+			const fix = readNumber(CRASH_FIX(instanceId));
+			if (run && !run.bisect && fix && run.startedAt >= fix) {
+				writeNumber(CRASHES_CLEARED(instanceId), run.startedAt);
+				writeNumber(CRASH_FIX(instanceId), null);
+			}
 			continue;
 		}
 		if (isCrashLine(e.message) && e.invocation) {
@@ -285,18 +291,72 @@ export function startTimes(instanceId: string): StartTimes | null {
 
 export type CrashRecord = { invocation: string; at: number; cause: string | null; diagnosed: boolean };
 
-/** The server's crashes since `since`, newest first. */
+/**
+ * The overview's crash list is cleared up to a time (settings, per server): by hand once
+ * a start after the newest crash got to "Done", or on its own when a one-click fix was
+ * applied and the next start got there. The runs stay; the Logs tab lists them all.
+ */
+const CRASHES_CLEARED = (id: string) => `crashes.cleared:${id}`;
+const CRASH_FIX = (id: string) => `crashes.fix:${id}`;
+
+function readNumber(key: string): number {
+	return Number(db.select().from(settings).where(eq(settings.key, key)).get()?.value ?? 0) || 0;
+}
+
+function writeNumber(key: string, value: number | null): void {
+	if (value === null) db.delete(settings).where(eq(settings.key, key)).run();
+	else db.insert(settings).values({ key, value: String(value) }).onConflictDoUpdate({ target: settings.key, set: { value: String(value) } }).run();
+}
+
+/** The server's crashes since `since`, newest first, leaving out the ones cleared from the overview. */
 export function recentCrashes(instanceId: string, since = Date.now() - 30 * 24 * 3600_000, limit = 10): CrashRecord[] {
+	const from = Math.max(since, readNumber(CRASHES_CLEARED(instanceId)));
 	return db
 		.select()
 		.from(serverRuns)
 		.where(
-			and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true), eq(serverRuns.bisect, false), gt(serverRuns.startedAt, since))
+			and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.crashed, true), eq(serverRuns.bisect, false), gt(serverRuns.startedAt, from))
 		)
 		.orderBy(desc(serverRuns.startedAt))
 		.limit(limit)
 		.all()
 		.map((r) => ({ invocation: r.invocation, at: r.endedAt ?? r.startedAt, cause: r.cause, diagnosed: r.diagnosed }));
+}
+
+/** Whether the overview's crashes can be cleared: a start after the newest one got to "Done". */
+export function crashesClearable(instanceId: string): boolean {
+	const [newest] = recentCrashes(instanceId, 0, 1);
+	if (!newest) return false;
+	const crash = db.select().from(serverRuns).where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, newest.invocation))).get();
+	if (!crash) return false;
+	return !!db
+		.select()
+		.from(serverRuns)
+		.where(and(eq(serverRuns.instanceId, instanceId), gt(serverRuns.startedAt, crash.startedAt), isNotNull(serverRuns.doneAt)))
+		.get();
+}
+
+/** Clears the overview's crashes; false (nothing changed) while the server has not started cleanly since. */
+export function clearCrashes(instanceId: string): boolean {
+	if (!crashesClearable(instanceId)) return false;
+	writeNumber(CRASHES_CLEARED(instanceId), Date.now());
+	writeNumber(CRASH_FIX(instanceId), null);
+	return true;
+}
+
+/** A one-click fix was applied: the next start that gets to "Done" clears the crashes. */
+export function noteCrashFix(instanceId: string): void {
+	writeNumber(CRASH_FIX(instanceId), Date.now());
+}
+
+/** Whether a fix waits for a clean start to clear the crashes. */
+export function crashFixPending(instanceId: string): boolean {
+	return readNumber(CRASH_FIX(instanceId)) > 0;
+}
+
+export function deleteCrashMarks(instanceId: string): void {
+	writeNumber(CRASHES_CLEARED(instanceId), null);
+	writeNumber(CRASH_FIX(instanceId), null);
 }
 
 /** The crash analyzer's verdict per crashed run, by invocation id, for the Logs tab. */

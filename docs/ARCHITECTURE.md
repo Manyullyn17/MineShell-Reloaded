@@ -339,7 +339,10 @@ hang on after its crash line (a mod's shutdown handler failing: Cleanroom 0.5.2 
 did); still running a minute after it (`hungAfterCrash`), the overview shows it as crashed, with
 the diagnosis, instead of running or "stuck starting". From it:
 today's peak and time online (overview), playtime and last seen (Players), start times
-(overview against the median of the five before, and per run in Logs).
+(overview against the median of the five before, and per run in Logs). The overview's Recent
+crashes can be cleared once a start after the newest one got to `Done (` (a time per server in
+settings, `crashes.cleared:<id>`; the runs stay, Logs lists them all), and clear on their own
+when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix`).
 
 **Heap and memory advice.** The cgroup's memory says nothing about the Java heap: the JVM
 keeps heap it took, all of it at start with `-Xms` = `-Xmx`. `heap.ts` asks the JVM itself,
