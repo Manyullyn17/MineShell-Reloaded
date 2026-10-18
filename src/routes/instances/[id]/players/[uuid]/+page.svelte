@@ -9,6 +9,7 @@
 	import ItemIcon from '#lib/components/ItemIcon.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import PlayerStats from '#lib/components/PlayerStats.svelte';
+	import { page } from '$app/state';
 	import { iconKey, iconLoader } from '#lib/shared/itemicon.svelte.js';
 	import { formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { countMatches, type Path, type TreeTag } from '#lib/shared/nbt.js';
@@ -255,7 +256,6 @@
 	let tab = $state<'inventory' | 'ender'>('inventory');
 	/** The editor's tabs; Inventory and Ender chest share the grid view. */
 	type View = 'inventory' | 'ender' | 'player' | 'effects' | 'stats' | 'data' | 'backups';
-	let view = $state<View>('inventory');
 	const VIEWS: { id: View; label: string }[] = [
 		{ id: 'inventory', label: 'Inventory' },
 		{ id: 'ender', label: 'Ender chest' },
@@ -264,6 +264,9 @@
 		{ id: 'stats', label: 'Stats' },
 		{ id: 'data', label: 'All data' }
 	];
+	// ?view= opens a tab: the player list's Stats link.
+	const asked = page.url.searchParams.get('view');
+	let view = $state<View>(VIEWS.find((v) => v.id === asked)?.id ?? 'inventory');
 	function show(next: View) {
 		view = next;
 		if (next === 'inventory' || next === 'ender') {

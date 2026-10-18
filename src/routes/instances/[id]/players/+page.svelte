@@ -386,6 +386,7 @@
 						</td>
 						<td class="right nowrap person-actions">
 							{#if person.file && can(data.access, data.instance.id, 'players.data.view', person.file.uuid)}
+								<a class="button button-quiet stats-link" href="{playerUrl(person.file.uuid)}?view=stats">Stats</a>
 								<a class="button button-quiet" href={playerUrl(person.file.uuid)}>Inventory</a>
 							{/if}
 							{#if may('players.manage')}
@@ -711,6 +712,11 @@
 		.people .person-status {
 			grid-column: 1;
 			grid-row: 2;
+		}
+
+		/* No room on a phone; the player's page has Stats as a tab. */
+		.people .stats-link {
+			display: none;
 		}
 
 		.people .person-actions {
