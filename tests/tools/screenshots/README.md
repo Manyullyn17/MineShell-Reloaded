@@ -8,7 +8,8 @@ and commit the new pictures with it (or on their own, `docs: ...`).
 npm run screenshots                     # every shot, ~1.5 min
 npm run screenshots -- overview mods    # only these
 npm run screenshots -- --keep           # leave it running to look around: http://localhost:5198
-npm run screenshots -- --cleanup        # end a --keep run
+npm run screenshots -- --serve          # only build the world and start its servers, no pictures (kept)
+npm run screenshots -- --cleanup        # end a --keep or --serve run
 ```
 
 It uses its own data dir (`/tmp/ms-shots`, emptied first), port 5198 and unit prefix

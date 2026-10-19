@@ -7,7 +7,8 @@
  *   npm run screenshots                     every shot
  *   npm run screenshots -- overview mods    only these
  *   npm run screenshots -- --keep           leave it running to look around (http://localhost:5198)
- *   npm run screenshots -- --cleanup        end a --keep run
+ *   npm run screenshots -- --serve          only the world and its running servers, no pictures (kept)
+ *   npm run screenshots -- --cleanup        end a --keep or --serve run
  *
  * Its own data dir, port and unit prefix (msshot), so it never meets real
  * servers or another throwaway dev server. The template unit it installs and
@@ -36,7 +37,8 @@ const OUT = path.join(REPO, 'docs/screenshots');
 const UNIT_DIR = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'systemd/user');
 
 const args = process.argv.slice(2);
-const keep = args.includes('--keep');
+const serve = args.includes('--serve');
+const keep = serve || args.includes('--keep');
 const only = args.filter((a) => !a.startsWith('--'));
 
 /** @param {string} cmd @param {string[]} cmdArgs @param {Record<string, string>} [env] */
@@ -261,6 +263,10 @@ db.close();
 // samples, the RCON polls and history's journal read (every 30 s).
 await act('/settings', 'installUnit');
 for (const id of toStart) await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
+if (serve) {
+	console.log(`started ${toStart.join(', ')}. Running at ${BASE} (data ${DATA}). End it with: npm run screenshots -- --cleanup`);
+	process.exit(0);
+}
 console.log(`started ${toStart.join(', ')}; letting them settle`);
 await sleep(40_000);
 

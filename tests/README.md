@@ -136,7 +136,7 @@ is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain
 | `act.mjs <page url>?/<action> [field=value ...]` | Posts to a form action as the page does and prints the decoded answer: drives a throwaway MineShell (MINESHELL_AUTH=off) from a script |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
-| `screenshots/run.mjs` (`npm run screenshots [-- names] [--keep\|--cleanup]`) | Redraws the README's pictures (`docs/screenshots/`) from invented data, with servers "running" on a fake Java under real units; scenes and shots are lists to add to (`screenshots/README.md`) |
+| `screenshots/run.mjs` (`npm run screenshots [-- names] [--keep\|--serve\|--cleanup]`) | Redraws the README's pictures (`docs/screenshots/`) from invented data, with servers "running" on a fake Java under real units; scenes and shots are lists to add to (`screenshots/README.md`) |
 
 When something needed for a check would be written a second time, it goes here instead.
 
