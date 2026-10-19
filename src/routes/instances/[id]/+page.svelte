@@ -40,7 +40,10 @@
 	$effect(() => {
 		if (!data.packIconPending || packIconDone) return;
 		packIconDone = true;
-		void applyPackIcon(data.instance.id).catch(() => undefined);
+		// The sidebar and header show it from the layout's data, which only a reload brings.
+		void applyPackIcon(data.instance.id)
+			.then(() => refreshAll())
+			.catch(() => undefined);
 	});
 
 	const clock = (ms: number) => {
