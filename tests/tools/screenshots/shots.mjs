@@ -21,6 +21,6 @@ export const shots = [
 	{ name: 'servers', path: '/', waitFor: 'MeatballCraft', height: 900 },
 	{ name: 'overview', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, height: 1000 },
 	{ name: 'console', path: '/instances/survival/console', waitFor: 'gg' },
-	{ name: 'mods', path: '/instances/cobblemon/mods', waitFor: 'Waystones', height: 1100 },
+	{ name: 'mods', path: '/instances/meatballcraft/mods', waitFor: 'AbyssalCraft', height: 1100 },
 	{ name: 'overview-phone', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, width: 390, height: 844 }
 ];
