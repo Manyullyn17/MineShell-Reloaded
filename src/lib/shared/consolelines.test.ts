@@ -100,6 +100,14 @@ describe('console lines', () => {
 		expect(shown(true)).toBe(4);
 	});
 
+	it('knows 1.12\'s RCON connection line (Forge, Cleanroom), one per connection', () => {
+		const entries = feed([
+			'[16:25:49] [RCON Listener #1/INFO] [minecraft/MinecraftServer]: Rcon connection from: /127.0.0.1',
+			'[16:22:15] [RCON Client #2/INFO] [minecraft/DedicatedServer]: [Rcon: Saved the world]'
+		]);
+		expect(entries.map((e) => e.rconConnection)).toEqual([true, false]);
+	});
+
 	it('knows NeoForge\'s RCON connection lines, and shows them by their chip alone', () => {
 		const entries = feed([
 			'\x1b[32m[09:14:02] [RCON Listener #1/INFO] [minecraft/GenericThread]: Thread RCON Client /127.0.0.1 started\x1b[0m',

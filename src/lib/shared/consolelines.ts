@@ -103,10 +103,11 @@ function continuesMessage(text: string): boolean {
  * one connection per server now, but used to open one per command, several a
  * minute (player list, TPS, the scheduler), and those runs' journals are
  * still read; other RCON tools connect per command too. Forge and NeoForge add the
- * logger's name ("[minecraft/RconClient]") before the colon.
+ * logger's name ("[minecraft/RconClient]") before the colon. 1.12 (Forge, Cleanroom)
+ * logs one line per connection instead: "Rcon connection from: /127.0.0.1".
  */
 export function isRconConnection(text: string): boolean {
-	return /^(?:\[[^\]]*\] )?\[RCON (Listener|Client)[^\]]*\](?: \[[^\]]*\])?: Thread RCON Client \S+ (started|shutting down)$/.test(text.trimEnd());
+	return /^(?:\[[^\]]*\] )?\[RCON (Listener|Client)[^\]]*\](?: \[[^\]]*\])?: (?:Thread RCON Client \S+ (started|shutting down)|Rcon connection from: \S+)$/.test(text.trimEnd());
 }
 
 export type ConsoleTone = 'error' | 'warn' | 'rcon' | 'meta' | 'player' | 'chat' | '';

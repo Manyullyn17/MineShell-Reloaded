@@ -227,6 +227,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Cleanroom offered for every uploaded pack, not only Forge 1.12.2 | `src/lib/shared/packpeek.test.ts` |
 | Mods disabled for Cleanroom showed no reason in the Mods list | `src/lib/server/cleanroom.test.ts` |
 | NeoForge's RCON connection lines slipped past the console filter | `src/lib/shared/consolelines.test.ts` |
+| 1.12's RCON connection line ("Rcon connection from: /127.0.0.1", Forge and Cleanroom) slipped past the console filter | `src/lib/shared/consolelines.test.ts` |
 | A form on a page with a query (Files `?path=`) went to the page without it | `src/lib/shared/forms.test.ts` |
 | ATM10's 42 Curios lists showed as identically named open lists | `src/lib/server/playeritems.test.ts` |
 | Coloured journal lines (byte-array MESSAGE) were skipped by history | `src/lib/server/journal.test.ts` |
