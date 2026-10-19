@@ -206,6 +206,9 @@
 							<a role="menuitem" href="{base}/export" onclick={() => (menuOpen = false)}>
 								<span>Export a client pack</span><span class="hint">Modrinth, CurseForge, Prism</span>
 							</a>
+							<a role="menuitem" href="{base}/export/server" onclick={() => (menuOpen = false)}>
+								<span>Export the server</span><span class="hint">to move it to another MineShell</span>
+							</a>
 						{/if}
 						{#if data.running && may('power')}
 							<div class="menu-head">If it's stuck</div>

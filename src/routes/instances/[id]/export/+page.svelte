@@ -84,6 +84,13 @@
 
 <svelte:head><title>Export - {data.instance.name} - MineShell</title></svelte:head>
 
+<div class="subhead">
+	<nav class="subtabs" aria-label="Export">
+		<a href="/instances/{encodeURIComponent(data.instance.id)}/export" aria-current="page">Client pack</a>
+		<a href="/instances/{encodeURIComponent(data.instance.id)}/export/server">Move to another MineShell</a>
+	</nav>
+</div>
+
 <header class="section-head">
 	<div>
 		<h2>Export a client pack</h2>

@@ -979,13 +979,13 @@ export async function worldFromSnapshot(instance: ServerInstance, snapshotId: st
 
 // ------------------------------------------------------------ uploads ---
 
-function openZip(file: string): Promise<yauzl.ZipFile> {
+export function openZip(file: string): Promise<yauzl.ZipFile> {
 	return new Promise((resolve, reject) =>
 		yauzl.open(file, { lazyEntries: true, autoClose: false }, (err, zip) => (err ? reject(err) : resolve(zip)))
 	);
 }
 
-async function zipEntries(zip: yauzl.ZipFile, onEntry: (entry: yauzl.Entry) => Promise<void>): Promise<void> {
+export async function zipEntries(zip: yauzl.ZipFile, onEntry: (entry: yauzl.Entry) => Promise<void>): Promise<void> {
 	await new Promise<void>((resolve, reject) => {
 		zip.on('entry', (entry: yauzl.Entry) => {
 			onEntry(entry).then(() => zip.readEntry(), reject);
@@ -996,7 +996,7 @@ async function zipEntries(zip: yauzl.ZipFile, onEntry: (entry: yauzl.Entry) => P
 	});
 }
 
-function entryStream(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<Readable> {
+export function entryStream(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<Readable> {
 	return new Promise((resolve, reject) =>
 		zip.openReadStream(entry, (err, stream) => (err ? reject(err) : resolve(stream)))
 	);
@@ -1187,7 +1187,8 @@ async function listFiles(dir: string, base: string, out: { abs: string; rel: str
 }
 
 /** Region files are compressed already; deflating them again only costs time. */
-const STORED = /\.(mca|mcr|mcc|png|gz|zip)$/i;
+/** Already compressed: stored as they are in a zip, not deflated again. */
+export const STORED = /\.(mca|mcr|mcc|png|gz|zip)$/i;
 
 /**
  * A zip of world folders under `dir`, streamed while it is built. Entries

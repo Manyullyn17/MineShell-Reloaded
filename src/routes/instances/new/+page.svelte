@@ -15,7 +15,7 @@
 
 	let { data, form } = $props();
 
-	type Mode = 'browse' | 'upload' | 'loader';
+	type Mode = 'browse' | 'upload' | 'loader' | 'import';
 	let mode = $state<Mode>('browse');
 	/** 1 start from, 2 choose, 3 configure. Steps stay mounted, so going back keeps every field. */
 	let step = $state(1);
@@ -32,12 +32,81 @@
 		// Another file may have been picked while this one was read.
 		if (archiveName === file.name) archiveTarget = target;
 	}
-	const ACTIONS: Record<Mode, string> = { browse: '?/install', upload: '?/upload', loader: '?/loader' };
+	const ACTIONS: Record<Mode, string> = { browse: '?/install', upload: '?/upload', loader: '?/loader', import: '?/import' };
 	const STARTS: { id: Mode; title: string; text: string }[] = [
 		{ id: 'browse', title: 'Modpack', text: 'Search Modrinth, CurseForge or Feed the Beast and install a server version.' },
 		{ id: 'upload', title: 'Upload a pack file', text: 'A CurseForge server zip or .mrpack you already have.' },
-		{ id: 'loader', title: 'Mod loader', text: 'A bare Vanilla, Fabric, Quilt, Forge, NeoForge or Cleanroom server.' }
+		{ id: 'loader', title: 'Mod loader', text: 'A bare Vanilla, Fabric, Quilt, Forge, NeoForge or Cleanroom server.' },
+		{ id: 'import', title: 'Import from another MineShell', text: 'A server exported from another MineShell, with its world, mods and settings.' }
 	];
+
+	// ---- import mode: the export is sent (or, the owner's, read from this machine) when picked,
+	// so step 3 can show what it holds; the import action then takes its id.
+	type ImportPreview = {
+		id: string;
+		fileName: string;
+		sizeBytes: number;
+		name: string;
+		minecraftVersion: string;
+		modloader: string;
+		modloaderVersion: string | null;
+		pack: string | null;
+		mineshell: string;
+		exportedAt: number;
+		mods: number;
+		downloads: number;
+		included: { worlds: boolean; snapshots: boolean; logs: boolean; mapTiles: boolean };
+	};
+	let importPreview = $state<ImportPreview | null>(null);
+	let importError = $state('');
+	let importBusy = $state(false);
+	let importProgress = $state<number | null>(null);
+	let importPath = $state('');
+	const labelOf = (loader: string) => data.loaders.find((l) => l.id === loader)?.label ?? loader;
+
+	function uploadExport(file: File | undefined) {
+		if (!file) return;
+		importPreview = null;
+		importError = '';
+		importBusy = true;
+		importProgress = 0;
+		// XMLHttpRequest, for upload progress: exports run to gigabytes.
+		const xhr = new XMLHttpRequest();
+		xhr.open('PUT', `/api/imports?name=${encodeURIComponent(file.name)}`);
+		xhr.upload.onprogress = (e) => (importProgress = e.lengthComputable ? Math.round((e.loaded / e.total) * 100) : null);
+		xhr.onload = () => {
+			importBusy = false;
+			const body = (() => {
+				try {
+					return JSON.parse(xhr.responseText);
+				} catch {
+					return null;
+				}
+			})();
+			if (xhr.status === 200 && body?.id) importPreview = body;
+			else importError = body?.message ?? 'The upload failed.';
+		};
+		xhr.onerror = () => {
+			importBusy = false;
+			importError = 'The upload did not finish.';
+		};
+		xhr.send(file);
+	}
+
+	async function readExportPath() {
+		importPreview = null;
+		importError = '';
+		importBusy = true;
+		importProgress = null;
+		try {
+			const res = await fetch('/api/imports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: importPath }) });
+			const body = await res.json().catch(() => null);
+			if (res.ok && body?.id) importPreview = body;
+			else importError = body?.message ?? 'Could not read that file.';
+		} finally {
+			importBusy = false;
+		}
+	}
 	let submitting = $state(false);
 	// Enhanced, so a refusal (a missing Java above all) keeps the picked pack,
 	// the chosen file and every field instead of reloading the page.
@@ -355,7 +424,8 @@
 		step === 1 ||
 			(mode === 'browse' && !!selected && !!versionId) ||
 			(mode === 'upload' && !!archiveName) ||
-			(mode === 'loader' && !!minecraftVersion)
+			(mode === 'loader' && !!minecraftVersion) ||
+			(mode === 'import' && !!importPreview)
 	);
 	const pickedVersion = $derived(packVersions.find((v) => v.id === versionId));
 	const loaderLabel = $derived(data.loaders.find((l) => l.id === modloader)?.label ?? modloader);
@@ -597,6 +667,42 @@
 				<strong>{archiveName || 'Choose a .mrpack or .zip'}</strong>
 				<span class="small muted">{archiveName ? 'Click to pick another' : 'Click to browse'}</span>
 			</label>
+		{:else if mode === 'import'}
+			<h2>Export file</h2>
+			<p class="muted">
+				A <code>.mineshell.zip</code> made with a server's "Export the server" on another MineShell. Its mods on Modrinth and
+				CurseForge are downloaded again here, and its loader installed again. Only import exports you trust: a server runs
+				its mods' code.
+			</p>
+			<label class="drop" use:dropzone={{ label: 'Drop the export here' }}>
+				<input
+					type="file"
+					accept=".zip"
+					class="visually-hidden"
+					disabled={importBusy}
+					onchange={(e) => uploadExport((e.currentTarget as HTMLInputElement).files?.[0])}
+				/>
+				<strong>{importBusy && importProgress !== null ? `Uploading · ${importProgress}%` : importBusy ? 'Reading' : (importPreview?.fileName ?? 'Choose the export file')}</strong>
+				<span class="small muted">{importPreview ? 'Click to pick another' : 'Click to browse'}</span>
+			</label>
+			{#if data.access.owner}
+				<div class="field import-path">
+					<label for="import-path">Or a file already on this machine</label>
+					<div class="row">
+						<input id="import-path" bind:value={importPath} placeholder="/home/you/server.mineshell.zip" autocomplete="off" />
+						<button type="button" class="button" disabled={importBusy || !importPath.trim()} onclick={readExportPath}>Read</button>
+					</div>
+					<p class="hint">For a large export copied over with scp or a USB drive: nothing is uploaded, and the file stays where it is.</p>
+				</div>
+			{/if}
+			{#if importError}<p class="notice error">{importError}</p>{/if}
+			{#if importPreview}
+				<p class="notice info">
+					<strong>{importPreview.name}</strong>: {labelOf(importPreview.modloader)}{importPreview.modloaderVersion ? ` ${importPreview.modloaderVersion}` : ''}
+					on Minecraft {importPreview.minecraftVersion}{importPreview.pack ? `, ${importPreview.pack}` : ''}. {importPreview.mods} mods
+					({importPreview.downloads} downloaded again), {importPreview.included.worlds ? 'with its worlds' : 'without worlds'}.
+				</p>
+			{/if}
 		{:else}
 			<h2>Mod loader</h2>
 			<div class="loader-grid" role="radiogroup" aria-label="Mod loader">
@@ -666,6 +772,13 @@
 				{:else if mode === 'upload'}
 					<strong class="mono">{archiveName}</strong>
 					<div class="faint small">Uploaded when you create the server</div>
+				{:else if mode === 'import'}
+					<strong>{importPreview?.name ?? ''}</strong>
+					<div class="faint small">
+						{importPreview
+							? `${labelOf(importPreview.modloader)} ${importPreview.modloaderVersion ?? ''} on ${importPreview.minecraftVersion} · exported by MineShell ${importPreview.mineshell} on ${new Date(importPreview.exportedAt).toLocaleDateString()}`
+							: ''}
+					</div>
 				{:else}
 					<strong>{loaderLabel} {minecraftVersion}</strong>
 					<div class="faint small">
@@ -685,7 +798,7 @@
 					bind:value={name}
 					oninput={() => (nameTouched = true)}
 					required={mode === 'loader'}
-					placeholder={mode === 'loader' ? 'Survival world' : 'Taken from the pack if left blank'}
+					placeholder={mode === 'loader' ? 'Survival world' : mode === 'import' ? (importPreview?.name ?? '') : 'Taken from the pack if left blank'}
 				/>
 				<p class="hint">The folder is named after it and cannot change later.</p>
 			</div>
@@ -698,7 +811,11 @@
 						: ''}
 				</p>
 			</div>
-			{@render memoryRows()}
+			{#if mode === 'import'}
+				<input type="hidden" name="importId" value={importPreview?.id ?? ''} />
+			{:else}
+				{@render memoryRows()}
+			{/if}
 			{#if mode === 'loader' && data.javaRuntimes.length > 1}
 				<div class="field">
 					<label for="javaPath">Java</label>
@@ -734,8 +851,13 @@
 
 		<JavaPrompt {form} action={mode === 'browse' ? 'install' : mode} />
 		<p class="faint small">
-			Ports are picked automatically. Game settings, restarts and JVM flags come from
-			<a href="/settings/defaults">New server defaults</a>; change them afterwards in the server's Settings.
+			{#if mode === 'import'}
+				Memory, JVM flags, restarts and the rest of the server's settings come from the export; the ports are this
+				machine's. Change any of it afterwards in the server's Settings.
+			{:else}
+				Ports are picked automatically. Game settings, restarts and JVM flags come from
+				<a href="/settings/defaults">New server defaults</a>; change them afterwards in the server's Settings.
+			{/if}
 		</p>
 	</section>
 
@@ -752,7 +874,7 @@
 				label="Create server"
 				busyLabel={mode === 'upload' ? 'Uploading' : 'Creating'}
 				busy={submitting}
-				disabled={mode === 'browse' ? !versionId : mode === 'upload' ? !archiveName : !minecraftVersion}
+				disabled={mode === 'browse' ? !versionId : mode === 'upload' ? !archiveName : mode === 'import' ? !importPreview : !minecraftVersion}
 				altLabel="Create & start"
 				altNote="Starts it once installed, accepting the Minecraft EULA"
 			/>
@@ -763,6 +885,20 @@
 <style>
 	.warn-text {
 		color: var(--warning);
+	}
+
+	.import-path {
+		margin-top: var(--space-4);
+	}
+
+	.import-path .row {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.import-path input {
+		flex: 1;
+		min-width: 0;
 	}
 
 	.page-head {
@@ -836,7 +972,8 @@
 
 	.starts {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(15rem, 18rem));
+		/* Two by two: four options in rows of three left one alone. */
+		grid-template-columns: repeat(2, minmax(15rem, 22rem));
 		gap: var(--space-3);
 	}
 

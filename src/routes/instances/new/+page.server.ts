@@ -9,6 +9,7 @@ import {
 	createFromPack
 } from '#lib/server/instances.js';
 import { takeProviderPack } from '#lib/server/packs/preview.js';
+import { importServer } from '#lib/server/serverbundle.js';
 import { listJavaRuntimes } from '#lib/server/java.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
 import { defaultMaxMb, getInstanceDefaults } from '#lib/server/instance-defaults.js';
@@ -207,6 +208,28 @@ export const actions: Actions = {
 			return javaMissing(err, 'install') ?? fail(500, {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not install that pack.'
+			});
+		}
+	},
+
+	/** A server exported from another MineShell, uploaded or picked on this machine first (/api/imports). */
+	import: async ({ request, locals }) => {
+		const form = await request.formData();
+		const importId = String(form.get('importId') ?? '');
+		if (!importId) return fail(400, { ok: false, message: 'Choose the export file first.' });
+		try {
+			const { instance } = await importServer(importId, {
+				name: String(form.get('name') ?? '').trim(),
+				...downloadJavaFrom(form),
+				...choicesFrom(form),
+				creatorId: creatorId(locals)
+			});
+			redirect(303, `/instances/${instance.id}`);
+		} catch (err) {
+			if (isRedirect(err)) throw err;
+			return javaMissing(err, 'import') ?? fail(400, {
+				ok: false,
+				message: err instanceof Error ? err.message : 'Could not import that server.'
 			});
 		}
 	}

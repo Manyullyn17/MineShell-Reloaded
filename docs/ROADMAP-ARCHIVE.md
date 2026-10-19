@@ -9,6 +9,24 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Instance export and import
+
+Built 2026-10-19 (the server's Export page, "Move to another MineShell"; Add a server, "Import
+from another MineShell"; ARCHITECTURE, "Moving a server to another MineShell"). The original
+`.jcpack` idea, decided with the user: like a modpack, mods MineShell can download again
+(Modrinth by hash, CurseForge by project and file id) are listed and fetched on import, the rest
+carried as files (user's call); the loader is installed again. Worlds in by default, snapshots,
+logs and map tiles on request; works while the server runs (saving paused). Notification
+destinations stay out (user's call: they hold webhook URLs), as do ports, RCON password, Java,
+access and playit tunnels. An export file already on the machine can be imported by its path
+(the owner only), for large ones copied over by hand (user's call). Permissions: exporting needs
+the server's files permission (like the client pack export), importing "may create servers".
+Tried for real on a throwaway dev server: a Fabric 1.21.1 server with Fabric API, Lithium (locked)
+and a hand-made mod, booted, exported while running (saving paused and back on; 467 KB once the
+Fabric cache and versions/ stayed out, 69.7 MB before), uploaded, imported, booted with all three
+mods, lock and world kept. The path import and phone widths checked too. Not tried: a CurseForge
+pack for real (CurseForge resolution only in tests), a world of gigabytes.
+
 ### Player stats
 
 Built 2026-10-18 (Players; ARCHITECTURE, "Player stats"). A Stats tab on each player's page:

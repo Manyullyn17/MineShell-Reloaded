@@ -198,6 +198,23 @@ afterwards. `npm run setup` writes the same template.
 
 From a git checkout: `git pull && npm ci && npm run build && systemctl --user restart mineshell`.
 
+### Moving a server to another machine
+
+On the old machine, the server's menu (⋯) > Export the server: one `.mineshell.zip` with its
+world, configs, settings and the mods no platform has. Mods from Modrinth and CurseForge are
+downloaded again on the new machine, and the loader installed again, so the file stays small
+unless the world is big. On the new machine, Add a server > Import from another MineShell, and
+either upload the file or (the owner) give its path after copying it over yourself, which suits a
+large world:
+
+```sh
+scp old-machine:Downloads/Survival-2026-10-19.mineshell.zip ~/
+```
+
+The import picks its own ports and RCON password, matches Java to the server (offering to
+download one), and makes whoever imports it the server's admin; playit tunnels and notification
+destinations are set up again there.
+
 ### Uninstalling
 
 `systemctl --user disable --now mineshell`, then remove `~/.config/systemd/user/mineshell.service`,

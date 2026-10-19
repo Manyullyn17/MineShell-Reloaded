@@ -18,7 +18,7 @@ built: ROADMAP-ARCHIVE):
 - **Next** (user's call, 2026-10-17): the status page, parked on its open questions
   (2026-10-18). Restoring chunks, pausing empty servers and player stats are built
   (ROADMAP-ARCHIVE).
-- **End of beta**: world backups (external), instance export and import.
+- **End of beta**: world backups (external). Instance export and import is built (ROADMAP-ARCHIVE).
 - **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
   settings.
 
@@ -148,13 +148,6 @@ replaced mod jars aside (the `mod-update` journal) so a failed update can be rol
 mods directory only and has nothing to do with world saves. The two were conflated in the
 original notes; they should stay separate.
 
-### Instance export and import
-
-The original design specified a `.jcpack` bundle containing mod metadata, overrides,
-configs and instance settings, for moving an instance between machines. Still a good idea,
-still not built. Its natural moment was after mod updating, since both depend on the mod
-metadata being trustworthy; that is built now.
-
 ### More README screenshots
 
 Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
@@ -195,6 +188,11 @@ What the built entries in the archive left out, in one place:
 - **Installer and updates**: installing Node for the user (the installer says how to get
   it), installing updates automatically; restoring a database backup from the page (by hand
   in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
+- **Server export and import**: data packs, resource packs and other files from Modrinth are
+  carried, not linked (only mods/ jars are); `isLoaderInstallEntry` does not count
+  `.fabric-cache/` or `versions/` either, so loader switches and pack changes leave them (the
+  export leaves them out by itself); not tried for real with a CurseForge pack or a world of
+  gigabytes.
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.

@@ -134,7 +134,7 @@ export async function deleteOldLogs(root: string): Promise<{ files: number; byte
 }
 
 /** The folders map mods keep their tiles in, at the server's top level. */
-const MAP_MOD_FOLDERS: Record<string, string> = {
+export const MAP_MOD_FOLDERS: Record<string, string> = {
 	bluemap: "BlueMap mod's map (bluemap)",
 	dynmap: "Dynmap's map (dynmap)"
 };

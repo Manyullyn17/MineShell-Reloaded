@@ -48,7 +48,10 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/denied': { load: 'signedIn' },
 	'/about': { load: 'signedIn' },
 	'/tasks': { load: 'signedIn', actions: { cancel: handler('signedIn', "admin of the task's server; global admin for others") } },
-	'/instances/new': { load: 'create', actions: { loader: 'create', upload: 'create', install: 'create' } },
+	'/instances/new': { load: 'create', actions: { loader: 'create', upload: 'create', install: 'create', import: 'create' } },
+	// A server exported from another MineShell: uploaded by anyone who may create servers; picked
+	// by its path on this machine only by the owner, since that reads any file MineShell can.
+	'/api/imports': { methods: { PUT: 'create', POST: 'owner' } },
 	'/settings': {
 		load: 'globalAdmin',
 		actions: {
@@ -277,6 +280,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	// A client pack carries the server's configs.
 	'/instances/[id]/export': { load: on('files'), actions: { export: on('files') } },
 	'/api/instances/[id]/export': { methods: { GET: on('files') } },
+	// The whole server, for another MineShell (serverbundle.ts): all its files, so the same permission.
+	'/instances/[id]/export/server': { load: on('files'), actions: { export: on('files') } },
+	'/api/instances/[id]/export/server': { methods: { GET: on('files') } },
 
 	'/instances/[id]/properties': { load: on('settings.view') },
 	'/instances/[id]/settings': {

@@ -33,6 +33,7 @@ Install and maintain modded Minecraft servers without having to manage every ste
 - **Minecraft and loader migrations:** Move eligible non-pack servers between Minecraft versions or loaders. Compatible mod builds are selected where available; unsupported mods are disabled and listed.
 - **Forge 1.12.2 / Cleanroom migration:** Switch between Forge and Cleanroom, including handling the compatible Fugue version required by Cleanroom.
 - **Safe experimentation:** Copy an entire server to test changes separately.
+- **Move between machines:** Export a server to one file and import it into another MineShell, with its world, configs, settings and mod records. Mods from Modrinth and CurseForge are downloaded again on import instead of being packed, and the loader is installed again, so exports stay small.
 - **Installation recovery:** Failed downloads are reported with manual download links and retry options. Long-running operations report progress and recover interrupted changes after a MineShell restart.
 - **Server icons:** Pack icons are used automatically and can be replaced in server settings.
 

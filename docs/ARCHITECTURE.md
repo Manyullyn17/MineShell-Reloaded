@@ -603,6 +603,44 @@ found again keeps its skipped flag and is notified once; applying updates
 
 ---
 
+### Moving a server to another MineShell
+
+`serverbundle.ts`, the server's Export page ("Move to another MineShell") and Add a server's
+"Import from another MineShell". An export is one zip: `mineshell-export.json` (format
+version, MineShell version, the server's loader and pack, its settings, its MineShell
+records, the list of files to download again) and the server folder under `files/`.
+
+Like a modpack, a mod MineShell can download again is listed instead of carried: a jar
+Modrinth knows by its sha512 (one `version_files` call), or one whose row is a CurseForge
+project and file id (resolved to a URL on import by `downloadPackFiles`, as pack files are).
+Everything else is carried: unknown jars, configs, worlds and the rest. The loader is not:
+the import installs the same version, so `isLoaderInstallEntry` entries stay out, and so do
+`.fabric-cache/` and `versions/` (the vanilla jar Fabric's install caches, and what the vanilla
+server unpacks on first start), `eula.txt`, `session.lock` and what a clone skips. Worlds are
+in by default; snapshots, logs and a map mod's tiles only when ticked (`bundleCategory`). A
+running server's saving is paused (save-off, flush) while the zip is written and turned back on
+however it ends. The zip is built into `$DATA/tmp/server-exports/<task>/`, refused when the disk
+lacks room for it plus 1 GB, and kept an hour.
+
+Settings travel through `checkedSettings`: a fixed list (memory, JVM flags, restarts, crash
+restarts, boot start, resource limits, console, update checks, notes), each checked like a
+settings page would; a failing value keeps the new-server default. Records travel the same way,
+each through its module's own setter where it has one: mod rows (source, version, enabled,
+locked, from pack, client-only), scheduled commands, macros, player fields, data pack sources,
+snapshot policy and schedule, tags (by name, created if missing). What belongs to the machine
+does not: ports (the import's own, or the next free), the RCON password, the Java path,
+accounts' access (the importer becomes admin, as on any new server), playit tunnels,
+notification destinations (they hold webhook URLs), run history.
+
+Import: the file is uploaded raw to `PUT /api/imports` (exports run to gigabytes; form bodies
+are buffered whole) or, for the owner only, read where it lies by its path (`POST`, left in
+place). Reading every entry once, `readManifest` refuses a damaged zip, one with an entry
+outside the folder (yauzl's own check), and a newer format. The staged file waits two hours
+for the import action, which runs like any new server: journalled `create`, Java planned up
+front (`JavaPrompt`), the loader installed, `files/` unpacked through `safeJoin`, the downloads
+fetched (failures listed as missing, to fetch later), this machine's ports and RCON password
+written into the export's server.properties, then settings and records.
+
 ## Worlds
 
 Snapshots live inside the server folder, `.mineshell/snapshots/<id>/`, with the world

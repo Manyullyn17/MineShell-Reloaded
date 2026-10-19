@@ -228,7 +228,7 @@ async function portsFor(requested: number | undefined): Promise<{ serverPort: nu
 	return { serverPort: requested, rconPort: await rconPortFor(requested) };
 }
 
-async function insertInstanceRow(
+export async function insertInstanceRow(
 	input: CreateInstanceInput & {
 		packSource?: string | null;
 		packName?: string | null;
@@ -330,7 +330,7 @@ function journal(instanceId: string, entry: Journal): void {
 }
 
 /** A failed first install has nothing to restore; its journal just goes. */
-function endJournalOnFailure<T>(instanceId: string, run: () => Promise<T>): Promise<T> {
+export function endJournalOnFailure<T>(instanceId: string, run: () => Promise<T>): Promise<T> {
 	return run().catch((err) => {
 		endOperation(instanceId);
 		throw err;
@@ -699,7 +699,7 @@ export async function createFromPack(
 }
 
 /** "Install & start": the person asked for the server to run, which accepts the EULA. */
-async function startWhenInstalled(instanceId: string, task: TaskHandle): Promise<void> {
+export async function startWhenInstalled(instanceId: string, task: TaskHandle): Promise<void> {
 	task.setProgress(null, 'Starting');
 	const instance = requireInstance(instanceId);
 	if (!(await eulaIsAccepted(instance))) await acceptEula(instance);
@@ -707,7 +707,7 @@ async function startWhenInstalled(instanceId: string, task: TaskHandle): Promise
 	task.log(result.ok ? 'Started the server.' : `Not starting the server: ${result.message}`);
 }
 
-function watchTaskFailure(taskId: string, instanceId: string) {
+export function watchTaskFailure(taskId: string, instanceId: string) {
 	const check = setInterval(() => {
 		const task = getTask(taskId);
 		if (!task) return clearInterval(check);
