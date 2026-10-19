@@ -98,8 +98,8 @@ export const scenes = [
 				loaderVersion: '0.16.10',
 				memoryMb: 8192,
 				pack: { source: 'modrinth', project: '5FFgwNNP', version: packVersion.id, versionName: packVersion.version_number, name: 'Cobblemon Official Modpack [Fabric]' },
-				worldMb: 1900,
-				running: { players: PLAYERS.slice(3, 5), mspt: 18.2, memoryMb: 3200, cpuPercent: 45, uptimeMinutes: 200, startSeconds: 52.6 }
+				// Stopped three hours ago (its history ends there): two servers running are enough, and each fake holds its memory.
+				worldMb: 1900
 			});
 			ctx.server({ id: 'creative', name: 'Creative build', minecraft: '1.21.4', loader: 'fabric', loaderVersion: '0.16.10', memoryMb: 4096, worldMb: 600, properties: { gamemode: 'creative' } });
 			// Old Minecraft, a big pack and Cleanroom in one: 1.12.2, hundreds of mods.
@@ -128,7 +128,7 @@ export const scenes = [
 		}
 	},
 	{
-		// A day of CPU and memory, and a week of runs and players, for the running servers.
+		// A day of CPU and memory, and a week of runs and players; a stopped server's end when it stopped.
 		name: 'history',
 		run(ctx) {
 			const random = seeded(7);
@@ -138,15 +138,16 @@ export const scenes = [
 				'INSERT INTO server_runs (instance_id, invocation, started_at, done_at, ended_at, exit_status, failed, crashed, diagnosed) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 1)'
 			);
 			const session = ctx.db.prepare('INSERT INTO player_sessions (instance_id, player, joined_at, left_at) VALUES (?, ?, ?, ?)');
-			for (const [id, baseMb, heapSwingMb, cpu, startSeconds] of /** @type {[string, number, number, number, number][]} */ ([
+			for (const [id, baseMb, heapSwingMb, cpu, startSeconds, stoppedHoursAgo] of /** @type {[string, number, number, number, number, number?][]} */ ([
 				['survival', 2300, 900, 28, 38],
-				['cobblemon', 2800, 1000, 42, 52],
+				['cobblemon', 2800, 1000, 42, 52, 3],
 				['meatballcraft', 4100, 1900, 65, 242]
 			])) {
+				const until = stoppedHoursAgo ? now - stoppedHoursAgo * HOUR : now - 60_000;
 				ctx.db.transaction(() => {
 					// Every 10 s, as the monitor samples: a garbage-collected sawtooth, busier in the evening.
 					let heap = 0;
-					for (let t = now - DAY; t < now - 60_000; t += 10_000) {
+					for (let t = now - DAY; t < until; t += 10_000) {
 						const hour = new Date(t).getHours();
 						const busy = hour >= 17 && hour <= 23 ? 1.5 : hour < 7 ? 0.5 : 1;
 						heap += (5 + random() * 20) * busy;
@@ -166,6 +167,10 @@ export const scenes = [
 							session.run(id, player, join, join + (0.3 + random() * 3) * HOUR);
 						}
 					}
+					// A stopped server's run today, from the nightly restart to the stop.
+					const today = new Date(now).setHours(5, 0, 12, 0);
+					if (stoppedHoursAgo && until > today + HOUR)
+						run.run(id, crypto.randomBytes(16).toString('hex'), today, today + startSeconds * 1000, until);
 				})();
 			}
 		}

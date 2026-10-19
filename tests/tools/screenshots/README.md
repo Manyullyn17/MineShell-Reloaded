@@ -22,8 +22,8 @@ Modrinth, and the page loads mod icons.
 ## The parts
 
 - **`scenes.mjs`**: the world, as an ordered list of scenes, all run every time. `servers`
-  (five servers, tags; running: vanilla 26.3, the Cobblemon pack on Fabric 1.21.1 and
-  MeatballCraft on Cleanroom 1.12.2), `history` (a day of CPU/memory samples, a week of runs
+  (five servers, tags; running: vanilla 26.3 and MeatballCraft on Cleanroom 1.12.2; the
+  Cobblemon pack on Fabric 1.21.1 stopped three hours ago), `history` (a day of CPU/memory samples, a week of runs
   and player sessions), `mods` (Cobblemon's mods from Modrinth, MeatballCraft's ~370 from
   CurseForge through the modpacks.ch mirror, with their real sizes). A scene gets a context
   (`run.mjs`, `Context`): `ctx.server({...})`, `ctx.tag(name, ids)`, `ctx.mod(id, {...})`,
