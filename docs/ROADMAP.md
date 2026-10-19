@@ -155,6 +155,24 @@ configs and instance settings, for moving an instance between machines. Still a 
 still not built. Its natural moment was after mod updating, since both depend on the mod
 metadata being trustworthy; that is built now.
 
+### More README screenshots
+
+Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
+tests/tools/screenshots) is the general overview; feature sections could get one picture
+each where it shows what text cannot, cropped to the part that matters (a shot's `element`),
+full width at the top of its section. Not settings, files or accounts (generic, and stale
+with every UI change). Proposed, cheapest first:
+1. **Crash diagnosis** (Console, logs & crash diagnostics): a server whose last start
+   crashed, with MineShell's verdict. The fake server prints a real crash log and exits 1.
+2. **Player editor with item pictures** (Player management): a scene writing a player file
+   with a filled inventory, and the client jar (~30 MB from Mojang, kept between runs).
+3. **Pack update preview** (Modpack & instance management): mods updated, added, removed,
+   configs kept; the page asks Modrinth live.
+4. **Chunk map with the prune heatmap** (World management): synthetic region files; the
+   heatmap needs only InhabitedTime, terrain colours need block palettes.
+
+Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draws as a box.
+
 ### Leftovers of built features
 
 What the built entries in the archive left out, in one place:
