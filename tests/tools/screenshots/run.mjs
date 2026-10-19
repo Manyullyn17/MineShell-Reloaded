@@ -32,7 +32,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../../..');
 const DATA = '/tmp/ms-shots';
 const PORT = 5198;
-const PREFIX = 'msshot';
+// A unit prefix of its own each run: the journal outlives units, and the
+// console reads a server's back to its (seeded, weeks old) creation, so a
+// reused name showed every earlier run's lines and counted them.
+const PREFIX_BASE = 'msshot';
+const PREFIX = `${PREFIX_BASE}${crypto.randomBytes(2).toString('hex')}`;
 const BASE = `http://localhost:${PORT}`;
 const OUT = path.join(REPO, 'docs/screenshots');
 const UNIT_DIR = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'systemd/user');
@@ -51,12 +55,12 @@ const sh = (cmd, cmdArgs, env = {}) => {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function cleanup() {
-	sh('systemctl', ['--user', 'stop', `${PREFIX}@*`]);
+	sh('systemctl', ['--user', 'stop', `${PREFIX_BASE}*@*`]);
 	for (const name of fs.existsSync(UNIT_DIR) ? fs.readdirSync(UNIT_DIR) : []) {
-		if (name.startsWith(`${PREFIX}@`) || name.startsWith(`app-${PREFIX}.slice`)) fs.rmSync(path.join(UNIT_DIR, name), { recursive: true, force: true });
+		if (new RegExp(`^(app-)?${PREFIX_BASE}[0-9a-f]*(@|\\.slice)`).test(name)) fs.rmSync(path.join(UNIT_DIR, name), { recursive: true, force: true });
 	}
 	sh('systemctl', ['--user', 'daemon-reload']);
-	sh('systemctl', ['--user', 'reset-failed', `${PREFIX}@*`]);
+	sh('systemctl', ['--user', 'reset-failed', `${PREFIX_BASE}*@*`]);
 	sh('bash', ['tests/tools/devserver.sh', 'stop', String(PORT)]);
 }
 
@@ -175,7 +179,7 @@ function sparseFile(file, bytes, zip = false) {
  * @typedef {{ id: string; name: string; minecraft: string; loader: string; loaderVersion?: string; memoryMb?: number;
  *   pinned?: boolean; notes?: string; properties?: Record<string, string>; worldMb?: number;
  *   pack?: { source: string; project: string; version: string; versionName: string; name: string };
- *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string][]; uptimeMinutes?: number } }} ServerOptions
+ *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number } }} ServerOptions
  * @typedef {{ source: string; slug: string; name: string; summary?: string; projectUrl?: string; iconUrl?: string;
  *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; fromPack?: boolean; enabled?: boolean }} ModOptions
  */

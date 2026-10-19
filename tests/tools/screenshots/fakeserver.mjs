@@ -9,7 +9,9 @@
  *
  * Everything it shows comes from fake-server.json in its working directory
  * (the server folder), written by the scenes:
- *   { version, players: [{ name, uuid }], chat: [[name, text]], mspt, memoryMb, cpuPercent }
+ *   { version, players: [{ name, uuid }], chat: [[name, text, seconds after the line before]],
+ *     mspt, memoryMb, cpuPercent, uptimeMinutes }
+ * A chat name '*' prints the text as a plain server line (advancements, deaths).
  * The RCON port and password are read from server.properties, as the game does.
  */
 import crypto from 'node:crypto';
@@ -28,9 +30,22 @@ const properties = Object.fromEntries(
 const players = config.players ?? [];
 const maxPlayers = Number(properties['max-players'] ?? 20);
 
-const time = () => new Date().toTimeString().slice(0, 8);
+// The time each line says it was written. The console shows the log's own
+// "[HH:MM:SS]", not the journal's, so the run can tell a story of hours
+// (started `uptimeMinutes` ago, players joining over time, chat spread out)
+// while printing it all at once.
+const now = Date.now();
+const uptimeMs = (config.uptimeMinutes ?? 0) * 60_000;
+let clock = now - uptimeMs;
+/** Once the story is told: what happens from then on (RCON clients, say, stop) at the real time. */
+let live = false;
+/** @param {number} msAgo  a moment before now, never before the start */
+const at = (msAgo) => (clock = now - Math.max(0, Math.min(msAgo, uptimeMs)));
 /** @param {string} thread @param {string} text */
-const log = (thread, text, level = 'INFO') => console.log(`[${time()}] [${thread}/${level}]: ${text}`);
+const log = (thread, text, level = 'INFO') => {
+	const time = new Date(live ? Date.now() : clock).toTimeString().slice(0, 8);
+	console.log(`[${time}] [${thread}/${level}]: ${text}`);
+};
 /** @param {number} ms */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -127,25 +142,31 @@ function rcon(socket) {
 }
 
 const port = properties['server-port'] ?? '25565';
-const started = Date.now();
+// Startup, in the time a modest server takes (40 s to "Done", as the run MineShell is told of).
+const start = clock;
+/** @param {number} ms */
+const after = (ms) => (clock = start + Math.min(ms, uptimeMs || 0));
 log('ServerMain', 'Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]');
-await sleep(300);
+after(4_200);
 log('ServerMain', 'Loaded 1370 recipes');
 log('ServerMain', 'Loaded 1481 advancements');
+after(6_900);
 log('Server thread', `Starting minecraft server version ${config.version}`);
 log('Server thread', 'Loading properties');
 log('Server thread', `Default game type: ${(properties.gamemode ?? 'survival').toUpperCase()}`);
 log('Server thread', 'Generating keypair');
+after(7_400);
 log('Server thread', `Starting Minecraft server on *:${port}`);
 log('Server thread', 'Using epoll channel type');
+after(8_300);
 log('Server thread', `Preparing level "${properties['level-name'] ?? 'world'}"`);
-await sleep(400);
-for (const pct of [0, 18, 49, 83, 100]) {
+for (const [ms, pct] of [[11_000, 0], [17_000, 18], [24_000, 49], [31_000, 83], [36_000, 100]]) {
+	after(ms);
 	log(`Worker-Main-${1 + (pct % 3)}`, `Preparing spawn area: ${pct}%`);
-	await sleep(150);
 }
-log('Server thread', `Time elapsed: ${Date.now() - started - 150} ms`);
-log('Server thread', `Done (${((Date.now() - started) / 1000).toFixed(3)}s)! For help, type "help"`);
+after(38_400);
+log('Server thread', 'Time elapsed: 27412 ms');
+log('Server thread', `Done (${uptimeMs ? '38.412' : '1.204'}s)! For help, type "help"`);
 if (properties['enable-rcon'] === 'true') {
 	log('Server thread', 'Starting remote control listener');
 	log('Server thread', 'Thread RCON Listener started');
@@ -153,16 +174,25 @@ if (properties['enable-rcon'] === 'true') {
 	log('RCON Listener #1', `RCON running on 0.0.0.0:${properties['rcon.port']}`);
 }
 
+// Players joined over the last hour and a half (95, 41, 19, 11 ... minutes ago), chat in the last few minutes.
 let entity = 140;
-for (const player of players) {
-	await sleep(600);
+for (const [i, player] of players.entries()) {
+	await sleep(50);
+	at((90 * 0.4 ** i + 5) * 60_000 + i * 17_000);
 	const ip = `203.0.113.${crypto.randomInt(2, 250)}:${crypto.randomInt(40000, 65000)}`;
 	log('User Authenticator #1', `UUID of player ${player.name} is ${player.uuid}`);
 	log('Server thread', `${player.name}[/${ip}] logged in with entity id ${entity++} at (${(Math.random() * 400 - 200).toFixed(1)}, 64.0, ${(Math.random() * 400 - 200).toFixed(1)})`);
 	log('Server thread', `${player.name} joined the game`);
 }
-for (const [name, text] of /** @type {[string, string][]} */ (config.chat ?? [])) {
-	await sleep(500);
+// Chat, counted back from the last line (half a minute ago) by each line's gap
+// after the one before it (75 s when it gives none).
+const chat = /** @type {[string, string, number?][]} */ (config.chat ?? []);
+const chatAgo = chat.map(() => 30_000);
+for (let i = chat.length - 2; i >= 0; i--) chatAgo[i] = chatAgo[i + 1] + (chat[i + 1][2] ?? 75) * 1000;
+for (const [i, [name, text]] of chat.entries()) {
+	await sleep(50);
+	at(chatAgo[i]);
 	if (name === '*') log('Server thread', text);
 	else log('Server thread', `<${name}> ${text}`);
 }
+live = true;

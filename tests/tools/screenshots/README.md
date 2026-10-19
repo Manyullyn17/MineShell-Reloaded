@@ -13,9 +13,10 @@ npm run screenshots -- --cleanup        # end a --keep or --serve run
 ```
 
 It uses its own data dir (`/tmp/ms-shots`, emptied first), port 5198 and unit prefix
-`msshot`, so it never meets real servers or a `devserver.sh` server. It installs the
-`msshot@` template unit and removes it, its drop-ins and its slice again afterwards (also
-when a scene fails). It needs the network: some scenes take real names and icons from
+(`msshot` and four random hex digits, new each run, so the console's journal starts empty),
+so it never meets real servers or a `devserver.sh` server. It installs that prefix's
+template unit and removes it, its drop-ins and its slice again afterwards (also when a
+scene fails; `--cleanup` removes any `msshot…` units). It needs the network: some scenes take real names and icons from
 Modrinth, and the page loads mod icons.
 
 ## The parts
@@ -35,6 +36,10 @@ Modrinth, and the page loads mod icons.
   console, joins, chat from `chat`), answers RCON's `list`, `list uuids` and `tick query`
   (TPS from `mspt`), holds `memoryMb` of memory and burns about `cpuPercent` of one core,
   so status, players, TPS and live graphs all come through MineShell's own code.
+  The console's time column is the log's own `[HH:MM:SS]`, so the log tells the story of
+  the uptime while printed at once: startup at the start time, players joining over the
+  last hour and a half, chat lines at the gaps the scene gives (`[name, text, seconds after
+  the line before]`); later lines (RCON, `say`) at real time.
   `uptimeMinutes` makes it look started that long ago: MineShell's `systemctl` (only the
   throwaway server's, through `$DATA/bin/systemctl` first in its PATH) reports the unit's
   start time that much earlier, and the run it matches that with (`server_runs`, under the

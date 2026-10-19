@@ -63,12 +63,13 @@ export const scenes = [
 					memoryMb: 2700,
 					cpuPercent: 30,
 					uptimeMinutes: sinceFive >= 120 ? sinceFive : sinceFive + 24 * 60,
+					// [player, text, seconds after the line before]; '*' is a server line.
 					chat: [
 						['Bramblewick', 'anyone up for the end tonight?'],
-						['mossy_fox', 'after I finish the farm'],
-						['*', 'TinCanTom has made the advancement [Diamonds!]'],
-						['TinCanTom', 'finally'],
-						['Bramblewick', 'gg']
+						['mossy_fox', 'after I finish the farm', 7],
+						['*', 'TinCanTom has made the advancement [Diamonds!]', 160],
+						['TinCanTom', 'finally', 4],
+						['Bramblewick', 'gg', 3]
 					]
 				},
 				properties: { motd: 'Survival - be nice', 'max-players': '20', difficulty: 'hard' }
