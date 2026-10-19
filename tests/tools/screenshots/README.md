@@ -22,8 +22,10 @@ Modrinth, and the page loads mod icons.
 ## The parts
 
 - **`scenes.mjs`**: the world, as an ordered list of scenes, all run every time. `servers`
-  (five servers, two running, tags), `history` (a day of CPU/memory samples, a week of runs
-  and player sessions), `mods` (the pack server's mods from Modrinth). A scene gets a context
+  (five servers, tags; running: vanilla 26.3, the Cobblemon pack on Fabric 1.21.1 and
+  MeatballCraft on Cleanroom 1.12.2), `history` (a day of CPU/memory samples, a week of runs
+  and player sessions), `mods` (Cobblemon's mods from Modrinth, MeatballCraft's ~370 from
+  CurseForge through the modpacks.ch mirror, with their real sizes). A scene gets a context
   (`run.mjs`, `Context`): `ctx.server({...})`, `ctx.tag(name, ids)`, `ctx.mod(id, {...})`,
   `ctx.sparseFile(path, bytes)`, `ctx.fetchJson(url)` and the database itself (`ctx.db`,
   better-sqlite3) for anything else. Seeded times are relative to now.
@@ -40,10 +42,12 @@ Modrinth, and the page loads mod icons.
   the uptime while printed at once: startup at the start time, players joining over the
   last hour and a half, chat lines at the gaps the scene gives (`[name, text, seconds after
   the line before]`); later lines (RCON, `say`) at real time.
+  Before 1.13 (Forge, Cleanroom) it logs and answers the old way: logger names on every line,
+  `forge tps`, "2/20 players online", a Forge mod-loading startup of `startSeconds`.
   `uptimeMinutes` makes it look started that long ago: MineShell's `systemctl` (only the
   throwaway server's, through `$DATA/bin/systemctl` first in its PATH) reports the unit's
   start time that much earlier, and the run it matches that with (`server_runs`, under the
-  run's real invocation) is written with the same start and its "Done (" 40 s later.
+  run's real invocation) is written with the same start and its "Done (" `startSeconds` later.
 - **Visits** (`visits` in `shots.mjs`): pages opened once before the pictures, for what the
   browser does on a first visit (a pack server's overview gives it the pack's icon).
 

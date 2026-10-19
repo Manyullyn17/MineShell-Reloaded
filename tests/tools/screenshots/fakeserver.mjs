@@ -9,8 +9,10 @@
  *
  * Everything it shows comes from fake-server.json in its working directory
  * (the server folder), written by the scenes:
- *   { version, players: [{ name, uuid }], chat: [[name, text, seconds after the line before]],
- *     mspt, memoryMb, cpuPercent, uptimeMinutes }
+ *   { version, loader, loaderVersion, players: [{ name, uuid }], chat: [[name, text, seconds
+ *     after the line before]], mspt, memoryMb, cpuPercent, uptimeMinutes, startSeconds }
+ * Minecraft before 1.13 (Forge, Cleanroom) logs and answers the old way: a
+ * logger name on every line, `forge tps` instead of `tick query`, "2/20" in `list`.
  * A chat name '*' prints the text as a plain server line (advancements, deaths).
  * The RCON port and password are read from server.properties, as the game does.
  */
@@ -29,6 +31,8 @@ const properties = Object.fromEntries(
 /** @type {{ name: string; uuid: string }[]} */
 const players = config.players ?? [];
 const maxPlayers = Number(properties['max-players'] ?? 20);
+const legacy = /^1\.([0-9]|1[0-2])(\.|$)/.test(config.version);
+const startMs = (config.startSeconds ?? 38.4) * 1000;
 
 // The time each line says it was written. The console shows the log's own
 // "[HH:MM:SS]", not the journal's, so the run can tell a story of hours
@@ -41,10 +45,13 @@ let clock = now - uptimeMs;
 let live = false;
 /** @param {number} msAgo  a moment before now, never before the start */
 const at = (msAgo) => (clock = now - Math.max(0, Math.min(msAgo, uptimeMs)));
-/** @param {string} thread @param {string} text */
-const log = (thread, text, level = 'INFO') => {
+/**
+ * A log line; `logger` is the old format's "[minecraft/DedicatedServer]" part, left out from 1.13 on.
+ * @param {string} thread @param {string} text @param {string} [logger]
+ */
+const log = (thread, text, logger = 'minecraft/DedicatedServer', level = 'INFO') => {
 	const time = new Date(live ? Date.now() : clock).toTimeString().slice(0, 8);
-	console.log(`[${time}] [${thread}/${level}]: ${text}`);
+	console.log(`[${time}] [${thread}/${level}]${legacy ? ` [${logger}]` : ''}: ${text}`);
 };
 /** @param {number} ms */
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -59,6 +66,13 @@ setInterval(() => {
 	const until = performance.now() + Math.min(busy, 95);
 	while (performance.now() < until);
 }, 100);
+
+/** Forge's `forge tps`, per dimension and overall (tps.ts reads the overall line). */
+function forgeTps() {
+	const mspt = (config.mspt ?? 8) * (0.9 + Math.random() * 0.2);
+	const line = (/** @type {string} */ name, /** @type {number} */ ms) => `${name} : Mean tick time: ${ms.toFixed(3)} ms. Mean TPS: ${Math.min(20, 1000 / ms).toFixed(3)}`;
+	return [line('Dim  0 (overworld)', mspt * 0.7), line('Dim -1 (the_nether)', mspt * 0.1), line('Dim  1 (the_end)', mspt * 0.05), line('Overall', mspt)].join('\n');
+}
 
 function tickQuery() {
 	const mspt = (config.mspt ?? 8) * (0.9 + Math.random() * 0.2);
@@ -75,10 +89,11 @@ function tickQuery() {
 function answer(command) {
 	const cmd = command.trim().replace(/^\//, '');
 	const names = players.map((p) => p.name);
-	if (cmd === 'list') return `There are ${names.length} of a max of ${maxPlayers} players online: ${names.join(', ')}`;
-	if (cmd === 'list uuids')
-		return `There are ${names.length} of a max of ${maxPlayers} players online: ${players.map((p) => `${p.name} (${p.uuid})`).join(', ')}`;
-	if (cmd === 'tick query') return tickQuery();
+	const counted = legacy ? `There are ${names.length}/${maxPlayers} players online:\n` : `There are ${names.length} of a max of ${maxPlayers} players online: `;
+	if (cmd === 'list') return counted + names.join(', ');
+	if (cmd === 'list uuids') return counted + players.map((p) => `${p.name} (${p.uuid})`).join(', ');
+	if (cmd === 'tick query' && !legacy) return tickQuery();
+	if (cmd === 'forge tps' && legacy) return forgeTps();
 	if (cmd === 'save-all' || cmd === 'save-all flush') return 'Saving the game (this may take a moment!)Saved the game';
 	if (cmd === 'save-off') return 'Automatic saving is now disabled';
 	if (cmd === 'save-on') return 'Automatic saving is now enabled';
@@ -90,7 +105,7 @@ function answer(command) {
 		setTimeout(shutdown, 200);
 		return 'Stopping the server';
 	}
-	return 'Unknown or incomplete command, see below for error';
+	return legacy ? 'Unknown command. Try /help for a list of commands' : 'Unknown or incomplete command, see below for error';
 }
 
 function shutdown() {
@@ -120,7 +135,8 @@ function packet(id, type, body) {
 function rcon(socket) {
 	let authed = false;
 	let pending = Buffer.alloc(0);
-	log('RCON Listener #1', `Thread RCON Client /127.0.0.1 started`);
+	if (legacy) log('RCON Listener #1', 'Rcon connection from: /127.0.0.1', 'minecraft/MinecraftServer');
+	else log('RCON Listener #1', `Thread RCON Client /127.0.0.1 started`);
 	socket.on('data', (/** @type {Buffer} */ chunk) => {
 		pending = Buffer.concat([pending, chunk]);
 		while (pending.length >= 4) {
@@ -142,31 +158,61 @@ function rcon(socket) {
 }
 
 const port = properties['server-port'] ?? '25565';
-// Startup, in the time a modest server takes (40 s to "Done", as the run MineShell is told of).
+// Startup, in `startSeconds` (as long as the run MineShell is told of); steps at shares of it.
 const start = clock;
-/** @param {number} ms */
-const after = (ms) => (clock = start + Math.min(ms, uptimeMs || 0));
-log('ServerMain', 'Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]');
-after(4_200);
-log('ServerMain', 'Loaded 1370 recipes');
-log('ServerMain', 'Loaded 1481 advancements');
-after(6_900);
-log('Server thread', `Starting minecraft server version ${config.version}`);
-log('Server thread', 'Loading properties');
-log('Server thread', `Default game type: ${(properties.gamemode ?? 'survival').toUpperCase()}`);
-log('Server thread', 'Generating keypair');
-after(7_400);
-log('Server thread', `Starting Minecraft server on *:${port}`);
-log('Server thread', 'Using epoll channel type');
-after(8_300);
-log('Server thread', `Preparing level "${properties['level-name'] ?? 'world'}"`);
-for (const [ms, pct] of [[11_000, 0], [17_000, 18], [24_000, 49], [31_000, 83], [36_000, 100]]) {
-	after(ms);
-	log(`Worker-Main-${1 + (pct % 3)}`, `Preparing spawn area: ${pct}%`);
+/** @param {number} share */
+const after = (share) => (clock = start + Math.min(share * startMs, uptimeMs));
+const level = properties['level-name'] ?? 'world';
+if (legacy) {
+	const mods = fs.readdirSync('mods').filter((f) => f.endsWith('.jar')).length;
+	if (config.loader === 'cleanroom') log('main', `Cleanroom ${config.loaderVersion} for Minecraft ${config.version} loading`, 'Cleanroom');
+	else log('main', `Forge Mod Loader version 14.23.5.2860 for Minecraft ${config.version} loading`, 'FML');
+	after(0.02);
+	log('Server thread', `Starting minecraft server version ${config.version}`);
+	log('Server thread', 'MinecraftForge v14.23.5.2860 Initialized', 'FML');
+	log('Server thread', 'Searching ./mods for mods', 'FML');
+	after(0.08);
+	log('Server thread', `Forge Mod Loader has identified ${mods + 5} mods to load`, 'FML');
+	after(0.3);
+	log('Server thread', 'Processing ObjectHolder annotations', 'FML');
+	log('Server thread', 'Applying holder lookups', 'FML');
+	after(0.62);
+	log('Server thread', 'Injecting itemstacks', 'FML');
+	log('Server thread', 'Itemstack injection complete', 'FML');
+	after(0.85);
+	log('Server thread', `Forge Mod Loader has successfully loaded ${mods + 5} mods`, 'FML');
+	log('Server thread', 'Loading properties');
+	log('Server thread', `Default game type: ${(properties.gamemode ?? 'survival').toUpperCase()}`);
+	log('Server thread', 'Generating keypair');
+	log('Server thread', `Starting Minecraft server on *:${port}`);
+	log('Server thread', `Preparing level "${level}"`);
+	after(0.9);
+	log('Server thread', 'Preparing start region for level 0');
+	after(1);
+	log('Server thread', `Done (${(startMs / 1000).toFixed(3)}s)! For help, type "help" or "?"`);
+} else {
+	log('ServerMain', 'Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]');
+	after(0.11);
+	log('ServerMain', 'Loaded 1370 recipes');
+	log('ServerMain', 'Loaded 1481 advancements');
+	after(0.18);
+	log('Server thread', `Starting minecraft server version ${config.version}`);
+	log('Server thread', 'Loading properties');
+	log('Server thread', `Default game type: ${(properties.gamemode ?? 'survival').toUpperCase()}`);
+	log('Server thread', 'Generating keypair');
+	after(0.19);
+	log('Server thread', `Starting Minecraft server on *:${port}`);
+	log('Server thread', 'Using epoll channel type');
+	after(0.22);
+	log('Server thread', `Preparing level "${level}"`);
+	for (const [share, pct] of [[0.29, 0], [0.44, 18], [0.62, 49], [0.81, 83], [0.94, 100]]) {
+		after(share);
+		log(`Worker-Main-${1 + (pct % 3)}`, `Preparing spawn area: ${pct}%`);
+	}
+	after(1);
+	log('Server thread', `Time elapsed: ${Math.round(startMs * 0.71)} ms`);
+	log('Server thread', `Done (${(startMs / 1000).toFixed(3)}s)! For help, type "help"`);
 }
-after(38_400);
-log('Server thread', 'Time elapsed: 27412 ms');
-log('Server thread', `Done (${uptimeMs ? '38.412' : '1.204'}s)! For help, type "help"`);
 if (properties['enable-rcon'] === 'true') {
 	log('Server thread', 'Starting remote control listener');
 	log('Server thread', 'Thread RCON Listener started');
@@ -180,8 +226,8 @@ for (const [i, player] of players.entries()) {
 	await sleep(50);
 	at((90 * 0.4 ** i + 5) * 60_000 + i * 17_000);
 	const ip = `203.0.113.${crypto.randomInt(2, 250)}:${crypto.randomInt(40000, 65000)}`;
-	log('User Authenticator #1', `UUID of player ${player.name} is ${player.uuid}`);
-	log('Server thread', `${player.name}[/${ip}] logged in with entity id ${entity++} at (${(Math.random() * 400 - 200).toFixed(1)}, 64.0, ${(Math.random() * 400 - 200).toFixed(1)})`);
+	log('User Authenticator #1', `UUID of player ${player.name} is ${player.uuid}`, 'minecraft/NetHandlerLoginServer');
+	log('Server thread', `${player.name}[/${ip}] logged in with entity id ${entity++} at (${(Math.random() * 400 - 200).toFixed(1)}, 64.0, ${(Math.random() * 400 - 200).toFixed(1)})`, 'minecraft/PlayerList');
 	log('Server thread', `${player.name} joined the game`);
 }
 // Chat, counted back from the last line (half a minute ago) by each line's gap

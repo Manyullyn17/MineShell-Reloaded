@@ -150,11 +150,12 @@ const fakeJava = path.join(DATA, 'fake-java');
 fs.writeFileSync(fakeJava, `#!/bin/sh\nexec "${process.execPath}" "${path.join(HERE, 'fakeserver.mjs')}"\n`, { mode: 0o755 });
 
 const now = Date.now();
-/** @type {{ id: string; uptimeMinutes: number }[]} */
+/** @type {{ id: string; uptimeMinutes: number; startSeconds: number }[]} */
 const toStart = [];
-// The fake, as a Java 21 runtime: the running servers' pinned path shows as that.
+// The fake, as a Java 25 runtime: the running servers' pinned path shows as that.
+// 26.x and Cleanroom 0.5+ need 25; MineShell takes it for what needs 21 too.
 db.prepare(
-	"INSERT INTO java_runtimes (path, major_version, version_string, vendor, manual, last_seen_at) VALUES (?, 21, '21.0.5', 'Eclipse Adoptium', 1, ?)"
+	"INSERT INTO java_runtimes (path, major_version, version_string, vendor, manual, last_seen_at) VALUES (?, 25, '25.0.1', 'Eclipse Adoptium', 1, ?)"
 ).run(fakeJava, Date.now());
 let nextPort = 25800;
 /**
@@ -179,9 +180,9 @@ function sparseFile(file, bytes, zip = false) {
  * @typedef {{ id: string; name: string; minecraft: string; loader: string; loaderVersion?: string; memoryMb?: number;
  *   pinned?: boolean; notes?: string; properties?: Record<string, string>; worldMb?: number;
  *   pack?: { source: string; project: string; version: string; versionName: string; name: string };
- *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number } }} ServerOptions
+ *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number; startSeconds?: number } }} ServerOptions
  * @typedef {{ source: string; slug: string; name: string; summary?: string; projectUrl?: string; iconUrl?: string;
- *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; fromPack?: boolean; enabled?: boolean }} ModOptions
+ *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; hashAlgo?: string; fromPack?: boolean; enabled?: boolean }} ModOptions
  */
 
 /**
@@ -251,12 +252,12 @@ const ctx = {
 		fs.writeFileSync(path.join(dir, 'server.properties'), Object.entries(properties).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
 		if (o.running) {
 			const players = o.running.players.map((name) => ({ name, uuid: offlineUuid(name) }));
-			fs.writeFileSync(path.join(dir, 'fake-server.json'), JSON.stringify({ version: o.minecraft, ...o.running, players }, null, 1));
+			fs.writeFileSync(path.join(dir, 'fake-server.json'), JSON.stringify({ version: o.minecraft, loader: o.loader, loaderVersion: o.loaderVersion, ...o.running, players }, null, 1));
 			fs.writeFileSync(
 				path.join(dir, 'usercache.json'),
 				JSON.stringify(players.map((p) => ({ ...p, expiresOn: '2099-01-01 00:00:00 +0000' })))
 			);
-			toStart.push({ id: o.id, uptimeMinutes: o.running.uptimeMinutes ?? 0 });
+			toStart.push({ id: o.id, uptimeMinutes: o.running.uptimeMinutes ?? 0, startSeconds: o.running.startSeconds ?? 38.4 });
 		}
 		installFiles(dir, o.loader, o.minecraft);
 		// A world of about this size, in region files of a few MB each.
@@ -312,7 +313,7 @@ const ctx = {
 		db.prepare(
 			`INSERT INTO instance_mods (instance_id, mod_id, version, version_id, file_path, hash, hash_algo, enabled, from_pack, installed_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(instanceId, id, m.version, m.versionId ?? null, file, m.hash ?? null, m.hash ? 'sha512' : null, m.enabled === false ? 0 : 1, m.fromPack ? 1 : 0, now - 20 * 24 * 3600_000);
+		).run(instanceId, id, m.version, m.versionId ?? null, file, m.hash ?? null, m.hash ? (m.hashAlgo ?? 'sha512') : null, m.enabled === false ? 0 : 1, m.fromPack ? 1 : 0, now - 20 * 24 * 3600_000);
 	}
 };
 
@@ -329,13 +330,13 @@ try {
 // The template unit, then the "running" servers.
 await act('/settings', 'installUnit');
 const bootMs = Date.now() - Number(fs.readFileSync('/proc/uptime', 'utf8').split(' ')[0]) * 1000;
-for (const { id, uptimeMinutes } of toStart) {
+for (const { id, uptimeMinutes, startSeconds } of toStart) {
 	const offset = uptimeMinutes * 60;
 	if (offset) fs.writeFileSync(path.join(DATA, 'uptime', id), String(offset));
 	await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
 	if (!offset) continue;
 	// The run MineShell matches the start time with (startphase.ts), moved back as
-	// far, with its "Done (" 40 s later. Written under the run's own invocation
+	// far, with its "Done (" as long after as the fake's startup says. Written under the run's own invocation
 	// before the fake logs anything, so history.ts keeps it rather than adding its own.
 	const show = sh(realSystemctl, ['--user', 'show', `${PREFIX}@${id}.service`, '-pInvocationID', '-pActiveEnterTimestampMonotonic']).out;
 	const invocation = show.match(/^InvocationID=(\w+)/m)?.[1];
@@ -345,7 +346,7 @@ for (const { id, uptimeMinutes } of toStart) {
 	db.prepare(
 		`INSERT INTO server_runs (instance_id, invocation, started_at, done_at) VALUES (?, ?, ?, ?)
 		ON CONFLICT (instance_id, invocation) DO UPDATE SET started_at = excluded.started_at, done_at = excluded.done_at`
-	).run(id, invocation, Math.round(startedAt), Math.round(startedAt + 40_000));
+	).run(id, invocation, Math.round(startedAt), Math.round(startedAt + startSeconds * 1000));
 }
 db.close();
 const startedList = toStart.map((s) => s.id).join(', ');

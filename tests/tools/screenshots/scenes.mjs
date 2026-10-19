@@ -34,7 +34,22 @@ function seeded(seed) {
 	};
 }
 
-const PLAYERS = ['Bramblewick', 'mossy_fox', 'TinCanTom', 'Quillfeather', 'lantern_jay', 'Oakhollow'];
+const PLAYERS = ['Bramblewick', 'mossy_fox', 'TinCanTom', 'Quillfeather', 'lantern_jay', 'Oakhollow', 'Ferrogrim'];
+
+const MIRROR = 'https://api.modpacks.ch/public';
+const MEATBALLCRAFT = 411966;
+
+/**
+ * MeatballCraft's newest version on CurseForge (through the modpacks.ch mirror, as
+ * MineShell reads it), with its file list.
+ * @param {import('./run.mjs').Context} ctx
+ * @returns {Promise<{ id: number; name: string; files: { name: string; path: string; size: number; sha1: string; curseforge?: { project: string; file: string } }[] }>}
+ */
+async function meatballcraft(ctx) {
+	const pack = await ctx.fetchJson(`${MIRROR}/curseforge/${MEATBALLCRAFT}`);
+	const newest = pack.versions.slice().sort((/** @type {{ updated: number }} */ a, /** @type {{ updated: number }} */ b) => b.updated - a.updated)[0];
+	return ctx.fetchJson(`${MIRROR}/curseforge/${MEATBALLCRAFT}/${newest.id}`);
+}
 
 /** @type {{ name: string; run: (ctx: import('./run.mjs').Context) => Promise<void> | void }[]} */
 export const scenes = [
@@ -47,11 +62,12 @@ export const scenes = [
 			const [packVersion] = await ctx.fetchJson(
 				`https://api.modrinth.com/v2/project/5FFgwNNP/version?loaders=${encodeURIComponent('["fabric"]')}&game_versions=${encodeURIComponent('["1.21.1"]')}`
 			);
+			const meatball = await meatballcraft(ctx);
 			const online = PLAYERS.slice(0, 3);
 			ctx.server({
 				id: 'survival',
 				name: 'Survival',
-				minecraft: '1.21.4',
+				minecraft: '26.3',
 				loader: 'vanilla',
 				memoryMb: 6144,
 				worldMb: 3400,
@@ -83,14 +99,31 @@ export const scenes = [
 				memoryMb: 8192,
 				pack: { source: 'modrinth', project: '5FFgwNNP', version: packVersion.id, versionName: packVersion.version_number, name: 'Cobblemon Official Modpack [Fabric]' },
 				worldMb: 1900,
-				running: { players: PLAYERS.slice(3, 5), mspt: 18.2, memoryMb: 3900, cpuPercent: 45, uptimeMinutes: 200 }
+				running: { players: PLAYERS.slice(3, 5), mspt: 18.2, memoryMb: 3200, cpuPercent: 45, uptimeMinutes: 200, startSeconds: 52.6 }
 			});
 			ctx.server({ id: 'creative', name: 'Creative build', minecraft: '1.21.4', loader: 'fabric', loaderVersion: '0.16.10', memoryMb: 4096, worldMb: 600, properties: { gamemode: 'creative' } });
-			ctx.server({ id: 'classic-tech', name: 'Classic tech', minecraft: '1.12.2', loader: 'forge', loaderVersion: '14.23.5.2860', memoryMb: 8192, worldMb: 5200 });
+			// Old Minecraft, a big pack and Cleanroom in one: 1.12.2, hundreds of mods.
+			ctx.server({
+				id: 'meatballcraft',
+				name: 'MeatballCraft',
+				minecraft: '1.12.2',
+				loader: 'cleanroom',
+				loaderVersion: '0.5.17',
+				memoryMb: 12288,
+				pack: {
+					source: 'curseforge',
+					project: String(MEATBALLCRAFT),
+					version: String(meatball.id),
+					versionName: meatball.name.match(/(\d[\d.]*\d)(?:\.zip)?$/)?.[1] ?? meatball.name,
+					name: 'MeatballCraft, Dimensional Ascension'
+				},
+				worldMb: 9800,
+				running: { players: PLAYERS.slice(5, 7), mspt: 31.4, memoryMb: 5000, cpuPercent: 70, uptimeMinutes: 2 * 24 * 60 + 310, startSeconds: 241.7 }
+			});
 			ctx.server({ id: 'snapshot-test', name: 'Snapshot testing', minecraft: '1.21.5', loader: 'vanilla', memoryMb: 2048, worldMb: 80 });
 
 			ctx.tag('Friends', ['survival', 'cobblemon']);
-			ctx.tag('Modded', ['cobblemon', 'classic-tech']);
+			ctx.tag('Modded', ['cobblemon', 'meatballcraft']);
 			ctx.tag('Testing', ['snapshot-test']);
 		}
 	},
@@ -105,9 +138,10 @@ export const scenes = [
 				'INSERT INTO server_runs (instance_id, invocation, started_at, done_at, ended_at, exit_status, failed, crashed, diagnosed) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 1)'
 			);
 			const session = ctx.db.prepare('INSERT INTO player_sessions (instance_id, player, joined_at, left_at) VALUES (?, ?, ?, ?)');
-			for (const [id, baseMb, heapSwingMb, cpu] of /** @type {[string, number, number, number][]} */ ([
-				['survival', 2300, 900, 28],
-				['cobblemon', 3500, 1200, 42]
+			for (const [id, baseMb, heapSwingMb, cpu, startSeconds] of /** @type {[string, number, number, number, number][]} */ ([
+				['survival', 2300, 900, 28, 38],
+				['cobblemon', 2800, 1000, 42, 52],
+				['meatballcraft', 4100, 1900, 65, 242]
 			])) {
 				ctx.db.transaction(() => {
 					// Every 10 s, as the monitor samples: a garbage-collected sawtooth, busier in the evening.
@@ -125,7 +159,7 @@ export const scenes = [
 						const start = new Date(now - d * DAY);
 						start.setHours(5, 0, 12, 0);
 						const end = start.getTime() + DAY - 60_000;
-						run.run(id, crypto.randomBytes(16).toString('hex'), start.getTime(), start.getTime() + 41_000, end);
+						run.run(id, crypto.randomBytes(16).toString('hex'), start.getTime(), start.getTime() + (startSeconds + 3 * random()) * 1000, end);
 						for (const player of PLAYERS) {
 							if (random() < 0.35) continue;
 							const join = start.getTime() + (12 + random() * 6) * HOUR;
@@ -184,6 +218,30 @@ export const scenes = [
 					hash: file.hashes.sha512,
 					fromPack: true
 				});
+			}
+			// MeatballCraft's mods: every jar of its pack version, named by CurseForge (16 lookups at a time).
+			const meatball = await meatballcraft(ctx);
+			const jars = meatball.files.filter((f) => f.path.replace(/^\.?\//, '') === 'mods/' && f.name.endsWith('.jar') && f.curseforge);
+			for (let i = 0; i < jars.length; i += 16) {
+				const batch = jars.slice(i, i + 16);
+				const projects = await Promise.all(batch.map((f) => ctx.fetchJson(`${MIRROR}/mod/${f.curseforge?.project}`).catch(() => null)));
+				for (const [j, file] of batch.entries()) {
+					const project = projects[j];
+					ctx.mod('meatballcraft', {
+						source: 'curseforge',
+						slug: String(file.curseforge?.project),
+						name: project?.name ?? file.name.replace(/[-_]?\d.*$/, ''),
+						summary: project?.synopsis,
+						iconUrl: project?.art?.[0]?.url,
+						version: file.name.replace(/\.jar$/, ''),
+						versionId: file.curseforge?.file,
+						fileName: file.name,
+						size: file.size,
+						hash: file.sha1,
+						hashAlgo: 'sha1',
+						fromPack: true
+					});
+				}
 			}
 			// Voice chat's own UDP port, clear of 24454 (a real server on this machine may hold it).
 			const config = path.join(ctx.dataDir, 'instances/cobblemon/config/voicechat');

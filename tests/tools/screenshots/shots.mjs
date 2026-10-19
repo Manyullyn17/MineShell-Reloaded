@@ -14,11 +14,11 @@
  * Pages opened once before the pictures, for what happens in the browser on a
  * first visit: a pack server's overview gives it the pack's icon.
  */
-export const visits = ['/instances/cobblemon'];
+export const visits = ['/instances/cobblemon', '/instances/meatballcraft'];
 
 /** @type {{ name: string; path: string; waitFor?: string; width?: number; height?: number; element?: string; steps?: ({ click: string } | { eval: string })[]; settle?: number }[]} */
 export const shots = [
-	{ name: 'servers', path: '/', waitFor: 'Classic tech', height: 900 },
+	{ name: 'servers', path: '/', waitFor: 'MeatballCraft', height: 900 },
 	{ name: 'overview', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, height: 1000 },
 	{ name: 'console', path: '/instances/survival/console', waitFor: 'gg' },
 	{ name: 'mods', path: '/instances/cobblemon/mods', waitFor: 'Waystones', height: 1100 },
