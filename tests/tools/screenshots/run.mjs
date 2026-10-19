@@ -19,10 +19,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { scenes, offlineUuid } from './scenes.mjs';
-import { shots } from './shots.mjs';
+import { shots, visits } from './shots.mjs';
 
 const require = createRequire(import.meta.url);
 const Database = require('better-sqlite3');
@@ -95,7 +96,32 @@ async function fetchJson(url) {
 cleanup();
 fs.rmSync(DATA, { recursive: true, force: true });
 fs.mkdirSync(DATA, { recursive: true });
-const started = sh('bash', ['tests/tools/devserver.sh', 'start', String(PORT), DATA], { MINESHELL_UNIT_PREFIX: PREFIX });
+// Uptime: the fake servers start a minute before the pictures, so MineShell is
+// told they started earlier. Its systemctl, and only its, goes through this
+// wrapper, which moves a screenshot unit's start time (ActiveEnterTimestampMonotonic)
+// back by the seconds in $DATA/uptime/<id>; the run that MineShell matches it
+// with is moved back the same way after the start (below).
+const realSystemctl = sh('bash', ['-c', 'command -v systemctl']).out.trim();
+fs.mkdirSync(path.join(DATA, 'bin'));
+fs.mkdirSync(path.join(DATA, 'uptime'));
+fs.writeFileSync(
+	path.join(DATA, 'bin/systemctl'),
+	`#!/bin/bash
+# Screenshot runs only (tests/tools/screenshots/run.mjs): earlier start times for ${PREFIX}@ units.
+for a in "$@"; do case "$a" in ${PREFIX}@*.service) id="\${a#${PREFIX}@}"; id="\${id%.service}";; esac; done
+f="${DATA}/uptime/\${id:-}"
+if [[ " $* " == *" show "* && -n "\${id:-}" && -f "$f" ]]; then
+	"${realSystemctl}" "$@" | awk -v s="$(( $(cat "$f") * 1000000 ))" -F= 'BEGIN { OFS = "=" } $1 == "ActiveEnterTimestampMonotonic" && $2 > 0 { $2 = $2 - s } { print }'
+	exit "\${PIPESTATUS[0]}"
+fi
+exec "${realSystemctl}" "$@"
+`,
+	{ mode: 0o755 }
+);
+const started = sh('bash', ['tests/tools/devserver.sh', 'start', String(PORT), DATA], {
+	MINESHELL_UNIT_PREFIX: PREFIX,
+	PATH: `${path.join(DATA, 'bin')}:${process.env.PATH}`
+});
 if (started.code !== 0) throw new Error(started.out);
 console.log(started.out.trim());
 await fetch(`${BASE}/`); // the first page load runs the migrations and boot
@@ -120,7 +146,7 @@ const fakeJava = path.join(DATA, 'fake-java');
 fs.writeFileSync(fakeJava, `#!/bin/sh\nexec "${process.execPath}" "${path.join(HERE, 'fakeserver.mjs')}"\n`, { mode: 0o755 });
 
 const now = Date.now();
-/** @type {string[]} */
+/** @type {{ id: string; uptimeMinutes: number }[]} */
 const toStart = [];
 // The fake, as a Java 21 runtime: the running servers' pinned path shows as that.
 db.prepare(
@@ -149,10 +175,47 @@ function sparseFile(file, bytes, zip = false) {
  * @typedef {{ id: string; name: string; minecraft: string; loader: string; loaderVersion?: string; memoryMb?: number;
  *   pinned?: boolean; notes?: string; properties?: Record<string, string>; worldMb?: number;
  *   pack?: { source: string; project: string; version: string; versionName: string; name: string };
- *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string][] } }} ServerOptions
+ *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string][]; uptimeMinutes?: number } }} ServerOptions
  * @typedef {{ source: string; slug: string; name: string; summary?: string; projectUrl?: string; iconUrl?: string;
  *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; fromPack?: boolean; enabled?: boolean }} ModOptions
  */
+
+/**
+ * What the loader's installer leaves in the folder (jars, libraries) and a few
+ * logs, so the disk use is not the world alone. Sparse, apart from the logs,
+ * which the Logs tab may open.
+ * @param {string} dir @param {string} loader @param {string} minecraft
+ */
+function installFiles(dir, loader, minecraft) {
+	const MB = 1024 * 1024;
+	/** @type {[string, number][]} */
+	const files =
+		loader === 'forge'
+			? [
+					[`forge-${minecraft}-14.23.5.2860.jar`, 5.1],
+					[`minecraft_server.${minecraft}.jar`, 9.6],
+					['libraries/org/scala-lang/scala-library/2.11.1/scala-library-2.11.1.jar', 5.5],
+					['libraries/org/ow2/asm/asm-all/5.2/asm-all-5.2.jar', 0.3],
+					['libraries/net/minecraftforge/forge/libraries.jar', 31]
+				]
+			: [
+					['server.jar', loader === 'vanilla' ? 57 : 0.2],
+					[`versions/${minecraft}/server-${minecraft}.jar`, 52],
+					['libraries/com/mojang/datafixerupper/datafixerupper.jar', 3.4],
+					['libraries/io/netty/netty-all.jar', 4.6],
+					['libraries/it/unimi/dsi/fastutil/fastutil.jar', 23],
+					['libraries/com/google/guava/guava.jar', 3.1],
+					...(/** @type {[string, number][]} */ (loader === 'vanilla' ? [] : [['libraries/net/fabricmc/intermediary.jar', 0.7], ['libraries/net/fabricmc/fabric-loader.jar', 1.4], ['libraries/net/fabricmc/sponge-mixin.jar', 1.5]]))
+				];
+	for (const [file, mb] of files) sparseFile(path.join(dir, file), Math.round(mb * MB), file.endsWith('.jar'));
+	fs.mkdirSync(path.join(dir, 'logs'), { recursive: true });
+	for (let d = 1; d <= 6; d++) {
+		const day = new Date(now - d * 24 * 3600_000).toISOString().slice(0, 10);
+		const lines = Array.from({ length: 4000 }, (_, i) => `[05:${String(i % 60).padStart(2, '0')}:00] [Server thread/INFO]: Saved the game`).join('\n');
+		fs.writeFileSync(path.join(dir, 'logs', `${day}-1.log.gz`), zlib.gzipSync(lines));
+	}
+	fs.writeFileSync(path.join(dir, 'logs/latest.log'), '');
+}
 
 /** @type {Context} */
 const ctx = {
@@ -189,8 +252,9 @@ const ctx = {
 				path.join(dir, 'usercache.json'),
 				JSON.stringify(players.map((p) => ({ ...p, expiresOn: '2099-01-01 00:00:00 +0000' })))
 			);
-			toStart.push(o.id);
+			toStart.push({ id: o.id, uptimeMinutes: o.running.uptimeMinutes ?? 0 });
 		}
+		installFiles(dir, o.loader, o.minecraft);
 		// A world of about this size, in region files of a few MB each.
 		for (let mb = 0, n = 0; mb < (o.worldMb ?? 0); n++) {
 			const size = 2 + ((n * 7919) % 9);
@@ -257,18 +321,39 @@ try {
 	if (!keep) cleanup();
 	throw err;
 }
-db.close();
 
-// The template unit, then the "running" servers; long enough for the monitor's
-// samples, the RCON polls and history's journal read (every 30 s).
+// The template unit, then the "running" servers.
 await act('/settings', 'installUnit');
-for (const id of toStart) await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
+const bootMs = Date.now() - Number(fs.readFileSync('/proc/uptime', 'utf8').split(' ')[0]) * 1000;
+for (const { id, uptimeMinutes } of toStart) {
+	const offset = uptimeMinutes * 60;
+	if (offset) fs.writeFileSync(path.join(DATA, 'uptime', id), String(offset));
+	await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
+	if (!offset) continue;
+	// The run MineShell matches the start time with (startphase.ts), moved back as
+	// far, with its "Done (" 40 s later. Written under the run's own invocation
+	// before the fake logs anything, so history.ts keeps it rather than adding its own.
+	const show = sh(realSystemctl, ['--user', 'show', `${PREFIX}@${id}.service`, '-pInvocationID', '-pActiveEnterTimestampMonotonic']).out;
+	const invocation = show.match(/^InvocationID=(\w+)/m)?.[1];
+	const monotonic = Number(show.match(/^ActiveEnterTimestampMonotonic=(\d+)/m)?.[1] ?? 0);
+	if (!invocation || !monotonic) throw new Error(`${id}: no start time from systemd:\n${show}`);
+	const startedAt = bootMs + monotonic / 1000 - offset * 1000;
+	db.prepare(
+		`INSERT INTO server_runs (instance_id, invocation, started_at, done_at) VALUES (?, ?, ?, ?)
+		ON CONFLICT (instance_id, invocation) DO UPDATE SET started_at = excluded.started_at, done_at = excluded.done_at`
+	).run(id, invocation, Math.round(startedAt), Math.round(startedAt + 40_000));
+}
+db.close();
+const startedList = toStart.map((s) => s.id).join(', ');
 if (serve) {
-	console.log(`started ${toStart.join(', ')}. Running at ${BASE} (data ${DATA}). End it with: npm run screenshots -- --cleanup`);
+	console.log(`started ${startedList}. Running at ${BASE} (data ${DATA}). End it with: npm run screenshots -- --cleanup`);
 	process.exit(0);
 }
-console.log(`started ${toStart.join(', ')}; letting them settle`);
+// Long enough for the monitor's samples, the RCON polls and history's journal read (every 30 s).
+console.log(`started ${startedList}; letting them settle`);
 await sleep(40_000);
+// Pages opened once first, for what the browser does on a first visit.
+for (const page of visits) sh(process.execPath, [path.join(REPO, 'tests/tools/pageshot.mjs'), `${BASE}${page}`, path.join(DATA, 'visit.png'), '--eval', 'new Promise((r) => setTimeout(r, 4000))']);
 
 // ---------------------------------------------------------------- shots ---
 

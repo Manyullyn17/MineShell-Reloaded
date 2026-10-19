@@ -35,14 +35,22 @@ Modrinth, and the page loads mod icons.
   console, joins, chat from `chat`), answers RCON's `list`, `list uuids` and `tick query`
   (TPS from `mspt`), holds `memoryMb` of memory and burns about `cpuPercent` of one core,
   so status, players, TPS and live graphs all come through MineShell's own code.
+  `uptimeMinutes` makes it look started that long ago: MineShell's `systemctl` (only the
+  throwaway server's, through `$DATA/bin/systemctl` first in its PATH) reports the unit's
+  start time that much earlier, and the run it matches that with (`server_runs`, under the
+  run's real invocation) is written with the same start and its "Done (" 40 s later.
+- **Visits** (`visits` in `shots.mjs`): pages opened once before the pictures, for what the
+  browser does on a first visit (a pack server's overview gives it the pack's icon).
 
+Each server gets the files its loader installs (server jar, libraries; sparse) and a week
+of gzipped logs, so its disk use is more than the world.
 Players are invented names with offline-mode UUIDs (MineShell never looks those up, so no
 skins: their faces are the locator-bar colours). Jars and region files are sparse: their
 sizes look real and take no disk.
 
 ## What it cannot show (yet)
 
-Uptime is a minute or so (the fake started just before), and Connect shows this machine's LAN
-address. Pages that read real game files - the player editor, chunk and world maps, item
+Connect shows this machine's LAN address. Players joined a minute ago (their sessions come
+from the fake's log). Pages that read real game files - the player editor, chunk and world maps, item
 pictures - need a scene that writes those files (NBT, region files, the client jar for
 pictures) before they can be added.

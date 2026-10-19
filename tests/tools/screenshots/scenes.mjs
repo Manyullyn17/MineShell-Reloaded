@@ -41,6 +41,8 @@ export const scenes = [
 	{
 		name: 'servers',
 		async run(ctx) {
+			// Up since the nightly restart at 05:00 (the day before, early in the morning).
+			const sinceFive = Math.floor((ctx.now - new Date(ctx.now).setHours(5, 0, 0, 0)) / 60_000);
 			// The Cobblemon pack's newest version for 1.21.1, so its name matches the mods it ships.
 			const [packVersion] = await ctx.fetchJson(
 				`https://api.modrinth.com/v2/project/5FFgwNNP/version?loaders=${encodeURIComponent('["fabric"]')}&game_versions=${encodeURIComponent('["1.21.1"]')}`
@@ -60,6 +62,7 @@ export const scenes = [
 					mspt: 11.6,
 					memoryMb: 2700,
 					cpuPercent: 30,
+					uptimeMinutes: sinceFive >= 120 ? sinceFive : sinceFive + 24 * 60,
 					chat: [
 						['Bramblewick', 'anyone up for the end tonight?'],
 						['mossy_fox', 'after I finish the farm'],
@@ -79,7 +82,7 @@ export const scenes = [
 				memoryMb: 8192,
 				pack: { source: 'modrinth', project: '5FFgwNNP', version: packVersion.id, versionName: packVersion.version_number, name: 'Cobblemon Official Modpack [Fabric]' },
 				worldMb: 1900,
-				running: { players: PLAYERS.slice(3, 5), mspt: 18.2, memoryMb: 3900, cpuPercent: 45 }
+				running: { players: PLAYERS.slice(3, 5), mspt: 18.2, memoryMb: 3900, cpuPercent: 45, uptimeMinutes: 200 }
 			});
 			ctx.server({ id: 'creative', name: 'Creative build', minecraft: '1.21.4', loader: 'fabric', loaderVersion: '0.16.10', memoryMb: 4096, worldMb: 600, properties: { gamemode: 'creative' } });
 			ctx.server({ id: 'classic-tech', name: 'Classic tech', minecraft: '1.12.2', loader: 'forge', loaderVersion: '14.23.5.2860', memoryMb: 8192, worldMb: 5200 });

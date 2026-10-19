@@ -10,6 +10,12 @@
  *   settle    ms to wait after loading before the picture (live numbers, graphs)
  */
 
+/**
+ * Pages opened once before the pictures, for what happens in the browser on a
+ * first visit: a pack server's overview gives it the pack's icon.
+ */
+export const visits = ['/instances/cobblemon'];
+
 /** @type {{ name: string; path: string; waitFor?: string; width?: number; height?: number; element?: string; steps?: ({ click: string } | { eval: string })[]; settle?: number }[]} */
 export const shots = [
 	{ name: 'servers', path: '/', waitFor: 'Classic tech', height: 900 },
