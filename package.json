@@ -18,6 +18,7 @@
     "doctor": "node scripts/doctor.mjs",
     "reset-password": "node scripts/reset-password.mjs",
     "release": "scripts/release.sh",
+    "screenshots": "node tests/tools/screenshots/run.mjs",
     "db:generate": "drizzle-kit generate",
     "test": "vitest run",
     "test:watch": "vitest",

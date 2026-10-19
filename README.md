@@ -6,6 +6,19 @@ MineShell brings modpack installation, server management, diagnostics, world adm
 
 Manage your own servers from a browser, or give friends access to specific servers and features through granular account permissions.
 
+![A running server's overview: players, tick rate, memory, CPU and disk, with a day of performance graphs](docs/screenshots/overview.png)
+
+<table>
+<tr>
+<td><img src="docs/screenshots/servers.png" alt="The server list, with status, players and tags per server"></td>
+<td><img src="docs/screenshots/console.png" alt="The live console, with filters for errors, joins and chat"></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/mods.png" alt="A modpack server's installed mods"></td>
+<td align="center"><img src="docs/screenshots/overview-phone.png" alt="The overview on a phone" width="260"></td>
+</tr>
+</table>
+
 ## Features
 
 ### Modpack & instance management
