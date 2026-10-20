@@ -7,6 +7,8 @@
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
+	import CpuInput from '#lib/components/CpuInput.svelte';
+	import { formatGb } from '#lib/shared/memorylimit.js';
 
 	let { data, form } = $props();
 
@@ -89,7 +91,7 @@
 					label="Maximum memory"
 				/>
 				{#if v.memoryMode === 'auto'}
-					<p class="hint">{data.suggestedMaxMb} MB on this machine: its RAM minus 2 GB, at most 16 GB.</p>
+					<p class="hint">{formatGb(data.suggestedMaxMb)} on this machine: its RAM minus 2 GB, at most 16 GB.</p>
 				{/if}
 			</div>
 			{#if v.memoryMode === 'fixed'}
@@ -142,20 +144,37 @@
 				raising its maximum memory there means raising the limit first.
 			</p>
 		</fieldset>
-		<div class="field narrow">
-			<label for="limitCpuPercent">CPU limit (%)</label>
-			<input
-				id="limitCpuPercent"
-				name="limitCpuPercent"
-				type="number"
-				min="10"
-				max={data.maxCpuPercent}
-				step="10"
-				placeholder="No limit"
-				bind:value={v.limitCpuPercent}
-			/>
-			<p class="hint">100% is one core; this machine has {data.maxCpuPercent}%.</p>
-		</div>
+		<fieldset>
+			<legend>CPU limit</legend>
+			<div class="field">
+				<SegmentedChoice
+					options={[
+						{ value: 'none', label: 'None' },
+						{ value: 'limit', label: 'Limit' }
+					]}
+					bind:value={
+						() => (v.limitCpuPercent === '' ? 'none' : 'limit'),
+						(mode) => (v.limitCpuPercent = mode === 'none' ? '' : Math.max(1, Math.floor(data.cpuCores / 2)) * 100)
+					}
+					name="limitCpuMode"
+					label="CPU limit"
+				/>
+			</div>
+			{#if v.limitCpuPercent === ''}
+				<input type="hidden" name="limitCpuPercent" value="" />
+			{:else}
+				<div class="field">
+					<CpuInput
+						id="limitCpuPercent"
+						name="limitCpuPercent"
+						label="CPU limit"
+						cores={data.cpuCores}
+						bind:value={() => Number(v.limitCpuPercent), (pct) => (v.limitCpuPercent = pct ?? '')}
+					/>
+				</div>
+			{/if}
+			<p class="hint">Past it the server is slowed down, not stopped; this machine has {data.cpuCores} cores.</p>
+		</fieldset>
 	</section>
 
 	<section class="panel">
