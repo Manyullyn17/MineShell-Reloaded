@@ -14,8 +14,8 @@ import { FULL_ACCESS, type Access } from '#lib/shared/access.js';
  */
 export type RouteEvent = {
 	params?: Record<string, string | undefined>;
-	/** Form fields; an array posts the field once per value. */
-	fields?: Record<string, string | string[]>;
+	/** Form fields (a File for an upload); an array posts the field once per value. */
+	fields?: Record<string, string | File | (string | File)[]>;
 	access?: Access;
 	user?: unknown;
 	/** What `cookies.get` answers, for any name. */
