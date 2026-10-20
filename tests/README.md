@@ -104,6 +104,12 @@ old fixture, written as the recorder writes it (keys sorted, `JSON.stringify(…
 that: "contains 0.4.4-alpha", not "exactly these 37 versions". Large downloads (a `.mrpack`,
 a mod jar) are not recorded; pass a small stand-in through the `extra` option instead.
 
+`tests/tools/check-apis.sh` runs every such file against the live APIs, recording into a
+temporary folder (`RECORD_HTTP_DIR`), so the fixtures stay as they are: run it before a release
+or when a provider seems to have changed. A failure is an API that changed shape, or a test
+pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `updatedAt`, a JEI
+file past the mirror's newest 50) - re-record that file with `RECORD_HTTP=1` and adjust.
+
 Code with side effects beyond that is tested through its pure parts (planning, parsing,
 matching), which is why some modules export small helpers such as `targetModNames` in
 `packchange.ts` and `pickVersionForJava` in `cleanroom.ts`.
@@ -140,6 +146,7 @@ is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain
 | `seed-instance.mjs <data dir> <id> [--loader, --loader-version, --mc, --pack source:project:versionId[:name[:pack]], --port, --memory]` | A server row without installing anything: a pack server on an old version, a Fabric server on an old loader. Start the dev server once first (migrations) |
 | `pageshot.mjs <url> <out.png> [--width 390] [--height px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--dialog accept\|dismiss] [--element selector]` | A whole-page screenshot once the page has loaded in the browser (Chrome's `--screenshot` fires before fetches answer). `--overflow` lists elements past the right edge, ignoring ones inside sideways-scrolling boxes: the phone-width check. `--click` presses a button first (repeatable, in order: a sub-tab, then a button in it), answering any confirm() it opens (printed). `--eval` runs a script in the page in the same order and prints its JSON result: typing into a field, reading what a step left behind. `--element` captures just one element's box at full size |
 | `act.mjs <page url>?/<action> [field=value ...]` | Posts to a form action as the page does and prints the decoded answer: drives a throwaway MineShell (MINESHELL_AUTH=off) from a script |
+| `check-apis.sh [vitest args]` | Every recorded-API test file against the live APIs, recorded into a temporary folder (see "No network") |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 | `screenshots/run.mjs` (`npm run screenshots [-- names] [--keep\|--serve\|--cleanup]`) | Redraws the README's pictures (`docs/screenshots/`) from invented data, with servers "running" on a fake Java under real units; scenes and shots are lists to add to (`screenshots/README.md`) |

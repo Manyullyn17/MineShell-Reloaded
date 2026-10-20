@@ -14,13 +14,17 @@ import { afterAll, beforeAll } from 'vitest';
  *
  *   RECORD_HTTP=1 npx vitest run src/lib/server/mods/modrinth.test.ts
  *
+ * RECORD_HTTP_DIR=<dir> records there instead of tests/fixtures/http (still
+ * replaying nothing), which is how tests/tools/check-apis.sh tries every file
+ * against the live APIs without touching the fixtures.
+ *
  * Without useRecordedHttp, any fetch throws (see tests/setup.ts).
  */
 
 type Recorded = { status: number; contentType: string | null; json?: unknown; body?: string };
 export type FetchCall = { method: string; url: string };
 
-const FIXTURES = path.resolve('tests/fixtures/http');
+const FIXTURES = path.resolve(process.env.RECORD_HTTP_DIR || 'tests/fixtures/http');
 export const fetchCalls: FetchCall[] = [];
 
 function keyFor(method: string, url: string, body: unknown): string {
