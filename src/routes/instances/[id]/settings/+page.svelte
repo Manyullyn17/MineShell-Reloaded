@@ -28,6 +28,7 @@
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import PresetSelect from '#lib/components/PresetSelect.svelte';
 	import WarnChoice from '#lib/components/WarnChoice.svelte';
+	import CpuInput from '#lib/components/CpuInput.svelte';
 	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
@@ -761,7 +762,7 @@
 		{#snippet description()}
 			Caps systemd puts on the server process, applied at once, also to a running server. The kernel kills the server
 			past the memory limit (crash restarts then apply), so leave Java room above its {formatGb(limitHeapMb)} heap. The CPU limit
-			slows it down instead: 100% is one full core, {data.cpuCores * 100}% all of them; blank means no CPU limit.
+			slows it down instead; this machine has {data.cpuCores} cores.
 		{/snippet}
 		<form method="POST" action="?/limits" class="rows" bind:this={forms.limits} onsubmit={onSectionSubmit}>
 			<div class="field">
@@ -798,17 +799,30 @@
 				</p>
 			</div>
 			<div class="field">
-				<label for="limitCpuPercent">CPU limit (%)</label>
-				<input
-					id="limitCpuPercent"
-					name="limitCpuPercent"
-					type="number"
-					min="10"
-					max={data.cpuCores * 100}
-					step="10"
-					placeholder="No limit"
-					bind:value={sv.limitCpuPercent}
-				/>
+				<span class="label" id="limitCpuLabel">CPU limit</span>
+				<div class="control limit-control">
+					<SegmentedChoice
+						options={LIMIT_MODES}
+						name="limitCpuMode"
+						labelledby="limitCpuLabel"
+						bind:value={
+							() => (sv.limitCpuPercent === '' ? 'none' : 'limit'),
+							(mode) => (sv.limitCpuPercent = mode === 'none' ? '' : Math.max(1, Math.floor(data.cpuCores / 2)) * 100)
+						}
+					/>
+					{#if sv.limitCpuPercent === ''}
+						<input type="hidden" name="limitCpuPercent" value="" />
+					{:else}
+						<CpuInput
+							id="limitCpuPercent"
+							name="limitCpuPercent"
+							label="CPU limit"
+							cores={data.cpuCores}
+							bind:value={() => Number(sv.limitCpuPercent), (pct) => (sv.limitCpuPercent = pct ?? '')}
+						/>
+					{/if}
+				</div>
+				<p class="hint">Past it the server is slowed down, not stopped.</p>
 			</div>
 		</form>
 	</SettingsSection>

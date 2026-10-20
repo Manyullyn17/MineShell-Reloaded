@@ -5,6 +5,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import CpuInput from '#lib/components/CpuInput.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
@@ -152,8 +153,11 @@
 	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
 	// svelte-ignore state_referenced_locally
 	let capMemoryMb = $state<number | null>(data.serverCap.memoryMb ?? null);
+	// svelte-ignore state_referenced_locally
+	let capCpuPercent = $state<number | null>(data.serverCap.cpuPercent ?? null);
 	$effect(() => {
 		capMemoryMb = data.serverCap.memoryMb ?? null;
+		capCpuPercent = data.serverCap.cpuPercent ?? null;
 	});
 	const capRunningMb = $derived(data.serverCap.running.reduce((sum, s) => sum + s.ceilingMb, 0));
 	const capOutside = $derived(
@@ -1060,7 +1064,7 @@
 		machine. Applied at once, also to running servers. The memory cap is soft: past it the system holds the servers
 		back (it frees cache, then swaps or stalls them) instead of killing one, which shows as lag on all of them. Java
 		does not give memory back under pressure, so the cap cannot shrink what the servers already hold. The CPU cap
-		slows them down: 100% is one full core, {data.serverCap.maxCpu}% all of them; blank means no CPU cap.
+		slows them down; this machine has {data.serverCap.maxCpu / 100} cores.
 	</p>
 	<form method="POST" action="?/serverCap" use:enhance={() => async ({ update }) => update({ reset: false })}>
 		<div class="sftp-fields">
@@ -1094,17 +1098,24 @@
 				<p class="hint">This machine has {formatMb(data.serverCap.totalMemoryMb)}.</p>
 			</div>
 			<div class="field">
-				<label for="capCpuPercent">CPU cap (%)</label>
-				<input
-					id="capCpuPercent"
-					name="capCpuPercent"
-					type="number"
-					min="10"
-					max={data.serverCap.maxCpu}
-					step="10"
-					placeholder="No cap"
-					value={data.serverCap.cpuPercent ?? ''}
+				<span class="label" id="capCpuLabel">CPU cap</span>
+				<SegmentedChoice
+					options={[
+						{ value: 'none', label: 'No cap' },
+						{ value: 'cap', label: 'Cap' }
+					]}
+					name="capCpuMode"
+					labelledby="capCpuLabel"
+					bind:value={
+						() => (capCpuPercent === null ? 'none' : 'cap'),
+						(mode) => (capCpuPercent = mode === 'none' ? null : Math.max(100, Math.floor(data.serverCap.maxCpu / 200) * 100))
+					}
 				/>
+				{#if capCpuPercent === null}
+					<input type="hidden" name="capCpuPercent" value="" />
+				{:else}
+					<CpuInput id="capCpuPercent" name="capCpuPercent" label="CPU cap" cores={data.serverCap.maxCpu / 100} bind:value={capCpuPercent} />
+				{/if}
 			</div>
 		</div>
 		{#if data.serverCap.running.length}
