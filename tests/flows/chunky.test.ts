@@ -27,7 +27,7 @@ const { fakeProcesses } = await import('../helpers/process');
 const RUNNING =
 	'§2[Chunky]§r Task running for minecraft:overworld. Processed: 12,345 chunks (12.34%), ETA: 1:05:12, Rate: 45.6 cps, Current: 12, -34';
 
-async function server(files: Record<string, string> = {}) {
+async function server(files: Parameters<typeof createInstance>[1] = {}) {
 	return createInstance(
 		{ modloader: 'fabric', minecraftVersion: '1.21.1', rconPort: 25596, rconPasswordEnc: encryptSecret('pw') },
 		files
@@ -95,6 +95,14 @@ describe('Chunky', () => {
 		rcon.answers['chunky start minecraft:overworld square 0 0 1000'] =
 			"[Chunky] A task was already started for this world. To continue running it, type '/chunky continue'. To start a new task, type '/chunky confirm'.";
 		expect((await chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'square', centerX: 0, centerZ: 0, radius: 1000 })).needsConfirm).toBe(true);
+	});
+
+	it('gives rectangles and ellipses both radii, east-west first', async () => {
+		const instance = await server();
+		await chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'ellipse', centerX: 5, centerZ: 6, radius: 3000, radiusZ: 1000 });
+		expect(rcon.commands).toEqual(['chunky start minecraft:overworld ellipse 5 6 3000 1000']);
+		await expect(chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'rectangle', centerX: 0, centerZ: 0, radius: 3000 })).rejects.toThrow(/radius/);
+		await expect(chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'star' as never, centerX: 0, centerZ: 0, radius: 3000 })).rejects.toThrow(/rectangle/);
 	});
 
 	it('refuses selections that are not one, so nothing odd reaches a command', async () => {
@@ -197,5 +205,33 @@ describe('Chunky', () => {
 		const fresh = await withChunky({});
 		await chunky.applyChunkyConfig(fresh);
 		expect(await chunky.chunkyConfigFile(fresh.path)).toBeNull();
+	});
+
+	it('reads the world border to pre-generate up to: level.dat before 1.21.11, then a file per dimension', async () => {
+		const { writeNbt } = await import('#lib/server/nbt.js');
+		const { worldBorder, worldSpawn } = await import('#lib/server/world.js');
+		const { listDimensions } = await import('#lib/server/dimensions.js');
+		const double = (value: number) => ({ type: 'double' as const, value });
+		const nbt = (outer: string, fields: [string, number][]) =>
+			writeNbt({ name: '', gzipped: true, root: { type: 'compound', value: [[outer, { type: 'compound', value: fields.map(([k, v]) => [k, double(v)]) }]] } });
+		const region = { 'world/region/r.0.0.mca': '', 'world/DIM-1/region/r.0.0.mca': '' };
+
+		const old = await server({ ...region, 'world/level.dat': nbt('Data', [['BorderCenterX', 200.5], ['BorderCenterZ', -100], ['BorderSize', 3000]]) });
+		const [overworld, nether] = await listDimensions(old.path);
+		expect(await worldBorder(old.path, overworld)).toEqual({ x: 201, z: -100, radius: 1500 });
+		// What the Nether got from it before 1.21.11 is not guessed at.
+		expect(await worldBorder(old.path, nether)).toBeNull();
+
+		const recent = await server({
+			...region,
+			'world/level.dat': nbt('Data', []),
+			'world/data/world_border.dat': nbt('data', [['center_x', 0], ['center_z', 0], ['size', 59999968]]),
+			'world/DIM-1/data/world_border.dat': nbt('data', [['center_x', 16], ['center_z', 32], ['size', 2000]])
+		});
+		const [overworld2, nether2] = await listDimensions(recent.path);
+		// Minecraft's default width is no border at all.
+		expect(await worldBorder(recent.path, overworld2)).toBeNull();
+		expect(await worldBorder(recent.path, nether2)).toEqual({ x: 16, z: 32, radius: 1000 });
+		expect(await worldSpawn(recent.path)).toBeNull();
 	});
 });

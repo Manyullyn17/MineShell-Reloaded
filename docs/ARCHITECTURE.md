@@ -783,6 +783,17 @@ removes a chunk only when the analysis showed it going, it is not protected, and
 being pruned it is still under the threshold, so a chunk generated or visited after the
 analysis stays. A finished prune drops the analysis.
 
+**Planning a pre-generation** (World > Pre-generate; `PregenPlanner.svelte`,
+`lib/shared/pregen.ts`) draws the area Chunky would cover on the chunk map, and a click
+there moves its middle; the middle can also be typed, or taken from spawn (1.21.9+ names
+the dimension it is in) or the dimension's world border (`worldBorder`: 1.21.11's
+`data/world_border.dat` per dimension, before it level.dat's for the overworld only). Which
+chunks are in follows Chunky's own test (the chunk's middle block inside the shape; an
+ellipse by dx²/rx² + dz²/rz² ≤ 1), counted a row at a time; Chunky skips chunks that exist,
+so the overview's chunks inside are greyed and subtracted, and the disk estimate is the new
+ones times the dimension's region bytes per chunk so far (the overview carries each
+file's size). It works with the server stopped; starting needs it running.
+
 A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
 are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which
 a pack rollback's world restore also needs: after World folder changed, putting it back

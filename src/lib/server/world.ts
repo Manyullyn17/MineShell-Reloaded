@@ -40,7 +40,7 @@ import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { analyseRegions, applyPrune, planPrune } from './chunkprune';
 import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
-import { child, parseNbt } from './nbt';
+import { child, num, parseNbt, str, type Tag } from './nbt';
 import { constants as fsConstants } from 'node:fs';
 import {
 	finishSnapshot,
@@ -479,18 +479,48 @@ export async function worldSeed(root: string): Promise<string | null> {
 }
 
 /**
- * The world spawn from level.dat: Data.spawn.pos [x, y, z] from 1.21.9,
+ * The world spawn from level.dat: Data.spawn.pos [x, y, z] from 1.21.9 (with
+ * the dimension it is in, which can be another than the overworld),
  * Data.SpawnX/SpawnZ before; null when unreadable.
  */
-export async function worldSpawn(root: string): Promise<{ x: number; z: number } | null> {
+export async function worldSpawn(root: string): Promise<{ x: number; z: number; dimension: string } | null> {
 	try {
 		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
 		const data = child(level.root, 'Data');
-		const pos = child(child(data, 'spawn'), 'pos');
-		if (pos?.type === 'intArray' && pos.value.length === 3) return { x: pos.value[0], z: pos.value[2] };
+		const spawn = child(data, 'spawn');
+		const pos = child(spawn, 'pos');
+		const dimension = str(child(spawn, 'dimension')) ?? 'minecraft:overworld';
+		if (pos?.type === 'intArray' && pos.value.length === 3) return { x: pos.value[0], z: pos.value[2], dimension };
 		const x = child(data, 'SpawnX');
 		const z = child(data, 'SpawnZ');
-		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, z: z.value } : null;
+		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, z: z.value, dimension } : null;
+	} catch {
+		return null;
+	}
+}
+
+/** A border this wide is Minecraft's default, the edge of the world: no border set (1.12 kept 60,000,000). */
+const NO_BORDER = 59_999_968;
+
+/**
+ * A dimension's world border, as center and half its width; null when none is
+ * set or it cannot be read. 1.21.11 keeps one per dimension in its own
+ * data/world_border.dat (center_x, center_z, size); before, level.dat holds
+ * the overworld's (BorderCenterX/Z, BorderSize), and what other dimensions
+ * get from it is not read here.
+ */
+export async function worldBorder(root: string, dimension: Dimension): Promise<{ x: number; z: number; radius: number } | null> {
+	const read = (tag: Tag | undefined, x: string, z: string, size: string) => {
+		const [cx, cz, width] = [num(child(tag, x)), num(child(tag, z)), num(child(tag, size))];
+		if (cx === null || cz === null || width === null || width >= NO_BORDER || width <= 0) return null;
+		return { x: Math.round(cx), z: Math.round(cz), radius: Math.round(width / 2) };
+	};
+	try {
+		const own = await fs.readFile(path.join(dimensionBase(root, dimension), 'data', 'world_border.dat')).catch(() => null);
+		if (own) return read(child(parseNbt(own).root, 'data'), 'center_x', 'center_z', 'size');
+		if (!dimension.overworld) return null;
+		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
+		return read(child(level.root, 'Data'), 'BorderCenterX', 'BorderCenterZ', 'BorderSize');
 	} catch {
 		return null;
 	}

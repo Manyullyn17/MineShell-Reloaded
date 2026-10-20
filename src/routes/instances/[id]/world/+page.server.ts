@@ -36,7 +36,9 @@ import {
 	renameWorld,
 	deleteWorld,
 	worldFromSnapshot,
+	worldBorder,
 	worldSeed,
+	worldSpawn,
 	WorldVersionError,
 	type SeedChoice
 } from '#lib/server/world.js';
@@ -44,6 +46,7 @@ import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder,
 import { webRoot } from '#lib/server/worldmap.js';
 import { snapshotWhileRunning } from '#lib/server/snapshotschedule.js';
 import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
+import type { PregenShape } from '#lib/shared/pregen.js';
 import { withDimensionNames } from '#lib/server/dimensionnames.js';
 import { getTask } from '#lib/server/tasks.js';
 import {
@@ -128,8 +131,45 @@ async function chunkyData(instance: ReturnType<typeof requireInstance>, running:
 		english: (await chunkyLanguage(instance.path)) === 'en',
 		pauseForPlayers: pausesForPlayers(instance.id),
 		pausedForPlayers: pausedForPlayers(instance.id),
-		continueOnRestart: continuesOnRestart(instance.id)
+		continueOnRestart: continuesOnRestart(instance.id),
+		dimensions: await pregenDimensions(instance)
 	};
+}
+
+const VANILLA_DIMENSIONS = [
+	{ id: 'minecraft:overworld', label: 'Overworld', folder: '' },
+	{ id: 'minecraft:the_nether', label: 'The Nether', folder: 'DIM-1' },
+	{ id: 'minecraft:the_end', label: 'The End', folder: 'DIM1' }
+];
+
+/**
+ * What Chunky can be pointed at: the vanilla three (a dimension nobody has
+ * visited has no folder yet, but Chunky generates it all the same) and every
+ * other one with a folder and an id. `key` names the folder for the chunk map;
+ * spawn and border are offered as the selection's middle.
+ */
+async function pregenDimensions(instance: ReturnType<typeof requireInstance>) {
+	const onDisk = (await withDimensionNames(instance, await listDimensions(instance.path))).filter((d) => d.id.includes(':'));
+	const spawn = await worldSpawn(instance.path);
+	const level = await serverWorldName(instance.path);
+	// A vanilla dimension without terrain yet can still have its border file (1.21.11 makes all three).
+	const entries: { id: string; label: string; dimension: Dimension | null; borderFrom: Dimension }[] = [
+		...VANILLA_DIMENSIONS.map((v) => {
+			const dimension = onDisk.find((d) => d.id === v.id) ?? null;
+			const unvisited = { id: v.id, label: v.label, paths: [v.folder ? path.join(level, v.folder) : path.join(level, 'region')], overworld: !v.folder };
+			return { id: v.id, label: dimension?.label ?? v.label, dimension, borderFrom: dimension ?? unvisited };
+		}),
+		...onDisk.filter((d) => !VANILLA_DIMENSIONS.some((v) => v.id === d.id)).map((d) => ({ id: d.id, label: d.label, dimension: d, borderFrom: d }))
+	];
+	return Promise.all(
+		entries.map(async ({ id, label, dimension, borderFrom }) => ({
+			id,
+			label,
+			key: dimension?.paths[0] ?? null,
+			spawn: spawn && spawn.dimension === id ? { x: spawn.x, z: spawn.z } : null,
+			border: await worldBorder(instance.path, borderFrom)
+		}))
+	);
 }
 
 /** The analysis under way with its task's state, so the page's first paint already shows how far it is. */
@@ -170,10 +210,11 @@ export const actions: Actions = {
 		try {
 			const result = await startPregen(instance, {
 				world,
-				shape: String(form.get('shape')) === 'circle' ? 'circle' : 'square',
+				shape: String(form.get('shape') ?? '') as PregenShape,
 				centerX: Number(form.get('centerX') || 0),
 				centerZ: Number(form.get('centerZ') || 0),
-				radius: Number(form.get('radius'))
+				radius: Number(form.get('radius')),
+				radiusZ: Number(form.get('radiusZ'))
 			});
 			return result.needsConfirm
 				? { ok: true, message: result.text, chunkyConfirm: world }

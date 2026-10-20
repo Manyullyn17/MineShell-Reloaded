@@ -8,6 +8,7 @@
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import PruneMap from '#lib/components/PruneMap.svelte';
+	import PregenPlanner from '#lib/components/PregenPlanner.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
@@ -66,15 +67,6 @@
 	let seedMode = $state<'keep' | 'random' | 'set'>('keep');
 
 	// ---- Chunky pre-generation
-	let pregenWorld = $state('minecraft:overworld');
-	let pregenShape = $state<'square' | 'circle'>('square');
-	let pregenRadius = $state(2500);
-	/** Chunks a selection covers, as Chunky counts them (16-block chunks). */
-	const pregenChunks = $derived(
-		pregenShape === 'circle'
-			? Math.round((Math.PI * pregenRadius * pregenRadius) / 256)
-			: Math.round(((2 * pregenRadius) / 16) ** 2)
-	);
 	const clock = (seconds: number) =>
 		`${Math.floor(seconds / 3600)}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 	// Progress moves on its own while a task runs; nothing else on this page does.
@@ -815,7 +807,10 @@
 						<span>
 							<strong class="mono">{task.world}</strong>
 							<span class="muted small">
-								{task.chunks.toLocaleString()} chunks done, {task.shape} of radius {task.radius.toLocaleString()} around
+								{task.chunks.toLocaleString()} chunks done, {task.shape} of radius {task.radius.toLocaleString()}{task.radiusZ !== null &&
+								(task.shape === 'rectangle' || task.shape === 'ellipse')
+									? ` by ${task.radiusZ.toLocaleString()}`
+									: ''} around
 								{task.centerX}, {task.centerZ}{data.chunky.pausedForPlayers.includes(task.world) ? ', paused while players are online' : ''}
 							</span>
 						</span>
@@ -851,60 +846,7 @@
 			</div>
 		{/if}
 
-		{#if data.running}
-			<form method="POST" action="?/chunkyStart" use:enhance class="pregen-form">
-				<div class="field wide">
-					<span class="label" id="pregen-world-label">Dimension</span>
-					<SegmentedChoice
-						options={[
-							{ value: 'minecraft:overworld', label: 'Overworld' },
-							{ value: 'minecraft:the_nether', label: 'Nether' },
-							{ value: 'minecraft:the_end', label: 'End' },
-							{ value: 'other', label: 'Other' }
-						]}
-						bind:value={pregenWorld}
-						name="world"
-						labelledby="pregen-world-label"
-					/>
-				</div>
-				{#if pregenWorld === 'other'}
-					<div class="field">
-						<label for="pregen-custom">Dimension id</label>
-						<input id="pregen-custom" name="customWorld" class="mono" placeholder="twilightforest:twilight_forest" />
-					</div>
-				{/if}
-				<div class="field wide">
-					<span class="label" id="pregen-shape-label">Shape</span>
-					<SegmentedChoice
-						options={[
-							{ value: 'square', label: 'Square' },
-							{ value: 'circle', label: 'Circle' }
-						]}
-						bind:value={pregenShape}
-						name="shape"
-						labelledby="pregen-shape-label"
-					/>
-				</div>
-				<div class="field">
-					<label for="pregen-x">Center X</label>
-					<input id="pregen-x" name="centerX" type="number" value="0" step="1" />
-				</div>
-				<div class="field">
-					<label for="pregen-z">Center Z</label>
-					<input id="pregen-z" name="centerZ" type="number" value="0" step="1" />
-				</div>
-				<div class="field">
-					<label for="pregen-radius">Radius in blocks</label>
-					<input id="pregen-radius" name="radius" type="number" min="16" step="1" bind:value={pregenRadius} />
-				</div>
-				<button class="button-primary" type="submit">Start</button>
-			</form>
-			<p class="muted small pregen-note">
-				About {pregenChunks.toLocaleString()} chunks. Generation is heavy work for the server; players notice it.
-			</p>
-		{:else}
-			<p class="muted small">Start the server to pre-generate chunks.</p>
-		{/if}
+		<PregenPlanner instanceId={data.instance.id} dimensions={data.chunky.dimensions} running={data.running} />
 
 		<form method="POST" action="?/chunkyAuto" use:enhance class="auto">
 			<input type="hidden" name="enabled" value={String(!data.chunky.pauseForPlayers)} />
@@ -1132,26 +1074,6 @@
 		border-radius: var(--radius);
 		padding: var(--space-3);
 		font-size: 0.8rem;
-	}
-
-	.pregen-form {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: var(--space-3);
-	}
-
-	.pregen-form .field {
-		margin-bottom: 0;
-		flex: 0 1 10rem;
-	}
-
-	.pregen-form .field.wide {
-		flex: none;
-	}
-
-	.pregen-note {
-		margin-top: var(--space-2);
 	}
 
 	.auto {

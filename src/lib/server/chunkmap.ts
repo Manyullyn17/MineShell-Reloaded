@@ -36,9 +36,12 @@ const CACHE_VERSION = 3;
 
 // ------------------------------------------------------------- overview ---
 
-export type RegionSummary = { x: number; z: number; chunks: string };
+export type RegionSummary = { x: number; z: number; chunks: string; bytes: number };
 
-/** Every region file of a dimension folder (the one holding region/), with its chunks as a 1024-bit list in base64. */
+/**
+ * Every region file of a dimension folder (the one holding region/), with its
+ * chunks as a 1024-bit list in base64 and its size (pre-generation's disk estimate).
+ */
 export async function regionOverview(base: string): Promise<RegionSummary[]> {
 	const dir = path.join(base, 'region');
 	const names = (await fs.readdir(dir).catch(() => [] as string[])).filter((n) => REGION_NAME.test(n));
@@ -55,7 +58,7 @@ export async function regionOverview(base: string): Promise<RegionSummary[]> {
 			for (let i = 0; i < 1024; i++) if (present[i]) bits[i >> 3] |= 1 << (i & 7);
 			if (!bits.some((b) => b)) continue;
 			const [x, z] = regionOf(name)!;
-			out.push({ x, z, chunks: bits.toString('base64') });
+			out.push({ x, z, chunks: bits.toString('base64'), bytes: (await handle.stat()).size });
 		} finally {
 			await handle.close();
 		}

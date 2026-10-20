@@ -7,6 +7,7 @@ import { onlinePlayers, rconPassword } from './instances';
 import { hasEnabledMod } from './mods';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
+import type { PregenShape } from '#lib/shared/pregen.js';
 
 /**
  * Chunk pre-generation with Chunky (Fabric, Forge, NeoForge; 1.14+, so not
@@ -204,13 +205,15 @@ export async function chunkyStatus(instance: ServerInstance): Promise<ChunkyStat
 
 // --------------------------------------------------------------- commands ---
 
-export type StartOptions = { world: string; shape: 'square' | 'circle'; centerX: number; centerZ: number; radius: number };
+export const PREGEN_SHAPES: readonly PregenShape[] = ['square', 'rectangle', 'circle', 'ellipse'];
+/** Rectangles and ellipses take `radiusZ` (north-south) besides `radius` (east-west). */
+export type StartOptions = { world: string; shape: PregenShape; centerX: number; centerZ: number; radius: number; radiusZ?: number };
 
 /** Minecraft's world border limit. */
 const WORLD_LIMIT = 29_999_984;
 
 /**
- * `chunky start <world> <shape> <x> <z> <radius>`: the whole selection in one
+ * `chunky start <world> <shape> <x> <z> <radius> [radiusZ]`: the whole selection in one
  * command, so nothing depends on what `chunky world`/`radius` were set to before.
  * When the world has an unfinished task, Chunky asks for `chunky confirm` (start
  * over) or `chunky continue`; `needsConfirm` says so.
@@ -219,16 +222,16 @@ export async function startPregen(instance: ServerInstance, opts: StartOptions):
 	if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(opts.world)) {
 		throw new ChunkyError('A dimension is written like minecraft:overworld.');
 	}
-	if (opts.shape !== 'square' && opts.shape !== 'circle') throw new ChunkyError('Pick square or circle.');
+	if (!PREGEN_SHAPES.includes(opts.shape)) throw new ChunkyError('Pick a square, rectangle, circle or ellipse.');
+	const twoRadii = opts.shape === 'rectangle' || opts.shape === 'ellipse';
 	for (const n of [opts.centerX, opts.centerZ]) {
 		if (!Number.isFinite(n) || Math.abs(n) > WORLD_LIMIT) throw new ChunkyError('The center is outside the world.');
 	}
-	if (!Number.isInteger(opts.radius) || opts.radius < 16 || opts.radius > WORLD_LIMIT) {
-		throw new ChunkyError('The radius is a whole number of blocks, at least 16.');
+	for (const r of twoRadii ? [opts.radius, opts.radiusZ] : [opts.radius]) {
+		if (!Number.isInteger(r) || r! < 16 || r! > WORLD_LIMIT) throw new ChunkyError('A radius is a whole number of blocks, at least 16.');
 	}
-	const text = await chunky(instance, [
-		`chunky start ${opts.world} ${opts.shape} ${Math.round(opts.centerX)} ${Math.round(opts.centerZ)} ${opts.radius}`
-	]);
+	const radii = twoRadii ? `${opts.radius} ${opts.radiusZ}` : `${opts.radius}`;
+	const text = await chunky(instance, [`chunky start ${opts.world} ${opts.shape} ${Math.round(opts.centerX)} ${Math.round(opts.centerZ)} ${radii}`]);
 	// The confirmation names the command itself, whatever the language.
 	return { text, needsConfirm: text.includes('chunky confirm') };
 }

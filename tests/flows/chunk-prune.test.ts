@@ -77,12 +77,12 @@ describe('chunk pruning', () => {
 		const old = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, {
 			'world/level.dat': levelDat([['SpawnX', { type: 'int', value: 40 }], ['SpawnY', { type: 'int', value: 64 }], ['SpawnZ', { type: 'int', value: -8 }]])
 		});
-		expect(await worldSpawn(old.path)).toEqual({ x: 40, z: -8 });
+		expect(await worldSpawn(old.path)).toEqual({ x: 40, z: -8, dimension: 'minecraft:overworld' });
 		// 1.21.9 moved it into Data.spawn, where SpawnX/SpawnZ no longer are: the radius kept nothing.
 		const recent = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.11' }, {
 			'world/level.dat': levelDat([['spawn', compound([['pos', { type: 'intArray', value: [0, 106, -64] }], ['dimension', { type: 'string', value: 'minecraft:overworld' }]])]])
 		});
-		expect(await worldSpawn(recent.path)).toEqual({ x: 0, z: -64 });
+		expect(await worldSpawn(recent.path)).toEqual({ x: 0, z: -64, dimension: 'minecraft:overworld' });
 	});
 
 	it('analyses every chunk: its time, its size, and which could not be read', async () => {

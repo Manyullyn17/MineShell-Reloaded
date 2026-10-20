@@ -20,6 +20,8 @@
 	 *
 	 * World > Prune chunks lays a colour per chunk over it (`layer`: the
 	 * heatmap, the chunks that would go), with or without the terrain under it.
+	 * World > Pre-generate draws the area Chunky would cover (`area`), and a
+	 * click there moves its middle (`onpick`) instead of selecting a chunk.
 	 */
 	let {
 		overview,
@@ -30,6 +32,8 @@
 		jump = null,
 		layer = null,
 		circle = null,
+		area = null,
+		onpick = null,
 		describe = null,
 		tapHint = 'Tap a chunk to select it and see what is there.'
 	}: {
@@ -41,8 +45,11 @@
 		/** Block position shown first. */
 		center: { x: number; z: number };
 		selecting?: boolean;
-		/** Set to move the view (the page's coordinate field); a new object each time. `zoom: false` keeps the zoom. */
-		jump?: { x: number; z: number; zoom?: boolean } | null;
+		/**
+		 * Set to move the view (the page's coordinate field); a new object each time. `zoom: false` keeps the
+		 * zoom; `span` zooms so that many blocks fit across the map.
+		 */
+		jump?: { x: number; z: number; zoom?: boolean; span?: number } | null;
 		/**
 		 * A colour per chunk over the terrain: per region "x,z", a code per chunk
 		 * index (x + 32 * z), 0 for none; `colours[code]` names its custom property.
@@ -51,6 +58,10 @@
 		layer?: { regions: Map<string, Uint8Array>; colours: string[]; alpha: number } | null;
 		/** A circle in block coordinates (the radius pruning keeps around spawn), dashed. */
 		circle?: { x: number; z: number; radius: number } | null;
+		/** A square or round area in block coordinates, filled and outlined in the accent colour, its middle marked. */
+		area?: { x: number; z: number; rx: number; rz: number; round: boolean } | null;
+		/** A click or tap calls this with the block there, instead of selecting the chunk. */
+		onpick?: ((x: number, z: number) => void) | null;
 		/** A line about a chunk for the tooltip. */
 		describe?: ((cx: number, cz: number) => string | null) | null;
 		/** Under the map on touch screens, before anything is tapped. */
@@ -161,7 +172,8 @@
 		if (!jump) return;
 		viewX = jump.x;
 		viewZ = jump.z;
-		if (jump.zoom !== false) scale = Math.max(scale, 2);
+		if (jump.span) scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, (Math.min(width, height) || 400) / jump.span));
+		else if (jump.zoom !== false) scale = Math.max(scale, 2);
 		untrack(redraw);
 	});
 
@@ -188,6 +200,7 @@
 		void regionUrl;
 		void layer;
 		void circle;
+		void area;
 		untrack(redraw);
 	});
 
@@ -322,6 +335,7 @@
 		pump();
 		if (layer) drawLayer(ctx, inView, layer, style);
 		if (circle) drawCircle(ctx, circle, colour('--text'));
+		if (area) drawArea(ctx, area, colour('--accent'));
 
 		drawGrid(ctx, colour('--text'), colour('--text-muted'), colour('--bg-sunken'));
 		drawSelection(ctx, colour('--accent'));
@@ -384,6 +398,28 @@
 		ctx.setLineDash([6, 4]);
 		ctx.stroke();
 		ctx.setLineDash([]);
+		ctx.globalAlpha = 1;
+	}
+
+	function drawArea(ctx: CanvasRenderingContext2D, a: NonNullable<typeof area>, accent: string) {
+		if (a.rx <= 0 || a.rz <= 0) return;
+		ctx.beginPath();
+		if (a.round) ctx.ellipse(sx(a.x), sz(a.z), a.rx * scale, a.rz * scale, 0, 0, Math.PI * 2);
+		else ctx.rect(sx(a.x - a.rx), sz(a.z - a.rz), 2 * a.rx * scale, 2 * a.rz * scale);
+		ctx.fillStyle = accent;
+		ctx.globalAlpha = 0.14;
+		ctx.fill();
+		ctx.globalAlpha = 0.95;
+		ctx.strokeStyle = accent;
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		// The middle: a small cross.
+		ctx.beginPath();
+		ctx.moveTo(sx(a.x) - 6, sz(a.z));
+		ctx.lineTo(sx(a.x) + 6, sz(a.z));
+		ctx.moveTo(sx(a.x), sz(a.z) - 6);
+		ctx.lineTo(sx(a.x), sz(a.z) + 6);
+		ctx.stroke();
 		ctx.globalAlpha = 1;
 	}
 
@@ -530,7 +566,7 @@
 			redraw();
 			return;
 		}
-		const rect = selecting || e.shiftKey || e.ctrlKey || e.metaKey;
+		const rect = !onpick && (selecting || e.shiftKey || e.ctrlKey || e.metaKey);
 		const startsOnSelected = selected.has(chunkKey(Math.floor(wx(px) / 16), Math.floor(wz(py) / 16)));
 		drag = { id: e.pointerId, startX: px, startY: py, lastX: px, lastY: py, moved: false, rect, remove: e.ctrlKey || e.metaKey || (selecting && !e.shiftKey && startsOnSelected) };
 	}
@@ -572,7 +608,10 @@
 		}
 		if (!drag || drag.id !== e.pointerId) return;
 		const { px, py } = local(e);
-		if (!drag.moved) {
+		if (!drag.moved && onpick) {
+			onpick(Math.floor(wx(px)), Math.floor(wz(py)));
+			if (!hoverCapable) tapped = { x: Math.floor(wx(px)), z: Math.floor(wz(py)) };
+		} else if (!drag.moved) {
 			// A click or tap: that chunk in or out.
 			const key = chunkKey(Math.floor(wx(px) / 16), Math.floor(wz(py) / 16));
 			if (selected.has(key)) selected.delete(key);
