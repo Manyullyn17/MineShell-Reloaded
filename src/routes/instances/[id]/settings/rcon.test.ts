@@ -6,6 +6,7 @@ import { encryptSecret } from '#lib/server/crypto.js';
 import { FULL_ACCESS } from '#lib/shared/access.js';
 import { createInstance } from '../../../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses } from '../../../../../tests/helpers/process';
+import { post } from '../../../../../tests/helpers/routes';
 
 afterEach(resetProcesses);
 
@@ -33,10 +34,7 @@ describe('the RCON password on the Settings page', () => {
 			{ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPasswordEnc: encryptSecret('hunter2-rcon') },
 			{ 'server.properties': 'motd=Hello\nrcon.password=hunter2-rcon\n' }
 		);
-		const form = new FormData();
-		form.set('raw', 'motd=Changed\n');
-		const request = new Request('http://localhost/', { method: 'POST', body: form });
-		await (actions.propertiesRaw as (event: never) => unknown)({ params: { id: instance.id }, request } as never);
+		await post(actions.propertiesRaw, { params: { id: instance.id }, fields: { raw: 'motd=Changed\n' } });
 		const file = await fs.readFile(path.join(instance.path, 'server.properties'), 'utf8');
 		expect(file).toContain('motd=Changed');
 		expect(file).toContain('rcon.password=hunter2-rcon');

@@ -5,13 +5,12 @@ import * as dashboard from '../../+page.server';
 import { db } from '#lib/server/db/index.js';
 import { instanceTags, serverTags } from '#lib/server/db/schema.js';
 import { createInstance } from '../../../../tests/helpers/instances';
+import { post as postTo } from '../../../../tests/helpers/routes';
 
 /** The dashboard's card forms post to each server's own actions; the server is in the address. */
-async function post(action: (event: never) => unknown, fields: Record<string, string>) {
+function post(action: unknown, fields: Record<string, string>) {
 	const { id, ...rest } = fields;
-	const form = new FormData();
-	for (const [key, value] of Object.entries(rest)) form.set(key, value);
-	return await action({ params: { id }, request: new Request('http://localhost/', { method: 'POST', body: form }) } as never);
+	return postTo(action, { params: { id }, fields: rest });
 }
 
 describe('dashboard server tag actions', () => {

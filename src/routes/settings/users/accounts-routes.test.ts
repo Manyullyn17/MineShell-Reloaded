@@ -1,4 +1,3 @@
-import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { describe, expect, it } from 'vitest';
 import * as list from './+page.server';
 import * as detail from './[userId]/+page.server';
@@ -7,6 +6,7 @@ import { createAccount, getAccount } from '#lib/server/accounts.js';
 import { createSession, verifyLogin } from '#lib/server/auth.js';
 import { FULL_ACCESS, NO_ACCESS, type Access } from '#lib/shared/access.js';
 import { owner } from '../../../../tests/helpers/auth';
+import { post } from '../../../../tests/helpers/routes';
 
 /** The Accounts pages' actions, as the owner, a global admin, and an account itself. */
 
@@ -14,22 +14,6 @@ const globalAdmin: Access = { ...NO_ACCESS, globalAdmin: true, canCreate: true }
 let n = 0;
 const name = () => `route${process.pid}x${++n}`;
 
-async function post(action: unknown, event: { params?: Record<string, string>; access: Access; user?: unknown; fields?: Record<string, string>; cookie?: string }) {
-	const form = new FormData();
-	for (const [key, value] of Object.entries(event.fields ?? {})) form.set(key, value);
-	try {
-		return await (action as (e: never) => unknown)({
-			params: event.params ?? {},
-			request: new Request('http://localhost/', { method: 'POST', body: form }),
-			locals: { access: event.access, user: event.user ?? null },
-			cookies: { get: () => event.cookie }
-		} as never);
-	} catch (err) {
-		if (isHttpError(err)) return { refused: err.status };
-		if (isRedirect(err)) return { redirect: err.location };
-		throw err;
-	}
-}
 
 describe('Accounts', () => {
 	it('a global admin adds accounts, but only the owner adds MineShell admins', async () => {

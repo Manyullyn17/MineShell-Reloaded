@@ -184,6 +184,12 @@ scope), `setAccountFlags(userId, { globalAdmin, canCreate })` sets its MineShell
 Handlers that check access read `locals.access`: pass an `Access` object
 (`lib/shared/access.ts`) in the event, as `routes/instances/access-handlers.test.ts` does.
 
+`tests/helpers/routes.ts`: `post(action, { params, fields, access, user, cookie, url })` calls a
+form action with a fake event (fields as FormData, an array posts a field once per value) and
+`load(module, { ... })` a page's load; `access` defaults to the owner's. An `error()` comes back
+as `{ refused: status }`, a `redirect()` as `{ redirect: location }`. The access policy is not
+in the way (it lives in the hooks): this reaches the handler itself, with its own checks.
+
 `tests/helpers/instances.ts`:
 
 | Helper | Use |

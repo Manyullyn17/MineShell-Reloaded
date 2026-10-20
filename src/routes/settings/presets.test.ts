@@ -5,6 +5,7 @@ import { deleteCustomPreset, listPresets } from '#lib/server/jvm-presets.js';
 import { getInstanceDefaults, resetInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
 import { addJava, clearJava } from '../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses } from '../../../tests/helpers/process';
+import { post as postTo } from '../../../tests/helpers/routes';
 
 beforeEach(clearJava);
 afterEach(() => {
@@ -12,11 +13,7 @@ afterEach(() => {
 	resetProcesses();
 });
 
-async function post(action: unknown, fields: Record<string, string>) {
-	const form = new FormData();
-	for (const [key, value] of Object.entries(fields)) form.set(key, value);
-	return await (action as (event: never) => unknown)({ request: new Request('http://localhost/', { method: 'POST', body: form }) } as never);
-}
+const post = (action: unknown, fields: Record<string, string>) => postTo(action, { fields });
 
 describe('JVM flag presets', () => {
 	it('are saved and deleted in MineShell settings, not by a server page, since every server shares them', async () => {

@@ -3,15 +3,11 @@ import { actions } from './+page.server';
 import { getInstance } from '#lib/server/instances.js';
 import { addJava, clearJava, createInstance } from '../../../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses, spawnCalls } from '../../../../../tests/helpers/process';
+import { post as postTo } from '../../../../../tests/helpers/routes';
 
 afterEach(resetProcesses);
 
-async function post(action: unknown, id: string, fields: Record<string, string>) {
-	const form = new FormData();
-	for (const [key, value] of Object.entries(fields)) form.set(key, value);
-	const request = new Request('http://localhost/', { method: 'POST', body: form });
-	return await (action as (event: never) => unknown)({ params: { id }, request } as never);
-}
+const post = (action: unknown, id: string, fields: Record<string, string>) => postTo(action, { params: { id }, fields });
 
 describe('memory and launch settings', () => {
 	it('are saved by separate actions: memory never changes what the server runs', async () => {

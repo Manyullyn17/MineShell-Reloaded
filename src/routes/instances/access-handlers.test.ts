@@ -1,6 +1,6 @@
-import { isHttpError } from '@sveltejs/kit';
 import { describe, expect, it, vi } from 'vitest';
 import type { Access, InstanceGrant } from '#lib/shared/access.js';
+import { post as postTo } from '../../../tests/helpers/routes';
 
 // The install action's catalog and installers, so it decides mod or data pack without the network.
 const installs = vi.hoisted(() => ({ mods: [] as string[], datapacks: [] as string[] }));
@@ -38,17 +38,8 @@ const access = (id: string, grant: Partial<InstanceGrant>): Access => ({
 	instances: { [id]: { admin: false, permissions: [], playerView: 'none', playerEdit: 'none', ...grant } }
 });
 
-async function post(action: unknown, id: string | undefined, who: Access, fields: Record<string, string>) {
-	const form = new FormData();
-	for (const [key, value] of Object.entries(fields)) form.set(key, value);
-	const request = new Request('http://localhost/', { method: 'POST', body: form });
-	try {
-		return await (action as (event: never) => unknown)({ params: { id }, request, locals: { access: who } } as never);
-	} catch (err) {
-		if (isHttpError(err)) return { refused: err.status };
-		throw err;
-	}
-}
+const post = (action: unknown, id: string | undefined, who: Access, fields: Record<string, string>) =>
+	postTo(action, { params: { id }, access: who, fields });
 
 const server = () => createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' });
 
