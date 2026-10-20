@@ -84,6 +84,8 @@ clean)
 	systemctl --user stop "$prefix@*" "$prefix-playit.service" 2>/dev/null
 	shopt -s nullglob
 	for f in "$units/$prefix@"* "$units/$prefix-playit.service" "$units/app-$prefix.slice"*; do
+		# The playit name has no wildcard, so nullglob keeps it whether or not it exists.
+		[[ -e "$f" ]] || continue
 		echo "removing $f"
 		rm -rf -- "$f"
 	done
