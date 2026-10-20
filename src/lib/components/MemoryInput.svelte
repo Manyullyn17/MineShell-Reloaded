@@ -43,10 +43,8 @@
 	const fit = $derived(Math.min(8, Math.max(1, Math.floor(width / 32))));
 	const every = $derived([1, 2, 4, 8, 16, 32, 64].find((n) => span / n <= fit) ?? 128);
 	const notches = $derived(width / span >= 4 ? Array.from({ length: span + 1 }, (_, i) => lowGb + i) : []);
-	// Round numbers (4, 8, 12 ...), with 1 GB at the start only when it is not crowded.
-	const numbered = $derived(
-		Array.from({ length: span + 1 }, (_, i) => lowGb + i).filter((n) => n % every === 0 || (n === lowGb && every <= 2))
-	);
+	// Round numbers (4, 8, 12 ...), and 1 GB at the start so it shows where the slider begins.
+	const numbered = $derived(Array.from({ length: span + 1 }, (_, i) => lowGb + i).filter((n) => n % every === 0 || n === lowGb));
 
 	function set(mb: number) {
 		value = mb;
