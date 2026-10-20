@@ -59,9 +59,31 @@ describe('Chunky', () => {
 			'config/chunky/tasks/minecraft/the_end.properties': 'world=minecraft\\:the_end\ncancelled=true\nradius=500.0\nchunks=3969\n'
 		});
 		expect(await chunky.savedTasks(instance.path)).toEqual([
-			{ world: 'minecraft:overworld', cancelled: false, shape: 'circle', centerX: 0, centerZ: -128, radius: 2500, chunks: 4096, time: 60000 },
-			{ world: 'minecraft:the_end', cancelled: true, shape: 'square', centerX: 0, centerZ: 0, radius: 500, chunks: 3969, time: 0 }
+			{ world: 'minecraft:overworld', cancelled: false, shape: 'circle', centerX: 0, centerZ: -128, radius: 2500, radiusZ: null, chunks: 4096, time: 60000 },
+			{ world: 'minecraft:the_end', cancelled: true, shape: 'square', centerX: 0, centerZ: 0, radius: 500, radiusZ: null, chunks: 3969, time: 0 }
 		]);
+	});
+
+	it('reads Chunky 1.2 (Minecraft 1.16 to 1.19.2), which keeps its language and tasks in config/chunky.json', async () => {
+		const instance = await server({
+			'config/chunky.json': JSON.stringify({
+				version: 1,
+				language: 'de',
+				continueOnRestart: false,
+				tasks: {
+					'minecraft:overworld': { cancelled: false, radius: 3000.0, radiusZ: 1500.0, centerX: 64.0, centerZ: 0.0, iterator: 'loop', shape: 'rectangle', count: 812, time: 9000 }
+				}
+			})
+		});
+		expect(await chunky.chunkyLanguage(instance.path)).toBe('de');
+		expect(await chunky.savedTasks(instance.path)).toEqual([
+			{ world: 'minecraft:overworld', cancelled: false, shape: 'rectangle', centerX: 64, centerZ: 0, radius: 3000, radiusZ: 1500, chunks: 812, time: 9000 }
+		]);
+		// Updated past 1.2: the new config wins, and its tasks come from their files.
+		await fs.mkdir(path.join(instance.path, 'config/chunky'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, 'config/chunky/config.json'), JSON.stringify({ language: 'en' }));
+		expect(await chunky.chunkyLanguage(instance.path)).toBe('en');
+		expect(await chunky.savedTasks(instance.path)).toEqual([]);
 	});
 
 	it('starts with the whole selection in one command, and notices when Chunky asks to confirm', async () => {

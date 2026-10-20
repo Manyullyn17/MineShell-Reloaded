@@ -914,7 +914,8 @@
 						? 'Pre-generation pauses while anyone is online and continues when the server is empty.'
 						: 'Pre-generation runs whether or not anyone is online.'}
 				{:else}
-					Pausing while players are online needs Chunky set to English (language in config/chunky/config.json):
+					Pausing while players are online needs Chunky set to English ("language" in config/chunky/config.json, or
+					config/chunky.json before Minecraft 1.19.3):
 					MineShell reads which tasks run from its messages.
 				{/if}
 			</span>

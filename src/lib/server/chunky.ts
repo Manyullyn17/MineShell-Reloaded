@@ -12,13 +12,17 @@ import { unitState } from './systemd';
  * Chunk pre-generation with Chunky (Fabric, Forge, NeoForge; 1.14+, so not
  * 1.12). Unlike Spark, Chunky answers its commands synchronously, so RCON gets
  * the reply. Two things to know:
- * - Replies are in Chunky's language (config/chunky/config.json, "en" by
- *   default). Live progress is read from `chunky progress` in English only;
- *   other languages show Chunky's own text.
- * - config/chunky/tasks/<namespace>/<path>.properties (minecraft:overworld ->
- *   minecraft/overworld.properties) is written when a task stops
- *   (finished, paused, cancelled) and at shutdown, not while it runs: it tells
- *   which tasks can be continued, not how far a running one is.
+ * - Replies are in Chunky's language (its config, "en" by default). Live
+ *   progress is read from `chunky progress` in English only; other languages
+ *   show Chunky's own text.
+ * - Saved tasks are written when a task stops (finished, paused, cancelled)
+ *   and at shutdown, not while it runs: they tell which tasks can be
+ *   continued, not how far a running one is.
+ * Where it keeps them depends on its version: 1.3 on (Minecraft 1.19 on) has
+ * config/chunky/config.json and a .properties file per task under
+ * config/chunky/tasks/<namespace>/ (minecraft:overworld ->
+ * minecraft/overworld.properties); 1.2 (1.16 to 1.19.2) has one
+ * config/chunky.json holding the tasks too.
  */
 
 export class ChunkyError extends Error {}
@@ -29,13 +33,32 @@ export function hasChunky(root: string): Promise<boolean> {
 
 const chunkyDir = (root: string) => path.join(root, 'config', 'chunky');
 
-export async function chunkyLanguage(root: string): Promise<string> {
+/**
+ * Chunky's config file: 1.3's, or 1.2's when only that one is there (a server
+ * updated past 1.2 can keep the old file, which the new Chunky no longer reads).
+ */
+export async function chunkyConfigFile(root: string): Promise<{ file: string; legacy: boolean } | null> {
+	const current = path.join(chunkyDir(root), 'config.json');
+	const legacy = path.join(root, 'config', 'chunky.json');
+	if (await fs.access(current).then(() => true, () => false)) return { file: current, legacy: false };
+	if (await fs.access(legacy).then(() => true, () => false)) return { file: legacy, legacy: true };
+	return null;
+}
+
+async function readConfig(root: string): Promise<{ file: string; legacy: boolean; config: Record<string, unknown> } | null> {
+	const found = await chunkyConfigFile(root);
+	if (!found) return null;
 	try {
-		const config = JSON.parse(await fs.readFile(path.join(chunkyDir(root), 'config.json'), 'utf8'));
-		return typeof config.language === 'string' ? config.language : 'en';
+		const config = JSON.parse(await fs.readFile(found.file, 'utf8'));
+		return config && typeof config === 'object' && !Array.isArray(config) ? { ...found, config } : null;
 	} catch {
-		return 'en';
+		return null;
 	}
+}
+
+export async function chunkyLanguage(root: string): Promise<string> {
+	const language = (await readConfig(root))?.config.language;
+	return typeof language === 'string' ? language : 'en';
 }
 
 // ------------------------------------------------------------ saved tasks ---
@@ -47,6 +70,8 @@ export type SavedTask = {
 	centerX: number;
 	centerZ: number;
 	radius: number;
+	/** Rectangles and ellipses: the north-south radius (`radius` is east-west). */
+	radiusZ: number | null;
 	chunks: number;
 	/** Time spent generating, ms. */
 	time: number;
@@ -63,8 +88,10 @@ export function parseProperties(text: string): Record<string, string> {
 	return values;
 }
 
-/** Read like Chunky reads them: every .properties file under tasks/, at any depth. */
+/** Read like Chunky reads them: every .properties file under tasks/, at any depth; 1.2's from its config. */
 export async function savedTasks(root: string): Promise<SavedTask[]> {
+	const read = await readConfig(root);
+	if (read?.legacy) return legacyTasks(read.config.tasks);
 	const dir = path.join(chunkyDir(root), 'tasks');
 	const names = (await fs.readdir(dir, { recursive: true }).catch(() => [] as string[])) as string[];
 	const tasks: SavedTask[] = [];
@@ -78,11 +105,32 @@ export async function savedTasks(root: string): Promise<SavedTask[]> {
 			centerX: Number(props['center-x'] ?? 0),
 			centerZ: Number(props['center-z'] ?? 0),
 			radius: Number(props.radius ?? 0),
+			radiusZ: props['radius-z'] === undefined ? null : Number(props['radius-z']),
 			chunks: Number(props.chunks ?? 0),
 			time: Number(props.time ?? 0)
 		});
 	}
 	return tasks;
+}
+
+/** 1.2's "tasks": { "<world>": { cancelled, radius, radiusZ, centerX, centerZ, shape, count, time } }. */
+function legacyTasks(raw: unknown): SavedTask[] {
+	if (!raw || typeof raw !== 'object') return [];
+	const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+	return Object.entries(raw as Record<string, Record<string, unknown>>)
+		.filter(([, t]) => t && typeof t === 'object')
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([world, t]) => ({
+			world,
+			cancelled: t.cancelled === true,
+			shape: typeof t.shape === 'string' ? t.shape : 'square',
+			centerX: n(t.centerX),
+			centerZ: n(t.centerZ),
+			radius: n(t.radius),
+			radiusZ: typeof t.radiusZ === 'number' ? t.radiusZ : null,
+			chunks: n(t.count),
+			time: n(t.time)
+		}));
 }
 
 // --------------------------------------------------------------- progress ---

@@ -132,6 +132,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `chunky cancel` and starting over an unfinished task both wait for `chunky confirm`;
   pending actions are keyed by sender name, so a later RCON connection can confirm. The
   confirm prompt contains the literal "chunky confirm" in every language.
+- Versions (jars of 1.2.54 to 1.5.3 compared, 2026-10-20): 1.2.x (Minecraft 1.16 to 1.19.2)
+  keeps language, `continueOnRestart` and the tasks (keyed by world: cancelled, radius,
+  radiusZ, centerX/Z, shape, count, time) in one `config/chunky.json`; 1.3 on has
+  `config/chunky/config.json` and the `.properties` files (`center-x`, `radius-z`). 1.2.54
+  (Fabric 1.16) has no `chunky progress`. Every version skips chunks that exist (unless 1.3's
+  `forceLoadExistingChunks`), takes `start <world> <shape> <x> <z> <radius> [radiusZ]`, and
+  has `spawn` and `worldborder`. `continueOnRestart` is off by default.
 - Live-tested with Chunky 1.3.146 on Fabric 1.20.1 (start, progress, pause, continue,
   confirm, cancel); pausing for players only in tests.
 
