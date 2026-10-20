@@ -24,6 +24,21 @@ export const EVERY_HOURS: Preset[] = [
 ];
 export const unevenHours = (hours: number) => `Every ${hours} hours (uneven)`;
 
+/**
+ * Scheduled commands' "every": minutes that divide an hour and hours that divide
+ * a day, so they fall on the clock (scheduledcommands.ts, minuteSlot); a day or
+ * more is "Daily at".
+ */
+export const EVERY_MINUTES: Preset[] = [
+	{ value: 1, label: 'Every minute' },
+	{ value: 5, label: 'Every 5 minutes' },
+	{ value: 10, label: 'Every 10 minutes' },
+	{ value: 15, label: 'Every 15 minutes' },
+	{ value: 20, label: 'Every 20 minutes' },
+	{ value: 30, label: 'Every 30 minutes' },
+	...EVERY_HOURS.filter((p) => p.value < 24).map((p) => ({ value: p.value * 60, label: p.label }))
+];
+
 /** In-game warnings go out at these minutes before (scheduler.ts, snapshotschedule.ts). */
 export const WARN_MARKS = [15, 10, 5, 1];
 export const WARN_CHOICES = [

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EVERY_HOURS, warnChoice } from './presets';
+import { EVERY_HOURS, EVERY_MINUTES, warnChoice } from './presets';
 import { clockSlot } from '#lib/server/snapshotschedule.js';
+import { minuteSlot } from '#lib/server/scheduledcommands.js';
 
 describe('field presets', () => {
 	it('show a stored warning window as the mark it warns from', () => {
@@ -24,6 +25,19 @@ describe('field presets', () => {
 				const local = new Date(at);
 				expect(local.getMinutes()).toBe(0);
 				expect(hours <= 24 ? local.getHours() % hours : local.getHours(), `every ${hours} hours, slot ${i}`).toBe(0);
+			}
+		}
+	});
+
+	it('offer only command intervals that land on the same minutes every day', () => {
+		const start = new Date(2026, 9, 20, 0, 0).getTime();
+		for (const { value: minutes } of EVERY_MINUTES) {
+			expect(1440 % minutes, `every ${minutes} minutes`).toBe(0);
+			let at = start;
+			for (let i = 0; i < 10; i++) {
+				at = minuteSlot(minutes, at);
+				const local = new Date(at);
+				expect((local.getHours() * 60 + local.getMinutes()) % minutes, `every ${minutes} minutes, slot ${i}`).toBe(0);
 			}
 		}
 	});

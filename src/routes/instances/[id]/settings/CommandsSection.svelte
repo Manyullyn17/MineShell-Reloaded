@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import SettingsSection from '#lib/components/SettingsSection.svelte';
+	import { EVERY_MINUTES } from '#lib/shared/presets.js';
 	import type { PageData } from './$types';
 
 	let { commands, editable }: { commands: PageData['scheduledCommands']; editable: boolean } = $props();
@@ -56,14 +57,17 @@
 		<form method="POST" action="?/addCommand" use:enhance class="add-command">
 			<input name="command" class="mono grow" placeholder="say Remember to vote!" aria-label="Command" required />
 			<select name="mode" bind:value={commandMode} aria-label="When">
-				<option value="interval">Every</option>
+				<option value="interval">Repeating</option>
 				<option value="daily">Daily at</option>
 			</select>
 			{#if commandMode === 'daily'}
 				<input name="dailyTime" type="time" value="04:00" aria-label="Time of day" required />
 			{:else}
-				<input name="everyMinutes" type="number" min="1" value="60" aria-label="Minutes" class="minutes" required />
-				<span class="faint small">min</span>
+				<select name="everyMinutes" value="60" aria-label="How often">
+					{#each EVERY_MINUTES as p (p.value)}
+						<option value={String(p.value)}>{p.label}</option>
+					{/each}
+				</select>
 			{/if}
 			<button type="submit">Add</button>
 		</form>
@@ -104,10 +108,6 @@
 	.add-command .grow {
 		flex: 1 1 14rem;
 		margin: 0;
-	}
-
-	.add-command .minutes {
-		width: 5rem;
 	}
 
 	.after {

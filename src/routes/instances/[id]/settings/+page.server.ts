@@ -83,6 +83,7 @@ import {
 } from '#lib/server/jvm-presets.js';
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
+import { EVERY_MINUTES } from '#lib/shared/presets.js';
 import { checkForUpdates, checkModsForUpdates, modsChecked, updateKind } from '#lib/server/updatecheck.js';
 import { globalTarget, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
@@ -656,9 +657,7 @@ export const actions: Actions = {
 			addScheduledCommand(instance.id, command, { dailyTime: time });
 		} else {
 			const minutes = Number(form.get('everyMinutes'));
-			if (!Number.isInteger(minutes) || minutes < 1 || minutes > 7 * 24 * 60) {
-				return fail(400, { ok: false, message: 'Run it every 1 minute to 7 days.' });
-			}
+			if (!EVERY_MINUTES.some((p) => p.value === minutes)) return fail(400, { ok: false, message: 'Pick how often it runs.' });
 			addScheduledCommand(instance.id, command, { everyMinutes: minutes });
 		}
 		return { ok: true, message: `Scheduled "${command}". It runs while the server is running.` };

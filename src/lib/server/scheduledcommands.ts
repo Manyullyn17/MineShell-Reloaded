@@ -5,6 +5,7 @@ import { scheduledCommands, type ScheduledCommand, type ServerInstance } from '.
 import { audit, getInstance, rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
+import { clockSlot } from './snapshotschedule';
 
 /**
  * Console commands on a schedule - an announcement every hour, a save-all
@@ -15,8 +16,23 @@ import { unitState } from './systemd';
 
 export type CommandSchedule = { everyMinutes: number } | { dailyTime: string };
 
+/**
+ * The next slot after `from` for "every N minutes", on the clock as restarts and
+ * snapshots are: whole hours as clockSlot, minutes that divide a day at the
+ * multiples of N since midnight (every 15: :00, :15, :30, :45); anything else,
+ * N minutes on.
+ */
+export function minuteSlot(minutes: number, from: number): number {
+	if (minutes % 60 === 0) return clockSlot(minutes / 60, from);
+	if (1440 % minutes !== 0) return from + minutes * 60_000;
+	const next = new Date(from);
+	const sinceMidnight = next.getHours() * 60 + next.getMinutes();
+	next.setHours(0, (Math.floor(sinceMidnight / minutes) + 1) * minutes, 0, 0);
+	return next.getTime();
+}
+
 export function nextRunAt(schedule: { everyMinutes: number | null; dailyTime: string | null }, from = Date.now()): number | null {
-	if (schedule.everyMinutes && schedule.everyMinutes > 0) return from + schedule.everyMinutes * 60_000;
+	if (schedule.everyMinutes && schedule.everyMinutes > 0) return minuteSlot(schedule.everyMinutes, from);
 	if (schedule.dailyTime) {
 		const [hour, minute] = schedule.dailyTime.split(':').map(Number);
 		if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
@@ -86,10 +102,15 @@ async function runOne(instance: ServerInstance, row: ScheduledCommand, now: numb
 		.run();
 }
 
-/** At startup: slots that passed while MineShell was down move on instead of all firing at once. */
+/**
+ * At startup: slots that passed while MineShell was down move on instead of all
+ * firing at once, and intervals set before they fell on the clock move onto it.
+ */
 export function rollForwardMissed(now = Date.now()): void {
 	for (const row of db.select().from(scheduledCommands).all()) {
-		if (row.nextAt !== null && row.nextAt < now) {
+		if (row.nextAt === null) continue;
+		const offClock = row.everyMinutes !== null && minuteSlot(row.everyMinutes, row.nextAt - 1) !== row.nextAt;
+		if (row.nextAt < now || offClock) {
 			db.update(scheduledCommands).set({ nextAt: nextRunAt(row, now) }).where(eq(scheduledCommands.id, row.id)).run();
 		}
 	}

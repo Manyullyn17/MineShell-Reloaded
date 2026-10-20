@@ -192,7 +192,10 @@ in snapshotschedule.ts): every 6 hours is 0:00, 6:00, 12:00 and 18:00, not 6 hou
 whenever the last restart was (before 2026-10-20 it was, and drifted; a slot set that way is
 moved onto the clock once at startup). The forms offer only intervals that come out even
 (divisors of 24 hours, whole days; `lib/shared/presets.ts`), and warnings only at the marks
-that are sent, as fixed choices; a stored value outside them shows as it is.
+that are sent, as fixed choices; a stored value outside them shows as it is. Scheduled
+console commands do the same in minutes (`minuteSlot` in scheduledcommands.ts: every 15
+minutes is :00, :15, :30, :45), offering minutes that divide an hour and hours that divide
+a day; one set to another interval before 2026-10-20 keeps counting on from its last run.
 
 ### Servers after a reboot are started by MineShell, not enabled in systemd
 
