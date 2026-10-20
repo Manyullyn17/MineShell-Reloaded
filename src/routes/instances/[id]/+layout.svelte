@@ -4,12 +4,13 @@
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { startAnyway } from '#lib/shared/startanyway.js';
+	import { describeState } from '#lib/shared/format.js';
 
 	let { data, children } = $props();
 
@@ -91,6 +92,16 @@
 		if (!data.countdown) return;
 		const tick = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(tick);
+	});
+
+	// Starting or stopping: every tab follows it until it settles, not only the overview (which
+	// reloads anyway). A tab that needs the server up or down (World's Pre-generate, Prune chunks)
+	// otherwise kept its "Starting" until it was left, losing what was filled in there.
+	const settling = $derived(describeState(data.state.active, data.state.sub, data.phase).tone === 'busy');
+	$effect(() => {
+		if (!settling) return;
+		const timer = setInterval(() => void refreshAll(), 3000);
+		return () => clearInterval(timer);
 	});
 
 	const delays = [1, 5, 10, 15];

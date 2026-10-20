@@ -1138,6 +1138,9 @@ browser through `bind:term` and its exported `search()`.
 **The instance header** carries start, stop, restart and the delayed variants on every
 tab. Its forms post to the overview's actions; an enhanced form posting to another page
 would navigate there, so the header applies the result itself and reloads in place.
+While the server is starting or stopping (the status pill's busy states) it reloads every
+3 s until it settles, so a tab that depends on it (Pre-generate needs it running, Prune
+chunks stopped) follows without being left.
 The server list's cards do the same (start, stop, restart, pin, tags): every operation on
 one server is an action under `/instances/<id>`, never an id in a form body, so the address
 alone says which server a request touches.
