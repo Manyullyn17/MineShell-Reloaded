@@ -875,7 +875,8 @@ server's), and writes it with a localhost-only bind into the mod's config before
 the assigned port and the per-server EULA answer; Dynmap's config is created by its first
 start and is configured before later starts). `/instances/<id>/map/live/` passes requests
 through to that port behind MineShell's login - bodies streamed, MineShell's own cookies
-and auth headers not passed on.
+and auth headers not passed on. With the BlueMap mod in, the Map tab opens on its live map
+(the one that is current); the rendered one is a switch away.
 
 A BlueMap render's size is measured when the render ends and kept (`sizeBytes` in the `map:`
 settings row; `mapDataSize` measures once for renders from before): walking 100k+ tiles took

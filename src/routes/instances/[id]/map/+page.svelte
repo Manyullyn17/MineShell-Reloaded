@@ -16,8 +16,9 @@
 	const map = $derived(data.map);
 	const viewUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/view/`);
 	const liveUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/live/`);
-	/** With the BlueMap mod in, which map is shown: BlueMap's render, or the mod's live one. */
-	let view = $state<'rendered' | 'live'>('rendered');
+	/** With the BlueMap mod in, which map is shown: the mod's live one unless the render is picked. */
+	let picked = $state<'rendered' | 'live' | null>(null);
+	const view = $derived(picked ?? (map.mods.blueMap ? 'live' : 'rendered'));
 	/** Reloaded after each update, so the frame shows the new tiles. */
 	const frameKey = $derived(map.settings.lastRenderAt ?? 0);
 
@@ -117,8 +118,8 @@
 {:else}
 	{#if map.mods.blueMap}
 		<nav class="segmented view-switch" aria-label="Which map">
-			<button type="button" aria-pressed={view === 'rendered'} onclick={() => (view = 'rendered')}>Rendered</button>
-			<button type="button" aria-pressed={view === 'live'} onclick={() => (view = 'live')}>Live (BlueMap mod)</button>
+			<button type="button" aria-pressed={view === 'rendered'} onclick={() => (picked = 'rendered')}>Rendered</button>
+			<button type="button" aria-pressed={view === 'live'} onclick={() => (picked = 'live')}>Live (BlueMap mod)</button>
 		</nav>
 	{/if}
 	{#if view === 'live' && map.mods.blueMap}
