@@ -8,6 +8,7 @@ import { hasEnabledMod } from './mods';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { cancelTask, startTask, type TaskHandle } from './tasks';
+import { outboundFetch } from './outbound';
 
 /**
  * Spark profiles, started from MineShell. Spark runs every command on its own
@@ -143,7 +144,7 @@ export async function uploadSavedProfile(root: string, file: string): Promise<st
 	const { bytebin, viewer } = await sparkUrls(root);
 	let res: Response;
 	try {
-		res = await fetch(`${bytebin}post`, {
+		res = await outboundFetch(`${bytebin}post`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-spark-sampler', 'Content-Encoding': 'gzip', 'User-Agent': 'MineShell' },
 			body: gzipSync(data),

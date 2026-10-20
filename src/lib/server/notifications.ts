@@ -12,6 +12,7 @@ import {
 	type TargetType,
 	type TargetView
 } from '#lib/shared/notifications.js';
+import { outboundFetch } from './outbound';
 
 /**
  * Messages about servers to Discord (a channel's webhook), ntfy (phone
@@ -236,7 +237,7 @@ async function sendOnce(target: Target, n: Notification): Promise<{ ok: boolean;
 	const { url, body, type } = request(target, n);
 	await assertPublicUrl(url);
 	for (let attempt = 0; ; attempt++) {
-		const response = await fetch(url, {
+		const response = await outboundFetch(url, {
 			method: 'POST',
 			headers: { 'Content-Type': type, 'User-Agent': USER_AGENT },
 			body,

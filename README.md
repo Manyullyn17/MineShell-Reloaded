@@ -54,6 +54,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available.
 - Inspect Java heap usage and receive guidance when memory allocation seems insufficient or excessive.
 - View server addresses and manage players directly from the overview.
+- See on the Activity page how the outside services MineShell uses (Modrinth, the modpacks.ch mirror, Mojang, Java and loader sites) answered since it started, with a warning while one is not answering.
 
 ### Console, logs & crash diagnostics
 

@@ -8,6 +8,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { addressKind, BlockedDownloadError, isAllowedAddress, refuse } from './downloadaccess';
 import { copyFromEarlierDownload, recordDownload } from './filecache';
+import { outboundFetch } from './outbound';
 
 export { BlockedDownloadError };
 
@@ -16,7 +17,7 @@ export { BlockedDownloadError };
 export const USER_AGENT = 'MineShell/0.1 (self-hosted Minecraft server manager)';
 
 export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
-	const res = await fetch(url, {
+	const res = await outboundFetch(url, {
 		...init,
 		headers: { Accept: 'application/json', 'User-Agent': USER_AGENT, ...(init.headers ?? {}) }
 	});
@@ -27,7 +28,7 @@ export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise
 }
 
 export async function fetchText(url: string, init: RequestInit = {}): Promise<string> {
-	const res = await fetch(url, {
+	const res = await outboundFetch(url, {
 		...init,
 		headers: { 'User-Agent': USER_AGENT, ...(init.headers ?? {}) }
 	});
@@ -66,7 +67,7 @@ async function fetchPublic(url: string): Promise<Response> {
 	let current = url;
 	for (let hop = 0; hop <= 10; hop++) {
 		await assertPublicUrl(current);
-		const res = await fetch(current, { headers: { 'User-Agent': USER_AGENT }, redirect: 'manual' });
+		const res = await outboundFetch(current, { headers: { 'User-Agent': USER_AGENT }, redirect: 'manual' });
 		const location = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
 		if (!location) return res;
 		await res.body?.cancel();

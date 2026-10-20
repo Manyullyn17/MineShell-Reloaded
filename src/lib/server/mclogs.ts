@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { logShares, type ServerInstance } from './db/schema';
 import { stripAnsi } from '#lib/shared/consolelines.js';
+import { outboundFetch } from './outbound';
 
 /**
  * mclo.gs (Aternos) as a second opinion on a log, only when asked:
@@ -49,7 +50,7 @@ export function prepareLog(text: string): string {
 async function call(method: string, path: string, body?: unknown, token?: string): Promise<Record<string, unknown>> {
 	let res: Response;
 	try {
-		res = await fetch(`${API}${path}`, {
+		res = await outboundFetch(`${API}${path}`, {
 			method,
 			headers: {
 				...(body === undefined ? {} : { 'Content-Type': 'application/json' }),

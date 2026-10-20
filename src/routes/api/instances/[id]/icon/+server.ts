@@ -5,6 +5,7 @@ import path from 'node:path';
 import { audit, getInstance } from '#lib/server/instances.js';
 import { checkServerIcon } from '#lib/server/servericon.js';
 import { markPackIconTried, packIconUrl } from '#lib/server/packicon.js';
+import { outboundFetch } from '#lib/server/outbound.js';
 
 const ICON = 'server-icon.png';
 
@@ -22,7 +23,7 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		// Counted as tried whatever happens, so a pack without a usable icon is not asked again.
 		markPackIconTried(instance.id);
 		const from = await packIconUrl(instance);
-		const res = from ? await fetch(from).catch(() => null) : null;
+		const res = from ? await outboundFetch(from).catch(() => null) : null;
 		if (!res?.ok) return Response.json({ message: 'The pack has no icon to use.' }, { status: 404 });
 		return new Response(new Uint8Array(await res.arrayBuffer()), {
 			headers: { 'Content-Type': res.headers.get('content-type') ?? 'application/octet-stream', 'Cache-Control': 'no-store' }

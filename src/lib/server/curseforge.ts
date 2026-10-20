@@ -3,6 +3,7 @@ import { db } from './db';
 import { settings } from './db/schema';
 import { encryptSecret, decryptSecret } from './crypto';
 import { CURSEFORGE_API_KEY as ENV_KEY } from './config';
+import { outboundFetch } from './outbound';
 
 /**
  * CurseForge API key storage and testing. Overridable at runtime from the
@@ -72,7 +73,7 @@ export async function testCurseforgeApiKey(
 ): Promise<{ ok: boolean; message: string }> {
 	if (!key) return { ok: false, message: 'No key to test.' };
 	try {
-		const res = await fetch(`https://api.curseforge.com/v1/games/${MINECRAFT_GAME_ID}`, {
+		const res = await outboundFetch(`https://api.curseforge.com/v1/games/${MINECRAFT_GAME_ID}`, {
 			headers: { 'x-api-key': key, Accept: 'application/json' }
 		});
 		if (res.ok) return { ok: true, message: 'CurseForge accepted the key.' };

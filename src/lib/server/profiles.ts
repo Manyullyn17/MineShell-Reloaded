@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { CACHE_DIR } from './config';
 import { USER_AGENT } from './download';
+import { outboundFetch } from './outbound';
 
 /**
  * Player profiles from Mojang's session server: the name, for UUIDs the server
@@ -81,7 +82,7 @@ export function skinTexture(profile: MojangProfile): string | null {
 
 /** The account's name and skin; null when Mojang has no such account; throws when it could not ask. */
 async function askMojang(uuid: string): Promise<{ name: string; skin: string | null } | null> {
-	const res = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid.replace(/-/g, '')}`, {
+	const res = await outboundFetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid.replace(/-/g, '')}`, {
 		headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' }
 	});
 	if (res.status === 204 || res.status === 404) return null;
@@ -144,7 +145,7 @@ export async function skinFile(texture: string): Promise<Buffer | null> {
 	const cached = path.join(CACHE_DIR, 'skins', `${texture}.png`);
 	const kept = await fs.readFile(cached).catch(() => null);
 	if (kept) return kept;
-	const res = await fetch(`https://textures.minecraft.net/texture/${texture}`, { headers: { 'User-Agent': USER_AGENT } }).catch(() => null);
+	const res = await outboundFetch(`https://textures.minecraft.net/texture/${texture}`, { headers: { 'User-Agent': USER_AGENT } }).catch(() => null);
 	if (!res?.ok) return null;
 	const bytes = Buffer.from(await res.arrayBuffer());
 	// A PNG, and skin-sized (64x64, or 64x32 from before 1.8).

@@ -1,6 +1,7 @@
 import { cached, CACHE_TTL } from '../cache';
 import { getCurseforgeApiKey } from '../curseforge';
 import type { FilterGroup, ProjectVersion, SearchHit, SearchQuery } from './types';
+import { outboundFetch } from '../outbound';
 
 /**
  * CurseForge's own API (api.curseforge.com), used for metadata - search,
@@ -49,7 +50,7 @@ async function cfFetch<T>(path: string, params: Record<string, string | number |
 	}
 	const suffix = query.toString() ? `?${query}` : '';
 	const url = `${API}${path}${suffix}`;
-	const res = await fetch(url, { headers: { 'x-api-key': key, Accept: 'application/json' } });
+	const res = await outboundFetch(url, { headers: { 'x-api-key': key, Accept: 'application/json' } });
 	if (res.status === 401 || res.status === 403) {
 		throw new CurseforgeAuthError(`CurseForge rejected the key (${res.status} ${res.statusText}) for ${path}.`);
 	}

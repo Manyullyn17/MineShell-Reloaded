@@ -9,6 +9,7 @@ import { downloadFile } from './download';
 import { readProperties } from './properties';
 import { run, systemctl } from './systemd';
 import { setVoiceConfig, voiceChat } from './voicechat';
+import { outboundFetch } from './outbound';
 
 /**
  * playit.gg tunnels: players reach a server without port forwarding.
@@ -60,7 +61,7 @@ type ApiAnswer<T> = { ok: true; data: T } | { ok: false; error: string };
 export async function playitApi<T>(route: string, body: unknown, key?: string | null): Promise<ApiAnswer<T>> {
 	let res: Response;
 	try {
-		res = await fetch(API + route, {
+		res = await outboundFetch(API + route, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json', ...(key ? { authorization: `Agent-Key ${key}` } : {}) },
 			body: JSON.stringify(body),

@@ -14,6 +14,7 @@ import { readForgeBackup } from './instances';
 import { openZipBuffer, type ZipArchive } from './zip';
 import { startTask, getTask, type TaskHandle } from './tasks';
 import { writeNbt } from './nbt';
+import { outboundFetch } from './outbound';
 
 /**
  * A pack players import into their launcher, built from a server: Modrinth
@@ -314,7 +315,7 @@ async function packClientEntries(
 		const version = await getProvider('modrinth').getVersion(pack.projectId, pack.versionId);
 		const file = version.files.find((f) => f.primary) ?? version.files[0];
 		if (!file) return [];
-		const res = await fetch(file.url);
+		const res = await outboundFetch(file.url);
 		if (!res.ok) throw new Error(`Could not download the pack (${res.status}).`);
 		const zip = openZipBuffer(Buffer.from(await res.arrayBuffer()));
 		const index = zip?.readText('modrinth.index.json');
@@ -395,7 +396,7 @@ async function prismComponents(instance: ServerInstance, zip: yazl.ZipFile): Pro
 	if (instance.modloader === 'cleanroom') {
 		const version = instance.modloaderVersion ?? '';
 		const url = `https://github.com/CleanroomMC/Cleanroom/releases/download/${version}/cleanroom-${version}.zip`;
-		const res = await fetch(url);
+		const res = await outboundFetch(url);
 		if (!res.ok) {
 			throw new Error(
 				`Cleanroom ${version} has no Prism instance published (${res.status}); one is published from 0.5.x on.`

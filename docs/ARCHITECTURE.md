@@ -117,7 +117,15 @@ check. Nothing older than 5 minutes is sent (the history catches up after downti
 of a problem within 10 minutes fold into the next message, and sending never blocks the
 caller. Addresses are encrypted, only a hint goes to the browser, and requests to local
 addresses are refused unless allowed (`assertPublicUrl`), since a server admin chooses its
-address. Discord messages set `allowed_mentions: { parse: [] }`. The template itself says `Restart=on-failure`, so a server
+address. Discord messages set `allowed_mentions: { parse: [] }`.
+
+Every request to the outside goes through `outboundFetch` (`outbound.ts`), which keeps per
+service (hosts grouped by suffix: api/cdn.modrinth.com are Modrinth) the last answer and the
+last failure, in memory on globalThis: no answer, a 5xx or a 429 fails, any other status is an
+answer (a 404 says the service works); a request MineShell aborted counts as neither. Activity
+lists them and warns while one fails. Only names, times and a short reason are kept, never
+URLs, which can carry tokens. The local map proxy (`/map/live/`) is not outbound and does not
+use it. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping

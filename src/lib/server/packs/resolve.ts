@@ -2,6 +2,7 @@ import { getProvider } from '../mods';
 import { compareVersions } from '../java';
 import type { ModloaderId } from '../modloaders';
 import { packFromFileList, parsePack, type ParsedPack } from './index';
+import { outboundFetch } from '../outbound';
 
 /**
  * Turn a provider pack version into a ParsedPack, the one shape both a fresh
@@ -22,7 +23,7 @@ export async function resolveProviderPack(
 	if (source === 'modrinth') {
 		const file = version.files.find((f) => f.primary) ?? version.files[0];
 		if (!file) throw new Error('That Modrinth version has no downloadable pack file.');
-		const res = await fetch(file.url);
+		const res = await outboundFetch(file.url);
 		if (!res.ok) throw new Error(`Could not download the pack (${res.status}).`);
 		return { pack: parsePack(Buffer.from(await res.arrayBuffer())), projectName: project.name };
 	}

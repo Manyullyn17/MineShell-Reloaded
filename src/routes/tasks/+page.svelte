@@ -26,6 +26,8 @@
 		};
 	});
 
+	const failing = $derived(data.services.filter((s) => s.failingFor > 0));
+
 	const toneOf = (state: string) =>
 		state === 'running' ? 'busy' : state === 'done' ? 'running' : state === 'failed' ? 'failed' : '';
 </script>
@@ -41,6 +43,14 @@
 </header>
 
 <Flash {form} />
+
+{#each failing as service (service.name)}
+	<p class="notice warning">
+		{service.name} is not answering: {service.lastFailure}{service.failingFor > 1
+			? `, ${service.failingFor} times since ${formatDateTime(service.failingSince!)}`
+			: ` (${formatDateTime(service.lastFailedAt!)})`}. Installs and lookups that need it fail until it is back.
+	</p>
+{/each}
 
 {#if tasks.length === 0}
 	<div class="empty">
@@ -104,6 +114,38 @@
 	</div>
 {/if}
 
+{#if data.services.length}
+	<section class="services">
+		<h2>Services</h2>
+		<p class="small muted">The sites MineShell has asked for something since it started, and how they answered.</p>
+		<div class="table-box">
+			<table>
+				<thead>
+					<tr><th>Service</th><th>Last answered</th><th>Last failed</th></tr>
+				</thead>
+				<tbody>
+					{#each data.services as service (service.name)}
+						<tr class:failing={service.failingFor > 0}>
+							<td>
+								<span class="dot {service.failingFor > 0 ? 'failed' : 'running'}"></span>
+								{service.name}
+							</td>
+							<td>{service.lastOkAt ? formatDateTime(service.lastOkAt) : 'never'}</td>
+							<td>
+								{#if service.lastFailedAt}
+									{formatDateTime(service.lastFailedAt)}: {service.lastFailure}
+								{:else}
+									<span class="faint">-</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</section>
+{/if}
+
 <style>
 	.page-head {
 		margin-bottom: var(--space-5);
@@ -143,6 +185,26 @@
 
 	.meta {
 		margin: var(--space-2) 0 0;
+	}
+
+	.services {
+		margin-top: var(--space-6);
+	}
+	.services h2 {
+		font-size: 1.05rem;
+		margin: 0;
+	}
+	.services > p {
+		margin: var(--space-1) 0 var(--space-3);
+	}
+	.services td:first-child {
+		white-space: nowrap;
+	}
+	.services .dot {
+		margin-right: var(--space-2);
+	}
+	.services tr.failing td {
+		color: var(--warning);
 	}
 
 	.log {
