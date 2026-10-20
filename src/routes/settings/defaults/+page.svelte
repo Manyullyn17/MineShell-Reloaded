@@ -6,6 +6,7 @@
 	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import MemoryInput from '#lib/components/MemoryInput.svelte';
 
 	let { data, form } = $props();
 
@@ -93,8 +94,8 @@
 			</div>
 			{#if v.memoryMode === 'fixed'}
 				<div class="field narrow">
-					<label for="memoryMaxMb">Maximum memory (MB)</label>
-					<input id="memoryMaxMb" name="memoryMaxMb" type="number" min="512" step="256" bind:value={v.memoryMaxMb} />
+					<label for="memoryMaxMb">Maximum memory</label>
+					<MemoryInput id="memoryMaxMb" name="memoryMaxMb" label="Maximum memory" machineMb={data.machineMemoryMb} bind:value={v.memoryMaxMb} />
 				</div>
 			{/if}
 			<p class="hint">Either way, the add-a-server form lets you change it for that server.</p>
@@ -102,8 +103,8 @@
 
 		<div class="grid-2">
 			<div class="field">
-				<label for="memoryMinMb">Starting memory (MB)</label>
-				<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={v.memoryMinMb} />
+				<label for="memoryMinMb">Starting memory</label>
+				<MemoryInput id="memoryMinMb" name="memoryMinMb" label="Starting memory" minMb={256} machineMb={data.machineMemoryMb} bind:value={v.memoryMinMb} />
 			</div>
 			<div class="field">
 				<label for="jvmPreset">JVM flags preset</label>

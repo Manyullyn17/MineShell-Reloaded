@@ -4,6 +4,7 @@
 	import { tick, untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
+	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
 	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
@@ -465,21 +466,20 @@
 
 {#snippet memoryRows()}
 	<div class="field">
-		<label for="memoryMaxMb">Maximum memory (MB)</label>
-		<input
+		<label for="memoryMaxMb">Maximum memory</label>
+		<MemoryInput
 			id="memoryMaxMb"
 			name="memoryMaxMb"
-			type="number"
-			min="512"
-			step="256"
+			label="Maximum memory"
+			machineMb={data.machineMemoryMb}
 			bind:value={memoryMaxMb}
 			oninput={() => (memoryTouched = true)}
 		/>
-		<p class="hint">Large modpacks want 6144 or more. Leave room for the rest of the machine.</p>
+		<p class="hint">Large modpacks want 6 GB or more. Leave room for the rest of the machine.</p>
 	</div>
 	<div class="field">
-		<label for="memoryMinMb">Starting memory (MB)</label>
-		<input id="memoryMinMb" name="memoryMinMb" type="number" min="256" step="256" bind:value={memoryMinMb} />
+		<label for="memoryMinMb">Starting memory</label>
+		<MemoryInput id="memoryMinMb" name="memoryMinMb" label="Starting memory" minMb={256} machineMb={data.machineMemoryMb} bind:value={memoryMinMb} />
 	</div>
 {/snippet}
 

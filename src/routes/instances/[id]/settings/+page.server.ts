@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances, updateNotices, type ServerInstance } from '#lib/server/db/schema.js';
 import { consoleFromForm, restartsFromForm, updatesFromForm, type RestartSettings } from '#lib/server/instance-defaults.js';
+import { totalMemoryMb } from '#lib/server/servercap.js';
 import {
 	InstanceError,
 	JavaMissingError,
@@ -209,6 +210,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		running,
 		/** The heap the running process started with; a saved change applies from the next start. */
 		runningMemoryMaxMb: running ? await runningHeapMb(summary.state.mainPid) : null,
+		machineMemoryMb: totalMemoryMb(),
 		/** Where this server's notifications go: its own destination and MineShell's, without their addresses. */
 		notifications: {
 			own: (() => {

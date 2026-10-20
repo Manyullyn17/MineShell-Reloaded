@@ -14,6 +14,7 @@ import { listJavaRuntimes } from '#lib/server/java.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
 import { defaultMaxMb, getInstanceDefaults } from '#lib/server/instance-defaults.js';
 import { allocatePort, portRanges } from '#lib/server/ports.js';
+import { totalMemoryMb } from '#lib/server/servercap.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 
@@ -39,6 +40,7 @@ export const load: PageServerLoad = async () => {
 		// Settings page defaults; the maximum is a RAM-based guess unless one is set.
 		suggestedMaxMb: defaultMaxMb(defaults),
 		defaultMinMb: defaults.memoryMinMb,
+		machineMemoryMb: totalMemoryMb(),
 		// The port a new server would get, and the ones the others use, for the port field.
 		nextPort: await allocatePort(portRanges().game).catch(() => portRanges().game),
 		usedPorts: db

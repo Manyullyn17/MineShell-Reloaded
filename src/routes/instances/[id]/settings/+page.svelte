@@ -24,6 +24,7 @@
 	import { CLEANMIX_WARNING, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { minMemoryLimitMb, suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
+	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
 	import CopyDeleteSection from './CopyDeleteSection.svelte';
@@ -835,15 +836,15 @@
 		<SettingsSection tab="java" title="Memory" editable={may('settings.edit')} dirty={dirtyIds.has('memory')}>
 			<div class="rows">
 				<div class="field">
-					<label for="memoryMaxMb">Maximum memory (MB) <span class="tag warn">restart</span></label>
-					<input id="memoryMaxMb" name="memoryMaxMb" form="memory-form" type="number" min="512" step="256" bind:value={sv.memoryMaxMb} />
+					<label for="memoryMaxMb">Maximum memory <span class="tag warn">restart</span></label>
+					<MemoryInput id="memoryMaxMb" name="memoryMaxMb" form="memory-form" label="Maximum memory" machineMb={data.machineMemoryMb} bind:value={sv.memoryMaxMb} />
 					{#if data.runningMemoryMaxMb !== null && data.runningMemoryMaxMb !== s.memoryMaxMb}
 						<p class="hint">The server is running with {data.runningMemoryMaxMb} MB until it restarts.</p>
 					{/if}
 				</div>
 				<div class="field">
-					<label for="memoryMinMb">Starting memory (MB) <span class="tag warn">restart</span></label>
-					<input id="memoryMinMb" name="memoryMinMb" form="memory-form" type="number" min="256" step="256" bind:value={sv.memoryMinMb} />
+					<label for="memoryMinMb">Starting memory <span class="tag warn">restart</span></label>
+					<MemoryInput id="memoryMinMb" name="memoryMinMb" form="memory-form" label="Starting memory" minMb={256} machineMb={data.machineMemoryMb} bind:value={sv.memoryMinMb} />
 				</div>
 			</div>
 			{#await data.memoryAdvice then advice}

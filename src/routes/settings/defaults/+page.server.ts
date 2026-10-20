@@ -16,11 +16,13 @@ import {
 import { getPreset, listPresets } from '#lib/server/jvm-presets.js';
 import { PROPERTY_GROUPS, propertiesFromForm } from '#lib/server/properties.js';
 import { audit } from '#lib/server/instances.js';
+import { totalMemoryMb } from '#lib/server/servercap.js';
 
 export const load: PageServerLoad = async () => {
 	return {
 		defaults: getInstanceDefaults(),
 		suggestedMaxMb: suggestedMaxMb(),
+		machineMemoryMb: totalMemoryMb(),
 		maxCpuPercent: maxCpuPercent(),
 		bootNote: bootStartNote(),
 		presets: listPresets().map((p) => ({ id: p.id, name: p.name, description: p.description, minJava: p.minJava ?? null })),
