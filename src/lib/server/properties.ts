@@ -19,6 +19,8 @@ export type PropertyField = {
 	group: string;
 	/** Changing this needs a restart to take effect. */
 	restartRequired?: boolean;
+	/** A number nudged a few steps either way (chunks): a notched slider between min and max. */
+	slider?: { unit: string };
 	/** The first Minecraft version that reads it; older servers do not get the field. */
 	since?: string;
 };
@@ -104,8 +106,8 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'spawn-monsters', label: 'Spawn monsters', type: 'boolean', group: 'Gameplay' },
 	{ key: 'enable-command-block', label: 'Enable command blocks', type: 'boolean', group: 'Gameplay' },
 
-	{ key: 'view-distance', label: 'View distance (chunks)', type: 'number', min: 2, max: 32, group: 'Performance' },
-	{ key: 'simulation-distance', label: 'Simulation distance (chunks)', type: 'number', min: 2, max: 32, group: 'Performance' },
+	{ key: 'view-distance', label: 'View distance', type: 'number', min: 2, max: 32, slider: { unit: 'chunks' }, group: 'Performance' },
+	{ key: 'simulation-distance', label: 'Simulation distance', type: 'number', min: 2, max: 32, slider: { unit: 'chunks' }, group: 'Performance' },
 	{ key: 'max-tick-time', label: 'Watchdog tick limit (ms)', type: 'number', min: -1, max: 600000, group: 'Performance', help: '-1 disables the watchdog. Useful on heavy modpacks that stall during chunk generation.' },
 	{
 		key: 'pause-when-empty-seconds',

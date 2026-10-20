@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SegmentedChoice from './SegmentedChoice.svelte';
+	import NotchedInput from './NotchedInput.svelte';
 
 	/**
 	 * One guided server.properties field: a server's own properties page and
@@ -14,6 +15,7 @@
 		options?: { value: string; label: string }[];
 		min?: number;
 		max?: number;
+		slider?: { unit: string };
 		restartRequired?: boolean;
 	};
 	let {
@@ -63,6 +65,19 @@
 		</select>
 	{:else if field.type === 'textarea'}
 		<textarea id={field.key} name={field.key} rows="2" bind:value></textarea>
+	{:else if field.type === 'number' && field.slider && field.min !== undefined && field.max !== undefined}
+		<div class="control slider-control">
+			<NotchedInput
+				id={field.key}
+				name={field.key}
+				label={field.label}
+				unit={field.slider.unit}
+				low={field.min}
+				high={field.max}
+				boxMax={field.max}
+				bind:value={() => (value === undefined || value.trim() === '' ? null : Number(value)), (n) => (value = n === null ? '' : String(n))}
+			/>
+		</div>
 	{:else if field.type === 'number'}
 		<input
 			id={field.key}
@@ -83,5 +98,8 @@
 <style>
 	label .tag {
 		margin-left: var(--space-2);
+	}
+	.slider-control {
+		width: 100%;
 	}
 </style>
