@@ -84,7 +84,10 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   (`db/migrate.test.ts` requires the line; ARCHITECTURE, "Updating itself"). Only 0019 is unsafe.
 - **Reinstalling `node_modules`** (`npm ci`, a lockfile regeneration) leaves VS Code's Svelte
   language server showing hundreds of bogus errors (`$state`, `$app/forms` unknown) until
-  "Svelte: Restart Language Server".
+  "Svelte: Restart Language Server". Any npm change to `node_modules` (even
+  `npm rm --no-save x`) also deletes `node_modules/$app/`, Kit 3's generated tsconfig base, as
+  extraneous: tsconfig.json then shows "File '$app/tsconfig' not found" until `svelte-kit sync`
+  (`npm run check`, the `prepare` script) and "TypeScript: Restart TS Server".
 - **Commits**: one logical change per commit; `fix:`/`feat:`/`test:`/`ci:`/`docs:`/`chore:`
   prefixes; body says what was wrong and why the fix is right. The prefixes pick the next
   version and `feat:`/`fix:` subjects become release-note lines (write them for users);
