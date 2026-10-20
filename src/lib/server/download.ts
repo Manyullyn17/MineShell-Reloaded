@@ -14,7 +14,8 @@ export { BlockedDownloadError };
 
 /** Small wrappers around fetch that every provider and installer shares. */
 
-export const USER_AGENT = 'MineShell/0.1 (self-hosted Minecraft server manager)';
+// Modrinth's API rules ask for a user agent that names the program, its version and where it lives.
+export const USER_AGENT = `MineShell/${__MINESHELL_VERSION__} (self-hosted Minecraft server manager; github.com/Manyullyn17/MineShell-Reloaded)`;
 
 export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
 	const res = await outboundFetch(url, {
