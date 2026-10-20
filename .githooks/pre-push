@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Type check, then the tests related to what is being pushed (Vitest --changed,
+# against the commit the remote has); a new branch runs the whole suite. CI runs
+# everything anyway; this only catches it before the push. Skip with
+# `git push --no-verify`. Enabled per clone with:
+#   git config core.hooksPath .githooks
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+zero=0000000000000000000000000000000000000000
+base=''
+full=0
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+	[[ "$local_sha" == "$zero" ]] && continue # deleting a ref
+	if [[ "$remote_sha" == "$zero" ]] || ! git cat-file -e "$remote_sha" 2>/dev/null; then
+		full=1
+	else
+		base="$remote_sha"
+	fi
+done
+[[ $full == 0 && -z "$base" ]] && exit 0
+
+npm run check
+if [[ $full == 1 ]]; then
+	npm test
+else
+	npx vitest run --changed "$base" --passWithNoTests
+fi
