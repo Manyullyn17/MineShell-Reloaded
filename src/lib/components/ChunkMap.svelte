@@ -37,8 +37,12 @@
 		describe = null,
 		tapHint = 'Tap a chunk to select it and see what is there.'
 	}: {
-		/** Region files and their chunks, from the overview endpoint. */
-		overview: { x: number; z: number; chunks: string }[];
+		/**
+		 * Region files and their chunks, from the overview endpoint. A new one keeps what is
+		 * drawn of each region that is the same as before (chunks and file size) and reads
+		 * the rest again: a world being generated fills in without the map starting over.
+		 */
+		overview: { x: number; z: number; chunks: string; bytes?: number }[];
 		/** Where one region's picture comes from; null draws no terrain. */
 		regionUrl: ((x: number, z: number) => string) | null;
 		selected: SvelteSet<string>;
@@ -109,8 +113,8 @@
 	let viewZ = untrack(() => center.z);
 	let scale = 1 / 2;
 
-	/** Overview per region "x,z": chunk presence, drawn into a 32x32 picture once. */
-	type Summary = { present: Uint8Array; picture: HTMLCanvasElement };
+	/** Overview per region "x,z": chunk presence, drawn into a 32x32 picture once; `sig` tells a changed region. */
+	type Summary = { present: Uint8Array; picture: HTMLCanvasElement; sig: string };
 	let summaries = new Map<string, Summary>();
 	type Picture = { detail: RegionDetail; picture: HTMLCanvasElement };
 	/** Region pictures by "x,z", most recently used last: full ones and the zoomed-out ones. */
@@ -160,21 +164,40 @@
 		return picture;
 	}
 
-	// A new overview (another dimension or source): start over.
+	// A new overview: regions that changed (or are new) are read again, the rest kept. Another
+	// dimension or source shares no region with this one, unless one is a copy of the other.
 	$effect(() => {
+		const regions = overview;
 		const next = new Map<string, Summary>();
-		for (const r of overview) {
-			const present = presence(r.chunks);
-			next.set(`${r.x},${r.z}`, { present, picture: summaryPicture(present) });
-		}
 		untrack(() => {
+			let kept = 0;
+			for (const r of regions) {
+				const key = `${r.x},${r.z}`;
+				const sig = `${r.chunks}:${r.bytes ?? ''}`;
+				const before = summaries.get(key);
+				if (before?.sig === sig) {
+					next.set(key, before);
+					kept++;
+					continue;
+				}
+				const present = presence(r.chunks);
+				next.set(key, { present, picture: summaryPicture(present), sig });
+				for (const cache of [details, small]) cache.delete(key);
+				failed.delete(`full:${key}`);
+				failed.delete(`small:${key}`);
+			}
+			for (const key of summaries.keys()) {
+				if (!next.has(key)) (details.delete(key), small.delete(key));
+			}
 			summaries = next;
-			roofed = false;
-			details.clear();
-			small.clear();
-			loading.clear();
-			failed.clear();
-			generation++;
+			if (!kept) {
+				roofed = false;
+				details.clear();
+				small.clear();
+				loading.clear();
+				failed.clear();
+				generation++;
+			}
 			redraw();
 		});
 	});

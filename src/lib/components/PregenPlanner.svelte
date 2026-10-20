@@ -34,7 +34,18 @@
 		spawn: { x: number; z: number } | null;
 		border: { x: number; z: number; radius: number } | null;
 	};
-	let { instanceId, dimensions, running }: { instanceId: string; dimensions: PregenDimension[]; running: boolean } = $props();
+	let {
+		instanceId,
+		dimensions,
+		running,
+		generating = []
+	}: {
+		instanceId: string;
+		dimensions: PregenDimension[];
+		running: boolean;
+		/** Dimensions Chunky is generating now: their map is read again every little while. */
+		generating?: string[];
+	} = $props();
 
 	const id = $derived(encodeURIComponent(instanceId));
 	const SHAPES: { value: PregenShape; label: string }[] = [
@@ -102,32 +113,61 @@
 	const generation = new SvelteMap<string, RegionGeneration>();
 	/** Regions asked for in this dimension, answered or not: each once. */
 	let asked = new Set<string>();
+	// By the folder's name, not the dimension's entry: the page's data reloads every few seconds
+	// while Chunky runs, with new entries that are the same, and that must not start the map over.
+	const currentKey = $derived(current?.key ?? null);
+	function readOverview(key: string, isStale: () => boolean) {
+		return fetch(`/api/instances/${id}/chunkmap?dimension=${encodeURIComponent(key)}&source=live`)
+			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`${res.status}`))))
+			.then((body: { regions: typeof overview }) => {
+				if (isStale()) return;
+				// A region that changed is checked again; the map reads its picture again too.
+				const before = new Map(overview.map((r) => [`${r.x},${r.z}`, `${r.chunks}:${r.bytes}`]));
+				for (const r of body.regions) {
+					const region = `${r.x},${r.z}`;
+					if (before.get(region) !== `${r.chunks}:${r.bytes}`) {
+						generation.delete(region);
+						asked.delete(region);
+					}
+				}
+				overview = body.regions;
+				overviewState = 'ready';
+			});
+	}
 	$effect(() => {
-		const key = current?.key;
-		overview = [];
-		generation.clear();
-		asked = new Set();
+		const key = currentKey;
+		untrack(() => {
+			overview = [];
+			generation.clear();
+			asked = new Set();
+		});
 		if (!key) {
 			overviewState = 'none';
 			return;
 		}
 		let stale = false;
 		overviewState = 'loading';
-		fetch(`/api/instances/${id}/chunkmap?dimension=${encodeURIComponent(key)}&source=live`)
-			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`${res.status}`))))
-			.then((body: { regions: typeof overview }) => {
-				if (stale) return;
-				overview = body.regions;
-				overviewState = 'ready';
-			})
-			.catch(() => {
-				if (!stale) overviewState = 'failed';
-			});
+		readOverview(key, () => stale).catch(() => {
+			if (!stale) overviewState = 'failed';
+		});
 		return () => (stale = true);
 	});
-	const regionUrl = $derived(
-		current?.key ? (rgnX: number, rgnZ: number) => `/api/instances/${id}/chunkmap/region?dimension=${encodeURIComponent(current.key!)}&source=live&x=${rgnX}&z=${rgnZ}` : null
-	);
+	// While Chunky generates this dimension, what it has done shows as it goes.
+	const live = $derived(!!current && generating.includes(current.id));
+	$effect(() => {
+		const key = currentKey;
+		if (!live || !key) return;
+		let stale = false;
+		const timer = setInterval(() => void readOverview(key, () => stale).catch(() => undefined), 20_000);
+		return () => {
+			stale = true;
+			clearInterval(timer);
+		};
+	});
+	const regionUrl = $derived.by(() => {
+		const key = currentKey;
+		return key ? (rgnX: number, rgnZ: number) => `/api/instances/${id}/chunkmap/region?dimension=${encodeURIComponent(key)}&source=live&x=${rgnX}&z=${rgnZ}` : null;
+	});
 
 	const total = $derived(selectionChunks(selection));
 	const there = $derived(existingInSelection(selection, overview, generation));
@@ -138,7 +178,7 @@
 	// Regions still to check, a few at a time once the selection has settled. The zoomed-out
 	// picture is the smallest answer that carries it, and warms the map's own cache.
 	$effect(() => {
-		const key = current?.key;
+		const key = currentKey;
 		const wanted = there.toCheck.filter((r) => !asked.has(r));
 		if (!key || !wanted.length) return;
 		let stale = false;
@@ -153,7 +193,7 @@
 					// No picture (204): nothing readable in it; its chunks count as not generated.
 					const gen = res.status === 204 ? { notFull: [...Array(1024).keys()], unreadable: [] } : regionGeneration(await res.arrayBuffer());
 					// Kept even when the selection moved on meanwhile (each answer re-runs this): only another dimension drops it.
-					if (current?.key === key) generation.set(region, gen);
+					if (currentKey === key) generation.set(region, gen);
 				} catch {
 					asked.delete(region);
 				}

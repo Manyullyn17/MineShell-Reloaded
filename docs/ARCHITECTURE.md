@@ -799,7 +799,9 @@ records which drawn chunks are not full (`partial`, beside the block-less `bare`
 them on every map; the planner reads that for the regions the selection reaches (their
 zoomed-out region data), three at a time, and counts only full chunks as done. The disk
 estimate is the chunks to generate times what a full chunk took in the regions checked
-(region file bytes; the overview carries each file's size). It works with the server stopped; starting needs it running.
+(region file bytes; the overview carries each file's size). It works with the server stopped; starting needs it running. While Chunky
+generates the dimension shown, the overview is read again every 20 s; the chunk map keeps
+every region whose chunks and file size are unchanged and reads only the others again.
 
 A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
 are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which

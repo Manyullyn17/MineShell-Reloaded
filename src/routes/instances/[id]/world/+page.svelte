@@ -846,7 +846,12 @@
 			</div>
 		{/if}
 
-		<PregenPlanner instanceId={data.instance.id} dimensions={data.chunky.dimensions} running={data.running} />
+		<PregenPlanner
+			instanceId={data.instance.id}
+			dimensions={data.chunky.dimensions}
+			running={data.running}
+			generating={data.chunky.status?.running.map((t) => t.world) ?? []}
+		/>
 
 		<form method="POST" action="?/chunkyAuto" use:enhance class="auto">
 			<input type="hidden" name="enabled" value={String(!data.chunky.pauseForPlayers)} />
