@@ -241,7 +241,7 @@
 		const edit = effectEdits[JSON.stringify(effect.path)];
 		await save([
 			{ op: 'set', path: effect.levelPath, value: String(Number(edit.level) - 1) },
-			{ op: 'set', path: effect.durationPath, value: String(Number(edit.seconds) < 0 ? -1 : Number(edit.seconds) * 20) }
+			{ op: 'set', path: effect.durationPath, value: String(Number(edit.seconds) < 0 ? data.view.effects.foreverTicks : Number(edit.seconds) * 20) }
 		]);
 	}
 
@@ -732,6 +732,16 @@
 	</div>
 </form>
 {:else if view === 'effects'}
+{#snippet duration(target: { seconds: number }, label: string)}
+	<div class="duration">
+		{#if target.seconds >= 0}
+			<input type="number" min="1" bind:value={target.seconds} aria-label={label} disabled={locked} />
+		{/if}
+		<label class="check"
+			><input type="checkbox" bind:checked={() => target.seconds < 0, (on) => (target.seconds = on ? -1 : 60)} disabled={locked} /> Forever</label
+		>
+	</div>
+{/snippet}
 <section class="panel">
 	<h2>Effects</h2>
 	{#if data.view.effects.effects.length === 0}
@@ -745,7 +755,7 @@
 					<tr>
 						<td class="mono small">{e.id}</td>
 						<td>{#if edit}<input type="number" min="1" max="128" bind:value={edit.level} aria-label="Level" disabled={locked} />{/if}</td>
-						<td>{#if edit}<input type="number" min="-1" bind:value={edit.seconds} aria-label="Seconds left" disabled={locked} />{/if}</td>
+						<td>{#if edit}{@render duration(edit, 'Seconds left')}{/if}</td>
 						<td class="right">
 							<button type="button" disabled={locked || busy || (edit?.level === e.level && edit?.seconds === e.seconds)} onclick={() => saveEffect(e)}>Save</button>
 							<button type="button" class="button-danger" disabled={locked || busy} onclick={() => save([{ op: 'remove', path: e.path }])}>Remove</button>
@@ -764,13 +774,12 @@
 			<label for="effect-level">Level</label>
 			<input id="effect-level" type="number" min="1" max="128" bind:value={newEffect.level} disabled={locked} />
 		</div>
-		<div class="field small-field">
-			<label for="effect-seconds">Seconds</label>
-			<input id="effect-seconds" type="number" min="-1" bind:value={newEffect.seconds} disabled={locked} />
+		<div class="field">
+			<span class="label">Seconds</span>
+			{@render duration(newEffect, 'Seconds')}
 		</div>
 		<button type="submit" disabled={locked || busy}>Add</button>
 	</form>
-	<p class="hint">-1 seconds lasts forever.</p>
 </section>
 {:else if view === 'inventory' || view === 'ender'}
 <section class="panel">
@@ -1199,7 +1208,8 @@
 		margin-bottom: var(--space-1);
 	}
 
-	.effects input {
+	.effects input[type='number'],
+	.duration input[type='number'] {
 		width: 6rem;
 		margin: 0;
 	}
@@ -1219,6 +1229,25 @@
 		gap: var(--space-3);
 		flex-wrap: wrap;
 		margin-top: var(--space-3);
+	}
+
+	.duration {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.25rem;
+	}
+
+	.duration .check {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		white-space: nowrap;
+	}
+
+	.duration input[type='checkbox'] {
+		width: auto;
+		margin: 0;
 	}
 
 	.add-effect .field {

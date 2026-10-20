@@ -161,6 +161,14 @@ export const LEGACY_EFFECTS: Record<number, string> = {
 
 /** 1.20.2 moved effects to `active_effects` with string ids. */
 const STRING_EFFECTS = 3578;
+/**
+ * 1.19.4 made a duration of -1 last forever. Before it, an effect ends once
+ * its duration is not above 0, so -1 was dropped on the next tick; "forever"
+ * there is the longest duration an int holds, as `/effect` 1000000 came close to.
+ */
+const INFINITE_EFFECTS = 3337;
+const INT_MAX = 2_147_483_647;
+export const foreverTicks = (dataVersion: number | null) => ((dataVersion ?? 0) >= INFINITE_EFFECTS ? -1 : INT_MAX);
 
 export type EffectView = {
 	/** The effect's entry, for edits. */
@@ -168,13 +176,19 @@ export type EffectView = {
 	id: string;
 	/** Amplifier + 1, as the game shows it. */
 	level: number;
-	/** Seconds left; -1 forever. */
+	/** Seconds left; -1 forever (stored as -1 or, before 1.19.4, the longest duration). */
 	seconds: number;
 	levelPath: Path;
 	durationPath: Path;
 };
 
-export type EffectsView = { list: 'active_effects' | 'ActiveEffects'; numericIds: boolean; effects: EffectView[] };
+export type EffectsView = {
+	list: 'active_effects' | 'ActiveEffects';
+	numericIds: boolean;
+	/** The duration in ticks that lasts forever in this file's version. */
+	foreverTicks: number;
+	effects: EffectView[];
+};
 
 export function playerEffects(root: Compound, dataVersion: number | null): EffectsView {
 	const existing = child(root, 'active_effects') ? 'active_effects' : child(root, 'ActiveEffects') ? 'ActiveEffects' : null;
@@ -195,13 +209,13 @@ export function playerEffects(root: Compound, dataVersion: number | null): Effec
 				path: [listKey, i],
 				id,
 				level: (num(child(entry, ampKey)) ?? 0) + 1,
-				seconds: ticks < 0 ? -1 : Math.round(ticks / 20),
+				seconds: ticks < 0 || ticks === INT_MAX ? -1 : Math.round(ticks / 20),
 				levelPath: [listKey, i, ampKey],
 				durationPath: [listKey, i, durKey]
 			});
 		});
 	}
-	return { list: listKey, numericIds, effects };
+	return { list: listKey, numericIds, foreverTicks: foreverTicks(dataVersion), effects };
 }
 
 /** Add an effect in the file's own format. */
@@ -228,7 +242,7 @@ export function addEffect(root: Compound, dataVersion: number | null, effect: { 
 		value: [
 			[names.id, idTag],
 			[names.amplifier, { type: 'byte', value: effect.level - 1 }],
-			[names.duration, { type: 'int', value: effect.seconds < 0 ? -1 : effect.seconds * 20 }],
+			[names.duration, { type: 'int', value: effect.seconds < 0 ? foreverTicks(dataVersion) : effect.seconds * 20 }],
 			[names.ambient, { type: 'byte', value: 0 }],
 			[names.particles, { type: 'byte', value: 1 }],
 			[names.icon, { type: 'byte', value: 1 }]

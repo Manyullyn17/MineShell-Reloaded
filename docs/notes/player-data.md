@@ -49,6 +49,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   existing entries' style beats DataVersion: mods leave old-form lists), and user-mapped fields
   (`player_fields` table, per server, copied on clone) - greyed with Remap/Remove when the path
   is gone or holds another type.
+- An effect lasting forever is duration -1 only from 1.19.4 (DataVersion 3337). Before it
+  an effect ends once its duration is not above 0, so -1 vanished on the next tick: older
+  files get 2147483647 ticks (`foreverTicks`), read back as forever too.
 - SNBT: `lib/server/snbt.ts` parses (unquoted strings cannot hold `:`, as in Minecraft);
   `lib/shared/nbt.ts` prints and holds the browser-side tree types.
 - Verified against real files for 1.21.1 (slimes-adventure; the user tested ATM10, NeoForge

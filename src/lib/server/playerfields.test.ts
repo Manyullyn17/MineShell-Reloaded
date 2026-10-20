@@ -65,6 +65,17 @@ describe('effects', () => {
 		expect(JSON.stringify(mixed)).not.toContain('"amplifier"');
 		expect(() => addEffect(modern, 3955, { id: 'minecraft:haste', level: 0, seconds: 1 })).toThrow(/1 to 128/);
 	});
+
+	it('writes forever as -1 from 1.19.4 on and as the longest duration before, where -1 ends the effect at once', () => {
+		const old = snbt('{}');
+		addEffect(old, 1343, { id: 'minecraft:speed', level: 1, seconds: -1 });
+		expect(JSON.stringify(old)).toContain('2147483647');
+		expect(playerEffects(old, 1343)).toMatchObject({ foreverTicks: 2147483647, effects: [{ seconds: -1 }] });
+		const modern = snbt('{}');
+		addEffect(modern, 3337, { id: 'minecraft:speed', level: 1, seconds: -1 });
+		expect(playerEffects(modern, 3337)).toMatchObject({ foreverTicks: -1, effects: [{ seconds: -1 }] });
+		expect(JSON.stringify(modern)).not.toContain('2147483647');
+	});
 });
 
 describe('customFieldViews', () => {
