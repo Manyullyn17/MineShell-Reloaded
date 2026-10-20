@@ -1,7 +1,7 @@
 # Tests
 
 ```sh
-npm test                  # whole suite (Vitest), about 30 seconds, fully offline
+npm test                  # whole suite (Vitest), about 40 seconds, fully offline
 npm run test:watch        # re-runs affected tests on save
 npx vitest run java       # only test files whose path contains "java"
 ```

@@ -8,5 +8,4 @@ data/
 *.db
 *.db-shm
 *.db-wal
-CLAUDE.md
 dist/
