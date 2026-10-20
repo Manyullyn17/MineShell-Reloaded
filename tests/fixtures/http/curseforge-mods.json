@@ -17394,6 +17394,3734 @@
    "refreshed": 1791024340
   }
  },
+ "GET https://api.modpacks.ch/public/mod/238222/versions/26.3": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "status": "success",
+   "versions": [
+    {
+     "id": 9255017,
+     "name": "jei-26.3-neoforge-31.16.0.85.jar",
+     "type": "beta",
+     "updated": 1792412603,
+     "version": "31.16.0.85 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9255/17/jei-26.3-neoforge-31.16.0.85.jar",
+     "mirrors": [],
+     "sha1": "78695254c9fe68553bb7f4e2c391186e72f2e988",
+     "size": 7357221,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9255015,
+     "name": "jei-26.3-fabric-31.16.0.85.jar",
+     "type": "beta",
+     "updated": 1792412599,
+     "version": "31.16.0.85 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9255/15/jei-26.3-fabric-31.16.0.85.jar",
+     "mirrors": [],
+     "sha1": "291ec685ca00c3055c16ea86bdbf8201347a8f23",
+     "size": 7385167,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9243118,
+     "name": "jei-26.3-neoforge-31.16.0.84.jar",
+     "type": "beta",
+     "updated": 1792340365,
+     "version": "31.16.0.84 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9243/118/jei-26.3-neoforge-31.16.0.84.jar",
+     "mirrors": [],
+     "sha1": "e7811bead1e9b9577417fc42aa1d10e044b80b01",
+     "size": 7357592,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9243115,
+     "name": "jei-26.3-fabric-31.16.0.84.jar",
+     "type": "beta",
+     "updated": 1792340362,
+     "version": "31.16.0.84 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9243/115/jei-26.3-fabric-31.16.0.84.jar",
+     "mirrors": [],
+     "sha1": "15755374a18f4940e2b8b03f7861967de667ce8c",
+     "size": 7379833,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9239738,
+     "name": "jei-26.3-neoforge-31.16.0.83.jar",
+     "type": "beta",
+     "updated": 1792329050,
+     "version": "31.16.0.83 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9239/738/jei-26.3-neoforge-31.16.0.83.jar",
+     "mirrors": [],
+     "sha1": "e4061feb3a135a22790959689133b94fc008d1d7",
+     "size": 7357592,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9239737,
+     "name": "jei-26.3-fabric-31.16.0.83.jar",
+     "type": "beta",
+     "updated": 1792329046,
+     "version": "31.16.0.83 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9239/737/jei-26.3-fabric-31.16.0.83.jar",
+     "mirrors": [],
+     "sha1": "2dcbd483f31d2520c51d295d7bd3e026f0eb64ff",
+     "size": 7379654,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9235396,
+     "name": "jei-26.3-neoforge-31.15.0.82.jar",
+     "type": "beta",
+     "updated": 1792292167,
+     "version": "31.15.0.82 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9235/396/jei-26.3-neoforge-31.15.0.82.jar",
+     "mirrors": [],
+     "sha1": "d15160b5c108bf0df428273c5bf5472d0850a2a0",
+     "size": 7345310,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9235395,
+     "name": "jei-26.3-fabric-31.15.0.82.jar",
+     "type": "beta",
+     "updated": 1792292163,
+     "version": "31.15.0.82 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9235/395/jei-26.3-fabric-31.15.0.82.jar",
+     "mirrors": [],
+     "sha1": "3ded45c47d96288bcb7a10725755d25c4aa478ec",
+     "size": 7367373,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9234778,
+     "name": "jei-26.3-neoforge-31.15.0.81.jar",
+     "type": "beta",
+     "updated": 1792284514,
+     "version": "31.15.0.81 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9234/778/jei-26.3-neoforge-31.15.0.81.jar",
+     "mirrors": [],
+     "sha1": "f2e72254ec832d27fd18ce25d5f5be882ef9a746",
+     "size": 2410479,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9234776,
+     "name": "jei-26.3-fabric-31.15.0.81.jar",
+     "type": "beta",
+     "updated": 1792284511,
+     "version": "31.15.0.81 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9234/776/jei-26.3-fabric-31.15.0.81.jar",
+     "mirrors": [],
+     "sha1": "1e9f9e97bd317b9c4f9afefffd82fd2c0ea699d0",
+     "size": 2432541,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9221721,
+     "name": "jei-26.3-neoforge-31.15.0.79.jar",
+     "type": "beta",
+     "updated": 1792234845,
+     "version": "31.15.0.79 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9221/721/jei-26.3-neoforge-31.15.0.79.jar",
+     "mirrors": [],
+     "sha1": "21f0843b0eaa1603441cd6209a741ee49bfe31ed",
+     "size": 2415272,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9221718,
+     "name": "jei-26.3-fabric-31.15.0.79.jar",
+     "type": "beta",
+     "updated": 1792234842,
+     "version": "31.15.0.79 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9221/718/jei-26.3-fabric-31.15.0.79.jar",
+     "mirrors": [],
+     "sha1": "df50a4d9b698af82153f087a0e0783906046fab5",
+     "size": 2422723,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9220925,
+     "name": "jei-26.3-neoforge-31.15.0.78.jar",
+     "type": "beta",
+     "updated": 1792230424,
+     "version": "31.15.0.78 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/925/jei-26.3-neoforge-31.15.0.78.jar",
+     "mirrors": [],
+     "sha1": "167f6e310ed6e7abd0d85cc672459f5f5696ac18",
+     "size": 2414750,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9220923,
+     "name": "jei-26.3-fabric-31.15.0.78.jar",
+     "type": "beta",
+     "updated": 1792230419,
+     "version": "31.15.0.78 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/923/jei-26.3-fabric-31.15.0.78.jar",
+     "mirrors": [],
+     "sha1": "479a2fa0f177a60e4759e02a16feae3b1017e02a",
+     "size": 2422202,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9220838,
+     "name": "jei-26.3-neoforge-31.15.0.77.jar",
+     "type": "beta",
+     "updated": 1792229749,
+     "version": "31.15.0.77 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/838/jei-26.3-neoforge-31.15.0.77.jar",
+     "mirrors": [],
+     "sha1": "56bcf39c11e962f591a8cafb076aa91d9e937621",
+     "size": 2413969,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9220836,
+     "name": "jei-26.3-fabric-31.15.0.77.jar",
+     "type": "beta",
+     "updated": 1792229746,
+     "version": "31.15.0.77 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/836/jei-26.3-fabric-31.15.0.77.jar",
+     "mirrors": [],
+     "sha1": "c6bdd692152b256e4fe8154a230c1bc5782b9137",
+     "size": 2421420,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9220713,
+     "name": "jei-26.3-neoforge-31.15.0.76.jar",
+     "type": "beta",
+     "updated": 1792228651,
+     "version": "31.15.0.76 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/713/jei-26.3-neoforge-31.15.0.76.jar",
+     "mirrors": [],
+     "sha1": "dc9dcd7a03f2aad6adf87aebf02f1c9fe7404a74",
+     "size": 2413969,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9220712,
+     "name": "jei-26.3-fabric-31.15.0.76.jar",
+     "type": "beta",
+     "updated": 1792228647,
+     "version": "31.15.0.76 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9220/712/jei-26.3-fabric-31.15.0.76.jar",
+     "mirrors": [],
+     "sha1": "bec6dbd0b59ce3905befb825d74d5ebdfc475229",
+     "size": 2421420,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9218483,
+     "name": "jei-26.3-neoforge-31.15.0.75.jar",
+     "type": "beta",
+     "updated": 1792208480,
+     "version": "31.15.0.75 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9218/483/jei-26.3-neoforge-31.15.0.75.jar",
+     "mirrors": [],
+     "sha1": "93a7e759c3e31ecad3962cb933a368240fa501ba",
+     "size": 2413933,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9218482,
+     "name": "jei-26.3-fabric-31.15.0.75.jar",
+     "type": "beta",
+     "updated": 1792208477,
+     "version": "31.15.0.75 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9218/482/jei-26.3-fabric-31.15.0.75.jar",
+     "mirrors": [],
+     "sha1": "759fbbd02391cdbfd0dc59220b76635445159ed0",
+     "size": 2421384,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9218363,
+     "name": "jei-26.3-neoforge-31.15.0.73.jar",
+     "type": "beta",
+     "updated": 1792206809,
+     "version": "31.15.0.73 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9218/363/jei-26.3-neoforge-31.15.0.73.jar",
+     "mirrors": [],
+     "sha1": "0c8bfb3eb291c757dc0890aa7aefb072375e1726",
+     "size": 2411856,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9218362,
+     "name": "jei-26.3-fabric-31.15.0.73.jar",
+     "type": "beta",
+     "updated": 1792206806,
+     "version": "31.15.0.73 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9218/362/jei-26.3-fabric-31.15.0.73.jar",
+     "mirrors": [],
+     "sha1": "e7907fc3b81e36c1d262946e8e070773bfcfe8fd",
+     "size": 2419307,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9207610,
+     "name": "jei-26.3-neoforge-31.14.0.72.jar",
+     "type": "release",
+     "updated": 1792162259,
+     "version": "31.14.0.72 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9207/610/jei-26.3-neoforge-31.14.0.72.jar",
+     "mirrors": [],
+     "sha1": "3099d3575007a79954a65e3ea55a94fe2342be8f",
+     "size": 2403531,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9207608,
+     "name": "jei-26.3-fabric-31.14.0.72.jar",
+     "type": "release",
+     "updated": 1792162256,
+     "version": "31.14.0.72 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9207/608/jei-26.3-fabric-31.14.0.72.jar",
+     "mirrors": [],
+     "sha1": "7fdf21e3d04883b8930202b454e8cae0f89e9a6b",
+     "size": 2410982,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9206523,
+     "name": "jei-26.3-neoforge-31.13.0.71.jar",
+     "type": "beta",
+     "updated": 1792152022,
+     "version": "31.13.0.71 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9206/523/jei-26.3-neoforge-31.13.0.71.jar",
+     "mirrors": [],
+     "sha1": "33e6055bee14d9938e7f3c8575eeaa5a49759473",
+     "size": 2403093,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9206520,
+     "name": "jei-26.3-fabric-31.13.0.71.jar",
+     "type": "beta",
+     "updated": 1792152018,
+     "version": "31.13.0.71 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9206/520/jei-26.3-fabric-31.13.0.71.jar",
+     "mirrors": [],
+     "sha1": "417e52d9be3b53051f079482bf9421010793450c",
+     "size": 2410543,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9205203,
+     "name": "jei-26.3-neoforge-31.13.0.70.jar",
+     "type": "beta",
+     "updated": 1792140423,
+     "version": "31.13.0.70 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9205/203/jei-26.3-neoforge-31.13.0.70.jar",
+     "mirrors": [],
+     "sha1": "5385e07c5243f41834f5d77e637d0e136260f623",
+     "size": 2402288,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9205202,
+     "name": "jei-26.3-fabric-31.13.0.70.jar",
+     "type": "beta",
+     "updated": 1792140419,
+     "version": "31.13.0.70 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9205/202/jei-26.3-fabric-31.13.0.70.jar",
+     "mirrors": [],
+     "sha1": "8ee36d278d27650182e282f8ea8e3d775d005e18",
+     "size": 2409738,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9205017,
+     "name": "jei-26.3-neoforge-31.13.0.69.jar",
+     "type": "beta",
+     "updated": 1792138660,
+     "version": "31.13.0.69 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9205/17/jei-26.3-neoforge-31.13.0.69.jar",
+     "mirrors": [],
+     "sha1": "3155a9d77c6a8fe50f8b0e85f03f59d7fed76c2d",
+     "size": 2402288,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9205016,
+     "name": "jei-26.3-fabric-31.13.0.69.jar",
+     "type": "beta",
+     "updated": 1792138657,
+     "version": "31.13.0.69 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9205/16/jei-26.3-fabric-31.13.0.69.jar",
+     "mirrors": [],
+     "sha1": "9c57a0d7f4ab3dae9c5d8ac678e0a726defe1eaf",
+     "size": 2409738,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9193210,
+     "name": "jei-26.3-neoforge-31.13.0.68.jar",
+     "type": "beta",
+     "updated": 1792081653,
+     "version": "31.13.0.68 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9193/210/jei-26.3-neoforge-31.13.0.68.jar",
+     "mirrors": [],
+     "sha1": "1e3e1c08688e264ed334beda992fa0ab6b4421db",
+     "size": 2401119,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9193208,
+     "name": "jei-26.3-fabric-31.13.0.68.jar",
+     "type": "beta",
+     "updated": 1792081649,
+     "version": "31.13.0.68 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9193/208/jei-26.3-fabric-31.13.0.68.jar",
+     "mirrors": [],
+     "sha1": "df69bceb090a522d654888dca54420ef3cc2f4f7",
+     "size": 2408570,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9192162,
+     "name": "jei-26.3-neoforge-31.13.0.67.jar",
+     "type": "beta",
+     "updated": 1792076411,
+     "version": "31.13.0.67 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9192/162/jei-26.3-neoforge-31.13.0.67.jar",
+     "mirrors": [],
+     "sha1": "9b3c663a86fbb7500b8e6a0215bee71bad308fd7",
+     "size": 2401083,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9192161,
+     "name": "jei-26.3-fabric-31.13.0.67.jar",
+     "type": "beta",
+     "updated": 1792076407,
+     "version": "31.13.0.67 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9192/161/jei-26.3-fabric-31.13.0.67.jar",
+     "mirrors": [],
+     "sha1": "309daa9253b84694c4a71f6eef2748696cc8a0d6",
+     "size": 2408534,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9174418,
+     "name": "jei-26.3-neoforge-31.12.0.66.jar",
+     "type": "beta",
+     "updated": 1791991927,
+     "version": "31.12.0.66 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9174/418/jei-26.3-neoforge-31.12.0.66.jar",
+     "mirrors": [],
+     "sha1": "ace0e933efa361cbe3eebcbde9487ca5cd1b1288",
+     "size": 2397742,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9174416,
+     "name": "jei-26.3-fabric-31.12.0.66.jar",
+     "type": "beta",
+     "updated": 1791991924,
+     "version": "31.12.0.66 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9174/416/jei-26.3-fabric-31.12.0.66.jar",
+     "mirrors": [],
+     "sha1": "856a3bca6072f4e8c2ce06dc437d012c81c1877e",
+     "size": 2405192,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9146313,
+     "name": "jei-26.3-neoforge-31.12.0.65.jar",
+     "type": "beta",
+     "updated": 1791813952,
+     "version": "31.12.0.65 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9146/313/jei-26.3-neoforge-31.12.0.65.jar",
+     "mirrors": [],
+     "sha1": "ff7d6d7b92a4eab4446dfd1e66144993c92262cb",
+     "size": 2397742,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9146312,
+     "name": "jei-26.3-fabric-31.12.0.65.jar",
+     "type": "beta",
+     "updated": 1791813949,
+     "version": "31.12.0.65 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9146/312/jei-26.3-fabric-31.12.0.65.jar",
+     "mirrors": [],
+     "sha1": "ba5a0bf10e0a8625bcab57e9a0dec43118ec6e74",
+     "size": 2405192,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9143551,
+     "name": "jei-26.3-neoforge-31.11.0.64.jar",
+     "type": "beta",
+     "updated": 1791796020,
+     "version": "31.11.0.64 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9143/551/jei-26.3-neoforge-31.11.0.64.jar",
+     "mirrors": [],
+     "sha1": "f59b252c70c38e8bb79d362e05bb5bdbc7f26d06",
+     "size": 2383705,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9143550,
+     "name": "jei-26.3-fabric-31.11.0.64.jar",
+     "type": "beta",
+     "updated": 1791796017,
+     "version": "31.11.0.64 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9143/550/jei-26.3-fabric-31.11.0.64.jar",
+     "mirrors": [],
+     "sha1": "f552c6aff1344ad86a921254dd03ca5114687fdf",
+     "size": 2391157,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9115761,
+     "name": "jei-26.3-neoforge-31.10.0.63.jar",
+     "type": "beta",
+     "updated": 1791616974,
+     "version": "31.10.0.63 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9115/761/jei-26.3-neoforge-31.10.0.63.jar",
+     "mirrors": [],
+     "sha1": "9319aca7c2bc35b598220f74bb06741f0f44bbc6",
+     "size": 2381068,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9115760,
+     "name": "jei-26.3-fabric-31.10.0.63.jar",
+     "type": "beta",
+     "updated": 1791616971,
+     "version": "31.10.0.63 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9115/760/jei-26.3-fabric-31.10.0.63.jar",
+     "mirrors": [],
+     "sha1": "f548607aea509f2a731c44d623a7ccb4c6ede30b",
+     "size": 2388519,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9115640,
+     "name": "jei-26.3-neoforge-31.10.0.62.jar",
+     "type": "beta",
+     "updated": 1791615378,
+     "version": "31.10.0.62 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9115/640/jei-26.3-neoforge-31.10.0.62.jar",
+     "mirrors": [],
+     "sha1": "55046280e2d55aa5494a65f003ed34eedad42536",
+     "size": 2381629,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9115639,
+     "name": "jei-26.3-fabric-31.10.0.62.jar",
+     "type": "beta",
+     "updated": 1791615375,
+     "version": "31.10.0.62 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9115/639/jei-26.3-fabric-31.10.0.62.jar",
+     "mirrors": [],
+     "sha1": "dcdfa2b2e0995f85ef63c9e608e986a8e06793c8",
+     "size": 2389079,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9099091,
+     "name": "jei-26.3-neoforge-31.9.0.61.jar",
+     "type": "beta",
+     "updated": 1791470193,
+     "version": "31.9.0.61 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9099/91/jei-26.3-neoforge-31.9.0.61.jar",
+     "mirrors": [],
+     "sha1": "659a26226463d2687aa88bec4f4769f4ca0da32c",
+     "size": 2369353,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9099090,
+     "name": "jei-26.3-fabric-31.9.0.61.jar",
+     "type": "beta",
+     "updated": 1791470190,
+     "version": "31.9.0.61 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9099/90/jei-26.3-fabric-31.9.0.61.jar",
+     "mirrors": [],
+     "sha1": "3b90f638d632c7b68ac061488f421b232c57c9f3",
+     "size": 2376905,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9098348,
+     "name": "jei-26.3-neoforge-31.9.0.59.jar",
+     "type": "beta",
+     "updated": 1791464907,
+     "version": "31.9.0.59 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9098/348/jei-26.3-neoforge-31.9.0.59.jar",
+     "mirrors": [],
+     "sha1": "8570e88d1be5d63792d1b9aecd57730d7e2c9dc5",
+     "size": 2365869,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9098347,
+     "name": "jei-26.3-fabric-31.9.0.59.jar",
+     "type": "beta",
+     "updated": 1791464904,
+     "version": "31.9.0.59 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9098/347/jei-26.3-fabric-31.9.0.59.jar",
+     "mirrors": [],
+     "sha1": "0345519e5fd164605356356d94d25f25cea55758",
+     "size": 2373137,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9068073,
+     "name": "jei-26.3-neoforge-31.9.0.58.jar",
+     "type": "beta",
+     "updated": 1791192320,
+     "version": "31.9.0.58 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9068/73/jei-26.3-neoforge-31.9.0.58.jar",
+     "mirrors": [],
+     "sha1": "63f65443ea2dc0c75eb5b2bc818e3524d8b32fd2",
+     "size": 2364726,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9068072,
+     "name": "jei-26.3-fabric-31.9.0.58.jar",
+     "type": "beta",
+     "updated": 1791192317,
+     "version": "31.9.0.58 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9068/72/jei-26.3-fabric-31.9.0.58.jar",
+     "mirrors": [],
+     "sha1": "145e8b52dfeabe2d9f1081b98a0682e501ecf2fb",
+     "size": 2371992,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    }
+   ],
+   "page": 1,
+   "pages": 3,
+   "pageSize": 50,
+   "total": 137,
+   "refreshed": 1792518596
+  }
+ },
+ "GET https://api.modpacks.ch/public/mod/238222/versions/26.3/2": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "status": "success",
+   "versions": [
+    {
+     "id": 9055124,
+     "name": "jei-26.3-neoforge-31.9.0.57.jar",
+     "type": "beta",
+     "updated": 1791095283,
+     "version": "31.9.0.57 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9055/124/jei-26.3-neoforge-31.9.0.57.jar",
+     "mirrors": [],
+     "sha1": "cf7f12c13b63829d8c480504221a84c994322d97",
+     "size": 2364726,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9055122,
+     "name": "jei-26.3-fabric-31.9.0.57.jar",
+     "type": "beta",
+     "updated": 1791095280,
+     "version": "31.9.0.57 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9055/122/jei-26.3-fabric-31.9.0.57.jar",
+     "mirrors": [],
+     "sha1": "4cc5a974ce4698051d5ac4604d7278eb5017aaa0",
+     "size": 2371992,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9038350,
+     "name": "jei-26.3-neoforge-31.9.0.56.jar",
+     "type": "beta",
+     "updated": 1790953129,
+     "version": "31.9.0.56 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9038/350/jei-26.3-neoforge-31.9.0.56.jar",
+     "mirrors": [],
+     "sha1": "9f4fd7a503e84d0fff5d4b7d383a2ccfb85dd046",
+     "size": 2364707,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9038348,
+     "name": "jei-26.3-fabric-31.9.0.56.jar",
+     "type": "beta",
+     "updated": 1790953125,
+     "version": "31.9.0.56 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9038/348/jei-26.3-fabric-31.9.0.56.jar",
+     "mirrors": [],
+     "sha1": "e2f129702a3dbd6a45fa9f29eb71593d5e364bca",
+     "size": 2371991,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9038198,
+     "name": "jei-26.3-neoforge-31.8.0.55.jar",
+     "type": "beta",
+     "updated": 1790951739,
+     "version": "31.8.0.55 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9038/198/jei-26.3-neoforge-31.8.0.55.jar",
+     "mirrors": [],
+     "sha1": "e1ad5c728f9e3b0e710a3a1df16c77f3683fcb0f",
+     "size": 2362464,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9038197,
+     "name": "jei-26.3-fabric-31.8.0.55.jar",
+     "type": "beta",
+     "updated": 1790951736,
+     "version": "31.8.0.55 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9038/197/jei-26.3-fabric-31.8.0.55.jar",
+     "mirrors": [],
+     "sha1": "e09da901396c5976a9d6232101e20e4fffa03534",
+     "size": 2369747,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9027820,
+     "name": "jei-26.3-neoforge-31.8.0.53.jar",
+     "type": "beta",
+     "updated": 1790860997,
+     "version": "31.8.0.53 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9027/820/jei-26.3-neoforge-31.8.0.53.jar",
+     "mirrors": [],
+     "sha1": "838b7c00daa5ca1c28bca275e088f0898c851f43",
+     "size": 2360634,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9027818,
+     "name": "jei-26.3-fabric-31.8.0.53.jar",
+     "type": "beta",
+     "updated": 1790860992,
+     "version": "31.8.0.53 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9027/818/jei-26.3-fabric-31.8.0.53.jar",
+     "mirrors": [],
+     "sha1": "f3d6c87b2fcdc3583ebc2e6d14eb1d5f76a3f18b",
+     "size": 2367917,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9027539,
+     "name": "jei-26.3-neoforge-31.8.0.52.jar",
+     "type": "beta",
+     "updated": 1790859270,
+     "version": "31.8.0.52 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9027/539/jei-26.3-neoforge-31.8.0.52.jar",
+     "mirrors": [],
+     "sha1": "583fa2411970e077c03b8e8d9523778a079c3339",
+     "size": 2360634,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9027538,
+     "name": "jei-26.3-fabric-31.8.0.52.jar",
+     "type": "beta",
+     "updated": 1790859267,
+     "version": "31.8.0.52 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9027/538/jei-26.3-fabric-31.8.0.52.jar",
+     "mirrors": [],
+     "sha1": "8ba8275540caa5b9a8123163dc01cd2fcbb0b3db",
+     "size": 2367918,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9019497,
+     "name": "jei-26.3-neoforge-31.8.0.49.jar",
+     "type": "beta",
+     "updated": 1790782697,
+     "version": "31.8.0.49 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9019/497/jei-26.3-neoforge-31.8.0.49.jar",
+     "mirrors": [],
+     "sha1": "97875e531c0aea06d7727a774c61c9798bbd4699",
+     "size": 2381616,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9019496,
+     "name": "jei-26.3-fabric-31.8.0.49.jar",
+     "type": "beta",
+     "updated": 1790782694,
+     "version": "31.8.0.49 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9019/496/jei-26.3-fabric-31.8.0.49.jar",
+     "mirrors": [],
+     "sha1": "d73b079023b1d59c5a84c4eba32a615c346e9c77",
+     "size": 2389062,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9010255,
+     "name": "jei-26.3-neoforge-31.8.0.48.jar",
+     "type": "beta",
+     "updated": 1790695848,
+     "version": "31.8.0.48 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9010/255/jei-26.3-neoforge-31.8.0.48.jar",
+     "mirrors": [],
+     "sha1": "772e0104e358b6f5ec39bba805eb49eb8ff9eda5",
+     "size": 2375702,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9010254,
+     "name": "jei-26.3-fabric-31.8.0.48.jar",
+     "type": "beta",
+     "updated": 1790695845,
+     "version": "31.8.0.48 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9010/254/jei-26.3-fabric-31.8.0.48.jar",
+     "mirrors": [],
+     "sha1": "803a0d6e50f944a8a8b306ab7ae95c701b5423e2",
+     "size": 2385930,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9000970,
+     "name": "jei-26.3-neoforge-31.7.0.47.jar",
+     "type": "beta",
+     "updated": 1790609826,
+     "version": "31.7.0.47 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9000/970/jei-26.3-neoforge-31.7.0.47.jar",
+     "mirrors": [],
+     "sha1": "87aa95420a0dff02de841255ee549ba8653fcb59",
+     "size": 2374170,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9000968,
+     "name": "jei-26.3-fabric-31.7.0.47.jar",
+     "type": "beta",
+     "updated": 1790609820,
+     "version": "31.7.0.47 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9000/968/jei-26.3-fabric-31.7.0.47.jar",
+     "mirrors": [],
+     "sha1": "6cc8338705dffb41a7d72564354525b4edd23d1c",
+     "size": 2384392,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 9000704,
+     "name": "jei-26.3-neoforge-31.7.0.46.jar",
+     "type": "beta",
+     "updated": 1790608139,
+     "version": "31.7.0.46 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9000/704/jei-26.3-neoforge-31.7.0.46.jar",
+     "mirrors": [],
+     "sha1": "885e185720f22a2c215f36adef5ff55f26f7ec4b",
+     "size": 2374043,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 9000703,
+     "name": "jei-26.3-fabric-31.7.0.46.jar",
+     "type": "beta",
+     "updated": 1790608136,
+     "version": "31.7.0.46 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/9000/703/jei-26.3-fabric-31.7.0.46.jar",
+     "mirrors": [],
+     "sha1": "6cd522146df4047e146da24106426d4a5812a5a2",
+     "size": 2384265,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8990341,
+     "name": "jei-26.3-neoforge-31.7.0.45.jar",
+     "type": "beta",
+     "updated": 1790515374,
+     "version": "31.7.0.45 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8990/341/jei-26.3-neoforge-31.7.0.45.jar",
+     "mirrors": [],
+     "sha1": "ded86dc082fa3adfe1aa51b708187b1170a824a8",
+     "size": 2364590,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8990340,
+     "name": "jei-26.3-fabric-31.7.0.45.jar",
+     "type": "beta",
+     "updated": 1790515369,
+     "version": "31.7.0.45 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8990/340/jei-26.3-fabric-31.7.0.45.jar",
+     "mirrors": [],
+     "sha1": "25c26fa7df31b145fc298f2d26c8c6bc51aab46b",
+     "size": 2374812,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8981280,
+     "name": "jei-26.3-neoforge-31.7.0.44.jar",
+     "type": "beta",
+     "updated": 1790430840,
+     "version": "31.7.0.44 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8981/280/jei-26.3-neoforge-31.7.0.44.jar",
+     "mirrors": [],
+     "sha1": "d783210f3884ac5399abc5a6ab79b06f6b8e5239",
+     "size": 2364559,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8981278,
+     "name": "jei-26.3-fabric-31.7.0.44.jar",
+     "type": "beta",
+     "updated": 1790430837,
+     "version": "31.7.0.44 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8981/278/jei-26.3-fabric-31.7.0.44.jar",
+     "mirrors": [],
+     "sha1": "3309dc3f4818b0608694a3783115787840a2456d",
+     "size": 2374781,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8981031,
+     "name": "jei-26.3-neoforge-31.7.0.43.jar",
+     "type": "beta",
+     "updated": 1790428013,
+     "version": "31.7.0.43 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8981/31/jei-26.3-neoforge-31.7.0.43.jar",
+     "mirrors": [],
+     "sha1": "44ab4102d92674ebc6e4f960a0dd884ce2f6c412",
+     "size": 2357689,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8981030,
+     "name": "jei-26.3-fabric-31.7.0.43.jar",
+     "type": "beta",
+     "updated": 1790428010,
+     "version": "31.7.0.43 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8981/30/jei-26.3-fabric-31.7.0.43.jar",
+     "mirrors": [],
+     "sha1": "b547652c3510358d0646ba554542a39540a7caae",
+     "size": 2367911,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8979163,
+     "name": "jei-26.3-neoforge-31.7.0.42.jar",
+     "type": "beta",
+     "updated": 1790413208,
+     "version": "31.7.0.42 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8979/163/jei-26.3-neoforge-31.7.0.42.jar",
+     "mirrors": [],
+     "sha1": "db1b5d9a7bb20974fedd9fc2da4f9eee2c371545",
+     "size": 2354703,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8979162,
+     "name": "jei-26.3-fabric-31.7.0.42.jar",
+     "type": "beta",
+     "updated": 1790413205,
+     "version": "31.7.0.42 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8979/162/jei-26.3-fabric-31.7.0.42.jar",
+     "mirrors": [],
+     "sha1": "42282191a6f328b0408527b5a454dfd7359e7c05",
+     "size": 2364925,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8979035,
+     "name": "jei-26.3-neoforge-31.7.0.41.jar",
+     "type": "beta",
+     "updated": 1790411619,
+     "version": "31.7.0.41 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8979/35/jei-26.3-neoforge-31.7.0.41.jar",
+     "mirrors": [],
+     "sha1": "68efc3eb046713aac58cc6147d0ea53e3f8f7334",
+     "size": 2352982,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8979033,
+     "name": "jei-26.3-fabric-31.7.0.41.jar",
+     "type": "beta",
+     "updated": 1790411616,
+     "version": "31.7.0.41 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8979/33/jei-26.3-fabric-31.7.0.41.jar",
+     "mirrors": [],
+     "sha1": "79a85c7b03dcfcd6b8a9ca61dcd93c62a6e1beba",
+     "size": 2363204,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8973701,
+     "name": "jei-26.3-neoforge-31.7.0.40.jar",
+     "type": "beta",
+     "updated": 1790356750,
+     "version": "31.7.0.40 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8973/701/jei-26.3-neoforge-31.7.0.40.jar",
+     "mirrors": [],
+     "sha1": "2434374b12e3d442582122117694bede785e89c8",
+     "size": 2350287,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8973700,
+     "name": "jei-26.3-fabric-31.7.0.40.jar",
+     "type": "beta",
+     "updated": 1790356746,
+     "version": "31.7.0.40 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8973/700/jei-26.3-fabric-31.7.0.40.jar",
+     "mirrors": [],
+     "sha1": "cc1603a46c6e98ded1e7638f2e75b55e17e94944",
+     "size": 2360510,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8973501,
+     "name": "jei-26.3-neoforge-31.7.0.39.jar",
+     "type": "beta",
+     "updated": 1790355150,
+     "version": "31.7.0.39 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8973/501/jei-26.3-neoforge-31.7.0.39.jar",
+     "mirrors": [],
+     "sha1": "9296ebd017cbb63b8f0c976eaa0a33d5587e5d1c",
+     "size": 2349965,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8973498,
+     "name": "jei-26.3-fabric-31.7.0.39.jar",
+     "type": "beta",
+     "updated": 1790355145,
+     "version": "31.7.0.39 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8973/498/jei-26.3-fabric-31.7.0.39.jar",
+     "mirrors": [],
+     "sha1": "b9ba1a6097498b472c17a861fc459d818bd3c356",
+     "size": 2359989,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8972142,
+     "name": "jei-26.3-neoforge-31.7.0.38.jar",
+     "type": "beta",
+     "updated": 1790344333,
+     "version": "31.7.0.38 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8972/142/jei-26.3-neoforge-31.7.0.38.jar",
+     "mirrors": [],
+     "sha1": "6cd8d8b4417d571bb18a4a7993f8f2dbf5b3494f",
+     "size": 2338316,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8972141,
+     "name": "jei-26.3-fabric-31.7.0.38.jar",
+     "type": "beta",
+     "updated": 1790344330,
+     "version": "31.7.0.38 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8972/141/jei-26.3-fabric-31.7.0.38.jar",
+     "mirrors": [],
+     "sha1": "ec837f9f8fa2d7390f6ea8442e34fbc6ecb46e10",
+     "size": 2348308,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8971390,
+     "name": "jei-26.3-neoforge-31.7.0.37.jar",
+     "type": "beta",
+     "updated": 1790336310,
+     "version": "31.7.0.37 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/390/jei-26.3-neoforge-31.7.0.37.jar",
+     "mirrors": [],
+     "sha1": "c19b8bfb43a753ad8c27612d516ce61c58b0d2e6",
+     "size": 2338315,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8971389,
+     "name": "jei-26.3-fabric-31.7.0.37.jar",
+     "type": "beta",
+     "updated": 1790336306,
+     "version": "31.7.0.37 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/389/jei-26.3-fabric-31.7.0.37.jar",
+     "mirrors": [],
+     "sha1": "0a8fed1557e2162dde5c05c4db00fa09d46384a5",
+     "size": 2348309,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8971356,
+     "name": "jei-26.3-neoforge-31.7.0.36.jar",
+     "type": "beta",
+     "updated": 1790336094,
+     "version": "31.7.0.36 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/356/jei-26.3-neoforge-31.7.0.36.jar",
+     "mirrors": [],
+     "sha1": "69b0d74847ffd0f6e64108889c07815618256325",
+     "size": 2338322,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8971355,
+     "name": "jei-26.3-fabric-31.7.0.36.jar",
+     "type": "beta",
+     "updated": 1790336091,
+     "version": "31.7.0.36 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/355/jei-26.3-fabric-31.7.0.36.jar",
+     "mirrors": [],
+     "sha1": "2373648f371fb2a16976bcbf99cd80603b1bd938",
+     "size": 2348316,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8971186,
+     "name": "jei-26.3-neoforge-31.7.0.35.jar",
+     "type": "beta",
+     "updated": 1790333825,
+     "version": "31.7.0.35 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/186/jei-26.3-neoforge-31.7.0.35.jar",
+     "mirrors": [],
+     "sha1": "ce1c085cb91a1fca84264979cd9d65ff55bbb644",
+     "size": 2312651,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8971185,
+     "name": "jei-26.3-fabric-31.7.0.35.jar",
+     "type": "beta",
+     "updated": 1790333822,
+     "version": "31.7.0.35 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8971/185/jei-26.3-fabric-31.7.0.35.jar",
+     "mirrors": [],
+     "sha1": "1605f068e0ef507a7db74c3e9fbba9859676c458",
+     "size": 2322644,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8965057,
+     "name": "jei-26.3-neoforge-31.7.0.34.jar",
+     "type": "beta",
+     "updated": 1790265456,
+     "version": "31.7.0.34 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8965/57/jei-26.3-neoforge-31.7.0.34.jar",
+     "mirrors": [],
+     "sha1": "4103bafd0c09990a85d7896afd3b5c3a932d90d8",
+     "size": 2312651,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8965056,
+     "name": "jei-26.3-fabric-31.7.0.34.jar",
+     "type": "beta",
+     "updated": 1790265453,
+     "version": "31.7.0.34 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8965/56/jei-26.3-fabric-31.7.0.34.jar",
+     "mirrors": [],
+     "sha1": "cbee71bbac929502975b6911a3cccc70b0e0daae",
+     "size": 2322645,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8964921,
+     "name": "jei-26.3-neoforge-31.7.0.33.jar",
+     "type": "beta",
+     "updated": 1790264364,
+     "version": "31.7.0.33 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8964/921/jei-26.3-neoforge-31.7.0.33.jar",
+     "mirrors": [],
+     "sha1": "a342d2dfdfcf50c51d3edb5722612030c3bc2df6",
+     "size": 2307136,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8964920,
+     "name": "jei-26.3-fabric-31.7.0.33.jar",
+     "type": "beta",
+     "updated": 1790264361,
+     "version": "31.7.0.33 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8964/920/jei-26.3-fabric-31.7.0.33.jar",
+     "mirrors": [],
+     "sha1": "f33d5ec68b09fb89fbc7b3d055dadfe36df51773",
+     "size": 2317129,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8963408,
+     "name": "jei-26.3-neoforge-31.7.0.32.jar",
+     "type": "beta",
+     "updated": 1790253039,
+     "version": "31.7.0.32 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8963/408/jei-26.3-neoforge-31.7.0.32.jar",
+     "mirrors": [],
+     "sha1": "40b371ec5d91744e54b6625d68d3d56de10aab95",
+     "size": 2307136,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8963407,
+     "name": "jei-26.3-fabric-31.7.0.32.jar",
+     "type": "beta",
+     "updated": 1790253036,
+     "version": "31.7.0.32 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8963/407/jei-26.3-fabric-31.7.0.32.jar",
+     "mirrors": [],
+     "sha1": "65c42f6a0ae5c35cd9a7a4486ea02f0b6fe52741",
+     "size": 2317130,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8962973,
+     "name": "jei-26.3-neoforge-31.7.0.31.jar",
+     "type": "beta",
+     "updated": 1790248740,
+     "version": "31.7.0.31 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8962/973/jei-26.3-neoforge-31.7.0.31.jar",
+     "mirrors": [],
+     "sha1": "9e246bd48ea9842ca338a861e680a917ffd940b8",
+     "size": 2307136,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8962972,
+     "name": "jei-26.3-fabric-31.7.0.31.jar",
+     "type": "beta",
+     "updated": 1790248737,
+     "version": "31.7.0.31 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8962/972/jei-26.3-fabric-31.7.0.31.jar",
+     "mirrors": [],
+     "sha1": "f8266a58416911a3de0b5fc27327cbac14ea022b",
+     "size": 2317129,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    },
+    {
+     "id": 8951888,
+     "name": "jei-26.3-neoforge-31.6.0.25.jar",
+     "type": "beta",
+     "updated": 1790130775,
+     "version": "31.6.0.25 for NeoForge 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8951/888/jei-26.3-neoforge-31.6.0.25.jar",
+     "mirrors": [],
+     "sha1": "4d57c84db29e46c4feea515e5f61b55e897e574d",
+     "size": 2273917,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "neoforge",
+       "type": "modloader",
+       "version": "neoforge",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1689768,
+       "required": true
+      },
+      {
+       "id": 1700987,
+       "required": false
+      }
+     ]
+    },
+    {
+     "id": 8951887,
+     "name": "jei-26.3-fabric-31.6.0.25.jar",
+     "type": "beta",
+     "updated": 1790130771,
+     "version": "31.6.0.25 for Fabric 26.3",
+     "path": "mods/",
+     "url": "https://edge.forgecdn.net/files/8951/887/jei-26.3-fabric-31.6.0.25.jar",
+     "mirrors": [],
+     "sha1": "d071e73006c8d5afcf8438fb2faaed5933929c7d",
+     "size": 2283780,
+     "clientonly": false,
+     "targets": [
+      {
+       "name": "fabric",
+       "type": "modloader",
+       "version": "fabric",
+       "updated": 1792518596
+      },
+      {
+       "name": "minecraft",
+       "type": "game",
+       "version": "26.3",
+       "updated": 1792518596
+      }
+     ],
+     "dependencies": [
+      {
+       "id": 1700987,
+       "required": false
+      },
+      {
+       "id": 1689768,
+       "required": true
+      }
+     ]
+    }
+   ],
+   "page": 2,
+   "pages": 3,
+   "pageSize": 50,
+   "total": 137,
+   "refreshed": 1792518596
+  }
+ },
  "GET https://api.modpacks.ch/public/mod/248370": {
   "status": 200,
   "contentType": "application/json",

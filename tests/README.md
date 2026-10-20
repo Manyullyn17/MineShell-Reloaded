@@ -108,7 +108,8 @@ a mod jar) are not recorded; pass a small stand-in through the `extra` option in
 temporary folder (`RECORD_HTTP_DIR`), so the fixtures stay as they are: run it before a release
 or when a provider seems to have changed. A failure is an API that changed shape, or a test
 pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `updatedAt`, a JEI
-file past the mirror's newest 50) - re-record that file with `RECORD_HTTP=1` and adjust.
+file past the mirror's newest 50; both tests since made to hold) - re-record that file with
+`RECORD_HTTP=1` and adjust.
 
 Code with side effects beyond that is tested through its pure parts (planning, parsing,
 matching), which is why some modules export small helpers such as `targetModNames` in

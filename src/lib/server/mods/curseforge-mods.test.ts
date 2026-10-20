@@ -8,7 +8,10 @@ useRecordedHttp('curseforge-mods');
 const JEI = '238222';
 /** A JEI 1.12.2 file old enough to be on page 2 of its Minecraft version's files. */
 const OLD_JEI = '2682936';
-/** A JEI file with one required and one optional dependency. */
+/**
+ * A JEI file with one required and one optional dependency (26.3, NeoForge).
+ * Found by paging its Minecraft version: it has left the project's newest 50.
+ */
 const JEI_WITH_DEPS = '9038350';
 
 describe('CurseForge mods through the modpacks.ch mirror', () => {
@@ -45,7 +48,7 @@ describe('CurseForge mods through the modpacks.ch mirror', () => {
 	});
 
 	it('reads dependencies as CurseForge project ids', async () => {
-		const v = await mods.getVersion(JEI, JEI_WITH_DEPS);
+		const v = await mods.getVersion(JEI, JEI_WITH_DEPS, { minecraftVersion: '26.3' });
 		expect(v.dependencies).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ projectId: '1689768', type: 'required' }),

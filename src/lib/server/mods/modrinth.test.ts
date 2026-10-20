@@ -44,7 +44,8 @@ describe('modrinth projects and versions', () => {
 			source: 'modrinth',
 			slug: 'fugue',
 			projectUrl: 'https://modrinth.com/project/fugue',
-			updatedAt: '2026-09-14T07:52:17.037902Z',
+			// Moves with every release: re-recording must not break the test.
+			updatedAt: expect.stringMatching(/^\d{4}-\d\d-\d\dT\d\d:\d\d/),
 			license: 'GPL-3.0-or-later'
 		});
 		expect(project.loaders).toContain('forge');
