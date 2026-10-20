@@ -138,7 +138,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `config/chunky/config.json` and the `.properties` files (`center-x`, `radius-z`). 1.2.54
   (Fabric 1.16) has no `chunky progress`. Every version skips chunks that exist (unless 1.3's
   `forceLoadExistingChunks`), takes `start <world> <shape> <x> <z> <radius> [radiusZ]`, and
-  has `spawn` and `worldborder`. `continueOnRestart` is off by default.
+  has `spawn` and `worldborder`. `continueOnRestart` is off by default; MineShell turns it
+  on (World > Pre-generate can turn it off) by writing it into an existing config before
+  every start and restart (`applyChunkyConfig`), since Chunky reads it only at startup and
+  1.2 writes its in-memory copy back whenever it saves a task. A missing config is not made:
+  older versions may not fill in fields it lacks.
 - Live-tested with Chunky 1.3.146 on Fabric 1.20.1 (start, progress, pause, continue,
   confirm, cancel); pausing for players only in tests.
 

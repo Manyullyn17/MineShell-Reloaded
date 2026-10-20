@@ -197,6 +197,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			chunkyContinue: on('world'),
 			chunkyCancel: on('world'),
 			chunkyAuto: on('world'),
+			chunkyRestart: on('world'),
 			pruneAnalyse: on('world'),
 			prune: on('world'),
 			resetDimension: on('world'),

@@ -72,7 +72,7 @@ import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
 import { copyServerTarget } from './notifications';
 import { deleteMacros, getMacros, setMacros } from './macros';
-import { deleteChunkySettings } from './chunky';
+import { applyChunkyConfig, deleteChunkySettings } from './chunky';
 import { copyDatapackRows } from './mods/datapacks';
 import { claimVoicePort, voicePortProblem } from './voicechat';
 
@@ -1213,6 +1213,8 @@ export async function start(
 	clearStopIntent(instance.id);
 	// A map mod's web server on its own port, localhost only (MineShell passes it through).
 	await applyMapModConfig(instance).catch(() => undefined);
+	// Chunky continuing its unfinished tasks after this start, as set on the World tab.
+	await applyChunkyConfig(instance).catch(() => undefined);
 	// A public server's playit tunnels follow its ports, which change only on a (re)start;
 	// voice chat's gets its address written into the mod's voice_host.
 	await syncTunnels(instance).catch((err) => console.warn(`playit tunnels for ${instance.id} not updated:`, err));
@@ -1339,6 +1341,9 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 		return { ok: false, message: 'Accept the Minecraft EULA before starting this server.' };
 	}
 	clearStopIntent(instance.id);
+	// Read by the start half of the restart. Chunky 1.2 writes back the value it started
+	// with at shutdown, so there a change made while it runs applies from the next restart.
+	await applyChunkyConfig(instance).catch(() => undefined);
 	await syncUnit(instance);
 	await writeOnceArgs(instance.id, null);
 	const res = await restartUnit(instance.id);

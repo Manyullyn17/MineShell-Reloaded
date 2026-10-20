@@ -314,7 +314,43 @@ export async function autoPauseForPlayers(instance: ServerInstance): Promise<voi
 	}
 }
 
+// ------------------------------------------------ continue after a restart ---
+
+const continueKey = (id: string) => `chunky.continueOnRestart:${id}`;
+
+/**
+ * Whether Chunky picks its unfinished tasks up again when the server starts
+ * (its continueOnRestart, off in Chunky itself). On unless turned off here:
+ * otherwise every scheduled restart leaves pre-generation stopped until
+ * someone presses Continue.
+ */
+export function continuesOnRestart(instanceId: string): boolean {
+	return readSetting<unknown>(continueKey(instanceId), true) !== false;
+}
+
+export async function setContinuesOnRestart(instance: ServerInstance, enabled: boolean): Promise<void> {
+	writeSetting(continueKey(instance.id), enabled);
+	await applyChunkyConfig(instance);
+}
+
+/**
+ * Before every start and restart (instances.ts): continueOnRestart as set
+ * here, written into Chunky's config. Every time, because Chunky reads it only
+ * when the server starts, and 1.2 writes the value it holds back into its file
+ * whenever it saves a task, shutdown included. Only a config Chunky already made is changed: older
+ * versions may not cope with one missing the rest of its fields.
+ */
+export async function applyChunkyConfig(instance: ServerInstance): Promise<void> {
+	if (!(await hasChunky(instance.path))) return;
+	const read = await readConfig(instance.path);
+	if (!read) return;
+	const wanted = continuesOnRestart(instance.id);
+	if (read.config.continueOnRestart === wanted) return;
+	await fs.writeFile(read.file, JSON.stringify({ ...read.config, continueOnRestart: wanted }, null, 2) + '\n');
+}
+
 export function deleteChunkySettings(instanceId: string): void {
 	db.delete(settings).where(eq(settings.key, autoKey(instanceId))).run();
 	db.delete(settings).where(eq(settings.key, pausedKey(instanceId))).run();
+	db.delete(settings).where(eq(settings.key, continueKey(instanceId))).run();
 }

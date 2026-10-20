@@ -96,7 +96,7 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 - Reset or restore individual dimensions.
 - Restore chosen chunks from a snapshot, picked on a map of the dimension drawn from the world's own files (top blocks with their textures' colours, modded blocks too).
 - Prune chunks that have not actually been visited, previewed on a heatmap of where players spent time, with chunks to keep picked on the map.
-- Pre-generate terrain with Chunky and monitor its progress.
+- Pre-generate terrain with Chunky and monitor its progress; it can pause while players are online and continue by itself after a restart.
 - Coordinate snapshots and scheduled restarts so they do not interfere with each other.
 
 **Backup limitation:** Snapshots currently remain inside the server's own directory on the same disk. Off-site, cloud, and separate-disk backups are not implemented.

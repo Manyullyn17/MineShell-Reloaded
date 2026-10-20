@@ -923,6 +923,15 @@
 				{data.chunky.pauseForPlayers ? 'Run it regardless' : 'Pause while players are online'}
 			</button>
 		</form>
+		<form method="POST" action="?/chunkyRestart" use:enhance class="auto">
+			<input type="hidden" name="enabled" value={String(!data.chunky.continueOnRestart)} />
+			<span class="small">
+				{data.chunky.continueOnRestart
+					? 'Unfinished pre-generation continues by itself when the server starts again, after a scheduled restart too.'
+					: 'After a restart, unfinished pre-generation waits until you press Continue.'}
+			</span>
+			<button class="button-quiet">{data.chunky.continueOnRestart ? 'Wait for Continue' : 'Continue after a restart'}</button>
+		</form>
 		<p class="faint small">
 			To run it only at certain hours, add scheduled commands <code>chunky continue</code> and <code>chunky pause</code>
 			in <a href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=automation">Settings → Automation</a>.
@@ -1154,6 +1163,11 @@
 		margin-top: var(--space-4);
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--line);
+	}
+
+	.auto + .auto {
+		margin-top: 0;
+		border-top: 0;
 	}
 
 	.danger {

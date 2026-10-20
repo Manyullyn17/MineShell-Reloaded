@@ -50,6 +50,7 @@ import {
 	cancelPregen,
 	chunkyLanguage,
 	chunkyStatus,
+	continuesOnRestart,
 	ChunkyError,
 	confirmPregen,
 	continuePregen,
@@ -58,6 +59,7 @@ import {
 	pausePregen,
 	pausesForPlayers,
 	savedTasks,
+	setContinuesOnRestart,
 	setPausesForPlayers,
 	startPregen
 } from '#lib/server/chunky.js';
@@ -125,7 +127,8 @@ async function chunkyData(instance: ReturnType<typeof requireInstance>, running:
 		unfinished: (await savedTasks(instance.path)).filter((t) => !t.cancelled && !runningWorlds.has(t.world)),
 		english: (await chunkyLanguage(instance.path)) === 'en',
 		pauseForPlayers: pausesForPlayers(instance.id),
-		pausedForPlayers: pausedForPlayers(instance.id)
+		pausedForPlayers: pausedForPlayers(instance.id),
+		continueOnRestart: continuesOnRestart(instance.id)
 	};
 }
 
@@ -221,6 +224,18 @@ export const actions: Actions = {
 			message: enabled
 				? 'Pre-generation now pauses while anyone is online and continues when the server is empty.'
 				: 'Pre-generation no longer pauses for players.'
+		};
+	},
+
+	chunkyRestart: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const enabled = (await request.formData()).get('enabled') === 'true';
+		await setContinuesOnRestart(instance, enabled);
+		return {
+			ok: true,
+			message: enabled
+				? 'Unfinished pre-generation now continues when the server starts again.'
+				: 'Unfinished pre-generation now waits for Continue after the server restarts.'
 		};
 	},
 

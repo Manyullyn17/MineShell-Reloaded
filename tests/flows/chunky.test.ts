@@ -170,4 +170,32 @@ describe('Chunky', () => {
 		await fs.rm(path.join(instance.path, 'mods'), { recursive: true });
 		expect(await chunky.hasChunky(instance.path)).toBe(false);
 	});
+
+	it('writes continueOnRestart into the config Chunky made, on unless turned off, for 1.3 and 1.2 alike', async () => {
+		const { writeJar } = await import('../helpers/fs');
+		const read = async (instance: { path: string }, file: string) => JSON.parse(await fs.readFile(path.join(instance.path, file), 'utf8'));
+		const withChunky = async (files: Record<string, string>) => {
+			const instance = await server(files);
+			await writeJar(path.join(instance.path, 'mods'), 'Chunky-Fabric-1.4.40.jar', {
+				'fabric.mod.json': JSON.stringify({ schemaVersion: 1, id: 'chunky', version: '1.4.40' })
+			});
+			return instance;
+		};
+
+		const current = await withChunky({ 'config/chunky/config.json': JSON.stringify({ version: 2, language: 'en', continueOnRestart: false, updateInterval: 1 }) });
+		expect(chunky.continuesOnRestart(current.id)).toBe(true);
+		await chunky.applyChunkyConfig(current);
+		expect(await read(current, 'config/chunky/config.json')).toEqual({ version: 2, language: 'en', continueOnRestart: true, updateInterval: 1 });
+		await chunky.setContinuesOnRestart(current, false);
+		expect((await read(current, 'config/chunky/config.json')).continueOnRestart).toBe(false);
+
+		const legacy = await withChunky({ 'config/chunky.json': JSON.stringify({ version: 1, continueOnRestart: false, tasks: {} }) });
+		await chunky.applyChunkyConfig(legacy);
+		expect(await read(legacy, 'config/chunky.json')).toEqual({ version: 1, continueOnRestart: true, tasks: {} });
+
+		// Before Chunky's first start there is no config to change; MineShell does not make one.
+		const fresh = await withChunky({});
+		await chunky.applyChunkyConfig(fresh);
+		expect(await chunky.chunkyConfigFile(fresh.path)).toBeNull();
+	});
 });
