@@ -1,16 +1,19 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireInstance } from '#lib/server/instances.js';
 import {
 	createDirectory,
 	listDirectory,
+	looksEditable,
 	readTextFile,
 	renameEntry,
+	safeJoin,
 	saveUpload,
 	uploadPath,
 	writeTextFile,
 	type DirEntry
 } from '#lib/server/files.js';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { sftpAccess } from '#lib/server/sftp.js';
@@ -23,6 +26,24 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const trash = await listTrash(instance.path).catch(() => []);
 	// The trash, shown in place of a folder.
 	const showTrash = url.searchParams.has('trash');
+
+	// A link to a file (disk usage, a leftover) opens its folder: in the editor
+	// if it is text, else with the file picked out in the list.
+	// A path outside the server folder is refused by the listing below.
+	const target = await Promise.resolve()
+		.then(() => safeJoin(instance.path, dir))
+		.then(async (full) => ({ full, stat: await fs.stat(full) }))
+		.catch(() => null);
+	if (target?.stat.isFile()) {
+		const { stat } = target;
+		const file = path.relative(path.resolve(instance.path), target.full);
+		const to = new URL(url);
+		const folder = path.posix.dirname(file);
+		if (folder === '.') to.searchParams.delete('path');
+		else to.searchParams.set('path', folder);
+		to.searchParams.set(looksEditable(file, stat.size) ? 'edit' : 'show', file);
+		redirect(307, to.pathname + to.search);
+	}
 
 	let entries: DirEntry[];
 	let listError: string | null = null;
@@ -51,6 +72,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
 	return {
 		dir,
+		// The file a link pointed at, picked out in the list.
+		show: url.searchParams.get('show'),
 		parentDir: parts.length ? parts.slice(0, -1).join('/') : null,
 		crumbs,
 		entries,

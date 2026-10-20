@@ -96,6 +96,11 @@
 		}
 	});
 
+	/** The row a link pointed at (`?show=`), brought into view once listed. */
+	function scrollToShown(row: HTMLElement, shown: boolean) {
+		if (shown) requestAnimationFrame(() => row.scrollIntoView({ block: 'center' }));
+	}
+
 	function startRename(relPath: string, name: string) {
 		renaming = relPath;
 		renameValue = name;
@@ -160,7 +165,7 @@
 
 {#snippet entryRows(entries: typeof data.entries, depth: number)}
 	{#each entries as entry (entry.relPath)}
-						<tr>
+						<tr class:shown={entry.relPath === data.show} use:scrollToShown={entry.relPath === data.show}>
 			<td style:padding-left="{1 + depth * 1.4}rem">
 				{#if renaming === entry.relPath}
 					<form method="POST" action="?/rename" use:enhance class="inline-form">
@@ -571,6 +576,10 @@
 	.inline-form input {
 		width: auto;
 		flex: 1 1 12rem;
+	}
+
+	tr.shown > td {
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
 	}
 
 	.entry {

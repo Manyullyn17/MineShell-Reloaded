@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import * as page from './+page.server';
 import { actions } from './+page.server';
 import { createInstance } from '../../../../../tests/helpers/instances';
 import { ls } from '../../../../../tests/helpers/fs';
-import { post } from '../../../../../tests/helpers/routes';
+import { load, post } from '../../../../../tests/helpers/routes';
 
 /**
  * The Files tab reaches anything in a server folder, for anyone given file
@@ -82,5 +83,27 @@ describe('the Files tab stays inside the server folder', () => {
 		await expect(fs.access(path.join(instance.path, 'config/x.toml'))).rejects.toThrow();
 		expect(await post(actions.restore, { params, fields: { id: deleted.undo } })).toMatchObject({ ok: true });
 		expect(await fs.readFile(path.join(instance.path, 'config/x.toml'), 'utf8')).toBe('x = 1\n');
+	});
+});
+
+describe('a link to a file', () => {
+	// Disk usage linked a leftover file with ?path=, which was listed as a folder: ENOTDIR.
+	it('opens the folder holding it: in the editor if it is text, else with the file picked out', async () => {
+		const { instance, params } = await server();
+		await fs.mkdir(path.join(instance.path, '.mineshell'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, '.mineshell/pack-base.zip'), 'zip');
+		const base = `http://localhost/instances/${instance.id}/files`;
+
+		expect(await load(page, { params, url: `${base}?path=.mineshell/pack-base.zip` })).toEqual({
+			redirect: `/instances/${instance.id}/files?path=.mineshell&show=.mineshell%2Fpack-base.zip`
+		});
+		expect(await load(page, { params, url: `${base}?path=config/x.toml` })).toEqual({
+			redirect: `/instances/${instance.id}/files?path=config&edit=config%2Fx.toml`
+		});
+		await fs.writeFile(path.join(instance.path, 'notes.txt'), 'hi');
+		expect(await load(page, { params, url: `${base}?path=notes.txt` })).toEqual({ redirect: `/instances/${instance.id}/files?edit=notes.txt` });
+
+		const shown = await load(page, { params, url: `${base}?path=.mineshell&show=.mineshell/pack-base.zip` });
+		expect(shown).toMatchObject({ dir: '.mineshell', show: '.mineshell/pack-base.zip', listError: null });
 	});
 });
