@@ -89,12 +89,9 @@ export default defineConfig({
     // Recording real API responses (RECORD_HTTP=1, tests/helpers/http.ts)
     // waits on live servers; replaying them is instant.
     testTimeout: process.env.RECORD_HTTP ? 60_000 : 5_000,
-    // Every test file shares the one throwaway database (SvelteKit fixes the
-    // env once per run), and parallel workers migrating it at the same time
-    // lock it, so files simply run in turn - in one worker, also across the two
-    // projects below.
-    fileParallelism: false,
-    maxWorkers: 1,
+    // Files run side by side: each worker has its own data directory and
+    // database inside the run's (tests/helpers/env.ts, mocked into
+    // $app/env/private by tests/setup.ts).
     projects: [
       // Files that replace modules (vi.mock) keep a fresh module registry each:
       // a mock cannot reach modules another file already loaded, and a module

@@ -6,7 +6,8 @@ import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 // Installed or not is what the installer writes into the service's environment.
 const install = vi.hoisted(() => ({ on: true }));
 vi.mock('$app/env/private', async (importOriginal) => {
-	const actual = await importOriginal<Record<string, string | undefined>>();
+	const { workerEnv } = await import('../../../tests/helpers/env');
+	const actual = workerEnv(await importOriginal<Record<string, string | undefined>>());
 	return {
 		...actual,
 		get MINESHELL_INSTALL_HOME() {

@@ -36,8 +36,8 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 afterEach(() => resetProcesses());
 
-// Earlier downloads stand in for new ones with the same hash (filecache.ts). All test
-// files share one database, so one file's download could stand in for another's and a
+// Earlier downloads stand in for new ones with the same hash (filecache.ts). Test files
+// in one worker share a database, so one file's download could stand in for another's and a
 // download a test makes fail would not fail; filecache.test.ts turns it back on.
 (globalThis as { __mineshellFileCache?: boolean }).__mineshellFileCache = false;
 
@@ -61,11 +61,19 @@ globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
 	throw new Error(`Tests must not use the network (tried: ${url}). Use useRecordedHttp() from tests/helpers/http.ts.`);
 }) as typeof fetch;
 
-const expected = process.env.MINESHELL_DATA;
+// Each worker gets its own data directory inside the run's (tests/helpers/env.ts),
+// so test files can run side by side without sharing a database.
+vi.mock('$app/env/private', async (importOriginal) => {
+	const { workerEnv } = await import('./helpers/env');
+	return workerEnv(await importOriginal<Record<string, string | undefined>>());
+});
+const { workerDataDir } = await import('./helpers/env');
+const expected = workerDataDir();
 const { DATA_DIR, systemdUnitDir } = await import('#lib/server/config.js');
 const tmp = path.resolve(os.tmpdir());
 const resolved = path.resolve(DATA_DIR);
-if (!expected || resolved !== path.resolve(expected) || !resolved.startsWith(tmp)) {
+const run = path.resolve(process.env.MINESHELL_RUN_DATA ?? '/nonexistent');
+if (resolved !== path.resolve(expected) || !resolved.startsWith(run + path.sep) || !run.startsWith(tmp)) {
 	throw new Error(
 		`Refusing to run tests: MineShell resolved its data directory to ${DATA_DIR} (expected a temporary directory, got MINESHELL_DATA=${expected}).`
 	);

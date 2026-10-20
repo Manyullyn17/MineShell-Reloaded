@@ -509,7 +509,7 @@ patched jars under upstream version numbers, which is why every mod used to be d
 fresh. A recorded file is hashed again before it is used and the copy hashed once more, so
 one changed, replaced or moved since is never copied (its record goes), and a download
 without a hash is always fetched. Copies are reflinks where the filesystem has them; no
-symlinks, so servers never share a file. Tests share one database across files, so the
+symlinks, so servers never share a file. Test files in one worker share a database, so the
 lookup is off in them except in `filecache.test.ts` (`tests/setup.ts`).
 
 **The mod bisect assistant** (`bisect.ts`, Mods tab) finds the mod, or pair of mods, a crash

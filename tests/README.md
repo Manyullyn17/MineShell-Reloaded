@@ -1,7 +1,7 @@
 # Tests
 
 ```sh
-npm test                  # whole suite (Vitest), about 40 seconds, fully offline
+npm test                  # whole suite (Vitest), about 7 seconds (12 cores), fully offline
 npm run test:watch        # re-runs affected tests on save
 npx vitest run java       # only test files whose path contains "java"
 ```
@@ -32,16 +32,22 @@ Vitest:
   `~/.config/systemd/user`.
 - Vite and SvelteKit read env files from `tests/env/`, which has none, so `.env` never loads
   (`envDir` and the `sveltekit()` `env.dir` option, both in `vite.config.ts`).
+- Each test worker gets its own folder inside it (`worker-*`, `tests/helpers/env.ts`), with its
+  own database: `tests/setup.ts` mocks `$app/env/private` to point `MINESHELL_DATA` and
+  `XDG_CONFIG_HOME` there, since SvelteKit fixes that module's values once per run in the main
+  process. A test file mocking `$app/env/private` itself spreads `workerEnv()` over the
+  original (its mock replaces setup.ts's).
 - `tests/setup.ts` checks the data and unit directories MineShell actually resolved before any
-  test file runs and aborts the whole run if they are not inside that temporary directory.
+  test file runs and aborts the whole run if they are not inside the worker's folder.
 - SvelteKit's output goes to `.svelte-kit-test`, not `.svelte-kit`: SvelteKit writes the env
   it started with into that folder, and a running `npm run dev` reloads it, which used to
   switch the dev server onto the test run's data.
 - `tests/global-setup.ts` deletes the temporary directory afterwards.
 
-Test files run one after another (`fileParallelism: false`) because they share that one
-database (and `maxWorkers: 1`, so the two projects below do not overlap either). What one file writes is still there
-for the files after it, in an order that can change: give mods, projects and servers ids no
+Test files run side by side, one worker per core (before 2026-10-20 they ran one after
+another on one shared database: 37 s, now 6.4 s on 12 cores, 11 s on 3 workers). A worker runs
+several files in turn, so what one file writes is still there for the files after it in the
+same worker, in an order that can change: give mods, projects and servers ids no
 other test uses (`upsertMod` reuses a row with the same source and slug, name included), and
 do not assert an order that comes from such shared rows.
 

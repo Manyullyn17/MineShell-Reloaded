@@ -49,7 +49,7 @@ export async function recordDownload(file: string, hash: FileHash): Promise<void
  * True when it did; records that no longer match are dropped on the way.
  */
 export async function copyFromEarlierDownload(hash: FileHash, temp: string, destination: string): Promise<boolean> {
-	// Tests share one database across files; one file's download must not stand in for another's (tests/setup.ts).
+	// Test files in one worker share a database; one file's download must not stand in for another's (tests/setup.ts).
 	if ((globalThis as { __mineshellFileCache?: boolean }).__mineshellFileCache === false) return false;
 	const value = hash.value.toLowerCase();
 	const rows = db
