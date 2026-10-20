@@ -14,3 +14,14 @@ export function minMemoryLimitMb(heapMb: number): number {
 export function suggestedMemoryLimitMb(heapMb: number): number {
 	return Math.ceil((heapMb * 1.25 + 1024) / 256) * 256;
 }
+
+/** MB as GB for hints: "6 GB", "5.4 GB". */
+export function formatGb(mb: number): string {
+	const gb = Math.round((mb / 1024) * 10) / 10;
+	return `${gb} GB`;
+}
+
+/** Whole GB at or above `mb`: where the limit's slider starts when a limit is switched on. */
+export function wholeGbAbove(mb: number): number {
+	return Math.ceil(mb / 1024) * 1024;
+}

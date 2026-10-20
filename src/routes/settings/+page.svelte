@@ -3,6 +3,8 @@
 	import PathText from '#lib/components/PathText.svelte';
 	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
+	import MemoryInput from '#lib/components/MemoryInput.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
@@ -147,6 +149,12 @@
 	});
 
 	const formatMb = (mb: number) => `${(mb / 1024).toFixed(1)} GB`;
+	// Re-synced after a save; see the bind/$effect note in CLAUDE.md.
+	// svelte-ignore state_referenced_locally
+	let capMemoryMb = $state<number | null>(data.serverCap.memoryMb ?? null);
+	$effect(() => {
+		capMemoryMb = data.serverCap.memoryMb ?? null;
+	});
 	const capRunningMb = $derived(data.serverCap.running.reduce((sum, s) => sum + s.ceilingMb, 0));
 	const capOutside = $derived(
 		data.serverCap.memoryMb || data.serverCap.cpuPercent ? data.serverCap.running.filter((s) => !s.underCap) : []
@@ -1052,22 +1060,37 @@
 		machine. Applied at once, also to running servers. The memory cap is soft: past it the system holds the servers
 		back (it frees cache, then swaps or stalls them) instead of killing one, which shows as lag on all of them. Java
 		does not give memory back under pressure, so the cap cannot shrink what the servers already hold. The CPU cap
-		slows them down: 100% is one full core, {data.serverCap.maxCpu}% all of them. Blank means no cap.
+		slows them down: 100% is one full core, {data.serverCap.maxCpu}% all of them; blank means no CPU cap.
 	</p>
 	<form method="POST" action="?/serverCap" use:enhance={() => async ({ update }) => update({ reset: false })}>
 		<div class="sftp-fields">
 			<div class="field">
-				<label for="capMemoryMb">Memory cap (MB)</label>
-				<input
-					id="capMemoryMb"
-					name="capMemoryMb"
-					type="number"
-					min={data.serverCap.minMemoryMb}
-					max={data.serverCap.totalMemoryMb}
-					step="256"
-					placeholder="No cap"
-					value={data.serverCap.memoryMb ?? ''}
+				<span class="label" id="capMemoryLabel">Memory cap</span>
+				<SegmentedChoice
+					options={[
+						{ value: 'none', label: 'No cap' },
+						{ value: 'cap', label: 'Cap' }
+					]}
+					name="capMemoryMode"
+					labelledby="capMemoryLabel"
+					bind:value={
+						() => (capMemoryMb === null ? 'none' : 'cap'),
+						(mode) => (capMemoryMb = mode === 'none' ? null : Math.max(data.serverCap.minMemoryMb, Math.floor(data.serverCap.totalMemoryMb / 1024) * 1024))
+					}
 				/>
+				{#if capMemoryMb === null}
+					<input type="hidden" name="capMemoryMb" value="" />
+				{:else}
+					<MemoryInput
+						id="capMemoryMb"
+						name="capMemoryMb"
+						label="Memory cap"
+						minMb={data.serverCap.minMemoryMb}
+						machineMb={data.serverCap.totalMemoryMb}
+						maxGb={Math.ceil(data.serverCap.totalMemoryMb / 1024)}
+						bind:value={capMemoryMb}
+					/>
+				{/if}
 				<p class="hint">This machine has {formatMb(data.serverCap.totalMemoryMb)}.</p>
 			</div>
 			<div class="field">

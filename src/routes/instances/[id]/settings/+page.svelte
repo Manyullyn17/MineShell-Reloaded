@@ -23,8 +23,9 @@
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import { CLEANMIX_WARNING, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
-	import { minMemoryLimitMb, suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
+	import { formatGb, minMemoryLimitMb, suggestedMemoryLimitMb, wholeGbAbove } from '#lib/shared/memorylimit.js';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
 	import CopyDeleteSection from './CopyDeleteSection.svelte';
@@ -34,6 +35,11 @@
 	import NotificationsSection from './NotificationsSection.svelte';
 
 	let { data, form } = $props();
+	const LIMIT_MODES = [
+		{ value: 'none', label: 'No limit' },
+		{ value: 'limit', label: 'Limit' }
+	] as const;
+
 	/** What this account may do here; the server checks every action again. */
 	const may = (permission: InstancePermission | 'admin') => can(data.access, data.instance.id, permission);
 	// A copy has every file and makes its maker the copy's admin.
@@ -751,26 +757,41 @@
 	<SettingsSection tab="performance" title="Resource limits" editable={may('settings.edit')} dirty={dirtyIds.has('limits')}>
 		{#snippet description()}
 			Caps systemd puts on the server process, applied at once, also to a running server. The kernel kills the server
-			past the memory limit (crash restarts then apply), so leave Java room above its {limitHeapMb} MB heap. The CPU limit
-			slows it down instead: 100% is one full core, {data.cpuCores * 100}% all of them. Blank means no limit.
+			past the memory limit (crash restarts then apply), so leave Java room above its {formatGb(limitHeapMb)} heap. The CPU limit
+			slows it down instead: 100% is one full core, {data.cpuCores * 100}% all of them; blank means no CPU limit.
 		{/snippet}
 		<form method="POST" action="?/limits" class="rows" bind:this={forms.limits} onsubmit={onSectionSubmit}>
 			<div class="field">
-				<label for="limitMemoryMb">Memory limit (MB)</label>
-				<input
-					id="limitMemoryMb"
-					name="limitMemoryMb"
-					type="number"
-					min={minMemoryLimitMb(limitHeapMb)}
-					step="256"
-					placeholder="No limit"
-					bind:value={sv.limitMemoryMb}
-				/>
+				<span class="label" id="limitMemoryLabel">Memory limit</span>
+				<div class="control limit-control">
+					<SegmentedChoice
+						options={LIMIT_MODES}
+						name="limitMemoryMode"
+						labelledby="limitMemoryLabel"
+						bind:value={
+							() => (sv.limitMemoryMb === '' ? 'none' : 'limit'),
+							(mode) => (sv.limitMemoryMb = mode === 'none' ? '' : wholeGbAbove(suggestedMemoryLimitMb(limitHeapMb)))
+						}
+					/>
+					{#if sv.limitMemoryMb === ''}
+						<input type="hidden" name="limitMemoryMb" value="" />
+					{:else}
+						<MemoryInput
+							id="limitMemoryMb"
+							name="limitMemoryMb"
+							label="Memory limit"
+							minMb={minMemoryLimitMb(limitHeapMb)}
+							machineMb={data.machineMemoryMb}
+							maxGb={Math.ceil(data.machineMemoryMb / 1024)}
+							bind:value={() => Number(sv.limitMemoryMb), (mb) => (sv.limitMemoryMb = mb ?? '')}
+						/>
+					{/if}
+				</div>
 				<p class="hint">
-					At least {minMemoryLimitMb(limitHeapMb)} MB; around {suggestedMemoryLimitMb(limitHeapMb)} MB leaves room for a busy pack.
-					The server is killed past it.
-					{#if limitHeapMb !== (s.memoryMaxMb ?? 0)}The running server started with a {limitHeapMb} MB heap; the
-						{s.memoryMaxMb} MB one applies after a restart.{/if}
+					At least {formatGb(minMemoryLimitMb(limitHeapMb))}; around {formatGb(suggestedMemoryLimitMb(limitHeapMb))} leaves room for
+					a busy pack. The server is killed past it.
+					{#if limitHeapMb !== (s.memoryMaxMb ?? 0)}The running server started with a {formatGb(limitHeapMb)} heap; the
+						{formatGb(s.memoryMaxMb ?? 0)} one applies after a restart.{/if}
 				</p>
 			</div>
 			<div class="field">
@@ -1100,6 +1121,14 @@
 <style>
 	.subhead {
 		flex-wrap: nowrap;
+	}
+
+	/* No limit / Limit above the slider, together in the field's control column. */
+	.limit-control {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		width: 100%;
 	}
 
 	.subhead .subtabs {

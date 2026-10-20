@@ -3,9 +3,10 @@
 	 * A memory amount: a slider that snaps to whole GB (1024 MB, as Java's -Xmx
 	 * counts), notched at each one, and a box beside it for the exact number,
 	 * which takes any amount. Posts whole MB as `name`, like the number field it
-	 * replaced, so the actions read it as before. The slider runs from 1 GB to
-	 * 16 GB (less on a machine with less RAM), so each GB gets room; further
-	 * only when the value already is. The box takes more.
+	 * replaced, so the actions read it as before. The slider runs from 1 GB (or
+	 * the first whole GB `minMb` allows) to 16 GB (less on a machine with less
+	 * RAM; `maxGb` sets another end), so each GB gets room; further only when the
+	 * value already is. The box takes more.
 	 */
 	let {
 		id,
@@ -14,6 +15,7 @@
 		label,
 		minMb = 512,
 		machineMb,
+		maxGb,
 		form,
 		oninput
 	}: {
@@ -26,15 +28,17 @@
 		label: string;
 		minMb?: number;
 		machineMb: number;
+		/** The slider's end, in place of 16 GB: a memory limit or cap sits above the heaps. */
+		maxGb?: number;
 		/** A form elsewhere on the page that posts it (the form attribute). */
 		form?: string;
 		oninput?: () => void;
 	} = $props();
 
 	const GB = 1024;
-	const lowGb = 1;
-	const capGb = 16;
-	const highGb = $derived(Math.max(Math.min(capGb, Math.ceil(machineMb / GB)), Math.ceil((value ?? 0) / GB), lowGb + 1));
+	const lowGb = $derived(Math.max(1, Math.ceil(minMb / GB)));
+	const endGb = $derived(maxGb ?? Math.min(16, Math.ceil(machineMb / GB)));
+	const highGb = $derived(Math.max(endGb, Math.ceil((value ?? 0) / GB), lowGb + 1));
 	const gb = $derived(value === null ? null : Math.round((value / GB) * 100) / 100);
 	const span = $derived(highGb - lowGb);
 	// As many numbers as fit the slider's width (about 2rem each, at most eight); every
@@ -43,7 +47,7 @@
 	const fit = $derived(Math.min(8, Math.max(1, Math.floor(width / 32))));
 	const every = $derived([1, 2, 4, 8, 16, 32, 64].find((n) => span / n <= fit) ?? 128);
 	const notches = $derived(width / span >= 4 ? Array.from({ length: span + 1 }, (_, i) => lowGb + i) : []);
-	// Round numbers (4, 8, 12 ...), and 1 GB at the start so it shows where the slider begins.
+	// Round numbers (4, 8, 12 ...), and the first one so it shows where the slider begins.
 	const numbered = $derived(Array.from({ length: span + 1 }, (_, i) => lowGb + i).filter((n) => n % every === 0 || n === lowGb));
 
 	function set(mb: number) {
