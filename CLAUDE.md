@@ -34,7 +34,8 @@ npm test             # Vitest, ~40s, fully offline; CI (GitHub Actions) runs che
   MINESHELL_UNIT_PREFIX=mstest npx vite dev --port 5199`), and `devserver.sh stop` to end it -
   never `pkill -f '...5199'`: the calling shell's command line holds the pattern too.
   Installing its template unit (Settings) writes `mstest@*` files to
-  `~/.config/systemd/user/` - remove them afterwards. Booting a server directly with the
+  `~/.config/systemd/user/`; `devserver.sh clean` removes them with the data dir when done
+  (the units outlive the data dir otherwise). Booting a server directly with the
   unit's env file (`$DATA/units/<id>.env`) avoids systemd entirely. `tests/tools/` has a row
   seeder, a screenshot taker that waits for the page (also the phone-width overflow check)
   and an RCON client (tests/README, "Manual tools"); add reusable checking tools there.

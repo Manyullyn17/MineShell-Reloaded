@@ -5,10 +5,15 @@
 #   tests/tools/devserver.sh start [port, default 5199] [data dir, default /tmp/ms-test]
 #   tests/tools/devserver.sh stop [port]
 #   tests/tools/devserver.sh status [port]
+#   tests/tools/devserver.sh clean [port] [data dir]
 #
 # start returns once the server answers (log in <data dir>/devserver-<port>.log).
 # MINESHELL_UNIT_PREFIX in the environment replaces the default mstest.
 # stop ends the process listening on the port, with its process group.
+# clean stops it, stops and removes the prefix's units (template, drop-ins, the
+# playit agent, the servers' slice) from ~/.config/systemd/user, and deletes the
+# data dir and the dev server's .svelte-kit-<hash> folder. Only a data dir under
+# /tmp, and never the prefixes minecraft or mineshell.
 # `pkill -f 'vite dev --port 5199'` also matched the shell running it (its own
 # command line holds that text), which killed the rest of that command.
 set -uo pipefail
@@ -62,12 +67,42 @@ stop)
 	echo "still listening on port $port (pid $(listener))" >&2
 	exit 1
 	;;
+clean)
+	prefix="${MINESHELL_UNIT_PREFIX:-mstest}"
+	resolved="$(realpath -ms "$data")"
+	case "$prefix" in minecraft | mineshell | '')
+		echo "refusing to clean units of prefix '$prefix'" >&2
+		exit 1
+		;;
+	esac
+	if [[ "$resolved" != /tmp/?* ]]; then
+		echo "refusing to delete $resolved: only a data dir under /tmp" >&2
+		exit 1
+	fi
+	"$0" stop "$port" || exit 1
+	units="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+	systemctl --user stop "$prefix@*" "$prefix-playit.service" 2>/dev/null
+	shopt -s nullglob
+	for f in "$units/$prefix@"* "$units/$prefix-playit.service" "$units/app-$prefix.slice"*; do
+		echo "removing $f"
+		rm -rf -- "$f"
+	done
+	systemctl --user daemon-reload
+	systemctl --user reset-failed "$prefix@*" "$prefix-playit.service" 2>/dev/null
+	# vite.config.ts names a dev server's output folder after its data dir.
+	repo="$(cd "$(dirname "$0")/../.." && pwd)"
+	kit="$repo/.svelte-kit-$(printf '%s' "$resolved" | sha256sum | cut -c1-8)"
+	for d in "$resolved" "$kit"; do
+		[[ -e "$d" ]] && { echo "removing $d ($(du -sh "$d" | cut -f1))"; rm -rf -- "$d"; }
+	done
+	echo "clean"
+	;;
 status)
 	pid="$(listener)"
 	[[ -n "$pid" ]] && echo "running on port $port (pid $pid)" || echo "not running on port $port"
 	;;
 *)
-	echo "usage: $0 start|stop|status [port] [data dir]" >&2
+	echo "usage: $0 start|stop|status|clean [port] [data dir]" >&2
 	exit 2
 	;;
 esac
