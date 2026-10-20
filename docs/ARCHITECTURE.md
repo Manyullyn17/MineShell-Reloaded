@@ -877,6 +877,8 @@ start and is configured before later starts). `/instances/<id>/map/live/` passes
 through to that port behind MineShell's login - bodies streamed, MineShell's own cookies
 and auth headers not passed on. With the BlueMap mod in, the Map tab opens on its live map
 (the one that is current); the rendered one is a switch away.
+A BlueMap mod that came another way (a pack, added by hand) before the EULA was accepted
+gets a panel asking only for that answer (`modEula`), without the render setup.
 
 A BlueMap render's size is measured when the render ends and kept (`sizeBytes` in the `map:`
 settings row; `mapDataSize` measures once for renders from before): walking 100k+ tiles took

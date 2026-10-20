@@ -223,6 +223,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 		load: on('view'),
 		actions: {
 			setup: on('map.render'),
+			modEula: on('map.render'),
 			render: on('map.render'),
 			dynmapRender: on('map.render'),
 			schedule: on('map.render'),

@@ -93,7 +93,8 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `worldmap.ts`, Map tab. 1.13+: BlueMap 5.28 CLI (`-c config -r -v <mc> -n mods/`), config
   rewritten before every render into `$DATA/maps/<id>/`, web app served statically by
   MineShell (`.gz` + Content-Encoding, 204 for missing tiles/live). Needs Java 21+.
-  `accept-download` only after the per-server EULA tick. BlueMap's web app paths are
+  `accept-download` only after the per-server EULA tick (also for the BlueMap mod: without it
+  the mod draws nothing, so a mod from a pack gets its own EULA panel on the Map tab). BlueMap's web app paths are
   relative: its pages need the trailing slash (`trailingSlash = 'ignore'` + own redirect).
 - 1.12.2 Forge/Cleanroom: Dynmap + DynmapBlockScan (live, in the game); uNmINeD fails on
   RoughlyEnoughIDs worlds. Mod web servers get `modPort` + 127.0.0.1 written before each

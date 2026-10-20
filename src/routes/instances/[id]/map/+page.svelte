@@ -90,6 +90,27 @@
 			<div class="empty"><p>Dynmap draws the map while the server runs: start it to see the map.</p></div>
 		{/if}
 	{/if}
+{:else if !map.settings.eulaAccepted && map.mods.blueMap}
+	<section class="panel setup">
+		<h2>A live map with the BlueMap mod</h2>
+		<p>
+			This server has the BlueMap mod, which draws the map while the server runs. Shown here, behind MineShell's login, it needs
+			the Minecraft client from Mojang for the vanilla textures, which means accepting Mojang's EULA. Until then the mod draws
+			nothing.
+		</p>
+		<p class="muted small">MineShell writes the answer into the mod's config before each start; a running server picks it up when restarted.</p>
+		{#if !may('map.render')}
+			<p class="muted small">Someone who may render this server's map has to accept it first.</p>
+		{:else}
+		<form method="POST" action="?/modEula" use:enhance>
+			<label class="check">
+				<input type="checkbox" name="eula" required />
+				I accept the <a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a>
+			</label>
+			<button class="button-primary" type="submit">Accept</button>
+		</form>
+		{/if}
+	</section>
 {:else if !map.settings.eulaAccepted}
 	<section class="panel setup">
 		<h2>A map of the world</h2>

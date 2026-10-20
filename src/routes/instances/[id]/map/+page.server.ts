@@ -32,6 +32,16 @@ export const actions: Actions = {
 		}
 	},
 
+	/** The BlueMap mod came in another way (a pack, by hand): only the EULA answer, which its config gets before each start. */
+	modEula: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		if (form.get('eula') !== 'on') return fail(400, { ok: false, message: 'Tick the box to accept Mojang’s EULA first.' });
+		saveMapSettings(instance.id, { eulaAccepted: true });
+		const running = (await summarise(instance)).running;
+		return { ok: true, message: running ? 'Accepted. Restart the server so the BlueMap mod downloads the textures.' : 'Accepted. The BlueMap mod uses it from the next start.' };
+	},
+
 	render: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
