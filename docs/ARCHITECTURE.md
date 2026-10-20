@@ -187,6 +187,13 @@ So `scheduler.ts` ticks every 30 seconds, computes the next run per instance, se
 warnings over RCON, and calls the same `restart()` path the button in the UI calls. One
 control path, one set of bugs.
 
+"Every N hours" falls on the clock, as scheduled snapshots and map updates do (`clockSlot`
+in snapshotschedule.ts): every 6 hours is 0:00, 6:00, 12:00 and 18:00, not 6 hours after
+whenever the last restart was (before 2026-10-20 it was, and drifted; a slot set that way is
+moved onto the clock once at startup). The forms offer only intervals that come out even
+(divisors of 24 hours, whole days; `lib/shared/presets.ts`), and warnings only at the marks
+that are sent, as fixed choices; a stored value outside them shows as it is.
+
 ### Servers after a reboot are started by MineShell, not enabled in systemd
 
 The template has `WantedBy=default.target`, so `systemctl --user enable` would bring a

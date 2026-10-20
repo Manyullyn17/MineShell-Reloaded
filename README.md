@@ -43,7 +43,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 
 - Start, stop, restart, and force-stop servers, including delayed shutdowns with in-game warnings.
 - Perform graceful shutdowns using RCON to save the world before stopping Java, with signal-based fallbacks.
-- Configure crash recovery, restart attempt limits, scheduled restarts, and scheduled console commands.
+- Configure crash recovery, restart attempt limits, scheduled restarts (daily, or every few hours on the clock: every 6 hours is 0:00, 6:00, 12:00, 18:00), and scheduled console commands.
 - Delay scheduled operations while players are online.
 - Let Minecraft 1.21.2+ pause an empty server (its `pause-when-empty-seconds`, in settings and new-server defaults); the status shows it paused until someone joins.
 - See every server's ports (game, RCON, query, voice chat, map) and what listens on each, with clashes between servers and ports other programs hold, and move one to a free port. Where new ports start can be changed for setups that need it.

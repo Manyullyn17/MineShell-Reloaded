@@ -7,7 +7,7 @@ import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
-import { evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
+import { clockSlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
 import { runDueUpdateChecks } from './updatecheck';
@@ -32,9 +32,11 @@ const deferredSince = new Map<string, number>();
 
 export function computeNextRun(instance: ServerInstance, from = Date.now()): number | null {
 	if (instance.restartSchedule === 'interval') {
+		// On the clock, as scheduled snapshots and maps: every 6 hours is 0:00, 6:00,
+		// 12:00 and 18:00, not 6 hours after whenever the last one happened to be.
 		const hours = instance.restartIntervalHours ?? 6;
 		if (hours <= 0) return null;
-		return from + hours * 60 * 60 * 1000;
+		return clockSlot(hours, from);
 	}
 
 	if (instance.restartSchedule === 'daily') {
@@ -184,13 +186,14 @@ async function checkAll(): Promise<void> {
 export function startScheduler(): void {
 	if (timer) return;
 	// Any instance whose next run is missing or already past gets a fresh slot,
-	// so a MineShell restart never causes an immediate surprise reboot.
+	// so a MineShell restart never causes an immediate surprise reboot. Interval
+	// restarts set before they fell on the clock move onto it.
 	for (const instance of listInstances()) {
-		if (instance.restartSchedule !== 'none') {
-			if (!instance.restartNextAt || instance.restartNextAt < Date.now()) {
-				rescheduleInstance(instance.id);
-			}
-		}
+		if (instance.restartSchedule === 'none') continue;
+		const next = instance.restartNextAt;
+		const offClock =
+			instance.restartSchedule === 'interval' && next !== null && clockSlot(instance.restartIntervalHours ?? 6, next - 1) !== next;
+		if (!next || next < Date.now() || offClock) rescheduleInstance(instance.id);
 	}
 	rollForwardMissed();
 	rollForwardSnapshots();

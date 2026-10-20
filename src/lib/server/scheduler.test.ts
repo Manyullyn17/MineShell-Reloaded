@@ -13,9 +13,11 @@ describe('computeNextRun', () => {
 		expect(computeNextRun(instance({}), at(2026, 1, 1, 12, 0))).toBeNull();
 	});
 
-	it('adds the interval', () => {
+	it('puts an interval on the clock', () => {
 		const from = at(2026, 1, 1, 12, 0);
 		expect(computeNextRun(instance({ restartSchedule: 'interval', restartIntervalHours: 6 }), from)).toBe(at(2026, 1, 1, 18, 0));
+		// Not 19:30: every 6 hours is 0:00, 6:00, 12:00, 18:00.
+		expect(computeNextRun(instance({ restartSchedule: 'interval', restartIntervalHours: 6 }), at(2026, 1, 1, 13, 30))).toBe(at(2026, 1, 1, 18, 0));
 		expect(computeNextRun(instance({ restartSchedule: 'interval', restartIntervalHours: 0 }), from)).toBeNull();
 	});
 

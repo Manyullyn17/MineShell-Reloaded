@@ -1,5 +1,8 @@
 <script lang="ts">
 	import SegmentedChoice from './SegmentedChoice.svelte';
+	import PresetSelect from './PresetSelect.svelte';
+	import WarnChoice from './WarnChoice.svelte';
+	import { CRASH_WINDOWS, EVERY_HOURS, unevenHours, windowLabel } from '#lib/shared/presets.js';
 
 	/**
 	 * Crash, scheduled and after-reboot start fields, shared by an instance's
@@ -73,8 +76,8 @@
 			<p class="hint">Attempts before systemd stops trying.</p>
 		</div>
 		<div class="field">
-			<label for="crashRestartWindowSec">Counted over (seconds)</label>
-			<input id="crashRestartWindowSec" name="crashRestartWindowSec" type="number" min="60" max="86400" step="60" bind:value={values.crashRestartWindowSec} />
+			<label for="crashRestartWindowSec">Counted over</label>
+			<PresetSelect id="crashRestartWindowSec" name="crashRestartWindowSec" choices={CRASH_WINDOWS} other={windowLabel} bind:value={values.crashRestartWindowSec} />
 			<p class="hint">A crash loop trips the limit; occasional crashes reset it.</p>
 		</div>
 	</div>
@@ -91,8 +94,9 @@
 
 	{#if values.restartSchedule === 'interval'}
 		<div class="field">
-			<label for="restartIntervalHours">Hours between restarts</label>
-			<input id="restartIntervalHours" name="restartIntervalHours" type="number" min="1" max="168" bind:value={values.restartIntervalHours} />
+			<label for="restartIntervalHours">How often</label>
+			<PresetSelect id="restartIntervalHours" name="restartIntervalHours" choices={EVERY_HOURS} other={unevenHours} bind:value={values.restartIntervalHours} />
+			<p class="hint">On the clock: every 6 hours restarts at 0:00, 6:00, 12:00 and 18:00.</p>
 		</div>
 	{/if}
 
@@ -106,9 +110,11 @@
 
 	{#if values.restartSchedule !== 'none'}
 		<div class="field">
-			<label for="restartWarnMinutes">Warn players this many minutes ahead</label>
-			<input id="restartWarnMinutes" name="restartWarnMinutes" type="number" min="0" max="60" bind:value={values.restartWarnMinutes} />
-			<p class="hint">Sends in-game messages at 15, 10, 5 and 1 minutes, within this window. 0 sends nothing.</p>
+			<span class="label" id="restartWarnMinutes-label">Warn players ahead</span>
+			<div class="control">
+				<WarnChoice name="restartWarnMinutes" labelledby="restartWarnMinutes-label" bind:value={values.restartWarnMinutes} />
+			</div>
+			<p class="hint">In-game messages at 15, 10, 5 and 1 minutes before, from the one picked.</p>
 		</div>
 		<div class="check field">
 			<input

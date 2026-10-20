@@ -26,6 +26,9 @@
 	import { formatGb, minMemoryLimitMb, suggestedMemoryLimitMb, wholeGbAbove } from '#lib/shared/memorylimit.js';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import PresetSelect from '#lib/components/PresetSelect.svelte';
+	import WarnChoice from '#lib/components/WarnChoice.svelte';
+	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
 	import CopyDeleteSection from './CopyDeleteSection.svelte';
@@ -978,8 +981,8 @@
 			{/if}
 			{#if sv.snapshotEvery === 'interval'}
 				<div class="field">
-					<label for="snapshotIntervalHours">Every (hours)</label>
-					<input id="snapshotIntervalHours" name="snapshotIntervalHours" type="number" min="1" max="168" bind:value={sv.snapshotIntervalHours} />
+					<label for="snapshotIntervalHours">How often</label>
+					<PresetSelect id="snapshotIntervalHours" name="snapshotIntervalHours" choices={EVERY_HOURS} other={unevenHours} bind:value={sv.snapshotIntervalHours} />
 					<p class="hint">On the clock: every hour at :00; every 6 hours at 0:00, 6:00, 12:00 and 18:00.</p>
 				</div>
 			{:else}
@@ -1004,8 +1007,10 @@
 				</div>
 				{#if sv.snapshotWhileRunning === 'stop'}
 					<div class="field">
-						<label for="snapshotWarnMinutes">Warn players (minutes before)</label>
-						<input id="snapshotWarnMinutes" name="snapshotWarnMinutes" type="number" min="0" max="15" bind:value={sv.snapshotWarnMinutes} />
+						<span class="label" id="snapshotWarnMinutes-label">Warn players ahead</span>
+						<div class="control">
+							<WarnChoice name="snapshotWarnMinutes" labelledby="snapshotWarnMinutes-label" bind:value={sv.snapshotWarnMinutes} />
+						</div>
 					</div>
 				{:else}
 					<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />

@@ -174,8 +174,28 @@ describe('scheduled restarts', () => {
 		const s = await server({ restartSchedule: 'interval', restartIntervalHours: 6 });
 		setNextIn(s.id, -3 * 60 * MIN);
 		startScheduler();
-		expect(reload(s.id).restartNextAt).toBe(NOW + 6 * 60 * MIN);
+		// On the clock: the next of 0:00, 6:00, 12:00, 18:00 after 4:00.
+		expect(reload(s.id).restartNextAt).toBe(new Date(2026, 9, 20, 6, 0).getTime());
 		await evaluateRestart(reload(s.id));
 		expect(restarted()).toBe(0);
+	});
+
+	it('puts interval restarts on the clock, and moves one set before that onto it once', async () => {
+		const s = await server({ restartSchedule: 'interval', restartIntervalHours: 6 });
+		// Counted from a restart at 3:17 the old way: 9:17.
+		db.update(serverInstances).set({ restartNextAt: new Date(2026, 9, 20, 9, 17).getTime() }).where(eq(serverInstances.id, s.id)).run();
+		startScheduler();
+		expect(reload(s.id).restartNextAt).toBe(new Date(2026, 9, 20, 6, 0).getTime());
+		stopScheduler();
+		// One already on the clock stays.
+		db.update(serverInstances).set({ restartNextAt: new Date(2026, 9, 20, 12, 0).getTime() }).where(eq(serverInstances.id, s.id)).run();
+		startScheduler();
+		expect(reload(s.id).restartNextAt).toBe(new Date(2026, 9, 20, 12, 0).getTime());
+
+		// Due at 12:00: it restarts, and the next is 18:00.
+		vi.setSystemTime(new Date(2026, 9, 20, 12, 0, 5).getTime());
+		await evaluateRestart(reload(s.id));
+		expect(restarted()).toBe(1);
+		expect(reload(s.id).restartNextAt).toBe(new Date(2026, 9, 20, 18, 0).getTime());
 	});
 });

@@ -3,6 +3,8 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import PresetSelect from '#lib/components/PresetSelect.svelte';
+	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
@@ -175,7 +177,7 @@
 			labelledby="map-every-label"
 		/>
 		{#if every === 'interval'}
-			<label class="inline">every <input name="intervalHours" type="number" min="1" max="168" bind:value={intervalHours} class="hours" /> h</label>
+			<PresetSelect name="intervalHours" label="How often" choices={EVERY_HOURS} other={unevenHours} bind:value={intervalHours} />
 		{:else if every === 'daily'}
 			<label class="inline">at <input name="dailyTime" type="time" bind:value={dailyTime} /></label>
 		{/if}
@@ -250,10 +252,6 @@
 		align-items: center;
 		gap: var(--space-1);
 		margin: 0;
-	}
-
-	.hours {
-		width: 4.5rem;
 	}
 
 	.segmented {
