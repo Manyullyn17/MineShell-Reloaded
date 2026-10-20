@@ -87,7 +87,8 @@ export function useRecordedHttp(
 	});
 	afterAll(() => {
 		globalThis.fetch = guard;
-		if (recording) {
+		// A file whose requests are all answered by `extra` records nothing, and gets no file.
+		if (recording && Object.keys(store).length) {
 			fs.mkdirSync(FIXTURES, { recursive: true });
 			const sorted = Object.fromEntries(Object.entries(store).sort(([a], [b]) => a.localeCompare(b)));
 			fs.writeFileSync(file, JSON.stringify(sorted, null, 1) + '\n');

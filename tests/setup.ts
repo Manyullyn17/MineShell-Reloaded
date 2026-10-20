@@ -1,6 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, vi } from 'vitest';
+import { blockNetwork } from './helpers/network';
 import { fakeSpawn, forbidden, resetProcesses } from './helpers/process';
 
 /**
@@ -55,11 +56,7 @@ vi.mock('node:dns/promises', async (importOriginal) => {
 
 // No network either: fetch throws unless a test file replays recorded
 // responses with useRecordedHttp() (tests/helpers/http.ts).
-(globalThis as { __realFetch?: typeof fetch }).__realFetch = globalThis.fetch;
-globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
-	const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-	throw new Error(`Tests must not use the network (tried: ${url}). Use useRecordedHttp() from tests/helpers/http.ts.`);
-}) as typeof fetch;
+blockNetwork();
 
 // Each worker gets its own data directory inside the run's (tests/helpers/env.ts),
 // so test files can run side by side without sharing a database.
