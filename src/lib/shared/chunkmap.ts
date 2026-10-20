@@ -19,6 +19,8 @@ export type RegionDetail = {
 	unreadable: number[];
 	/** Chunks present with nothing to draw (generated only partway), by index: their status ('' unknown). */
 	bare: Record<number, string>;
+	/** Chunks drawn but not fully generated yet (the rings round what was loaded), by index: their status. */
+	partial: Record<number, string>;
 	/** The height of a roof over the region: the picture is what is below it, unless the surface was asked for. */
 	roof: number | null;
 	/** Minecraft's own textures were there (its EULA answered): vanilla blocks have colours. */
@@ -63,6 +65,7 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 		blocks: BlockEntry[];
 		unreadable: number[];
 		bare?: Record<number, string>;
+		partial?: Record<number, string>;
 		roof?: number | null;
 		size?: number;
 		vanilla: boolean;
@@ -108,6 +111,7 @@ export function readRegion(buffer: ArrayBuffer): RegionDetail {
 		heights,
 		unreadable: head.unreadable,
 		bare: head.bare ?? {},
+		partial: head.partial ?? {},
 		roof: head.roof ?? null,
 		vanilla: head.vanilla,
 		image: new ImageData(pixels, size, size)
@@ -130,10 +134,27 @@ export function blockAt(detail: RegionDetail, x: number, z: number): { name: str
 export function chunkState(detail: RegionDetail, cx: number, cz: number): string | null {
 	const index = (cx & 31) + 32 * (cz & 31);
 	if (detail.unreadable.includes(index)) return 'Could not be read';
-	const status = detail.bare[index];
+	const status = detail.bare[index] ?? detail.partial[index];
 	if (status === undefined) return null;
 	if (!status || status === 'full') return 'Nothing to draw: no blocks';
 	return `Not fully generated: stopped at ${status.replaceAll('_', ' ')}`;
+}
+
+/** A region's chunks that are not fully generated (blocks or not) and the unreadable ones, from its response's head alone. */
+export function regionGeneration(buffer: ArrayBuffer): { notFull: number[]; unreadable: number[] } {
+	const length = new DataView(buffer).getUint32(0, true);
+	const head = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, length))) as {
+		unreadable: number[];
+		bare?: Record<number, string>;
+		partial?: Record<number, string>;
+	};
+	const notFull = [
+		...Object.entries(head.bare ?? {})
+			.filter(([, status]) => status && status !== 'full')
+			.map(([i]) => Number(i)),
+		...Object.keys(head.partial ?? {}).map(Number)
+	];
+	return { notFull, unreadable: head.unreadable };
 }
 
 export const chunkKey = (cx: number, cz: number) => `${cx},${cz}`;

@@ -83,6 +83,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   needs a server folder with a world: copy one from a real server (read only) into the
   throwaway dev server's `instances/` after `seed-instance.mjs`.
 
+- Generation status (`Status`, Level.Status before 1.18): from 1.18 the chunks round anything
+  loaded are saved partway (structure_starts, biomes; nearer in carvers, initialize_light,
+  features with blocks and trees). Chunky's 500-block square on the user's 1.21.11 irithyll
+  left 4225 full chunks and about 3300 partial ones out to ~9 chunks further. Only `full` is
+  finished: the map dims the rest (`partial` and `bare`).
+
 ## World map
 - `worldmap.ts`, Map tab. 1.13+: BlueMap 5.28 CLI (`-c config -r -v <mc> -n mods/`), config
   rewritten before every render into `$DATA/maps/<id>/`, web app served statically by

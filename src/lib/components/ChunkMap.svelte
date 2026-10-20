@@ -58,8 +58,19 @@
 		layer?: { regions: Map<string, Uint8Array>; colours: string[]; alpha: number } | null;
 		/** A circle in block coordinates (the radius pruning keeps around spawn), dashed. */
 		circle?: { x: number; z: number; radius: number } | null;
-		/** A square or round area in block coordinates, filled and outlined in the accent colour, its middle marked. */
-		area?: { x: number; z: number; rx: number; rz: number; round: boolean } | null;
+		/**
+		 * A square or round area in block coordinates, filled and outlined in the accent colour, its middle
+		 * marked. With `rows` (the chunks it holds, row by row) it follows chunk edges once chunks are big
+		 * enough to see: the chunks that are in, not the shape they were picked by.
+		 */
+		area?: {
+			x: number;
+			z: number;
+			rx: number;
+			rz: number;
+			round: boolean;
+			rows?: { first: number; last: number; range: (cz: number) => [number, number] | null } | null;
+		} | null;
 		/** A click or tap calls this with the block there, instead of selecting the chunk. */
 		onpick?: ((x: number, z: number) => void) | null;
 		/** A line about a chunk for the tooltip. */
@@ -280,7 +291,8 @@
 		const style = getComputedStyle(wrap);
 		const colour = (name: string) => style.getPropertyValue(name).trim();
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.fillStyle = colour('--bg-sunken');
+		const background = colour('--bg-sunken');
+		ctx.fillStyle = background;
 		ctx.fillRect(0, 0, width, height);
 		ctx.imageSmoothingEnabled = false;
 
@@ -324,6 +336,12 @@
 				// Generated only partway: faint, so the region keeps the shape its placeholder had.
 				ctx.fillStyle = 'rgba(127, 135, 144, 0.28)';
 				for (const i of Object.keys(drawn.detail.bare)) chunk(Number(i));
+				// Blocks there but not finished (the rings round what was loaded): dimmed, so the map
+				// shows where the world is really generated.
+				ctx.fillStyle = background;
+				ctx.globalAlpha = 0.55;
+				for (const i of Object.keys(drawn.detail.partial)) chunk(Number(i));
+				ctx.globalAlpha = 1;
 			} else {
 				ctx.drawImage(summaries.get(key)!.picture, x, z, size, size);
 			}
@@ -404,15 +422,55 @@
 	function drawArea(ctx: CanvasRenderingContext2D, a: NonNullable<typeof area>, accent: string) {
 		if (a.rx <= 0 || a.rz <= 0) return;
 		ctx.beginPath();
-		if (a.round) ctx.ellipse(sx(a.x), sz(a.z), a.rx * scale, a.rz * scale, 0, 0, Math.PI * 2);
-		else ctx.rect(sx(a.x - a.rx), sz(a.z - a.rz), 2 * a.rx * scale, 2 * a.rz * scale);
+		const edges = new Path2D();
+		const chunk = 16 * scale;
+		if (a.rows && chunk >= 1.5) {
+			// Chunk by chunk, only the rows in view: the fill is each row's run, the outline each row's
+			// ends and, between two rows, where one reaches past the other.
+			const first = Math.max(a.rows.first, Math.floor(wz(0) / 16) - 1);
+			const last = Math.min(a.rows.last, Math.floor(wz(height) / 16) + 1);
+			const across = (from: number, to: number, cz: number) => {
+				edges.moveTo(sx(from * 16), sz(cz * 16));
+				edges.lineTo(sx(to * 16), sz(cz * 16));
+			};
+			const between = (above: [number, number] | null, below: [number, number] | null, cz: number) => {
+				if (!above && !below) return;
+				if (!above || !below) {
+					const r = (above ?? below)!;
+					return across(r[0], r[1] + 1, cz);
+				}
+				if (above[0] !== below[0]) across(Math.min(above[0], below[0]), Math.max(above[0], below[0]), cz);
+				if (above[1] !== below[1]) across(Math.min(above[1], below[1]) + 1, Math.max(above[1], below[1]) + 1, cz);
+			};
+			let previous = first > a.rows.first ? a.rows.range(first - 1) : null;
+			for (let cz = first; cz <= last; cz++) {
+				const r = a.rows.range(cz);
+				between(previous, r, cz);
+				if (r) {
+					ctx.rect(sx(r[0] * 16), sz(cz * 16), (r[1] - r[0] + 1) * chunk, chunk);
+					edges.moveTo(sx(r[0] * 16), sz(cz * 16));
+					edges.lineTo(sx(r[0] * 16), sz((cz + 1) * 16));
+					edges.moveTo(sx((r[1] + 1) * 16), sz(cz * 16));
+					edges.lineTo(sx((r[1] + 1) * 16), sz((cz + 1) * 16));
+				}
+				previous = r;
+			}
+			if (last === a.rows.last) between(previous, null, last + 1);
+			else between(previous, a.rows.range(last + 1), last + 1);
+		} else if (a.round) {
+			ctx.ellipse(sx(a.x), sz(a.z), a.rx * scale, a.rz * scale, 0, 0, Math.PI * 2);
+			edges.ellipse(sx(a.x), sz(a.z), a.rx * scale, a.rz * scale, 0, 0, Math.PI * 2);
+		} else {
+			ctx.rect(sx(a.x - a.rx), sz(a.z - a.rz), 2 * a.rx * scale, 2 * a.rz * scale);
+			edges.rect(sx(a.x - a.rx), sz(a.z - a.rz), 2 * a.rx * scale, 2 * a.rz * scale);
+		}
 		ctx.fillStyle = accent;
 		ctx.globalAlpha = 0.14;
 		ctx.fill();
 		ctx.globalAlpha = 0.95;
 		ctx.strokeStyle = accent;
 		ctx.lineWidth = 2;
-		ctx.stroke();
+		ctx.stroke(edges);
 		// The middle: a small cross.
 		ctx.beginPath();
 		ctx.moveTo(sx(a.x) - 6, sz(a.z));

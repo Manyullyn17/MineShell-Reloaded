@@ -207,11 +207,15 @@ describe('chunk map: a region', () => {
 			// The ring 1.18+ leaves around loaded chunks: biomes but no blocks, or no sections at all yet.
 			{ index: 1, root: chunk('minecraft:biomes', [air]) },
 			{ index: 2, root: chunk('minecraft:structure_starts', []) },
-			{ index: 3, compression: 4 }
+			{ index: 3, compression: 4 },
+			// Nearer in, blocks and trees already, but finished only when a neighbour is: drawn, and marked.
+			{ index: 4, root: chunk('minecraft:features', [stone]) }
 		]);
 		const columns = (await readRegionColumns(dir, 'r.0.0.mca', null))!;
 		expect(columns.keys).toEqual(['minecraft:stone']);
 		expect(columns.bare).toEqual({ 1: 'biomes', 2: 'structure_starts' });
+		expect(columns.partial).toEqual({ 4: 'features' });
+		expect(columns.blocks[4 * 16]).toBe(1);
 		expect(columns.unreadable).toEqual([3]);
 		await fs.rm(dir, { recursive: true, force: true });
 	});
@@ -238,7 +242,7 @@ describe('chunk map: overview', () => {
 
 describe('chunk map: the zoomed-out picture', () => {
 	it('keeps the middle column of every 8x8 cell', () => {
-		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], bare: { 5: 'biomes' }, roof: null, under: null, blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
+		const full: RegionColumns = { keys: ['a', 'b'], unreadable: [3], bare: { 5: 'biomes' }, partial: { 6: 'features' }, roof: null, under: null, blocks: new Uint16Array(512 * 512), heights: new Int16Array(512 * 512), depths: new Uint8Array(512 * 512) };
 		// Cell (1, 2) has its middle at x 12, z 20; the cell's corner is different and must not show.
 		full.blocks[20 * 512 + 12] = 2;
 		full.heights[20 * 512 + 12] = 70;
@@ -247,7 +251,7 @@ describe('chunk map: the zoomed-out picture', () => {
 		const small = shrinkColumns(full, 8);
 		expect(small.size).toBe(64);
 		expect([small.blocks[2 * 64 + 1], small.heights[2 * 64 + 1], small.depths[2 * 64 + 1]]).toEqual([2, 70, 3]);
-		expect([small.unreadable, small.bare]).toEqual([[3], { 5: 'biomes' }]);
+		expect([small.unreadable, small.bare, small.partial]).toEqual([[3], { 5: 'biomes' }, { 6: 'features' }]);
 		expect(small.blocks.filter((b) => b).length).toBe(1);
 		expect(small.unreadable).toEqual([3]);
 	});

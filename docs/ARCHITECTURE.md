@@ -788,11 +788,18 @@ analysis stays. A finished prune drops the analysis.
 there moves its middle; the middle can also be typed, or taken from spawn (1.21.9+ names
 the dimension it is in) or the dimension's world border (`worldBorder`: 1.21.11's
 `data/world_border.dat` per dimension, before it level.dat's for the overworld only). Which
-chunks are in follows Chunky's own test (the chunk's middle block inside the shape; an
-ellipse by dx²/rx² + dz²/rz² ≤ 1), counted a row at a time; Chunky skips chunks that exist,
-so the overview's chunks inside are greyed and subtracted, and the disk estimate is the new
-ones times the dimension's region bytes per chunk so far (the overview carries each
-file's size). It works with the server stopped; starting needs it running.
+chunks are in follows Chunky's own rule (1.2 to 1.5 alike): the shape is put on chunks first,
+its middle on the middle of the center's chunk and its radius to ceil(r / 16) chunks and a
+half, then a chunk is in when its middle is inside (an ellipse by dx²/rx² + dz²/rz² ≤ 1). A
+square of 500 is so chunks -32 to 32 (to block 527), which is what Chunky generated on a real
+world; the map draws the outline along those chunks once they are big enough to see.
+Chunky leaves a chunk only when its Status is full: the rings round everything loaded
+(from 1.18) are on disk and partly have blocks but are finished like new ones. The chunk map
+records which drawn chunks are not full (`partial`, beside the block-less `bare`) and dims
+them on every map; the planner reads that for the regions the selection reaches (their
+zoomed-out region data), three at a time, and counts only full chunks as done. The disk
+estimate is the chunks to generate times what a full chunk took in the regions checked
+(region file bytes; the overview carries each file's size). It works with the server stopped; starting needs it running.
 
 A snapshot names the world it was taken of (`world`, the `level-name` then; older manifests
 are judged by their folders, `snapshotOfWorld`) and is restored only onto that world, which

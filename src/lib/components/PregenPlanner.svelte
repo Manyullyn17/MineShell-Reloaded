@@ -1,11 +1,24 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { enhance } from '#lib/shared/forms.js';
 	import ChunkMap from '#lib/components/ChunkMap.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
-	import { existingInSelection, isRound, radii, selectionChunks, twoRadii, chunkInSelection, type PregenShape } from '#lib/shared/pregen.js';
+	import { regionGeneration } from '#lib/shared/chunkmap.js';
+	import {
+		chunkInSelection,
+		chunkyShape,
+		existingInSelection,
+		isRound,
+		radii,
+		rowRange,
+		selectionChunks,
+		selectionRows,
+		twoRadii,
+		type PregenShape,
+		type RegionGeneration
+	} from '#lib/shared/pregen.js';
 
 	/**
 	 * World > Pre-generate's selection: a dimension, a shape, its middle (typed,
@@ -82,12 +95,18 @@
 		untrack(() => moveTo(current?.spawn ?? { x: 0, z: 0 }));
 	});
 
-	// The chunks that are there: the overview of the dimension's folder.
+	// The chunks that are there: the overview of the dimension's folder; then, for the regions the
+	// selection reaches, which of them are fully generated (the region's chunk map data says).
 	let overview = $state<{ x: number; z: number; chunks: string; bytes: number }[]>([]);
 	let overviewState = $state<'none' | 'loading' | 'ready' | 'failed'>('none');
+	const generation = new SvelteMap<string, RegionGeneration>();
+	/** Regions asked for in this dimension, answered or not: each once. */
+	let asked = new Set<string>();
 	$effect(() => {
 		const key = current?.key;
 		overview = [];
+		generation.clear();
+		asked = new Set();
 		if (!key) {
 			overviewState = 'none';
 			return;
@@ -111,16 +130,54 @@
 	);
 
 	const total = $derived(selectionChunks(selection));
-	const there = $derived(existingInSelection(selection, overview));
-	const fresh = $derived(total - there.existing);
+	const there = $derived(existingInSelection(selection, overview, generation));
+	const fresh = $derived(total - there.existing - there.unchecked);
 	/** Bytes per chunk from what the dimension holds; too few chunks say little. */
 	const estimate = $derived(there.bytesPerChunk && there.known >= 256 ? fresh * there.bytesPerChunk : null);
-	const area = $derived({ x: selection.x, z: selection.z, rx, rz, round: isRound(shape) });
+
+	// Regions still to check, a few at a time once the selection has settled. The zoomed-out
+	// picture is the smallest answer that carries it, and warms the map's own cache.
+	$effect(() => {
+		const key = current?.key;
+		const wanted = there.toCheck.filter((r) => !asked.has(r));
+		if (!key || !wanted.length) return;
+		let stale = false;
+		const timer = setTimeout(async () => {
+			const next = async (): Promise<void> => {
+				const region = wanted.shift();
+				if (!region || stale) return;
+				asked.add(region);
+				const [rgnX, rgnZ] = region.split(',');
+				try {
+					const res = await fetch(`/api/instances/${id}/chunkmap/region?dimension=${encodeURIComponent(key)}&source=live&x=${rgnX}&z=${rgnZ}&size=64`);
+					// No picture (204): nothing readable in it; its chunks count as not generated.
+					const gen = res.status === 204 ? { notFull: [...Array(1024).keys()], unreadable: [] } : regionGeneration(await res.arrayBuffer());
+					// Kept even when the selection moved on meanwhile (each answer re-runs this): only another dimension drops it.
+					if (current?.key === key) generation.set(region, gen);
+				} catch {
+					asked.delete(region);
+				}
+				return next();
+			};
+			await Promise.all([next(), next(), next()]);
+		}, 300);
+		return () => {
+			stale = true;
+			clearTimeout(timer);
+		};
+	});
+	const rows = $derived.by(() => {
+		const span = selectionRows(selection);
+		const sel = selection;
+		return span ? { first: span[0], last: span[1], range: (cz: number) => rowRange(sel, cz) } : null;
+	});
+	// Chunky's own shape, put on chunks: zoomed out it is drawn as is, closer chunk by chunk.
+	const area = $derived({ ...chunkyShape(selection), round: isRound(shape), rows });
 	const layer = $derived({ regions: there.regions, colours: ['', '--text-faint'], alpha: 0.7 });
 	const describe = (cx: number, cz: number) => {
 		if (!chunkInSelection(selection, cx, cz)) return null;
 		return there.regions.get(`${Math.floor(cx / 32)},${Math.floor(cz / 32)}`)?.[(cx & 31) + 32 * (cz & 31)]
-			? 'Already generated: Chunky skips it'
+			? 'Fully generated already: Chunky leaves it'
 			: 'Chunky generates it';
 	};
 	const noSelection = new SvelteSet<string>();
@@ -199,7 +256,7 @@
 	{#if !otherWorld}
 		<ul class="legend small" aria-label="Map colours">
 			<li><span class="swatch new"></span>Generated</li>
-			<li><span class="swatch there"></span>Already there, skipped</li>
+			<li><span class="swatch there"></span>Fully generated already</li>
 			<li class="faint">Click the map to move the center there.</li>
 			<li><button type="button" class="button-quiet small-button" onclick={fit}>Show all of it</button></li>
 		</ul>
@@ -223,9 +280,14 @@
 				About {total.toLocaleString()} chunks{overviewState === 'none' && !otherWorld ? ', none generated here yet' : ''}.
 			{:else if overviewState === 'loading'}
 				About {total.toLocaleString()} chunks in the area; reading which are there…
+			{:else if there.unchecked}
+				About {total.toLocaleString()} chunks in the area; checking which of the {(there.unchecked + there.existing).toLocaleString()}
+				there are fully generated ({there.toCheck.length.toLocaleString()} region{there.toCheck.length === 1 ? '' : 's'} to go)…
+			{:else if fresh === 0}
+				Nothing to generate: all {total.toLocaleString()} chunks in the area are fully generated already.
 			{:else}
-				About <strong>{fresh.toLocaleString()} new chunks</strong> of {total.toLocaleString()} in the area{there.existing
-					? `; ${there.existing.toLocaleString()} are already there and skipped`
+				About <strong>{fresh.toLocaleString()} chunks to generate</strong> of {total.toLocaleString()} in the area{there.existing
+					? `; ${there.existing.toLocaleString()} are fully generated already`
 					: ''}.
 				{#if estimate !== null}About {formatBytes(estimate)} more on disk.{/if}
 			{/if}

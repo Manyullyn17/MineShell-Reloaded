@@ -31,8 +31,8 @@ import { HEADER, locations, presentChunks, readChunk, REGION_NAME, regionOf } fr
 const CACHE = path.join(CACHE_DIR, 'chunkmap');
 const SIZE = 512;
 const AREA = SIZE * SIZE;
-/** Bumped when the cached format changes (2: `bare`; 3: `roof` and `under`). */
-const CACHE_VERSION = 3;
+/** Bumped when the cached format changes (2: `bare`; 3: `roof` and `under`; 4: `partial`). */
+const CACHE_VERSION = 4;
 
 // ------------------------------------------------------------- overview ---
 
@@ -357,6 +357,13 @@ export type RegionColumns = {
 	 * world's chunks: drawn faintly, so the map keeps the shape of what is on disk.
 	 */
 	bare: Record<number, string>;
+	/**
+	 * Chunks drawn that are not fully generated yet, by index: their status. Next to
+	 * what is loaded, the first rings already have blocks (surface, carvers, features)
+	 * but are only finished when a chunk beside them is; pre-generation counts them as
+	 * still to do, as Chunky does (it looks for Status full).
+	 */
+	partial: Record<number, string>;
 	/** The height of a roof over the region (the Nether's, a mod dimension's), when it has one. */
 	roof: number | null;
 	/** With a roof: what is below it, column by column (chunkUnderRoof), drawn instead of the roof. */
@@ -386,6 +393,7 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 		depths: new Uint8Array(AREA),
 		unreadable: [],
 		bare: {},
+		partial: {},
 		roof: null,
 		under: null
 	};
@@ -428,6 +436,8 @@ export async function readRegionColumns(dir: string, name: string, legacyIds: Ma
 			continue;
 		}
 		for (let col = 0; col < 256; col++) if (tops[col]) put(out, loc.index, col, tops[col]!);
+		const status = chunkStatus(root);
+		if (status && status !== 'full') out.partial[loc.index] = status;
 	}
 	// A roof: the view below it takes a second pass, only for regions that have one.
 	const roofY = roofHeight(out);
@@ -485,7 +495,7 @@ function roofHeight(c: RegionColumns): number | null {
 const layerBytes = (l: Layer) => [Buffer.from(l.blocks.buffer), Buffer.from(l.heights.buffer), Buffer.from(l.depths.buffer)];
 
 function encodeColumns(c: RegionColumns): Buffer {
-	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable, bare: c.bare, roof: c.roof }));
+	const head = Buffer.from(JSON.stringify({ v: CACHE_VERSION, keys: c.keys, unreadable: c.unreadable, bare: c.bare, partial: c.partial, roof: c.roof }));
 	const len = Buffer.alloc(4);
 	len.writeUInt32LE(head.length);
 	return Buffer.concat([len, head, ...layerBytes(c), ...(c.under ? layerBytes(c.under) : [])]);
@@ -494,7 +504,14 @@ function encodeColumns(c: RegionColumns): Buffer {
 function decodeColumns(buf: Buffer): RegionColumns | null {
 	try {
 		const len = buf.readUInt32LE(0);
-		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as { v: number; keys: string[]; unreadable: number[]; bare: Record<number, string>; roof: number | null };
+		const head = JSON.parse(buf.toString('utf8', 4, 4 + len)) as {
+			v: number;
+			keys: string[];
+			unreadable: number[];
+			bare: Record<number, string>;
+			partial: Record<number, string>;
+			roof: number | null;
+		};
 		if (head.v !== CACHE_VERSION) return null;
 		let at = 4 + len;
 		const take = (bytes: number) => {
@@ -505,7 +522,7 @@ function decodeColumns(buf: Buffer): RegionColumns | null {
 		};
 		const layer = (): Layer => ({ blocks: new Uint16Array(take(AREA * 2)), heights: new Int16Array(take(AREA * 2)), depths: new Uint8Array(take(AREA)) });
 		const top = layer();
-		return { keys: head.keys, unreadable: head.unreadable, bare: head.bare, roof: head.roof, ...top, under: head.roof !== null ? layer() : null };
+		return { keys: head.keys, unreadable: head.unreadable, bare: head.bare, partial: head.partial, roof: head.roof, ...top, under: head.roof !== null ? layer() : null };
 	} catch {
 		return null;
 	}
@@ -551,7 +568,7 @@ export function shrinkColumns(c: RegionColumns, factor: number): RegionColumns &
 		}
 		return out;
 	};
-	return { keys: c.keys, unreadable: c.unreadable, bare: c.bare, roof: c.roof, size, ...shrink(c), under: c.under ? shrink(c.under) : null };
+	return { keys: c.keys, unreadable: c.unreadable, bare: c.bare, partial: c.partial, roof: c.roof, size, ...shrink(c), under: c.under ? shrink(c.under) : null };
 }
 
 /**

@@ -45,6 +45,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		blocks: columns.keys.map((key) => ({ key, name: info[key]?.name ?? null, color: info[key]?.color ?? null })),
 		unreadable: columns.unreadable,
 		bare: columns.bare,
+		partial: columns.partial,
 		roof: columns.roof,
 		size: columns.size,
 		vanilla
