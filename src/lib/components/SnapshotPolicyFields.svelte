@@ -3,22 +3,48 @@
 	 * The snapshot retention fields, shared by the global Settings and a
 	 * server's own settings. Values are strings as typed; a blank one means
 	 * the default (globally) or the global value (on a server), which
-	 * `placeholders` then shows.
+	 * `placeholders` then shows. The question and the free-space check can
+	 * also be off ("never", "off"), picked beside the size.
 	 */
+	import SegmentedChoice from './SegmentedChoice.svelte';
+
 	type Values = {
 		keepMin: string;
 		keepMax: string;
 		partialMin: string;
 		partialMax: string;
 		budgetGb: string;
-		askAboveMb: string;
+		askAboveGb: string;
 		minFreeGb: string;
 	};
+	type Mode = 'global' | 'on' | 'off';
 	let {
 		values = $bindable(),
 		placeholders = null,
 		idPrefix
 	}: { values: Values; placeholders?: Values | null; idPrefix: string } = $props();
+
+	const SIZE_DEFAULTS = { askAboveGb: '2', minFreeGb: '5' };
+	const OFF = { askAboveGb: 'never', minFreeGb: 'off' };
+	type SizeKey = keyof typeof OFF;
+	const isSize = (v: string | number | undefined) => v !== undefined && v !== '' && !Number.isNaN(Number(v));
+
+	function mode(key: SizeKey): Mode {
+		const v = values[key];
+		if (v === OFF[key]) return 'off';
+		return v === '' && placeholders ? 'global' : 'on';
+	}
+	function setMode(key: SizeKey, m: Mode) {
+		const fallback = placeholders && isSize(placeholders[key]) ? placeholders[key] : SIZE_DEFAULTS[key];
+		values[key] = m === 'global' ? '' : m === 'off' ? OFF[key] : isSize(values[key]) ? values[key] : fallback;
+	}
+	const modes = (on: string, off: string) => [
+		...(placeholders ? [{ value: 'global' as Mode, label: 'Global' }] : []),
+		{ value: 'on' as Mode, label: on },
+		{ value: 'off' as Mode, label: off }
+	];
+	const globalSays = (key: SizeKey, on: (gb: string) => string, off: string) =>
+		placeholders ? (placeholders[key] === OFF[key] ? off : on(placeholders[key])) : '';
 </script>
 
 <div class="policy">
@@ -59,19 +85,52 @@
 				</p>
 			</div>
 			<div class="field">
-				<label for="{idPrefix}-minFree">Keep free on the disk (GB)</label>
-				<input id="{idPrefix}-minFree" name="minFreeGb" type="number" min="0" step="0.5" bind:value={values.minFreeGb} placeholder={placeholders?.minFreeGb} />
+				<span class="label" id="{idPrefix}-minFreeLabel">Keep free on the disk</span>
+				<div class="control">
+					<SegmentedChoice
+						options={modes('Keep free', "Don't check")}
+						labelledby="{idPrefix}-minFreeLabel"
+						bind:value={() => mode('minFreeGb'), (m) => setMode('minFreeGb', m)}
+					/>
+					{#if mode('minFreeGb') === 'on'}
+						<div class="size">
+							<input id="{idPrefix}-minFree" name="minFreeGb" type="number" min="0" step="0.5" bind:value={values.minFreeGb} aria-labelledby="{idPrefix}-minFreeLabel" />
+							<span class="faint">GB</span>
+						</div>
+					{:else}
+						<input type="hidden" name="minFreeGb" value={values.minFreeGb} />
+					{/if}
+				</div>
 				<p class="hint">
+					{#if mode('minFreeGb') === 'global'}
+						{globalSays('minFreeGb', (gb) => `Global: keep ${gb} GB free.`, 'Global: not checked.')}
+					{/if}
 					A snapshot that copies the world is not taken when it would leave less free; the form says so and offers to
-					continue without. <code>0</code> turns this off.
+					continue without.
 				</p>
 			</div>
 			<div class="field">
-				<label for="{idPrefix}-ask">Ask first for worlds above (MB)</label>
-				<input id="{idPrefix}-ask" name="askAboveMb" type="number" min="-1" bind:value={values.askAboveMb} placeholder={placeholders?.askAboveMb} />
+				<span class="label" id="{idPrefix}-askLabel">Ask first for big worlds</span>
+				<div class="control">
+					<SegmentedChoice
+						options={modes('Above a size', 'Never')}
+						labelledby="{idPrefix}-askLabel"
+						bind:value={() => mode('askAboveGb'), (m) => setMode('askAboveGb', m)}
+					/>
+					{#if mode('askAboveGb') === 'on'}
+						<div class="size">
+							<input id="{idPrefix}-ask" name="askAboveGb" type="number" min="0" step="0.5" bind:value={values.askAboveGb} aria-labelledby="{idPrefix}-askLabel" />
+							<span class="faint">GB</span>
+						</div>
+					{:else}
+						<input type="hidden" name="askAboveGb" value={values.askAboveGb} />
+					{/if}
+				</div>
 				<p class="hint">
-					Bigger worlds ask whether to snapshot or continue without. <code>-1</code> turns the question off: the snapshot
-					is then always taken.
+					{#if mode('askAboveGb') === 'global'}
+						{globalSays('askAboveGb', (gb) => `Global: above ${gb} GB.`, 'Global: never.')}
+					{/if}
+					Bigger worlds ask whether to snapshot or continue without. Never asking means the snapshot is always taken.
 				</p>
 			</div>
 		</div>
@@ -81,5 +140,31 @@
 <style>
 	.policy fieldset {
 		margin-bottom: var(--space-3);
+	}
+	.control {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	/* A server's settings rows put controls on the right (SettingsSection). */
+	:global(.rows) .control {
+		align-items: flex-end;
+	}
+	@media (max-width: 60rem) {
+		:global(.rows) .control {
+			align-items: flex-start;
+		}
+	}
+	:global(.rows) .size input {
+		text-align: right;
+	}
+	.size {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+	.size input {
+		max-width: 8rem;
 	}
 </style>

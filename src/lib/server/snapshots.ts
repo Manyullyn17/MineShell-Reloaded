@@ -237,21 +237,31 @@ const FIELD_LABELS: Record<keyof SnapshotPolicy, string> = {
 };
 
 /**
- * The policy fields a settings form sent. Budget and free space come in GB
- * (budgetGb, minFreeGb), the rest as is. A blank field is left out: the
- * default globally, the global value for a server.
+ * The policy fields a settings form sent. Sizes come in GB (budgetGb,
+ * askAboveGb, minFreeGb), the rest as is; askAboveGb "never" is -1, minFreeGb
+ * "off" is 0. A blank field is left out: the default globally, the global
+ * value for a server.
  */
 export function policyFromForm(form: FormData): { fields: Partial<SnapshotPolicy>; error: string | null } {
 	const fields: Partial<SnapshotPolicy> = {};
 	for (const field of POLICY_FIELDS) {
-		const gb = field === 'budgetMb' || field === 'minFreeMb';
+		const gb = field === 'budgetMb' || field === 'askAboveMb' || field === 'minFreeMb';
 		const raw = String(form.get(gb ? field.replace('Mb', 'Gb') : field) ?? '').trim();
 		if (!raw) continue;
+		if (field === 'askAboveMb' && raw === 'never') {
+			fields[field] = -1;
+			continue;
+		}
+		if (field === 'minFreeMb' && raw === 'off') {
+			fields[field] = 0;
+			continue;
+		}
 		const n = Number(raw);
 		const value = gb ? Math.round(n * 1024) : n;
-		const [lo, hi] = LIMITS[field];
+		// -1 (never ask) comes as "never", not as a number.
+		const [lo, hi] = [Math.max(LIMITS[field][0], 0), LIMITS[field][1]];
 		if (!Number.isFinite(n) || !Number.isInteger(value) || value < lo || value > hi) {
-			return { fields, error: `${FIELD_LABELS[field]}: ${gb ? 'a number of GB' : 'a whole number'} from ${gb ? lo / 1024 : lo}${field === 'askAboveMb' ? ' (-1: never ask)' : ''}.` };
+			return { fields, error: `${FIELD_LABELS[field]}: ${gb ? 'a number of GB' : 'a whole number'} from ${gb ? lo / 1024 : lo}.` };
 		}
 		fields[field] = value;
 	}

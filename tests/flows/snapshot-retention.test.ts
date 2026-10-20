@@ -16,6 +16,7 @@ import {
 	type Snapshot
 } from '#lib/server/snapshots.js';
 import { snapshotNow } from '#lib/server/world.js';
+import { policyFormValues } from '#lib/shared/snapshots.js';
 import { createInstance, systemdStopped } from '../helpers/instances';
 
 const MB = 1024 * 1024;
@@ -99,10 +100,15 @@ describe('snapshot settings', () => {
 			for (const [k, v] of Object.entries(fields)) f.set(k, v);
 			return f;
 		};
-		expect(policyFromForm(form({ keepMin: '3', budgetGb: '12.5', minFreeGb: '0', askAboveMb: '', partialMax: ' ' }))).toEqual({
+		expect(policyFromForm(form({ keepMin: '3', budgetGb: '12.5', minFreeGb: '0', askAboveGb: '', partialMax: ' ' }))).toEqual({
 			fields: { keepMin: 3, budgetMb: 12800, minFreeMb: 0 },
 			error: null
 		});
+		// The question and the free-space check are switched off by name, not by -1 and 0.
+		expect(policyFromForm(form({ askAboveGb: 'never', minFreeGb: 'off' })).fields).toEqual({ askAboveMb: -1, minFreeMb: 0 });
+		expect(policyFromForm(form({ askAboveGb: '1.5' })).fields).toEqual({ askAboveMb: 1536 });
+		expect(policyFromForm(form({ askAboveGb: '-1' })).error).toMatch(/^Ask first above: a number of GB from 0\./);
+		expect(policyFormValues({ askAboveMb: -1, minFreeMb: 0, budgetMb: 2048 })).toMatchObject({ askAboveGb: 'never', minFreeGb: 'off', budgetGb: '2' });
 		expect(policyFromForm(form({ keepMin: '0' })).error).toMatch(/^Full snapshots always kept/);
 		expect(policyFromForm(form({ budgetGb: 'lots' })).error).toMatch(/^Storage for more/);
 		expect(policyFromForm(form({ partialMin: '9', partialMax: '4' })).error).toMatch(/cannot be fewer/);

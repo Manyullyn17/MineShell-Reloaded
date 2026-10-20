@@ -8,14 +8,17 @@ export type SnapshotPromptView = {
 	policy: { keepMin: number; partialMin: number; budgetMb: number; askAboveMb: number; minFreeMb: number };
 };
 
-/** The snapshot policy as a settings form shows it: GB for the two sizes, '' for a field not set. */
+/**
+ * The snapshot policy as a settings form shows it: GB for the sizes, '' for a
+ * field not set, "never" for no size question and "off" for no free-space check.
+ */
 export type PolicyFormValues = {
 	keepMin: string;
 	keepMax: string;
 	partialMin: string;
 	partialMax: string;
 	budgetGb: string;
-	askAboveMb: string;
+	askAboveGb: string;
 	minFreeGb: string;
 };
 
@@ -31,7 +34,7 @@ export function policyFormValues(policy: Partial<PolicyNumbers>): PolicyFormValu
 		partialMin: str(policy.partialMin),
 		partialMax: str(policy.partialMax),
 		budgetGb: gb(policy.budgetMb),
-		askAboveMb: str(policy.askAboveMb),
-		minFreeGb: gb(policy.minFreeMb)
+		askAboveGb: policy.askAboveMb === -1 ? 'never' : gb(policy.askAboveMb),
+		minFreeGb: policy.minFreeMb === 0 ? 'off' : gb(policy.minFreeMb)
 	};
 }
