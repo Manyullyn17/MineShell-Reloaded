@@ -220,6 +220,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Bug | Test |
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
+| A file saved in the Files editor got CRLF line endings (forms send newlines so), which breaks a shell script like run.sh | `routes/instances/[id]/files/files.test.ts` ("line endings") |
 | Re-recording several files in one run recorded only each worker's first: setup.ts ran again per file and kept the network guard as the "real" fetch | `helpers/network.test.ts` |
 | On the dev server, a reload of server code left open pages' task streams deaf (a second task list and event bus): no progress, no page reload when a snapshot finished, its button greyed | `server/tasks.test.ts` |
 | A task that started and finished before the task stream's first payload (a small world's snapshot) got no toast and no page reload: the list stayed without the new snapshot | `shared/taskwatch.test.ts` |

@@ -43,8 +43,20 @@ describe('the Files tab stays inside the server folder', () => {
 
 	it('reads a leading slash as the server folder, not the machine root', async () => {
 		const { instance, params } = await server();
-		expect(await post(actions.save, { params, fields: { path: '/config/x.toml', contents: 'x = 2' } })).toMatchObject({ ok: true });
-		expect(await fs.readFile(path.join(instance.path, 'config/x.toml'), 'utf8')).toBe('x = 2');
+		expect(await post(actions.save, { params, fields: { path: '/config/x.toml', contents: 'x = 2\n' } })).toMatchObject({ ok: true });
+		expect(await fs.readFile(path.join(instance.path, 'config/x.toml'), 'utf8')).toBe('x = 2\n');
+	});
+
+	it("keeps a file's line endings, though forms send every newline as CRLF", async () => {
+		const { instance, params } = await server();
+		await fs.writeFile(path.join(instance.path, 'run.sh'), '#!/bin/sh\njava -jar server.jar\n');
+		await fs.writeFile(path.join(instance.path, 'windows.cfg'), 'a=1\r\nb=2\r\n');
+		expect(await post(actions.save, { params, fields: { path: 'run.sh', contents: '#!/bin/sh\njava -Xmx2G -jar server.jar\n' } })).toMatchObject({ ok: true });
+		expect(await post(actions.save, { params, fields: { path: 'windows.cfg', contents: 'a=1\nb=3\n' } })).toMatchObject({ ok: true });
+		expect(await post(actions.save, { params, fields: { path: 'new.txt', contents: 'one\ntwo\n' } })).toMatchObject({ ok: true });
+		expect(await fs.readFile(path.join(instance.path, 'run.sh'), 'utf8')).toBe('#!/bin/sh\njava -Xmx2G -jar server.jar\n');
+		expect(await fs.readFile(path.join(instance.path, 'windows.cfg'), 'utf8')).toBe('a=1\r\nb=3\r\n');
+		expect(await fs.readFile(path.join(instance.path, 'new.txt'), 'utf8')).toBe('one\ntwo\n');
 	});
 
 	it('never deletes the server folder itself or something outside it', async () => {

@@ -88,10 +88,20 @@ export async function readTextFile(root: string, relative: string): Promise<stri
 	return fs.readFile(target, 'utf8');
 }
 
+/**
+ * The editor posts a form, and forms send every newline as CRLF: the file keeps
+ * the line endings it had (LF when new or without CRLF). Written as posted, a
+ * saved run.sh failed on "\r: command not found".
+ */
 export async function writeTextFile(root: string, relative: string, contents: string): Promise<void> {
 	const target = safeJoin(root, relative);
 	await fs.mkdir(path.dirname(target), { recursive: true });
-	await fs.writeFile(target, contents, 'utf8');
+	const crlf = await fs.readFile(target, 'utf8').then(
+		(old) => old.includes('\r\n'),
+		() => false
+	);
+	const lf = contents.replace(/\r\n/g, '\n');
+	await fs.writeFile(target, crlf ? lf.replace(/\n/g, '\r\n') : lf, 'utf8');
 }
 
 export function fileStream(root: string, relative: string) {
