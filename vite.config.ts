@@ -87,8 +87,12 @@ export default defineConfig({
     globalSetup: ['tests/global-setup.ts'],
     environment: 'node',
     // Recording real API responses (RECORD_HTTP=1, tests/helpers/http.ts)
-    // waits on live servers; replaying them is instant.
-    testTimeout: process.env.RECORD_HTTP ? 60_000 : 5_000,
+    // waits on live servers; replaying them is instant. GitHub's runners are
+    // about five times slower at the tests that move many files (a pack change
+    // stopped at every move: 1 s here with three workers, over 5 s there once
+    // files ran side by side), so CI gets more room; 5 s here keeps a test
+    // that got slow visible.
+    testTimeout: process.env.RECORD_HTTP ? 60_000 : process.env.CI ? 20_000 : 5_000,
     // Files run side by side: each worker has its own data directory and
     // database inside the run's (tests/helpers/env.ts, mocked into
     // $app/env/private by tests/setup.ts).
