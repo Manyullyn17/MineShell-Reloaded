@@ -12,22 +12,59 @@ functionality is there and stable. After it, maybe a few minor additions, then p
 servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
-Beta order (user's call, 2026-10-16), for the entries under "Later" (the "sooner" ones are
-built: ROADMAP-ARCHIVE):
+Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
+"sooner" ones are built: ROADMAP-ARCHIVE):
 
-- **Next** (user's call, 2026-10-17): the status page, parked on its open questions
-  (2026-10-18). Restoring chunks, pausing empty servers and player stats are built
-  (ROADMAP-ARCHIVE).
-- **End of beta**: world backups (external). Instance export and import is built (ROADMAP-ARCHIVE).
-- **Late beta or after 1.0** (polish): the item icon and name leftovers, per-world game
-  settings.
+- **Before 1.0**: world backups to another place, simple and without any cloud integration
+  for now, built so other destinations can be added later (Later, "World backups"); then
+  the rest of "Road to 1.0" below. Restoring chunks, pausing empty servers, player stats
+  and instance export and import are built (ROADMAP-ARCHIVE).
+- **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
+  questions), the item icon and name leftovers, per-world game settings.
 
-External world-backup integration is a future plan, but the provider and design are not
-settled. Current snapshots remain local to the server disk. This is an accepted limitation
-for now, rather than a current blocker.
+Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
+(user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
+nearly always x64). What depends on them is only what MineShell downloads for a machine:
+Java builds (`javadownload.ts` picks x64/aarch64 and glibc/musl) and playit.gg's agent.
+A Java added by path works on any of them, and better-sqlite3 in the release archive
+carries prebuilt binaries for all four. (Quilt loader switching was tried on a real server
+2026-10-15.)
 
-Portability notes: Java downloads on ARM64 and musl/Alpine are not tested and will not be
-before 1.0 (user's call, 2026-10-18): development hardware is x64 with glibc. (Quilt loader switching was tried on a real server 2026-10-15.)
+### Road to 1.0
+
+Checks and small additions before 1.0 (suggested 2026-10-21; the user agreed to the
+backups, the status page's move, the minor dependency updates and leaving TypeScript 7
+until after 1.0, and asked to keep the rest listed here):
+
+- **Feature freeze and a release candidate**: once the backups are in, only `fix:` commits;
+  cut a release candidate, run it on the real install for a week or two, then 1.0. Check
+  that `release.sh`, the Release workflow and the self-updater handle a pre-release tag
+  (or use a last 0.x as the candidate).
+- **Updating to 1.0 from older versions**: once from an early 0.x install and once from
+  the newest, through the update button and through `install.sh`. Decide what 1.0 promises
+  about going back past migration 0019 (the only unsafe one) and what later majors may break
+  (env vars, unit files, the database).
+- **A clean-machine install**: a fresh VM or container with Debian 12 / Ubuntu 24.04 (their
+  packaged Node is older than 22.12, so the installer's "how to get Node" message gets used)
+  and maybe Fedora or Arch; lingering, `machinectl` and the dedicated account
+  (DEPLOYMENT) are what differs most between distributions.
+- **A real-loader checklist**: the repeatable real-loader run is shelved, and the last pass
+  was 2026-10-15. A one-page manual list in `tests/tools/` (install, boot, update, migrate,
+  export and import for vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom) to go through
+  before 1.0 and later releases.
+- **Left for the user** (docs/notes/status.md): notifications to a Discord channel;
+  importing the `.mrpack` and CurseForge exports; a server export and import with a
+  CurseForge pack and a world of gigabytes.
+- **MineShell's own database**: it is only backed up before an update. A daily copy with a
+  few kept (accounts, history, settings); restoring one from the page stays a leftover.
+- **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
+  `crash-reports/`), even if the answer is that the disk usage page is enough.
+- **A security pass**: LAN-only by design, but with accounts, uploads, the file editor and
+  pack downloads, one focused review of path handling, uploads and the access policy.
+- **Route tests**: form actions and endpoints without a test (status.md).
+
+Long running is covered: the user's installed MineShell has run a server with scheduled
+restarts and snapshots since it was installed.
 
 ---
 
@@ -106,7 +143,8 @@ None of these depends on another.
 
 Optional, off by default, for players without an account (accounts already cover users):
 the owner turns it on per server and ticks what it shows. Parked (user's call, 2026-10-18)
-with the open questions below; the user is thinking them over.
+with the open questions below; the user is thinking them over. After 1.0 (user's call,
+2026-10-21).
 
 Proposal (not agreed):
 - **Where it lives**: (A) a path on MineShell's own port, `/status/<server>`: least work,
@@ -136,12 +174,29 @@ in the first version or later; the JSON or not.
 
 ### World backups
 
-Not implemented yet. External backup integration is planned for the future; its provider
-and exact design are still undecided. The existing snapshots (before MineShell's own risky
-operations, on request and on a schedule; ARCHITECTURE, "Worlds") are useful for
-local recovery, but remain on the same disk as the server. A running-world backup must
-preserve consistency: flush and pause saving, copy, then always restore saving even if the
-copy fails (as the World tab's download and live scheduled snapshots already do).
+Before 1.0 (user's call, 2026-10-21): simple, no cloud integration for now, and extensible.
+The existing snapshots (before MineShell's own risky operations, on request and on a
+schedule; ARCHITECTURE, "Worlds") are useful for local recovery, but remain on the same
+disk as the server. A running-world backup must preserve consistency: flush and pause
+saving, copy, then always restore saving even if the copy fails (as the World tab's
+download and live scheduled snapshots already do).
+
+Proposal (not agreed in detail):
+- **A backup destination** as its own kind of thing, with one kind to start: a folder on
+  this machine (another disk, a mounted NAS share, a USB drive). Other kinds (rclone,
+  S3-compatible, SFTP) come later as more kinds with the same few operations (write,
+  list, read, delete); that is the extensible part, with no provider chosen now.
+- **What goes there**: finished snapshots (`.mineshell/snapshots/<id>/` is already a
+  consistent copy), copied after the snapshot completes, so a running world needs no
+  second save pause. A copy is written under a partial name and renamed when complete,
+  like snapshots. Per server: off, every snapshot, or only scheduled ones.
+- **Retention** on the destination, separate from local retention (keep more off the disk
+  than on it); pinned snapshots kept there too.
+- **Restore** from a destination copies it back as a local snapshot, then the usual
+  restore runs; a server whose folder is gone can come back through the server import.
+- **Failures** (destination unmounted, full) are a notification and a mark on the
+  snapshot, never a failed snapshot. A destination folder that is missing is not created:
+  an unmounted drive would otherwise fill the system disk underneath its mount point.
 
 Note there is already a *different* backup mechanism in the codebase: an update moves the
 replaced mod jars aside (the `mod-update` journal) so a failed update can be rolled back. That operates on the
