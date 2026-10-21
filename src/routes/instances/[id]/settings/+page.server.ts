@@ -72,7 +72,7 @@ import {
 } from '#lib/server/properties.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
-import { LOADER_LIST, LOADERS, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
+import { LOADER_LIST, findLoader, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	composeJvmArgs,
 	getPreset,
@@ -349,7 +349,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const minecraft = String(form.get('minecraft') ?? '').trim();
 		const loader = String(form.get('loader') ?? '');
-		if (!minecraft || !(loader in LOADERS)) return fail(400, { ok: false, message: 'Pick a Minecraft version and a loader.' });
+		if (!minecraft || !findLoader(loader)) return fail(400, { ok: false, message: 'Pick a Minecraft version and a loader.' });
 		try {
 			await applyMigration(
 				instance,

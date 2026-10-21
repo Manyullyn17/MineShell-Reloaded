@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance, InstanceError } from '#lib/server/instances.js';
 import { planMigration } from '#lib/server/migrate.js';
-import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
+import { findLoader, type ModloaderId } from '#lib/server/modloaders.js';
 
 /**
  * Preview of moving the server to another Minecraft version and loader:
@@ -15,7 +15,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	if (!instance) error(404, 'No server with that name.');
 	const minecraft = url.searchParams.get('mc')?.trim() ?? '';
 	const loader = url.searchParams.get('loader') ?? '';
-	if (!minecraft || !(loader in LOADERS)) error(400, 'Pick a Minecraft version and a loader.');
+	if (!minecraft || !findLoader(loader)) error(400, 'Pick a Minecraft version and a loader.');
 
 	try {
 		const plan = await planMigration(instance, {

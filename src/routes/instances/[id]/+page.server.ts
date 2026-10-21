@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
 	const requested = url.searchParams.get('range');
-	const range: Range = requested && requested in RANGES ? (requested as Range) : '1h';
+	const range: Range = requested && Object.hasOwn(RANGES, requested) ? (requested as Range) : '1h';
 	const samples = bucketSamples(recentSamples(instance.id, RANGES[range]));
 	const heap = heapSamplesSince(instance.id, Date.now() - RANGES[range]);
 	// Shown only when the last run ended badly, so a crash is not silent.

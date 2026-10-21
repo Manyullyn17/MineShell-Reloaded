@@ -1,7 +1,7 @@
 import { fail, isRedirect, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { creatorId } from '#lib/server/access.js';
-import { LOADERS, LOADER_LIST, listReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
+import { LOADER_LIST, findLoader, listReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	JavaMissingError,
 	createFromArchive,
@@ -116,7 +116,7 @@ export const actions: Actions = {
 		if (!minecraftVersion) {
 			return fail(400, { ok: false, message: 'Pick a Minecraft version.' });
 		}
-		const loader = LOADERS[modloader];
+		const loader = findLoader(modloader);
 		if (!loader) return fail(400, { ok: false, message: `Unknown mod loader "${modloader}".` });
 		if (loader.onlyGameVersions && !loader.onlyGameVersions.includes(minecraftVersion)) {
 			return fail(400, {

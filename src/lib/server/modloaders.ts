@@ -534,8 +534,13 @@ export const LOADERS: Record<ModloaderId, Modloader> = {
 
 export const LOADER_LIST = Object.values(LOADERS);
 
+/** The loader with this id, or undefined: a posted name can be "toString", which `in` and `LOADERS[id]` find too. */
+export function findLoader(id: string): Modloader | undefined {
+	return Object.hasOwn(LOADERS, id) ? LOADERS[id as ModloaderId] : undefined;
+}
+
 export function getLoader(id: string): Modloader {
-	const loader = LOADERS[id as ModloaderId];
+	const loader = findLoader(id);
 	if (!loader) throw new Error(`Unknown mod loader "${id}".`);
 	return loader;
 }
