@@ -346,6 +346,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The server list's start/stop, pin and tag buttons named their server only in the form body, not in the address | `routes/instances/[id]/tags.test.ts` |
 | (feature) Accounts: the owner `admin`, sign-in by name, sessions per account, a disabled account or deleted session stops at once, the owner cannot be deleted/demoted/disabled, throttle per address and per name | `auth.test.ts`, `guard.test.ts` |
 | (feature) Migration 0019 turns the old admin password into the owner and keeps its sessions | `db/users-migration.test.ts` |
+| (feature) An update that skips releases: from after any migration, with a row in every table, all the rest apply in one go and leave the keys and the file sound (a NOT NULL column without a default fails it) | `db/upgrade.test.ts` |
 | "Sign out every other device" on a password change also signed out the device asking | `auth.test.ts` |
 | (feature) The sign-in and setup pages use their checks: sign-in only redirects into MineShell, counts failures per address and stops at ten, a success clears the count; sign-out ends the session; once there is an owner, setup is not offered and posting to it changes no password and signs nobody in | `routes/login/login.test.ts`, `routes/setup/setup.test.ts` |
 | (feature) Each Settings section's action changes only what its form carries (the row, server.properties); the shared update and console fields, saved unchanged, keep every value | `routes/instances/[id]/settings/sections.test.ts` |
