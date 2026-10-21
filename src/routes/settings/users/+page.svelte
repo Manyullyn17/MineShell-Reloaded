@@ -3,6 +3,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import OneTimePassword from '#lib/components/OneTimePassword.svelte';
 	import { formatDateTime } from '#lib/shared/format.js';
+	import { FULL_TRUST_NOTE } from '#lib/shared/access.js';
 
 	let { data, form } = $props();
 	const created = $derived((form as { created?: { id: string; username: string; password: string } } | null)?.created ?? null);
@@ -74,12 +75,12 @@
 		</div>
 		<div class="check field">
 			<input id="canCreate" name="canCreate" type="checkbox" class="switch" role="switch" />
-			<label for="canCreate">May add servers (and becomes admin of what they add)</label>
+			<label for="canCreate">May add servers (and becomes admin of what they add) <span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span></label>
 		</div>
 		{#if data.owner}
 			<div class="check field">
 				<input id="globalAdmin" name="globalAdmin" type="checkbox" class="switch" role="switch" />
-				<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts</label>
+				<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts <span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span></label>
 			</div>
 		{/if}
 		<button class="button-primary" type="submit">Add account</button>

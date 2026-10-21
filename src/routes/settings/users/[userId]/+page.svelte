@@ -5,7 +5,7 @@
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { formatDateTime } from '#lib/shared/format.js';
-	import { FULL_TRUST, PERMISSION_GROUPS } from '#lib/shared/access.js';
+	import { FULL_TRUST, FULL_TRUST_NOTE, PERMISSION_GROUPS } from '#lib/shared/access.js';
 
 	let { data, form } = $props();
 	const reset = $derived((form as { reset?: { username: string; password: string } } | null)?.reset ?? null);
@@ -105,12 +105,12 @@
 		<form method="POST" action="?/flags" use:enhance={keep} class="flags">
 			<div class="check field">
 				<input id="canCreate" name="canCreate" type="checkbox" class="switch" role="switch" checked={data.account.canCreate} />
-				<label for="canCreate">May add servers (and becomes admin of what they add)</label>
+				<label for="canCreate">May add servers (and becomes admin of what they add) <span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span></label>
 			</div>
 			{#if data.owner}
 				<div class="check field">
 					<input id="globalAdmin" name="globalAdmin" type="checkbox" class="switch" role="switch" checked={data.account.isGlobalAdmin} />
-					<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts</label>
+					<label for="globalAdmin">MineShell admin: every server, MineShell settings and other accounts <span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span></label>
 				</div>
 			{:else}
 				<p class="muted small">Only the owner makes MineShell admins.</p>
@@ -175,7 +175,7 @@
 
 					{#if ed.level === 'admin'}
 						<p class="muted small">
-							Everything on this server, including what is added to MineShell later, but not other servers, MineShell
+							<span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span> Everything on this server, including what is added to MineShell later, but not other servers, MineShell
 							settings or accounts. Taking it away gives back the permissions chosen before.
 						</p>
 					{:else if ed.level === 'custom'}
@@ -189,7 +189,7 @@
 											<input type="checkbox" class="switch" role="switch" name="permission" value={p.id} checked={grant?.permissions.includes(p.id) ?? false} />
 											<span>
 												{p.label}
-												{#if FULL_TRUST.includes(p.id)}<span class="tag warn" title="Can run programs on this machine as MineShell, and through that reach everything">full trust</span>{/if}
+												{#if FULL_TRUST.includes(p.id)}<span class="tag warn" title={FULL_TRUST_NOTE}>full trust</span>{/if}
 												<span class="hint">{p.hint}</span>
 											</span>
 										</label>

@@ -1080,7 +1080,9 @@ is kept beside its id, so entries read right after it is renamed or deleted. Min
 Access is given on an account's page under Accounts: per server "No access", chosen permissions
 (grouped, the full-trust ones marked, player data as nobody's, every player's or chosen
 players' with a picker of the server's known players), or admin of the server. Choosing admin
-keeps the chosen permissions stored, so choosing them again later gives back the same.
+keeps the chosen permissions stored, so choosing them again later gives back the same. A
+server's admin, "May add servers" (its adder becomes admin of it) and MineShell admin are
+marked full trust as well.
 
 Whoever adds a server, or copies one (which needs `duplicate` and `files` on the source and
 "may create servers"), becomes admin of the new one: `insertInstanceRow` and `cloneInstance`

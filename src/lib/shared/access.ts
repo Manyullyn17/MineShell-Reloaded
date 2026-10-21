@@ -104,6 +104,9 @@ export const PERMISSION_GROUPS: { label: string; permissions: { id: InstancePerm
  */
 export const FULL_TRUST: readonly InstancePermission[] = ['files', 'mods', 'software'];
 
+/** The "full trust" tag's explanation: on those permissions, a server's admin, adding servers and MineShell admin. */
+export const FULL_TRUST_NOTE = 'Can run programs on this machine as MineShell, and through that reach everything';
+
 /** What a permission brings with it, besides `view`. */
 const IMPLIES: Partial<Record<InstancePermission, InstancePermission[]>> = {
 	'settings.edit': ['settings.view'],
