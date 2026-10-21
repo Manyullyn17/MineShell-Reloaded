@@ -341,6 +341,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Accounts: the owner `admin`, sign-in by name, sessions per account, a disabled account or deleted session stops at once, the owner cannot be deleted/demoted/disabled, throttle per address and per name | `auth.test.ts`, `guard.test.ts` |
 | (feature) Migration 0019 turns the old admin password into the owner and keeps its sessions | `db/users-migration.test.ts` |
 | "Sign out every other device" on a password change also signed out the device asking | `auth.test.ts` |
+| (feature) The sign-in and setup pages use their checks: sign-in only redirects into MineShell, counts failures per address and stops at ten, a success clears the count; sign-out ends the session; once there is an owner, setup is not offered and posting to it changes no password and signs nobody in | `routes/login/login.test.ts`, `routes/setup/setup.test.ts` |
 | Sign out did nothing: the guard sent every signed-in request for /login home, the sign-out post included | `guard.test.ts` |
 | (feature) Access: `can()`, loading grants (admin removal keeps the listed permissions, grants go with the server or account), the guard applying the policy, a refused page never running its load | `shared/access.test.ts`, `server/access.test.ts`, `guard.test.ts` |
 | (feature) The access policy names every route, action and method, and handler-checked entries call `requireAccess` | `access/policy.test.ts` |
