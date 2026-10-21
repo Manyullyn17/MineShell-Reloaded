@@ -521,6 +521,12 @@ export async function resolveMapFile(instanceId: string, rel: string): Promise<M
 /** Dynmap's CurseForge project, and DynmapBlockScan's build per Minecraft version (dynmap.us only). */
 const DYNMAP_PROJECT = '59433';
 const DYNMAP: Record<string, { blockScan: string }> = {
+/**
+ * Dynmap builds that do not load on Forge's own 1.12.2 (Cleanroom runs them):
+ * 3.7-beta-6 stops the server with an IllegalAccessError on a Biome field.
+ * 3.7-beta-4 and 3.5 were tried and run.
+ */
+const DYNMAP_NOT_ON_FORGE = [/-3\.7-beta-6-/];
 	'1.12.2': { blockScan: 'https://dynmap.us/builds/DynmapBlockScan/DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar' }
 };
 const BLUEMAP_PROJECT = 'bluemap';
@@ -623,7 +629,9 @@ export async function installMapMod(instance: ServerInstance): Promise<string> {
 		if (support.engine === 'dynmap') {
 			if (!mods.dynmap) {
 				task.setProgress(null, 'Installing Dynmap');
-				const versions = await getModProvider('curseforge').listVersions(DYNMAP_PROJECT, { minecraftVersion: instance.minecraftVersion, loader: 'forge' });
+				const versions = (await getModProvider('curseforge').listVersions(DYNMAP_PROJECT, { minecraftVersion: instance.minecraftVersion, loader: 'forge' })).filter(
+					(v) => instance.modloader !== 'forge' || !v.files.some((f) => DYNMAP_NOT_ON_FORGE.some((bad) => bad.test(f.filename)))
+				);
 				// Its 1.12.2 builds after 3.6 are betas: the newest of any channel.
 				const newest = [...versions].sort((a, b) => Date.parse(b.datePublished ?? '') - Date.parse(a.datePublished ?? ''))[0];
 				if (!newest) throw new InstanceError(`No Dynmap build for Forge ${instance.minecraftVersion}.`);

@@ -100,10 +100,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   RoughlyEnoughIDs worlds. Mod web servers get `modPort` + 127.0.0.1 written before each
   start; `/maps/<token>/live/` proxies. Tested: MeatballCraft with both mods (renders, black areas
   gone with BlockScan); the proxy against a fake Dynmap server; BlueMap CLI on the throwaway
-  server and a copy of ATM10. Found 2026-10-21, not fixed: on plain Forge 1.12.2
-  (14.23.5.2859) the Dynmap MineShell installs (3.7-beta-6) crashes at start
-  (`IllegalAccessError` on `Biome.field_76791_y`; FML also cannot read its
-  `META-INF/versions/9` classes) - only Cleanroom was tried before; and the BlueMap mod on a
+  server and a copy of ATM10. On plain Forge 1.12.2 (14.23.5.2859) Dynmap 3.7-beta-6, the
+  newest 1.12.2 build, crashes at start (`IllegalAccessError` on `Biome.field_76791_y`; FML
+  also cannot read its `META-INF/versions/9` classes), so Forge gets the newest build but
+  that (`DYNMAP_NOT_ON_FORGE`): 3.7-beta-4 and 3.5 were booted and run, 3.7-beta-4 checked
+  through the live map. Cleanroom keeps 3.7-beta-6 (MeatballCraft runs it). The BlueMap mod on a
   Fabric server without a pack does not start, since Fabric API is not added with it.
 - The map's sandbox (2026-10-21, ARCHITECTURE "The map's pages are not MineShell's"),
   checked in headless Chrome against a real BlueMap render, a running BlueMap mod and a running

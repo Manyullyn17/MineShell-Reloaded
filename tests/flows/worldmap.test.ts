@@ -42,6 +42,7 @@ useRecordedHttp('none', {
 				pages: 1
 			}),
 		'https://cdn.test/dynmap-3.7.jar': () => new Response(new Uint8Array(zipBuffer({ 'mcmod.info': '[{"modid":"dynmap","name":"Dynmap"}]' }))),
+		'https://cdn.test/dynmap-3.6.jar': () => new Response(new Uint8Array(zipBuffer({ 'mcmod.info': '[{"modid":"dynmap","name":"Dynmap"}]' }))),
 		'https://dynmap.us/builds/DynmapBlockScan/DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar': () =>
 			new Response(new Uint8Array(zipBuffer({ 'mcmod.info': '[{"modid":"dynmapblockscan","name":"DynmapBlockScan"}]' })))
 	}
@@ -236,6 +237,12 @@ describe('map mods', () => {
 		expect(webserver).toContain('ip: "127.0.0.1"');
 		expect(core).toContain('accept-download: true');
 		expect(await liveMapTarget(instance, '', '')).toBe(`http://127.0.0.1:${port}/`);
+	});
+
+	it("installs on Forge's own 1.12.2 the newest Dynmap that loads there: 3.7-beta-6 stops the server", async () => {
+		const instance = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, { 'server.properties': 'level-name=world\n' });
+		expect((await waitForTask(await installMapMod(instance))).state).toBe('done');
+		expect((await fs.readdir(path.join(instance.path, 'mods'))).sort()).toEqual(['Dynmap-3.6-forge-1.12.2.jar', 'DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar']);
 	});
 
 	it('installs Dynmap (its newest build) and DynmapBlockScan, then gives Dynmap its own local port', async () => {
