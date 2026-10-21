@@ -19,6 +19,9 @@
  *                        returns as JSON: fill a field, read state. Repeatable, and runs in
  *                        order with the --clicks, half a second apart; each may take up to
  *                        --timeout
+ *     --drag <x1,y1,x2,y2>  once loaded, drag with the left mouse button from one point of
+ *                        the viewport to another, as real input (it reaches into frames too:
+ *                        panning a map). Repeatable, in order with --click and --eval
  *     --dialog <answer>  accept | dismiss a confirm() the page opens (default accept);
  *                        its text is printed
  *     --element <selector>  capture only the first element matching this (plus a small
@@ -56,14 +59,14 @@ const overflow = flag('--overflow');
 /** Every --click and --eval, in order: a sub-tab, then a button inside it. */
 const steps = [];
 for (let at = 0; at < args.length; ) {
-	if (args[at] === '--click' || args[at] === '--eval') steps.push({ kind: args[at].slice(2), value: args.splice(at, 2)[1] });
+	if (args[at] === '--click' || args[at] === '--eval' || args[at] === '--drag') steps.push({ kind: args[at].slice(2), value: args.splice(at, 2)[1] });
 	else at++;
 }
 const click = steps.length > 0;
 const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
-	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--dialog accept|dismiss]');
+	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--drag x1,y1,x2,y2] [--dialog accept|dismiss]');
 	process.exit(1);
 }
 
@@ -153,6 +156,18 @@ try {
 				const answer = await send('Runtime.evaluate', { expression: step.value, returnByValue: true, awaitPromise: true }, Math.max(timeout, 20000));
 				const thrown = answer.result?.exceptionDetails;
 				console.log(thrown ? `--eval threw: ${thrown.exception?.description ?? thrown.text}` : JSON.stringify(answer.result?.result?.value));
+				continue;
+			}
+			if (step.kind === 'drag') {
+				const [x1, y1, x2, y2] = step.value.split(',').map(Number);
+				/** @param {string} type @param {number} x @param {number} y */
+				const mouse = (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 });
+				await mouse('mousePressed', x1, y1);
+				for (let t = 1; t <= 10; t++) {
+					await mouse('mouseMoved', x1 + ((x2 - x1) * t) / 10, y1 + ((y2 - y1) * t) / 10);
+					await sleep(30);
+				}
+				await mouse('mouseReleased', x2, y2);
 				continue;
 			}
 			const clicked = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(step.value)}); if (!e) return false; e.click(); return true; })()`);
