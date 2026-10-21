@@ -8,6 +8,8 @@ export const trailingSlash = 'ignore';
 
 /** Headers that belong to one connection, not to what is passed on. */
 const HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'host', 'content-length', 'cookie', 'authorization']);
+/** Nor may the map set cookies on MineShell's own address, where they would reach every page. */
+const DROPPED = new Set([...HOP, 'content-encoding', 'set-cookie']);
 
 /**
  * A map mod's own web server (Dynmap, the BlueMap mod), passed through
@@ -36,7 +38,7 @@ const pass: RequestHandler = async ({ params, url, request, locals }) => {
 		error(502, 'The map is not answering: it runs while the server runs (and starts a little after it).');
 	}
 	const out = new Headers();
-	for (const [name, value] of answer.headers) if (!HOP.has(name.toLowerCase()) && name.toLowerCase() !== 'content-encoding') out.set(name, value);
+	for (const [name, value] of answer.headers) if (!DROPPED.has(name.toLowerCase())) out.set(name, value);
 	return new Response(answer.body, { status: answer.status, headers: out });
 };
 
