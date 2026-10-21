@@ -28,17 +28,23 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   class-file versions; the Cleanroom wiki's "Java 21+" is stale).
 
 ## Cleanroom
-- Forge 1.12.2 fork; installer `--installServer` leaves `cleanroom-<ver>.jar` +
-  `minecraft_server.1.12.2.jar`. Mod catalogs have no Cleanroom tag, so instances query
+- Forge 1.12.2 fork; the older installer (0.5.x) takes `--installServer` and leaves
+  `cleanroom-<ver>.jar` + `minecraft_server.1.12.2.jar`. Mod catalogs have no Cleanroom tag, so instances query
   them as `forge` (`catalogLoader`).
 - **0.6.0+ replaced Mixin with CleanMix**; mods reaching into Mixin internals
   (FermiumBooter) or patching exact targets (Alfheim) crash on it. Forge-pack installs and
   migrations default to the newest 0.5.x; every Cleanroom picker warns on 0.6+.
-- Found 2026-10-21, not fixed: the newest installer (0.7.11-alpha's) is no longer a Forge
-  installer fork on the command line: `--installServer` is refused ("Unknown option") and it
-  takes `server --dir <path> [--version <id>] [--no-gui] [-y]` instead, so a new plain
-  Cleanroom server (the newest release by default) fails to install. Which version changed
-  it, and what `server` leaves in the folder, is not checked yet; 0.5.x still installs.
+- The newer installer (0.7.11-alpha's at least; which release changed it is unchecked) has
+  modes: `--installServer` is refused ("Unknown option"), `server --dir <path> --version <id>
+  --no-gui -y` installs (`-y`: the folder already holds the server's files). It leaves
+  `libraries/` (Cleanroom itself as `libraries/com/cleanroommc/cleanroom/<ver>/cleanroom-<ver>-universal.jar`),
+  an @argfile `.../<ver>/unix_args.txt`, `user_jvm_args.txt` (with `-Xmx3G`, emptied like
+  Forge's), `run.sh` (refuses any Java but 25) and `cleanroom-server.json`. MineShell tries
+  `--installServer` first and the mode on "Unknown option". Tried 2026-10-21: a new plain
+  server on 0.7.11 installed and booted on Java 25.
+- Cleanroom 0.7 asks at the first start when Fugue and Scalar are missing ("These mods are
+  missing", `/fml confirm`; forge_early.cfg turns it off); the overview shows it as a
+  startup question and confirming starts the server.
 - `cleanroom.ts`: adds Fugue (Modrinth) and Scalar Legacy (CurseForge, CDN fallback), disables
   a curated must-remove list (never content mods), reports the "replace with fork" list.
   Mods are matched by mcmod.info name/modid and filename because modids lie (Born in a Barn =

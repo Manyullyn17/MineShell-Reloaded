@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
 	cleanroomDisabledReasons,
@@ -139,6 +140,14 @@ describe('Fugue against the Cleanroom version', () => {
 		const r = await cleanroomReport(dir, '0.5.17-alpha');
 		expect(r.replace.map((x) => x.reason)).toEqual(['It needs Cleanroom [0.6.10-alpha,).']);
 		expect((await cleanroomReport(dir, '0.6.13-alpha')).replace).toEqual([]);
+	});
+
+	it("reads the newer installer's jar under libraries/", async () => {
+		const dir = await tempDir();
+		const jar = `${dir}/libraries/com/cleanroommc/cleanroom/0.7.11-alpha/cleanroom-0.7.11-alpha-universal.jar`;
+		await fs.mkdir(path.dirname(jar), { recursive: true });
+		await fs.writeFile(jar, cleanroomJar(true));
+		expect(await cleanroomHasGetUrl(dir, '0.7.11-alpha')).toBe(true);
 	});
 
 	it('goes by the version getURL was removed in when the Cleanroom jar is not there', async () => {

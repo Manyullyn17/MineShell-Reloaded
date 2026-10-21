@@ -325,6 +325,19 @@ const quilt: Modloader = {
 
 // -------------------------------------------------------- forge / neoforge ---
 
+/** The launch for an installer's @argfile (Forge and NeoForge since 1.17, Cleanroom's newer installer), or null without one. */
+async function argFileLaunch(dir: string, argFile: string): Promise<string | null> {
+	try {
+		await fs.access(path.join(dir, argFile));
+	} catch {
+		return null;
+	}
+	// user_jvm_args.txt is where the installer expects people to put -Xmx.
+	// MineShell passes JVM args from the unit instead, so it stays empty.
+	await fs.writeFile(path.join(dir, 'user_jvm_args.txt'), '# MineShell sets JVM arguments in instance settings; this file is left empty.\n', { flag: 'w' });
+	return `@user_jvm_args.txt @${argFile} nogui`;
+}
+
 /**
  * Since 1.17 both Forge and NeoForge generate an @argfile rather than a runnable
  * jar. This finds whichever launch shape the installer produced.
@@ -343,21 +356,8 @@ async function resolveInstalledLoaderLaunch(dir: string): Promise<string> {
 			continue;
 		}
 		for (const version of versions) {
-			const argFile = path.join(base, version, 'unix_args.txt');
-			try {
-				await fs.access(path.join(dir, argFile));
-				// user_jvm_args.txt is where the installer expects people to put -Xmx.
-				// MineShell passes JVM args from the unit instead, so it stays empty.
-				const userArgs = path.join(dir, 'user_jvm_args.txt');
-				await fs.writeFile(
-					userArgs,
-					'# MineShell sets JVM arguments in instance settings; this file is left empty.\n',
-					{ flag: 'w' }
-				);
-				return `@user_jvm_args.txt @${argFile} nogui`;
-			} catch {
-				/* keep looking */
-			}
+			const launch = await argFileLaunch(dir, path.join(base, version, 'unix_args.txt'));
+			if (launch) return launch;
 		}
 	}
 
@@ -371,16 +371,23 @@ async function resolveInstalledLoaderLaunch(dir: string): Promise<string> {
 	);
 }
 
-async function runInstallerJar(ctx: InstallContext, url: string, name: string): Promise<void> {
+/**
+ * Runs an installer jar in the server folder with the first of `argSets` it
+ * takes: an installer that does not know the options says "Unknown option",
+ * and the next set is tried (Cleanroom's newer installer has modes instead of
+ * Forge's --installServer).
+ */
+async function runInstallerJar(ctx: InstallContext, url: string, name: string, argSets: string[][] = [['--installServer']]): Promise<void> {
 	const installer = path.join(ctx.dir, '.mineshell', name);
 	log(ctx, `Downloading ${name}`);
 	await downloadFile(url, installer);
 	log(ctx, 'Running the installer (this pulls a few hundred MB of libraries)');
 	ctx.task?.setProgress(null, 'Running the loader installer');
-	const res = await run([ctx.javaPath, '-jar', installer, '--installServer'], {
-		cwd: ctx.dir,
-		timeoutMs: 20 * 60_000
-	});
+	let res = { code: 1, stdout: '', stderr: '' } as Awaited<ReturnType<typeof run>>;
+	for (const args of argSets) {
+		res = await run([ctx.javaPath, '-jar', installer, ...args], { cwd: ctx.dir, timeoutMs: 20 * 60_000 });
+		if (res.code === 0 || !/unknown option/i.test(`${res.stderr}\n${res.stdout}`)) break;
+	}
 	if (res.code !== 0) {
 		throw new Error(`Installer failed: ${(res.stderr || res.stdout).trim().slice(-600)}`);
 	}
@@ -477,10 +484,13 @@ async function cleanroomVersions(): Promise<{ versions: string[]; release: strin
 }
 
 /**
- * The Cleanroom installer is a Forge-installer fork and, like pre-1.17 Forge,
- * leaves a runnable cleanroom-<version>.jar in the server root.
+ * The older Cleanroom installer is a Forge-installer fork and, like pre-1.17
+ * Forge, leaves a runnable cleanroom-<version>.jar in the server root; the
+ * newer one an @argfile under libraries/, like Forge since 1.17.
  */
 async function resolveCleanroomLaunch(dir: string, version: string): Promise<string> {
+	const argFile = await argFileLaunch(dir, `libraries/com/cleanroommc/cleanroom/${version}/unix_args.txt`);
+	if (argFile) return argFile;
 	const entries = await fs.readdir(dir);
 	const exact = `cleanroom-${version}.jar`;
 	const jar = entries.includes(exact)
@@ -514,11 +524,11 @@ const cleanroom: Modloader = {
 			loaderVersion = release ?? versions[0];
 		}
 		if (!loaderVersion) throw new Error('Could not resolve the latest Cleanroom version.');
-		await runInstallerJar(
-			ctx,
-			`${CLEANROOM_MAVEN}/${loaderVersion}/cleanroom-${loaderVersion}-installer.jar`,
-			`cleanroom-${loaderVersion}-installer.jar`
-		);
+		await runInstallerJar(ctx, `${CLEANROOM_MAVEN}/${loaderVersion}/cleanroom-${loaderVersion}-installer.jar`, `cleanroom-${loaderVersion}-installer.jar`, [
+			['--installServer'],
+			// The newer installer (0.7.11 at least): a mode, the folder and the version; -y as the folder already has the server's files.
+			['server', '--dir', ctx.dir, '--version', loaderVersion, '--no-gui', '-y']
+		]);
 		return { launchArgs: await resolveCleanroomLaunch(ctx.dir, loaderVersion), loaderVersion };
 	}
 };

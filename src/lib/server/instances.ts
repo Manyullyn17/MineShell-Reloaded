@@ -1033,7 +1033,7 @@ export async function revertToForge(instance: ServerInstance, opts: { snapshot?:
  */
 export function isLoaderInstallEntry(name: string): boolean {
 	return (
-		['libraries', '.fabric', 'run.sh', 'run.bat', 'user_jvm_args.txt'].includes(name) ||
+		['libraries', '.fabric', 'run.sh', 'run.bat', 'user_jvm_args.txt', 'cleanroom-server.json'].includes(name) ||
 		/^(server|quilt-server-launch|fabric-server-launch|minecraft_server\..*|(forge|neoforge|cleanroom)-.*)\.jar$/.test(name) ||
 		// An installer's log lands in the server folder (and is left there if it fails).
 		/^(forge|neoforge|cleanroom)-.*-installer\.jar\.log$/.test(name)

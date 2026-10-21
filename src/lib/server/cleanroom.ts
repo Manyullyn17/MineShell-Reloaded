@@ -194,7 +194,10 @@ export function inVersionRange(version: string, range: string): boolean {
  * its jar, else from the version it was removed in.
  */
 export async function cleanroomHasGetUrl(instancePath: string, cleanroomVersion: string): Promise<boolean> {
-	const zip = await openZipFile(path.join(instancePath, `cleanroom-${cleanroomVersion}.jar`)).catch(() => null);
+	// The older installer leaves it in the server folder, the newer one under libraries/.
+	const jars = [`cleanroom-${cleanroomVersion}.jar`, `libraries/com/cleanroommc/cleanroom/${cleanroomVersion}/cleanroom-${cleanroomVersion}-universal.jar`];
+	let zip = null;
+	for (const jar of jars) zip ??= await openZipFile(path.join(instancePath, jar)).catch(() => null);
 	const entry = zip?.entries.find((e) => e.name === `${HACKERY}.class`);
 	if (!zip || !entry) return compareVersions(cleanroomVersion, '0.5.3') < 0;
 	return (await zip.read(entry)).toString('latin1').includes('getURL');
