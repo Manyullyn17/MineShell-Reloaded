@@ -61,7 +61,6 @@ until after 1.0, and asked to keep the rest listed here):
   `crash-reports/`), even if the answer is that the disk usage page is enough.
 - **A security pass**: LAN-only by design, but with accounts, uploads, the file editor and
   pack downloads, one focused review of path handling, uploads and the access policy.
-- **Route tests**: form actions and endpoints without a test (status.md).
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.

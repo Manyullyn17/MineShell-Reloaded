@@ -21,10 +21,14 @@ actions are thin over `lib/server` code the flow tests cover. Done: `call()` for
 in the route helper, sign-in and setup (`routes/login`, `routes/setup`), each Settings
 section keeping what its form does not carry, with a server-rendered round trip of the
 shared field components (`tests/helpers/forms.ts`; it found the restarts switch bug).
-Next, agreed: raw uploads (world `PUT`, imports `PUT`/`POST`), then input checks without
-a test (`power`, `limits`, `addCommand`, `settings/defaults.save`, `instances/new.loader`,
-`portChange`, `sftp`). Not worth it: read-only `/api` GETs, item icons, the Chunky, map and
-profiler buttons. A new test for working code is checked by removing what it covers.
+Then the raw uploads (world `PUT`, imports) and the input checks (`power`, `limits`,
+`addCommand`, `settings/defaults.save`, `instances/new.loader`, `portChange`, `sftp`); these
+found loader names like `toString` passing the loader checks (fixed). Not worth it:
+read-only `/api` GETs, item icons, the Chunky, map and profiler buttons. A new test for
+working code is checked by removing what it covers. Seen, left as they are: a power delay
+outside 1-3600 s acts at once instead of being refused (the buttons only offer listed
+delays), and Add a server answers a bad game port with status 500 (the message shows all
+the same).
 
 ## Left for the user
 
