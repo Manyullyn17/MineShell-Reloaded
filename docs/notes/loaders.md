@@ -34,6 +34,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - **0.6.0+ replaced Mixin with CleanMix**; mods reaching into Mixin internals
   (FermiumBooter) or patching exact targets (Alfheim) crash on it. Forge-pack installs and
   migrations default to the newest 0.5.x; every Cleanroom picker warns on 0.6+.
+- Found 2026-10-21, not fixed: the newest installer (0.7.11-alpha's) is no longer a Forge
+  installer fork on the command line: `--installServer` is refused ("Unknown option") and it
+  takes `server --dir <path> [--version <id>] [--no-gui] [-y]` instead, so a new plain
+  Cleanroom server (the newest release by default) fails to install. Which version changed
+  it, and what `server` leaves in the folder, is not checked yet; 0.5.x still installs.
 - `cleanroom.ts`: adds Fugue (Modrinth) and Scalar Legacy (CurseForge, CDN fallback), disables
   a curated must-remove list (never content mods), reports the "replace with fork" list.
   Mods are matched by mcmod.info name/modid and filename because modids lie (Born in a Barn =
