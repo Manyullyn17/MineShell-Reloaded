@@ -174,7 +174,8 @@ When something needed for a check would be written a second time, it goes here i
 
 `tests/helpers/ports.ts`: `testPorts()`, a game and RCON port pair for a server a test
 starts (`start()` binds them to check they are free). Each Vitest worker gets its own block
-below the ephemeral range; never pick ports by pid or at random.
+below the ephemeral range, and a pair a server in the worker's database already has is skipped
+(earlier files' servers stay there); never pick ports by pid or at random.
 
 `tests/helpers/auth.ts`: `owner()`, the owner account with `OWNER_PASSWORD` (made once: the
 database will not delete an owner, so it is reused and its password put back), and
@@ -363,6 +364,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The Map tab ran BlueMap's and the map mods' pages on MineShell's own origin, where their scripts could do anything the viewer could: now sandboxed under a token path, the token following the session, the server and the account's access; the guard lets `/maps/` through without a session or the cross-site check, and nowhere else; pages get the storage shim | `server/mapframe.test.ts`, `routes/maps/[token]/view/[...path]/view.test.ts`, `routes/maps/[token]/live/[...path]/live.test.ts`, `server/guard.test.ts`, `server/access/policy.test.ts` |
 | A new plain Cleanroom server failed to install: the newest installer refuses `--installServer` and lays the server out with an @argfile | `server/installer-jar.test.ts`, `server/cleanroom.test.ts` ("libraries/") |
 | (feature) A new plain Cleanroom server gets Fugue and Scalar Legacy while it is set up, and is ready with a note when one cannot be added | `flows/cleanroom-create.test.ts` |
+| `testPorts()` handed out a pair again after 25 (and from the start in an isolated file), so on CI the port overview's test met another server on its RCON port | `helpers/ports.test.ts` |
 | The Map tab installed Dynmap 3.7-beta-6 on plain Forge 1.12.2, where it stops the server at start | `flows/worldmap.test.ts` ("Forge's own 1.12.2") |
 | The BlueMap mod added to a Fabric server without a pack came without Fabric API, and the server did not start | `flows/worldmap-mod.test.ts` |
 | The raw server.properties editor saved a game port of 0 or 70000 | `routes/instances/[id]/settings/properties.test.ts` ("the game port in the raw editor") |
