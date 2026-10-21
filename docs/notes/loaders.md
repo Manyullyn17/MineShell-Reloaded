@@ -43,8 +43,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `--installServer` first and the mode on "Unknown option". Tried 2026-10-21: a new plain
   server on 0.7.11 installed and booted on Java 25.
 - Cleanroom 0.7 asks at the first start when Fugue and Scalar are missing ("These mods are
-  missing", `/fml confirm`; forge_early.cfg turns it off); the overview shows it as a
-  startup question and confirming starts the server.
+  missing", `/fml confirm`; forge_early.cfg turns it off). Every Cleanroom server gets both:
+  packs moving to it always did, a new plain one since 2026-10-21 (user's call: no reason to
+  run without them), with a failure to add one shown in its status, not failing the install.
 - `cleanroom.ts`: adds Fugue (Modrinth) and Scalar Legacy (CurseForge, CDN fallback), disables
   a curated must-remove list (never content mods), reports the "replace with fork" list.
   Mods are matched by mcmod.info name/modid and filename because modids lie (Born in a Barn =

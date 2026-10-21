@@ -325,8 +325,8 @@ Installed by MineShell or worked with when a server has them.
 
 - [Dynmap and DynmapBlockScan](https://github.com/webbukkit/dynmap) — The live map for 1.12.2 Forge and Cleanroom servers.
 - [BlueMap (mod)](https://modrinth.com/plugin/bluemap) — A live map with players on it, offered beside the rendered one.
-- [Fugue](https://modrinth.com/mod/fugue) — Added when a pack moves to Cleanroom, so older mods run on it.
-- [Scalar Legacy](https://www.curseforge.com/projects/1235372) — Added when a pack moves to Cleanroom: the Scala libraries Forge bundled.
+- [Fugue](https://modrinth.com/mod/fugue) — Added to every Cleanroom server, so older mods run on it.
+- [Scalar Legacy](https://www.curseforge.com/projects/1235372) — Added to every Cleanroom server: the Scala libraries Forge bundled.
 - [spark](https://spark.lucko.me) — Profiling from the server's overview, and its viewer.
 - [Chunky](https://github.com/pop4959/Chunky) — Pre-generating worlds from the World tab.
 - [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat) — Its port is kept free and tunnelled with the server.

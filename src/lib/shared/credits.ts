@@ -51,8 +51,8 @@ export const CREDITS: CreditGroup[] = [
 		items: [
 			{ name: 'Dynmap and DynmapBlockScan', url: 'https://github.com/webbukkit/dynmap', use: 'The live map for 1.12.2 Forge and Cleanroom servers.' },
 			{ name: 'BlueMap (mod)', url: 'https://modrinth.com/plugin/bluemap', use: 'A live map with players on it, offered beside the rendered one.' },
-			{ name: 'Fugue', url: 'https://modrinth.com/mod/fugue', use: 'Added when a pack moves to Cleanroom, so older mods run on it.' },
-			{ name: 'Scalar Legacy', url: 'https://www.curseforge.com/projects/1235372', use: 'Added when a pack moves to Cleanroom: the Scala libraries Forge bundled.' },
+			{ name: 'Fugue', url: 'https://modrinth.com/mod/fugue', use: 'Added to every Cleanroom server, so older mods run on it.' },
+			{ name: 'Scalar Legacy', url: 'https://www.curseforge.com/projects/1235372', use: 'Added to every Cleanroom server: the Scala libraries Forge bundled.' },
 			{ name: 'spark', url: 'https://spark.lucko.me', use: "Profiling from the server's overview, and its viewer." },
 			{ name: 'Chunky', url: 'https://github.com/pop4959/Chunky', use: 'Pre-generating worlds from the World tab.' },
 			{ name: 'Simple Voice Chat', url: 'https://modrinth.com/plugin/simple-voice-chat', use: 'Its port is kept free and tunnelled with the server.' }

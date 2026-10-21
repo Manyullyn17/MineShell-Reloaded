@@ -424,14 +424,15 @@ export async function createFromLoader(input: CreateInstanceInput): Promise<{ in
 					.where(eq(serverInstances.id, instance.id))
 					.run();
 
+				// Fugue and Scalar Legacy: most Forge mods need them on Cleanroom, which asks for them at the first start otherwise.
+				const problems: string[] = [];
 				if (input.modloader === 'cleanroom') {
-					task.log(
-						'Most Forge mods also need Fugue and Scalar Legacy on Cleanroom; "Apply required fixes" in the server\'s Settings adds both.'
-					);
+					task.setProgress(null, 'Adding Fugue and Scalar Legacy');
+					problems.push(...(await applyCleanroomModFixes(requireInstance(instance.id), task)).failures);
 				}
 
 				await syncUnit(requireInstance(instance.id));
-				commitOperation(instance.id, { status: 'ready', statusMessage: null });
+				commitOperation(instance.id, { status: 'ready', statusMessage: problems.length ? problems.join(' ') : null });
 				audit('instance.created', { instanceId: instance.id, detail: input.modloader });
 				if (input.startWhenReady) await startWhenInstalled(instance.id, task);
 				else if (input.acceptEula && !(await eulaIsAccepted(requireInstance(instance.id)))) await acceptEula(requireInstance(instance.id));
