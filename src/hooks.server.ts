@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { boot } from '#lib/server/boot.js';
-import { guard } from '#lib/server/guard.js';
+import { guard, withSecurityHeaders } from '#lib/server/guard.js';
 import { runAs } from '#lib/server/requestcontext.js';
 
 boot();
@@ -11,7 +11,7 @@ boot();
  */
 export const handle: Handle = async ({ event, resolve }) => {
 	const refused = guard(event);
-	if (refused) return refused;
+	if (refused) return withSecurityHeaders(refused);
 	const user = event.locals.user;
-	return runAs(user ? { id: user.id, username: user.username } : null, () => resolve(event));
+	return withSecurityHeaders(await runAs(user ? { id: user.id, username: user.username } : null, () => resolve(event)));
 };

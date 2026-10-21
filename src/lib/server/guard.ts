@@ -39,6 +39,18 @@ export function isCrossSiteRequest(request: Request): boolean {
 	return !hosts.includes(originHost);
 }
 
+/**
+ * Headers every response gets: no other site (or another port on this
+ * machine, which shares the cookies) may show MineShell in a frame, so a
+ * page cannot overlay its buttons with its own. Its own pages may: the Map
+ * tab frames the map.
+ */
+export function withSecurityHeaders(response: Response): Response {
+	response.headers.set('x-frame-options', 'SAMEORIGIN');
+	if (!response.headers.has('content-security-policy')) response.headers.set('content-security-policy', "frame-ancestors 'self'");
+	return response;
+}
+
 type GuardEvent = {
 	request: Request;
 	url: URL;

@@ -10,7 +10,7 @@ vi.mock('./auth', async (importOriginal) => {
 	return { ...actual, authEnabled: () => authControl.enabled, ownerExists: () => authControl.setUp && actual.ownerExists() };
 });
 
-const { guard, isCrossSiteRequest } = await import('./guard');
+const { guard, isCrossSiteRequest, withSecurityHeaders } = await import('./guard');
 const { createSession, destroySession, SESSION_COOKIE } = await import('./auth');
 const { db } = await import('./db');
 const { users } = await import('./db/schema');
@@ -80,6 +80,17 @@ describe('cross-site requests', () => {
 		} finally {
 			authControl.enabled = true;
 		}
+	});
+});
+
+describe('framing', () => {
+	it('is allowed only to MineShell itself, and a page keeps its own policy', () => {
+		const plain = withSecurityHeaders(new Response('page'));
+		expect(plain.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+		expect(plain.headers.get('content-security-policy')).toBe("frame-ancestors 'self'");
+		const own = withSecurityHeaders(new Response('map', { headers: { 'content-security-policy': "default-src 'self'" } }));
+		expect(own.headers.get('content-security-policy')).toBe("default-src 'self'");
+		expect(own.headers.get('x-frame-options')).toBe('SAMEORIGIN');
 	});
 });
 
