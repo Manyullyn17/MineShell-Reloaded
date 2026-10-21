@@ -70,6 +70,7 @@ import {
 	serialiseProperties,
 	writeProperties
 } from '#lib/server/properties.js';
+import { cleanWorldPath } from '#lib/server/packworld.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
 import { LOADER_LIST, findLoader, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
@@ -95,6 +96,35 @@ import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib
  */
 const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port', 'server-port']);
 
+/**
+ * Minecraft's management server (1.21.9+): an API on a port of its own that
+ * manages operators, bans and the whitelist. Turning it on would get around
+ * "the operators list needs Send commands", so only accounts with full trust
+ * on the server (`software`) change these keys or see the secret.
+ */
+const isManagementKey = (key: string) => key.startsWith('management-server-');
+const MANAGEMENT_SECRET = 'management-server-secret';
+
+/**
+ * Why `next` may not replace `current` in server.properties, or null. Puts
+ * back the management secret, which an account that may not see it saves
+ * without.
+ */
+function propertiesProblem(locals: App.Locals, instanceId: string, current: Record<string, string>, next: Record<string, string>): string | null {
+	// The game follows level-name anywhere, another server's world included; MineShell's world tools would not.
+	const levelName = next['level-name'];
+	if (levelName !== undefined && levelName !== current['level-name'] && cleanWorldPath(levelName) === null) {
+		return 'The world folder (level-name) has to be inside the server folder.';
+	}
+	if (can(locals.access, instanceId, 'software')) return null;
+	if (current[MANAGEMENT_SECRET] !== undefined && next[MANAGEMENT_SECRET] === undefined) next[MANAGEMENT_SECRET] = current[MANAGEMENT_SECRET];
+	const keys = new Set([...Object.keys(current), ...Object.keys(next)].filter(isManagementKey));
+	if ([...keys].some((key) => current[key] !== next[key])) {
+		return 'The management-server settings (Minecraft\'s management API, which can make players operators) need "Loader, modpack and Java".';
+	}
+	return null;
+}
+
 /** Another server using `port`, by name only to an account that may see it. */
 function portClash(locals: App.Locals, port: number, instanceId: string) {
 	const user = portUser(port, instanceId);
@@ -110,6 +140,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const parsed = await readProperties(instance.path);
 	// The RCON password is only sent when asked for (revealRcon), never with the page.
 	const { 'rcon.password': _, ...shownProperties } = parsed.values;
+	if (!can(locals.access, instance.id, 'software')) delete shownProperties[MANAGEMENT_SECRET];
 	const cleanroomRelevant =
 		instance.modloader === 'cleanroom' || canUseCleanroom(instance.modloader, instance.minecraftVersion);
 	const backup = cleanroomRelevant ? await readForgeBackup(instance) : null;
@@ -267,7 +298,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				: [],
 		properties: {
 			values: shownProperties,
-			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k)).map((key) => ({ key, value: parsed.values[key] })),
+			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k)).map((key) => ({ key, value: parsed.values[key] })),
 			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) =>
 				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
 			),
@@ -848,17 +879,17 @@ export const actions: Actions = {
 	 * Guided server.properties fields. Settings posts them a section at a time,
 	 * so only the keys on the form are written; the rest keep their values.
 	 */
-	properties: async ({ request, params }) => {
+	properties: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const next: Record<string, string> = {
-			...(await readProperties(instance.path)).values,
-			...propertiesFromForm(form, editableProperties())
-		};
+		const current = (await readProperties(instance.path)).values;
+		const next: Record<string, string> = { ...current, ...propertiesFromForm(form, editableProperties()) };
 		for (const [key, value] of form.entries()) {
 			const match = key.match(/^extra:(.+)$/);
 			if (match && !MANAGED_KEYS.has(match[1])) next[match[1]] = String(value);
 		}
+		const problem = propertiesProblem(locals, instance.id, current, next);
+		if (problem) return fail(400, { ok: false, message: problem });
 		await writeProperties(instance.path, next);
 		await syncPortsToProperties(requireInstance(instance.id));
 		return { ok: true, message: 'Saved. Restart the server for the changes to take effect.' };
@@ -871,6 +902,8 @@ export const actions: Actions = {
 		if (Object.keys(parsed.values).length === 0) {
 			return fail(400, { ok: false, message: 'That does not look like a properties file.' });
 		}
+		const problem = propertiesProblem(locals, instance.id, (await readProperties(instance.path)).values, parsed.values);
+		if (problem) return fail(400, { ok: false, message: problem });
 		// The game port lives in the DB too; a changed one in the raw file moves it.
 		const newPort = Number(parsed.values['server-port']);
 		if (Number.isInteger(newPort) && newPort !== instance.serverPort) {

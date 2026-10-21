@@ -356,6 +356,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) A server's limits (memory above the heap, the running one's included; CPU from 10% to every core) and scheduled commands (a command, a valid time or an offered interval) are refused otherwise, saving nothing | `routes/instances/[id]/settings/checks.test.ts` |
 | (feature) New-server defaults: memory and a preset that is gone are refused; saved unchanged through the shared field components, every value stays | `routes/settings/defaults/defaults.test.ts` |
 | (feature) Moving a port from the port overview, and the SFTP address: only real ports, own-setting kinds, host names and account names | `routes/settings/checks.test.ts` |
+| "Change settings" could turn on Minecraft's management server (it makes players operators, without "Send commands") through extra properties or the raw editor, and saw its secret; and could point level-name at another server's world | `routes/instances/[id]/settings/properties.test.ts` |
 | Sign out did nothing: the guard sent every signed-in request for /login home, the sign-out post included | `guard.test.ts` |
 | (feature) Access: `can()`, loading grants (admin removal keeps the listed permissions, grants go with the server or account), the guard applying the policy, a refused page never running its load | `shared/access.test.ts`, `server/access.test.ts`, `guard.test.ts` |
 | (feature) The access policy names every route, action and method, and handler-checked entries call `requireAccess` | `access/policy.test.ts` |

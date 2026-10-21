@@ -1047,7 +1047,12 @@ entries) only with `software`, the others learning just that it asks; Spark's pr
 `console.command`; Players' IP bans need `players.manage`; a server's scheduled commands need console access; the playit.gg account links,
 link-up and routing, and tunnels made outside MineShell are the owner's (global admins see the
 status). A server the account may not see is "Another server" in port messages, and moving
-another server's port to make room needs `settings.edit` on it. A visitor who is not signed in
+another server's port to make room needs `settings.edit` on it. Two server.properties settings
+reach past `settings.edit`, so both editors check them: the `management-server-*` keys
+(Minecraft 1.21.9+'s management API, which can make players operators) need `software` to
+change, and its secret is left out of the page without it (a save puts it back); a changed
+`level-name` must stay inside the server folder (`cleanWorldPath`), since the game follows it
+anywhere, another server's world included. A visitor who is not signed in
 has no access (`NO_ACCESS`), never the full access `MINESHELL_AUTH=off` gives.
 
 Pages show only what the account may use, from the same `can()`: the root layout hands every
