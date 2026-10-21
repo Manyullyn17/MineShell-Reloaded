@@ -361,6 +361,9 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Any site could show MineShell in a frame (no X-Frame-Options or frame-ancestors) | `server/guard.test.ts` ("framing") |
 | The live map proxy passed the map mod's Set-Cookie through to MineShell's address | `routes/maps/[token]/live/[...path]/live.test.ts` |
 | The Map tab ran BlueMap's and the map mods' pages on MineShell's own origin, where their scripts could do anything the viewer could: now sandboxed under a token path, the token following the session, the server and the account's access; the guard lets `/maps/` through without a session or the cross-site check, and nowhere else; pages get the storage shim | `server/mapframe.test.ts`, `routes/maps/[token]/view/[...path]/view.test.ts`, `routes/maps/[token]/live/[...path]/live.test.ts`, `server/guard.test.ts`, `server/access/policy.test.ts` |
+| A new plain Cleanroom server failed to install: the newest installer refuses `--installServer` and lays the server out with an @argfile | `server/installer-jar.test.ts`, `server/cleanroom.test.ts` ("libraries/") |
+| The Map tab installed Dynmap 3.7-beta-6 on plain Forge 1.12.2, where it stops the server at start | `flows/worldmap.test.ts` ("Forge's own 1.12.2") |
+| The BlueMap mod added to a Fabric server without a pack came without Fabric API, and the server did not start | `flows/worldmap-mod.test.ts` |
 | The raw server.properties editor saved a game port of 0 or 70000 | `routes/instances/[id]/settings/properties.test.ts` ("the game port in the raw editor") |
 | Sign out did nothing: the guard sent every signed-in request for /login home, the sign-out post included | `guard.test.ts` |
 | (feature) Access: `can()`, loading grants (admin removal keeps the listed permissions, grants go with the server or account), the guard applying the policy, a refused page never running its load | `shared/access.test.ts`, `server/access.test.ts`, `guard.test.ts` |
