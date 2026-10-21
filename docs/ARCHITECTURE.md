@@ -875,7 +875,7 @@ server's), and writes it with a localhost-only bind into the mod's config before
 the assigned port and the per-server EULA answer; Dynmap's config is created by its first
 start and is configured before later starts). `/instances/<id>/map/live/` passes requests
 through to that port behind MineShell's login - bodies streamed, MineShell's own cookies
-and auth headers not passed on. With the BlueMap mod in, the Map tab opens on its live map
+and auth headers not passed on, nor the map's cookies back to MineShell's address. With the BlueMap mod in, the Map tab opens on its live map
 (the one that is current); the rendered one is a switch away.
 A BlueMap mod that came another way (a pack, added by hand) before the EULA was accepted
 gets a panel asking only for that answer (`modEula`), without the render setup.
@@ -994,7 +994,10 @@ server.properties editor, which leaves the line out (a save puts it back from th
 **Cross-site requests.** A state-changing request whose browser `Origin` names another host
 is refused (`guard.ts`). Only the host is compared, against `Host` and `X-Forwarded-Host`,
 because MineShell is reached by raw IP, other hostnames and through TLS-terminating proxies;
-SvelteKit's own full-origin check is turned off for that reason.
+SvelteKit's own full-origin check is turned off for that reason. Every response also says only
+MineShell may frame it (`X-Frame-Options: SAMEORIGIN`, and `frame-ancestors 'self'` where the
+response has no policy of its own; `withSecurityHeaders`), since a page on another port of the
+same machine would share its cookies.
 
 **Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that

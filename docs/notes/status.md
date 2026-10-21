@@ -30,6 +30,12 @@ outside 1-3600 s acts at once instead of being refused (the buttons only offer l
 delays), and Add a server answers a bad game port with status 500 (the message shows all
 the same).
 
+Security and permissions pass (2026-10-21): no route without its check; fixed what reached past
+its permission (management-server keys and level-name under "Change settings"), full-trust
+tags on a server's admin, "May add servers" and MineShell admin, framing headers, the live
+map's cookies, the raw editor's game port. Left: the map on its own address (ROADMAP, "Road to
+1.0"), to be looked at next.
+
 ## Left for the user
 
 - Notifications to a Discord channel (ntfy.sh is tried: crash with cause, memory kill
