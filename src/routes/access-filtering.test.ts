@@ -43,6 +43,7 @@ const { addScheduledCommand } = await import('#lib/server/scheduledcommands.js')
 const { createInstance } = await import('../../tests/helpers/instances');
 const { fakeProcesses, resetProcesses } = await import('../../tests/helpers/process');
 const { testPorts } = await import('../../tests/helpers/ports');
+const { call, post } = await import('../../tests/helpers/routes');
 
 /** What each account's page data holds: other servers, and secrets, left out. */
 
@@ -86,7 +87,7 @@ describe('lists show only the servers an account may see', () => {
 		const theirs = startTask({ label: 'theirs', instanceId: other.id }, () => new Promise(() => undefined));
 		const global = startTask({ label: 'java', instanceId: null }, () => new Promise(() => undefined));
 		const seen = async (who: Access) => {
-			const response = await (tasksApi.GET as (e: never) => Promise<Response>)({ url: new URL('http://localhost/api/tasks'), locals: { authenticated: true, access: who } } as never);
+			const response = await call(tasksApi.GET, { url: 'http://localhost/api/tasks', access: who });
 			return ((await response.json()) as { tasks: { id: string }[] }).tasks.map((t) => t.id);
 		};
 		const ids = await seen(access({ [mine.id]: { permissions: ['view'] } }));
@@ -156,22 +157,14 @@ describe("another server's ports", () => {
 		const mine = await server();
 		const other = await server();
 		const who = access({ [mine.id]: { permissions: ['settings.edit'] } });
-		const check = await (ports.GET as (e: never) => Promise<Response>)({
-			params: { id: mine.id },
-			url: new URL(`http://localhost/?port=${other.serverPort}&field=game`),
-			locals: { authenticated: true, access: who }
-		} as never);
+		const check = await call(ports.GET, { params: { id: mine.id }, url: `http://localhost/?port=${other.serverPort}&field=game`, access: who });
 		expect(((await check.json()) as { other: unknown }).other).toMatchObject({ name: 'Another server', movable: false });
 
-		const form = new FormData();
-		form.set('serverPort', String(other.serverPort));
-		form.set('rconPort', String(mine.rconPort));
-		form.set('moveGame', 'swap');
-		const result = await (settings.actions.network as (e: never) => unknown)({
+		const result = await post(settings.actions.network, {
 			params: { id: mine.id },
-			request: new Request('http://localhost/', { method: 'POST', body: form }),
-			locals: { access: who }
-		} as never);
+			access: who,
+			fields: { serverPort: String(other.serverPort), rconPort: String(mine.rconPort), moveGame: 'swap' }
+		});
 		expect(result).toMatchObject({ status: 400, data: { message: expect.stringMatching(/^Another server .* may not change that server/) } });
 	});
 });

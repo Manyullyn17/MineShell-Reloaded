@@ -188,7 +188,11 @@ Handlers that check access read `locals.access`: pass an `Access` object
 `tests/helpers/routes.ts`: `post(action, { params, fields, access, user, cookie, url })` calls a
 form action with a fake event (fields as FormData, an array posts a field once per value) and
 `load(module, { ... })` a page's load; `access` defaults to the owner's. An `error()` comes back
-as `{ refused: status }`, a `redirect()` as `{ redirect: location }`. The access policy is not
+as `{ refused: status }`, a `redirect()` as `{ redirect: location }`. `call(handler, { method,
+body, json, ... })` calls an endpoint (`+server.ts`) and always returns a Response: an `error()`
+as Kit sends it (that status, `{ message }`), a `redirect()` with its `location` header. The
+event also takes `headers`, `ip` (`getClientAddress()`) and `cookies: cookieJar()`, whose
+`values` show what the handler set or deleted (sign-in, setup). The access policy is not
 in the way (it lives in the hooks): this reaches the handler itself, with its own checks.
 
 `tests/helpers/instances.ts`:
