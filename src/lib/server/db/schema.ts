@@ -631,3 +631,24 @@ export const downloadedFiles = sqliteTable(
 		byHash: index('downloaded_files_hash_idx').on(t.algo, t.hash)
 	})
 );
+
+/**
+ * Access to one server's map content for one session (mapframe.ts): the Map
+ * tab's frames are sandboxed, so their requests carry no cookie and name this
+ * instead. Null session: MINESHELL_AUTH=off.
+ */
+export const mapTokens = sqliteTable(
+	'map_tokens',
+	{
+		token: text('token').primaryKey(),
+		sessionId: text('session_id').references(() => sessions.id, { onDelete: 'cascade' }),
+		instanceId: text('instance_id')
+			.notNull()
+			.references(() => serverInstances.id, { onDelete: 'cascade' }),
+		createdAt: integer('created_at').notNull(),
+		usedAt: integer('used_at').notNull()
+	},
+	(t) => ({
+		bySession: index('map_tokens_session_idx').on(t.sessionId, t.instanceId)
+	})
+);

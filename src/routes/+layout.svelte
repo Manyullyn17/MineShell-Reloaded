@@ -25,6 +25,8 @@
 	}
 
 	const bare = $derived(page.url.pathname === '/login' || page.url.pathname === '/setup');
+	/** A map on a page of its own: nothing around it. */
+	const mapOnly = $derived(page.route.id === '/instances/[id]/map/full');
 	const instances = $derived(data.railInstances ?? []);
 </script>
 
@@ -36,7 +38,9 @@
 	</select>
 {/snippet}
 
-{#if bare}
+{#if mapOnly}
+	{@render children()}
+{:else if bare}
 	<main class="bare">
 		{@render children()}
 	</main>

@@ -11,6 +11,7 @@ const pageServers = import.meta.glob<{ actions?: Record<string, unknown>; load?:
 const pageSources = import.meta.glob<string>('/src/routes/**/+page.server.ts', { eager: true, query: '?raw', import: 'default' });
 const pages = import.meta.glob('/src/routes/**/+page.svelte');
 const endpoints = import.meta.glob<Record<string, unknown>>('/src/routes/**/+server.ts', { eager: true });
+const endpointSources = import.meta.glob<string>('/src/routes/**/+server.ts', { eager: true, query: '?raw', import: 'default' });
 
 const routeId = (file: string) => file.replace(/^\/src\/routes/, '').replace(/\/\+[^/]+$/, '') || '/';
 const METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'fallback'];
@@ -82,9 +83,14 @@ describe('the access policy', () => {
 		expect(loose.map(([where]) => where)).toEqual([]);
 	});
 
-	it('keeps public access to signing in and setting up', () => {
-		const open = allRequirements().filter(([, r]) => r === 'public').map(([where]) => where.split(/[ ?]/)[0]);
-		expect(new Set(open)).toEqual(new Set(['/login', '/setup']));
+	it("keeps public access to signing in, setting up and the map frames, which check their token", () => {
+		const open = allRequirements()
+			.filter(([, r]) => r === 'public')
+			.map(([where]) => where.split(/[ ?]/).find((part) => part.startsWith('/')));
+		const frames = ['/maps/[token]/view/[...path]', '/maps/[token]/live/[...path]'];
+		expect(new Set(open)).toEqual(new Set(['/login', '/setup', ...frames]));
+		// No session comes with the sandboxed frames: their handlers check the token (mapframe.ts; each route's test refuses an unknown one).
+		for (const id of frames) expect(endpointSources[`/src/routes${id}/+server.ts`], id).toContain('mapRequest(');
 	});
 
 	it('has the handler check what the table leaves to it', () => {

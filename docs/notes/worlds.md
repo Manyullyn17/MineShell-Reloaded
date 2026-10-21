@@ -98,6 +98,23 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   relative: its pages need the trailing slash (`trailingSlash = 'ignore'` + own redirect).
 - 1.12.2 Forge/Cleanroom: Dynmap + DynmapBlockScan (live, in the game); uNmINeD fails on
   RoughlyEnoughIDs worlds. Mod web servers get `modPort` + 127.0.0.1 written before each
-  start; `/map/live/` proxies. Tested: MeatballCraft with both mods (renders, black areas
+  start; `/maps/<token>/live/` proxies. Tested: MeatballCraft with both mods (renders, black areas
   gone with BlockScan); the proxy against a fake Dynmap server; BlueMap CLI on the throwaway
-  server and a copy of ATM10.
+  server and a copy of ATM10. Found 2026-10-21, not fixed: on plain Forge 1.12.2
+  (14.23.5.2859) the Dynmap MineShell installs (3.7-beta-6) crashes at start
+  (`IllegalAccessError` on `Biome.field_76791_y`; FML also cannot read its
+  `META-INF/versions/9` classes) - only Cleanroom was tried before; and the BlueMap mod on a
+  Fabric server without a pack does not start, since Fabric API is not added with it.
+- The map's sandbox (2026-10-21, ARCHITECTURE "The map's pages are not MineShell's"),
+  checked in headless Chrome against a real BlueMap render, a running BlueMap mod and a running
+  Dynmap (map, controls, web chat reaching the game): in a
+  sandboxed frame (opaque origin) `localStorage` and `document.cookie` throw, and BlueMap
+  writes localStorage unguarded (marker visibility, every setting) while Dynmap uses a cookie,
+  so both need the shim. Only the frame's own navigation carries the session cookie; every
+  request its page makes goes without, hence the token in the path. BlueMap's
+  `<script type="module" crossorigin>` needs CORS. Dynmap's jQuery takes the sandboxed page's
+  address for its own and adds `X-Requested-With` to every request, so each one is preflighted
+  (OPTIONS) and the preflight has to allow that header - allowing only `content-type` left
+  Dynmap black, its configuration never loaded; its chat posts JSON. `window.name` is readable in the sandbox and set by the parent before load: the
+  shim's way in for saved storage. Panning, the URL hash and the full-screen page work as before.
+  `tests/tools/pageshot.mjs --drag` pans a map (real input, reaches into the frame).

@@ -59,14 +59,6 @@ until after 1.0, and asked to keep the rest listed here):
   few kept (accounts, history, settings); restoring one from the page stays a leftover.
 - **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
   `crash-reports/`), even if the answer is that the disk usage page is enough.
-- **The map on its own address** (from the security pass, 2026-10-21; the user wants it
-  fixed, timing depending on the work, with the map looking and working the same): the Map
-  tab's frames show BlueMap's web app and the map mod's own page on MineShell's address,
-  unsandboxed, so their scripts can do whatever the person looking can (the owner: anything).
-  Players with no account influence what they show (Dynmap's chat, names some mods let
-  players change, markers); no hole in them is known, but one would reach that far. Ways: a
-  second listener for map content only, or sandboxed frames reached by a per-view token
-  instead of the session cookie.
 - **Limits on going back** (agreed in outline 2026-10-21, details when it is built): from
   1.0 on, Settings > Updates goes back only within the same major, plus to the newest
   release of the previous one (the escape hatch if 1.0 has a problem); older ones are not

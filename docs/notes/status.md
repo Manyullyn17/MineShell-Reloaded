@@ -33,8 +33,13 @@ the same).
 Security and permissions pass (2026-10-21): no route without its check; fixed what reached past
 its permission (management-server keys and level-name under "Change settings"), full-trust
 tags on a server's admin, "May add servers" and MineShell admin, framing headers, the live
-map's cookies, the raw editor's game port. Left: the map on its own address (ROADMAP, "Road to
-1.0"), to be looked at next.
+map's cookies, the raw editor's game port. Then the map on an origin of its own (sandboxed under
+a token path; ARCHITECTURE, "The map's pages are not MineShell's"), checked in headless Chrome
+on a real render and a running BlueMap mod.
+
+Found while testing that, on real loaders, not fixed yet: a new plain Cleanroom server fails to
+install (the newest installer's options changed; loaders.md), Dynmap crashes on plain Forge
+1.12.2, and the BlueMap mod on a Fabric server without a pack lacks Fabric API (worlds.md).
 
 ## Left for the user
 

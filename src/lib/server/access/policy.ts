@@ -29,7 +29,7 @@ export type Requirement =
 	| { base: Requirement; handler: string };
 
 export type PagePolicy = { load: Requirement; actions?: Record<string, Requirement> };
-export type EndpointPolicy = { methods: Partial<Record<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', Requirement>> };
+export type EndpointPolicy = { methods: Partial<Record<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS', Requirement>> };
 
 const on = (instance: InstancePermission | 'admin', player?: 'uuid' | 'any' | 'all'): Requirement =>
 	player ? { instance, player } : { instance };
@@ -231,9 +231,12 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			installMod: on('mods')
 		}
 	},
-	'/instances/[id]/map/view/[...path]': { methods: { GET: on('view') } },
-	// POSTs are the map mod's own (Dynmap's web chat).
-	'/instances/[id]/map/live/[...path]': { methods: { GET: on('view'), POST: on('map.render') } },
+	'/instances/[id]/map/full': { load: on('view') },
+	// The Map tab's frames, sandboxed: no session comes with them, so the token in the path is
+	// the access check (mapframe.ts mapRequest: view; map.render for the live map's POSTs,
+	// Dynmap's web chat).
+	'/maps/[token]/view/[...path]': { methods: { GET: 'public' } },
+	'/maps/[token]/live/[...path]': { methods: { GET: 'public', POST: 'public', OPTIONS: 'public' } },
 
 	'/instances/[id]/players': {
 		load: on('view'),

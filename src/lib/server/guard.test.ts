@@ -108,6 +108,16 @@ describe('auth guard', () => {
 		expect(outcome(event('/setup'))).toBeNull();
 	});
 
+	it("lets the Map tab's sandboxed frames through without a session or an origin, to their token check", () => {
+		const route = '/maps/[token]/live/[...path]';
+		const params = { token: 'T'.repeat(43), path: 'up/sendmessage' };
+		expect(outcome(event(`/maps/${params.token}/live/up/world`, { route, params }))).toBeNull();
+		expect(outcome(event(`/maps/${params.token}/live/up/sendmessage`, { route, params, method: 'POST', headers: { origin: 'null' } }))).toBeNull();
+		// Nowhere else: the same request to any other path is still cross-site, and still needs a session.
+		expect(outcome(event('/instances/a?/power', { method: 'POST', headers: { origin: 'null' } }))).toEqual({ status: 403 });
+		expect(outcome(event('/mapsx/y'))).toEqual({ redirect: '/login?next=%2Fmapsx%2Fy' });
+	});
+
 	it('sends visitors without a session to login, remembering where they were going', () => {
 		expect(outcome(event('/settings?tab=x'))).toEqual({ redirect: '/login?next=%2Fsettings%3Ftab%3Dx' });
 		expect(outcome(event('/login'))).toBeNull();

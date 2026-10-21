@@ -5,10 +5,11 @@ import { isJavaVendor } from '#lib/server/javadownload.js';
 import { deleteMapData, installMapMod, mapStatus, renderMap, saveMapSchedule, saveMapSettings, validMapSchedule } from '#lib/server/worldmap.js';
 import { serverWorldName } from '#lib/server/packworld.js';
 import { sendCommand, summarise } from '#lib/server/instances.js';
+import { mapFrames } from '#lib/server/mapframe.js';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, cookies, locals }) => {
 	const instance = requireInstance(params.id);
-	return { map: await mapStatus(instance) };
+	return { map: await mapStatus(instance), frames: mapFrames(instance.id, cookies, locals) };
 };
 
 function refused(err: unknown, action: string) {

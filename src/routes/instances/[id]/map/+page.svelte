@@ -6,7 +6,7 @@
 	import PresetSelect from '#lib/components/PresetSelect.svelte';
 	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
-	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import MapFrame from '#lib/components/MapFrame.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 
 	let { data, form } = $props();
@@ -14,8 +14,8 @@
 	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	const map = $derived(data.map);
-	const viewUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/view/`);
-	const liveUrl = $derived(`/instances/${encodeURIComponent(data.instance.id)}/map/live/`);
+	/** The map on a page of its own, full size (map/full). */
+	const fullUrl = (which: 'rendered' | 'live') => `/instances/${encodeURIComponent(data.instance.id)}/map/full?map=${which}`;
 	/** With the BlueMap mod in, which map is shown: the mod's live one unless the render is picked. */
 	let picked = $state<'rendered' | 'live' | null>(null);
 	const view = $derived(picked ?? (map.mods.blueMap ? 'live' : 'rendered'));
@@ -82,10 +82,10 @@
 				<p class="small muted">Dynmap draws what changes as the server runs. A world it has not drawn yet stays empty until it is rendered once.</p>
 				<div class="button-row">
 					{#if may('map.render')}<form method="POST" action="?/dynmapRender" use:enhance><button type="submit">Render the whole world</button></form>{/if}
-					<a class="button button-quiet" href={liveUrl} target="_blank" rel="noreferrer">Open full screen</a>
+					<a class="button button-quiet" href={fullUrl('live')} target="_blank" rel="noreferrer">Open full screen</a>
 				</div>
 			</div>
-			<iframe class="map" src={liveUrl} title="Map of {data.instance.name}" use:fitToViewport></iframe>
+			<MapFrame src={data.frames.live} title="Map of {data.instance.name}" />
 		{:else}
 			<div class="empty"><p>Dynmap draws the map while the server runs: start it to see the map.</p></div>
 		{/if}
@@ -145,7 +145,7 @@
 	{/if}
 	{#if view === 'live' && map.mods.blueMap}
 		{#if map.running}
-			<iframe class="map" src={liveUrl} title="Live map of {data.instance.name}" use:fitToViewport></iframe>
+			<MapFrame src={data.frames.live} title="Live map of {data.instance.name}" />
 		{:else}
 			<div class="empty"><p>The BlueMap mod's map runs with the server: start it to see the live map.</p></div>
 		{/if}
@@ -169,7 +169,7 @@
 				</form>
 			{/if}
 			{#if map.ready && !map.taskId}
-				<a class="button button-quiet" href={viewUrl} target="_blank" rel="noreferrer">Open full screen</a>
+				<a class="button button-quiet" href={fullUrl('rendered')} target="_blank" rel="noreferrer">Open full screen</a>
 				{#if may('map.render')}
 				<form
 					method="POST"
@@ -212,7 +212,7 @@
 
 	{#if map.ready}
 		{#key frameKey}
-			<iframe class="map" src={viewUrl} title="Map of {data.instance.name}" use:fitToViewport></iframe>
+			<MapFrame src={data.frames.view} title="Map of {data.instance.name}" />
 		{/key}
 	{:else}
 		<div class="empty">
@@ -260,7 +260,6 @@
 		margin: 0;
 	}
 
-	/* As tall as the screen; fitToViewport's max-height trims it to the room left. */
 	.schedule {
 		display: flex;
 		flex-wrap: wrap;
@@ -315,13 +314,4 @@
 		margin-top: var(--space-2);
 	}
 
-	.map {
-		display: block;
-		width: 100%;
-		height: 100vh;
-		min-height: 24rem;
-		border: 1px solid var(--line);
-		border-radius: var(--radius-lg);
-		background: #000;
-	}
 </style>

@@ -124,8 +124,8 @@ service (hosts grouped by suffix: api/cdn.modrinth.com are Modrinth) the last an
 last failure, in memory on globalThis: no answer, a 5xx or a 429 fails, any other status is an
 answer (a 404 says the service works); a request MineShell aborted counts as neither. Activity
 lists them and warns while one fails. Only names, times and a short reason are kept, never
-URLs, which can carry tokens. The local map proxy (`/map/live/`) is not outbound and does not
-use it. The template itself says `Restart=on-failure`, so a server
+URLs, which can carry tokens. The local map proxy (`/maps/<token>/live/`) is not outbound and does
+not use it. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping
@@ -858,7 +858,7 @@ Everything per server is in `$DATA/maps/<id>/` - `config/` (written fresh before
 render: one map per dimension with a namespaced id, BlueMap's own web server off),
 `data/` (caches and the Minecraft client jar BlueMap downloads, only with
 `accept-download`, which follows the per-server EULA answer), `web/`. MineShell serves
-`web/` itself under `/instances/<id>/map/view/`, behind its login, the way BlueMap's server
+`web/` itself under `/maps/<token>/view/` (sandboxed, below), the way BlueMap's server
 would: a file, else its `.gz` with `Content-Encoding: gzip` (tiles and textures are stored
 compressed), else 204 for tiles and live data. A render is a task (one per server; a running
 server is told to `save-all` first) and only redraws what changed unless forced. An optional
@@ -873,10 +873,31 @@ server one port of its own for the mod's web server (`modPort`, from 8123, not a
 server's), and writes it with a localhost-only bind into the mod's config before every start
 (`applyMapModConfig`; BlueMap's config is created during install, so its first start uses
 the assigned port and the per-server EULA answer; Dynmap's config is created by its first
-start and is configured before later starts). `/instances/<id>/map/live/` passes requests
-through to that port behind MineShell's login - bodies streamed, MineShell's own cookies
-and auth headers not passed on, nor the map's cookies back to MineShell's address. With the BlueMap mod in, the Map tab opens on its live map
+start and is configured before later starts). `/maps/<token>/live/` passes requests
+through to that port - bodies streamed, MineShell's own cookies and auth headers not passed
+on, nor the map's cookies and its own CORS or CSP headers back. With the BlueMap mod in, the Map tab opens on its live map
 (the one that is current); the rendered one is a switch away.
+
+**The map's pages are not MineShell's** (`mapframe.ts`, `MapFrame.svelte`): BlueMap's web
+app and a map mod's page run their own scripts, and players without an account put things
+in them (Dynmap's chat, names some mods let players change, markers). So they never run on
+MineShell's origin: everything under `/maps/` is sent with `Content-Security-Policy: sandbox
+allow-scripts allow-forms allow-popups allow-downloads` (an opaque origin, also when the
+address is opened on its own), CORS open (the apps' module scripts, fetches and WebGL
+textures are CORS requests from that origin; a preflight is allowed whatever headers it asks
+for, as Dynmap's jQuery adds X-Requested-With to every request), and no referrer. A sandboxed page sends no
+SameSite=Lax cookie (only the frame's own navigation does), so its requests carry a token in
+the path instead: `map_tokens` holds one per session and server (migration 0028), made by the
+Map tab's load, gone with the session or the server or after 12 hours unused; each request
+checks the session's account still has `view` (the live map's POSTs, Dynmap's web chat,
+`map.render`). The guard lets `/maps/` through without a session and without the
+cross-site check: the token is both, since another site cannot know it. A sandboxed page may
+not use localStorage or cookies, which BlueMap and Dynmap do, so every HTML page there gets a
+small script first (`withShim`) that keeps both in memory; the frame's `name` brings what
+MineShell saved and the page posts every change back to the Map tab, which keeps it in its own
+localStorage (`mineshell:map-storage`, started from the `bluemap-*` keys BlueMap kept when it
+ran on MineShell's origin). "Open full screen" opens `/instances/<id>/map/full`, the same
+frame with nothing around it (`+page@.svelte`, and the root layout leaves out the rail).
 A BlueMap mod that came another way (a pack, added by hand) before the EULA was accepted
 gets a panel asking only for that answer (`modEula`), without the render setup.
 

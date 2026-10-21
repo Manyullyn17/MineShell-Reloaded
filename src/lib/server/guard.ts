@@ -12,6 +12,13 @@ import { decide } from './access/check';
 
 /** Paths reachable without a session. */
 const PUBLIC_PATHS = ['/login', '/setup'];
+/**
+ * The Map tab's sandboxed map content (mapframe.ts): its requests carry no
+ * cookie and, from the sandbox, `Origin: null`. The token in the path is
+ * checked instead, and stands in for the cross-site check too: another site
+ * cannot know it.
+ */
+const MAP_FRAMES = '/maps/';
 const STATE_CHANGING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
@@ -109,7 +116,8 @@ function checkPolicy(event: GuardEvent): Response | null {
  * a redirect (setup / login), or returns null to carry on.
  */
 export function guard(event: GuardEvent): Response | null {
-	if (isCrossSiteRequest(event.request)) {
+	const mapFrame = event.url.pathname.startsWith(MAP_FRAMES);
+	if (isCrossSiteRequest(event.request) && !mapFrame) {
 		return new Response('Cross-site request blocked.', { status: 403 });
 	}
 
@@ -126,7 +134,7 @@ export function guard(event: GuardEvent): Response | null {
 	event.locals.authenticated = event.locals.user !== null;
 	event.locals.access = event.locals.user ? loadAccess(event.locals.user) : NO_ACCESS;
 	const pathname = event.url.pathname;
-	const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+	const isPublic = mapFrame || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
 	// A fresh install has no account yet, so send the first visitor to setup.
 	// (In SvelteKit 2, redirect() throws by itself.)
@@ -136,7 +144,7 @@ export function guard(event: GuardEvent): Response | null {
 	}
 	// Only the page: signing out posts to /login?/logout, which this used to send home unrun.
 	if (event.locals.authenticated && pathname === '/login' && event.request.method === 'GET') redirect(303, '/');
-	if (event.locals.user?.mustChangePassword && !FORCED_CHANGE_ROUTES.has(event.route.id ?? '')) {
+	if (event.locals.user?.mustChangePassword && !mapFrame && !FORCED_CHANGE_ROUTES.has(event.route.id ?? '')) {
 		if (event.request.method === 'GET' && !pathname.startsWith('/api/')) redirect(303, '/account');
 		return refused(event.request, 'Pick your own password first, on your account page.');
 	}
