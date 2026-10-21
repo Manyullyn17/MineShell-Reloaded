@@ -67,6 +67,16 @@ until after 1.0, and asked to keep the rest listed here):
   players change, markers); no hole in them is known, but one would reach that far. Ways: a
   second listener for map content only, or sandboxed frames reached by a per-view token
   instead of the session cookie.
+- **Limits on going back** (agreed in outline 2026-10-21, details when it is built): from
+  1.0 on, Settings > Updates goes back only within the same major, plus to the newest
+  release of the previous one (the escape hatch if 1.0 has a problem); older ones are not
+  listed, and the installer's `MINESHELL_VERSION` stays as the unsupported manual way. As a
+  rule, not a fixed version, so 2.0 works the same. Notes: the hatch only works while every
+  migration since the last 0.x is downgrade-safe (a test could hold that until 1.0 has
+  settled); the release candidate can be that last 0.x, so going back lands on a tested
+  release with the backups in; that 0.x would list older betas again, unless it refuses going
+  below itself once its database has seen 1.x (optional); the dialog could name the features
+  the older version lacks ("backups to other places will not run").
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
