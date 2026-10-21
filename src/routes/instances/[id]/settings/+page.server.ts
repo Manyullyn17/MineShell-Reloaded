@@ -906,6 +906,9 @@ export const actions: Actions = {
 		if (problem) return fail(400, { ok: false, message: problem });
 		// The game port lives in the DB too; a changed one in the raw file moves it.
 		const newPort = Number(parsed.values['server-port']);
+		if (parsed.values['server-port'] !== undefined && !(Number.isInteger(newPort) && newPort >= 1 && newPort <= 65535)) {
+			return fail(400, { ok: false, message: 'The game port (server-port) goes from 1 to 65535.' });
+		}
 		if (Number.isInteger(newPort) && newPort !== instance.serverPort) {
 			const clash = portClash(locals, newPort, instance.id);
 			if (clash) return fail(400, { ok: false, message: clash.message });

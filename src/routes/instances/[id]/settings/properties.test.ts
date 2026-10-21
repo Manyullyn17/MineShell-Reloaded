@@ -5,7 +5,7 @@ import * as page from './+page.server';
 import { actions } from './+page.server';
 import type { Access, InstancePermission } from '#lib/shared/access.js';
 import { readProperties } from '#lib/server/properties.js';
-import { createInstance, systemdStopped } from '../../../../../tests/helpers/instances';
+import { createInstance, reload, systemdStopped } from '../../../../../tests/helpers/instances';
 import { resetProcesses } from '../../../../../tests/helpers/process';
 import { load, post } from '../../../../../tests/helpers/routes';
 
@@ -93,5 +93,20 @@ describe('the world folder (level-name)', () => {
 		const instance = await server();
 		await fs.writeFile(path.join(instance.path, 'server.properties'), 'motd=Hello\nlevel-name=../elsewhere\n');
 		expect(await post(actions.properties, { params: { id: instance.id }, fields: { motd: 'Changed' } })).toMatchObject({ ok: true });
+	});
+});
+
+describe('the game port in the raw editor', () => {
+	it('is a port, or the file is not written', async () => {
+		const instance = await server();
+		for (const port of ['0', '70000', 'abc', '25565.5']) {
+			const raw = `motd=Changed\nlevel-name=world\nserver-port=${port}\n`;
+			expect(await post(actions.propertiesRaw, { params: { id: instance.id }, fields: { raw } }), port).toMatchObject({
+				status: 400,
+				data: { message: 'The game port (server-port) goes from 1 to 65535.' }
+			});
+		}
+		expect(reload(instance.id).serverPort).toBe(instance.serverPort);
+		expect((await file(instance.path)).motd).toBe('Hello');
 	});
 });
