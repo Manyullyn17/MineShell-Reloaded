@@ -37,9 +37,11 @@ map's cookies, the raw editor's game port. Then the map on an origin of its own 
 a token path; ARCHITECTURE, "The map's pages are not MineShell's"), checked in headless Chrome
 on a real render and a running BlueMap mod.
 
-Found while testing that, on real loaders, not fixed yet: a new plain Cleanroom server fails to
-install (the newest installer's options changed; loaders.md), Dynmap crashes on plain Forge
-1.12.2, and the BlueMap mod on a Fabric server without a pack lacks Fabric API (worlds.md).
+Found while testing that, on real loaders, and fixed the same day: a new plain Cleanroom server
+failed to install (the newest installer's options changed; loaders.md), Dynmap crashed plain
+Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabric API
+(worlds.md). Open from it: whether a new plain Cleanroom server should get Fugue and Scalar
+Legacy at once, since Cleanroom 0.7 asks about them at the first start (loaders.md).
 
 ## Left for the user
 

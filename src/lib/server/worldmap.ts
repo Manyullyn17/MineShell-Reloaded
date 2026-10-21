@@ -13,6 +13,7 @@ import { compareVersions, listJavaRuntimes, scanJavaRuntimes } from './java';
 import { installJava, type JavaVendor } from './javadownload';
 import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
 import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods } from './mods';
+import type { ProjectVersion } from './mods/types';
 import { compatibleVersions, filterFor } from './modupdates';
 import { allocatePort, portRanges } from './ports';
 import { nextSnapshotAt } from './snapshotschedule';
@@ -520,13 +521,13 @@ export async function resolveMapFile(instanceId: string, rel: string): Promise<M
 
 /** Dynmap's CurseForge project, and DynmapBlockScan's build per Minecraft version (dynmap.us only). */
 const DYNMAP_PROJECT = '59433';
-const DYNMAP: Record<string, { blockScan: string }> = {
 /**
  * Dynmap builds that do not load on Forge's own 1.12.2 (Cleanroom runs them):
  * 3.7-beta-6 stops the server with an IllegalAccessError on a Biome field.
  * 3.7-beta-4 and 3.5 were tried and run.
  */
 const DYNMAP_NOT_ON_FORGE = [/-3\.7-beta-6-/];
+const DYNMAP: Record<string, { blockScan: string }> = {
 	'1.12.2': { blockScan: 'https://dynmap.us/builds/DynmapBlockScan/DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar' }
 };
 const BLUEMAP_PROJECT = 'bluemap';
@@ -619,6 +620,25 @@ export async function applyMapModConfig(instance: ServerInstance): Promise<strin
  * BlueMap mod on 1.13+ (live updates and player markers). Mods load on the
  * next start.
  */
+/**
+ * What a map mod needs and the server does not have yet (the BlueMap mod on
+ * Fabric: Fabric API, which a pack usually brings and a bare server lacks).
+ * Present is a jar declaring the project's slug as its mod id, as Fabric API's does.
+ */
+async function installRequiredMods(instance: ServerInstance, version: ProjectVersion, task: TaskHandle): Promise<void> {
+	const provider = getModProvider('modrinth');
+	for (const dep of version.dependencies.filter((d) => d.type === 'required' && d.projectId)) {
+		const project = await provider.getProject(dep.projectId!);
+		if (await hasEnabledMod(instance.path, project.slug)) continue;
+		const needed = dep.versionId
+			? await provider.getVersion(dep.projectId!, dep.versionId)
+			: bestVersion(await compatibleVersions('modrinth', dep.projectId!, filterFor(instance)));
+		if (!needed) throw new InstanceError(`${version.name} needs ${project.name}, which has no build for ${instance.modloader} ${instance.minecraftVersion}.`);
+		await installModVersion(instance, 'modrinth', project, needed);
+		task.log(`Installed ${project.name} ${needed.versionNumber}, which it needs.`);
+	}
+}
+
 export async function installMapMod(instance: ServerInstance): Promise<string> {
 	const support = mapSupport(instance);
 	if (support.engine === null) throw new InstanceError(support.reason);
@@ -650,6 +670,7 @@ export async function installMapMod(instance: ServerInstance): Promise<string> {
 			if (!best) throw new InstanceError(`No BlueMap mod for ${instance.modloader} ${instance.minecraftVersion}.`);
 			await installModVersion(instance, 'modrinth', { id: BLUEMAP_PROJECT, slug: BLUEMAP_PROJECT, name: 'BlueMap', projectUrl: null, iconUrl: null }, best);
 			task.log(`Installed BlueMap ${best.versionNumber}.`);
+			await installRequiredMods(instance, best, task);
 		}
 		// Other untracked jars are the user's own, not a pack's.
 		await syncMods(instance, { fromPack: false }).catch(() => undefined);

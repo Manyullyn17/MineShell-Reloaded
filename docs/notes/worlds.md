@@ -104,8 +104,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   newest 1.12.2 build, crashes at start (`IllegalAccessError` on `Biome.field_76791_y`; FML
   also cannot read its `META-INF/versions/9` classes), so Forge gets the newest build but
   that (`DYNMAP_NOT_ON_FORGE`): 3.7-beta-4 and 3.5 were booted and run, 3.7-beta-4 checked
-  through the live map. Cleanroom keeps 3.7-beta-6 (MeatballCraft runs it). The BlueMap mod on a
-  Fabric server without a pack does not start, since Fabric API is not added with it.
+  through the live map. Cleanroom keeps 3.7-beta-6 (MeatballCraft runs it). The BlueMap mod needs Fabric API on
+  Fabric, which a pack usually brings: it is installed with it when no enabled jar declares the
+  dependency's slug as its mod id (`installRequiredMods`; tried on a bare Fabric 1.21.1 server).
 - The map's sandbox (2026-10-21, ARCHITECTURE "The map's pages are not MineShell's"),
   checked in headless Chrome against a real BlueMap render, a running BlueMap mod and a running
   Dynmap (map, controls, web chat reaching the game): in a
