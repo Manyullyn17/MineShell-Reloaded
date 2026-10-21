@@ -129,6 +129,9 @@
 				Wait while players are online, up to an hour past the scheduled time
 			</label>
 		</div>
+	{:else if values.restartSkipIfPlayers}
+		<!-- An absent checkbox reads as off; the saved choice goes with the schedule. -->
+		<input type="hidden" name="restartSkipIfPlayers" value="on" />
 	{/if}
 </fieldset>
 

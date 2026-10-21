@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+import RestartFields from '#lib/components/RestartFields.svelte';
 import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 import { encryptSecret } from '#lib/server/crypto.js';
 import { readProperties } from '#lib/server/properties.js';
@@ -204,6 +205,13 @@ describe('a section saved unchanged keeps every value', () => {
 		expect(await post(actions[action], instance.id, fields)).toMatchObject({ ok: true });
 		expect(without((await state(instance.id)).row, follows)).toEqual(without(before.row, follows));
 	}
+
+	// Scheduled "none" hides the skip-if-players switch: saving used to turn it off.
+	it.each(['none', 'interval', 'daily'])('restarts, scheduled %s', async (restartSchedule) => {
+		systemdStopped();
+		const instance = await server({ restartSchedule });
+		await unchanged(instance, 'restarts', formFields(RestartFields, { values: instance }), ['restartNextAt']);
+	});
 
 	it.each([
 		{ updateCheck: true, mods: true },
