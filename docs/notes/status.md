@@ -16,10 +16,15 @@ Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10
 - arm64 and musl stay untested (no such hardware; home servers are nearly always x64). Only
   Java downloads and playit.gg's agent depend on them; a Java added by path works anywhere.
 
-Next after the docs update: route tests. Form actions and endpoints are tested with
-`tests/helpers/routes.ts` (tests/README), but not all of them; finding which have none and
-which matter is the first step. ("Route/form-action tests" used to be listed as shelved
-here; that was before the route helper.)
+Route tests (2026-10-21): about 30 of ~230 form actions and 3 of 36 endpoints had one; most
+actions are thin over `lib/server` code the flow tests cover. Done: `call()` for endpoints
+in the route helper, sign-in and setup (`routes/login`, `routes/setup`), each Settings
+section keeping what its form does not carry, with a server-rendered round trip of the
+shared field components (`tests/helpers/forms.ts`; it found the restarts switch bug).
+Next, agreed: raw uploads (world `PUT`, imports `PUT`/`POST`), then input checks without
+a test (`power`, `limits`, `addCommand`, `settings/defaults.save`, `instances/new.loader`,
+`portChange`, `sftp`). Not worth it: read-only `/api` GETs, item icons, the Chunky, map and
+profiler buttons. A new test for working code is checked by removing what it covers.
 
 ## Left for the user
 
