@@ -227,7 +227,30 @@ export type DowngradePlan = {
 	refusal: string | null;
 	/** Older than the release list: from there, only an update to the latest comes back. */
 	beforeHistory: boolean;
+	/** What the older release does differently with data this one leaves (LEFT_BEHIND). */
+	warnings: string[];
 };
+
+/**
+ * Data a release started leaving that older ones handle differently, said
+ * when going back past it. `since` is the first release with it.
+ */
+const LEFT_BEHIND: { since: string; warning: (version: string) => string }[] = [
+	{
+		since: '0.32.0',
+		warning: (version) =>
+			`Snapshots share the files that did not change between them. ${version} counts each at its full size, so its next snapshot can delete older ones to fit the storage budget (Settings > Snapshots): pin the ones to keep, or raise the budget, first. Its Files tab also writes into files, which for a file inside a snapshot changes it in every snapshot sharing it.`
+	},
+	{
+		since: '0.32.0',
+		warning: (version) => `${version} has no backup folders: snapshots stop being copied to them, and the copies there stay as they are.`
+	}
+];
+
+/** The warnings for going back from this release to `version`. */
+export function leftBehind(version: string, current = currentVersion()): string[] {
+	return LEFT_BEHIND.filter((l) => compareVersions(version, l.since) < 0 && compareVersions(current, l.since) >= 0).map((l) => l.warning(version));
+}
 
 async function releaseMigrations(release: Release): Promise<Set<string>> {
 	const entries = await fetchJson<{ name: string }[]>(
@@ -253,7 +276,13 @@ export async function planDowngrade(version: string): Promise<DowngradePlan> {
 	const release = releaseHistory().find((r) => r.version === version);
 	if (!release) throw new UpdateRefused(`${version} is not in the release list: check for updates first.`);
 	if (compareVersions(version, currentVersion()) >= 0) throw new UpdateRefused(`${version} is not older than the running ${currentVersion()}.`);
-	const plan: DowngradePlan = { release, missing: [], refusal: null, beforeHistory: compareVersions(version, HISTORY_SINCE) < 0 };
+	const plan: DowngradePlan = {
+		release,
+		missing: [],
+		refusal: null,
+		beforeHistory: compareVersions(version, HISTORY_SINCE) < 0,
+		warnings: leftBehind(version)
+	};
 
 	let known: Set<string>;
 	try {

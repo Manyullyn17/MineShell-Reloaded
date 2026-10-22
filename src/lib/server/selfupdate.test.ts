@@ -30,6 +30,7 @@ const {
 	DB_BACKUP_DIR,
 	HISTORY_SINCE,
 	lastUpdateRun,
+	leftBehind,
 	planDowngrade,
 	releaseHistory,
 	startDowngrade,
@@ -283,6 +284,15 @@ describe('going back to an older release', () => {
 		expect(plan.refusal).toContain('0019_users');
 		expect(plan.missing.find((m) => m.name === '0019_users.sql')?.safe).toBe(false);
 		await expect(startDowngrade('0.12.0')).rejects.toThrow(UpdateRefused);
+	});
+
+	it('warns what an older release does differently with data this one leaves', () => {
+		// Going back from a release with shared snapshots to one without: retention would count them in full.
+		const warnings = leftBehind('0.31.0', '0.32.0');
+		expect(warnings).toEqual([expect.stringMatching(/counts each at its full size/), expect.stringMatching(/no backup folders/)]);
+		expect(leftBehind('0.32.0', '0.33.0')).toEqual([]);
+		// Not from a release that never had them either.
+		expect(leftBehind('0.30.0', '0.31.0')).toEqual([]);
 	});
 
 	it('refuses when GitHub does not say which migrations the release has', async () => {

@@ -85,6 +85,7 @@
 		missing: { name: string; safe: boolean }[];
 		refusal: string | null;
 		beforeHistory: boolean;
+		warnings: string[];
 	};
 	const downgrade = $derived((form as { downgrade?: DowngradePlan } | null)?.downgrade ?? null);
 	let understood = $state(false);
@@ -1012,6 +1013,9 @@
 						They only add things, so it should run with them; what is stored there is unused until you come back.
 					</li>
 				{/if}
+				{#each downgrade.warnings as warning (warning)}
+					<li>{warning}</li>
+				{/each}
 				{#if downgrade.beforeHistory}
 					<li>
 						{downgrade.release.version} is older than {data.update.historySince}, which brought this list. From there MineShell

@@ -325,7 +325,12 @@ before going back once) and any unsafe one refuses. Only 0019_users is unsafe: i
 admin password into `users`, so nothing before 0.13 can be gone back to. The backup is not
 restored by MineShell (servers made since would be missing from it); DEPLOYMENT says how by
 hand. Releases before 0.24.0 (`HISTORY_SINCE`) have no list: from there only "update to the
-latest" or the installer with `MINESHELL_VERSION`.
+latest" or the installer with `MINESHELL_VERSION`. Data on disk an older release handles
+differently (not the database) is listed in `LEFT_BEHIND` with the release that brought it,
+and the dialog says each one going back past it: shared snapshot files (an older retention
+counts them in full and can delete snapshots to fit its budget; its Files tab writes into
+files) and backup folders, both 0.32.0. `since` has to be the release that ships it: if the
+next release is not 0.32.0, change it there.
 
 Tables: `server_instances`, `mods`, `instance_mods`, `instance_datapacks`,
 `resource_samples`, `java_runtimes`, `settings`, `scheduled_commands`, `operations`,
