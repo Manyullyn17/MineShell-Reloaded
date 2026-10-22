@@ -483,6 +483,8 @@ export async function worldSize(root: string): Promise<number> {
  */
 export type SnapshotPrompt = {
 	worldBytes: number;
+	/** About what a snapshot would add on disk: files unchanged since the last one are shared (snapshotNeeds). */
+	neededBytes: number;
 	/** The form shows the question: the world is above askAboveMb, or a copy would not fit. */
 	ask: boolean;
 	/** Above askAboveMb alone; what counts for operations that move the world instead of copying it. */
@@ -490,7 +492,7 @@ export type SnapshotPrompt = {
 	policy: SnapshotPolicy;
 	/** Free on the disk holding the server, bytes; null when unknown. */
 	freeBytes: number | null;
-	/** A snapshot copying the world would leave less than minFreeMb free. */
+	/** A snapshot copying the world would leave less than minFreeMb free (by neededBytes). */
 	lowSpace: boolean;
 };
 
@@ -504,17 +506,47 @@ export async function freeSpace(dir: string): Promise<number | null> {
 	}
 }
 
-function lacksSpace(policy: SnapshotPolicy, worldBytes: number, freeBytes: number | null): boolean {
-	return policy.minFreeMb > 0 && freeBytes !== null && worldBytes > 0 && freeBytes - worldBytes < policy.minFreeMb * 1024 * 1024;
+function lacksSpace(policy: SnapshotPolicy, neededBytes: number, freeBytes: number | null): boolean {
+	return policy.minFreeMb > 0 && freeBytes !== null && neededBytes > 0 && freeBytes - neededBytes < policy.minFreeMb * 1024 * 1024;
+}
+
+/**
+ * About what a snapshot copying the world now would add on disk: files whose
+ * size and modification time match the newest snapshot's records (HASHES) are
+ * most likely unchanged and would be links; the rest copies. The game sets the
+ * time on every write, and region files often keep their size when they
+ * change (it grows in 4 KB steps), so size alone would not do. The whole
+ * world when no snapshot has records. Nothing is hashed: page loads ask this.
+ */
+export async function snapshotNeeds(root: string): Promise<number> {
+	const worlds = await worldFolders(root);
+	let records: Record<string, FileRecord> | null = null;
+	for (const s of await listSnapshots(root)) {
+		if ((records = await readHashes(snapshotPath(root, s.id)))) break;
+	}
+	let needed = 0;
+	for (const world of worlds) {
+		for (const entry of await fs.readdir(path.join(root, world), { withFileTypes: true, recursive: true }).catch(() => [])) {
+			if (!entry.isFile()) continue;
+			const full = path.join(entry.parentPath, entry.name);
+			const stat = await fs.stat(full).catch(() => null);
+			if (!stat) continue;
+			const record = records?.[path.relative(root, full).split(path.sep).join('/')];
+			// Times are kept to the millisecond (utimes), the live file's can be finer.
+			if (!record || record[0] !== stat.size || Math.abs(record[1] - stat.mtimeMs) >= 1) needed += stat.size;
+		}
+	}
+	return needed;
 }
 
 export async function snapshotPrompt(instance: Pick<ServerInstance, 'id' | 'path'>): Promise<SnapshotPrompt> {
 	const policy = getSnapshotPolicy(instance.id);
 	const worldBytes = await worldSize(instance.path);
 	const freeBytes = await freeSpace(instance.path);
-	const lowSpace = lacksSpace(policy, worldBytes, freeBytes);
+	const neededBytes = worldBytes ? await snapshotNeeds(instance.path) : 0;
+	const lowSpace = lacksSpace(policy, neededBytes, freeBytes);
 	const asksBySize = policy.askAboveMb !== -1 && worldBytes > policy.askAboveMb * 1024 * 1024;
-	return { worldBytes, ask: lowSpace || asksBySize, asksBySize, policy, freeBytes, lowSpace };
+	return { worldBytes, neededBytes, ask: lowSpace || asksBySize, asksBySize, policy, freeBytes, lowSpace };
 }
 
 export class SnapshotChoiceNeeded extends Error {}
@@ -522,8 +554,8 @@ export class SnapshotChoiceNeeded extends Error {}
 /** A copying snapshot refused for lack of disk space (minFreeMb). */
 export class LowDiskSpaceError extends Error {}
 
-const lowSpaceMessage = (worldBytes: number, freeBytes: number, policy: SnapshotPolicy) =>
-	`Only ${formatBytes(freeBytes)} is free on the disk; a snapshot of this world (${formatBytes(worldBytes)}) would leave less than the ${formatBytes(policy.minFreeMb * 1024 * 1024)} to keep free. Continue without a snapshot, or free some space first.`;
+const lowSpaceMessage = (neededBytes: number, freeBytes: number, policy: SnapshotPolicy) =>
+	`Only ${formatBytes(freeBytes)} is free on the disk; a snapshot of this world (about ${formatBytes(neededBytes)} that earlier snapshots do not share) would leave less than the ${formatBytes(policy.minFreeMb * 1024 * 1024)} to keep free. Continue without a snapshot, or free some space first.`;
 
 /**
  * Whether to snapshot, from what the form sent (`snapshot` = yes | no).
@@ -543,7 +575,7 @@ export async function decideSnapshot(
 	if (prompt.worldBytes === 0) return false;
 	if (prompt.lowSpace && !opts.moves) {
 		if (choice === 'no') return false;
-		throw new SnapshotChoiceNeeded(lowSpaceMessage(prompt.worldBytes, prompt.freeBytes ?? 0, prompt.policy));
+		throw new SnapshotChoiceNeeded(lowSpaceMessage(prompt.neededBytes, prompt.freeBytes ?? 0, prompt.policy));
 	}
 	if (!prompt.asksBySize) return true;
 	if (choice === 'yes') return true;
@@ -761,9 +793,9 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 	if (!worlds.length) return null;
 	// The form already asked; this catches what changed since, and callers that never ask (Snapshot now).
 	const policy = getSnapshotPolicy(instance.id);
-	const worldBytes = await worldSize(root);
+	const neededBytes = await snapshotNeeds(root);
 	const freeBytes = await freeSpace(root);
-	if (lacksSpace(policy, worldBytes, freeBytes)) throw new LowDiskSpaceError(lowSpaceMessage(worldBytes, freeBytes ?? 0, policy));
+	if (lacksSpace(policy, neededBytes, freeBytes)) throw new LowDiskSpaceError(lowSpaceMessage(neededBytes, freeBytes ?? 0, policy));
 	const id = await newSnapshotId(root, input.reason);
 	const partial = partialPath(root, id);
 	try {

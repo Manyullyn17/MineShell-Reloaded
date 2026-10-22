@@ -700,7 +700,7 @@ export async function snapshotNow(
 	const prompt = await snapshotPrompt(instance);
 	if (prompt.lowSpace) {
 		throw new InstanceError(
-			`Only ${formatBytes(prompt.freeBytes ?? 0)} is free on the disk; this snapshot (${formatBytes(prompt.worldBytes)}) would leave less than the ${formatBytes(prompt.policy.minFreeMb * 1024 * 1024)} to keep free.`
+			`Only ${formatBytes(prompt.freeBytes ?? 0)} is free on the disk; this snapshot (about ${formatBytes(prompt.neededBytes)} that earlier snapshots do not share) would leave less than the ${formatBytes(prompt.policy.minFreeMb * 1024 * 1024)} to keep free.`
 		);
 	}
 	begin(instance.id, { kind: 'snapshot' });

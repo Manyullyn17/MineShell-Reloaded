@@ -45,8 +45,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   export with snapshots, `cp -r`. No damage; a copied-back snapshot keeps its `hashes.json`,
   and from a plain backup its times too, so it can be linked to again; from a zip the times
   differ and it is only copied from.
-- The free-space check before a snapshot still asks for room for the whole world, though a
-  linked one takes far less: on the safe side, left as it is.
+- The free-space check before a snapshot counts what it would add (`snapshotNeeds`): files whose
+  size and time match the newest snapshot's records would be links. Size alone is not enough:
+  region files grow in 4 KB steps, so a changed one often keeps its size; the game sets the
+  time on every write. Records keep times to the millisecond (utimes), live files finer, hence
+  the 1 ms tolerance. Nothing is hashed, since page loads ask.
+- If linking fails (a file system without hard links, too many names), the file is copied.
 
 ## Snapshot retention
 - Policy (`snapshots.ts`): newest `keepMin` full / `partialMin` partial always stay, more

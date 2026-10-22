@@ -1,6 +1,8 @@
 /** What a form needs to know about snapshotting before a risky operation (server: snapshotPrompt). */
 export type SnapshotPromptView = {
 	worldBytes: number;
+	/** About what a snapshot would add on disk, files shared with the last one left out. */
+	neededBytes: number;
 	ask: boolean;
 	asksBySize: boolean;
 	freeBytes: number | null;

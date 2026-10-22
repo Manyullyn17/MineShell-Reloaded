@@ -241,10 +241,9 @@ What the built entries in the archive left out, in one place:
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.
-- **Snapshots**: a scheduler hook running a script after a snapshot. Shared files: the
-  free-space check still asks for a whole world's room; snapshots made by moving the world
-  (world changes) have no hash records, so the next copied one cannot link to them; an
-  export with snapshots and a backup copy hold each snapshot in full.
+- **Snapshots**: a scheduler hook running a script after a snapshot. Shared files: snapshots
+  made by moving the world (world changes) have no hash records, so the next copied one cannot
+  link to them; an export with snapshots and a backup copy hold each snapshot in full.
 - **Backup copies**: destinations other than a folder (rclone, S3-compatible, SFTP: more
   stores in `backups.ts`); the rest of a server (mods, configs) beside its worlds, so a lost
   server comes back from the folder alone (today: make it again, copy a backup back, use it as

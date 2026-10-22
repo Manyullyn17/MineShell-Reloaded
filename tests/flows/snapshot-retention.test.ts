@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '#lib/server/db/index.js';
 import { settings } from '#lib/server/db/schema.js';
@@ -11,6 +12,7 @@ import {
 	saveServerSnapshotOverrides,
 	saveSnapshotPolicy,
 	SnapshotChoiceNeeded,
+	snapshotPrompt,
 	snapshotsToDelete,
 	takeSnapshot,
 	type Snapshot
@@ -142,6 +144,24 @@ describe('free disk space', () => {
 		expect(await decideSnapshot(instance, null, { moves: true })).toBe(true);
 		await expect(takeSnapshot(instance, { reason: 'manual', label: 'x' })).rejects.toThrow(LowDiskSpaceError);
 		await expect(snapshotNow(instance)).rejects.toThrow(/would leave less than/);
+	});
+
+	it('counts only what earlier snapshots do not share, by size and time', async () => {
+		const instance = await world();
+		await fs.mkdir(path.join(instance.path, 'world/region'));
+		await fs.writeFile(path.join(instance.path, 'world/region/r.0.0.mca'), 'x'.repeat(MB));
+		disk(50 * GB);
+		await takeSnapshot(instance, { reason: 'manual', label: 'first' });
+		expect((await snapshotPrompt(instance)).neededBytes).toBe(0);
+		// Same size, newer time: a region file that changed in place counts.
+		const later = new Date(Date.now() + 60_000);
+		await fs.utimes(path.join(instance.path, 'world/region/r.0.0.mca'), later, later);
+		expect((await snapshotPrompt(instance)).neededBytes).toBe(MB);
+		// 5 GB keep free on a disk with 5 GB + 2 MB left: a whole copy (1 MB more) would not fit, the change alone does.
+		vi.restoreAllMocks();
+		disk(5 * GB + 2 * MB);
+		expect((await snapshotPrompt(instance)).lowSpace).toBe(false);
+		await expect(takeSnapshot(instance, { reason: 'manual', label: 'second' })).resolves.toBeTruthy();
 	});
 
 	it('takes it when there is room, or when the check is off', async () => {

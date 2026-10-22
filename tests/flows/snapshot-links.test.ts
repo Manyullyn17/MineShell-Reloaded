@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	deleteSnapshot,
 	DEFAULT_POLICY,
@@ -66,6 +66,7 @@ async function liveUnshared(root: string, dir = 'world'): Promise<void> {
 }
 
 beforeEach(() => systemdStopped());
+afterEach(() => vi.restoreAllMocks());
 
 describe('snapshots sharing unchanged files', () => {
 	it('links what did not change to the snapshot before and copies what did', async () => {
@@ -144,6 +145,18 @@ describe('snapshots sharing unchanged files', () => {
 		const { taskId, folder } = await worldFromSnapshot(reload(s.id), first.id, 'Old times');
 		await waitForTask(taskId);
 		await liveUnshared(s.path, folder);
+	});
+
+	it('copies instead when the file system refuses a link', async () => {
+		const s = await server();
+		const first = await take(s, 'one');
+		// No hard links there (some network shares), or the file has too many names already.
+		vi.spyOn(fs, 'link').mockRejectedValue(Object.assign(new Error('EMLINK: too many links'), { code: 'EMLINK' }));
+		const second = await take(s, 'two');
+		const at = (snap: Snapshot) => path.join(snapshotPath(s.path, snap.id), 'world/region/r.0.0.mca');
+		expect(fs.link).toHaveBeenCalled();
+		expect(await inode(at(second))).not.toBe(await inode(at(first)));
+		await intact(s.path, second);
 	});
 
 	it('keeps the file lists in the cache folder across restarts, and drops those of deleted snapshots', async () => {
