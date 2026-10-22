@@ -571,21 +571,19 @@ tbody tr:last-child td {
 	transition: width 0.3s ease-out;
 }
 
-/* Total not known yet: a short bar sweeping across. */
+/* Total not known yet: a short bar sweeping back and forth. Translate comes before scale so
+   its percentage is of the full track: 70% puts the 30% bar's right edge on the track's. */
 .progress > span.indeterminate {
-	animation: sweep 1.6s ease-in-out infinite;
+	animation: sweep 0.9s ease-in-out infinite alternate;
 	transform-origin: left;
 }
 
 @keyframes sweep {
-	0% {
-		transform: scaleX(0.15) translateX(0);
+	from {
+		transform: translateX(0) scaleX(0.3);
 	}
-	50% {
-		transform: scaleX(0.4) translateX(150%);
-	}
-	100% {
-		transform: scaleX(0.15) translateX(560%);
+	to {
+		transform: translateX(70%) scaleX(0.3);
 	}
 }
 
