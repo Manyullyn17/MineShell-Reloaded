@@ -181,7 +181,23 @@
 		} else newUploadError = result.message ?? 'The upload failed.';
 	}
 
-	function differs(s: (typeof data.snapshots)[number]) {
+	/** What a snapshot row shows, for this server's snapshots and the copies in its backup folder alike. */
+	type SnapshotRow = {
+		createdAt: number;
+		label: string;
+		note?: string;
+		pinned?: boolean;
+		partial?: boolean;
+		tags?: string[];
+		worlds: string[];
+		sizeBytes: number;
+		minecraftVersion: string;
+		modloader: string;
+		modloaderVersion: string | null;
+		packVersionName: string | null;
+	};
+
+	function differs(s: SnapshotRow) {
 		return (
 			s.minecraftVersion !== data.current.minecraftVersion ||
 			s.modloader !== data.current.modloader ||
@@ -189,6 +205,30 @@
 		);
 	}
 </script>
+
+<!-- One snapshot as a row shows it: what it is on the first line, when, how big and what it ran on under it. -->
+{#snippet snapshotSummary(s: SnapshotRow, backedUp: boolean)}
+	<div class="snap-name">
+		{#if s.note}<strong>{s.note}</strong>{:else}{s.label}{/if}
+		{#if s.pinned}<span class="tag accent">pinned</span>{/if}
+		{#if s.partial}<span class="tag">part of the world</span>{/if}
+		{#each s.tags ?? [] as tag (tag)}<span class="tag">{tag}</span>{/each}
+	</div>
+	<div class="snap-meta small">
+		{#if s.note}<span class="muted">{s.label}</span>{/if}
+		<span title={formatRelative(s.createdAt)}>{formatDateTime(s.createdAt)}</span>
+		<span class="faint">{formatRelative(s.createdAt)}</span>
+		<span class="mono">{formatBytes(s.sizeBytes)}</span>
+		{#if s.packVersionName && s.packVersionName !== data.current.packVersionName}<span>pack {s.packVersionName}</span>{/if}
+		{#if differs(s)}
+			<span class="warn-text" title="What the world last ran on; the server now runs {data.current.minecraftVersion}, {data.current.modloader}{data.current.modloaderVersion ? ` ${data.current.modloaderVersion}` : ''}"
+				>ran on {s.minecraftVersion}, {s.modloader}{s.modloaderVersion ? ` ${s.modloaderVersion}` : ''}</span
+			>
+		{/if}
+		{#if backedUp}<span title="A copy is in {data.backups?.destination.name}">backed up</span>{/if}
+		{#if s.partial}<span class="mono">{s.worlds.length > 3 ? `${s.worlds.length} files` : s.worlds.join(', ')}</span>{/if}
+	</div>
+{/snippet}
 
 <div class="subhead">
 	<nav class="subtabs" aria-label="World sections">
@@ -290,43 +330,18 @@
 			<div class="empty"><p>No snapshots of this world yet.</p></div>
 		{:else}
 		<div class="table-box">
-		<table>
-			<thead>
+		<table class="snapshot-table">
+			<thead class="visually-hidden">
 				<tr>
-					<th>Taken</th>
-					<th>Why</th>
-					<th class="nowrap">Ran on</th>
-					<th class="nowrap">Size</th>
-					<th><span class="visually-hidden">Actions</span></th>
+					<th>Snapshot</th>
+					<th>Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each shownSnapshots as s (s.id)}
 					<tr>
-						<td class="nowrap">
-							{formatDateTime(s.createdAt)}
-							<div class="faint small">
-								{formatRelative(s.createdAt)}{#if copied.has(s.id)}<span title="A copy is in {data.backups?.destination.name}">{' · backed up'}</span>{/if}
-							</div>
-						</td>
-						<td>
-							{#if s.note}
-								<strong>{s.note}</strong>
-								<div class="small muted">{s.label}</div>
-							{:else}
-								{s.label}
-							{/if}
-							{#if s.pinned}<span class="tag accent">pinned</span>{/if}
-							{#if s.partial}<span class="tag">part of the world</span>{/if}
-							{#each s.tags ?? [] as tag (tag)}<span class="tag">{tag}</span>{/each}
-							<div class="faint small mono">{s.worlds.join(', ')}</div>
-						</td>
-						<td class="small nowrap" class:warn-text={differs(s)}>
-							{s.minecraftVersion}, {s.modloader}{s.modloaderVersion ? ` ${s.modloaderVersion}` : ''}
-							{#if s.packVersionName}<div class="faint">{s.packVersionName}</div>{/if}
-						</td>
-						<td class="mono small nowrap">{formatBytes(s.sizeBytes)}</td>
-						<td>
+						<td>{@render snapshotSummary(s, copied.has(s.id))}</td>
+						<td class="actions-cell">
 							<div class="row-actions">
 								<!-- Unpinning lets retention delete it: that takes snapshot deletion. -->
 								{#if s.pinned ? may('backups.delete') : may('backups.create')}
@@ -359,6 +374,9 @@
 									<button type="button" class="button-quiet" title="Copy it out as a world of its own, beside the others" onclick={() => openRow('world', s.id)}
 										>New world</button
 									>
+								{:else if may('world')}
+									<!-- Holds the place, so every row's buttons stay in the same columns. -->
+									<span class="button button-quiet slot" aria-hidden="true">New world</span>
 								{/if}
 								{#if may('backups.delete')}
 									<button
@@ -373,7 +391,7 @@
 					</tr>
 					{#if pendingRestore === s.id}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form
 									method="POST"
 									action="?/restore"
@@ -425,7 +443,7 @@
 						</tr>
 					{:else if pendingNewWorld === s.id}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form
 									method="POST"
 									action="?/worldFromSnapshot"
@@ -455,7 +473,7 @@
 						</tr>
 					{:else if pendingEdit === s.id}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form
 									method="POST"
 									action="?/editSnapshot"
@@ -489,7 +507,7 @@
 						</tr>
 					{:else if pendingDelete === s.id}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form
 									method="POST"
 									action="?/deleteSnapshot"
@@ -553,33 +571,18 @@
 					<p class="small faint">{backups.copies.length} cop{backups.copies.length === 1 ? 'y' : 'ies'}, all of snapshots this server still has.</p>
 				{:else}
 					<div class="table-box">
-						<table>
-							<thead>
+						<table class="snapshot-table">
+							<thead class="visually-hidden">
 								<tr>
-									<th>Taken</th>
-									<th>Why</th>
-									<th class="nowrap">Ran on</th>
-									<th class="nowrap">Size</th>
-									<th><span class="visually-hidden">Actions</span></th>
+									<th>Copy</th>
+									<th>Actions</th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each onlyThere as c (c.id)}
 									<tr>
-										<td class="nowrap">
-											{formatDateTime(c.createdAt)}
-											<div class="faint small">{formatRelative(c.createdAt)}</div>
-										</td>
-										<td>
-											{#if c.note}<strong>{c.note}</strong><div class="small muted">{c.label}</div>{:else}{c.label}{/if}
-											{#if c.pinned}<span class="tag accent">pinned</span>{/if}
-										</td>
-										<td class="small nowrap">
-											{c.minecraftVersion}, {c.modloader}{c.modloaderVersion ? ` ${c.modloaderVersion}` : ''}
-											{#if c.packVersionName}<div class="faint">{c.packVersionName}</div>{/if}
-										</td>
-										<td class="mono small nowrap">{formatBytes(c.sizeBytes)}</td>
-										<td>
+										<td>{@render snapshotSummary(c, false)}</td>
+										<td class="actions-cell">
 											{#if may('backups.create')}
 												<form method="POST" action="?/copyBack" use:enhance class="row-actions">
 													<input type="hidden" name="id" value={c.id} />
@@ -675,7 +678,7 @@
 					</tr>
 					{#if pendingWorld?.folder === w.folder && pendingWorld.kind === 'switch'}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form method="POST" action="?/switchWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />
 									<p>
@@ -709,7 +712,7 @@
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'rename'}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form
 									method="POST"
 									action="?/renameWorld"
@@ -734,7 +737,7 @@
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'delete'}
 						<tr class="confirm-row">
-							<td colspan="5">
+							<td colspan="2">
 								<form method="POST" action="?/deleteWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />
 									<p>Delete {w.name}? Its folders go to the trash, where Files can put them back until the trash is emptied.</p>
@@ -1201,6 +1204,63 @@
 		gap: var(--space-2);
 		justify-content: flex-end;
 		align-items: center;
+	}
+
+	/* A snapshot row: its summary takes the width, the actions keep theirs. */
+	.snapshot-table td {
+		vertical-align: middle;
+	}
+	.snapshot-table .actions-cell {
+		width: 1%;
+		white-space: nowrap;
+	}
+	.snap-name {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+	}
+	.snap-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 var(--space-3);
+		margin-top: 0.15rem;
+		color: var(--text-muted);
+	}
+	.slot {
+		visibility: hidden;
+	}
+	/* With a mouse the buttons need less room around them, which leaves more for the summary. */
+	@media (pointer: fine) {
+		.snapshot-table .row-actions .button-quiet {
+			padding-inline: 0.45rem;
+		}
+	}
+	/* Narrow windows: the actions go under the summary instead of off the side. */
+	@media (max-width: 60rem) {
+		.snapshot-table tr:not(.confirm-row) td {
+			display: block;
+		}
+		.snapshot-table tr:not(.confirm-row) td:first-child {
+			border-bottom: none;
+			padding-bottom: var(--space-1);
+		}
+		.slot {
+			display: none;
+		}
+		.snapshot-table .actions-cell {
+			width: auto;
+			padding-top: 0;
+			white-space: normal;
+		}
+		.snapshot-table .row-actions {
+			justify-content: flex-start;
+			flex-wrap: wrap;
+		}
+		.snapshot-table .row-actions form {
+			min-width: 0;
+			text-align: left;
+		}
 	}
 
 	.row-actions form {

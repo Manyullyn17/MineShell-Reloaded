@@ -116,7 +116,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		current: {
 			minecraftVersion: instance.minecraftVersion,
 			modloader: instance.modloader,
-			modloaderVersion: instance.modloaderVersion
+			modloaderVersion: instance.modloaderVersion,
+			packVersionName: instance.packVersionName
 		}
 	};
 };

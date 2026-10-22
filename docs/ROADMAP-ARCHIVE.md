@@ -681,7 +681,12 @@ segmented buttons for difficulty and game mode, the likely cause of a crash on i
 card, the item editor beside the inventory grid, the updated date and licence in the mod
 detail pane (licence from Modrinth only; CurseForge has none) and a note per available
 update (from Modrinth changelogs; the CurseForge mirror's version lists carry none), a game
-port field and an EULA checkbox when adding a server, folders expanding in place in Files. These parts of the mockup need data or
+port field and an EULA checkbox when adding a server, folders expanding in place in Files. The
+snapshot list on two lines a snapshot (2026-10-22, the user's pick of the options): what it is
+with its tags first, then date, size, pack and "ran on" (only when it differs, in amber) under
+it, so the label no longer wraps in a column squeezed by the buttons; every button stays in the
+row, with a hidden place-holder keeping the columns lined up, and under 60rem the buttons go
+under the summary. The backup folder's list has the same rows. These parts of the mockup need data or
 behaviour MineShell did not have, so they were left out rather than faked:
 
 - **Peak players today** (overview strip) and **how long each player has been online**
