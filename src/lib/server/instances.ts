@@ -61,7 +61,7 @@ import {
 	type Journal
 } from './operations';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
-import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
+import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, deleteSnapshotFilesCache, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
 import { deleteServerBackup } from './backups';
@@ -1429,6 +1429,7 @@ export async function deleteInstance(
 	deleteDimensionNames(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
 	await deleteChunkMapCache(instance.id).catch(() => undefined);
+	await deleteSnapshotFilesCache(instance.path).catch(() => undefined);
 	await deletePlayitData(instance.id);
 	audit('instance.deleted', {
 		instanceId: instance.id,

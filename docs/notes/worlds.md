@@ -35,6 +35,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   a plain copy before; hashing what it copied), the next with nothing changed 9.2 s, with three
   region files changed 8.7 s; three snapshots took 7.2 GB instead of 21. A live snapshot keeps
   saving paused for as long, so the hashing is time with saving off.
+- Sizes walk every file of every snapshot (by inode): 50 snapshots of a 5000-file world were
+  250,000 lookups, 3.1 s one at a time, 1.3 s side by side. The lists are kept in
+  `$DATA/cache/snapshot-files/<server>/<snapshot>@<folder inode>.json` (snapshots never change),
+  so after a restart the World tab answered in 0.2 s instead of 1.5.
 - `du` counts a hard-linked file once per run, so `du -sh .mineshell/snapshots` shows the real
   use; per snapshot folder it shows each in full when measured one at a time.
 - Copies that leave the server folder become full again: a backup copy (plain or zip), the

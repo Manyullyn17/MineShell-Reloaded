@@ -16,6 +16,7 @@ import {
 	type Snapshot
 } from '#lib/server/snapshots.js';
 import { restoreSnapshot, worldFromSnapshot } from '#lib/server/world.js';
+import { CACHE_DIR } from '#lib/server/config.js';
 import { createInstance, reload, systemdStopped, waitForTask } from '../helpers/instances';
 
 /**
@@ -143,6 +144,21 @@ describe('snapshots sharing unchanged files', () => {
 		const { taskId, folder } = await worldFromSnapshot(reload(s.id), first.id, 'Old times');
 		await waitForTask(taskId);
 		await liveUnshared(s.path, folder);
+	});
+
+	it('keeps the file lists in the cache folder across restarts, and drops those of deleted snapshots', async () => {
+		const s = await server();
+		const first = await take(s, 'one');
+		const second = await take(s, 'two');
+		const before = await snapshotFiles(s.path, await listSnapshots(s.path));
+		const cache = path.join(CACHE_DIR, 'snapshot-files', path.basename(s.path));
+		expect((await fs.readdir(cache)).length).toBe(2);
+		// As after a restart: memory empty, the cache folder answers.
+		(globalThis as { __mineshellSnapshotFiles?: Map<string, unknown> }).__mineshellSnapshotFiles!.clear();
+		expect(await snapshotFiles(s.path, await listSnapshots(s.path))).toEqual(before);
+		await deleteSnapshot(s.path, first.id);
+		await snapshotFiles(s.path, await listSnapshots(s.path));
+		expect((await fs.readdir(cache)).map((n) => n.split('@')[0])).toEqual([second.id]);
 	});
 
 	it('counts a shared file once against the storage budget', async () => {

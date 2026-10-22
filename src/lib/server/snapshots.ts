@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
+import { CACHE_DIR } from './config';
 import { bus } from './events';
 import { directorySize } from './files';
 import { serverWorldName } from './packworld';
@@ -328,35 +329,68 @@ export function snapshotsToDelete(snapshots: Snapshot[], policy: SnapshotPolicy,
 /** Each snapshot's files by inode ("device:inode") with their sizes: a file shared by hard links is one key. */
 export type SnapshotFiles = Map<string, Map<string, number>>;
 
-/** Read once per snapshot folder: a finished snapshot's files never change. */
+/**
+ * Read once per snapshot folder, kept in memory and in MineShell's cache
+ * folder, since a finished snapshot's files never change: walking every file
+ * of 50 snapshots of a 5000-file world took 3 s, too long for the first page
+ * after a restart. Keyed by the folder's own inode too, as a snapshot deleted
+ * and copied back under its id is another folder.
+ */
 const filesCache = ((globalThis as { __mineshellSnapshotFiles?: Map<string, Map<string, number>> }).__mineshellSnapshotFiles ??= new Map());
+const filesCacheDir = (root: string) => path.join(CACHE_DIR, 'snapshot-files', path.basename(root));
 
 async function inodesUnder(dir: string, out: Map<string, number>): Promise<void> {
-	for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
-		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) await inodesUnder(full, out);
-		else {
+	const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+	// Side by side: one at a time, the lookups waited on each other (3 s became 1.3).
+	await Promise.all(
+		entries.map(async (entry) => {
+			const full = path.join(dir, entry.name);
+			if (entry.isDirectory()) return inodesUnder(full, out);
 			const stat = await fs.lstat(full).catch(() => null);
 			if (stat) out.set(`${stat.dev}:${stat.ino}`, stat.size);
-		}
-	}
+		})
+	);
 }
 
 export async function snapshotFiles(root: string, snapshots: Snapshot[]): Promise<SnapshotFiles> {
 	const result: SnapshotFiles = new Map();
+	const cacheDir = filesCacheDir(root);
+	const current = new Set<string>();
 	for (const s of snapshots) {
-		// By the folder's own inode too: a snapshot deleted and copied back under its id is another folder.
 		const dir = await fs.stat(snapshotPath(root, s.id)).catch(() => null);
-		const key = `${snapshotPath(root, s.id)}@${dir?.ino}`;
+		if (!dir) continue;
+		const name = `${s.id}@${dir.ino}.json`;
+		current.add(name);
+		const key = path.join(cacheDir, name);
 		let files = filesCache.get(key);
 		if (!files) {
-			files = new Map();
-			await inodesUnder(snapshotPath(root, s.id), files);
+			try {
+				files = new Map(JSON.parse(await fs.readFile(key, 'utf8')) as [string, number][]);
+			} catch {
+				files = new Map();
+				await inodesUnder(snapshotPath(root, s.id), files);
+				await fs.mkdir(cacheDir, { recursive: true });
+				await fs.writeFile(key, JSON.stringify([...files]), 'utf8').catch(() => undefined);
+			}
 			filesCache.set(key, files);
 		}
 		result.set(s.id, files);
 	}
+	// Lists of snapshots that are gone. Only with the whole list given, which is how every caller asks.
+	if (snapshots.length === (await listSnapshots(root)).length) {
+		for (const name of await fs.readdir(cacheDir).catch(() => [] as string[])) {
+			if (!current.has(name)) {
+				await fs.rm(path.join(cacheDir, name), { force: true });
+				filesCache.delete(path.join(cacheDir, name));
+			}
+		}
+	}
 	return result;
+}
+
+/** A deleted server's cached file lists. */
+export async function deleteSnapshotFilesCache(root: string): Promise<void> {
+	await fs.rm(filesCacheDir(root), { recursive: true, force: true });
 }
 
 /**
