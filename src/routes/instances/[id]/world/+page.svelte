@@ -7,6 +7,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import RowMenu from '#lib/components/RowMenu.svelte';
 	import PruneMap from '#lib/components/PruneMap.svelte';
 	import PregenPlanner from '#lib/components/PregenPlanner.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
@@ -358,9 +359,8 @@
 									</form>
 								{/if}
 								{#if may('backups.create')}
-									<button type="button" class="button-quiet" title="Name and tags" onclick={() => openRow('edit', s.id)}>Edit</button>
+									<button type="button" class="button-quiet wide-only" title="Name and tags" onclick={() => openRow('edit', s.id)}>Edit</button>
 								{/if}
-								{#if may('files')}<a class="button button-quiet" href="{base}?snapshot={encodeURIComponent(s.id)}" download>Download</a>{/if}
 								{#if may('backups.restore')}
 									<button
 										type="button"
@@ -370,21 +370,29 @@
 										onclick={() => openRow('restore', s.id)}>Restore</button
 									>
 								{/if}
-								{#if may('world') && !s.partial}
-									<button type="button" class="button-quiet" title="Copy it out as a world of its own, beside the others" onclick={() => openRow('world', s.id)}
-										>New world</button
-									>
-								{:else if may('world')}
-									<!-- Holds the place, so every row's buttons stay in the same columns. -->
-									<span class="button button-quiet slot" aria-hidden="true">New world</span>
-								{/if}
 								{#if may('backups.delete')}
-									<button
-										type="button"
-										class="button-quiet"
-										disabled={busy}
-										onclick={() => openRow('delete', s.id)}>Delete</button
-									>
+									<button type="button" class="button-quiet wide-only" disabled={busy} onclick={() => openRow('delete', s.id)}>Delete</button>
+								{/if}
+								<!-- The rarer actions; in narrow windows Edit and Delete too. -->
+								{#if may('files') || (may('world') && !s.partial) || may('backups.create') || may('backups.delete')}
+									<RowMenu>
+										{#snippet children(close)}
+											{#if may('backups.create')}
+												<button type="button" role="menuitem" class="narrow-only" onclick={() => (openRow('edit', s.id), close())}>Edit name and tags</button>
+											{/if}
+											{#if may('files')}
+												<a role="menuitem" href="{base}?snapshot={encodeURIComponent(s.id)}" download onclick={close}>Download as zip</a>
+											{/if}
+											{#if may('world') && !s.partial}
+												<button type="button" role="menuitem" title="Copy it out as a world of its own, beside the others" onclick={() => (openRow('world', s.id), close())}
+													>Make a new world of it</button
+												>
+											{/if}
+											{#if may('backups.delete')}
+												<button type="button" role="menuitem" class="narrow-only danger" disabled={busy} onclick={() => (openRow('delete', s.id), close())}>Delete</button>
+											{/if}
+										{/snippet}
+									</RowMenu>
 								{/if}
 							</div>
 						</td>
@@ -1227,8 +1235,9 @@
 		margin-top: 0.15rem;
 		color: var(--text-muted);
 	}
-	.slot {
-		visibility: hidden;
+	/* Edit and Delete: in the row on wide windows, in its ⋯ menu on narrow ones. */
+	.snapshot-table .narrow-only {
+		display: none;
 	}
 	/* With a mouse the buttons need less room around them, which leaves more for the summary. */
 	@media (pointer: fine) {
@@ -1245,8 +1254,11 @@
 			border-bottom: none;
 			padding-bottom: var(--space-1);
 		}
-		.slot {
+		.snapshot-table .wide-only {
 			display: none;
+		}
+		.snapshot-table .narrow-only {
+			display: flex;
 		}
 		.snapshot-table .actions-cell {
 			width: auto;
