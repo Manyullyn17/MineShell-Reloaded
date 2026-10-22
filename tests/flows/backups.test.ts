@@ -155,7 +155,7 @@ describe('syncing a server', () => {
 		expect(lastBackupResult(s.id)).toMatchObject({ ok: true, message: 'Copied 1 snapshot.' });
 
 		await setSnapshotPinned(s.path, first.id, true);
-		await new Promise((r) => setTimeout(r, 1100));
+		await new Promise((r) => setTimeout(r, 2));
 		const second = (await takeSnapshot(s, { reason: 'manual', label: 'two' }))!;
 		await syncServer(s.id);
 		expect(ids(await storeFor(destination).list(s.id))).toEqual([second.id, first.id]);
@@ -179,7 +179,7 @@ describe('syncing a server', () => {
 		saveServerBackup(s.id, { destination: destination.id, copy: 'all', keep: 5 });
 		await syncServer(s.id);
 		setDestinationCompress(destination.id, true);
-		await new Promise((r) => setTimeout(r, 1100));
+		await new Promise((r) => setTimeout(r, 2));
 		const zipped = (await takeSnapshot(s, { reason: 'manual', label: 'zipped' }))!;
 		// What MineShell stopping mid-copy leaves: a partial zip, and a zip whose manifest was never written.
 		await fs.writeFile(path.join(dir, s.id, '2026-01-01_000000-manual.zip.partial'), 'half');

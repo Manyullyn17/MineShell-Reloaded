@@ -41,8 +41,8 @@ async function server() {
 
 const inode = async (file: string) => (await fs.stat(file)).ino;
 const take = async (instance: Awaited<ReturnType<typeof server>>, label: string) => {
-	// Ids are by the second.
-	await new Promise((r) => setTimeout(r, 1050));
+	// A later millisecond, so the order by time is certain (ids in the same second get a -2).
+	await new Promise((r) => setTimeout(r, 2));
 	return (await takeSnapshot(instance, { reason: 'manual', label }))!;
 };
 

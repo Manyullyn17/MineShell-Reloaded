@@ -114,10 +114,10 @@ describe('disk usage breakdown', () => {
 	it('counts files snapshots share once, and offers what deleting the unpinned ones really frees', async () => {
 		const instance = await server();
 		const kept = (await takeSnapshot(instance, { reason: 'manual', label: 'Kept' }))!;
-		await new Promise((r) => setTimeout(r, 1050));
+		await new Promise((r) => setTimeout(r, 2));
 		await fs.writeFile(path.join(instance.path, 'world/playerdata/a.dat'), bytes(31));
 		const newer = (await takeSnapshot(instance, { reason: 'manual', label: 'Newer' }))!;
-		await new Promise((r) => setTimeout(r, 1050));
+		await new Promise((r) => setTimeout(r, 2));
 		const newest = (await takeSnapshot(instance, { reason: 'manual', label: 'Newest' }))!;
 		/** A snapshot's own records: its manifest and hash list. */
 		const records = async (id: string) =>
