@@ -192,6 +192,16 @@ Proposal (not agreed):
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
 
+### Snapshot list layout
+
+Noticed by the user 2026-10-22 in screenshots of World > Snapshots; to look at more closely
+together before changing anything (user's call). The "Why" column gets squeezed by the row's
+action buttons (Pin, Edit, Download, Restore, New world, Delete), so a label as short as
+"Taken by hand" wraps over three lines, with its tags and world folder under it; on a phone
+the actions are off to the side. Probably wants a redesign rather than a width tweak: fewer
+buttons in the row (a menu, or actions in an opened row), or the label first and the details
+under it. The "In the backup folder" list below it has the same columns.
+
 ### More README screenshots
 
 Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
