@@ -84,6 +84,9 @@ export default defineConfig({
   envDir: testing ? 'tests/env' : undefined,
   test: {
     setupFiles: ['tests/setup.ts'],
+    // What a test logs is shown only when it fails: a passing run was over a thousand lines
+    // of migrations (every fresh test database) and expected warnings.
+    silent: 'passed-only',
     globalSetup: ['tests/global-setup.ts'],
     environment: 'node',
     // Recording real API responses (RECORD_HTTP=1, tests/helpers/http.ts)

@@ -20,6 +20,11 @@ src/lib/shared/links.ts       src/lib/shared/links.test.ts
 outside the suite: every item's name and picture for vanilla versions and real servers
 (`npm run check:icons`), run after changes to item icons or names.
 
+What a test prints (console) is shown only when it fails (`silent: 'passed-only'` in
+`vite.config.ts`): every fresh test database logs its 28 migrations and some tests log expected
+warnings, over a thousand lines on a passing run. Vitest does the same by itself when it
+detects an AI agent running it.
+
 ## Real data is never touched
 
 Importing anything that reaches the database opens and migrates the SQLite file under
