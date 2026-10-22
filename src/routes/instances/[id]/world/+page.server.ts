@@ -17,6 +17,7 @@ import {
 	snapshotDetails,
 	snapshotOfWorld,
 	snapshotPrompt,
+	snapshotUsage,
 	SnapshotChoiceNeeded,
 	worldFolders
 } from '#lib/server/snapshots.js';
@@ -85,6 +86,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		/** The seed the world was made with (level.dat); with level-seed blank, the random one it got. */
 		worldSeed: await worldSeed(instance.path),
 		snapshotPrompt: await snapshotPrompt(instance),
+		/** What the snapshots take on disk: files they share counted once. */
+		snapshotDiskBytes: (await snapshotUsage(instance.path)).bytes,
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await withDimensionNames(instance, await listDimensions(instance.path))).map(dimensionOption),
 		pruneAnalysis: pruneAnalysisSummary(instance.id),

@@ -9,6 +9,22 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Snapshots sharing unchanged files
+
+Built 2026-10-22 (ARCHITECTURE, "Worlds"; notes/worlds.md), before 1.0 (user's call). Talked over
+with the user: compression for backup folders (built the same day, "World backups to another
+place"), hard links for local snapshots, unchanged files found by hash (user's call, over size
+and time alone); deleting a snapshot any way must never touch the others (user's requirement),
+which hard links give by themselves and a test holds for MineShell's Delete, retention and `rm`
+by hand. Done first: the Files tab replaces files instead of writing into them, since it can
+browse snapshots and an edit in place would change every snapshot sharing the file. Tests also
+hold that the live world never shares a file after a snapshot, a restore or a world made of a
+snapshot, and that a file changed in place since its record is not linked to. Sizes on disk count
+each file once (retention, Settings, World tab, disk usage, whose "delete unpinned snapshots"
+offer is what that really frees). Measured on MeatballCraft's 7.1 GB world: three snapshots in
+7.2 GB instead of 21, the next snapshot of an unchanged world 9 s instead of 12. Leftovers:
+ROADMAP, "Leftovers of built features".
+
 ### World backups to another place
 
 Built 2026-10-22 (MineShell settings > Snapshots, "Backup folders"; a server's Settings >

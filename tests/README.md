@@ -424,3 +424,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | "Snapshot now" on a running server said it stays stopped until the snapshot is done | `routes/instances/[id]/world/snapshot.test.ts` |
 | Saving or uploading in the Files tab wrote into the existing file, which changes it under every other name it has (hard-linked snapshots) | `server/files.test.ts` ("saving a file") |
 | (feature) Compressed backup copies: zips with the manifest beside them, plain and compressed copies in one folder, partials left by a cut-short copy cleared, copy back from a zip | `flows/backups.test.ts` |
+| (feature) Snapshots sharing unchanged files: links by hash, deleting one (Delete, retention, by hand) leaves the others whole, no link to a file changed in place or a snapshot without records, the live world never shares a file, shared bytes counted once | `flows/snapshot-links.test.ts`, `flows/disk-usage.test.ts` ("share once") |

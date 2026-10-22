@@ -665,7 +665,20 @@ written into the export's server.properties, then settings and records.
 
 Snapshots live inside the server folder, `.mineshell/snapshots/<id>/`, with the world
 folders at their relative paths and a `manifest.json`; one is assembled as `<id>.partial`
-and only counts once renamed. Pinning, the user's name (`note`) and tags only rewrite the
+and only counts once renamed. A copied snapshot also has `hashes.json` (each file's size,
+modification time and SHA-256, apart from the manifest so listing stays cheap) and shares
+every file an earlier snapshot holds unchanged as a hard link (`copyWorld`): a live file is
+hashed only when some snapshot has a file of its size, linked to the newest snapshot holding
+that hash while the target still has the recorded size and time (a file changed in place is
+never shared further), otherwise copied (reflinks where the filesystem has them) and hashed
+as copied. Snapshots without records (older, or made by moving the world) are copied from,
+never linked to. This rests on two rules: a snapshot's files are never written to (manifests
+are replaced by rename, the Files tab replaces files) and the live world never shares a file
+with a snapshot (restore and "new world" copy out, world changes move the world in). Deleting
+a snapshot, by MineShell or by hand, removes names; the file system frees a file with its last
+name. Sizes on disk count each file once (`snapshotFiles`, by inode, cached per snapshot
+folder): retention counts what a snapshot adds to the ones kept and pinned, Settings and the
+World tab show the total, disk usage what each holds alone plus one line for what they share. Pinning, the user's name (`note`) and tags only rewrite the
 manifest (`updateManifest`). Before MineShell's own risky operations the world is copied
 into one (reflinks where the filesystem has them). The World tab's operations - reset,
 replace, restore, reset or restore one dimension, restore chunks, prune chunks - instead move what they

@@ -6,7 +6,7 @@ import { dimensionNames, namedLabel } from './dimensionnames';
 import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
 import { serverWorldName } from './packworld';
-import { listSnapshots, SNAPSHOTS_DIR, worldFolders } from './snapshots';
+import { diskBytes, listSnapshots, snapshotFiles, SNAPSHOTS_DIR, worldFolders } from './snapshots';
 import { TRASH_DIR } from './trash';
 import { mapDataSize } from './worldmap';
 import { listWorlds } from './worlds';
@@ -199,6 +199,8 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 	const names = await dimensionNames(instance, await listDimensions(root));
 	const snapshots = new Map((await listSnapshots(root)).map((s) => [s.id, s]));
 	const suggestions: Suggestion[] = [];
+	/** The files of unpinned snapshots that no pinned one shares: what deleting them all frees. */
+	const unpinnedFiles = new Map<string, number>();
 	// The server's other worlds, by their top-level folders (worlds.ts).
 	const inactive = new Map<string, string>();
 	const keptMaps: UsageItem[] = [];
@@ -228,14 +230,27 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 				if (rel === TRASH_DIR) {
 					items.trash.push({ label: 'Deleted files in the trash', path: rel, bytes: await sizeOf(path.join(root, rel)) });
 				} else if (rel === SNAPSHOTS_DIR) {
+					// Snapshots share unchanged files (hard links): each shows what it alone holds, what deleting it
+					// frees, and the shared files are one item, so nothing is counted twice.
+					const files = await snapshotFiles(root, [...snapshots.values()]);
+					const shares = diskBytes(files);
+					// Deleting every unpinned one frees what no pinned one also holds.
+					const pinned = new Set([...snapshots.values()].filter((x) => x.pinned).flatMap((x) => [...(files.get(x.id)?.keys() ?? [])]));
+					for (const x of snapshots.values()) {
+						if (x.pinned) continue;
+						for (const [key, size] of files.get(x.id) ?? []) if (!pinned.has(key)) unpinnedFiles.set(key, size);
+					}
 					for (const snap of await entries(path.join(root, rel))) {
 						const info = snapshots.get(snap.name);
 						items.mineshell.push({
 							label: info ? `Snapshot: ${info.label}` : `Unfinished snapshot ${snap.name}`,
 							path: path.join(rel, snap.name),
-							bytes: await sizeOf(path.join(root, rel, snap.name)),
+							bytes: info ? (shares.own.get(snap.name) ?? 0) : await sizeOf(path.join(root, rel, snap.name)),
 							note: info?.pinned ? 'pinned' : undefined
 						});
+					}
+					if (shares.shared) {
+						items.mineshell.push({ label: 'Files several snapshots share (unchanged between them)', path: rel, bytes: shares.shared });
 					}
 				} else {
 					items.mineshell.push({
@@ -289,7 +304,7 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 	if (unpinned.length) {
 		suggestions.push({
 			text: `${unpinned.length} unpinned world snapshot${unpinned.length === 1 ? '' : 's'}. Delete the ones you no longer need on the World tab, or keep fewer in Settings.`,
-			bytes: unpinned.reduce((sum, i) => sum + i.bytes, 0),
+			bytes: [...unpinnedFiles.values()].reduce((sum, size) => sum + size, 0),
 			href: { tab: 'world' }
 		});
 	}

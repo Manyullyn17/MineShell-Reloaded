@@ -23,7 +23,6 @@
 	// ?view= opens a tab: Restore chunks is a page of its own and links back to the others.
 	const asked = page.url.searchParams.get('view');
 	let view = $state<(typeof VIEWS)[number]>(VIEWS.find((v) => v === asked) ?? 'snapshots');
-	const snapshotBytes = $derived(data.snapshots.reduce((sum, s) => sum + s.sizeBytes, 0));
 	let pendingRestore = $state<string | null>(null);
 	let pendingDelete = $state<string | null>(null);
 	let pendingEdit = $state<string | null>(null);
@@ -261,7 +260,9 @@
 	</div>
 	<div>
 		<dt>Snapshots</dt>
-		<dd class="mono">{data.snapshots.length}{data.snapshots.length ? ` · ${formatBytes(snapshotBytes)}` : ''}</dd>
+		<dd class="mono" title="On disk: files that did not change between snapshots are kept once">
+			{data.snapshots.length}{data.snapshots.length ? ` · ${formatBytes(data.snapshotDiskBytes)}` : ''}
+		</dd>
 	</div>
 </dl>
 

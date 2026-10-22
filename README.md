@@ -90,7 +90,7 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 
 - Create snapshots manually, on a schedule, or automatically before risky operations.
 - Snapshot a running server with saving paused, or stop and restart it around the operation.
-- Configure retention by snapshot count and storage usage. Pin, name, tag, and filter snapshots.
+- Configure retention by snapshot count and storage usage. Pin, name, tag, and filter snapshots. Snapshots share the files that did not change between them, so ten of a big world take little more than one.
 - Restore a snapshot, reset a world, replace it with an uploaded world, or download a world as a ZIP archive.
 - Keep several worlds per server: start a new one without deleting the old, upload one, switch between them, and turn any snapshot into a world of its own. Each world keeps its seed, data packs and map.
 - Reset or restore individual dimensions.

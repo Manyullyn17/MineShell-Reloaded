@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { deleteOldLogs, diskBreakdown, forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
-import { setSnapshotPinned, takeSnapshot } from '#lib/server/snapshots.js';
+import { setSnapshotPinned, SNAPSHOTS_DIR, takeSnapshot } from '#lib/server/snapshots.js';
 import { createInstance } from '../helpers/instances';
 import { getMapSettings, mapDataSize, mapDir, saveMapSettings } from '#lib/server/worldmap.js';
 
@@ -43,10 +43,15 @@ async function server() {
 	return instance;
 }
 
+/** What the files take, each once however many names it has (snapshots share files as hard links). */
 async function onDisk(dir: string): Promise<number> {
+	const seen = new Set<number>();
 	let total = 0;
 	for (const entry of await fs.readdir(dir, { withFileTypes: true, recursive: true })) {
-		if (entry.isFile()) total += (await fs.stat(path.join(entry.parentPath, entry.name))).size;
+		if (!entry.isFile()) continue;
+		const stat = await fs.stat(path.join(entry.parentPath, entry.name));
+		if (!seen.has(stat.ino)) total += stat.size;
+		seen.add(stat.ino);
 	}
 	return total;
 }
@@ -104,6 +109,36 @@ describe('disk usage breakdown', () => {
 		expect(texts.some((t) => t.startsWith('Configs that pack changes moved aside (2 versions)'))).toBe(true);
 		expect(texts.some((t) => t.includes('pack-change-1791000000000 was left by an operation'))).toBe(true);
 		expect(usage.suggestions.find((s) => s.action === 'deleteOldLogs')).toMatchObject({ bytes: 25 + 12 });
+	});
+
+	it('counts files snapshots share once, and offers what deleting the unpinned ones really frees', async () => {
+		const instance = await server();
+		const kept = (await takeSnapshot(instance, { reason: 'manual', label: 'Kept' }))!;
+		await new Promise((r) => setTimeout(r, 1050));
+		await fs.writeFile(path.join(instance.path, 'world/playerdata/a.dat'), bytes(31));
+		const newer = (await takeSnapshot(instance, { reason: 'manual', label: 'Newer' }))!;
+		await new Promise((r) => setTimeout(r, 1050));
+		const newest = (await takeSnapshot(instance, { reason: 'manual', label: 'Newest' }))!;
+		/** A snapshot's own records: its manifest and hash list. */
+		const records = async (id: string) =>
+			(await fs.stat(path.join(instance.path, SNAPSHOTS_DIR, id, 'manifest.json'))).size +
+			(await fs.stat(path.join(instance.path, SNAPSHOTS_DIR, id, 'hashes.json'))).size;
+
+		const usage = await diskBreakdown(instance);
+		expect(usage.total).toBe(await onDisk(instance.path));
+		const mineshell = usage.groups.find((g) => g.id === 'mineshell')!;
+		const item = (label: string) => mineshell.items.find((i) => i.label === label)?.bytes;
+		// Every region file and notes.txt are in all three; the changed player file in the two newer ones.
+		expect(item('Files several snapshots share (unchanged between them)')).toBe(1000 + 200 + 150 + 120 + 110 + 90 + 7 + 80 + 31);
+		expect(item('Snapshot: Kept')).toBe(30 + (await records(kept.id)));
+		expect(item('Snapshot: Newest')).toBe(await records(newest.id));
+
+		await setSnapshotPinned(instance.path, kept.id, true);
+		forgetDiskBreakdown(instance.path);
+		const again = await diskBreakdown(instance);
+		// Deleting the two unpinned ones frees what Kept does not hold too: the newer player file and their records.
+		const offer = again.suggestions.find((x) => x.text.startsWith('2 unpinned world snapshots'))!;
+		expect(offer.bytes).toBe(31 + (await records(newer.id)) + (await records(newest.id)));
 	});
 
 	it('deletes only archived logs and crash reports past the cutoff', async () => {

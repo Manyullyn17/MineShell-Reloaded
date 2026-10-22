@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
-import { constants as fsConstants } from 'node:fs';
+import { constants as fsConstants, createReadStream } from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
@@ -22,6 +24,14 @@ import { formatBytes } from '#lib/shared/format.js';
  * stopping is never mistaken for a snapshot; recovery deletes the partial
  * ones. The copy is a step inside the operation's journal, before anything
  * moves.
+ *
+ * A copied snapshot shares the files that did not change with the snapshots
+ * before it, as hard links (`copyWorld`), so ten snapshots of a big world cost
+ * it once plus what changed. That is safe because a snapshot's files are never
+ * written to (manifests are replaced by rename, the Files tab replaces files
+ * too) and the live world never shares a file with a snapshot (restoring
+ * copies); deleting a snapshot, however, frees only what no other one still
+ * names. Sizes on disk count each shared file once (`snapshotFiles`).
  */
 
 export const SNAPSHOTS_DIR = path.join('.mineshell', 'snapshots');
@@ -108,8 +118,10 @@ export function snapshotDetails(note: string, tags: string): { note: string | nu
  * apart, so a run of dimension resets never pushes the last full worlds out.
  * The newest `keepMin` / `partialMin` always stay; older ones stay, newest
  * first, while all kept snapshots together fit in `budgetMb` and the type is
- * under its max. Pinned snapshots are outside all of it. Sizes are file sizes:
- * on btrfs/XFS a snapshot shares space with the world, so it really takes less.
+ * under its max. Pinned snapshots are outside all of it. Sizes are what a
+ * snapshot adds on disk: files it shares with ones already kept (hard links)
+ * count once. On btrfs/XFS a copied file also shares space with the world
+ * (reflinks), which no size here sees.
  */
 export type SnapshotPolicy = {
 	keepMin: number;
@@ -275,40 +287,118 @@ export function policyFromForm(form: FormData): { fields: Partial<SnapshotPolicy
 	return { fields, error: null };
 }
 
-/** The snapshots the policy lets go: oldest first within what does not fit. Pinned ones never. */
-export function snapshotsToDelete(snapshots: Snapshot[], policy: SnapshotPolicy): Snapshot[] {
+/**
+ * The snapshots the policy lets go: oldest first within what does not fit.
+ * Pinned ones never. With `files` (snapshotFiles), a snapshot costs only the
+ * files not already in a kept or pinned one; without, its whole size.
+ */
+export function snapshotsToDelete(snapshots: Snapshot[], policy: SnapshotPolicy, files?: SnapshotFiles): Snapshot[] {
 	const unpinned = snapshots.filter((s) => !s.pinned).sort((a, b) => b.createdAt - a.createdAt);
 	const kept = new Set<string>();
 	const count = { full: 0, partial: 0 };
+	const seen = new Set<string>();
+	for (const s of snapshots.filter((s) => s.pinned)) for (const key of files?.get(s.id)?.keys() ?? []) seen.add(key);
+	const cost = (s: Snapshot) => {
+		const own = files?.get(s.id);
+		if (!own) return s.sizeBytes;
+		let bytes = 0;
+		for (const [key, size] of own) if (!seen.has(key)) bytes += size;
+		return bytes;
+	};
 	let used = 0;
-	const keep = (s: Snapshot) => {
+	const keep = (s: Snapshot, bytes: number) => {
 		kept.add(s.id);
 		count[s.partial ? 'partial' : 'full']++;
-		used += s.sizeBytes;
+		used += bytes;
+		for (const key of files?.get(s.id)?.keys() ?? []) seen.add(key);
 	};
 	for (const s of unpinned) {
-		if (s.partial ? count.partial < policy.partialMin : count.full < policy.keepMin) keep(s);
+		if (s.partial ? count.partial < policy.partialMin : count.full < policy.keepMin) keep(s, cost(s));
 	}
 	const budget = policy.budgetMb * 1024 * 1024;
 	for (const s of unpinned) {
 		if (kept.has(s.id)) continue;
 		const underMax = s.partial ? count.partial < policy.partialMax : count.full < policy.keepMax;
-		if (underMax && used + s.sizeBytes <= budget) keep(s);
+		const bytes = cost(s);
+		if (underMax && used + bytes <= budget) keep(s, bytes);
 	}
 	return unpinned.filter((s) => !kept.has(s.id)).reverse();
 }
 
+/** Each snapshot's files by inode ("device:inode") with their sizes: a file shared by hard links is one key. */
+export type SnapshotFiles = Map<string, Map<string, number>>;
+
+/** Read once per snapshot folder: a finished snapshot's files never change. */
+const filesCache = ((globalThis as { __mineshellSnapshotFiles?: Map<string, Map<string, number>> }).__mineshellSnapshotFiles ??= new Map());
+
+async function inodesUnder(dir: string, out: Map<string, number>): Promise<void> {
+	for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) await inodesUnder(full, out);
+		else {
+			const stat = await fs.lstat(full).catch(() => null);
+			if (stat) out.set(`${stat.dev}:${stat.ino}`, stat.size);
+		}
+	}
+}
+
+export async function snapshotFiles(root: string, snapshots: Snapshot[]): Promise<SnapshotFiles> {
+	const result: SnapshotFiles = new Map();
+	for (const s of snapshots) {
+		// By the folder's own inode too: a snapshot deleted and copied back under its id is another folder.
+		const dir = await fs.stat(snapshotPath(root, s.id)).catch(() => null);
+		const key = `${snapshotPath(root, s.id)}@${dir?.ino}`;
+		let files = filesCache.get(key);
+		if (!files) {
+			files = new Map();
+			await inodesUnder(snapshotPath(root, s.id), files);
+			filesCache.set(key, files);
+		}
+		result.set(s.id, files);
+	}
+	return result;
+}
+
+/**
+ * What snapshots take on disk, each shared file once: in all, what each holds
+ * alone (deleting it frees that), and what several share.
+ */
+export function diskBytes(files: SnapshotFiles, ids?: Iterable<string>): { total: number; own: Map<string, number>; shared: number } {
+	const owners = new Map<string, { size: number; count: number; id: string }>();
+	for (const id of ids ?? files.keys()) {
+		for (const [key, size] of files.get(id) ?? []) {
+			const o = owners.get(key);
+			if (o) o.count++;
+			else owners.set(key, { size, count: 1, id });
+		}
+	}
+	const own = new Map<string, number>();
+	let total = 0;
+	let shared = 0;
+	for (const o of owners.values()) {
+		total += o.size;
+		if (o.count > 1) shared += o.size;
+		else own.set(o.id, (own.get(o.id) ?? 0) + o.size);
+	}
+	return { total, own, shared };
+}
+
 export type SnapshotUsage = { full: number; partial: number; pinned: number; bytes: number; pinnedBytes: number };
 
+/** How many snapshots of each kind, and the bytes they take on disk (shared files once). */
 export async function snapshotUsage(root: string): Promise<SnapshotUsage> {
 	const usage: SnapshotUsage = { full: 0, partial: 0, pinned: 0, bytes: 0, pinnedBytes: 0 };
-	for (const s of await listSnapshots(root)) {
-		usage.bytes += s.sizeBytes;
-		if (s.pinned) {
-			usage.pinned++;
-			usage.pinnedBytes += s.sizeBytes;
-		} else usage[s.partial ? 'partial' : 'full']++;
+	const snapshots = await listSnapshots(root);
+	for (const s of snapshots) {
+		if (s.pinned) usage.pinned++;
+		else usage[s.partial ? 'partial' : 'full']++;
 	}
+	const files = await snapshotFiles(root, snapshots);
+	usage.bytes = diskBytes(files).total;
+	usage.pinnedBytes = diskBytes(
+		files,
+		snapshots.filter((s) => s.pinned).map((s) => s.id)
+	).total;
 	return usage;
 }
 
@@ -534,10 +624,102 @@ export async function finishSnapshot(
 	return manifest;
 }
 
+// ----------------------------------------------------- shared files ---
+
+/** Beside a copied snapshot's manifest: each world file's size, modification time and SHA-256. */
+export const HASHES = 'hashes.json';
+type FileRecord = [size: number, mtimeMs: number, sha256: string];
+
+/** Files earlier snapshots hold, by size and then hash, newest snapshot first: what a new one can link to. */
+type LinkIndex = Map<number, Map<string, { file: string; mtimeMs: number }>>;
+
+export async function readHashes(dir: string): Promise<Record<string, FileRecord> | null> {
+	try {
+		const parsed = JSON.parse(await fs.readFile(path.join(dir, HASHES), 'utf8')) as { version?: number; files?: Record<string, FileRecord> };
+		return parsed.version === 1 && parsed.files ? parsed.files : null;
+	} catch {
+		return null;
+	}
+}
+
+async function linkIndex(root: string): Promise<LinkIndex> {
+	const index: LinkIndex = new Map();
+	for (const s of await listSnapshots(root)) {
+		const dir = snapshotPath(root, s.id);
+		for (const [rel, [size, mtimeMs, hash]] of Object.entries((await readHashes(dir)) ?? {})) {
+			let bySize = index.get(size);
+			if (!bySize) index.set(size, (bySize = new Map()));
+			if (!bySize.has(hash)) bySize.set(hash, { file: path.join(dir, rel), mtimeMs });
+		}
+	}
+	return index;
+}
+
+export async function hashFile(file: string): Promise<string> {
+	const hash = crypto.createHash('sha256');
+	await pipeline(createReadStream(file), hash);
+	return hash.digest('hex');
+}
+
+/**
+ * Copies world folders into `partial`, linking each file whose contents an
+ * earlier snapshot holds to that snapshot's file instead of copying it. A live
+ * file is hashed only when some snapshot has a file of its size (region files
+ * mostly differ); a link is made only while the target still has the size
+ * and time it was recorded with, so a file changed in place since is never
+ * shared further. A copied file is hashed as copied, so a record always
+ * matches what is stored. Returns the records for HASHES.
+ */
+async function copyWorld(root: string, worlds: string[], partial: string, index: LinkIndex): Promise<Record<string, FileRecord>> {
+	const records: Record<string, FileRecord> = {};
+	async function walk(rel: string): Promise<void> {
+		const to = path.join(partial, rel);
+		await fs.mkdir(to, { recursive: true });
+		for (const entry of await fs.readdir(path.join(root, rel), { withFileTypes: true })) {
+			const childRel = path.posix.join(rel, entry.name);
+			const from = path.join(root, childRel);
+			const dest = path.join(partial, childRel);
+			if (entry.isDirectory()) {
+				await walk(childRel);
+				continue;
+			}
+			const stat = await fs.lstat(from);
+			if (stat.isSymbolicLink()) {
+				await fs.symlink(await fs.readlink(from), dest);
+				continue;
+			}
+			if (!stat.isFile()) continue;
+			const candidates = index.get(stat.size);
+			if (candidates) {
+				const hash = await hashFile(from);
+				const found = candidates.get(hash);
+				const target = found && (await fs.stat(found.file).catch(() => null));
+				if (found && target && target.size === stat.size && target.mtimeMs === found.mtimeMs) {
+					const linked = await fs.link(found.file, dest).then(
+						() => true,
+						() => false
+					);
+					if (linked) {
+						records[childRel] = [stat.size, found.mtimeMs, hash];
+						continue;
+					}
+				}
+			}
+			await fs.copyFile(from, dest, fsConstants.COPYFILE_FICLONE);
+			await fs.utimes(dest, stat.atime, stat.mtime);
+			const copied = await fs.stat(dest);
+			records[childRel] = [copied.size, copied.mtimeMs, await hashFile(dest)];
+		}
+	}
+	for (const world of worlds) await walk(world);
+	return records;
+}
+
 /**
  * Copies the world into a new snapshot; null when there is no world yet.
- * Reflinks where the filesystem supports them (btrfs, XFS), so the copy is
- * instant there and costs no space until the world changes.
+ * Files an earlier snapshot holds unchanged are hard links to it (copyWorld);
+ * the rest are copied with reflinks where the filesystem has them (btrfs,
+ * XFS), instant there and costing no space until the world changes.
  */
 export async function takeSnapshot(instance: ServerInstance, input: SnapshotInput): Promise<Snapshot | null> {
 	const root = instance.path;
@@ -551,16 +733,8 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 	const id = await newSnapshotId(root, input.reason);
 	const partial = partialPath(root, id);
 	try {
-		for (const world of worlds) {
-			await fs.mkdir(path.dirname(path.join(partial, world)), { recursive: true });
-			await fs.cp(path.join(root, world), path.join(partial, world), {
-				recursive: true,
-				errorOnExist: true,
-				force: false,
-				preserveTimestamps: true,
-				mode: fsConstants.COPYFILE_FICLONE
-			});
-		}
+		const hashes = await copyWorld(root, worlds, partial, await linkIndex(root));
+		await fs.writeFile(path.join(partial, HASHES), JSON.stringify({ version: 1, files: hashes }), 'utf8');
 		return await finishSnapshot(instance, id, input, worlds);
 	} catch (err) {
 		await fs.rm(partial, { recursive: true, force: true });
@@ -571,7 +745,8 @@ export async function takeSnapshot(instance: ServerInstance, input: SnapshotInpu
 /** Deletes what the policy does not keep (snapshotsToDelete). Pinned ones always stay. */
 export async function pruneSnapshots(root: string, policy: SnapshotPolicy): Promise<string[]> {
 	const removed: string[] = [];
-	for (const old of snapshotsToDelete(await listSnapshots(root), policy)) {
+	const snapshots = await listSnapshots(root);
+	for (const old of snapshotsToDelete(snapshots, policy, await snapshotFiles(root, snapshots))) {
 		await fs.rm(snapshotPath(root, old.id), { recursive: true, force: true });
 		removed.push(old.id);
 	}

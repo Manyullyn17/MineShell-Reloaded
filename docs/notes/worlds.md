@@ -29,6 +29,21 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Only keys present in server.properties are saved per world: an empty `level-type=` is
   not the default to every version.
 
+## Shared files between snapshots
+- Built 2026-10-22 (ARCHITECTURE, "Worlds"). Measured on a throwaway copy of MeatballCraft's
+  world (7.1 GB, 4893 files, warm page cache, stopped): the first snapshot took 14.3 s (12 s as
+  a plain copy before; hashing what it copied), the next with nothing changed 9.2 s, with three
+  region files changed 8.7 s; three snapshots took 7.2 GB instead of 21. A live snapshot keeps
+  saving paused for as long, so the hashing is time with saving off.
+- `du` counts a hard-linked file once per run, so `du -sh .mineshell/snapshots` shows the real
+  use; per snapshot folder it shows each in full when measured one at a time.
+- Copies that leave the server folder become full again: a backup copy (plain or zip), the
+  export with snapshots, `cp -r`. No damage; a copied-back snapshot keeps its `hashes.json`,
+  and from a plain backup its times too, so it can be linked to again; from a zip the times
+  differ and it is only copied from.
+- The free-space check before a snapshot still asks for room for the whole world, though a
+  linked one takes far less: on the safe side, left as it is.
+
 ## Snapshot retention
 - Policy (`snapshots.ts`): newest `keepMin` full / `partialMin` partial always stay, more
   newest-first while all kept fit in `budgetMb` and each type is under its max; pinned are

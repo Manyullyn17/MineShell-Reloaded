@@ -58,6 +58,7 @@ function fakeInstall() {
 async function snapshotTree(root: string, id: string) {
 	const all = await tree(path.join(root, SNAPSHOTS_DIR, id), /^$/);
 	delete all['manifest.json'];
+	delete all['hashes.json'];
 	return all;
 }
 
@@ -140,7 +141,7 @@ describe('world snapshots', () => {
 		const instance = await instanceWithWorld();
 		const before = await tree(instance.path);
 		const install = fakeInstall();
-		vi.spyOn(fs, 'cp').mockRejectedValue(new Error('ENOSPC: no space left on device'));
+		vi.spyOn(fs, 'copyFile').mockRejectedValue(new Error('ENOSPC: no space left on device'));
 		const task = await waitForTask(await changeLoaderVersion(instance, '0.16.5', { snapshot: true }));
 		expect(task.state).toBe('failed');
 		expect(install).not.toHaveBeenCalled();
