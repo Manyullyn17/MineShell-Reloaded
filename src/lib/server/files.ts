@@ -101,7 +101,28 @@ export async function writeTextFile(root: string, relative: string, contents: st
 		() => false
 	);
 	const lf = contents.replace(/\r\n/g, '\n');
-	await fs.writeFile(target, crlf ? lf.replace(/\n/g, '\r\n') : lf, 'utf8');
+	await replaceFile(target, crlf ? lf.replace(/\n/g, '\r\n') : lf);
+}
+
+/**
+ * Writes `data` as a new file renamed over `target`, never into the file that
+ * is there: a file can have other names (hard links), and writing into it
+ * would change it under every one of them. The old file's permissions carry
+ * over, so an executable run.sh stays one; a symbolic link is written through,
+ * as it always was.
+ */
+async function replaceFile(target: string, data: string | Buffer): Promise<void> {
+	const old = await fs.lstat(target).catch(() => null);
+	if (old?.isSymbolicLink()) return fs.writeFile(target, data);
+	const temp = path.join(path.dirname(target), `.${path.basename(target)}.${process.pid}-${Date.now()}.tmp`);
+	try {
+		await fs.writeFile(temp, data, { flag: 'wx' });
+		if (old) await fs.chmod(temp, old.mode & 0o7777);
+		await fs.rename(temp, target);
+	} catch (err) {
+		await fs.rm(temp, { force: true });
+		throw err;
+	}
 }
 
 export function fileStream(root: string, relative: string) {
@@ -138,7 +159,7 @@ export async function saveUpload(root: string, relative: string, file: File): Pr
 	const target = safeJoin(root, relative);
 	await fs.mkdir(path.dirname(target), { recursive: true });
 	const buffer = Buffer.from(await file.arrayBuffer());
-	await fs.writeFile(target, buffer);
+	await replaceFile(target, buffer);
 }
 
 export async function directorySize(dir: string): Promise<number> {

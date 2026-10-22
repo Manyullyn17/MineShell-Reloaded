@@ -422,3 +422,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Backup copies: what a sync copies and deletes, pins, the folder checks, a missing folder never made, copying back (another server's too), one notification per run of failures | `flows/backups.test.ts`, `routes/instances/[id]/settings/checks.test.ts` ("backup copies") |
 | A notification kind added later stayed off for destinations saved before it | `server/notifications.test.ts` ("a kind added later") |
 | "Snapshot now" on a running server said it stays stopped until the snapshot is done | `routes/instances/[id]/world/snapshot.test.ts` |
+| Saving or uploading in the Files tab wrote into the existing file, which changes it under every other name it has (hard-linked snapshots) | `server/files.test.ts` ("saving a file") |
