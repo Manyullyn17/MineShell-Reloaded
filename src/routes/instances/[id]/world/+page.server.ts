@@ -294,8 +294,11 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		try {
 			// Running: copied with saving paused, as scheduled snapshots are.
-			if ((await summarise(instance)).running) await snapshotWhileRunning(instance);
-			else await snapshotNow(instance);
+			if ((await summarise(instance)).running) {
+				await snapshotWhileRunning(instance);
+				return { ok: true, message: 'Snapshotting the world while it runs, with saving paused for the copy. Follow it in Activity.' };
+			}
+			await snapshotNow(instance);
 			return { ok: true, message: `Snapshotting the world. ${STARTED}` };
 		} catch (err) {
 			return refused(err);
