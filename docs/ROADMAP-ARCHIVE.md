@@ -26,8 +26,12 @@ a warning; another server's copies can be copied back by a global admin, for a s
 and made again. The notification kind ("Snapshot or backup copy failed", on by default) is also
 on for destinations saved before it. Tried on a throwaway dev server: copies on saving the
 setting and 15 s after a new snapshot, copy back by the button, the folder removed (failed,
-nothing created, shown on the World tab), desktop and phone widths. Leftovers: ROADMAP,
-"Leftovers of built features".
+nothing created, shown on the World tab), desktop and phone widths. Measured on a throwaway copy
+of MeatballCraft (7.1 GB): a live snapshot and its copy in under a minute, TPS 20 throughout
+(notes/worlds.md). Compressed copies added the same day (user's call: compression for the backup
+folder, hard links for local snapshots): one zip per snapshot with its manifest beside it, a
+switch per folder, on by default; plain copies are still read, so the switch can change.
+Leftovers: ROADMAP, "Leftovers of built features".
 
 ### Instance export and import
 

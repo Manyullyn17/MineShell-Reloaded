@@ -706,7 +706,13 @@ hand; partial ones never) and how many are kept there (`backups.server:<id>`), a
 result is kept beside it (`backups.last:<id>`). A destination is a store with a few operations
 (problem, free space, list, write, read, remove, rewrite a manifest); a folder is the only
 kind, others would be more stores. On a folder, `<folder>/<server id>/<snapshot id>/` has the
-snapshot's own shape, written as `.partial` and renamed when complete. The folder itself is
+snapshot's own shape, or, with the folder's "compressed" on (the default), `<snapshot id>.zip`
+with the manifest beside it as `<snapshot id>.json`, so listing and retention never open a zip
+(region files at deflate level 1: a third smaller, as small as level 6, faster). Either is
+written as `.partial` and renamed when complete, a zip's manifest last, since that is what
+makes it listed; both kinds are read, so the setting can change, and copy back lays the
+manifest beside a zip over the one inside it. Leftover partials are removed before a sync
+copies. The folder itself is
 never created: an unmounted drive leaves an empty mount point on the system disk, which a copy
 would fill. What a sync does is worked out from both sides each time (`planBackup`): the newest
 `keep` of what is there and what should be, plus pinned ones (the server's pin while it has the

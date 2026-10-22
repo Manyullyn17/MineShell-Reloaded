@@ -68,6 +68,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			// A folder on this machine MineShell writes into, as picking an import by its path reads one.
 			addBackupFolder: 'owner',
 			removeBackupFolder: 'owner',
+			backupFolderCompress: 'owner',
 			installUnit: 'globalAdmin',
 			serverCap: 'globalAdmin',
 			portChange: 'globalAdmin',

@@ -98,7 +98,7 @@ import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, 
 import { deleteCustomPreset, getPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
 import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
 import { globalTarget, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
-import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, storeFor } from '#lib/server/backups.js';
+import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, setDestinationCompress, storeFor } from '#lib/server/backups.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 /**
@@ -348,10 +348,30 @@ export const actions: Actions = {
 	addBackupFolder: async ({ request }) => {
 		const form = await request.formData();
 		try {
-			const added = await addDestination({ name: String(form.get('name') ?? ''), path: String(form.get('path') ?? '') });
+			const added = await addDestination({
+				name: String(form.get('name') ?? ''),
+				path: String(form.get('path') ?? ''),
+				compress: form.get('compress') === 'on'
+			});
 			return { ok: true, message: `${added.name} added. Pick it in a server's settings (Snapshots) to copy its snapshots there.` };
 		} catch (err) {
 			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message, backupPath: String(form.get('path') ?? '') });
+			throw err;
+		}
+	},
+
+	backupFolderCompress: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			const folder = setDestinationCompress(String(form.get('id') ?? ''), form.get('compress') === 'on');
+			return {
+				ok: true,
+				message: folder.compress
+					? `New copies in ${folder.name} are zips. The ones there already stay as they are.`
+					: `New copies in ${folder.name} are plain folders. The ones there already stay as they are.`
+			};
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
 	},

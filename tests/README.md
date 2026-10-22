@@ -423,3 +423,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A notification kind added later stayed off for destinations saved before it | `server/notifications.test.ts` ("a kind added later") |
 | "Snapshot now" on a running server said it stays stopped until the snapshot is done | `routes/instances/[id]/world/snapshot.test.ts` |
 | Saving or uploading in the Files tab wrote into the existing file, which changes it under every other name it has (hard-linked snapshots) | `server/files.test.ts` ("saving a file") |
+| (feature) Compressed backup copies: zips with the manifest beside them, plain and compressed copies in one folder, partials left by a cut-short copy cleared, copy back from a zip | `flows/backups.test.ts` |

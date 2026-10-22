@@ -448,6 +448,7 @@
 				<tr>
 					<th>Name</th>
 					<th>Folder</th>
+					<th>Copies</th>
 					<th>Free</th>
 					<th>Servers</th>
 					{#if data.owner}<th><span class="visually-hidden">Actions</span></th>{/if}
@@ -467,7 +468,28 @@
 								</p>
 							{/if}
 						</td>
-						<td class="mono small">{folder.freeBytes === null ? '-' : formatBytes(folder.freeBytes)}</td>
+						<td class="small">
+							{#if data.owner}
+								<form method="POST" action="?/backupFolderCompress" use:enhance class="compress-form">
+									<input type="hidden" name="id" value={folder.id} />
+									<label>
+										<input
+											type="checkbox"
+											name="compress"
+											class="switch"
+											role="switch"
+											checked={folder.compress}
+											onchange={(e) => e.currentTarget.form?.requestSubmit()}
+										/>
+										Compressed
+									</label>
+									<noscript><button type="submit">Save</button></noscript>
+								</form>
+							{:else}
+								{folder.compress ? 'Compressed' : 'Plain folders'}
+							{/if}
+						</td>
+						<td class="mono small nowrap">{folder.freeBytes === null ? '-' : formatBytes(folder.freeBytes)}</td>
 						<td class="small">
 							{#each folder.servers as server, i (server.id)}{i ? ', ' : ''}<a href="/instances/{encodeURIComponent(server.id)}/settings?tab=snapshots">{server.name}</a>{:else}<span class="faint">none yet</span>{/each}
 						</td>
@@ -500,12 +522,18 @@
 				<label for="backup-name">Name <span class="muted">(optional)</span></label>
 				<input id="backup-name" name="name" placeholder="USB drive" />
 			</div>
+			<div class="field check">
+				<input id="backup-compress" name="compress" type="checkbox" class="switch" role="switch" checked />
+				<label for="backup-compress">Compressed</label>
+			</div>
 			<button type="submit">Add</button>
 		</form>
 		<p class="muted small folder-hint">
 			The folder has to exist and be writable by the user MineShell runs as. MineShell never makes it: when a drive is
 			not mounted, its mount point is an empty folder on the system disk, and copies would fill that instead. A missing
-			folder is a failed copy, retried every hour, with a notification (Snapshot or backup copy failed).
+			folder is a failed copy, retried every hour, with a notification (Snapshot or backup copy failed). Compressed copies
+			are zips, about a third smaller and slower to make (around 1.5 minutes for a 7 GB world, in MineShell, not the
+			game); plain ones are folders you can open anywhere. Switching keeps the copies there as they are.
 		</p>
 	{:else if !data.backupFolders.length}
 		<p class="muted small">No backup folders yet. The owner adds them here.</p>
@@ -1661,6 +1689,12 @@
 	}
 	.folder-note.warn {
 		color: var(--warning);
+	}
+	.compress-form label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		white-space: nowrap;
 	}
 	.folder-hint {
 		margin-top: var(--space-2);

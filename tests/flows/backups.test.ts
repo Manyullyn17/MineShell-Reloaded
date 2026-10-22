@@ -6,12 +6,14 @@ import {
 	addDestination,
 	copyBack,
 	folderProblem,
+	getDestination,
 	getServerBackup,
 	lastBackupResult,
 	listDestinations,
 	planBackup,
 	removeDestination,
 	saveServerBackup,
+	setDestinationCompress,
 	storeFor,
 	syncServer
 } from '#lib/server/backups.js';
@@ -129,21 +131,27 @@ describe('backup folders', () => {
 		saveServerBackup(s.id, { destination: destination.id, copy: 'all', keep: 3 });
 		removeDestination(destination.id);
 		expect(getServerBackup(s.id)).toEqual({ destination: null, copy: 'all', keep: 3 });
+		expect(destination.compress).toBe(true);
 	});
 });
 
 describe('syncing a server', () => {
 	beforeEach(() => db.delete(settings).run());
 
-	it('copies finished snapshots, follows pins and deletes past the count there', async () => {
+	it.each([
+		['plain folders', false],
+		['zips', true]
+	])('copies finished snapshots as %s, follows pins and deletes past the count there', async (_, compress) => {
 		const dir = await backupDir();
-		const destination = await addDestination({ name: 'USB', path: dir });
+		const destination = await addDestination({ name: 'USB', path: dir, compress });
 		const s = await server();
 		const first = (await takeSnapshot(s, { reason: 'manual', label: 'one' }))!;
 		saveServerBackup(s.id, { destination: destination.id, copy: 'all', keep: 1 });
+		const shape = (id: string) => (compress ? [`${id}.json`, `${id}.zip`] : [id]);
 
 		await syncServer(s.id);
-		expect(await fs.readFile(path.join(dir, s.id, first.id, 'world/region/r.0.0.mca'), 'utf8')).toBe('chunks');
+		expect(await fs.readdir(path.join(dir, s.id))).toEqual(shape(first.id));
+		if (!compress) expect(await fs.readFile(path.join(dir, s.id, first.id, 'world/region/r.0.0.mca'), 'utf8')).toBe('chunks');
 		expect(lastBackupResult(s.id)).toMatchObject({ ok: true, message: 'Copied 1 snapshot.' });
 
 		await setSnapshotPinned(s.path, first.id, true);
@@ -160,7 +168,24 @@ describe('syncing a server', () => {
 		expect(ids(there)).toEqual([second.id]);
 		expect(there[0].note).toBe('Kept');
 		// Nothing half-written left behind.
-		expect(await fs.readdir(path.join(dir, s.id))).toEqual([second.id]);
+		expect(await fs.readdir(path.join(dir, s.id))).toEqual(shape(second.id));
+	});
+
+	it('reads plain and compressed copies side by side, and clears what a copy cut short left', async () => {
+		const dir = await backupDir();
+		const destination = await addDestination({ name: 'Mixed', path: dir, compress: false });
+		const s = await server();
+		const plain = (await takeSnapshot(s, { reason: 'manual', label: 'plain' }))!;
+		saveServerBackup(s.id, { destination: destination.id, copy: 'all', keep: 5 });
+		await syncServer(s.id);
+		setDestinationCompress(destination.id, true);
+		await new Promise((r) => setTimeout(r, 1100));
+		const zipped = (await takeSnapshot(s, { reason: 'manual', label: 'zipped' }))!;
+		// What MineShell stopping mid-copy leaves: a partial zip, and a zip whose manifest was never written.
+		await fs.writeFile(path.join(dir, s.id, '2026-01-01_000000-manual.zip.partial'), 'half');
+		await syncServer(s.id);
+		expect((await fs.readdir(path.join(dir, s.id))).sort()).toEqual([plain.id, `${zipped.id}.json`, `${zipped.id}.zip`].sort());
+		expect(ids(await storeFor(getDestination(destination.id)!).list(s.id))).toEqual([zipped.id, plain.id]);
 	});
 
 	it('fails without creating a folder that is not there, and copies once it is back', async () => {
@@ -223,6 +248,7 @@ describe('syncing a server', () => {
 		const [back] = await listSnapshots(again.path);
 		expect(back).toMatchObject({ id: old.id, label: 'one' });
 		expect(await fs.readFile(path.join(again.path, '.mineshell/snapshots', old.id, 'world/level.dat'), 'utf8')).toBe('level');
+		expect(await fs.readFile(path.join(again.path, '.mineshell/snapshots', old.id, 'world/region/r.0.0.mca'), 'utf8')).toBe('chunks');
 		await expect(copyBack(again, old.id, gone.id)).rejects.toThrow(/has that snapshot already/);
 		await expect(copyBack(again, old.id, '../etc')).rejects.toThrow(/No such copy/);
 	});

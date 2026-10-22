@@ -87,7 +87,7 @@ until after 1.0, and asked to keep the rest listed here):
 #### Smaller snapshots and backup copies
 
 Before 1.0 (user's calls, 2026-10-22: hard links for local snapshots, unchanged files found
-by hash; compression for backup copies). Measured: AromaBackup's zips of MeatballCraft's
+by hash; compression for backup copies, built). Measured: AromaBackup's zips of MeatballCraft's
 7.1 GB world are 5.1 GB, about 30% smaller, although chunks are compressed already (sector
 padding, headers, mods' own files). A full copy per snapshot is what fills the disk: ten of a
 7 GB world are 70 GB.
@@ -121,13 +121,8 @@ padding, headers, mods' own files). A full copy per snapshot is what fills the d
     budget fills with links that free nothing when deleted.
   - Snapshots never change in place (manifests are rewritten by rename), which is what makes
     sharing their files safe; anything editing a snapshot file would have to copy it first.
-- **Backup copies: compressed.** One archive per snapshot (zip through `zip.ts`, as the
-  world download already makes), with its manifest beside it (`<id>.json`) so listing and
-  retention never open archives; copy back unpacks. Node's gzip/deflate runs at maybe
-  50-100 MB/s (a 7 GB world in 1-2 minutes, in MineShell's process, not the game's); zstd is
-  faster but not in Node 22.12. A setting per backup folder (compressed or plain folders),
-  since plain ones can be browsed and opened anywhere. Hard links in the backup folder too
-  would be the bigger saving but fail on exFAT/FAT drives, where most USB drives start.
+- **Backup copies: compressed**: built 2026-10-22 (ROADMAP-ARCHIVE, "World backups to another
+  place").
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.

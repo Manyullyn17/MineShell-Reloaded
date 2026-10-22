@@ -54,6 +54,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   the backup copy was done 28 s later (15 s wait, ~13 s copy). Mean tick time went from ~3.1
   to ~3.6 ms during both copies, TPS 20 throughout. A cold cache or a USB drive is slower;
   not measured.
+- Region files deflate about 37% smaller although their chunks are compressed (the padding to
+  4 KB sectors, mostly): 40 of MeatballCraft's, 143 MB, at gzip -1 and -6 alike, ~80 MB/s on
+  one core. Hence compressed backup copies use level 1 for region files; the world download
+  still stores them (`STORED` in world.ts), where time matters more than size.
 - MeatballCraft ships AromaBackup, which zips the whole world at every start ("the server may
   lag for a bit", 2 minutes) and kept 24 GB of zips in `backups/`: a pack's own backup mod
   doubles what snapshots and backup copies do.

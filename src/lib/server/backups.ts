@@ -1,7 +1,9 @@
 import fs from 'node:fs/promises';
-import { constants as fsConstants } from 'node:fs';
+import { constants as fsConstants, createWriteStream } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { pipeline } from 'node:stream/promises';
+import yazl from 'yazl';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
@@ -11,6 +13,7 @@ import { audit, getInstance, InstanceError, listInstances } from './instances';
 import { listOperations } from './operations';
 import { notify } from './notifications';
 import { startTask, type TaskHandle } from './tasks';
+import { entryStream, entryTarget, openZip, zipEntries } from './world';
 import {
 	freeSpace,
 	getSnapshotPolicy,
@@ -34,8 +37,10 @@ import { BACKUP_COPY_CHOICES, type BackupCopy } from '#lib/shared/backups.js';
  * A destination is a kind of store with a few operations (list, write, read,
  * remove); other kinds (rclone, S3, SFTP) would be more stores, nothing else.
  * On a folder each server has a folder named by its id, holding snapshots in
- * the same shape as `.mineshell/snapshots/`: written as `<id>.partial` and
- * renamed when complete. A destination folder that is not there is never
+ * the same shape as `.mineshell/snapshots/`, or, compressed (the folder's
+ * setting), each as `<id>.zip` with its manifest beside it as `<id>.json`, so
+ * listing never opens an archive. Either is written under a partial name and
+ * renamed when complete; both kinds are read, so the setting can change. A destination folder that is not there is never
  * created: an unmounted drive would fill the disk under its mount point.
  *
  * What is wanted there is worked out each time from both sides (`planBackup`),
@@ -46,7 +51,8 @@ import { BACKUP_COPY_CHOICES, type BackupCopy } from '#lib/shared/backups.js';
 
 // ------------------------------------------------------------ settings ---
 
-export type BackupDestination = { id: string; name: string; kind: 'folder'; path: string };
+/** `compress`: copies as zips, about a third smaller (region files' padding deflates) but slower to make. */
+export type BackupDestination = { id: string; name: string; kind: 'folder'; path: string; compress: boolean };
 
 /** A server's backup copies: where to, which snapshots, how many kept there. */
 export type ServerBackup = { destination: string | null; copy: BackupCopy; keep: number };
@@ -78,10 +84,12 @@ function writeJson(key: string, value: unknown): void {
 export function listDestinations(): BackupDestination[] {
 	const raw = readJson(DESTINATIONS_KEY);
 	if (!Array.isArray(raw)) return [];
-	return raw.filter(
-		(d): d is BackupDestination =>
-			!!d && typeof d.id === 'string' && typeof d.name === 'string' && d.kind === 'folder' && typeof d.path === 'string' && path.isAbsolute(d.path)
-	);
+	return raw
+		.filter(
+			(d): d is Omit<BackupDestination, 'compress'> & { compress?: unknown } =>
+				!!d && typeof d.id === 'string' && typeof d.name === 'string' && d.kind === 'folder' && typeof d.path === 'string' && path.isAbsolute(d.path)
+		)
+		.map((d) => ({ ...d, compress: d.compress !== false }));
 }
 
 export function getDestination(id: string | null): BackupDestination | null {
@@ -127,7 +135,7 @@ export async function sameDiskAsServers(dir: string): Promise<boolean> {
 	return !!a && !!b && a.dev === b.dev;
 }
 
-export async function addDestination(input: { name: string; path: string }): Promise<BackupDestination> {
+export async function addDestination(input: { name: string; path: string; compress?: boolean }): Promise<BackupDestination> {
 	const dir = input.path.trim().replace(/(.)\/+$/, '$1');
 	const problem = await folderProblem(dir);
 	if (problem) throw new InstanceError(problem);
@@ -135,10 +143,22 @@ export async function addDestination(input: { name: string; path: string }): Pro
 	const existing = listDestinations();
 	if (existing.some((d) => d.path === resolved)) throw new InstanceError('That folder is already a backup folder.');
 	const name = input.name.replace(/\s+/g, ' ').trim().slice(0, 60) || path.basename(resolved);
-	const destination: BackupDestination = { id: crypto.randomUUID().slice(0, 8), name, kind: 'folder', path: resolved };
+	const destination: BackupDestination = { id: crypto.randomUUID().slice(0, 8), name, kind: 'folder', path: resolved, compress: input.compress ?? true };
 	writeJson(DESTINATIONS_KEY, [...existing, destination]);
 	audit('backups.destination_added', { detail: `${name}: ${resolved}` });
 	return destination;
+}
+
+/** Whether new copies there are compressed; the ones there already stay as they are, and are read either way. */
+export function setDestinationCompress(id: string, compress: boolean): BackupDestination {
+	const destination = getDestination(id);
+	if (!destination) throw new InstanceError('That backup folder is no longer in the list.');
+	writeJson(
+		DESTINATIONS_KEY,
+		listDestinations().map((d) => (d.id === id ? { ...d, compress } : d))
+	);
+	audit('backups.destination_compress', { detail: `${destination.name}: ${compress ? 'compressed' : 'plain folders'}` });
+	return { ...destination, compress };
 }
 
 /** Removes a destination; servers copying there stop. The copies already there stay. */
@@ -208,19 +228,80 @@ export type BackupStore = {
 	remove(serverId: string, snapshotId: string): Promise<void>;
 	/** Rewrites a copy's manifest (pinned, name and tags follow the server's own). */
 	writeManifest(serverId: string, snapshot: Snapshot): Promise<void>;
+	/** Removes what copies cut short left (MineShell stopped mid-copy). */
+	tidy(serverId: string): Promise<void>;
 };
 
 const PARTIAL = '.partial';
 const COPY = { recursive: true, errorOnExist: true, force: false, preserveTimestamps: true } as const;
 
-export function folderStore(root: string): BackupStore {
+/** All files under `dir`, as paths relative to it with forward slashes. */
+async function filesUnder(dir: string, base = ''): Promise<{ abs: string; rel: string }[]> {
+	const out: { abs: string; rel: string }[] = [];
+	for (const entry of await fs.readdir(path.join(dir, base), { withFileTypes: true })) {
+		const rel = base ? `${base}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) out.push(...(await filesUnder(dir, rel)));
+		else if (entry.isFile()) out.push({ abs: path.join(dir, rel), rel });
+	}
+	return out;
+}
+
+/**
+ * Region files deflate about a third smaller (the padding between chunks), and
+ * level 1 does as well there as level 6, faster (measured on MeatballCraft's
+ * 7 GB world); other files get zlib's default.
+ */
+const REGION = /\.(mca|mcr|mcc)$/i;
+
+async function zipFolder(dir: string, out: string): Promise<void> {
+	const zip = new yazl.ZipFile();
+	for (const file of await filesUnder(dir)) zip.addFile(file.abs, file.rel, { compressionLevel: REGION.test(file.rel) ? 1 : 6 });
+	zip.end();
+	await pipeline(zip.outputStream, createWriteStream(out, { flags: 'wx' }));
+}
+
+async function unzipInto(file: string, into: string): Promise<void> {
+	await fs.mkdir(into, { recursive: true });
+	const zip = await openZip(file);
+	try {
+		await zipEntries(zip, async (entry) => {
+			const rel = entryTarget(entry.fileName, '');
+			if (!rel) return;
+			const out = path.join(into, rel);
+			if (entry.fileName.endsWith('/')) return void (await fs.mkdir(out, { recursive: true }));
+			await fs.mkdir(path.dirname(out), { recursive: true });
+			await pipeline(await entryStream(zip, entry), createWriteStream(out, { flags: 'wx' }));
+		});
+	} finally {
+		zip.close();
+	}
+}
+
+async function writeAtomically(file: string, text: string): Promise<void> {
+	await fs.writeFile(`${file}.tmp`, text, 'utf8');
+	await fs.rename(`${file}.tmp`, file);
+}
+
+const exists = (p: string) =>
+	fs.access(p).then(
+		() => true,
+		() => false
+	);
+
+export function folderStore(root: string, opts: { compress: boolean } = { compress: false }): BackupStore {
 	const serverDir = (serverId: string) => {
 		if (!isServerFolderName(serverId)) throw new Error(`"${serverId}" is not a server's folder name.`);
 		return path.join(root, serverId);
 	};
-	const copyDir = (serverId: string, snapshotId: string) => {
+	/** Where one copy lives: a folder, or a zip with its manifest beside it. */
+	const paths = (serverId: string, snapshotId: string) => {
 		if (!isSnapshotId(snapshotId)) throw new Error('No such snapshot.');
-		return path.join(serverDir(serverId), snapshotId);
+		const base = path.join(serverDir(serverId), snapshotId);
+		return { dir: base, zip: `${base}.zip`, json: `${base}.json` };
+	};
+	const manifestText = (snapshot: Snapshot) => {
+		const { id: _id, ...manifest } = snapshot;
+		return JSON.stringify(manifest, null, 2);
 	};
 	return {
 		problem: () => folderProblem(root, { added: true }),
@@ -231,12 +312,16 @@ export function folderStore(root: string): BackupStore {
 		},
 		async list(serverId) {
 			const dir = serverDir(serverId);
+			const names = new Set(await fs.readdir(dir).catch(() => [] as string[]));
 			const found: Snapshot[] = [];
-			for (const name of await fs.readdir(dir).catch(() => [] as string[])) {
-				if (!isSnapshotId(name)) continue;
+			for (const name of names) {
+				// A folder with its manifest, or a finished zip with one beside it.
+				const id = name.endsWith('.json') ? name.slice(0, -'.json'.length) : name;
+				if (!isSnapshotId(id)) continue;
+				if (name.endsWith('.json') && !names.has(`${id}.zip`)) continue;
+				const file = name.endsWith('.json') ? path.join(dir, name) : path.join(dir, name, MANIFEST);
 				try {
-					const manifest = JSON.parse(await fs.readFile(path.join(dir, name, MANIFEST), 'utf8')) as Snapshot;
-					found.push({ ...manifest, id: name });
+					found.push({ ...(JSON.parse(await fs.readFile(file, 'utf8')) as Snapshot), id });
 				} catch {
 					/* not a finished copy */
 				}
@@ -244,38 +329,57 @@ export function folderStore(root: string): BackupStore {
 			return found.sort((a, b) => b.createdAt - a.createdAt);
 		},
 		async write(serverId, snapshotDir, snapshotId) {
-			const target = copyDir(serverId, snapshotId);
-			const partial = target + PARTIAL;
+			const { dir, zip, json } = paths(serverId, snapshotId);
 			// Inside the destination, which exists: only the server's own folder is ever made.
 			await fs.mkdir(serverDir(serverId), { recursive: false }).catch((err: NodeJS.ErrnoException) => {
 				if (err.code !== 'EEXIST') throw err;
 			});
+			const partial = (opts.compress ? zip : dir) + PARTIAL;
 			await fs.rm(partial, { recursive: true, force: true });
 			try {
-				await fs.cp(snapshotDir, partial, COPY);
-				await fs.rename(partial, target);
+				if (opts.compress) {
+					await zipFolder(snapshotDir, partial);
+					await fs.rename(partial, zip);
+					// The manifest beside it is what makes it a copy (list).
+					await writeAtomically(json, await fs.readFile(path.join(snapshotDir, MANIFEST), 'utf8'));
+				} else {
+					await fs.cp(snapshotDir, partial, COPY);
+					await fs.rename(partial, dir);
+				}
 			} catch (err) {
 				await fs.rm(partial, { recursive: true, force: true }).catch(() => undefined);
 				throw err;
 			}
 		},
 		async read(serverId, snapshotId, into) {
-			await fs.cp(copyDir(serverId, snapshotId), into, COPY);
+			const { dir, zip, json } = paths(serverId, snapshotId);
+			if (await exists(dir)) return fs.cp(dir, into, COPY);
+			await unzipInto(zip, into);
+			// The manifest beside the zip has the pin, name and tags as they are now.
+			await fs.writeFile(path.join(into, MANIFEST), await fs.readFile(json, 'utf8'), 'utf8');
 		},
 		async remove(serverId, snapshotId) {
-			await fs.rm(copyDir(serverId, snapshotId), { recursive: true, force: true });
+			const { dir, zip, json } = paths(serverId, snapshotId);
+			// The manifest first: a zip without one is no longer listed, whatever happens after.
+			await fs.rm(json, { force: true });
+			await fs.rm(zip, { force: true });
+			await fs.rm(dir, { recursive: true, force: true });
 		},
 		async writeManifest(serverId, snapshot) {
-			const file = path.join(copyDir(serverId, snapshot.id), MANIFEST);
-			const { id: _id, ...manifest } = snapshot;
-			await fs.writeFile(`${file}.tmp`, JSON.stringify(manifest, null, 2), 'utf8');
-			await fs.rename(`${file}.tmp`, file);
+			const { dir, json } = paths(serverId, snapshot.id);
+			await writeAtomically((await exists(dir)) ? path.join(dir, MANIFEST) : json, manifestText(snapshot));
+		},
+		async tidy(serverId) {
+			const dir = serverDir(serverId);
+			for (const name of await fs.readdir(dir).catch(() => [] as string[])) {
+				if (name.endsWith(PARTIAL) || name.endsWith('.tmp')) await fs.rm(path.join(dir, name), { recursive: true, force: true });
+			}
 		}
 	};
 }
 
 export function storeFor(destination: BackupDestination): BackupStore {
-	return folderStore(destination.path);
+	return folderStore(destination.path, { compress: destination.compress });
 }
 
 // ---------------------------------------------------------------- plan ---
@@ -402,6 +506,7 @@ async function syncNow(instanceId: string): Promise<void> {
 }
 
 async function applyPlan(instance: ServerInstance, store: BackupStore, plan: BackupPlan, task: TaskHandle): Promise<number> {
+	await store.tidy(instance.id);
 	let copied = 0;
 	for (const [i, snapshot] of plan.copy.entries()) {
 		const source = snapshotPath(instance.path, snapshot.id);
