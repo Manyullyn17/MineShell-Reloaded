@@ -419,3 +419,6 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Roofs on the chunk map: found by height whatever they are made of, the floor under the first open space, walls, missing sections as air; not superflat or oceans; dimensions open where their chunks are | `server/chunkmap.test.ts` ("below a roof"), `shared/chunkmap.test.ts` |
 | (feature) Names for 1.12 numbered dimensions: Forge's `forge dimensions` once per run, else ranked guesses from configs (biome ids and counts never) | `flows/dimension-names.test.ts` |
 | The overworld was labelled "region" once a world had named dimensions: every label was rebuilt from the first folder | `flows/dimension-names.test.ts` |
+| (feature) Backup copies: what a sync copies and deletes, pins, the folder checks, a missing folder never made, copying back (another server's too), one notification per run of failures | `flows/backups.test.ts`, `routes/instances/[id]/settings/checks.test.ts` ("backup copies") |
+| A notification kind added later stayed off for destinations saved before it | `server/notifications.test.ts` ("a kind added later") |
+| "Snapshot now" on a running server said it stays stopped until the snapshot is done | `routes/instances/[id]/world/snapshot.test.ts` |

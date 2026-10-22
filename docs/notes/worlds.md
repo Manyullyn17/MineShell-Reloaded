@@ -48,6 +48,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   goes beside the worker's data folder (`tests/flows/backups.test.ts`), not in `tempDir()`.
 - The sync after a snapshot waits 15 s (debounced per server), and longer while the server has
   an operation: a world change's snapshot is finished before its commit.
+- Measured 2026-10-22 on a throwaway copy of MeatballCraft (Cleanroom 1.12.2, 7.1 GB world,
+  NVMe, nobody online, files mostly in the page cache): stopped, a snapshot took 12 s and its
+  backup copy 10 s; running, "Snapshot now" took 21 s (save-off, 5 s of quiet, the copy) and
+  the backup copy was done 28 s later (15 s wait, ~13 s copy). Mean tick time went from ~3.1
+  to ~3.6 ms during both copies, TPS 20 throughout. A cold cache or a USB drive is slower;
+  not measured.
+- MeatballCraft ships AromaBackup, which zips the whole world at every start ("the server may
+  lag for a bit", 2 minutes) and kept 24 GB of zips in `backups/`: a pack's own backup mod
+  doubles what snapshots and backup copies do.
 
 ## Scheduled snapshots
 - `snapshotschedule.ts`, from the scheduler tick (dev server restart needed after changes).

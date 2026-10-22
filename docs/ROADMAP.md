@@ -296,6 +296,10 @@ Suggested, not yet confirmed or rejected:
   than 1.12.2, or 1.12.2 without adding a mod), with "save as image" (one block a pixel, no
   grid; copying the canvas already gives the view as it is). Probably not worth it beside
   a fully built map; it could grow into its own map tool.
+- **Packs' own backup mods** (found 2026-10-22: MeatballCraft's AromaBackup zips the world at
+  every start, 2 minutes of lag, and kept 24 GB): point them out on the World tab or the disk
+  usage page (AromaBackup, FTB Backups, Simple Backups, Textile Backup), with the folder they
+  fill, so the owner can turn one off where snapshots and backup copies already do the job.
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
