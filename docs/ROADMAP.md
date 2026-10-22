@@ -56,7 +56,19 @@ until after 1.0, and asked to keep the rest listed here):
   importing the `.mrpack` and CurseForge exports; a server export and import with a
   CurseForge pack and a world of gigabytes.
 - **MineShell's own database**: it is only backed up before an update. A daily copy with a
-  few kept (accounts, history, settings); restoring one from the page stays a leftover.
+  few kept (accounts, history, settings); restoring one from the page stays a leftover. The
+  database runs in WAL mode, so the copy goes through `sqlite.backup()` or `VACUUM INTO`,
+  not a file copy (which can miss what is still in the `-wal` file).
+- **Notifications for snapshots and disk space** (suggested 2026-10-22): a scheduled snapshot
+  that is skipped for disk space, times out waiting or fails is only an audit entry today
+  (`snapshotschedule.ts`), so backups can stop without anyone noticing. A notification kind
+  for a failed snapshot or backup copy, on by default, which the world backups use too; and
+  a warning when a server's disk runs low (a full disk is what damages worlds).
+- **A restore drill**: once the world backups are built, delete a throwaway server's folder
+  and bring it back from the destination alone, end to end.
+- **Small fixes for the freeze** (status.md): a power delay outside 1-3600 s acts at once
+  instead of being refused; Add a server answers a bad game port with status 500. And maybe
+  an update marker in the server list (Leftovers, "Update availability").
 - **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
   `crash-reports/`), even if the answer is that the disk usage page is enough.
 - **Limits on going back** (agreed in outline 2026-10-21, details when it is built): from
