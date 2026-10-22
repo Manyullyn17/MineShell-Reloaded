@@ -7,7 +7,8 @@ of CLAUDE.md (2026-10-20). Open work itself is `docs/ROADMAP.md`.
 
 Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10-21:
 - World backups to another place (a folder on this machine first, no cloud, extensible) are
-  the last feature before 1.0; then a feature freeze and a release candidate.
+  the last feature before 1.0 (built 2026-10-22: backup folders); then a feature freeze and a
+  release candidate.
 - The status page moves to after 1.0, with the item icon leftovers and per-world game
   settings. Plugin servers stay 2.0; GT New Horizons has no slot yet.
 - Minor dependency updates before the freeze; TypeScript 7 waits until after 1.0.

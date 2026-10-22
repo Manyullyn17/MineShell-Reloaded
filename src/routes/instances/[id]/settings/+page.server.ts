@@ -47,6 +47,8 @@ import {
 	snapshotUsage
 } from '#lib/server/snapshots.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
+import { getDestination, getServerBackup, KEEP_LIMITS, lastBackupResult, listDestinations, saveServerBackup, syncServer } from '#lib/server/backups.js';
+import { BACKUP_COPY_CHOICES, type BackupCopy } from '#lib/shared/backups.js';
 import { isJavaVendor } from '#lib/server/javadownload.js';
 import {
 	addScheduledCommand,
@@ -226,7 +228,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					snapshotSkipIdle: schedule.skipIdle
 				};
 			})(),
-			voicePort: voice?.port ?? null
+			voicePort: voice?.port ?? null,
+			...(() => {
+				const backup = getServerBackup(instance.id);
+				return { backupDestination: backup.destination ?? '', backupCopy: backup.copy, backupKeep: backup.keep };
+			})()
 		},
 		/** Simple Voice Chat's port and where it sends clients, when the mod is installed. */
 		voice,
@@ -285,6 +291,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			? cleanroomReport(instance.path, instance.modloader === 'cleanroom' ? instance.modloaderVersion : null)
 			: null,
 		snapshotPrompt: await snapshotPrompt(instance),
+		/** The backup folders to pick from (MineShell settings), and how the last copy went. */
+		backups: {
+			destinations: listDestinations().map((d) => ({ id: d.id, name: d.name, path: d.path })),
+			last: lastBackupResult(instance.id)
+		},
 		// The server's own retention settings (blank = global), with the global values as placeholders.
 		snapshotSettings: {
 			values: policyFormValues(serverSnapshotOverrides(instance.id)),
@@ -810,6 +821,23 @@ export const actions: Actions = {
 		if (port === instance.rconPort) return fail(400, { ok: false, message: "That is this server's RCON port." });
 		await setVoiceConfig(instance, { port });
 		return { ok: true, message: 'Saved to the voice chat config. Restart to apply.' };
+	},
+
+	backups: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const destination = String(form.get('backupDestination') ?? '');
+		if (destination && !getDestination(destination)) return fail(400, { ok: false, message: 'That backup folder is no longer in the list.' });
+		const keep = formInt(form, 'backupKeep', 0);
+		if (!Number.isInteger(keep) || keep < KEEP_LIMITS[0] || keep > KEEP_LIMITS[1]) {
+			return fail(400, { ok: false, message: `Copies kept there: a whole number from ${KEEP_LIMITS[0]} to ${KEEP_LIMITS[1]}.` });
+		}
+		const copy = String(form.get('backupCopy') ?? '');
+		if (!BACKUP_COPY_CHOICES.some((c) => c.value === copy)) return fail(400, { ok: false, message: 'Pick which snapshots to copy.' });
+		saveServerBackup(instance.id, { destination: destination || null, copy: copy as BackupCopy, keep });
+		if (!destination) return { ok: true, message: 'Snapshots are no longer copied to a backup folder. The copies there stay.' };
+		void syncServer(instance.id);
+		return { ok: true, message: 'Backup copies saved. Snapshots already taken are copied there now.' };
 	},
 
 	snapshotPolicy: async ({ request, params }) => {

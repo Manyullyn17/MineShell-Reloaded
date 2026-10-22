@@ -48,7 +48,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Let Minecraft 1.21.2+ pause an empty server (its `pause-when-empty-seconds`, in settings and new-server defaults); the status shows it paused until someone joins.
 - See every server's ports (game, RCON, query, voice chat, map) and what listens on each, with clashes between servers and ports other programs hold, and move one to a free port. Where new ports start can be changed for setups that need it.
 - Set per-server CPU and memory limits, and a cap on all servers together (a soft memory cap that slows the servers down instead of killing one), and detect servers that never finish starting.
-- Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.
+- Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting, fails to copy its snapshots to the backup folder or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.
 - Get a warning before starting a server the machine may not have the memory for, counting what the running servers can still grow into.
 - Choose which servers start after a machine reboot: restore their previous state, always start, or never start automatically.
 - Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available.
@@ -98,8 +98,9 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 - Prune chunks that have not actually been visited, previewed on a heatmap of where players spent time, with chunks to keep picked on the map.
 - Pre-generate terrain with Chunky and monitor its progress: plan the area on a map of the world (square, rectangle, circle or ellipse, centered on spawn, the world border or any point), which shows how many chunks are new and about how much disk they take; it can pause while players are online and continue by itself after a restart.
 - Coordinate snapshots and scheduled restarts so they do not interfere with each other.
+- Copy snapshots to a backup folder on another disk, a mounted network share or a USB drive, right after each one is taken, with its own retention. Copy one back to restore it, also into a server made again after the old one was lost. A missing or full folder is reported (and notified), never created on the system disk underneath.
 
-**Backup limitation:** Snapshots currently remain inside the server's own directory on the same disk. Off-site, cloud, and separate-disk backups are not implemented.
+**Backup limitation:** Backup folders are folders on this machine; cloud and remote destinations (S3, SFTP, rclone) are not implemented yet.
 
 ### Player management & inventory editing
 

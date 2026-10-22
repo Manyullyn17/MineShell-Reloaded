@@ -40,8 +40,26 @@ type Target = { type: TargetType; url: string; kinds: NotificationKind[] };
 const GLOBAL_KEY = 'notifications';
 const KINDS = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
 
+/**
+ * Kinds added after destinations could be saved, on by default: a saved
+ * destination gets them too unless they were turned off, which is stored as
+ * `!kind` (older versions skip what they do not know).
+ */
+const ADDED_LATER: NotificationKind[] = ['backup'];
+
 function cleanKinds(input: unknown): NotificationKind[] {
-	return Array.isArray(input) ? input.filter((k): k is NotificationKind => KINDS.has(k)) : [...DEFAULT_NOTIFICATION_KINDS];
+	if (!Array.isArray(input)) return [...DEFAULT_NOTIFICATION_KINDS];
+	const kinds = input.filter((k): k is NotificationKind => KINDS.has(k));
+	for (const kind of ADDED_LATER) {
+		if (!kinds.includes(kind) && !input.includes(`!${kind}`) && DEFAULT_NOTIFICATION_KINDS.includes(kind)) kinds.push(kind);
+	}
+	return kinds;
+}
+
+/** The kinds as stored: the ones on, and `!kind` for each later one turned off (cleanKinds). */
+function storedKinds(input: NotificationKind[]): string[] {
+	const kinds = input.filter((k) => KINDS.has(k));
+	return [...kinds, ...ADDED_LATER.filter((k) => !kinds.includes(k)).map((k) => `!${k}`)];
 }
 
 /** Why an address cannot be used for this kind of destination, or null when it can. */
@@ -94,7 +112,7 @@ export function saveGlobalTarget(input: { type: TargetType; url: string | null; 
 	if (!url) return 'Paste the address to send to.';
 	const problem = targetProblem(input.type, url);
 	if (problem) return problem;
-	const value = JSON.stringify({ type: input.type, urlEnc: encryptSecret(url), kinds: cleanKinds(input.kinds) });
+	const value = JSON.stringify({ type: input.type, urlEnc: encryptSecret(url), kinds: storedKinds(input.kinds) });
 	db.insert(settings).values({ key: GLOBAL_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 	return null;
 }
@@ -127,7 +145,7 @@ export function saveServerTarget(
 	if (!url) return 'Paste the address to send to.';
 	const problem = targetProblem(input.type, url);
 	if (problem) return problem;
-	const row = { type: input.type, urlEnc: encryptSecret(url), kinds: JSON.stringify(cleanKinds(input.kinds)), alsoGlobal: input.alsoGlobal };
+	const row = { type: input.type, urlEnc: encryptSecret(url), kinds: JSON.stringify(storedKinds(input.kinds)), alsoGlobal: input.alsoGlobal };
 	db.insert(instanceNotifications)
 		.values({ instanceId, ...row })
 		.onConflictDoUpdate({ target: instanceNotifications.instanceId, set: row })
@@ -165,6 +183,7 @@ const COLORS: Record<NotificationKind, number> = {
 	crash: 0xd9534f,
 	memory: 0xd9534f,
 	stuck: 0xf0ad4e,
+	backup: 0xd9534f,
 	update: 0x5b8def,
 	restart: 0x8a8f98,
 	start: 0x4caf50,
@@ -176,6 +195,7 @@ const NTFY_TAGS: Record<NotificationKind, string> = {
 	crash: 'rotating_light',
 	memory: 'warning',
 	stuck: 'hourglass',
+	backup: 'floppy_disk',
 	update: 'package',
 	restart: 'arrows_counterclockwise',
 	start: 'white_check_mark',

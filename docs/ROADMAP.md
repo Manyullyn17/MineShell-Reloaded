@@ -15,10 +15,9 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
 "sooner" ones are built: ROADMAP-ARCHIVE):
 
-- **Before 1.0**: world backups to another place, simple and without any cloud integration
-  for now, built so other destinations can be added later (Later, "World backups"); then
-  the rest of "Road to 1.0" below. Restoring chunks, pausing empty servers, player stats
-  and instance export and import are built (ROADMAP-ARCHIVE).
+- **Before 1.0**: the rest of "Road to 1.0" below. World backups to a folder (built
+  2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
+  import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
   questions), the item icon and name leftovers, per-world game settings.
 
@@ -36,7 +35,7 @@ Checks and small additions before 1.0 (suggested 2026-10-21; the user agreed to 
 backups, the status page's move, the minor dependency updates and leaving TypeScript 7
 until after 1.0, and asked to keep the rest listed here):
 
-- **Feature freeze and a release candidate**: once the backups are in, only `fix:` commits;
+- **Feature freeze and a release candidate**: the backups are in; from here only `fix:` commits;
   cut a release candidate, run it on the real install for a week or two, then 1.0. Check
   that `release.sh`, the Release workflow and the self-updater handle a pre-release tag
   (or use a last 0.x as the candidate).
@@ -61,11 +60,13 @@ until after 1.0, and asked to keep the rest listed here):
   not a file copy (which can miss what is still in the `-wal` file).
 - **Notifications for snapshots and disk space** (suggested 2026-10-22): a scheduled snapshot
   that is skipped for disk space, times out waiting or fails is only an audit entry today
-  (`snapshotschedule.ts`), so backups can stop without anyone noticing. A notification kind
-  for a failed snapshot or backup copy, on by default, which the world backups use too; and
+  (`snapshotschedule.ts`), so backups can stop without anyone noticing. The notification
+  kind exists ("Snapshot or backup copy failed", built with the backup copies, which use it);
+  the scheduled snapshot's failures and skips (not the idle skip) still need to send it. And
   a warning when a server's disk runs low (a full disk is what damages worlds).
-- **A restore drill**: once the world backups are built, delete a throwaway server's folder
-  and bring it back from the destination alone, end to end.
+- **A restore drill**: delete a throwaway server's folder and bring it back from its backup
+  folder, end to end (make it again with the same pack, copy a backup back, use it as the
+  world), on a real loader.
 - **Small fixes for the freeze** (status.md): a power delay outside 1-3600 s acts at once
   instead of being refused; Add a server answers a bad game port with status 500. And maybe
   an update marker in the server list (Leftovers, "Update availability").
@@ -191,37 +192,6 @@ Proposal (not agreed):
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
 
-### World backups
-
-Before 1.0 (user's call, 2026-10-21): simple, no cloud integration for now, and extensible.
-The existing snapshots (before MineShell's own risky operations, on request and on a
-schedule; ARCHITECTURE, "Worlds") are useful for local recovery, but remain on the same
-disk as the server. A running-world backup must preserve consistency: flush and pause
-saving, copy, then always restore saving even if the copy fails (as the World tab's
-download and live scheduled snapshots already do).
-
-Proposal (not agreed in detail):
-- **A backup destination** as its own kind of thing, with one kind to start: a folder on
-  this machine (another disk, a mounted NAS share, a USB drive). Other kinds (rclone,
-  S3-compatible, SFTP) come later as more kinds with the same few operations (write,
-  list, read, delete); that is the extensible part, with no provider chosen now.
-- **What goes there**: finished snapshots (`.mineshell/snapshots/<id>/` is already a
-  consistent copy), copied after the snapshot completes, so a running world needs no
-  second save pause. A copy is written under a partial name and renamed when complete,
-  like snapshots. Per server: off, every snapshot, or only scheduled ones.
-- **Retention** on the destination, separate from local retention (keep more off the disk
-  than on it); pinned snapshots kept there too.
-- **Restore** from a destination copies it back as a local snapshot, then the usual
-  restore runs; a server whose folder is gone can come back through the server import.
-- **Failures** (destination unmounted, full) are a notification and a mark on the
-  snapshot, never a failed snapshot. A destination folder that is missing is not created:
-  an unmounted drive would otherwise fill the system disk underneath its mount point.
-
-Note there is already a *different* backup mechanism in the codebase: an update moves the
-replaced mod jars aside (the `mod-update` journal) so a failed update can be rolled back. That operates on the
-mods directory only and has nothing to do with world saves. The two were conflated in the
-original notes; they should stay separate.
-
 ### More README screenshots
 
 Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
@@ -271,6 +241,12 @@ What the built entries in the archive left out, in one place:
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
   official API key), packwiz.
 - **Snapshots**: a scheduler hook running a script after a snapshot.
+- **Backup copies**: destinations other than a folder (rclone, S3-compatible, SFTP: more
+  stores in `backups.ts`); the rest of a server (mods, configs) beside its worlds, so a lost
+  server comes back from the folder alone (today: make it again, copy a backup back, use it as
+  the world); a backup folder in New server defaults; a copy of a server does not take over its
+  source's backup setting; no progress within one copy, and no Cancel. exFAT/NTFS drives and
+  NFS/SMB shares not tried (only folders on ext4).
 - **Restoring chunks**: a setting for other map controls (user's call, 2026-10-17: kept
   open; built is drag to pan, click to toggle, Shift/Ctrl-drag); a snapshot row's link to
   the page with that snapshot picked; undoing a restore leaves a region file the restore

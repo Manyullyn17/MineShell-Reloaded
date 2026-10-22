@@ -4,6 +4,7 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
+import { bus } from './events';
 import { directorySize } from './files';
 import { serverWorldName } from './packworld';
 import { formatBytes } from '#lib/shared/format.js';
@@ -25,7 +26,7 @@ import { formatBytes } from '#lib/shared/format.js';
 
 export const SNAPSHOTS_DIR = path.join('.mineshell', 'snapshots');
 const PARTIAL = '.partial';
-const MANIFEST = 'manifest.json';
+export const MANIFEST = 'manifest.json';
 
 export type SnapshotReason =
 	| 'pack-change'
@@ -529,6 +530,7 @@ export async function finishSnapshot(
 	const manifest = manifestFor(instance, id, input, worlds, world, await directorySize(partial), opts.partial ?? false);
 	await fs.writeFile(path.join(partial, MANIFEST), JSON.stringify(manifest, null, 2), 'utf8');
 	await fs.rename(partial, snapshotPath(instance.path, id));
+	bus.publish('snapshot:finished', { instanceId: instance.id, snapshotId: id });
 	return manifest;
 }
 

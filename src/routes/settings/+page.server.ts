@@ -98,6 +98,7 @@ import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, 
 import { deleteCustomPreset, getPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
 import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
 import { globalTarget, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
+import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, storeFor } from '#lib/server/backups.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 /**
@@ -147,6 +148,24 @@ async function serverCapView() {
 			underCap: inServerSlice(states.find((s) => s.instance.id === c.instance.id)!.state.controlGroup)
 		}))
 	};
+}
+
+/** The backup folders, whether each can be used now, and the servers copying to it. */
+async function backupFolders() {
+	const instances = listInstances();
+	return Promise.all(
+		listDestinations().map(async (d) => {
+			const store = storeFor(d);
+			const problem = await store.problem();
+			return {
+				...d,
+				problem,
+				freeBytes: problem ? null : await store.freeBytes(),
+				sameDisk: !problem && (await sameDiskAsServers(d.path)),
+				servers: instances.filter((i) => getServerBackup(i.id).destination === d.id).map((i) => ({ id: i.id, name: i.name }))
+			};
+		})
+	);
 }
 
 /** The kinds ticked on a notification form. */
@@ -207,6 +226,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			}))
 		),
 		freeBytes: await freeSpace(INSTANCES_DIR),
+		backupFolders: await backupFolders(),
+		owner: locals.access.owner,
 		recent: db.select().from(auditLog).orderBy(desc(auditLog.timestamp)).limit(40).all(),
 		itemIcons: itemIconsEnabled(),
 		trash: { days: trashDays(), max: MAX_TRASH_DAYS },
@@ -322,6 +343,27 @@ export const actions: Actions = {
 		if (error) return fail(400, { ok: false, message: error });
 		saveSnapshotPolicy(fields);
 		return { ok: true, message: 'Snapshot settings saved. They apply from the next snapshot on.' };
+	},
+
+	addBackupFolder: async ({ request }) => {
+		const form = await request.formData();
+		try {
+			const added = await addDestination({ name: String(form.get('name') ?? ''), path: String(form.get('path') ?? '') });
+			return { ok: true, message: `${added.name} added. Pick it in a server's settings (Snapshots) to copy its snapshots there.` };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message, backupPath: String(form.get('path') ?? '') });
+			throw err;
+		}
+	},
+
+	removeBackupFolder: async ({ request }) => {
+		try {
+			removeDestination(String((await request.formData()).get('id') ?? ''));
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+		return { ok: true, message: 'Backup folder removed; the copies in it are left as they are.' };
 	},
 
 	installUnit: async () => {

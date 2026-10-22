@@ -434,6 +434,83 @@
 		{/if}
 	{/if}
 </section>
+<section class="panel">
+	<h2>Backup folders</h2>
+	<p class="muted">
+		Snapshots live on the same disk as their server. A backup folder on another disk, a mounted network share or a USB
+		drive keeps copies of them apart from it. Each server picks its folder, which snapshots go there and how many are
+		kept there in its settings (Snapshots); copies are made right after a snapshot is finished, also while the server
+		runs.
+	</p>
+	{#if data.backupFolders.length}
+		<table class="stacked">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Folder</th>
+					<th>Free</th>
+					<th>Servers</th>
+					{#if data.owner}<th><span class="visually-hidden">Actions</span></th>{/if}
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.backupFolders as folder (folder.id)}
+					<tr>
+						<td>{folder.name}</td>
+						<td class="mono small">
+							<PathText path={folder.path} />
+							{#if folder.problem}
+								<p class="folder-note bad">{folder.problem}</p>
+							{:else if folder.sameDisk}
+								<p class="folder-note warn">
+									On the same disk as the servers: the copies survive a mistake, but not the disk failing.
+								</p>
+							{/if}
+						</td>
+						<td class="mono small">{folder.freeBytes === null ? '-' : formatBytes(folder.freeBytes)}</td>
+						<td class="small">
+							{#each folder.servers as server, i (server.id)}{i ? ', ' : ''}<a href="/instances/{encodeURIComponent(server.id)}/settings?tab=snapshots">{server.name}</a>{:else}<span class="faint">none yet</span>{/each}
+						</td>
+						{#if data.owner}
+							<td class="right">
+								<form
+									method="POST"
+									action="?/removeBackupFolder"
+									use:enhance={({ cancel }) => {
+										if (folder.servers.length && !confirm(`Stop ${folder.servers.length} server(s) copying to ${folder.name}? The copies there stay.`)) cancel();
+									}}
+								>
+									<input type="hidden" name="id" value={folder.id} />
+									<button class="button-quiet">Remove</button>
+								</form>
+							</td>
+						{/if}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+	{#if data.owner}
+		<form method="POST" action="?/addBackupFolder" use:enhance class="inline-form">
+			<div class="field grow">
+				<label for="backup-path">Add a folder</label>
+				<input id="backup-path" name="path" class="mono" placeholder="/mnt/backup/minecraft" value={(form as { backupPath?: string } | null)?.backupPath ?? ''} />
+			</div>
+			<div class="field">
+				<label for="backup-name">Name <span class="muted">(optional)</span></label>
+				<input id="backup-name" name="name" placeholder="USB drive" />
+			</div>
+			<button type="submit">Add</button>
+		</form>
+		<p class="muted small folder-hint">
+			The folder has to exist and be writable by the user MineShell runs as. MineShell never makes it: when a drive is
+			not mounted, its mount point is an empty folder on the system disk, and copies would fill that instead. A missing
+			folder is a failed copy, retried every hour, with a notification (Snapshot or backup copy failed).
+		</p>
+	{:else if !data.backupFolders.length}
+		<p class="muted small">No backup folders yet. The owner adds them here.</p>
+	{/if}
+</section>
 {:else if tab === 'ports'}
 <section class="panel">
 	<h2>Ports</h2>
@@ -1571,6 +1648,22 @@
 
 	.right {
 		text-align: right;
+	}
+
+	/* Under a backup folder's path: why it cannot be used, or that it shares the servers' disk. */
+	.folder-note {
+		margin: var(--space-1) 0 0;
+		font-family: var(--font-ui);
+		overflow-wrap: anywhere;
+	}
+	.folder-note.bad {
+		color: var(--error);
+	}
+	.folder-note.warn {
+		color: var(--warning);
+	}
+	.folder-hint {
+		margin-top: var(--space-2);
 	}
 
 	td button {

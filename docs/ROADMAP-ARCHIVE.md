@@ -9,6 +9,26 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### World backups to another place
+
+Built 2026-10-22 (MineShell settings > Snapshots, "Backup folders"; a server's Settings >
+Snapshots, "Backup copies"; World > Snapshots, "In the backup folder"; ARCHITECTURE, "Backup
+copies"). Before 1.0 (user's call, 2026-10-21): simple, no cloud, extensible. As proposed: a
+destination is its own kind of thing, a folder on this machine the only kind so far, with a few
+operations other kinds would implement; finished snapshots are copied after the snapshot, so a
+running world needs no second save pause; written under a partial name; per server: off, every
+full snapshot, or scheduled ones (and ones taken by hand); its own count kept there, pinned ones
+kept too; a failure is a notification and a mark (the World tab and the server's settings), never
+a failed snapshot; a missing folder is never created. Decided while building: partial snapshots
+stay local (one dimension before a change); adding and removing folders is the owner's (a path
+MineShell writes into, as the path import is); a folder on the servers' own disk is allowed with
+a warning; another server's copies can be copied back by a global admin, for a server deleted
+and made again. The notification kind ("Snapshot or backup copy failed", on by default) is also
+on for destinations saved before it. Tried on a throwaway dev server: copies on saving the
+setting and 15 s after a new snapshot, copy back by the button, the folder removed (failed,
+nothing created, shown on the World tab), desktop and phone widths. Leftovers: ROADMAP,
+"Leftovers of built features".
+
 ### Instance export and import
 
 Built 2026-10-19 (the server's Export page, "Move to another MineShell"; Add a server, "Import
@@ -872,7 +892,7 @@ Suggested after the client pack export and reboot handling; all wanted.
 - Panel hardening (it is LAN-only; remote access stays the Tailscale route below), idle
   auto-stop (wake-on-connect needs too much machinery), a fuller audit log beyond the
   existing one, adopting an existing server.
-- Full world backups: since planned as external backups (ROADMAP.md, "World backups").
+- Full world backups: since built as backup folders ("World backups to another place", above).
 
 ---
 

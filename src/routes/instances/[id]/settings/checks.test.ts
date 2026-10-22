@@ -98,3 +98,16 @@ describe('scheduled commands', () => {
 		]);
 	});
 });
+
+describe('backup copies', () => {
+	it('take only a listed folder, a known choice and a count in range', async () => {
+		const { getServerBackup } = await import('#lib/server/backups.js');
+		const instance = await server();
+		const fields = { backupDestination: '', backupCopy: 'all', backupKeep: '10' };
+		expect(await post(actions.backups, instance.id, { ...fields, backupDestination: 'gone' })).toMatchObject({ status: 400, data: { message: /no longer in the list/ } });
+		expect(await post(actions.backups, instance.id, { ...fields, backupKeep: '0' })).toMatchObject({ status: 400 });
+		expect(await post(actions.backups, instance.id, { ...fields, backupCopy: 'everything' })).toMatchObject({ status: 400 });
+		expect(await post(actions.backups, instance.id, { ...fields, backupKeep: '4', backupCopy: 'scheduled' })).toMatchObject({ ok: true });
+		expect(getServerBackup(instance.id)).toEqual({ destination: null, copy: 'scheduled', keep: 4 });
+	});
+});

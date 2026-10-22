@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fail } from '@sveltejs/kit';
-import { requireAccess } from '#lib/server/access.js';
+import { requireAccess, requireGlobalAdmin } from '#lib/server/access.js';
+import { backupView, copyBack, isServerFolderName } from '#lib/server/backups.js';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { readProperties } from '#lib/server/properties.js';
@@ -67,7 +68,7 @@ import {
 	startPregen
 } from '#lib/server/chunky.js';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const instance = requireInstance(params.id);
 	const { values } = await readProperties(instance.path);
 	const running = (await summarise(instance)).running;
@@ -88,6 +89,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		dimensions: (await withDimensionNames(instance, await listDimensions(instance.path))).map(dimensionOption),
 		pruneAnalysis: pruneAnalysisSummary(instance.id),
 		pruneAnalysing: analysingNow(instance.id),
+		// Copies of another server's snapshots there (one that is gone, made again) are for global admins.
+		backups: await backupView(instance, backupsOf(url, locals) ?? instance.id),
 		snapshots: await Promise.all(
 			snapshots.map(async (s) => {
 				// Only one of the world the server uses can be restored (snapshotOfWorld).
@@ -117,6 +120,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		}
 	};
 };
+
+/** The server folder in the backup folder the page lists, when it is another server's. */
+function backupsOf(url: URL, locals: App.Locals): string | null {
+	const of = url.searchParams.get('backupsOf');
+	return of && locals.access.globalAdmin && isServerFolderName(of) ? of : null;
+}
 
 /**
  * Chunky's state for the pre-generation panel. Saved tasks not cancelled are
@@ -306,6 +315,20 @@ export const actions: Actions = {
 			return { ok: true, message: `Restoring the snapshot. ${STARTED}` };
 		} catch (err) {
 			return refused(err);
+		}
+	},
+
+	copyBack: async ({ request, params, locals }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const from = String(form.get('from') || instance.id);
+		if (from !== instance.id) requireGlobalAdmin(locals);
+		try {
+			await copyBack(instance, String(form.get('id') ?? ''), from);
+			return { ok: true, message: 'Copying the snapshot back; it shows under Snapshots when the task finishes. Pin it if it should stay a while.' };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
 		}
 	},
 

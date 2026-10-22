@@ -49,6 +49,12 @@
 	const allTags = $derived(
 		[...new Set(worldSnapshots.flatMap((s) => s.tags ?? []))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 	);
+	// Snapshots with a copy in the server's backup folder.
+	const copied = $derived(
+		new Set(data.backups && data.backups.fromServer === data.instance.id ? data.backups.copies.map((c) => c.id) : [])
+	);
+	const onlyThere = $derived(data.backups ? data.backups.copies.filter((c) => !c.onServer) : []);
+	const otherServers = $derived(data.backups ? data.backups.servers.filter((id) => id !== data.instance.id) : []);
 	const shownSnapshots = $derived(
 		tagFilter && allTags.includes(tagFilter) ? worldSnapshots.filter((s) => s.tags?.includes(tagFilter!)) : worldSnapshots
 	);
@@ -299,7 +305,9 @@
 					<tr>
 						<td class="nowrap">
 							{formatDateTime(s.createdAt)}
-							<div class="faint small">{formatRelative(s.createdAt)}</div>
+							<div class="faint small">
+								{formatRelative(s.createdAt)}{#if copied.has(s.id)}<span title="A copy is in {data.backups?.destination.name}">{' · backed up'}</span>{/if}
+							</div>
 						</td>
 						<td>
 							{#if s.note}
@@ -505,6 +513,89 @@
 		</table>
 		</div>
 		{/if}
+	{/if}
+	{#if data.backups}
+		{@const backups = data.backups}
+		<div class="backup-copies">
+			<h3>In the backup folder</h3>
+			<p class="small muted">
+				Copies in {backups.destination.name} (<code>{backups.destination.path}</code>), the newest {backups.setting.keep}
+				and pinned ones. One that is no longer here copies back as a snapshot, to restore or to make a world of.
+				{#if backups.last && !backups.last.ok && !backups.problem}
+					<span class="bad-text">The last copy failed ({formatDateTime(backups.last.at)}): {backups.last.message}</span>
+				{/if}
+			</p>
+			{#if backups.problem}
+				<div class="notice warning"><p>{backups.problem}</p></div>
+			{:else}
+				{#if data.access.globalAdmin && (otherServers.length || backups.fromServer !== data.instance.id)}
+					<form method="GET" class="inline-form">
+						<input type="hidden" name="view" value="snapshots" />
+						<div class="field">
+							<label for="backups-of">Copies of</label>
+							<select id="backups-of" name="backupsOf" value={backups.fromServer} onchange={(e) => e.currentTarget.form?.requestSubmit()}>
+								<option value={data.instance.id}>this server</option>
+								{#each otherServers as id (id)}<option value={id}>{id}</option>{/each}
+							</select>
+						</div>
+						<noscript><button type="submit">Show</button></noscript>
+					</form>
+					{#if backups.fromServer !== data.instance.id}
+						<p class="hint">
+							Another server's copies, such as one deleted and made again: copied back here, they can become a world of
+							this server (Use as a new world).
+						</p>
+					{/if}
+				{/if}
+				{#if !backups.copies.length}
+					<div class="empty"><p>No copies there yet.</p></div>
+				{:else if !onlyThere.length}
+					<p class="small faint">{backups.copies.length} cop{backups.copies.length === 1 ? 'y' : 'ies'}, all of snapshots this server still has.</p>
+				{:else}
+					<div class="table-box">
+						<table>
+							<thead>
+								<tr>
+									<th>Taken</th>
+									<th>Why</th>
+									<th class="nowrap">Ran on</th>
+									<th class="nowrap">Size</th>
+									<th><span class="visually-hidden">Actions</span></th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each onlyThere as c (c.id)}
+									<tr>
+										<td class="nowrap">
+											{formatDateTime(c.createdAt)}
+											<div class="faint small">{formatRelative(c.createdAt)}</div>
+										</td>
+										<td>
+											{#if c.note}<strong>{c.note}</strong><div class="small muted">{c.label}</div>{:else}{c.label}{/if}
+											{#if c.pinned}<span class="tag accent">pinned</span>{/if}
+										</td>
+										<td class="small nowrap">
+											{c.minecraftVersion}, {c.modloader}{c.modloaderVersion ? ` ${c.modloaderVersion}` : ''}
+											{#if c.packVersionName}<div class="faint">{c.packVersionName}</div>{/if}
+										</td>
+										<td class="mono small nowrap">{formatBytes(c.sizeBytes)}</td>
+										<td>
+											{#if may('backups.create')}
+												<form method="POST" action="?/copyBack" use:enhance class="row-actions">
+													<input type="hidden" name="id" value={c.id} />
+													<input type="hidden" name="from" value={backups.fromServer} />
+													<button type="submit" class="button-quiet" disabled={busy}>Copy back</button>
+												</form>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			{/if}
+		</div>
 	{/if}
 	{#if data.running && data.worlds.length}
 		<p class="faint small after">
@@ -1145,6 +1236,25 @@
 
 	.tag-filter {
 		margin-bottom: var(--space-3);
+	}
+
+	.backup-copies {
+		margin-top: var(--space-5);
+	}
+	.backup-copies h3 {
+		margin-bottom: var(--space-1);
+	}
+	.bad-text {
+		color: var(--error);
+	}
+	.inline-form {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-end;
+		margin-bottom: var(--space-3);
+	}
+	.inline-form .field {
+		margin-bottom: 0;
 	}
 
 	.snapshot-edit {

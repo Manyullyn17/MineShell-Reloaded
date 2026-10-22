@@ -66,6 +66,17 @@ describe('destinations', () => {
 		expect(globalTarget()).toEqual({ type: 'discord', url: DISCORD, kinds: ['crash', 'update'] });
 	});
 
+	it('turns a kind added later on for destinations saved before it, unless turned off since', async () => {
+		const s = await server();
+		saveServerTarget(s.id, { type: 'ntfy', url: NTFY, kinds: ['crash'], alsoGlobal: false });
+		// As a version without failed backups saved it: only what was ticked then.
+		db.update(instanceNotifications).set({ kinds: JSON.stringify(['crash']) }).where(eq(instanceNotifications.instanceId, s.id)).run();
+		expect(serverTarget(s.id)?.kinds).toEqual(['crash', 'backup']);
+		// Saved now with it off: it stays off.
+		saveServerTarget(s.id, { type: 'ntfy', url: null, kinds: ['crash'], alsoGlobal: false });
+		expect(serverTarget(s.id)?.kinds).toEqual(['crash']);
+	});
+
 	it("sends a server's notifications to its own destination, MineShell's only when asked", async () => {
 		const s = await server();
 		expect(destinations(s.id, 'crash')).toEqual([]);

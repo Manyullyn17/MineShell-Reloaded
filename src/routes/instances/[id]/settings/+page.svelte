@@ -30,6 +30,7 @@
 	import WarnChoice from '#lib/components/WarnChoice.svelte';
 	import CpuInput from '#lib/components/CpuInput.svelte';
 	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
+	import { BACKUP_COPY_CHOICES } from '#lib/shared/backups.js';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
 	import CopyDeleteSection from './CopyDeleteSection.svelte';
@@ -130,7 +131,10 @@
 			snapshotWhileRunning: d.snapshotWhileRunning as string,
 			snapshotWarnMinutes: d.snapshotWarnMinutes,
 			snapshotSkipIdle: d.snapshotSkipIdle as boolean,
-			voicePort: (d.voicePort ?? '') as number | string
+			voicePort: (d.voicePort ?? '') as number | string,
+			backupDestination: d.backupDestination,
+			backupCopy: d.backupCopy as string,
+			backupKeep: d.backupKeep as number | string
 		};
 	}
 	function propertyValues() {
@@ -319,6 +323,7 @@
 				return (Object.keys(snapshotValues) as (keyof typeof snapshotValues)[]).some((k) => differs(snapshotValues[k], base[k]));
 			}
 		},
+		{ id: 'backups', tab: 'snapshots', label: 'Backup copies', restart: false, dirty: () => svChanged('backupDestination', 'backupCopy', 'backupKeep') },
 		{ id: 'console', tab: 'advanced', label: 'Console', restart: false, dirty: () => svChanged('consoleBacklogLines', 'consoleBufferLines') },
 		{
 			id: 'more',
@@ -1061,6 +1066,50 @@
 		</form>
 	</SettingsSection>
 
+	<SettingsSection tab="snapshots" title="Backup copies" editable={may('backups.delete')} dirty={dirtyIds.has('backups')}>
+		{#snippet description()}
+			Copies of this server's snapshots in a backup folder, apart from its disk, made right after each snapshot.
+			{#if data.backups.last && sv.backupDestination}
+				<span class={data.backups.last.ok ? '' : 'backup-failed'}>
+					Last {data.backups.last.ok ? 'copy' : 'try'}, {formatDateTime(data.backups.last.at)}: {data.backups.last.message}
+				</span>
+			{/if}
+		{/snippet}
+		<form method="POST" action="?/backups" class="rows" bind:this={forms.backups} onsubmit={onSectionSubmit}>
+			<div class="field">
+				<label for="backupDestination">Copy to</label>
+				<select id="backupDestination" name="backupDestination" bind:value={sv.backupDestination}>
+					<option value="">Nowhere</option>
+					{#each data.backups.destinations as folder (folder.id)}
+						<option value={folder.id}>{folder.name} ({folder.path})</option>
+					{/each}
+				</select>
+				{#if !data.backups.destinations.length}
+					<p class="hint">No backup folders yet: the owner adds them in <a href="/settings?tab=snapshots">MineShell settings</a>.</p>
+				{/if}
+			</div>
+			{#if sv.backupDestination}
+				<div class="field">
+					<label for="backupCopy">Which snapshots</label>
+					<select id="backupCopy" name="backupCopy" bind:value={sv.backupCopy}>
+						{#each BACKUP_COPY_CHOICES as choice (choice.value)}
+							<option value={choice.value}>{choice.label}</option>
+						{/each}
+					</select>
+					<p class="hint">Partial ones (one dimension, before a reset or prune) stay here only.</p>
+				</div>
+				<div class="field">
+					<label for="backupKeep">Copies kept there</label>
+					<input id="backupKeep" name="backupKeep" type="number" min="1" max="1000" bind:value={sv.backupKeep} />
+					<p class="hint">The newest ones there; the settings above are for the ones here. Pinned snapshots are kept there too, not counted.</p>
+				</div>
+			{:else}
+				<input type="hidden" name="backupCopy" value={sv.backupCopy} />
+				<input type="hidden" name="backupKeep" value={sv.backupKeep} />
+			{/if}
+		</form>
+	</SettingsSection>
+
 	<!-- =========================================================== Advanced -->
 
 	<SettingsSection tab="advanced" title="Console" editable={may('settings.edit')} dirty={dirtyIds.has('console')}>
@@ -1138,6 +1187,11 @@
 </div>
 
 <style>
+	/* The backup section's last try, when it failed. */
+	.backup-failed {
+		color: var(--error);
+	}
+
 	.subhead {
 		flex-wrap: nowrap;
 	}

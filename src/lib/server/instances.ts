@@ -64,6 +64,7 @@ import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
+import { deleteServerBackup } from './backups';
 import { deleteCrashMarks, pausedSince } from './history';
 import { doneStartingAt } from './startphase';
 import { deleteDimensionNames } from './dimensionnames';
@@ -1423,6 +1424,7 @@ export async function deleteInstance(
 	deleteServerSnapshotOverrides(instance.id);
 	deleteMemorySettings(instance.id);
 	deleteSnapshotSchedule(instance.id);
+	deleteServerBackup(instance.id);
 	deleteCrashMarks(instance.id);
 	deleteDimensionNames(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);

@@ -10,6 +10,8 @@ export type BusEvents = {
 	'stats:sample': { instanceId: string; cpuPercent: number; memoryBytes: number; ts: number };
 	'instance:state': { instanceId: string; active: string; sub: string };
 	'task:update': { id: string };
+	/** A snapshot became one (snapshots.ts finishSnapshot): backups.ts copies it to the server's backup folder. */
+	'snapshot:finished': { instanceId: string; snapshotId: string };
 	/** Sessions, accounts or access changed (auth.ts, accounts.ts): open streams check again (access.ts guardStream). */
 	'access:changed': { userId: string | null };
 };

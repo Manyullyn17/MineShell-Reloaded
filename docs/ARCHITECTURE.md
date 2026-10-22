@@ -112,8 +112,10 @@ installed; a slice file MineShell did not write is never replaced.
 Notifications (`notifications.ts`) go to MineShell's destination (a `settings` row) and/or a
 server's own (`instance_notifications`, with `also_global`), each with the kinds it is sent.
 Reported by the run history (start, stop, join, leave; crash and memory kill after the crash
-diagnosis, with its cause), the scheduler (stuck starting, scheduled restart) and the update
-check. Nothing older than 5 minutes is sent (the history catches up after downtime), repeats
+diagnosis, with its cause), the scheduler (stuck starting, scheduled restart), the backup
+copies (once per run of failures) and the update check. A kind added later and on by default
+(`ADDED_LATER`: backup) is on for destinations saved before it too; turning it off is stored
+as `!kind`, which older versions skip. Nothing older than 5 minutes is sent (the history catches up after downtime), repeats
 of a problem within 10 minutes fold into the next message, and sending never blocks the
 caller. Addresses are encrypted, only a hint goes to the browser, and requests to local
 addresses are refused unless allowed (`assertPublicUrl`), since a server admin chooses its
@@ -696,6 +698,30 @@ warning time; after 30 minutes the slot is let go. The scheduled restart in turn
 the server has a journalled operation (a snapshot under way): a restart during a live copy
 caught the world mid-write. A failed `save-on` is only reported when the same run of the
 server is still going (`activeEnterTimestamp`): a restarted server saves anyway.
+
+**Backup copies** (`backups.ts`): snapshots copied to a backup folder off the server's disk.
+The folders (destinations) are a `settings` row the owner edits under MineShell settings >
+Snapshots; each server picks one, which snapshots (every full one, or scheduled and taken by
+hand; partial ones never) and how many are kept there (`backups.server:<id>`), and the last
+result is kept beside it (`backups.last:<id>`). A destination is a store with a few operations
+(problem, free space, list, write, read, remove, rewrite a manifest); a folder is the only
+kind, others would be more stores. On a folder, `<folder>/<server id>/<snapshot id>/` has the
+snapshot's own shape, written as `.partial` and renamed when complete. The folder itself is
+never created: an unmounted drive leaves an empty mount point on the system disk, which a copy
+would fill. What a sync does is worked out from both sides each time (`planBackup`): the newest
+`keep` of what is there and what should be, plus pinned ones (the server's pin while it has the
+snapshot, the copy's after), are kept there; missing ones are copied, newest first, the rest
+there deleted, and manifests whose pin, name or tags changed rewritten. So a copy cut short or
+failed is made at the next sync, and nothing is copied only to be deleted. Syncs run one at a
+time for all servers: 15 s after `snapshot:finished` (bus, from `finishSnapshot`; postponed
+while the server has an operation, since a world change finishes its snapshot before it commits
+and a rollback moves it back), for every server 2 minutes after MineShell starts, and every
+hour for servers whose last one failed. A failure is recorded, audited and notified (kind
+`backup`) once per run of failures; the snapshot itself is never failed by it. A copy back
+(World tab) copies one into the server's snapshots as `.partial`, then renamed, checked against
+the server's keep-free space; a global admin can copy back another server's copies (a server
+deleted and made again), which then become a world of their own or restore if the world names
+match.
 
 Dimensions are found on disk (`dimensions.ts`): a folder holding `region/` or `entities/`.
 The overworld is the level folder's own `region/`, `entities/` and `poi/`, so resetting it

@@ -65,6 +65,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			updatePreset: 'globalAdmin',
 			deletePreset: 'globalAdmin',
 			snapshots: 'globalAdmin',
+			// A folder on this machine MineShell writes into, as picking an import by its path reads one.
+			addBackupFolder: 'owner',
+			removeBackupFolder: 'owner',
 			installUnit: 'globalAdmin',
 			serverCap: 'globalAdmin',
 			portChange: 'globalAdmin',
@@ -191,6 +194,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			pinSnapshot: handler(on('backups.create'), 'unpinning lets retention delete it: backups.delete'),
 			restore: on('backups.restore'),
 			deleteSnapshot: on('backups.delete'),
+			// Another server's copies (one that is gone): a global admin.
+			copyBack: handler(on('backups.create'), "another server's copies: global admin"),
 			chunkyStart: on('world'),
 			chunkyConfirm: on('world'),
 			chunkyPause: on('world'),
@@ -310,8 +315,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			removeCommand: on('console.command'),
 			toggleCommand: on('console.command'),
 			snapshotSchedule: on('backups.create'),
-			// Retention deletes snapshots.
+			// Retention deletes snapshots; the backup folder's too.
 			snapshotPolicy: on('backups.delete'),
+			backups: on('backups.delete'),
 			launch: on('software'),
 			rescanJava: on('software'),
 			resolveConfig: on('software'),

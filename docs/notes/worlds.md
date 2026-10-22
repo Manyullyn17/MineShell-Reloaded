@@ -39,6 +39,16 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   free (`fs.statfs`); the form then offers only "continue without". World-tab operations pass
   `moves: true`: they keep the old world by renaming it, which costs no space.
 
+## Backup copies
+- `backups.ts` (built 2026-10-22; ARCHITECTURE, "Backup copies"). Tried on the throwaway dev
+  server only, with folders on ext4 under /tmp, so every one there warns "same disk as the
+  servers". exFAT/NTFS USB drives and NFS/SMB shares are untried: `fs.cp` there sets times
+  (`preserveTimestamps`) and may hit permission or name limits.
+- Backup folders may not be inside MineShell's data folder (or contain it), so a test's folder
+  goes beside the worker's data folder (`tests/flows/backups.test.ts`), not in `tempDir()`.
+- The sync after a snapshot waits 15 s (debounced per server), and longer while the server has
+  an operation: a world change's snapshot is finished before its commit.
+
 ## Scheduled snapshots
 - `snapshotschedule.ts`, from the scheduler tick (dev server restart needed after changes).
   "Every N hours" on the clock (user's call, 2026-10-09; the map schedule shares it). Skip-
