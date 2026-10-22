@@ -15,7 +15,8 @@ has an agreed install-flow plan. None of this has a delivery date.
 Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
 "sooner" ones are built: ROADMAP-ARCHIVE):
 
-- **Before 1.0**: the rest of "Road to 1.0" below. World backups to a folder (built
+- **Before 1.0**: the rest of "Road to 1.0" below, smaller snapshots and backup copies
+  included (user's call, 2026-10-22). World backups to a folder (built
   2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
@@ -82,6 +83,51 @@ until after 1.0, and asked to keep the rest listed here):
   release with the backups in; that 0.x would list older betas again, unless it refuses going
   below itself once its database has seen 1.x (optional); the dialog could name the features
   the older version lacks ("backups to other places will not run").
+
+#### Smaller snapshots and backup copies
+
+Before 1.0 (user's calls, 2026-10-22: hard links for local snapshots, unchanged files found
+by hash; compression for backup copies). Measured: AromaBackup's zips of MeatballCraft's
+7.1 GB world are 5.1 GB, about 30% smaller, although chunks are compressed already (sector
+padding, headers, mods' own files). A full copy per snapshot is what fills the disk: ten of a
+7 GB world are 70 GB.
+
+- **Local snapshots: hard links to the previous snapshot.** A new snapshot copies only the
+  files that changed since the newest one and hard-links the rest to that snapshot's file, so
+  ten snapshots cost the world once plus what changed (on btrfs and XFS reflinks give this
+  already). Safe only with care, since a hard link is one file in two places:
+  - A link only ever joins two snapshots, never the live world: the server writes region files
+    in place and would change every snapshot sharing them. Restore and "new world from a
+    snapshot" already copy (`fs.cp` in `world.ts`), and world changes move the live world into
+    a snapshot, so the live world never shares a file today; every path that puts snapshot
+    files back has to keep it that way, held by a test that no live world file has more than
+    one link after each operation.
+  - "Unchanged" by a hash per file (user's call), kept in the manifest so the previous
+    snapshot is not read again; size and time alone would trust every mod to update the time.
+    Reading the world to hash it is cheaper than writing it.
+  - Deleting a snapshot, by MineShell's retention, its Delete or by hand (`rm -rf`, a file
+    manager), must never touch the others (user's requirement). Hard links give that by
+    themselves: the file system counts the names a file has and frees it only with the last,
+    so no snapshot "owns" a shared file. A test deletes snapshots each way and checks every
+    other one still byte for byte against its hashes.
+  - Writing into a snapshot in place is what would break them: the Files tab can browse
+    `.mineshell/snapshots/` and `files.ts` saves and uploads with `fs.writeFile` on the
+    existing file, which changes it in every snapshot sharing it. Writes there have to replace
+    the file (write a new one, rename it over) or be refused.
+  - Copying a server folder turns links into full copies (a clone, an export with snapshots,
+    `cp -r` by hand): no damage, but a clone could take ten times the space; clones leave
+    snapshots out already, the export's "with snapshots" needs a look.
+  - Retention counts file sizes today: it needs the bytes each snapshot alone holds, or the
+    budget fills with links that free nothing when deleted.
+  - Snapshots never change in place (manifests are rewritten by rename), which is what makes
+    sharing their files safe; anything editing a snapshot file would have to copy it first.
+- **Backup copies: compressed.** One archive per snapshot (zip through `zip.ts`, as the
+  world download already makes), with its manifest beside it (`<id>.json`) so listing and
+  retention never open archives; copy back unpacks. Node's gzip/deflate runs at maybe
+  50-100 MB/s (a 7 GB world in 1-2 minutes, in MineShell's process, not the game's); zstd is
+  faster but not in Node 22.12. A setting per backup folder (compressed or plain folders),
+  since plain ones can be browsed and opened anywhere. Hard links in the backup folder too
+  would be the bigger saving but fail on exFAT/FAT drives, where most USB drives start.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
@@ -191,37 +237,6 @@ Proposal (not agreed):
 
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
-
-### Smaller snapshots and backup copies
-
-Talked over 2026-10-22 (user's calls: hard links for local snapshots, compression for backup
-copies; when is open). Measured: AromaBackup's zips of MeatballCraft's 7.1 GB world are 5.1 GB,
-about 30% smaller, although chunks are compressed already (sector padding, headers, mods' own
-files). A full copy per snapshot is what fills the disk: ten of a 7 GB world are 70 GB.
-
-- **Local snapshots: hard links to the previous snapshot.** A new snapshot copies only the
-  files that changed since the newest one and hard-links the rest to that snapshot's file, so
-  ten snapshots cost the world once plus what changed (on btrfs and XFS reflinks give this
-  already). Safe only with care, since a hard link is one file in two places:
-  - A link only ever joins two snapshots, never the live world: the server writes region files
-    in place and would change every snapshot sharing them. Restore and "new world from a
-    snapshot" already copy (`fs.cp` in `world.ts`), and world changes move the live world into
-    a snapshot, so the live world never shares a file today; every path that puts snapshot
-    files back has to keep it that way, held by a test that no live world file has more than
-    one link after each operation.
-  - "Unchanged" by size and modification time is cheap but trusts the mods; a hash per file in
-    the manifest is surer (reading the world is cheaper than writing it).
-  - Retention counts file sizes today: it needs the bytes each snapshot alone holds, or the
-    budget fills with links that free nothing when deleted.
-  - Snapshots never change in place (manifests are rewritten by rename), which is what makes
-    sharing their files safe; anything editing a snapshot file would have to copy it first.
-- **Backup copies: compressed.** One archive per snapshot (zip through `zip.ts`, as the
-  world download already makes), with its manifest beside it (`<id>.json`) so listing and
-  retention never open archives; copy back unpacks. Node's gzip/deflate runs at maybe
-  50-100 MB/s (a 7 GB world in 1-2 minutes, in MineShell's process, not the game's); zstd is
-  faster but not in Node 22.12. A setting per backup folder (compressed or plain folders),
-  since plain ones can be browsed and opened anywhere. Hard links in the backup folder too
-  would be the bigger saving but fail on exFAT/FAT drives, where most USB drives start.
 
 ### More README screenshots
 
