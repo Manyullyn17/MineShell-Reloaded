@@ -312,7 +312,10 @@ MineShell settles it as done when it runs the new version, and the running one a
 (with the unit's journal) once that unit has ended without a restart. It refuses while a
 task or a journalled operation runs: the restart would leave those to recovery. Before the
 installer runs, the database is copied (SQLite's online backup) to `$DATA/db-backups/`,
-newest five kept.
+newest five kept. The scheduler's tick also makes one a day (`dbbackups.ts`,
+`daily-<local date>.db`, newest seven, written as `.part` and renamed), kept apart from the
+pre-update ones so neither pushes the other out. Never a file copy: in WAL mode the file alone
+can miss what is still in `-wal`.
 
 Going back to an older release (`startDowngrade`) is the same install with the older archive
 and its own installer (whose environment variables have not changed since 0.13). Migrations

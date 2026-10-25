@@ -9,6 +9,14 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Daily copy of MineShell's database
+
+Built 2026-10-25 (ARCHITECTURE, "Updating itself"; DEPLOYMENT, restoring by hand), before 1.0.
+Before, the database was only copied before an update. Now also once a day from the scheduler
+tick, `db-backups/daily-<date>.db`, seven kept, with SQLite's online backup (WAL mode: a file
+copy can miss the `-wal`). Not built: restoring one from the page (the steps are in
+DEPLOYMENT), and copying them to a backup folder with the snapshots.
+
 ### Notifications for snapshots and disk space
 
 Built 2026-10-25 (ARCHITECTURE, "Scheduled snapshots" and "Low disk space"), before 1.0

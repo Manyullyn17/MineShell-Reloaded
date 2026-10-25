@@ -55,10 +55,6 @@ until after 1.0, and asked to keep the rest listed here):
 - **Left for the user** (docs/notes/status.md): notifications to a Discord channel;
   importing the `.mrpack` and CurseForge exports; a server export and import with a
   CurseForge pack and a world of gigabytes.
-- **MineShell's own database**: it is only backed up before an update. A daily copy with a
-  few kept (accounts, history, settings); restoring one from the page stays a leftover. The
-  database runs in WAL mode, so the copy goes through `sqlite.backup()` or `VACUUM INTO`,
-  not a file copy (which can miss what is still in the `-wal` file).
 - **A restore drill**: delete a throwaway server's folder and bring it back from its backup
   folder, end to end (make it again with the same pack, copy a backup back, use it as the
   world), on a real loader.
@@ -209,6 +205,10 @@ Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draw
 
 What the built entries in the archive left out, in one place:
 
+- **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
+  copying them to a backup folder along with the snapshots.
+- **Disk running low**: a server with only its own notification destination hears of a shared
+  disk only when the message goes under it.
 - **Pack change preview**: a warning when the new version drops the mod that loads a folder
   of the user's data packs (Paxi, OpenLoader): the files come back but nothing loads them,
   and a world-generation one going away can stop the world loading.

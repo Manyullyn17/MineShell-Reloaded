@@ -179,7 +179,10 @@ newest release.
 
 Database migrations run automatically at startup. Before every update or downgrade from the
 page, the database is copied to `$MINESHELL_DATA/db-backups/mineshell-<date>-<from>-to-<to>.db`
-(the newest five are kept). To put one back by hand - servers created or changed since then
+(the newest five are kept), and once a day to `db-backups/daily-<date>.db` (the newest seven).
+They hold the accounts, settings, history and the server list, not the servers' own files:
+back up `db-backups/` with `secret.key` beside it (it unlocks the saved RCON passwords and
+notification addresses). To put one back by hand - servers created or changed since then
 will be missing from it, their folders still on disk:
 
 ```sh
@@ -189,7 +192,9 @@ rm -f ~/.local/share/mineshell/mineshell.db-wal ~/.local/share/mineshell/mineshe
 systemctl --user start mineshell
 ```
 
-Do that while the version it was taken from (`<from>` in the name) is installed.
+Do that while the version it was taken from (`<from>` in the name) is installed. A daily copy
+is of the version that ran that day: one from before an update needs that version back first
+(Settings > Updates).
 
 The template unit does not need reinstalling: at startup MineShell rewrites an installed
 template that an older MineShell wrote. Reinstalling it is safe anyway — the Settings page

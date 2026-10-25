@@ -9,6 +9,7 @@ import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
 import { clockSlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { checkDiskSpace } from './diskspace';
+import { dailyDatabaseCopy } from './dbbackups';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
 import { runDueUpdateChecks } from './updatecheck';
@@ -180,6 +181,7 @@ async function checkAll(): Promise<void> {
 		}
 	}
 	await checkDiskSpace(listInstances()).catch((err) => console.error('[mineshell] disk space check failed:', err));
+	await dailyDatabaseCopy().catch((err) => console.error("[mineshell] the daily copy of MineShell's database failed:", err));
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 	// Not awaited: lookups on a slow provider must not hold up restarts.
 	void runDueUpdateChecks().catch((err) => console.error('[mineshell] update checks failed:', err));

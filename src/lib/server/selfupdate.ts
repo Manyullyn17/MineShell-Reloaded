@@ -11,6 +11,9 @@ import { downloadFile, fetchJson, fetchText } from './download';
 import { listOperations } from './operations';
 import { run } from './systemd';
 import { listTasks, startTask } from './tasks';
+import { DB_BACKUP_DIR } from './dbbackups';
+
+export { DB_BACKUP_DIR };
 
 /**
  * MineShell updating itself from its GitHub releases (DEPLOYMENT.md, "Upgrading").
@@ -301,8 +304,6 @@ export async function planDowngrade(version: string): Promise<DowngradePlan> {
 		plan.refusal = `${version} cannot work with database changes made since: ${unsafe.map((m) => m.name.replace(/\.sql$/, '')).join(', ')}.`;
 	return plan;
 }
-
-export const DB_BACKUP_DIR = () => path.join(DATA_DIR, 'db-backups');
 
 /** A copy of the database before installing another version, and only the newest few kept. */
 async function backupDatabase(from: string, to: string): Promise<string> {
