@@ -34,6 +34,7 @@ if (!dataDir || !folder) {
 const port = Number(portArg ?? 8766);
 const base = `http://127.0.0.1:${port}`;
 
+/** @param {string} a @param {string} b */
 const compare = (a, b) => {
 	const [x, y] = [a, b].map((v) => v.split(/[.-]/).slice(0, 3).map(Number));
 	for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i];
@@ -41,8 +42,8 @@ const compare = (a, b) => {
 };
 const versions = fs
 	.readdirSync(folder)
-	.map((f) => /^mineshell-(\d+\.\d+\.\d+)\.tar\.gz$/.exec(f)?.[1])
-	.filter((v) => v && fs.existsSync(path.join(folder, `mineshell-${v}.tar.gz.sha256`)))
+	.flatMap((f) => /^mineshell-(\d+\.\d+\.\d+)\.tar\.gz$/.exec(f)?.[1] ?? [])
+	.filter((v) => fs.existsSync(path.join(folder, `mineshell-${v}.tar.gz.sha256`)))
 	.sort(compare)
 	.reverse();
 if (!versions.length) {
