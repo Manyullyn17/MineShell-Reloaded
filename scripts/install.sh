@@ -48,7 +48,7 @@ main() {
 	[ -n "$node" ] || fail "Node.js not found. Install Node.js 22.12 or newer (https://nodejs.org, NodeSource or nvm), then run this again."
 	node=$(readlink -f "$node")
 	"$node" -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit(a > 22 || (a === 22 && b >= 12) ? 0 : 1)' ||
-		fail "Node.js $("$node" -v) is too old: MineShell needs 22.12 or newer."
+		fail "Node.js $("$node" -v) ($node) is too old: MineShell needs 22.12 or newer. Distributions often package an older one: install a current one (https://nodejs.org, NodeSource or nvm), then run this again; MINESHELL_NODE=/path/to/node picks one that is not first on PATH."
 
 	# Everything that could refuse is checked before anything changes.
 	if [ -e "$home_dir" ] && [ ! -e "$home_dir/.mineshell-install" ]; then
