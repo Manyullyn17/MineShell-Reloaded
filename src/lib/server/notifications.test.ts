@@ -69,9 +69,9 @@ describe('destinations', () => {
 	it('turns a kind added later on for destinations saved before it, unless turned off since', async () => {
 		const s = await server();
 		saveServerTarget(s.id, { type: 'ntfy', url: NTFY, kinds: ['crash'], alsoGlobal: false });
-		// As a version without failed backups saved it: only what was ticked then.
+		// As a version without failed backups or disk warnings saved it: only what was ticked then.
 		db.update(instanceNotifications).set({ kinds: JSON.stringify(['crash']) }).where(eq(instanceNotifications.instanceId, s.id)).run();
-		expect(serverTarget(s.id)?.kinds).toEqual(['crash', 'backup']);
+		expect(serverTarget(s.id)?.kinds).toEqual(['crash', 'backup', 'disk']);
 		// Saved now with it off: it stays off.
 		saveServerTarget(s.id, { type: 'ntfy', url: null, kinds: ['crash'], alsoGlobal: false });
 		expect(serverTarget(s.id)?.kinds).toEqual(['crash']);

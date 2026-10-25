@@ -1,11 +1,12 @@
 /** Notifications (lib/server/notifications.ts), as the settings forms see them. */
-export type NotificationKind = 'crash' | 'memory' | 'stuck' | 'backup' | 'update' | 'restart' | 'start' | 'stop' | 'join' | 'leave';
+export type NotificationKind = 'crash' | 'memory' | 'stuck' | 'backup' | 'disk' | 'update' | 'restart' | 'start' | 'stop' | 'join' | 'leave';
 
 export const NOTIFICATION_KINDS: { kind: NotificationKind; label: string; defaultOn: boolean }[] = [
 	{ kind: 'crash', label: 'Crashed', defaultOn: true },
 	{ kind: 'memory', label: 'Killed for its memory', defaultOn: true },
 	{ kind: 'stuck', label: 'Stuck starting (10 minutes without finishing)', defaultOn: true },
-	{ kind: 'backup', label: 'Snapshot or backup copy failed', defaultOn: true },
+	{ kind: 'backup', label: 'Snapshot or backup copy failed or skipped', defaultOn: true },
+	{ kind: 'disk', label: 'Disk running low', defaultOn: true },
 	{ kind: 'update', label: 'Update found', defaultOn: true },
 	{ kind: 'restart', label: 'Scheduled restart', defaultOn: false },
 	{ kind: 'start', label: 'Finished starting', defaultOn: false },

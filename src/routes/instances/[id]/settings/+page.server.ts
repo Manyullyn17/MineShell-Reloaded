@@ -35,7 +35,7 @@ import { latestMergeReport, resolveMerge } from '#lib/server/configmerge.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
 import { runningHeapMb } from '#lib/server/heap.js';
 import { formInt } from '#lib/server/formvalues.js';
-import { getSnapshotSchedule, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
+import { getSnapshotSchedule, lastScheduledResult, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
 import {
 	decideSnapshot,
 	getSnapshotPolicy,
@@ -238,6 +238,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		voice,
 		/** When the next scheduled snapshot is due, if one is set. */
 		snapshotNextAt: scheduledSnapshotAt(instance.id),
+		snapshotLastScheduled: lastScheduledResult(instance.id),
 		cpuCores: cpus().length || 1,
 		javaRuntimes: listJavaRuntimes(),
 		requiredJava: requiredJavaMajor(instance.minecraftVersion, instance.modloader, instance.modloaderVersion),

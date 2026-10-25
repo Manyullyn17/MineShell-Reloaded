@@ -59,12 +59,6 @@ until after 1.0, and asked to keep the rest listed here):
   few kept (accounts, history, settings); restoring one from the page stays a leftover. The
   database runs in WAL mode, so the copy goes through `sqlite.backup()` or `VACUUM INTO`,
   not a file copy (which can miss what is still in the `-wal` file).
-- **Notifications for snapshots and disk space** (suggested 2026-10-22): a scheduled snapshot
-  that is skipped for disk space, times out waiting or fails is only an audit entry today
-  (`snapshotschedule.ts`), so backups can stop without anyone noticing. The notification
-  kind exists ("Snapshot or backup copy failed", built with the backup copies, which use it);
-  the scheduled snapshot's failures and skips (not the idle skip) still need to send it. And
-  a warning when a server's disk runs low (a full disk is what damages worlds).
 - **A restore drill**: delete a throwaway server's folder and bring it back from its backup
   folder, end to end (make it again with the same pack, copy a backup back, use it as the
   world), on a real loader.

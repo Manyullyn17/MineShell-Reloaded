@@ -45,7 +45,7 @@ const KINDS = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
  * destination gets them too unless they were turned off, which is stored as
  * `!kind` (older versions skip what they do not know).
  */
-const ADDED_LATER: NotificationKind[] = ['backup'];
+const ADDED_LATER: NotificationKind[] = ['backup', 'disk'];
 
 function cleanKinds(input: unknown): NotificationKind[] {
 	if (!Array.isArray(input)) return [...DEFAULT_NOTIFICATION_KINDS];
@@ -184,6 +184,7 @@ const COLORS: Record<NotificationKind, number> = {
 	memory: 0xd9534f,
 	stuck: 0xf0ad4e,
 	backup: 0xd9534f,
+	disk: 0xf0ad4e,
 	update: 0x5b8def,
 	restart: 0x8a8f98,
 	start: 0x4caf50,
@@ -196,6 +197,7 @@ const NTFY_TAGS: Record<NotificationKind, string> = {
 	memory: 'warning',
 	stuck: 'hourglass',
 	backup: 'floppy_disk',
+	disk: 'warning',
 	update: 'package',
 	restart: 'arrows_counterclockwise',
 	start: 'white_check_mark',

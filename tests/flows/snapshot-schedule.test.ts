@@ -28,6 +28,21 @@ const { evaluateRestart } = await import('#lib/server/scheduler.js');
 const { db } = await import('#lib/server/db/index.js');
 const { playerSessions, serverInstances } = await import('#lib/server/db/schema.js');
 const { eq } = await import('drizzle-orm');
+const { removeGlobalTarget, saveGlobalTarget } = await import('#lib/server/notifications.js');
+const { saveServerSnapshotOverrides } = await import('#lib/server/snapshots.js');
+const { useRecordedHttp } = await import('../helpers/http');
+
+const HOOK = 'https://hooks.example/snapshots';
+const sent: Record<string, unknown>[] = [];
+useRecordedHttp('none', {
+	extra: {
+		[HOOK]: async (init) => {
+			sent.push(JSON.parse(String(init?.body)));
+			return new Response(null, { status: 204 });
+		}
+	}
+});
+const settle = () => new Promise((r) => setTimeout(r, 20));
 
 sched.scheduleTiming.pollMs = 5;
 sched.scheduleTiming.quietMs = 50;
@@ -149,6 +164,48 @@ describe('scheduled snapshots', () => {
 		const task = await waitForTask(sched.scheduledSnapshot(s, 'live'));
 		expect(task.error).toMatch(/did not answer over RCON/);
 		expect(await listSnapshots(s.path)).toEqual([]);
+	});
+
+	it('notifies once when scheduled snapshots start failing, and again only after one worked', async () => {
+		const s = await server();
+		saveGlobalTarget({ type: 'webhook', url: HOOK, kinds: ['backup'] });
+		sent.length = 0;
+		try {
+			rcon.failOn = 'save-off';
+			await waitForTask(sched.scheduledSnapshot(s, 'live'));
+			await waitForTask(sched.scheduledSnapshot(s, 'live'));
+			await settle();
+			expect(sent).toEqual([expect.objectContaining({ event: 'backup', title: 'Scheduled snapshot failed', message: expect.stringMatching(/did not answer over RCON/) })]);
+			expect(sched.lastScheduledResult(s.id)).toMatchObject({ ok: false });
+			rcon.failOn = null;
+			await waitForTask(sched.scheduledSnapshot(s, 'live'));
+			expect(sched.lastScheduledResult(s.id)).toMatchObject({ ok: true });
+			rcon.failOn = 'save-off';
+			await waitForTask(sched.scheduledSnapshot(s, 'live'));
+			await settle();
+			expect(sent).toHaveLength(2);
+		} finally {
+			removeGlobalTarget();
+		}
+	});
+
+	it('skips a slot the disk has no room for, before stopping the server, and says so', async () => {
+		const s = await server();
+		saveServerSnapshotOverrides(s.id, { minFreeMb: 100 * 1024 * 1024 });
+		sched.saveSnapshotSchedule(s.id, sched.validSchedule({ every: 'interval', intervalHours: 6, whileRunning: 'stop', warnMinutes: 0, skipIdle: false }));
+		saveGlobalTarget({ type: 'webhook', url: HOOK, kinds: ['backup'] });
+		sent.length = 0;
+		try {
+			const at = sched.scheduledSnapshotAt(s.id)!;
+			expect(await sched.evaluateSnapshotSchedule(s, at + 1000)).toBeNull();
+			await settle();
+			expect(rcon.commands).not.toContain('stop');
+			expect(await listSnapshots(s.path)).toEqual([]);
+			expect(sched.scheduledSnapshotAt(s.id)).toBe(sched.clockSlot(6, at + 1000));
+			expect(sent).toEqual([expect.objectContaining({ title: 'Scheduled snapshot skipped: disk full', message: expect.stringMatching(/Keep free on the disk/) })]);
+		} finally {
+			removeGlobalTarget();
+		}
 	});
 
 	it('stops the server for the copy and starts it again', async () => {

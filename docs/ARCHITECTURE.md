@@ -112,9 +112,10 @@ installed; a slice file MineShell did not write is never replaced.
 Notifications (`notifications.ts`) go to MineShell's destination (a `settings` row) and/or a
 server's own (`instance_notifications`, with `also_global`), each with the kinds it is sent.
 Reported by the run history (start, stop, join, leave; crash and memory kill after the crash
-diagnosis, with its cause), the scheduler (stuck starting, scheduled restart), the backup
-copies (once per run of failures) and the update check. A kind added later and on by default
-(`ADDED_LATER`: backup) is on for destinations saved before it too; turning it off is stored
+diagnosis, with its cause), the scheduler (stuck starting, scheduled restart, a scheduled
+snapshot that failed or was skipped, a disk running low), the backup copies (once per run of
+failures) and the update check. A kind added later and on by default
+(`ADDED_LATER`: backup, disk) is on for destinations saved before it too; turning it off is stored
 as `!kind`, which older versions skip. Nothing older than 5 minutes is sent (the history catches up after downtime), repeats
 of a problem within 10 minutes fold into the next message, and sending never blocks the
 caller. Addresses are encrypted, only a hint goes to the browser, and requests to local
@@ -726,6 +727,17 @@ warning time; after 30 minutes the slot is let go. The scheduled restart in turn
 the server has a journalled operation (a snapshot under way): a restart during a live copy
 caught the world mid-write. A failed `save-on` is only reported when the same run of the
 server is still going (`activeEnterTimestamp`): a restarted server saves anyway.
+A slot the disk has no room for (the snapshot would leave less than "keep free") is skipped
+before anything is stopped. How the last due slot ended is kept (`snapshots.lastScheduled:<id>`,
+shown under the schedule in Settings when it did not work); a failure, the 30-minute wait or
+the disk skip is notified (kind `backup`) once per run of them, like the backup copies. The
+idle skip and a slot skipped for another operation are not failures.
+
+**Low disk space** (`diskspace.ts`, every scheduler tick): servers grouped by the disk they are
+on (`stat().dev`); a disk below its line - the largest "keep free on the disk" of its servers,
+where their snapshots stop, or 2 GB when all have it off - is notified once (kind `disk`),
+under the first of its servers whose destinations take it, naming the others; again only
+after it was 10% above the line. Kept in memory, so a restart while low says it once more.
 
 **Backup copies** (`backups.ts`): snapshots copied to a backup folder off the server's disk.
 The folders (destinations) are a `settings` row the owner edits under MineShell settings >

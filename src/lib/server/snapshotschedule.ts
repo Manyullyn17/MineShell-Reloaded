@@ -7,6 +7,7 @@ import { beginOperation, endOperation, listOperations, OperationInProgressError 
 import { audit, getInstance, InstanceError, onlinePlayers, rconPassword, setStatus, start, stop } from './instances';
 import { runFinishedStarting } from './journal';
 import { getCountdown } from './countdown';
+import { notify } from './notifications';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { startTask, type TaskHandle } from './tasks';
@@ -54,6 +55,7 @@ const WAIT_MAX_MS = 30 * 60_000;
 
 const KEY = (id: string) => `snapshots.schedule:${id}`;
 const NEXT = (id: string) => `snapshots.next:${id}`;
+const LAST = (id: string) => `snapshots.lastScheduled:${id}`;
 
 /** Timings tests shorten. */
 export const scheduleTiming = { pollMs: 3000, quietMs: 5000, quietMaxMs: 120_000 };
@@ -99,6 +101,39 @@ export function saveSnapshotSchedule(instanceId: string, schedule: SnapshotSched
 export function deleteSnapshotSchedule(instanceId: string): void {
 	write(KEY(instanceId), null);
 	write(NEXT(instanceId), null);
+	write(LAST(instanceId), null);
+}
+
+export type ScheduledResult = { at: number; ok: boolean; message: string };
+
+export function lastScheduledResult(instanceId: string): ScheduledResult | null {
+	try {
+		const raw = JSON.parse(read(LAST(instanceId)) ?? 'null');
+		return raw && typeof raw.at === 'number' && typeof raw.ok === 'boolean' && typeof raw.message === 'string' ? raw : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * How a due slot ended. A skip (other than nobody having played) or a
+ * failure was only an audit entry, so backups could stop without anyone
+ * noticing; it is notified now, once per run of them like the backup copies:
+ * a full disk is one message, not one a slot.
+ */
+function recordOutcome(instance: ServerInstance, outcome: { ok: true } | { ok: false; title: string; message: string }): void {
+	const before = lastScheduledResult(instance.id);
+	const message = outcome.ok ? 'Taken' : outcome.message;
+	write(LAST(instance.id), JSON.stringify({ at: Date.now(), ok: outcome.ok, message } satisfies ScheduledResult));
+	if (!outcome.ok && before?.ok !== false) {
+		void notify({
+			kind: 'backup',
+			instance: { id: instance.id, name: instance.name },
+			title: outcome.title,
+			message: `${outcome.message} Until a scheduled snapshot works again, no more messages about it.`,
+			at: Date.now()
+		});
+	}
 }
 
 export function copySnapshotSchedule(fromId: string, toId: string): void {
@@ -212,6 +247,11 @@ export async function evaluateSnapshotSchedule(instance: ServerInstance, now = D
 		waitingSince.set(instance.id, since);
 		if (now - since < WAIT_MAX_MS) return null;
 		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail: `waited ${WAIT_MAX_MS / 60_000} minutes: ${notReady}`, actor: 'scheduler' });
+		recordOutcome(instance, {
+			ok: false,
+			title: 'Scheduled snapshot skipped',
+			message: `The scheduled snapshot waited ${WAIT_MAX_MS / 60_000} minutes and was skipped: ${notReady}.`
+		});
 		return moveOn(instance, schedule, now);
 	}
 	if (listOperations().some((o) => o.instanceId === instance.id)) {
@@ -221,6 +261,18 @@ export async function evaluateSnapshotSchedule(instance: ServerInstance, now = D
 	if (!(await worldFolders(instance.path)).length) return moveOn(instance, schedule, now);
 	if (schedule.skipIdle && !(await playedSinceLastSnapshot(instance, active))) {
 		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail: 'nobody was online since the last snapshot', actor: 'scheduler' });
+		return moveOn(instance, schedule, now);
+	}
+	// Before stopping anything: the copy would fail on it anyway, after the stop mode had stopped the server.
+	const space = await snapshotPrompt(instance);
+	if (space.lowSpace) {
+		const detail = `only ${formatBytes(space.freeBytes ?? 0)} free, ${formatBytes(space.policy.minFreeMb * 1024 * 1024)} to keep free`;
+		audit('scheduler.snapshot_skipped', { instanceId: instance.id, detail, actor: 'scheduler' });
+		recordOutcome(instance, {
+			ok: false,
+			title: 'Scheduled snapshot skipped: disk full',
+			message: `Only ${formatBytes(space.freeBytes ?? 0)} is free on the disk; a snapshot (about ${formatBytes(space.neededBytes)}) would leave less than the ${formatBytes(space.policy.minFreeMb * 1024 * 1024)} kept free. Free some space, or lower "Keep free on the disk" in the server's Settings > Snapshots.`
+		});
 		return moveOn(instance, schedule, now);
 	}
 	moveOn(instance, schedule, now);
@@ -286,6 +338,10 @@ export function scheduledSnapshot(instance: ServerInstance, mode: 'stopped' | 'l
 			if (mode === 'live') await liveSnapshot(instance, task);
 			else if (mode === 'stop') await stoppingSnapshot(instance, task);
 			else await copy(instance, task, { reason: 'scheduled', label: 'Scheduled, server stopped' });
+			recordOutcome(instance, { ok: true });
+		} catch (err) {
+			recordOutcome(instance, { ok: false, title: 'Scheduled snapshot failed', message: err instanceof Error ? err.message : String(err) });
+			throw err;
 		} finally {
 			endOperation(instance.id);
 			running.delete(instance.id);

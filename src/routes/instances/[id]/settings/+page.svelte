@@ -989,6 +989,9 @@
 				{#if sv.snapshotEvery !== 'off' && data.snapshotNextAt && !dirtyIds.has('snapshotSchedule')}
 					<p class="hint">Next: {formatDateTime(data.snapshotNextAt)}.</p>
 				{/if}
+				{#if sv.snapshotEvery !== 'off' && data.snapshotLastScheduled && !data.snapshotLastScheduled.ok}
+					<p class="hint backup-failed">Last one, {formatDateTime(data.snapshotLastScheduled.at)}: {data.snapshotLastScheduled.message}</p>
+				{/if}
 			</div>
 			{#if sv.snapshotEvery === 'daily'}
 				<div class="field">

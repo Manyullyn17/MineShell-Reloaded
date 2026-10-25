@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Notifications for snapshots and disk space
+
+Built 2026-10-25 (ARCHITECTURE, "Scheduled snapshots" and "Low disk space"), before 1.0
+(suggested 2026-10-22, the user agreed 2026-10-25). A scheduled snapshot that fails, waits
+30 minutes in vain or is skipped for disk space sends the `backup` kind (now "Snapshot or
+backup copy failed or skipped") once per run of them, and Settings shows how the last one went
+when it did not work. The disk skip now comes before the stop mode stops the server; before,
+the copy failed after the stop. Disks running low get a kind of their own (`disk`, on by
+default, also for destinations saved before it): one message per disk, the line being the
+servers' "keep free on the disk". Not built: a server with only its own destination that is
+not the one a shared disk's message goes under does not get it.
+
 ### Mod list export
 
 Built 2026-10-25 (the server's Export page, "Mod list"; also in the server's ⋯ menu and on the

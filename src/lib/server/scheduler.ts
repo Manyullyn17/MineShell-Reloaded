@@ -8,6 +8,7 @@ import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
 import { clockSlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
+import { checkDiskSpace } from './diskspace';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
 import { runDueUpdateChecks } from './updatecheck';
@@ -178,6 +179,7 @@ async function checkAll(): Promise<void> {
 			if (state.active === 'active') await notifyIfStuck(instance, state.activeEnterTimestamp).catch(() => {});
 		}
 	}
+	await checkDiskSpace(listInstances()).catch((err) => console.error('[mineshell] disk space check failed:', err));
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
 	// Not awaited: lookups on a slow provider must not hold up restarts.
 	void runDueUpdateChecks().catch((err) => console.error('[mineshell] update checks failed:', err));
