@@ -36,7 +36,9 @@ Checks and small additions before 1.0 (suggested 2026-10-21; the user agreed to 
 backups, the status page's move, the minor dependency updates and leaving TypeScript 7
 until after 1.0, and asked to keep the rest listed here):
 
-- **Feature freeze and a release candidate**: the backups and the mod list are in; from here only `fix:` commits;
+- **Feature freeze and a release candidate**: every planned feature is in (built 2026-10-25:
+  the mod list, snapshot and disk notifications, the daily database copy, the update marker,
+  limits on going back); released as 0.33, from there only `fix:` commits;
   cut a release candidate, run it on the real install for a week or two, then 1.0. Check
   that `release.sh`, the Release workflow and the self-updater handle a pre-release tag
   (or use a last 0.x as the candidate).
