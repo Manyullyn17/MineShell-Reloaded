@@ -58,9 +58,6 @@ until after 1.0, and asked to keep the rest listed here):
 - **A restore drill**: delete a throwaway server's folder and bring it back from its backup
   folder, end to end (make it again with the same pack, copy a backup back, use it as the
   world), on a real loader.
-- **Small fixes for the freeze** (status.md): a power delay outside 1-3600 s acts at once
-  instead of being refused; Add a server answers a bad game port with status 500. And maybe
-  an update marker in the server list (Leftovers, "Update availability").
 - **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
   `crash-reports/`), even if the answer is that the disk usage page is enough.
 - **Limits on going back** (agreed in outline 2026-10-21, details when it is built): from
@@ -279,7 +276,7 @@ What the built entries in the archive left out, in one place:
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
-  calls). The server list shows no update marker.
+  calls).
 
 ---
 

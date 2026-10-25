@@ -12,6 +12,7 @@ import { listJavaRuntimes } from '#lib/server/java.js';
 import { LOADERS, type ModloaderId } from '#lib/server/modloaders.js';
 import { gaveUpAfter } from '#lib/shared/format.js';
 import { likelyCause } from '#lib/server/lastcrash.js';
+import { updateMarker } from '#lib/server/updatecheck.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const [tagRows, allTags] = await Promise.all([
@@ -67,7 +68,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 				cpuPercent: sample?.cpuPercent ?? null,
 				memoryBytes: sample?.memoryBytes ?? null,
 				memoryMaxMb: summary.instance.memoryMaxMb,
-				players: players ? { online: players.online, max: players.max, names: players.names } : null
+				players: players ? { online: players.online, max: players.max, names: players.names } : null,
+				update: updateMarker(summary.instance)
 			};
 		})
 	);

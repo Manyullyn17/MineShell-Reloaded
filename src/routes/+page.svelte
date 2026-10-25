@@ -280,6 +280,7 @@
 						<button type="button" class="tag filter-chip" aria-label="Filter Minecraft version {instance.minecraftVersion}" onclick={() => toggleMinecraftVersion(instance.minecraftVersion)}>{instance.minecraftVersion}</button>
 						<button type="button" class="tag accent filter-chip" aria-label="Filter by {instance.modloaderLabel}" onclick={() => toggleLoader(instance.modloader)}>{instance.modloaderLabel}</button>
 						<span class="tag">:{instance.port}</span>
+						{#if instance.update}<a class="tag warn update-tag" href="/instances/{instance.id}" title="Update found: {instance.update}">Update</a>{/if}
 						<div class="server-tags">
 							{#each instance.tags as tag (tag.id)}
 								{#if editingTagsFor === instance.id}
@@ -607,6 +608,10 @@
 
 	.title a:hover h2 {
 		color: var(--accent-hover);
+	}
+
+	.update-tag {
+		text-decoration: none;
 	}
 
 	.tags {

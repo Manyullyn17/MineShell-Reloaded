@@ -5,6 +5,7 @@ import {
 	checkModsForUpdates,
 	modsChecked,
 	currentNotice,
+	updateMarker,
 	forgeChannel,
 	loaderChannel,
 	pickLoaderUpdate,
@@ -112,8 +113,11 @@ describe('update notices', () => {
 
 	it('shows what it found until skipped, and a newer version again', async () => {
 		const instance = await packServer();
+		expect(updateMarker(instance)).toBeNull();
 		await checkForUpdates(instance, async () => found('1.1'));
 		expect(currentNotice(reload(instance.id))?.versionId).toBe('1.1');
+		// The server list's marker says the same.
+		expect(updateMarker(reload(instance.id))).toBe('1.1');
 
 		expect(skipNotice(instance.id, '1.1')).toBe(true);
 		await checkForUpdates(reload(instance.id), async () => found('1.1'));
@@ -171,6 +175,7 @@ describe('mod update notices', () => {
 		expect(await checkModsForUpdates(instance, found(update('sodium-1.jar', '2'), update('off-1.jar', '2', false)))).toEqual({ ok: true, count: 1 });
 		const notice = currentModNotice(instance.id)!;
 		expect(notice.updates).toEqual([{ fileName: 'sodium-1.jar', name: 'sodium', from: '1', to: '2' }]);
+		expect(updateMarker(reload(instance.id))).toBe('1 mod update');
 
 		expect(skipModNotice(instance.id, notice.fingerprint)).toBe(true);
 		await checkModsForUpdates(instance, found(update('sodium-1.jar', '2')));

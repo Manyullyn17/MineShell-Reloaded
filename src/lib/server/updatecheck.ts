@@ -6,7 +6,7 @@ import { compareSemver, forgePromotions, LOADERS, pickerLoaderVersions, type Mod
 import { compareVersions } from './java';
 import { notify } from './notifications';
 import { checkModUpdates } from './modupdates';
-import { saveModNotice, type ModNoticeEntry } from './modnotice';
+import { currentModNotice, saveModNotice, type ModNoticeEntry } from './modnotice';
 import { channelNote, UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
 
 /**
@@ -166,6 +166,14 @@ export function currentNotice(instance: ServerInstance): UpdateNotice | null {
 	const row = db.select().from(updateNotices).where(eq(updateNotices.instanceId, instance.id)).get();
 	if (!row || row.skipped || row.kind !== updateKind(instance) || row.fromVersion !== installedVersion(instance, row.kind)) return null;
 	return row;
+}
+
+/** What the overview would offer, in a few words, for the server list's marker: a pack or loader version, or how many mod updates. */
+export function updateMarker(instance: ServerInstance): string | null {
+	const notice = currentNotice(instance);
+	if (notice) return notice.label;
+	const mods = instance.updateCheck && modsChecked(instance) ? currentModNotice(instance.id) : null;
+	return mods?.updates.length ? `${mods.updates.length} mod update${mods.updates.length === 1 ? '' : 's'}` : null;
 }
 
 /** Hides this version's notice; a newer one shows again. */
