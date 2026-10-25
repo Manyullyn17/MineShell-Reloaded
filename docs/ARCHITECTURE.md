@@ -598,6 +598,16 @@ from the instance Cleanroom publishes with each release (0.5.x on). Modrinth and
 packs cannot name Cleanroom, so they ask for Forge 1.12.2 (the version migrated from, else
 14.23.5.2860) and the page says so.
 
+**Mod list export** (`modlist.ts`, the Export page's "Mod list") lists the mods in the
+folder as text, like Prism Launcher's: the server sends the entries and the page formats
+them (`lib/shared/modlist.ts`: Markdown, plain text, HTML, CSV, JSON), so changing the
+format or fields needs no round trip; Copy or a download made in the browser. Name and
+link come from the mod's record; version and authors from the jar's metadata (fabric.mod.json,
+quilt.mod.json, mods.toml, mcmod.info, read by crashdiag's `indexMods`), falling back to the
+record, since Modrinth's project has no author and CurseForge's "version" is the file's
+display name. Jars without a record, or recorded as uploaded, are named by their metadata.
+It needs only the view permission, like the Mods tab.
+
 Update checks (`updatecheck.ts`, from the scheduler's tick, not awaited by it) look for the
 next pack version on a pack server and the next loader build on a server without a pack;
 a pack's author picks its loader, so pack servers are never offered one. Per server: on or

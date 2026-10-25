@@ -221,6 +221,9 @@
 								<span>Export the server</span><span class="hint">to move it to another MineShell</span>
 							</a>
 						{/if}
+						<a role="menuitem" href="{base}/export/mods" onclick={() => (menuOpen = false)}>
+							<span>Export the mod list</span><span class="hint">Markdown, text, CSV</span>
+						</a>
 						{#if data.running && may('power')}
 							<div class="menu-head">If it's stuck</div>
 							<button type="submit" role="menuitem" class="danger" name="verb" value="kill">

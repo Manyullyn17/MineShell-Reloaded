@@ -36,11 +36,6 @@ Checks and small additions before 1.0 (suggested 2026-10-21; the user agreed to 
 backups, the status page's move, the minor dependency updates and leaving TypeScript 7
 until after 1.0, and asked to keep the rest listed here):
 
-- **Mod list export** (user's call, 2026-10-25: the last feature before 1.0, besides the rest
-  of this list): a list of a server's mods like Prism Launcher's "Export mod list", as
-  Markdown, plain text, HTML, CSV or JSON, with a choice of fields (version, author, link,
-  file name); copied or downloaded. Readable by anyone who may view the server, like the Mods
-  tab. Authors and versions MineShell has no record of come from the jar's own metadata.
 - **Feature freeze and a release candidate**: the backups and the mod list are in; from here only `fix:` commits;
   cut a release candidate, run it on the real install for a week or two, then 1.0. Check
   that `release.sh`, the Release workflow and the self-updater handle a pre-release tag

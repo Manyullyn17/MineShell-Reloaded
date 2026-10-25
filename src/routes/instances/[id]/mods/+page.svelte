@@ -215,6 +215,7 @@
 		{#if may('files')}
 			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
 		{/if}
+		<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export/mods" title="The mods as Markdown, text, HTML, CSV or JSON">Mod list</a>
 	</div>
 </div>
 

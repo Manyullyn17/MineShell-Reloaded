@@ -82,6 +82,7 @@ Manage server mods and prepare matching client installations from the same inter
 - Browse and install data pack releases directly into a world's `datapacks/` directory, and update them (a world-generation pack the world uses only with the server stopped, after a snapshot).
 - Export client installations as Modrinth `.mrpack` files, CurseForge ZIP archives, or Prism Launcher instances.
 - Put the server in the exported pack's multiplayer list, so players join without typing the address.
+- Export the mod list as Markdown, plain text, HTML, CSV or JSON, with versions, authors, links or file names, to copy or download.
 - Choose which mods and folders to include in an export. For servers installed from modpacks, include the original pack's client-side files that were not needed on the server.
 
 ### World management & snapshots

@@ -291,6 +291,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	// A client pack carries the server's configs.
 	'/instances/[id]/export': { load: on('files'), actions: { export: on('files') } },
 	'/api/instances/[id]/export': { methods: { GET: on('files') } },
+	// What the Mods tab shows, as text.
+	'/instances/[id]/export/mods': { load: on('view') },
 	// The whole server, for another MineShell (serverbundle.ts): all its files, so the same permission.
 	'/instances/[id]/export/server': { load: on('files'), actions: { export: on('files') } },
 	'/api/instances/[id]/export/server': { methods: { GET: on('files') } },

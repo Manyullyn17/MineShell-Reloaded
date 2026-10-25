@@ -27,6 +27,9 @@ export type ModJar = {
 	enabled: boolean;
 	ids: string[];
 	names: string[];
+	/** The version the jar declares, when it is a real one (not a `${file.jarVersion}` placeholder). */
+	version: string | null;
+	authors: string[];
 	/** Declared client-only (Fabric/Quilt `environment: client`); the loader skips it on a server. */
 	clientOnly: boolean;
 	/** Mod ids it declares as required, lower-cased (Minecraft and loaders included). */
@@ -89,10 +92,23 @@ function tomlRequired(text: string): string[] {
 		.flatMap((b) => tomlValues(b, 'modId'));
 }
 
+/** Fabric's authors: names, or objects with a name. */
+function personNames(list: unknown): string[] {
+	if (!Array.isArray(list)) return [];
+	return list.map((p) => (typeof p === 'string' ? p : typeof p?.name === 'string' ? p.name : '')).filter(Boolean);
+}
+
+/** A mods.toml `authors` string: "A, B and C". */
+function splitAuthors(value: string | undefined): string[] {
+	return value ? value.split(/\s*(?:,|&|\band\b)\s*/) : [];
+}
+
 async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'enabled'>> {
 	const info: Omit<ModJar, 'fileName' | 'enabled'> = {
 		ids: [],
 		names: [],
+		version: null,
+		authors: [],
 		clientOnly: false,
 		requires: [],
 		classes: new Set(),
@@ -108,6 +124,8 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			const meta = JSON.parse(fabric);
 			if (meta.id) info.ids.push(String(meta.id));
 			if (meta.name) info.names.push(String(meta.name));
+			if (meta.version) info.version ??= String(meta.version);
+			info.authors.push(...personNames(meta.authors));
 			if (meta.environment === 'client') info.clientOnly = true;
 			if (meta.depends && typeof meta.depends === 'object') info.requires.push(...Object.keys(meta.depends));
 		} catch {
@@ -121,6 +139,10 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			const meta = JSON.parse(quilt);
 			if (meta.quilt_loader?.id) info.ids.push(String(meta.quilt_loader.id));
 			if (meta.quilt_loader?.metadata?.name) info.names.push(String(meta.quilt_loader.metadata.name));
+			if (meta.quilt_loader?.version) info.version ??= String(meta.quilt_loader.version);
+			// Quilt's contributors map names to roles.
+			const contributors = meta.quilt_loader?.metadata?.contributors;
+			if (contributors && typeof contributors === 'object') info.authors.push(...Object.keys(contributors));
 			if (meta.minecraft?.environment === 'client') info.clientOnly = true;
 			for (const dep of meta.quilt_loader?.depends ?? []) {
 				const id = typeof dep === 'string' ? dep : dep?.optional ? null : dep?.id;
@@ -138,6 +160,8 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			for (const block of tomlBlocks(text, /^mods\]\]/)) {
 				info.ids.push(...tomlValues(block, 'modId'));
 				info.names.push(...tomlValues(block, 'displayName'));
+				info.version ??= tomlValues(block, 'version')[0] ?? null;
+				info.authors.push(...splitAuthors(tomlValues(block, 'authors')[0]));
 			}
 			info.requires.push(...tomlRequired(text));
 		}
@@ -146,12 +170,18 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 	if (mcmod) {
 		info.ids.push(...[...mcmod.matchAll(/"modid"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.names.push(...[...mcmod.matchAll(/"name"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
+		info.version ??= mcmod.match(/"version"\s*:\s*"([^"]+)"/)?.[1] ?? null;
+		const authorList = mcmod.match(/"(?:authorList|authors)"\s*:\s*\[([^\]]*)\]/);
+		if (authorList) info.authors.push(...[...authorList[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
 		for (const list of mcmod.matchAll(/"requiredMods"\s*:\s*\[([^\]]*)\]/g)) {
 			info.requires.push(...[...list[1].matchAll(/"([^"@]+)/g)].map((m) => m[1]));
 		}
 	}
 	info.ids = [...new Set(info.ids.map((s) => s.toLowerCase()))];
 	info.names = [...new Set(info.names)];
+	// Build tools fill these in at build time; a jar that still has one never had it replaced.
+	if (info.version && /\$\{|@[a-z_]+@/i.test(info.version)) info.version = null;
+	info.authors = [...new Set(info.authors.map((a) => a.trim()).filter(Boolean))];
 	info.requires = [...new Set(info.requires.map((s) => s.toLowerCase()))];
 	return info;
 }

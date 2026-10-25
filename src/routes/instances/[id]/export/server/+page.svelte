@@ -44,6 +44,7 @@
 <div class="subhead">
 	<nav class="subtabs" aria-label="Export">
 		<a href="/instances/{encodeURIComponent(data.instance.id)}/export">Client pack</a>
+		<a href="/instances/{encodeURIComponent(data.instance.id)}/export/mods">Mod list</a>
 		<a href="/instances/{encodeURIComponent(data.instance.id)}/export/server" aria-current="page">Move to another MineShell</a>
 	</nav>
 </div>

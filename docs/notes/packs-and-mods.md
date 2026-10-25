@@ -95,3 +95,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   files added) and a fake Cleanroom server. The user imported a Prism export of
   meatballcraft-dimensional-ascension (Cleanroom) into Prism and it worked (2026-10-09);
   .mrpack and CurseForge imports are still untested.
+
+## Mod list export
+- `modlist.ts`. The `mods` table's author is mostly empty: Modrinth's project endpoint has no
+  author (only search results carry one) and a mod is first recorded from a hash lookup. Jars
+  know their authors, so the list reads them first.
+- Uploaded (`manual`) records are named after the file (`sodium-0.6.0`), and a disabled one
+  keeps `.jar.disabled` in its name; the jar's own name is used instead.
+- Forge/NeoForge mods.toml `version` is often `${file.jarVersion}` left unreplaced; treated as
+  no version.

@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Mod list export
+
+Built 2026-10-25 (the server's Export page, "Mod list"; also in the server's ⋯ menu and on the
+Mods tab; ARCHITECTURE, "Mod list export"): the last feature before 1.0 (user's call), like
+Prism Launcher's "Export mod list". Markdown, plain text, HTML, CSV or JSON; version,
+authors, link and file name as choices (all but the file name ticked); disabled mods left out
+unless asked for. Copy or download. Anyone who may view the server may export it. Versions
+and authors come from the jar first: Modrinth's project endpoint has no author (only search
+results do), and CurseForge's recorded version is the file's display name. Not built: Prism's
+custom template.
+
 ### Snapshots sharing unchanged files
 
 Built 2026-10-22 (ARCHITECTURE, "Worlds"; notes/worlds.md), before 1.0 (user's call). Talked over
