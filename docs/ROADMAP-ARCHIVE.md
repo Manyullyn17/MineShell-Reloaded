@@ -12,7 +12,7 @@ When something on the roadmap is built, its entry moves here with its notes.
 ### Mod list export
 
 Built 2026-10-25 (the server's Export page, "Mod list"; also in the server's ⋯ menu and on the
-Mods tab; ARCHITECTURE, "Mod list export"): the last feature before 1.0 (user's call), like
+Mods tab; the ⋯ menu has one Export entry for all three tabs; ARCHITECTURE, "Mod list export"): the last feature before 1.0 (user's call), like
 Prism Launcher's "Export mod list". Markdown, plain text, HTML, CSV or JSON; version,
 authors, link and file name as choices (all but the file name ticked); disabled mods left out
 unless asked for. Copy or download. Anyone who may view the server may export it. Versions

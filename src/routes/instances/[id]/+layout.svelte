@@ -213,16 +213,9 @@
 								<span>Open console</span>
 							</a>
 						{/if}
-						{#if may('files')}
-							<a role="menuitem" href="{base}/export" onclick={() => (menuOpen = false)}>
-								<span>Export a client pack</span><span class="hint">Modrinth, CurseForge, Prism</span>
-							</a>
-							<a role="menuitem" href="{base}/export/server" onclick={() => (menuOpen = false)}>
-								<span>Export the server</span><span class="hint">to move it to another MineShell</span>
-							</a>
-						{/if}
-						<a role="menuitem" href="{base}/export/mods" onclick={() => (menuOpen = false)}>
-							<span>Export the mod list</span><span class="hint">Markdown, text, CSV</span>
+						<!-- One way in: the Export page's tabs pick what. Without the files permission only the mod list is there. -->
+						<a role="menuitem" href={may('files') ? `${base}/export` : `${base}/export/mods`} onclick={() => (menuOpen = false)}>
+							<span>Export</span><span class="hint">{may('files') ? 'pack, mod list, server' : 'mod list'}</span>
 						</a>
 						{#if data.running && may('power')}
 							<div class="menu-head">If it's stuck</div>
@@ -397,7 +390,15 @@
 		color: var(--error);
 	}
 
+	/* One line each: the label whole, the hint cut short when there is no room. */
+	.menu [role='menuitem'] > span:first-child {
+		flex: none;
+		white-space: nowrap;
+	}
+
 	.menu .hint {
+		min-width: 0;
+		white-space: nowrap;
 		font-size: 0.78rem;
 		color: var(--text-faint);
 		overflow: hidden;
