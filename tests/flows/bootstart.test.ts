@@ -10,7 +10,7 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	})
 }));
 
-const { startServersAfterBoot, serversToStartAfterBoot } = await import('#lib/server/bootstart.js');
+const { readBootId, startServersAfterBoot, serversToStartAfterBoot } = await import('#lib/server/bootstart.js');
 const { listInstances, setWantedRunning, start, stop, sendCommand } = await import('#lib/server/instances.js');
 const { beginOperation, endOperation } = await import('#lib/server/operations.js');
 const { db } = await import('#lib/server/db/index.js');
@@ -110,6 +110,28 @@ describe('starting servers after a reboot', () => {
 		expect(task.error).toBeNull();
 		expect(started).toEqual([a.id, b.id]);
 		expect(task.log).toEqual([`${a.name}: started.`, `${b.name}: started.`]);
+	});
+
+	it('counts a container restart as a boot, and an id from before that as the same boot', async () => {
+		const a = await server({ bootStart: 'always' });
+		// A container shares the host's kernel and its boot id; its PID 1 starts anew.
+		setBootId('kernel-1/1000');
+		const taskId = await startServersAfterBoot({ bootId: 'kernel-1/2000', waitMs: 1000 });
+		expect(taskId).not.toBeNull();
+		await waitForTask(taskId!, 8000);
+		expect(started).toEqual([a.id]);
+
+		// Stored by a MineShell before this: the kernel's id alone. Same kernel, same boot.
+		started.length = 0;
+		setBootId('kernel-2');
+		expect(await startServersAfterBoot({ bootId: 'kernel-2/3000' })).toBeNull();
+		expect(started).toEqual([]);
+		expect(await startServersAfterBoot({ bootId: 'kernel-2/3000' })).toBeNull();
+		expect(started).toEqual([]);
+	});
+
+	it('reads the boot as the kernel boot id and when PID 1 started', () => {
+		expect(readBootId()).toMatch(/^[0-9a-f-]{36}\/\d+$/);
 	});
 
 	it('goes on past a server that will not start, and says so', async () => {

@@ -76,8 +76,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   joins only tested with faked journal lines (no client here).
 
 ## Servers after a reboot
-- `bootstart.ts`, run from `boot()` after recovery; only a new kernel boot id starts
-  anything. Tried for real on the throwaway setup (old boot id stored, vanilla server
+- `bootstart.ts`, run from `boot()` after recovery; only a new boot (kernel boot id + PID 1's
+  start time) starts anything. The kernel's id alone missed container restarts: a container
+  sees the host's boot id (found 2026-10-25 in a Debian 12 Docker container with systemd;
+  restarting it brought MineShell back but no server; with PID 1's start time it did). Tried for real on the throwaway setup (old boot id stored, vanilla server
   started through `mstest@` and reached Done; a MineShell restart on the same boot started
   nothing). Needs MineShell itself started at boot; the user runs `npm run dev`, so the
   settings show the "not a systemd service" note (`INVOCATION_ID` unset).

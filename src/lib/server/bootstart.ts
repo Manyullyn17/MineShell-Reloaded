@@ -26,12 +26,27 @@ const BOOT_ID_KEY = 'host.bootId';
 export const BOOT_START_WAIT_MS = 3 * 60_000;
 const POLL_MS = 3000;
 
+/**
+ * The kernel's boot id and when PID 1 started (clock ticks after the kernel
+ * booted). A container (Proxmox LXC, Docker, LXD) shares the host's kernel and
+ * so its boot id; its own PID 1 starts again with every container restart.
+ */
 export function readBootId(): string | null {
 	try {
-		return readFileSync('/proc/sys/kernel/random/boot_id', 'utf8').trim() || null;
+		const kernel = readFileSync('/proc/sys/kernel/random/boot_id', 'utf8').trim();
+		if (!kernel) return null;
+		// Fields after the command name, which is in parentheses and may hold spaces; starttime is field 22.
+		const stat = readFileSync('/proc/1/stat', 'utf8');
+		const started = stat.slice(stat.lastIndexOf(')') + 2).split(' ')[19];
+		return /^\d+$/.test(started ?? '') ? `${kernel}/${started}` : kernel;
 	} catch {
 		return null;
 	}
+}
+
+/** An id stored before PID 1's start was part of it is the kernel's alone: same kernel, same boot. */
+function sameBoot(previous: string, current: string): boolean {
+	return previous === current || (!previous.includes('/') && previous === current.split('/')[0]);
 }
 
 /** Null when MineShell runs as a systemd service (and so comes back by itself after a reboot); otherwise why servers will not. */
@@ -129,7 +144,7 @@ export async function startServersAfterBoot(
 		}
 		return null;
 	}
-	if (previous === bootId) return null;
+	if (sameBoot(previous, bootId)) return null;
 
 	const servers = serversToStartAfterBoot();
 	if (servers.length === 0) return null;

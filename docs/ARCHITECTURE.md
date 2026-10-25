@@ -207,9 +207,12 @@ server back at boot without MineShell. It is not used: systemd would start the s
 before MineShell's recovery runs, so a power cut in the middle of a pack change would boot
 a half-changed server; it would start with whatever env file was last written (a start
 resolves Java and rewrites it); and every server would load at once. Instead `bootstart.ts`
-runs at MineShell startup, after `recoverInterruptedOperations`. It compares the kernel's
-boot id (`/proc/sys/kernel/random/boot_id`) with the one stored in `settings`
-(`host.bootId`): only a new boot starts anything, so restarting MineShell never does. Then
+runs at MineShell startup, after `recoverInterruptedOperations`. It compares the boot, the
+kernel's boot id (`/proc/sys/kernel/random/boot_id`) and when PID 1 started (`/proc/1/stat`),
+with the one stored in `settings` (`host.bootId`): only a new boot starts anything, so
+restarting MineShell never does. PID 1 is there for containers (Proxmox LXC, Docker, LXD),
+which share the host's kernel and boot id: restarting one restarts only its PID 1. An id
+stored before that (the kernel's alone) counts as the same boot while the kernel's matches. Then
 it starts, one at a time in list order, every ready server without an unfinished operation
 whose `boot_start` is `always`, or `if-running` with `wanted_running` set, through the
 normal `start()`, waiting for `Done (` (or the unit stopping, or 3 minutes) before the
