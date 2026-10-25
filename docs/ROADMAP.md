@@ -41,13 +41,19 @@ until after 1.0, and asked to keep the rest listed here):
   the mod list, snapshot and disk notifications, the daily database copy, the update marker,
   limits on going back); frozen from 0.33.0 on (user's call, 2026-10-25): only `fix:` commits,
   and 1.0 once it runs stable without big issues;
-  cut a release candidate, run it on the real install for a week or two, then 1.0. Check
-  that `release.sh`, the Release workflow and the self-updater handle a pre-release tag
-  (or use a last 0.x as the candidate).
-- **Updating to 1.0 from older versions**: once from an early 0.x install and once from
-  the newest, through the update button and through `install.sh`. Decide what 1.0 promises
-  about going back past migration 0019 (the only unsafe one) and what later majors may break
-  (env vars, unit files, the database).
+  cut a release candidate, run it on the real install for a week or two, then 1.0. The
+  candidate is a last 0.x (checked 2026-10-25): a `-rc` tag would need four changes (the
+  workflow publishes it as a full release, `release.sh` cannot bump from it, the release
+  notes for 1.0 would start at it, and the self-updater's `compareVersions` reads
+  `1.0.0-rc.1` as equal to `1.0.0`, so the candidate would never be offered 1.0), while a
+  0.x needs none, and going back from 1.x then lands on the tested release.
+- **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
+  built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
+  through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
+  (0.32.1 refused), each with a server running through it and its world, snapshot and
+  backup folder kept. Left: decide what 1.0 promises about going back past migration 0019
+  (the only unsafe one) and what later majors may break (env vars, unit files, the
+  database).
 - **A clean-machine install**: a fresh VM or container with Debian 12 / Ubuntu 24.04 (their
   packaged Node is older than 22.12, so the installer's "how to get Node" message gets used)
   and maybe Fedora or Arch; lingering, `machinectl` and the dedicated account
