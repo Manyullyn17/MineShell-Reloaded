@@ -54,10 +54,12 @@ until after 1.0, and asked to keep the rest listed here):
   backup folder kept. Left: decide what 1.0 promises about going back past migration 0019
   (the only unsafe one) and what later majors may break (env vars, unit files, the
   database).
-- **A clean-machine install**: a fresh VM or container with Debian 12 / Ubuntu 24.04 (their
-  packaged Node is older than 22.12, so the installer's "how to get Node" message gets used)
-  and maybe Fedora or Arch; lingering, `machinectl` and the dedicated account
-  (DEPLOYMENT) are what differs most between distributions.
+- **A clean-machine install**: done 2026-10-25 (`tests/tools/clean-install.sh`) on Debian 12,
+  Ubuntu 24.04 (both refuse their packaged Node 18, then NodeSource 22), Fedora 44 (Node 22)
+  and Arch (Node 26), each with the dedicated account, lingering and `machinectl shell`: install,
+  setup, a server with Java downloaded, a container restart. Found and fixed: servers did not
+  come back after a container restart, the too-old Node message did not say how to get one,
+  doctor failed on a Java MineShell had downloaded. Run it again on the release candidate.
 - **A real-loader checklist**: written and gone through 2026-10-25
   (`tests/tools/real-loader-checklist.md`; found the Quilt export carrying Quilt's cache,
   fixed). Go through it again on the release candidate.
