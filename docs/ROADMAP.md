@@ -64,9 +64,10 @@ until after 1.0, and asked to keep the rest listed here):
 - **Left for the user** (docs/notes/status.md): notifications to a Discord channel;
   importing the `.mrpack` and CurseForge exports; a server export and import with a
   CurseForge pack and a world of gigabytes.
-- **A restore drill**: delete a throwaway server's folder and bring it back from its backup
-  folder, end to end (make it again with the same pack, copy a backup back, use it as the
-  world), on a real loader.
+- **A restore drill**: done 2026-10-25 on Forge 1.21.1 (throwaway): a scoreboard marker
+  written over RCON, a snapshot copied to a compressed backup folder, the server deleted with
+  its files, made again under the same name, the backup folder picked in its settings (copy
+  back needs that first), the copy brought back and restored: same seed, marker there.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
