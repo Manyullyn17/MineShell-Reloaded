@@ -1047,6 +1047,10 @@
 		<p class="small muted">
 			Every release, newest first. Going back to an older one is meant for stepping back from a release that brought a
 			problem; the version after it is one update away again.
+			{#if u.releases.some((r) => r.olderThanCurrent && !r.mayGoBack)}
+				From {u.current.split('.')[0]}.0 on, that is to releases of the same major version and the last one before it;
+				the older ones are here for their notes.
+			{/if}
 		</p>
 		<ul class="release-list">
 			{#each u.releases as r (r.tag)}
@@ -1060,7 +1064,7 @@
 						{#if r.notes}<div class="release-notes">{@html notesHtml(r.notes)}</div>{/if}
 						<div class="release-actions">
 							<a class="small" href={r.url} target="_blank" rel="noreferrer">On GitHub</a>
-							{#if data.access.owner && u.installed && r.olderThanCurrent}
+							{#if data.access.owner && u.installed && r.mayGoBack}
 								<form method="POST" action="?/downgradePlan" use:enhance={() => async ({ update }) => update({ reset: false })}>
 									<input type="hidden" name="version" value={r.version} />
 									<button class="button" type="submit" disabled={!!updateTask}>Go back to this version…</button>

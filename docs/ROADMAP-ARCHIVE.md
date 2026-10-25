@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Limits on going back
+
+Built 2026-10-25 (ARCHITECTURE, "Updating itself"; DEPLOYMENT), before 1.0, as agreed in
+outline 2026-10-21: from 1.0 on, Settings > Updates goes back only within the running major,
+plus to the newest release of the previous one (the escape hatch if 1.0 has a problem). A
+rule, so 2.0 works the same; while on 0.x nothing changes. Older releases stay in the list for
+their notes, without the button (the outline said not listed; the notes are worth keeping), and
+the page says why. The installer's `MINESHELL_VERSION` stays the unsupported manual way. A test
+holds every migration after 0019 downgrade-safe, which the hatch needs. What the older version
+lacks was already named (`LEFT_BEHIND`, built with the backup folders).
+
 ### Daily copy of MineShell's database
 
 Built 2026-10-25 (ARCHITECTURE, "Updating itself"; DEPLOYMENT, restoring by hand), before 1.0.

@@ -60,16 +60,6 @@ until after 1.0, and asked to keep the rest listed here):
   world), on a real loader.
 - **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
   `crash-reports/`), even if the answer is that the disk usage page is enough.
-- **Limits on going back** (agreed in outline 2026-10-21, details when it is built): from
-  1.0 on, Settings > Updates goes back only within the same major, plus to the newest
-  release of the previous one (the escape hatch if 1.0 has a problem); older ones are not
-  listed, and the installer's `MINESHELL_VERSION` stays as the unsupported manual way. As a
-  rule, not a fixed version, so 2.0 works the same. Notes: the hatch only works while every
-  migration since the last 0.x is downgrade-safe (a test could hold that until 1.0 has
-  settled); the release candidate can be that last 0.x, so going back lands on a tested
-  release with the backups in; that 0.x would list older betas again, unless it refuses going
-  below itself once its database has seen 1.x (optional); the dialog could name the features
-  the older version lacks ("backups to other places will not run").
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
@@ -202,6 +192,9 @@ Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draw
 
 What the built entries in the archive left out, in one place:
 
+- **Limits on going back**: the last 0.x, once gone back to from 1.x, offers the older betas
+  again; it could refuse going below itself once its database has seen 1.x (optional). The
+  release candidate can be that last 0.x, so going back lands on a tested release.
 - **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
   copying them to a backup folder along with the snapshots.
 - **Disk running low**: a server with only its own notification destination hears of a shared

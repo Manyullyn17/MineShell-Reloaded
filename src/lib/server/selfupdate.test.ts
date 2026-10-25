@@ -31,6 +31,7 @@ const {
 	HISTORY_SINCE,
 	lastUpdateRun,
 	leftBehind,
+	mayGoBackTo,
 	planDowngrade,
 	releaseHistory,
 	startDowngrade,
@@ -299,6 +300,20 @@ describe('going back to an older release', () => {
 		await listed();
 		const plan = await planDowngrade('0.20.0');
 		expect(plan.refusal).toContain('Could not read');
+	});
+
+	it('goes back anywhere in beta; from 1.0 on within the major, and to the last release of the one before', () => {
+		const releases = ['2.1.0', '2.0.0', '1.4.2', '1.4.1', '1.0.0', '0.33.0', '0.32.1', '0.1.0'].map((version) => ({ version }));
+		expect(mayGoBackTo('0.1.0', releases, '0.33.0')).toBe(true);
+		expect(mayGoBackTo('1.0.0', releases, '1.4.2')).toBe(true);
+		expect(mayGoBackTo('0.33.0', releases, '1.4.2')).toBe(true);
+		expect(mayGoBackTo('0.32.1', releases, '1.4.2')).toBe(false);
+		// The same rule for 2.0.
+		expect(mayGoBackTo('2.0.0', releases, '2.1.0')).toBe(true);
+		expect(mayGoBackTo('1.4.2', releases, '2.1.0')).toBe(true);
+		expect(mayGoBackTo('1.4.1', releases, '2.1.0')).toBe(false);
+		expect(mayGoBackTo('1.0.0', releases, '2.1.0')).toBe(false);
+		expect(mayGoBackTo('2.1.0', releases, '2.1.0')).toBe(false);
 	});
 
 	it('refuses a version that is not older, or not in the list', async () => {

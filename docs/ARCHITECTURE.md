@@ -318,10 +318,14 @@ pre-update ones so neither pushes the other out. Never a file copy: in WAL mode 
 can miss what is still in `-wal`.
 
 Going back to an older release (`startDowngrade`) is the same install with the older archive
-and its own installer (whose environment variables have not changed since 0.13). Migrations
-only go forward and the older version runs on the database as it is: it skips `_migrations`
-rows it does not know, and Drizzle's selects name their columns, so added tables and columns
-go unnoticed. Each migration's first line says whether that holds for it (`-- downgrade:
+and its own installer. Which ones are offered is a rule (`mayGoBackTo`): any while on 0.x; from
+1.0 on, those of the running major and the newest release of the one before (the way out of a
+bad .0), refused otherwise, with the installer's `MINESHELL_VERSION` as the unsupported manual
+way. That way out needs every migration since the last 0.x to be downgrade-safe, which a test
+holds (`db/migrate.test.ts`) until 1.0 has settled. The older installer's environment
+variables have not changed since 0.13. Migrations only go forward and the older version runs
+on the database as it is: it skips `_migrations` rows it does not know, and Drizzle's selects
+name their columns, so added tables and columns go unnoticed. Each migration's first line says whether that holds for it (`-- downgrade:
 safe` or `-- downgrade: unsafe - <why>`; no line counts as unsafe, and a test requires the
 line). `planDowngrade` asks GitHub for the target tag's `migrations/` list; applied ones it
 lacks are read from this version's own files (or GitHub's, for ones a newer release applied

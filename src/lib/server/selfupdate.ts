@@ -217,6 +217,26 @@ export function updateBlocker(): string | null {
 	return null;
 }
 
+const major = (version: string) => Number.parseInt(version.replace(/^v/, ''), 10) || 0;
+
+/**
+ * Which older releases Settings > Updates goes back to (user's call,
+ * 2026-10-21). Any while MineShell is in beta (0.x). From 1.0 on, those of the
+ * running major and the newest of the one before: the way out when a .0
+ * brings a problem. Further back is the installer's MINESHELL_VERSION, which
+ * is not supported. A rule rather than a version, so 2.0 works the same.
+ */
+export function mayGoBackTo(version: string, releases: Pick<Release, 'version'>[] = releaseHistory(), current = currentVersion()): boolean {
+	if (compareVersions(version, current) >= 0) return false;
+	const running = major(current);
+	if (running === 0 || major(version) === running) return true;
+	return version === lastOfMajor(running - 1, releases);
+}
+
+function lastOfMajor(m: number, releases: Pick<Release, 'version'>[]): string | null {
+	return releases.map((r) => r.version).filter((v) => major(v) === m).sort(compareVersions).at(-1) ?? null;
+}
+
 /** Every release the last check found, newest first. */
 export function releaseHistory(): Release[] {
 	return lastCheck()?.releases ?? [];
@@ -279,6 +299,13 @@ export async function planDowngrade(version: string): Promise<DowngradePlan> {
 	const release = releaseHistory().find((r) => r.version === version);
 	if (!release) throw new UpdateRefused(`${version} is not in the release list: check for updates first.`);
 	if (compareVersions(version, currentVersion()) >= 0) throw new UpdateRefused(`${version} is not older than the running ${currentVersion()}.`);
+	if (!mayGoBackTo(version)) {
+		const running = major(currentVersion());
+		const hatch = lastOfMajor(running - 1, releaseHistory());
+		throw new UpdateRefused(
+			`From ${running}.0 on, MineShell goes back only to ${running}.x releases${hatch ? ` and to ${hatch}, the last ${running - 1}.x` : ''}. An older one can still be installed by hand (the installer's MINESHELL_VERSION), but that is not supported.`
+		);
+	}
 	const plan: DowngradePlan = {
 		release,
 		missing: [],

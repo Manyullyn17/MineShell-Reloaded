@@ -18,6 +18,13 @@ describe('downgrade markers', () => {
 		expect(downgradeSafe(migrationSql('0018_server_tags.sql')!)).toBe(true);
 	});
 
+	// Going back from 1.x is allowed to the last 0.x (selfupdate.ts, mayGoBackTo), which only
+	// works while every migration since is safe. Held until 1.0 has settled; an unsafe one
+	// before then needs that way out thought about first.
+	it('keeps every migration after the accounts one safe, so 1.x can go back to the last 0.x', () => {
+		expect(files.filter((f) => f.slice(0, 4) > '0019' && !downgradeSafe(migrationSql(f)!))).toEqual([]);
+	});
+
 	it('counts a migration without the line as unsafe', () => {
 		expect(downgradeSafe('CREATE TABLE x (id TEXT);')).toBe(false);
 		expect(migrationSql('9999_none.sql')).toBeNull();

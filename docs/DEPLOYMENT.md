@@ -169,7 +169,9 @@ not touch running servers.
 
 Going back: Settings > Updates lists every release with its notes, and "Go back to this
 version" on an older one installs it the same way (or run the installer with
-`MINESHELL_VERSION=v<older>`; the page's checks below do not apply then). Releases are made
+`MINESHELL_VERSION=v<older>`; the page's checks below do not apply then, and it is not
+supported). From 1.0 on the page goes back only within the running major version (1.x), and
+to the last release before it (the last 0.x) in case a .0 brings a problem. Releases are made
 to read what older ones left, not the reverse, so going back can cause problems: settings or
 files a newer version wrote may be read wrongly or not at all. The page refuses a version that
 cannot work with the database as newer releases changed it (anything before 0.13.0, whose

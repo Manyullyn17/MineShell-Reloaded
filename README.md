@@ -176,7 +176,7 @@ Keep MineShell itself up to date without manually replacing the installation.
 - Check for new releases every 12 hours or on demand.
 - View release notes and install updates from the web interface.
 - A copy of MineShell's own database (accounts, settings, history) every day, the last seven kept.
-- Browse every release with its notes, and go back to an older one when a release brings a problem (with warnings, a database backup first, and a refusal where the older version could not work with the database).
+- Browse every release with its notes, and go back to an older one of the same major version, or the last one before it, when a release brings a problem (with warnings, a database backup first, and a refusal where the older version could not work with the database).
 - Apply updates in place and restart MineShell while Minecraft servers continue running.
 
 ## Requirements
