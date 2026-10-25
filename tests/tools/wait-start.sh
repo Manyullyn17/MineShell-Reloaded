@@ -14,8 +14,11 @@ since=$(systemctl --user show "$unit" -p ActiveEnterTimestamp --value)
 [ -z "$since" ] || since="@$(date -d "$since" +%s)"
 deadline=$((SECONDS + timeout))
 while ((SECONDS < deadline)); do
-	if journalctl --user -u "$unit" --since "${since:-today}" -o cat --no-pager | grep -q ']: Done ('; then
-		echo "up: $(journalctl --user -u "$unit" --since "${since:-today}" -o cat --no-pager | grep -m1 ']: Done (')"
+	# Not grep -q: it quits at the match, journalctl still writing then dies of
+	# SIGPIPE, and pipefail counts the whole check as failed.
+	done_line=$(journalctl --user -u "$unit" --since "${since:-today}" -o cat --no-pager | grep ']: Done (' | head -n 1)
+	if [[ -n "$done_line" ]]; then
+		echo "up: $done_line"
 		exit 0
 	fi
 	state=$(systemctl --user is-active "$unit")
