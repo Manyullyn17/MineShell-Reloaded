@@ -58,10 +58,9 @@ until after 1.0, and asked to keep the rest listed here):
   packaged Node is older than 22.12, so the installer's "how to get Node" message gets used)
   and maybe Fedora or Arch; lingering, `machinectl` and the dedicated account
   (DEPLOYMENT) are what differs most between distributions.
-- **A real-loader checklist**: the repeatable real-loader run is shelved, and the last pass
-  was 2026-10-15. A one-page manual list in `tests/tools/` (install, boot, update, migrate,
-  export and import for vanilla, Fabric, Quilt, Forge, NeoForge, Cleanroom) to go through
-  before 1.0 and later releases.
+- **A real-loader checklist**: written and gone through 2026-10-25
+  (`tests/tools/real-loader-checklist.md`; found the Quilt export carrying Quilt's cache,
+  fixed). Go through it again on the release candidate.
 - **Left for the user** (docs/notes/status.md): notifications to a Discord channel;
   importing the `.mrpack` and CurseForge exports; a server export and import with a
   CurseForge pack and a world of gigabytes.
