@@ -42,6 +42,16 @@ describe('the power buttons', () => {
 		cancelCountdown(instance.id);
 	});
 
+	it('refuse a delay out of range instead of acting at once', async () => {
+		running();
+		const instance = await server();
+		for (const delay of ['7200', '-5', '1.5', 'soon']) {
+			expect(await post(actions.power, instance.id, { verb: 'stop', delay })).toMatchObject({ status: 400, data: { message: expect.stringMatching(/up to an hour/) } });
+		}
+		expect(getCountdown(instance.id)).toBeNull();
+		expect(acted('stop')).toEqual([]);
+	});
+
 	it('refuse a verb they do not know, doing nothing', async () => {
 		systemdStopped();
 		const instance = await server();

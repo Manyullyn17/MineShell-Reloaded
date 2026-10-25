@@ -228,8 +228,13 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const verb = String(form.get('verb') ?? '');
 		// The header menu's buttons carry the verb, so their delay is in the URL.
-		const delay = Number(form.get('delay') ?? url.searchParams.get('delay') ?? 0);
-		if ((verb === 'stop' || verb === 'restart') && Number.isInteger(delay) && delay > 0 && delay <= 3600) {
+		const rawDelay = String(form.get('delay') ?? url.searchParams.get('delay') ?? '').trim();
+		const delay = Number(rawDelay || 0);
+		// One out of range used to stop or restart at once: refused, since a warning was asked for.
+		if ((verb === 'stop' || verb === 'restart') && !(Number.isInteger(delay) && delay >= 0 && delay <= 3600)) {
+			return fail(400, { ok: false, message: 'A delay is a whole number of seconds, up to an hour (3600).' });
+		}
+		if ((verb === 'stop' || verb === 'restart') && delay > 0) {
 			const result = await startCountdown(instance, verb, delay);
 			return result.ok ? result : fail(400, result);
 		}
