@@ -10,6 +10,8 @@ set -uo pipefail
 unit="$1"
 timeout="${2:-600}"
 since=$(systemctl --user show "$unit" -p ActiveEnterTimestamp --value)
+# As seconds: journalctl cannot read every zone name systemctl prints ("CET").
+[ -z "$since" ] || since="@$(date -d "$since" +%s)"
 deadline=$((SECONDS + timeout))
 while ((SECONDS < deadline)); do
 	if journalctl --user -u "$unit" --since "${since:-today}" -o cat --no-pager | grep -q ']: Done ('; then
