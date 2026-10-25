@@ -199,6 +199,8 @@ describe('exporting a server', () => {
 		expect(bundleCategory('cleanroom-0.5.17.jar', tops)).toBe('never');
 		expect(bundleCategory('.mineshell/pack-change-123/x', tops)).toBe('never');
 		expect(bundleCategory('world/session.lock', tops)).toBe('never');
+		expect(bundleCategory('.cache/quilt_loader/remappedJars/minecraft-1.21.1-0.30.1/a.jar', tops)).toBe('never');
+		expect(bundleCategory('.cache/other/a', tops)).toBe('always');
 		expect(bundleCategory('world_nether/DIM-1/x', tops)).toBe('worlds');
 		expect(bundleCategory('crash-reports/a.txt', tops)).toBe('logs');
 		expect(bundleCategory('config/a.toml', tops)).toBe('always');

@@ -227,7 +227,8 @@ What the built entries in the archive left out, in one place:
   in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
 - **Server export and import**: data packs, resource packs and other files from Modrinth are
   carried, not linked (only mods/ jars are); `isLoaderInstallEntry` does not count
-  `.fabric-cache/` or `versions/` either, so loader switches and pack changes leave them (the
+  `.fabric-cache/`, `versions/` or `.cache/quilt_loader/` either, so loader switches and pack changes
+  leave them (Quilt's gains a set of remapped jars with every change; the
   export leaves them out by itself); not tried for real with a CurseForge pack or a world of
   gigabytes.
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),

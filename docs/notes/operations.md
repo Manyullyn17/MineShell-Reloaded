@@ -24,7 +24,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   knows by sha512 or with a CurseForge row are listed and downloaded again on import; the loader
   is installed again. Besides `isLoaderInstallEntry`, `.fabric-cache/` (MineShell's Fabric install
   caches the vanilla jar there, 52 MB) and `versions/` (the vanilla bundler unpacks it on start)
-  stay out: with them a small Fabric server's export was 69.7 MB, without 467 KB.
+  stay out: with them a small Fabric server's export was 69.7 MB, without 467 KB. So does
+  `.cache/quilt_loader` (2026-10-25): Quilt's remapped game jars, a set per loader build and
+  Minecraft version it ever ran (rebuilt at start); a Quilt server moved once exported 100 MB, 35 without.
 - yauzl refuses entries named outside the folder (`../x`) with its own error: `readManifest`
   reads every entry once so such a file is refused at the preview, before anything is created.
 - Tried end to end on a throwaway dev server (Fabric 1.21.1, two Modrinth mods, a hand-made one,
