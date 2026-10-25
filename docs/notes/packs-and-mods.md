@@ -24,6 +24,17 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `edge.forgecdn.net` (a redirector to `mediafilez.forgecdn.net`, the fallback source), FTB's
   configs/kubejs/own jars at `dist.modpacks.ch` with no CurseForge ids. Failed files go to
   `.mineshell/missing-downloads.json`, listed on the overview (`packs/missing.ts`).
+- Node's built-in fetch (undici 7, Node 22 and 24) crashes the whole process
+  (`assert(!this.paused)` in `Parser.finish`, thrown from a socket event, so no catch reaches
+  it) when a server sends a complete large body and closes the connection (`Connection:
+  close`, or HTTP/1.0 as Python's `http.server`) while the file write holds the stream back.
+  A connection dropped halfway fails cleanly. Found 2026-10-25 by a self-update from a local
+  Python server; undici 8.12 (needs Node 22.19) does not crash. Every host MineShell
+  downloads files from keeps connections alive (checked then: piston-data.mojang.com,
+  cdn.modrinth.com, edge/mediafilez.forgecdn.net, dist.modpacks.ch, the Forge, NeoForge,
+  Fabric and Quilt mavens, Adoptium, GitHub's release assets), so it was left as it is; a
+  host that closes would take MineShell down mid-install. `tests/tools/update-source.mjs`
+  serves with keep-alive for that reason.
 - Pack version change (`packchange.ts`): pack-shipped top-level folders move whole to
   `old-configs/<date>-<version name>/`; `server.properties`, world, player lists, logs are
   never moved or replaced. The world is whatever `level-name` says (pack side and server

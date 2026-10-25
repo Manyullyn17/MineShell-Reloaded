@@ -73,7 +73,9 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   by install.sh from the 0.2 installer on). The installer runs as a `systemd-run --user`
   transient unit, because restarting MineShell kills its children. Tried end to end on a
   throwaway install (0.1.0 -> 0.1.1 from a local http server, by writing `update.check` into
-  its DB; and a broken archive -> failed with the installer's log, old version kept). Since
+  its DB; and a broken archive -> failed with the installer's log, old version kept);
+  `tests/tools/update-source.mjs` does both (not Python's `http.server`: its closed
+  connections crash Node's fetch, docs/notes/packs-and-mods.md). Since
   2026-10-13 downloads from local addresses are refused: allow 127.0.0.1 under MineShell
   settings > System (or Activity's prompt) to repeat that. Used
   for real 2026-10-09: the user's install went 0.2.0 -> 0.2.1 through the button.
