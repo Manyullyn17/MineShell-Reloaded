@@ -20,7 +20,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
-  questions), the item icon and name leftovers, per-world game settings.
+  questions), the item icon and name leftovers, per-world game settings; log retention (the
+  Undecided entry below; moved here 2026-10-25).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
 (user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
@@ -38,7 +39,8 @@ until after 1.0, and asked to keep the rest listed here):
 
 - **Feature freeze and a release candidate**: every planned feature is in (built 2026-10-25:
   the mod list, snapshot and disk notifications, the daily database copy, the update marker,
-  limits on going back); released as 0.33, from there only `fix:` commits;
+  limits on going back); frozen from 0.33.0 on (user's call, 2026-10-25): only `fix:` commits,
+  and 1.0 once it runs stable without big issues;
   cut a release candidate, run it on the real install for a week or two, then 1.0. Check
   that `release.sh`, the Release workflow and the self-updater handle a pre-release tag
   (or use a last 0.x as the candidate).
@@ -60,8 +62,6 @@ until after 1.0, and asked to keep the rest listed here):
 - **A restore drill**: delete a throwaway server's folder and bring it back from its backup
   folder, end to end (make it again with the same pack, copy a backup back, use it as the
   world), on a real loader.
-- **Log retention**: decide the Undecided entry below (nothing deletes old `logs/` or
-  `crash-reports/`), even if the answer is that the disk usage page is enough.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
