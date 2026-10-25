@@ -18,9 +18,9 @@ describe('downgrade markers', () => {
 		expect(downgradeSafe(migrationSql('0018_server_tags.sql')!)).toBe(true);
 	});
 
-	// Going back from 1.x is allowed to the last 0.x (selfupdate.ts, mayGoBackTo), which only
-	// works while every migration since is safe. Held until 1.0 has settled; an unsafe one
-	// before then needs that way out thought about first.
+	// 1.x promises going back to any 1.x and to the last 0.x (DEPLOYMENT, "What 1.x keeps";
+	// selfupdate.ts, mayGoBackTo), which only works while every migration since is safe. A
+	// migration that changes data waits for 2.0, whose first one moves this boundary.
 	it('keeps every migration after the accounts one safe, so 1.x can go back to the last 0.x', () => {
 		expect(files.filter((f) => f.slice(0, 4) > '0019' && !downgradeSafe(migrationSql(f)!))).toEqual([]);
 	});

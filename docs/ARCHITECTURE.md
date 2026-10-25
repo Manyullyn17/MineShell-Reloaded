@@ -325,7 +325,7 @@ and its own installer. Which ones are offered is a rule (`mayGoBackTo`): any whi
 1.0 on, those of the running major and the newest release of the one before (the way out of a
 bad .0), refused otherwise, with the installer's `MINESHELL_VERSION` as the unsupported manual
 way. That way out needs every migration since the last 0.x to be downgrade-safe, which a test
-holds (`db/migrate.test.ts`) until 1.0 has settled. The older installer's environment
+holds (`db/migrate.test.ts`) for all of 1.x (DEPLOYMENT, "What 1.x keeps", is the promise). The older installer's environment
 variables have not changed since 0.13. Migrations only go forward and the older version runs
 on the database as it is: it skips `_migrations` rows it does not know, and Drizzle's selects
 name their columns, so added tables and columns go unnoticed. Each migration's first line says whether that holds for it (`-- downgrade:

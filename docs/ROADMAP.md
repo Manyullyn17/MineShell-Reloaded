@@ -21,7 +21,7 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
   questions), the item icon and name leftovers, per-world game settings; log retention (the
-  Undecided entry below; moved here 2026-10-25).
+  Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
 (user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
@@ -51,9 +51,9 @@ until after 1.0, and asked to keep the rest listed here):
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
   (0.32.1 refused), each with a server running through it and its world, snapshot and
-  backup folder kept. Left: decide what 1.0 promises about going back past migration 0019
-  (the only unsafe one) and what later majors may break (env vars, unit files, the
-  database).
+  backup folder kept. What 1.x keeps and what 2.0 may break is decided (user's call,
+  2026-10-25: DEPLOYMENT, "What 1.x keeps"); going back past the last 0.x (and so past
+  migration 0019) is neither offered nor supported.
 - **A clean-machine install**: done 2026-10-25 (`tests/tools/clean-install.sh`) on Debian 12,
   Ubuntu 24.04 (both refuse their packaged Node 18, then NodeSource 22), Fedora 44 (Node 22)
   and Arch (Node 26), each with the dedicated account, lingering and `machinectl shell`: install,
@@ -146,6 +146,16 @@ Work it needs:
 ## Later
 
 None of these depends on another.
+
+### Node's download crash (after 1.0)
+
+Node's built-in fetch (undici 7 in Node 22 and 24) can end the whole MineShell process during a
+download from a host that closes the connection after a full file (docs/notes/packs-and-mods.md
+has the details; found 2026-10-25). No host MineShell downloads from does that, so it waits
+(user's call, 2026-10-25: not during the freeze, and the fix raises the Node minimum). After
+1.0: check whether a newer Node 22/24 or Node 26 ships a fixed undici (the separate undici
+package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
+1.x minor, raising the minimum within Node 22 to 22.19.
 
 ### Status page
 

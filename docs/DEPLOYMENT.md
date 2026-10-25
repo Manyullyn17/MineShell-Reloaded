@@ -179,6 +179,30 @@ accounts change moved the password), and lists the database changes the older ve
 ignore. Versions before 0.24.0 have no release list: from there, Update brings you to the
 newest release.
 
+### What 1.x keeps
+
+Within 1.x, any release can update to any later one and go back to any earlier one, or to the
+last 0.x:
+
+- **Settings file**: variables keep their names and meaning. New ones are optional with a
+  default; none is renamed or removed.
+- **Database**: 1.x changes only add (tables, columns, indexes), so an older 1.x still works on
+  it. A change that rewrites or removes data waits for 2.0.
+- **systemd**: unit names (`<prefix>@<server id>`) and the user service stay. The template unit
+  and drop-ins are MineShell's own and are rewritten by it when they change.
+- **Data folder**: its layout stays readable by every 1.x. Where a release leaves data an older
+  one handles differently, the going-back dialog says so.
+- **Node.js**: the minimum rises only once a Node line has reached its end of life, announced in
+  the release notes before. With a Node too old, an update stops before changing anything.
+
+Not kept: the database layout for other programs, MineShell's internal endpoints (there is no
+public API), and what a server's `.mineshell/` folder holds. Going back past the last 0.x is not
+offered and not supported: releases before 0.13.0 cannot read the accounts.
+
+A 2.0 may rename settings, change data, and change the layout. Going back from 2.x to the last
+1.x stays offered unless a 2.0 change makes that impossible, which its release notes and the
+going-back dialog say.
+
 Database migrations run automatically at startup. Before every update or downgrade from the
 page, the database is copied to `$MINESHELL_DATA/db-backups/mineshell-<date>-<from>-to-<to>.db`
 (the newest five are kept), and once a day to `db-backups/daily-<date>.db` (the newest seven).
