@@ -24,7 +24,8 @@ async function refused(fields: Record<string, string>, message: string | RegExp)
 	const name = fields.name ?? named();
 	const result = await post(actions.loader, { fields: { name, minecraftVersion: '1.21.1', modloader: 'fabric', ...fields } });
 	expect(result).toMatchObject({ data: { ok: false, message: typeof message === 'string' ? message : expect.stringMatching(message) } });
-	expect((result as { status: number }).status).toBeGreaterThanOrEqual(400);
+	// The asker's mistake, not MineShell's: never a 500.
+	expect((result as { status: number }).status).toBe(400);
 	if (name) expect(made(name)).toEqual([]);
 }
 

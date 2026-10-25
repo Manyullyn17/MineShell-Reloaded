@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { creatorId } from '#lib/server/access.js';
 import { LOADER_LIST, findLoader, listReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
+	InstanceError,
 	JavaMissingError,
 	createFromArchive,
 	createFromLoader,
@@ -74,6 +75,9 @@ function memoryFrom(form: FormData) {
 	};
 }
 
+/** A choice on the form MineShell refused (InstanceError: a taken game port) is the asker's; anything else is ours. */
+const statusOf = (err: unknown) => (err instanceof InstanceError ? 400 : 500);
+
 /** The split button's "& start" item, the EULA box and the game port, each only when given. */
 function choicesFrom(form: FormData) {
 	const port = String(form.get('serverPort') ?? '').trim();
@@ -140,7 +144,7 @@ export const actions: Actions = {
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
-			return javaMissing(err, 'loader') ?? fail(500, {
+			return javaMissing(err, 'loader') ?? fail(statusOf(err), {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not create the server.'
 			});
@@ -207,7 +211,7 @@ export const actions: Actions = {
 			redirect(303, `/instances/${instance.id}`);
 		} catch (err) {
 			if (isRedirect(err)) throw err;
-			return javaMissing(err, 'install') ?? fail(500, {
+			return javaMissing(err, 'install') ?? fail(statusOf(err), {
 				ok: false,
 				message: err instanceof Error ? err.message : 'Could not install that pack.'
 			});

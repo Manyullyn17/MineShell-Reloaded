@@ -26,10 +26,9 @@ Then the raw uploads (world `PUT`, imports) and the input checks (`power`, `limi
 `addCommand`, `settings/defaults.save`, `instances/new.loader`, `portChange`, `sftp`); these
 found loader names like `toString` passing the loader checks (fixed). Not worth it:
 read-only `/api` GETs, item icons, the Chunky, map and profiler buttons. A new test for
-working code is checked by removing what it covers. Seen, left as they are: a power delay
-outside 1-3600 s acts at once instead of being refused (the buttons only offer listed
-delays), and Add a server answers a bad game port with status 500 (the message shows all
-the same).
+working code is checked by removing what it covers. Seen then and fixed 2026-10-25: a power
+delay outside 1-3600 s acted at once instead of being refused, and Add a server answered a
+bad game port with status 500.
 
 Security and permissions pass (2026-10-21): no route without its check; fixed what reached past
 its permission (management-server keys and level-name under "Change settings"), full-trust
