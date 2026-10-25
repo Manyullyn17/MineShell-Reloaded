@@ -6,7 +6,10 @@ import yazl from 'yazl';
 import type { ServerInstance } from './db/schema';
 import { TMP_DIR } from './config';
 import { downloadFile, hashFile } from './download';
-import { getProvider, listInstanceMods, DISABLED_SUFFIX } from './mods';
+import { getProvider, listInstanceMods, modsDir, DISABLED_SUFFIX } from './mods';
+import { indexMods } from './crashdiag';
+import { directorySize } from './files';
+import { modDisplayName } from './modlist';
 import { versionsFromHashes } from './mods/modrinth';
 import { packVersionFiles } from './mods/modpacksch';
 import { serverWorldName } from './packworld';
@@ -50,7 +53,7 @@ export type ExportMod = {
 	sizeBytes: number;
 };
 
-export type ExportFolder = { name: string; dir: boolean; include: boolean };
+export type ExportFolder = { name: string; dir: boolean; include: boolean; sizeBytes: number };
 
 export type ExportPlan = {
 	mods: ExportMod[];
@@ -146,19 +149,29 @@ export async function planExport(instance: ServerInstance): Promise<ExportPlan> 
 	// Every mod, server-only ones too: they do nothing on a client, but a singleplayer
 	// test world then plays like the server.
 	const rows = (await listInstanceMods(instance)).filter((m) => !m.missing);
+	const jars = new Map((await indexMods(modsDir(instance.path))).map((j) => [j.fileName, j]));
 	const mods: ExportMod[] = rows.map((m) => ({
 		file: m.fileName,
-		name: m.name,
+		name: modDisplayName(m, jars.get(m.fileName)),
 		enabled: m.enabled || m.clientOnly,
 		clientOnly: m.clientOnly,
 		sizeBytes: m.sizeBytes
 	}));
 
 	const worlds = await worldFolders(instance);
-	const folders: ExportFolder[] = (await fs.readdir(instance.path, { withFileTypes: true }))
-		.filter((e) => !neverOffered(e.name) && !worlds.has(e.name) && (e.isDirectory() || e.isFile()))
-		.map((e) => ({ name: e.name, dir: e.isDirectory(), include: CLIENT_FOLDERS.has(e.name) }))
-		.sort((a, b) => Number(b.include) - Number(a.include) || a.name.localeCompare(b.name));
+	// Sizes, so a folder of server backups is plain to see before it is ticked.
+	const offered = (await fs.readdir(instance.path, { withFileTypes: true })).filter(
+		(e) => !neverOffered(e.name) && !worlds.has(e.name) && (e.isDirectory() || e.isFile())
+	);
+	const folders: ExportFolder[] = (
+		await Promise.all(
+			offered.map(async (e) => {
+				const full = path.join(instance.path, e.name);
+				const sizeBytes = e.isDirectory() ? await directorySize(full) : ((await fs.stat(full).catch(() => null))?.size ?? 0);
+				return { name: e.name, dir: e.isDirectory(), include: CLIENT_FOLDERS.has(e.name), sizeBytes };
+			})
+		)
+	).sort((a, b) => Number(b.include) - Number(a.include) || a.name.localeCompare(b.name));
 
 	const loaderNotes: ExportPlan['loaderNotes'] = {};
 	if (instance.modloader === 'cleanroom') {

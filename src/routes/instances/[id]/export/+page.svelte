@@ -46,6 +46,24 @@
 		void data.plan.then(prime, () => undefined);
 	});
 
+	/** What the usual folders hold, so the list says more than a name. */
+	const FOLDER_NOTES: Record<string, string> = {
+		config: "Mods' settings",
+		defaultconfigs: 'Settings new worlds start with',
+		kubejs: 'KubeJS scripts and assets',
+		scripts: 'CraftTweaker scripts',
+		resources: 'Resources mods load',
+		resourcepacks: 'Resource packs',
+		shaderpacks: 'Shader packs',
+		global_packs: 'Packs every world loads',
+		patchouli_books: 'Guide books',
+		openloader: 'Packs OpenLoader loads',
+		'options.txt': 'Game options: keys, video, sound',
+		backups: 'Backups some mods make; often large',
+		journeymap: 'Map data the server keeps',
+		local: 'Data mods keep on the server'
+	};
+
 	function toggle(set: Set<string> | null, key: string, on: boolean): Set<string> {
 		const next = new Set(set);
 		if (on) next.delete(key);
@@ -194,23 +212,39 @@
 
 		<section class="panel block">
 			<h3>Folders and files</h3>
-			<p class="small muted">The world, logs and the server's own files are never included.</p>
+			<p class="small muted">
+				What else from the server's folder goes in the pack. The ticked ones are what clients use; the world, logs and
+				the server's own files are never included.
+			</p>
 			{#if plan.folders.length === 0}
 				<p class="small faint">Nothing besides the mods.</p>
 			{:else}
-				<div class="folders">
-					{#each plan.folders as f (f.name)}
-						<label class="check">
-							<input
-								type="checkbox"
-								name="folder"
-								value={f.name}
-								checked={!excludedFolders?.has(f.name)}
-								onchange={(e) => (excludedFolders = toggle(excludedFolders, f.name, e.currentTarget.checked))}
-							/>
-							<span class="mono">{f.name}{f.dir ? '/' : ''}</span>
-						</label>
-					{/each}
+				<div class="table-box list">
+					<table>
+						<tbody>
+							{#each plan.folders as f (f.name)}
+								<tr class:out={excludedFolders?.has(f.name)}>
+									<td class="tick">
+										<input
+											id="export-folder-{f.name}"
+											type="checkbox"
+											name="folder"
+											value={f.name}
+											checked={!excludedFolders?.has(f.name)}
+											onchange={(e) => (excludedFolders = toggle(excludedFolders, f.name, e.currentTarget.checked))}
+										/>
+									</td>
+									<td>
+										<label class="row-label" for="export-folder-{f.name}">
+											<span class="mono">{f.name}{f.dir ? '/' : ''}</span>
+											{#if FOLDER_NOTES[f.name]}<span class="faint small">{FOLDER_NOTES[f.name]}</span>{/if}
+										</label>
+									</td>
+									<td class="size faint small">{formatBytes(f.sizeBytes)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			{/if}
 		</section>
@@ -235,22 +269,25 @@
 			{#each plan.mods as m (m.file)}
 				{#if !excludedMods?.has(m.file)}<input type="hidden" name="mod" value={m.file} />{/if}
 			{/each}
-			<div class="table-box">
+			<!-- Scrolls inside, so a big pack does not push the Export button a few screens down. -->
+			<div class="table-box list mods">
 				<table>
 					<tbody>
 						{#each shownMods as m (m.file)}
 							<tr class:out={excludedMods?.has(m.file)}>
 								<td class="tick">
 									<input
+										id="export-mod-{m.file}"
 										type="checkbox"
-										aria-label="Include {m.name}"
 										checked={!excludedMods?.has(m.file)}
 										onchange={(e) => (excludedMods = toggle(excludedMods, m.file, e.currentTarget.checked))}
 									/>
 								</td>
 								<td>
-									<div>{m.name}</div>
-									<div class="faint small mono">{m.file}</div>
+									<label class="row-label" for="export-mod-{m.file}">
+										<span>{m.name}</span>
+										{#if m.name !== m.file.replace(/\.jar(\.disabled)?$/i, '')}<span class="faint small mono">{m.file}</span>{/if}
+									</label>
 								</td>
 								<td class="tags">
 									{#if m.clientOnly}<span class="tag accent">client-only, exported enabled</span>{/if}
@@ -311,12 +348,6 @@
 		gap: var(--space-2);
 	}
 
-	.folders {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2) var(--space-4);
-	}
-
 	.check {
 		display: flex;
 		align-items: center;
@@ -343,6 +374,44 @@
 
 	table {
 		width: 100%;
+	}
+
+	.list td {
+		padding-block: 0.35rem;
+		vertical-align: middle;
+	}
+
+	@media (max-width: 60rem) {
+		.list td {
+			padding-inline: var(--space-2);
+		}
+
+		.list .tick {
+			width: 1.5rem;
+		}
+
+		.size {
+			width: auto;
+		}
+	}
+
+	.list.mods {
+		max-height: min(28rem, 60vh);
+		overflow-y: auto;
+	}
+
+	/* The whole row's text ticks the box, like a checkbox's own label. */
+	.row-label {
+		display: flex;
+		flex-direction: column;
+		margin: 0;
+		color: var(--text);
+		font-size: inherit;
+		cursor: pointer;
+	}
+
+	.row-label .mono {
+		font-size: 0.85rem;
 	}
 
 	.tick {

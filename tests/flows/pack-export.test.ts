@@ -145,9 +145,9 @@ describe('client pack export', () => {
 		expect(mod('sodium.jar.disabled')).toMatchObject({ enabled: true, clientOnly: true });
 		expect(mod('spare.jar.disabled').enabled).toBe(false);
 		expect(plan.folders).toEqual([
-			{ name: 'config', dir: true, include: true },
-			{ name: 'kubejs', dir: true, include: true },
-			{ name: 'notes.txt', dir: false, include: false }
+			{ name: 'config', dir: true, include: true, sizeBytes: 24 },
+			{ name: 'kubejs', dir: true, include: true, sizeBytes: 2 },
+			{ name: 'notes.txt', dir: false, include: false, sizeBytes: 11 }
 		]);
 	});
 

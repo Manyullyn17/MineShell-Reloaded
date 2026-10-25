@@ -1,17 +1,24 @@
 import { inArray } from 'drizzle-orm';
-import { indexMods } from './crashdiag.js';
+import { indexMods, type ModJar } from './crashdiag.js';
 import { db } from './db/index.js';
 import { mods as modsTable, type ServerInstance } from './db/schema.js';
-import { listInstanceMods, modsDir } from './mods/index.js';
+import { listInstanceMods, modsDir, type ModRow } from './mods/index.js';
 import type { ModListEntry } from '#lib/shared/modlist.js';
+
+/**
+ * What to call a mod: its record's name, except for a jar MineShell has no
+ * record of, or recorded as uploaded (named after its file), which goes by
+ * the name in its metadata.
+ */
+export function modDisplayName(row: ModRow, jar: ModJar | undefined): string {
+	return ((row.untracked || row.source === 'manual') && jar?.names[0]) || row.name;
+}
 
 /**
  * The mods in the server's folder, for the mod list export. Name and link come
  * from where MineShell installed it from; version and authors from the jar
  * itself, which knows all of them (Modrinth's project carries no author, and
  * CurseForge's file name stands in for a version), falling back to the record.
- * A jar MineShell has no record of, or recorded as uploaded (named after its
- * file), is named by its metadata.
  */
 export async function modListEntries(instance: ServerInstance): Promise<ModListEntry[]> {
 	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing);
@@ -26,7 +33,7 @@ export async function modListEntries(instance: ServerInstance): Promise<ModListE
 		const jar = jars.get(r.fileName);
 		const recorded = r.id === null ? null : (authors.get(r.id) ?? null);
 		return {
-			name: ((r.untracked || r.source === 'manual') && jar?.names[0]) || r.name,
+			name: modDisplayName(r, jar),
 			version: jar?.version ?? r.version,
 			authors: jar?.authors.length ? jar.authors : recorded ? [recorded] : [],
 			url: r.projectUrl,
