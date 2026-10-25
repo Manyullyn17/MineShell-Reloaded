@@ -110,9 +110,11 @@ async function main() {
 		record(false, 'Data directory writable', `${DATA_DIR}: ${err.message}`);
 	}
 
-	const java = await tryRun('sh', ['-c', 'ls -d /usr/lib/jvm/*/bin/java 2>/dev/null || command -v java']);
+	// Also the runtimes MineShell downloaded itself (javadownload.ts). None is fine: a server
+	// that needs one offers the download.
+	const java = await tryRun('sh', ['-c', 'ls -d "$1"/*/bin/java /usr/lib/jvm/*/bin/java 2>/dev/null; command -v java; true', 'sh', path.join(DATA_DIR, 'java')]);
 	const javas = java.stdout.trim().split('\n').filter(Boolean);
-	record(javas.length > 0, 'Java found', javas.join(', ') || 'Install a JRE, e.g. openjdk-21-jre-headless');
+	record(true, 'Java', javas.join(', ') || 'none yet: a server that needs one offers to download it (MineShell settings > Java), or install a JRE, e.g. openjdk-21-jre-headless');
 
 	console.log('');
 	for (const r of results) {
