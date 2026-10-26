@@ -34,7 +34,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - yauzl refuses entries named outside the folder (`../x`) with its own error: `readManifest`
   reads every entry once so such a file is refused at the preview, before anything is created.
 - Tried end to end on a throwaway dev server (Fabric 1.21.1, two Modrinth mods, a hand-made one,
-  exported while running, imported, booted). A CurseForge pack only in tests.
+  exported while running, imported, booted). By the user 2026-10-26 on the dev copy of
+  MeatballCraft (CurseForge pack on Cleanroom 0.5.17, 7.1 GB world): the copy was
+  byte-identical apart from what was left unticked and the machine's ports and RCON password,
+  booted with no warning the original lacks, and was joined. Empty folders do not travel
+  (119 there; a zip holds only what has files), harmless for it.
 
 ## Mod bisect assistant
 - `bisect.ts`: ddmin over the enabled mods minus keep-on, dependency closure from crashdiag's

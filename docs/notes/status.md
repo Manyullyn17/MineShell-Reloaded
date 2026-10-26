@@ -49,7 +49,8 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-- A server export and import with a CurseForge pack and with a world of gigabytes.
+Nothing (2026-10-26): Discord notifications, the client export imports and a large server
+export and import are done (ROADMAP, "Road to 1.0").
 
 ## Real-loader passes
 

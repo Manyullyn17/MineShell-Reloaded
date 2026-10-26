@@ -68,9 +68,10 @@ until after 1.0, and asked to keep the rest listed here):
 - **A real-loader checklist**: written and gone through 2026-10-25
   (`tests/tools/real-loader-checklist.md`; found the Quilt export carrying Quilt's cache,
   fixed). Covers 0.33.1: it ran on its code.
-- **Left for the user** (docs/notes/status.md): a server export and import with a
-  CurseForge pack and a world of gigabytes. (Notifications to a Discord channel and the
-  `.mrpack` and CurseForge client export imports: done 2026-10-26.)
+- **Left for the user**: all done 2026-10-26: notifications to a Discord channel, the
+  `.mrpack` and CurseForge client export imports, and a server export and import of
+  MeatballCraft (CurseForge, Cleanroom, a 7.1 GB world; found and fixed: a backup mod's 21 GB
+  of backups went into every export, and the import screen showed no icon).
 - **A restore drill**: done 2026-10-25 on Forge 1.21.1 (throwaway): a scoreboard marker
   written over RCON, a snapshot copied to a compressed backup folder, the server deleted with
   its files, made again under the same name, the backup folder picked in its settings (copy
