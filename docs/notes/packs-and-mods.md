@@ -104,8 +104,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   0.4.4 has none.
 - Tried on a copy of slimes-adventure (117 mods: 87 linked, 20 bundled, 12 client-only pack
   files added) and a fake Cleanroom server. The user imported a Prism export of
-  meatballcraft-dimensional-ascension (Cleanroom) into Prism and it worked (2026-10-09);
-  .mrpack and CurseForge imports are still untested.
+  meatballcraft-dimensional-ascension (Cleanroom) into Prism and it worked (2026-10-09).
+  The .mrpack and CurseForge exports of a Cobblemon test server (Modrinth pack, 75 mods)
+  imported into Prism cleanly (2026-10-26); both hold the same 75 mods and the same 2449
+  other files. The CurseForge one bundles all 75 (Modrinth mods have no CurseForge ids), so
+  Prism asks before importing bundled jars ("could be malware"): expected, not a fault.
 
 ## Mod list export
 - `modlist.ts`. The `mods` table's author is mostly empty: Modrinth's project endpoint has no

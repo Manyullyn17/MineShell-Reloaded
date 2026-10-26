@@ -49,8 +49,6 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-- Importing the `.mrpack` and CurseForge client exports (`~/Downloads/mineshell-export-test`;
-  the Prism export is done).
 - A server export and import with a CurseForge pack and with a world of gigabytes.
 
 ## Real-loader passes
