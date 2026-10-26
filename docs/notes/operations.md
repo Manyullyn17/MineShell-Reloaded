@@ -38,7 +38,8 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   MeatballCraft (CurseForge pack on Cleanroom 0.5.17, 7.1 GB world): the copy was
   byte-identical apart from what was left unticked and the machine's ports and RCON password,
   booted with no warning the original lacks, and was joined. Empty folders do not travel
-  (119 there; a zip holds only what has files), harmless for it.
+  (119 there; a zip holds only what has files): left so (user's call, 2026-10-26), mods make
+  their folders when they need them.
 
 ## Mod bisect assistant
 - `bisect.ts`: ddmin over the enabled mods minus keep-on, dependency closure from crashdiag's
