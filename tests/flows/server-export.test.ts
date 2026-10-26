@@ -82,6 +82,7 @@ const FILES: Record<string, string> = {
 	'mods/old.jar.disabled': 'switched off',
 	'config/sodium.json': '{"fast":true}',
 	'whitelist.json': '[]',
+	'server-icon.png': 'the icon',
 	'logs/latest.log': 'log',
 	'dynmap/web/tiles/a.png': 'tile',
 	'backups/world/Backup--world--2026-10-15.zip': 'a backup mod\'s copy',
@@ -170,6 +171,7 @@ describe('exporting a server', () => {
 			'creative/level.dat',
 			'mods/old.jar.disabled',
 			'mods/own-build.jar',
+			'server-icon.png',
 			'server.properties',
 			'whitelist.json',
 			'world/level.dat',
@@ -231,6 +233,8 @@ describe('importing a server', () => {
 		const install = fakeInstall();
 		const preview = await stageImport(file, 'home.mineshell.zip', true);
 		expect(preview).toMatchObject({ name: 'Home', minecraftVersion: '1.21.1', modloader: 'fabric', modloaderVersion: '0.16.5', mods: 4, downloads: 2 });
+		// The server's icon shows before the import, not only once it is done.
+		expect(preview.icon).toBe(`data:image/png;base64,${Buffer.from('the icon').toString('base64')}`);
 
 		const { instance, taskId } = await importServer(preview.id, { name: 'Home again' });
 		const task = await waitForTask(taskId);

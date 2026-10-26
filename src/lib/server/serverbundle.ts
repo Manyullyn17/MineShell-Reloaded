@@ -477,26 +477,43 @@ export type ImportPreview = {
 	mods: number;
 	downloads: number;
 	included: BundleChoices;
+	/** server-icon.png as a data URL, null without one. */
+	icon: string | null;
 };
 
-type Staged = { file: string; fileName: string; owned: boolean; manifest: BundleManifest; at: number };
+type Staged = { file: string; fileName: string; owned: boolean; manifest: BundleManifest; icon: string | null; at: number };
 const staged = new Map<string, Staged>();
 const STAGE_KEEP_MS = 2 * 60 * 60_000;
 export const IMPORT_DIR = () => path.join(TMP_DIR, 'imports');
 
 /** The manifest of an export file; throws an InstanceError for anything else. */
 export async function readManifest(file: string): Promise<BundleManifest> {
+	return (await readBundle(file)).manifest;
+}
+
+const ICON_ENTRY = `${FILES}server-icon.png`;
+/** Larger than any server icon (64x64); a bigger file is not shown in the preview. */
+const ICON_MAX_BYTES = 256 * 1024;
+
+/** The manifest, and the server's icon as a data URL for the import preview. */
+async function readBundle(file: string): Promise<{ manifest: BundleManifest; icon: string | null }> {
 	let text: string | null = null;
+	let icon: string | null = null;
 	const zip = await openZip(file).catch(() => null);
 	if (!zip) throw new InstanceError('That file is not a readable zip.');
+	const read = async (entry: Parameters<typeof entryStream>[1]) => {
+		const chunks: Buffer[] = [];
+		for await (const chunk of await entryStream(zip, entry)) chunks.push(chunk as Buffer);
+		return Buffer.concat(chunks);
+	};
 	try {
 		// Every entry is read, so a damaged one, or one naming a path outside the
 		// folder (yauzl refuses those), turns the file away here, before the import.
 		await zipEntries(zip, async (entry) => {
-			if (entry.fileName !== MANIFEST || text !== null) return;
-			const chunks: Buffer[] = [];
-			for await (const chunk of await entryStream(zip, entry)) chunks.push(chunk as Buffer);
-			text = Buffer.concat(chunks).toString('utf8');
+			if (entry.fileName === MANIFEST && text === null) text = (await read(entry)).toString('utf8');
+			else if (entry.fileName === ICON_ENTRY && entry.uncompressedSize <= ICON_MAX_BYTES) {
+				icon = `data:image/png;base64,${(await read(entry)).toString('base64')}`;
+			}
 		});
 	} catch (err) {
 		throw new InstanceError(`That file cannot be imported: ${err instanceof Error ? err.message : String(err)}.`);
@@ -516,7 +533,7 @@ export async function readManifest(file: string): Promise<BundleManifest> {
 	if (manifest.format > BUNDLE_FORMAT) {
 		throw new InstanceError(`That export is from a newer MineShell (${manifest.mineshell ?? 'unknown version'}); update this one to import it.`);
 	}
-	return manifest;
+	return { manifest, icon };
 }
 
 async function sweepStaged(): Promise<void> {
@@ -535,15 +552,15 @@ async function sweepStaged(): Promise<void> {
  */
 export async function stageImport(file: string, fileName: string, owned: boolean): Promise<ImportPreview> {
 	await sweepStaged();
-	let manifest: BundleManifest;
+	let bundle: Awaited<ReturnType<typeof readBundle>>;
 	try {
-		manifest = await readManifest(file);
+		bundle = await readBundle(file);
 	} catch (err) {
 		if (owned) await fs.rm(file, { force: true });
 		throw err;
 	}
 	const id = crypto.randomUUID();
-	staged.set(id, { file, fileName, owned, manifest, at: Date.now() });
+	staged.set(id, { file, fileName, owned, ...bundle, at: Date.now() });
 	return previewOf(id, staged.get(id)!, (await fs.stat(file)).size);
 }
 
@@ -562,7 +579,8 @@ function previewOf(id: string, s: Staged, sizeBytes: number): ImportPreview {
 		exportedAt: m.exportedAt,
 		mods: m.records?.mods?.length ?? 0,
 		downloads: m.downloads?.length ?? 0,
-		included: m.included
+		included: m.included,
+		icon: s.icon
 	};
 }
 

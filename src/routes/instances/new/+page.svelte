@@ -57,6 +57,7 @@
 		mods: number;
 		downloads: number;
 		included: { worlds: boolean; snapshots: boolean; logs: boolean; mapTiles: boolean; modBackups?: boolean };
+		icon: string | null;
 	};
 	let importPreview = $state<ImportPreview | null>(null);
 	let importError = $state('');
@@ -760,6 +761,8 @@
 		<div class="picked-pack">
 			{#if mode === 'browse' && selected?.iconUrl}
 				<img src={selected.iconUrl} alt="" width="40" height="40" />
+			{:else if mode === 'import' && importPreview?.icon}
+				<img src={importPreview.icon} alt="" width="40" height="40" />
 			{:else}
 				<span class="icon-fallback" aria-hidden="true"></span>
 			{/if}
