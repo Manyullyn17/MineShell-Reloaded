@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
-import { recentDiskBreakdown } from '#lib/server/diskusage.js';
+import { BACKUP_MOD_FOLDERS, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { startServerExport } from '#lib/server/serverbundle.js';
 
 /** What each choice adds, from the Files tab's disk breakdown (measured a moment ago, or now). */
@@ -14,6 +14,7 @@ async function sizes(instance: ReturnType<typeof requireInstance>) {
 		snapshots: sum(group('mineshell')?.items.filter((i) => i.path.startsWith('.mineshell/snapshots'))),
 		logs: group('logs')?.bytes ?? 0,
 		mapTiles: sum(group('map')?.items.filter((i) => !i.outside)),
+		modBackups: sum(group('other')?.items.filter((i) => i.path in BACKUP_MOD_FOLDERS)),
 		mods: group('mods')?.bytes ?? 0
 	};
 }
@@ -32,7 +33,8 @@ export const actions: Actions = {
 				worlds: form.get('worlds') === 'on',
 				snapshots: form.get('snapshots') === 'on',
 				logs: form.get('logs') === 'on',
-				mapTiles: form.get('mapTiles') === 'on'
+				mapTiles: form.get('mapTiles') === 'on',
+				modBackups: form.get('modBackups') === 'on'
 			});
 			return { ok: true, taskId };
 		} catch (err) {

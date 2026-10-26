@@ -139,6 +139,15 @@ export const MAP_MOD_FOLDERS: Record<string, string> = {
 	dynmap: "Dynmap's map (dynmap)"
 };
 
+/**
+ * The folders backup mods keep their own world copies in, at the server's top
+ * level: AromaBackup and FTB Utilities (backups), Simple Backups (simplebackups).
+ */
+export const BACKUP_MOD_FOLDERS: Record<string, string> = {
+	backups: "A backup mod's backups (backups)",
+	simplebackups: "Simple Backups' backups (simplebackups)"
+};
+
 const MINESHELL_LABELS: Record<string, string> = {
 	'forge-backup': 'Forge kept for undoing the Cleanroom migration',
 	'playerdata-backups': 'Player data backups from the player editor'
@@ -274,7 +283,8 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 		} else if (isLoaderInstallEntry(name)) {
 			items.loader.push({ label: name, path: name, bytes: await sizeOf(full) });
 		} else {
-			items.other.push({ label: name, path: name, bytes: await sizeOf(full) });
+			const label = BACKUP_MOD_FOLDERS[name] && entry.isDirectory() ? BACKUP_MOD_FOLDERS[name] : name;
+			items.other.push({ label, path: name, bytes: await sizeOf(full) });
 		}
 	}
 

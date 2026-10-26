@@ -88,6 +88,9 @@
 			{#if !sizes || sizes.mapTiles > 0}
 				<label class="check"><input type="checkbox" name="mapTiles" /> A map mod's tiles <span class="faint mono small">{size(sizes?.mapTiles)}</span></label>
 			{/if}
+			{#if !sizes || sizes.modBackups > 0}
+				<label class="check"><input type="checkbox" name="modBackups" /> A backup mod's backups <span class="faint mono small">{size(sizes?.modBackups)}</span></label>
+			{/if}
 		</div>
 		{#if data.running}
 			<p class="small muted">The server is running: saving is paused while the world is copied, as for a world download.</p>

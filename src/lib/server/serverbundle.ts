@@ -9,7 +9,7 @@ import { db } from './db';
 import { instanceDatapacks, instanceMods, instanceTags, mods, serverInstances, serverTags, type ServerInstance } from './db/schema';
 import { TMP_DIR } from './config';
 import { hashFile } from './download';
-import { MAP_MOD_FOLDERS } from './diskusage';
+import { BACKUP_MOD_FOLDERS, MAP_MOD_FOLDERS } from './diskusage';
 import { safeJoin } from './files';
 import {
 	audit,
@@ -80,6 +80,8 @@ export type BundleChoices = {
 	logs: boolean;
 	/** A map mod's own tiles (Dynmap, the BlueMap mod). */
 	mapTiles: boolean;
+	/** A backup mod's own world copies (AromaBackup, FTB Utilities, Simple Backups). */
+	modBackups: boolean;
 };
 
 type ModRecord = {
@@ -216,6 +218,7 @@ export function bundleCategory(rel: string, worldTops: Set<string>): keyof Bundl
 	if (worldTops.has(top)) return 'worlds';
 	if (top === 'logs' || top === 'crash-reports') return 'logs';
 	if (top in MAP_MOD_FOLDERS) return 'mapTiles';
+	if (top in BACKUP_MOD_FOLDERS) return 'modBackups';
 	return 'always';
 }
 

@@ -663,7 +663,8 @@ Everything else is carried: unknown jars, configs, worlds and the rest. The load
 the import installs the same version, so `isLoaderInstallEntry` entries stay out, and so do
 `.fabric-cache/`, `versions/` and `.cache/quilt_loader/` (the vanilla jar Fabric's install caches,
 what the vanilla server unpacks on first start, and Quilt's remapped game jars), `eula.txt`, `session.lock` and what a clone skips. Worlds are
-in by default; snapshots, logs and a map mod's tiles only when ticked (`bundleCategory`). A
+in by default; snapshots, logs, a map mod's tiles and a backup mod's own backups (`backups/`,
+`simplebackups/`: AromaBackup's zips were 21 GB on a 7 GB world) only when ticked (`bundleCategory`). A
 running server's saving is paused (save-off, flush) while the zip is written and turned back on
 however it ends. The zip is built into `$DATA/tmp/server-exports/<task>/`, refused when the disk
 lacks room for it plus 1 GB, and kept an hour.

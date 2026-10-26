@@ -84,6 +84,7 @@ const FILES: Record<string, string> = {
 	'whitelist.json': '[]',
 	'logs/latest.log': 'log',
 	'dynmap/web/tiles/a.png': 'tile',
+	'backups/world/Backup--world--2026-10-15.zip': 'a backup mod\'s copy',
 	'.mineshell/snapshots/2026-10-01_120000-manual/world/level.dat': 'old snapshot',
 	'.mineshell/forge-backup/manifest.json': '{}',
 	'.mineshell/worlds.json': '{"worlds":{"creative":{"name":"Creative"}}}'
@@ -142,7 +143,7 @@ function fakeInstall() {
 }
 
 /** The export of `instance` as a file, built the way the task builds it. */
-async function exportOf(instance: Awaited<ReturnType<typeof source>>, choices = { worlds: true, snapshots: false, logs: false, mapTiles: false }) {
+async function exportOf(instance: Awaited<ReturnType<typeof source>>, choices = { worlds: true, snapshots: false, logs: false, mapTiles: false, modBackups: false }) {
 	const file = path.join(TMP_DIR, `export-${crypto.randomUUID()}.zip`);
 	let manifest: Awaited<ReturnType<typeof buildServerExport>> | null = null;
 	const id = startTask({ label: 'test export' }, async (task) => {
@@ -157,7 +158,7 @@ describe('exporting a server', () => {
 	beforeEach(() => systemdStopped());
 	afterEach(() => vi.restoreAllMocks());
 
-	it('links mods it can download again and carries everything else, without the loader, logs, snapshots or map tiles', async () => {
+	it('links mods it can download again and carries everything else, without the loader, logs, snapshots, map tiles or a backup mod\'s backups', async () => {
 		const { file, manifest } = await exportOf(await source());
 		const names = (await zipEntryNames(file))!;
 		expect(names[0]).toBe(MANIFEST);
@@ -186,10 +187,17 @@ describe('exporting a server', () => {
 		expect(manifest.server.settings).not.toHaveProperty('javaPath');
 	});
 
-	it('takes logs, snapshots and map tiles when asked, and leaves the worlds out when asked', async () => {
-		const { file } = await exportOf(await source(), { worlds: false, snapshots: true, logs: true, mapTiles: true });
+	it('takes logs, snapshots, map tiles and mod backups when asked, and leaves the worlds out when asked', async () => {
+		const { file } = await exportOf(await source(), { worlds: false, snapshots: true, logs: true, mapTiles: true, modBackups: true });
 		const files = (await zipEntryNames(file))!.filter((n) => n.startsWith('files/')).map((n) => n.slice('files/'.length));
-		expect(files).toEqual(expect.arrayContaining(['logs/latest.log', 'dynmap/web/tiles/a.png', '.mineshell/snapshots/2026-10-01_120000-manual/world/level.dat']));
+		expect(files).toEqual(
+			expect.arrayContaining([
+				'logs/latest.log',
+				'dynmap/web/tiles/a.png',
+				'.mineshell/snapshots/2026-10-01_120000-manual/world/level.dat',
+				'backups/world/Backup--world--2026-10-15.zip'
+			])
+		);
 		expect(files.some((f) => f.startsWith('world/') || f.startsWith('world_nether/') || f.startsWith('creative/'))).toBe(false);
 	});
 
@@ -203,6 +211,8 @@ describe('exporting a server', () => {
 		expect(bundleCategory('.cache/other/a', tops)).toBe('always');
 		expect(bundleCategory('world_nether/DIM-1/x', tops)).toBe('worlds');
 		expect(bundleCategory('crash-reports/a.txt', tops)).toBe('logs');
+		expect(bundleCategory('backups/world/a.zip', tops)).toBe('modBackups');
+		expect(bundleCategory('simplebackups/a.zip', tops)).toBe('modBackups');
 		expect(bundleCategory('config/a.toml', tops)).toBe('always');
 	});
 });
@@ -335,7 +345,7 @@ describe('importing a server', () => {
 			mineshell: '0.25.0',
 			exportedAt: 1,
 			server: { name: 'Evil', minecraftVersion: '1.21.1', modloader: 'fabric', modloaderVersion: '0.16.5', pack: null, settings: {} },
-			included: { worlds: true, snapshots: false, logs: false, mapTiles: false },
+			included: { worlds: true, snapshots: false, logs: false, mapTiles: false, modBackups: false },
 			downloads: [{ target: '../../outside.jar', urls: ['https://cdn.modrinth.com/data/sodium.jar'], hash: null, required: true, size: 1 }],
 			files: 2,
 			bytes: 2,

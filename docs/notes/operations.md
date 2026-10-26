@@ -27,6 +27,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   stay out: with them a small Fabric server's export was 69.7 MB, without 467 KB. So does
   `.cache/quilt_loader` (2026-10-25): Quilt's remapped game jars, a set per loader build and
   Minecraft version it ever ran (rebuilt at start); a Quilt server moved once exported 100 MB, 35 without.
+- Backup mods write their own world copies into the server folder: AromaBackup and FTB
+  Utilities (1.12) default to `backups/`, Simple Backups to `simplebackups/`. On MeatballCraft
+  AromaBackup's were 21 GB beside a 7.1 GB world; they were carried by every export until
+  they became a choice, off by default (2026-10-26).
 - yauzl refuses entries named outside the folder (`../x`) with its own error: `readManifest`
   reads every entry once so such a file is refused at the preview, before anything is created.
 - Tried end to end on a throwaway dev server (Fabric 1.21.1, two Modrinth mods, a hand-made one,

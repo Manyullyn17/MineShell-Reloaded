@@ -56,7 +56,7 @@
 		exportedAt: number;
 		mods: number;
 		downloads: number;
-		included: { worlds: boolean; snapshots: boolean; logs: boolean; mapTiles: boolean };
+		included: { worlds: boolean; snapshots: boolean; logs: boolean; mapTiles: boolean; modBackups?: boolean };
 	};
 	let importPreview = $state<ImportPreview | null>(null);
 	let importError = $state('');
