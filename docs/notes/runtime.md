@@ -152,7 +152,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `notifications.ts` (built 2026-10-15): Discord webhook, ntfy, JSON webhook; MineShell's
   destination plus per-server ones. The event bus never carried crashes: events come from
   history.ts, the scheduler and updatecheck.ts. Tried end to end against ntfy.sh (random
-  topic, read back with `/json?poll=1`); a real Discord channel is the user's to try.
+  topic, read back with `/json?poll=1`): crash with cause, memory kill folded, stuck after
+  10 min. A real Discord channel took the test message 2026-10-26 (the user's own server);
+  every kind goes through the same `request()`, so that covers the Discord side.
 
 ## playit.gg
 - `playit.ts`: agent claimed `self-managed` (its key creates tunnels; checked on a free

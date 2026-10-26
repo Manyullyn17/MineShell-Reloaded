@@ -49,8 +49,6 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-- Notifications to a Discord channel (ntfy.sh is tried: crash with cause, memory kill
-  folded, stuck after 10 min, 2026-10-15).
 - Importing the `.mrpack` and CurseForge client exports (`~/Downloads/mineshell-export-test`;
   the Prism export is done).
 - A server export and import with a CurseForge pack and with a world of gigabytes.
