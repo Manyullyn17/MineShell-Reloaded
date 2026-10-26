@@ -20,7 +20,9 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
-  questions), the item icon and name leftovers, per-world game settings; log retention (the
+  questions), the item icon and name leftovers, per-world game settings, game rules with world
+  spawn and border, the server resource pack, a mod config editor, and game mode
+  and teleport for online players (below, added 2026-10-26); log retention (the
   Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
@@ -163,6 +165,62 @@ has the details; found 2026-10-25). No host MineShell downloads from does that, 
 1.0: check whether a newer Node 22/24 or Node 26 ships a fixed undici (the separate undici
 package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
 1.x minor, raising the minimum within Node 22 to 22.19.
+
+### Game rules, world spawn and border (after 1.0)
+
+Asked for 2026-10-26 (user: no easy way to edit game rules yet; spawn and border agreed the
+same day). A list of a world's game rules with their values, edited in place: a checkbox for
+true/false, a number field for numbers. Game rules belong to the world (`level.dat`,
+`Data.GameRules`, every rule stored as a string, mod-added ones included), so they go on the
+World tab, per world, which is also a first piece of the per-world game settings in
+"Several worlds" (Leftovers). Beside them the world spawn (`SpawnX/Y/Z`) and the world
+border (`Border*`: centre, size), both already read for the Chunky planner
+(`worldSpawn`/`worldBorder` in `world.ts`) but only changeable by console command today;
+the spawn could be picked on the chunk map. Running: `setworldspawn` and `worldborder`
+over RCON; stopped: written to `level.dat` like the rules.
+
+- Reading: `level.dat` through `nbt.ts`, which gives every rule the world has, mods' too,
+  with no running server. Names and descriptions from the lang files where they have them
+  (`gamerule.<name>`), the raw name otherwise.
+- Changing a running server's active world: `gamerule <name> <value>` over RCON (a write to
+  `level.dat` would be overwritten at the next save). A stopped server or an inactive world:
+  written to `level.dat`, after a snapshot or with the same care other `level.dat` writes take.
+- To check first: 1.21.11 reworked game rules (names and how `level.dat` stores them), and
+  whether pre-1.13 worlds store every rule or only changed ones. On 1.21.9+ the management
+  server (Undecided) can list and set them with types, which would cover the running case
+  without RCON.
+
+### Server resource pack (after 1.0)
+
+Nothing yet (user, 2026-10-26: long meant to, never mentioned): the pack is only reachable as
+extra `server.properties` keys (`resource-pack`, `resource-pack-sha1`,
+`require-resource-pack`, `resource-pack-prompt`, `resource-pack-id` on newer versions).
+Typed fields in the server's settings, with MineShell downloading the pack once to work out
+the SHA-1 (and again when the URL changes), and the prompt as text. To check: which keys
+each Minecraft version reads (the prompt and `require-resource-pack` came in 1.17), and
+whether MineShell should also host an uploaded pack itself, which needs an address players
+can reach (playit.gg does not carry HTTP).
+
+### Mod config editor (after 1.0)
+
+Planned for the old MineShell and forgotten (user, 2026-10-26). Today configs are edited as
+raw text in Files. A form view for the common formats: NeoForge/Forge TOML (with the
+comments above each key as hints, and their `# Range:`/`# Allowed Values:` lines as limits
+or choices), Forge 1.12 `.cfg` (typed `B:`/`I:`/`D:`/`S:` keys and `<...>` lists), and plain
+JSON/JSON5; anything else stays in the text editor. Writes keep comments and order (edit
+the lines, not reprint the file), and a running server is told which configs it only reads
+at start. Where it lives: a Configs view per mod on the Mods tab, and the same editor from
+Files.
+
+### Game mode and teleport for online players (after 1.0)
+
+Asked for 2026-10-26. Online players can be kicked, opped and banned (overview, player
+drawer), but the player editor is read-only while they are online and nothing else acts on
+them. Buttons in the player drawer and on the overview's "Online now": game mode (the four
+modes, `gamemode <mode> <name>`; 1.12 takes the number or the name), and teleport to
+another online player, to the world spawn or to coordinates (`tp`, with the dimension where
+the version's `execute in` allows it, 1.13+). Over RCON, under the console permission
+(`console.command`) or a permission of its own.
 
 ### Status page
 
@@ -315,6 +373,16 @@ Suggested, not yet confirmed or rejected:
   every start, 2 minutes of lag, and kept 24 GB): point them out on the World tab or the disk
   usage page (AromaBackup, FTB Backups, Simple Backups, Textile Backup), with the folder they
   fill, so the owner can turn one off where snapshots and backup copies already do the job.
+- **The management server instead of RCON where there is one** (user, 2026-10-26: idea for
+  later, if it is worth it): Minecraft 1.21.9+ has a JSON-RPC API over WebSocket
+  (`management-server-enabled`/`-host`/`-port`/`-secret`, optional TLS in server.properties).
+  What it would give over RCON: structured answers instead of parsing command text (online
+  players, allowlist/ops/bans, game rules, server settings), and pushed events (player
+  joined/left, server started/stopping/saving) instead of reading the log or polling `list`.
+  Against: only 1.21.9+, which few modded packs are on yet, so RCON stays for everything
+  older and the feature means two paths for the same things. Check first: the method list on
+  a current server (and whether NeoForge/Fabric leave it as vanilla has it), and whether it
+  takes arbitrary console commands (RCON would still be needed if not).
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
