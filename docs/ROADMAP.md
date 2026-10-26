@@ -47,6 +47,9 @@ until after 1.0, and asked to keep the rest listed here):
   notes for 1.0 would start at it, and the self-updater's `compareVersions` reads
   `1.0.0-rc.1` as equal to `1.0.0`, so the candidate would never be offered 1.0), while a
   0.x needs none, and going back from 1.x then lands on the tested release.
+  **The candidate is 0.33.1** (user's call, 2026-10-26), running on the real install from
+  2026-10-26. A `fix:` release in the meantime becomes the new candidate, and only the checks
+  its fix touches are repeated.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
@@ -59,10 +62,12 @@ until after 1.0, and asked to keep the rest listed here):
   and Arch (Node 26), each with the dedicated account, lingering and `machinectl shell`: install,
   setup, a server with Java downloaded, a container restart. Found and fixed: servers did not
   come back after a container restart, the too-old Node message did not say how to get one,
-  doctor failed on a Java MineShell had downloaded. Run it again on the release candidate.
+  doctor failed on a Java MineShell had downloaded. Covers 0.33.1 (user's call, 2026-10-26):
+  it ran on its code with the fixes in, from a local archive built by the same
+  `scripts/package.sh` the Release workflow uses (which smoke-tests the published one).
 - **A real-loader checklist**: written and gone through 2026-10-25
   (`tests/tools/real-loader-checklist.md`; found the Quilt export carrying Quilt's cache,
-  fixed). Go through it again on the release candidate.
+  fixed). Covers 0.33.1: it ran on its code.
 - **Left for the user** (docs/notes/status.md): notifications to a Discord channel;
   importing the `.mrpack` and CurseForge exports; a server export and import with a
   CurseForge pack and a world of gigabytes.
