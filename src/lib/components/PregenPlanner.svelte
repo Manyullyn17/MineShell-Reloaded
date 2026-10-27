@@ -297,7 +297,7 @@
 		<ul class="legend small" aria-label="Map colours">
 			<li><span class="swatch new"></span>Generated</li>
 			<li><span class="swatch there"></span>Fully generated already</li>
-			<li class="faint">Click the map to move the center there.</li>
+			<li class="faint click-hint">Click the map to move the center there.</li>
 			<li><button type="button" class="button-quiet small-button" onclick={fit}>Show all of it</button></li>
 		</ul>
 		<ChunkMap
@@ -417,5 +417,13 @@
 	.summary {
 		margin: 0;
 		flex: 1 1 20rem;
+	}
+
+	/* Without a mouse the map says it under itself ("Tap the map ...", ChunkMap's tapHint). */
+	@media not ((hover: hover) and (pointer: fine)) {
+		/* As specific as .legend li, which shows every item as flex. */
+		.legend li.click-hint {
+			display: none;
+		}
 	}
 </style>
