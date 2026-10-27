@@ -12,7 +12,7 @@
 	import { DEFAULT_NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
 	import { blockedLabel } from '#lib/shared/downloads.js';
 	import { PORT_KIND_LABELS } from '#lib/shared/ports.js';
-	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime, plural } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { invalidateAll } from '$app/navigation';
 	import { marked } from 'marked';
@@ -500,7 +500,7 @@
 									method="POST"
 									action="?/removeBackupFolder"
 									use:enhance={({ cancel }) => {
-										if (folder.servers.length && !confirm(`Stop ${folder.servers.length} server(s) copying to ${folder.name}? The copies there stay.`)) cancel();
+										if (folder.servers.length && !confirm(`Stop ${plural(folder.servers.length, 'server')} copying to ${folder.name}? The copies there stay.`)) cancel();
 									}}
 								>
 									<input type="hidden" name="id" value={folder.id} />

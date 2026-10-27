@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
+	import { plural } from '#lib/shared/format.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
@@ -337,8 +338,8 @@
 				<h3>Your own files in the folders that move</h3>
 				{#if plan.ownFiles.back.length}
 					<p class="small muted">
-						{plan.ownFiles.back.length} file(s) the installed version did not ship (added by you, or written by a mod) come
-						back as they are:
+						{plural(plan.ownFiles.back.length, 'file')} the installed version did not ship (added by you, or written by a mod)
+						{plan.ownFiles.back.length === 1 ? 'comes' : 'come'} back as {plan.ownFiles.back.length === 1 ? 'it is' : 'they are'}:
 						{backByFolder.map(([folder, n]) => `${n} in ${folder}/`).join(', ')}.
 					</p>
 					<details>
@@ -358,7 +359,7 @@
 				{#if plan.ownFiles.stays.length}
 					<p class="notice warning small">
 						MineShell has no record of the files the installed version shipped, so it cannot tell yours from the pack's,
-						and nothing is merged. These {plan.ownFiles.stays.length} file(s) are not in the new version and stay only in
+						and nothing is merged. {plan.ownFiles.stays.length === 1 ? 'This file is' : `These ${plan.ownFiles.stays.length} files are`} not in the new version and {plan.ownFiles.stays.length === 1 ? 'stays' : 'stay'} only in
 						<code>old-configs/</code> unless ticked; tick the ones you added.
 					</p>
 					{@render ownList(plan.ownFiles.stays)}

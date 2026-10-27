@@ -241,6 +241,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
 | Svelte drops spaces at the edges of a block, so the overview read "peak today 3 ·all players" and allowed addresses "…10:00by admin" | `templates.test.ts` (every `.svelte` file) |
+| Messages counted in "3 file(s)" (pack changes, migrations, drops, backup folders) instead of words that fit the number | `wording.test.ts` (every page and server module) |
 | A file saved in the Files editor got CRLF line endings (forms send newlines so), which breaks a shell script like run.sh | `routes/instances/[id]/files/files.test.ts` ("line endings") |
 | "Open in Files" on a leftover file (disk usage) listed the file as a folder: ENOTDIR. A file link now opens its folder, in the editor or with the file picked out | `routes/instances/[id]/files/files.test.ts` ("a link to a file") |
 | Re-recording several files in one run recorded only each worker's first: setup.ts ran again per file and kept the network guard as the "real" fetch | `helpers/network.test.ts` |

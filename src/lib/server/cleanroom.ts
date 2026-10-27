@@ -19,6 +19,7 @@ import {
 import { CLEANROOM_MINECRAFT, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { compareVersions } from './java';
 import { openZipFile } from './zip';
+import { plural } from '#lib/shared/format.js';
 
 /**
  * Moving a Forge 1.12.2 pack onto Cleanroom, following Cleanroom's own
@@ -533,7 +534,7 @@ export async function applyCleanroomModFixes(
 
 	if (report.advise.length) {
 		task?.log(
-			`Cleanroom's guide suggests replacing ${report.advise.length} more mod(s); nothing was changed for these:`
+			`Cleanroom's guide suggests replacing ${plural(report.advise.length, 'more mod')}; nothing was changed for ${report.advise.length === 1 ? 'it' : 'these'}:`
 		);
 		for (const item of report.advise) {
 			task?.log(

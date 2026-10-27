@@ -1,4 +1,5 @@
 import type { Action } from 'svelte/action';
+import { plural } from '#lib/shared/format.js';
 
 /**
  * Files dropped onto one part of a page: the part that is about them (the
@@ -105,7 +106,7 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 		input.files = picked.files;
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		input.dispatchEvent(new Event('change', { bubbles: true }));
-		if (fitting.length < files.length) refuse(`${files.length - fitting.length} file(s) skipped: not ${input.accept}`);
+		if (fitting.length < files.length) refuse(`${plural(files.length - fitting.length, 'file')} skipped: not ${input.accept}`);
 	};
 
 	node.addEventListener('dragenter', enter);

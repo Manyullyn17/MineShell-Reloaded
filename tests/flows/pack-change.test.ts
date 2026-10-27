@@ -189,7 +189,7 @@ describe('changing the pack version', () => {
 		expect(install).toHaveBeenCalledTimes(1); // only the original install; same loader and Minecraft
 		expect(reload(instance.id)).toMatchObject({ packVersionId: 'v2', packVersionName: 'Test Pack v2.zip', status: 'ready' });
 		// The user and the pack both changed pack.cfg's one line: the pack's is in place, flagged for review.
-		expect(reload(instance.id).statusMessage).toMatch(/^1 config file\(s\) were changed by both you and the pack/);
+		expect(reload(instance.id).statusMessage).toMatch(/^1 config file was changed by both you and the pack/);
 	});
 
 	it('keeps a jar the user put into mods/ by hand through any number of changes', async () => {
@@ -652,7 +652,7 @@ describe('your config edits across a pack change', () => {
 			'config/mine.cfg': 'carried',
 			'kubejs/mine.js': 'carried'
 		});
-		expect(reload(instance.id).statusMessage).toMatch(/1 config file\(s\) were changed by both/);
+		expect(reload(instance.id).statusMessage).toMatch(/1 config file was changed by both/);
 
 		// The review: all three sides, then the user's side put back.
 		expect(await mergeView(instance.path, report.stamp, 'config/c.cfg')).toMatchObject({

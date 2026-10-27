@@ -8,6 +8,11 @@ export function formatBytes(bytes: number, digits = 1): string {
 	return `${i === 0 ? Math.round(value) : value.toFixed(digits)} ${units[i]}`;
 }
 
+/** "1 file", "3 files": a count with its noun in the right number (`many` where adding s is wrong). */
+export function plural(count: number, one: string, many = `${one}s`): string {
+	return `${count} ${count === 1 ? one : many}`;
+}
+
 export function formatDuration(ms: number): string {
 	if (!Number.isFinite(ms) || ms <= 0) return '0m';
 	const totalMinutes = Math.floor(ms / 60000);

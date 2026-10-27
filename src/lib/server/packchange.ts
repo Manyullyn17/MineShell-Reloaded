@@ -54,6 +54,7 @@ import {
 	type JavaPlan
 } from './instances';
 import type { JavaVendor } from './javadownload';
+import { plural } from '#lib/shared/format.js';
 
 /**
  * Moving an installed pack to another version of itself - up, down, or the
@@ -819,7 +820,7 @@ export async function applyPackChange(
 				for (const entry of report.entries) if (kept.includes(entry.path)) entry.resolved = 'mine';
 				if (kept.length) {
 					await fs.writeFile(path.join(staging, 'config-merge', 'report.json'), JSON.stringify(report, null, '\t'));
-					task.log(`Kept ${kept.length} of your own file(s) over the new version's, as asked.`);
+					task.log(`Kept ${plural(kept.length, 'file')} of your own over the new version's, as asked.`);
 				}
 				const count = (o: string) => report.entries.filter((e) => e.outcome === o && !e.resolved).length;
 				const parts = [
@@ -829,12 +830,12 @@ export async function applyPackChange(
 				].filter(([n]) => n);
 				if (parts.length) task.log(`Your config edits: ${parts.map(([n, what]) => `${n} ${what}`).join(', ')}.`);
 				if (count('conflict') + count('both-added')) {
-					problems.push(`${count('conflict') + count('both-added')} config file(s) were changed by both you and the pack; review them under Settings > Modpack.`);
+					problems.push(`${plural(count('conflict') + count('both-added'), 'config file was', 'config files were')} changed by both you and the pack; review them under Settings > Modpack.`);
 				}
 			} else if (movedConfigs.length) {
 				task.log('No record of the installed pack version’s own configs, so your edits stay in old-configs/ only.');
 				const kept = await keepOwnFiles(root, oldConfigs, plan.ownFiles.stays, opts.keepOwn);
-				if (kept.length) task.log(`Brought back ${kept.length} file(s) the new version does not ship, as asked.`);
+				if (kept.length) task.log(`Brought back ${plural(kept.length, 'file')} the new version does not ship, as asked.`);
 			}
 			// This version's originals, the base for the next change, tagged with
 			// the version the commit records (a rollback leaves a base whose tag no
@@ -944,7 +945,7 @@ export async function applyPackChange(
 		if (downloadFailures.length) problems.push(missingNotice(downloadFailures.length));
 		const blocking = plan.manual.filter((m) => m.blocking && !opts.updateMods.includes(m.fileName));
 		if (blocking.length) {
-			problems.push(`${blocking.length} of your own mod(s) have no compatible version: ${blocking.map((m) => m.name).join(', ')}.`);
+			problems.push(`${blocking.length} of your own ${blocking.length === 1 ? 'mods has' : 'mods have'} no compatible version: ${blocking.map((m) => m.name).join(', ')}.`);
 		}
 		try {
 			task.setProgress(null, 'Identifying mods');

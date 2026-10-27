@@ -137,7 +137,7 @@ describe('moving a server to another Minecraft version and loader', () => {
 			launchArgs: '@libraries/net/neoforged/unix_args.txt nogui',
 			status: 'ready'
 		});
-		expect(reload(instance.id).statusMessage).toMatch(/Disabled 2 mod\(s\)/);
+		expect(reload(instance.id).statusMessage).toMatch(/Disabled 2 mods with no build/);
 		const mods = Object.fromEntries((await listInstanceMods(reload(instance.id))).map((m) => [m.name, m]));
 		expect(mods.Chunky).toMatchObject({ version: '1.2', enabled: true });
 		expect(mods.CorgiLib).toMatchObject({ version: '2.0', enabled: false, fileName: 'corgilib-2.0.jar.disabled' });

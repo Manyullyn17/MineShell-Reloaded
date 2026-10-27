@@ -51,6 +51,7 @@ import {
 	syncUnit
 } from './instances';
 import type { JavaVendor } from './javadownload';
+import { plural } from '#lib/shared/format.js';
 
 /**
  * Moving a server to another Minecraft version and/or loader (1.20.1 Forge
@@ -324,7 +325,7 @@ export async function applyMigration(
 		prepared.delete(instance.id);
 		for (const line of done) task.log(line);
 		const problems: string[] = [];
-		if (disable.length) problems.push(`Disabled ${disable.length} mod(s) with no build for it: ${disable.join(', ')}.`);
+		if (disable.length) problems.push(`Disabled ${plural(disable.length, 'mod')} with no build for it: ${disable.join(', ')}.`);
 		for (const u of plan.dependencies.unresolved) {
 			problems.push(`${u.name} (needed by ${u.neededBy.join(', ')}) could not be installed: ${u.reason}.`);
 		}

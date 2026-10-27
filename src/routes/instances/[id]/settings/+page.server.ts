@@ -90,6 +90,7 @@ import { EVERY_MINUTES } from '#lib/shared/presets.js';
 import { checkForUpdates, checkModsForUpdates, modsChecked, updateKind } from '#lib/server/updatecheck.js';
 import { globalTarget, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
+import { plural } from '#lib/shared/format.js';
 
 /**
  * server.properties keys with a control of their own elsewhere: MineShell
@@ -748,7 +749,7 @@ export const actions: Actions = {
 		const result = await checkForUpdates(instance);
 		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
 		const mods = modsChecked(instance) ? await checkModsForUpdates(instance) : null;
-		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${mods.count} mod update(s) found; they are on the overview.` : ' The mods are up to date.';
+		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${plural(mods.count, 'mod update')} found; ${mods.count === 1 ? 'it is' : 'they are'} on the overview.` : ' The mods are up to date.';
 		return { ok: true, message: (result.found ? `${result.found.label} is available.` : 'Nothing newer to install.') + modPart };
 	},
 
@@ -895,7 +896,7 @@ export const actions: Actions = {
 		}
 		const result = await applyCleanroomModFixes(instance);
 		const done = [
-			result.disabled.length && `disabled ${result.disabled.length} mod(s)`,
+			result.disabled.length && `disabled ${plural(result.disabled.length, 'mod')}`,
 			result.added.length && `added ${result.added.join(', ')}`
 		].filter(Boolean);
 		return {
