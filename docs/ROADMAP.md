@@ -89,7 +89,12 @@ until after 1.0, and asked to keep the rest listed here):
   a real generated world, and a player's inventory with item pictures. Left out: settings,
   files and accounts (generic, stale with every UI change) and a BlueMap render. The
   redraw found eight UI bugs, fixed: words run together at block edges, "file(s)",
-  bullets in the pack preview's lists, and mod updates counted as removed and added.
+  bullets in the pack preview's lists, and mod updates counted as removed and added. A sweep
+  of every page and sub-tab at 390 and 1280 px followed (`tests/tools/page-sweep.mjs`, on the
+  screenshot world) and found nine more, fixed: Files and the All data tree on narrow
+  screens, a phone's tab bars not showing the current tab, sub-tabs hidden past the edge on
+  desktop, doubled space in two-column fields, the planner's two hints, and spacing and
+  overflow in the client export, the version and loader pickers and the player editor.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
