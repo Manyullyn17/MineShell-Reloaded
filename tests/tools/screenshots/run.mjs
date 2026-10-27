@@ -175,14 +175,16 @@ function sparseFile(file, bytes, zip = false) {
  * @typedef {{
  *   db: import('better-sqlite3').Database; dataDir: string; now: number;
  *   server: (o: ServerOptions) => void; tag: (name: string, ids: string[]) => void; sparseFile: typeof sparseFile;
- *   mod: (instanceId: string, m: ModOptions) => void; fetchJson: (url: string) => Promise<any>
+ *   mod: (instanceId: string, m: ModOptions) => void; fetchJson: (url: string) => Promise<any>;
+ *   vars: Record<string, string>
  * }} Context
  * @typedef {{ id: string; name: string; minecraft: string; loader: string; loaderVersion?: string; memoryMb?: number;
  *   pinned?: boolean; notes?: string; properties?: Record<string, string>; worldMb?: number;
  *   pack?: { source: string; project: string; version: string; versionName: string; name: string };
- *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number; startSeconds?: number } }} ServerOptions
+ *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number; startSeconds?: number; crashLog?: string } }} ServerOptions
  * @typedef {{ source: string; slug: string; name: string; summary?: string; projectUrl?: string; iconUrl?: string;
- *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; hashAlgo?: string; fromPack?: boolean; enabled?: boolean }} ModOptions
+ *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; hashAlgo?: string; fromPack?: boolean; enabled?: boolean; data?: Buffer }} ModOptions
+ * `data`: the jar's real bytes, where a page hashes the file (a pack change's preview); otherwise a sparse file of `size`.
  */
 
 /**
@@ -228,6 +230,7 @@ const ctx = {
 	dataDir: DATA,
 	now,
 	fetchJson,
+	vars: {},
 	sparseFile,
 	server(o) {
 		const dir = path.join(DATA, 'instances', o.id);
@@ -309,7 +312,8 @@ const ctx = {
 		const { id } = /** @type {{ id: number }} */ (db.prepare('SELECT id FROM mods WHERE source = ? AND slug = ?').get(m.source, m.slug));
 		const file = `mods/${m.fileName}`;
 		const instance = /** @type {{ path: string }} */ (db.prepare('SELECT path FROM server_instances WHERE id = ?').get(instanceId));
-		sparseFile(path.join(instance.path, file), Math.max(m.size ?? 0, 22), true);
+		if (m.data) fs.writeFileSync(path.join(instance.path, file), m.data);
+		else sparseFile(path.join(instance.path, file), Math.max(m.size ?? 0, 22), true);
 		db.prepare(
 			`INSERT INTO instance_mods (instance_id, mod_id, version, version_id, file_path, hash, hash_algo, enabled, from_pack, installed_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -357,8 +361,17 @@ if (serve) {
 // Long enough for the monitor's samples, the RCON polls and history's journal read (every 30 s).
 console.log(`started ${startedList}; letting them settle`);
 await sleep(40_000);
-// Pages opened once first, for what the browser does on a first visit.
-for (const page of visits) sh(process.execPath, [path.join(REPO, 'tests/tools/pageshot.mjs'), `${BASE}${page}`, path.join(DATA, 'visit.png'), '--eval', 'new Promise((r) => setTimeout(r, 4000))']);
+// Pages opened once first, for what the browser does on a first visit: an
+// overview saves its pack's icon, which takes a while from CurseForge (a fixed
+// 4 s left MeatballCraft without one), so each waits until the icon is there.
+const ICON_SAVED = `(async () => {
+	for (let i = 0; i < 60; i++) {
+		if ((await fetch('/api' + location.pathname + '/icon')).ok) return true;
+		await new Promise((r) => setTimeout(r, 500));
+	}
+	return false;
+})()`;
+for (const page of visits) sh(process.execPath, [path.join(REPO, 'tests/tools/pageshot.mjs'), `${BASE}${page}`, path.join(DATA, 'visit.png'), '--eval', ICON_SAVED]);
 
 // ---------------------------------------------------------------- shots ---
 
@@ -366,7 +379,7 @@ fs.mkdirSync(OUT, { recursive: true });
 let failed = 0;
 for (const shot of shots.filter((s) => !only.length || only.includes(s.name))) {
 	const out = path.join(OUT, `${shot.name}.png`);
-	const shotArgs = [path.join(REPO, 'tests/tools/pageshot.mjs'), `${BASE}${shot.path}`, out, '--width', String(shot.width ?? 1280), '--height', String(shot.height ?? 800)];
+	const shotArgs = [path.join(REPO, 'tests/tools/pageshot.mjs'), `${BASE}${typeof shot.path === 'function' ? shot.path(ctx.vars) : shot.path}`, out, '--width', String(shot.width ?? 1280), '--height', String(shot.height ?? 800)];
 	if (shot.waitFor) shotArgs.push('--wait-for', shot.waitFor);
 	if (shot.element) shotArgs.push('--element', shot.element);
 	for (const step of shot.steps ?? []) shotArgs.push(...('click' in step ? ['--click', step.click] : ['--eval', step.eval]));

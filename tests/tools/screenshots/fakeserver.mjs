@@ -10,7 +10,8 @@
  * Everything it shows comes from fake-server.json in its working directory
  * (the server folder), written by the scenes:
  *   { version, loader, loaderVersion, players: [{ name, uuid }], chat: [[name, text, seconds
- *     after the line before]], mspt, memoryMb, cpuPercent, uptimeMinutes, startSeconds }
+ *     after the line before]], mspt, memoryMb, cpuPercent, uptimeMinutes, startSeconds, crashLog }
+ * `crashLog`, a recorded crash's console output, makes it print that and exit 1 instead.
  * Minecraft before 1.13 (Forge, Cleanroom) logs and answers the old way: a
  * logger name on every line, `forge tps` instead of `tick query`, "2/20" in `list`.
  * A chat name '*' prints the text as a plain server line (advancements, deaths).
@@ -21,6 +22,14 @@ import fs from 'node:fs';
 import net from 'node:net';
 
 const config = JSON.parse(fs.readFileSync('fake-server.json', 'utf8'));
+
+// A server that crashes at startup: a recorded crash's console output, then
+// Java's exit code, for the crash diagnosis to read from the journal.
+if (config.crashLog) {
+	process.stdout.write(fs.readFileSync(config.crashLog, 'utf8'));
+	process.stdout.end(() => process.exit(1));
+	await new Promise(() => {});
+}
 const properties = Object.fromEntries(
 	fs
 		.readFileSync('server.properties', 'utf8')

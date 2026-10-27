@@ -1,7 +1,7 @@
 /**
  * The screenshots, one entry each (README.md here). Written to
  * docs/screenshots/<name>.png. Options are tests/tools/pageshot.mjs's:
- *   path      page on the throwaway server
+ *   path      page on the throwaway server, or a function of the scenes' `ctx.vars` giving it
  *   waitFor   text the page shows once it has what the picture needs
  *   width     viewport width (default 1280; 390 is a phone)
  *   height    exactly this tall (default 800)
@@ -16,11 +16,79 @@
  */
 export const visits = ['/instances/cobblemon', '/instances/meatballcraft'];
 
-/** @type {{ name: string; path: string; waitFor?: string; width?: number; height?: number; element?: string; steps?: ({ click: string } | { eval: string })[]; settle?: number }[]} */
+/** @type {{ name: string; path: string | ((vars: Record<string, string>) => string); waitFor?: string; width?: number; height?: number; element?: string; steps?: ({ click: string } | { eval: string })[]; settle?: number }[]} */
 export const shots = [
 	{ name: 'servers', path: '/', waitFor: 'MeatballCraft', height: 900 },
-	{ name: 'overview', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, height: 1000 },
+	// Ends above Setup's Directory row, which shows the throwaway /tmp/ms-shots path.
+	{ name: 'overview', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, height: 900 },
 	{ name: 'console', path: '/instances/survival/console', waitFor: 'gg' },
 	{ name: 'mods', path: '/instances/meatballcraft/mods', waitFor: 'AbyssalCraft', height: 1100 },
-	{ name: 'overview-phone', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, width: 390, height: 844 }
+	// The Cobblemon pack's newest version previewed against the installed one (Settings > General > Modpack;
+	// the overview's update notice links here the same way): mods updated, added, removed, configs moved.
+	{
+		name: 'pack-update',
+		path: (vars) => `/instances/cobblemon/settings?packVersion=${vars.cobblemonNewest}`,
+		waitFor: 'Pack mods:',
+		// Its list of mod changes opened, once the preview is there.
+		steps: [
+			{
+				eval: `(async () => {
+					for (let i = 0; i < 120; i++) {
+						const list = [...document.querySelectorAll('#modpack details')].find((d) => d.textContent.includes('Pack mod changes'));
+						if (list) return (list.open = true);
+						await new Promise((r) => setTimeout(r, 500));
+					}
+				})()`
+			}
+		],
+		// The panel itself: the section's own top sits under the settings' sticky save bar.
+		element: '#modpack .embedded'
+	},
+	{ name: 'overview-phone', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, width: 390, height: 844 },
+	// Feature sections: one picture each, the page without the sidebar.
+	// The crashed server's overview, its last-output panel: the verdict, the button that fixes it, the log.
+	{ name: 'crash', path: '/instances/creative', waitFor: 'Disable Simple Datapacks', element: 'main.content section.panel' },
+	{
+		// Add a server, step 2: Modrinth searched for Cobblemon, its official pack opened (live).
+		name: 'packs',
+		path: '/instances/new',
+		height: 900,
+		element: 'main.content',
+		steps: [
+			{ click: '.bottombar .button-primary' },
+			{ eval: searchAndOpen('Search modpacks', 'cobblemon', 0) }
+		]
+	},
+	{
+		// Add mods on the Cobblemon server: Modrinth's popular Fabric 1.21.1 mods, installed ones marked, one not yet installed opened (live).
+		name: 'mod-browser',
+		path: '/instances/cobblemon/mods',
+		height: 900,
+		element: 'main.content',
+		steps: [{ click: '.subtabs button:nth-of-type(3)' }, { eval: searchAndOpen(null, null, 1) }]
+	}
 ];
+
+/**
+ * Types a search (when given) into the field labelled `label`, waits for the
+ * results, and opens the `nth` one; resolves once its details have loaded.
+ * @param {string | null} label @param {string | null} term @param {number} nth
+ */
+function searchAndOpen(label, term, nth) {
+	return `(async () => {
+		const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+		await wait(3000);
+		${
+			term
+				? `const input = document.querySelector('input[aria-label="${label}"]');
+		input.value = ${JSON.stringify(term)};
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		await wait(4000);`
+				: ''
+		}
+		document.querySelectorAll('.hits .hit')[${nth}].click();
+		await wait(5000);
+		return true;
+	})()`;
+}
