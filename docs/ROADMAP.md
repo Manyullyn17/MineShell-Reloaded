@@ -23,7 +23,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   questions), the item icon and name leftovers, per-world game settings, game rules with world
   spawn and border, the server resource pack, a mod config editor, and game mode
   and teleport for online players (below, added 2026-10-26); zips and folders in Files, a
-  server list preview and shared player lists (below, added 2026-10-27); log retention (the
+  server list preview, shared player lists, earlier versions of edited files, single files
+  from a snapshot and search in files (below, added 2026-10-27); log retention (the
   Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
@@ -250,6 +251,33 @@ over RCON while it runs and to its JSON file while stopped, as the Players tab a
 for one. To decide: whether a following server can still have its own extra entries, and
 what joining a list does with the entries a server already has.
 
+### Earlier versions of edited files (after 1.0)
+
+Agreed 2026-10-27. Snapshots hold only the world: configs, mods' settings and
+`server.properties` have no copy unless a pack change made one (pack rollback). Each save
+from the file editor (and later the mod config editor and the settings' raw editor) keeps
+the version it replaced, listed per file with "go back"; going back is itself a save, so it
+can be undone. Kept per file by count and age, in `.mineshell/` (left out of exports). The
+user's call: this rather than configs in snapshots, since a file's own history is what
+someone who broke one config reaches for. To decide: whether changes from outside the
+editor (a mod rewriting its config, SFTP) are noticed and kept too.
+
+### Single files from a snapshot (after 1.0)
+
+Agreed 2026-10-27. A snapshot can be restored whole, by dimension, by chunk, or a player's
+data, but not one file: a mod's file in `world/data/`, one region file, `level.dat`. A
+snapshot browsed like Files, with "restore this file" (and folder); what it replaces goes
+to the trash. Files the running server writes (region files, `level.dat`) only with it
+stopped, as other world restores.
+
+### Search in files (after 1.0)
+
+Agreed 2026-10-27. "Which config sets this?" means opening files one by one today. A search
+across the server's text files (`config/`, `defaultconfigs/`, `kubejs/`, `serverconfig/` in
+worlds, scripts), listing matching lines that open in the editor at that line; binary files,
+`mods/`, logs (the Logs tab has its own search) and worlds' region files left out. Belongs
+with the mod config editor.
+
 ### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
@@ -424,6 +452,15 @@ Suggested, not yet confirmed or rejected:
 - **Chat to Discord** (2026-10-27, user: maybe): players' chat, deaths and advancements sent
   to a channel through the notification setup (webhook), read from the console. One way
   only: two-way needs a bot, which is what mods for it already do.
+- **Hours a server runs** (2026-10-27, user: maybe): started and stopped on a schedule (only
+  evenings, off overnight); the scheduler only restarts today. Fits beside scheduled
+  restarts, with the same delay while players are online.
+- **Command completion in the console** (2026-10-27, user: maybe): RCON cannot ask for
+  completions, so suggestions would come from a command list read from the server (`help`
+  over RCON), which modded commands make less complete.
+- **Acting on several servers at once** (2026-10-27, user: maybe): stop or restart all,
+  install the updates on offer everywhere; less needed with a few servers at home than
+  on a host with many.
 
 ---
 
