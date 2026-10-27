@@ -266,10 +266,12 @@
 {/if}
 
 <style>
+	/* Apart from the section's description above it, as other sections' first fields are. */
 	.pickers {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-3);
+		margin-top: var(--space-3);
 	}
 
 	.pickers .field {
