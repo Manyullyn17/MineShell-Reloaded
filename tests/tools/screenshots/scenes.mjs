@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yauzl from 'yauzl';
 import yazl from 'yazl';
+import { generatedWorld, versionMeta } from './worldgen.mjs';
 
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
@@ -197,7 +198,8 @@ export const scenes = [
 				memoryMb: 8192,
 				pack: { source: 'modrinth', project: '5FFgwNNP', version: packVersion.id, versionName: packVersion.version_number, name: 'Cobblemon Official Modpack [Fabric]' },
 				// Stopped three hours ago (its history ends there): two servers running are enough, and each fake holds its memory.
-				worldMb: 1900
+				// Its world is a real one (the world scene).
+				worldMb: 0
 			});
 			// Crashed at its last start (the crash scene gives it the mods): a real crash's log, printed by the fake.
 			ctx.server({
@@ -370,7 +372,148 @@ export const scenes = [
 			fs.mkdirSync(config, { recursive: true });
 			fs.writeFileSync(path.join(config, 'voicechat-server.properties'), 'port=24790\n');
 		}
+	},
+	{
+		// Cobblemon's world is a real one (worldgen.mjs: Mojang's 1.21.1 server, 32 x 32 chunks round
+		// spawn), so its chunk map and the Chunky planner have terrain; Chunky added by hand.
+		name: 'world',
+		async run(ctx) {
+			const dir = path.join(ctx.dataDir, 'instances/cobblemon');
+			const world = await generatedWorld({ cacheDir: CACHE, version: '1.21.1', seed: '8675309', radiusChunks: 16, download: cachedDownload });
+			fs.rmSync(path.join(dir, 'world'), { recursive: true, force: true });
+			fs.cpSync(world, path.join(dir, 'world'), { recursive: true });
+			fs.rmSync(path.join(dir, 'world/session.lock'), { force: true });
+
+			const [chunky] = await ctx.fetchJson(
+				`https://api.modrinth.com/v2/project/chunky/version?loaders=${encodeURIComponent('["fabric"]')}&game_versions=${encodeURIComponent('["1.21.1"]')}`
+			);
+			const project = await ctx.fetchJson('https://api.modrinth.com/v2/project/chunky');
+			const file = chunky.files.find((/** @type {{ primary: boolean }} */ f) => f.primary) ?? chunky.files[0];
+			ctx.mod('cobblemon', {
+				source: 'modrinth',
+				slug: project.id,
+				name: project.title,
+				summary: project.description,
+				projectUrl: 'https://modrinth.com/mod/chunky',
+				iconUrl: project.icon_url,
+				version: chunky.version_number,
+				versionId: chunky.id,
+				fileName: file.filename,
+				size: file.size,
+				hash: file.hashes.sha512,
+				data: await cachedDownload(file.url, file.filename)
+			});
+
+			// Mojang's EULA answered for this server: the map's block colours (and item pictures) come
+			// from the client jar, put where MineShell keeps it rather than downloaded every run.
+			ctx.db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('map:cobblemon', JSON.stringify({ eulaAccepted: true }));
+			const meta = await versionMeta('1.21.1', cachedDownload);
+			const clientDir = path.join(ctx.dataDir, 'cache/minecraft-client');
+			fs.mkdirSync(clientDir, { recursive: true });
+			fs.writeFileSync(path.join(clientDir, '1.21.1.jar'), await cachedDownload(meta.downloads.client.url, 'client-1.21.1.jar'));
+
+			// Players who have been on it: their files (written with MineShell's own NBT code) and names.
+			const { writeNbt } = await import('../../../src/lib/server/nbt.ts');
+			fs.mkdirSync(path.join(dir, 'world/playerdata'), { recursive: true });
+			for (const [i, name] of PLAYERS.slice(0, 4).entries()) {
+				const root = playerFile(i === 0 ? BRAMBLEWICK_ITEMS : BRAMBLEWICK_ITEMS.slice(0, 6 - i));
+				fs.writeFileSync(path.join(dir, `world/playerdata/${offlineUuid(name)}.dat`), writeNbt({ name: '', root, gzipped: true }));
+			}
+			fs.writeFileSync(
+				path.join(dir, 'usercache.json'),
+				JSON.stringify(PLAYERS.slice(0, 4).map((name) => ({ name, uuid: offlineUuid(name), expiresOn: '2099-01-01 00:00:00 +0000' })))
+			);
+		}
 	}
 ];
+
+// ------------------------------------------------------------ player files ---
+// NBT as nbt.ts holds it: typed tags, compounds as [name, tag] entries.
+
+/** @param {[string, any][]} entries @returns {any} nbt.ts's Compound */ const compound = (entries) => ({ type: 'compound', value: entries });
+/** @param {string} itemType @param {any[]} value */ const list = (itemType, value) => ({ type: 'list', itemType, value });
+/** @param {string} value */ const string = (value) => ({ type: 'string', value });
+/** @param {number} value */ const int = (value) => ({ type: 'int', value });
+/** @param {number} value */ const byte = (value) => ({ type: 'byte', value });
+/** @param {number} value */ const float = (value) => ({ type: 'float', value });
+/** @param {number} value */ const double = (value) => ({ type: 'double', value });
+
+/**
+ * An item in 1.21.1's layout (count + components), at an inventory slot.
+ * @param {number} slot @param {string} id @param {number} [count]
+ * @param {{ enchantments?: Record<string, number>; damage?: number; name?: string; contents?: [string, number][] }} [o]
+ */
+function item(slot, id, count = 1, o = {}) {
+	/** @type {[string, any][]} */
+	const components = [];
+	if (o.enchantments)
+		components.push(['minecraft:enchantments', compound([['levels', compound(Object.entries(o.enchantments).map(([e, l]) => [`minecraft:${e}`, int(l)]))]])]);
+	if (o.damage) components.push(['minecraft:damage', int(o.damage)]);
+	if (o.name) components.push(['minecraft:custom_name', string(JSON.stringify({ text: o.name, italic: false }))]);
+	if (o.contents)
+		components.push([
+			'minecraft:container',
+			list('compound', o.contents.map(([cid, n], s) => compound([['slot', int(s)], ['item', compound([['id', string(`minecraft:${cid}`)], ['count', int(n)]])]])))
+		]);
+	/** @type {[string, any][]} */
+	const entries = [['Slot', byte(slot)], ['id', string(`minecraft:${id}`)], ['count', int(count)]];
+	if (components.length) entries.push(['components', compound(components)]);
+	return compound(entries);
+}
+
+/** A player well into a world: tools and armour, a stocked shulker box, food, blocks. */
+const BRAMBLEWICK_ITEMS = [
+	item(0, 'netherite_sword', 1, { enchantments: { sharpness: 5, looting: 3, unbreaking: 3, mending: 1 }, name: 'Thornbite' }),
+	item(1, 'netherite_pickaxe', 1, { enchantments: { efficiency: 5, fortune: 3, unbreaking: 3, mending: 1 }, damage: 412 }),
+	item(2, 'bow', 1, { enchantments: { power: 4, infinity: 1 } }),
+	item(3, 'golden_carrot', 47),
+	item(4, 'oak_log', 64),
+	item(5, 'torch', 64),
+	item(6, 'water_bucket'),
+	item(7, 'ender_pearl', 12),
+	item(8, 'firework_rocket', 23),
+	item(9, 'shulker_box', 1, { contents: [['diamond', 23], ['emerald', 41], ['redstone', 64], ['lapis_lazuli', 36], ['amethyst_shard', 18]] }),
+	item(10, 'cobblestone', 64),
+	item(11, 'cobblestone', 64),
+	item(12, 'deepslate_bricks', 48),
+	item(13, 'glass', 32),
+	item(14, 'iron_ingot', 29),
+	item(15, 'gold_ingot', 11),
+	item(18, 'arrow', 1),
+	item(19, 'cooked_beef', 16),
+	item(21, 'spyglass'),
+	item(22, 'compass'),
+	item(27, 'lantern', 12),
+	item(28, 'chest', 6),
+	item(30, 'oak_sapling', 9),
+	item(31, 'bone_meal', 37),
+	item(100, 'netherite_boots', 1, { enchantments: { feather_falling: 4, protection: 4 } }),
+	item(101, 'diamond_leggings', 1, { enchantments: { protection: 4 } }),
+	item(102, 'elytra', 1, { damage: 120 }),
+	item(103, 'turtle_helmet'),
+	item(-106, 'shield')
+];
+
+/**
+ * A 1.21.1 player file (DataVersion 3955) holding these items.
+ * @param {any[]} items
+ */
+function playerFile(items) {
+	return compound([
+		['DataVersion', int(3955)],
+		['Dimension', string('minecraft:overworld')],
+		['Pos', list('double', [double(118.5), double(71), double(-36.5)])],
+		['Rotation', list('float', [float(212.4), float(8.1)])],
+		['Health', float(20)],
+		['foodLevel', int(18)],
+		['foodSaturationLevel', float(4.2)],
+		['XpLevel', int(31)],
+		['XpP', float(0.42)],
+		['playerGameType', int(0)],
+		['SelectedItemSlot', int(0)],
+		['Inventory', list('compound', items)],
+		['EnderItems', list('compound', [item(0, 'diamond_block', 9), item(1, 'netherite_ingot', 4), item(2, 'totem_of_undying', 1)])]
+	]);
+}
 
 export { PLAYERS };

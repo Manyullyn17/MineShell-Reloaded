@@ -28,7 +28,8 @@ Modrinth and CurseForge, and pages load mod icons and search live.
   restart on crash off so it stays crashed), `history` (a day of CPU/memory samples, a week of
   runs and player sessions), `mods` (Cobblemon's mods: its installed pack version's own file
   list, named through Modrinth by hash; MeatballCraft's ~370 from CurseForge through the
-  modpacks.ch mirror, with their real sizes; Creative build's from a recorded crash, below).
+  modpacks.ch mirror, with their real sizes; Creative build's from a recorded crash, below), `world` (Cobblemon's real world, Chunky and
+  player files, below).
   A scene gets a context (`run.mjs`, `Context`): `ctx.server({...})`, `ctx.tag(name, ids)`,
   `ctx.mod(id, {...})`, `ctx.sparseFile(path, bytes)`, `ctx.fetchJson(url)`, `ctx.vars` (values
   for shot paths, such as the pack version a preview moves to) and the database itself
@@ -37,9 +38,16 @@ Modrinth and CurseForge, and pages load mod icons and search live.
   `tests/crashdiag/fixtures` (Simple Datapacks needing Mod Menu, which a server leaves out as
   client-only) and exits 1, and its mods folder is that crash's own, as small jars holding
   just `fabric.mod.json` and the class names the diagnosis reads.
+- **The world scene**: Cobblemon gets a real Minecraft 1.21.1 world (`worldgen.mjs`:
+  Mojang's own server on seed 8675309 generates 32 x 32 chunks round spawn with `forceload`,
+  saves and stops, about a minute and a half the first time), the real Chunky jar, the EULA
+  tick with the client jar in place (map colours, item pictures), and player files written
+  with MineShell's own `nbt.ts` (Node runs it as TypeScript): Bramblewick's inventory is full
+  of enchanted gear, a stocked shulker box and blocks.
 - **The pack change preview** hashes the jars a new version ships under the same name, so
   those are Cobblemon's real jars (about 30 MB); everything else is sparse. Downloads like
-  these, and the `.mrpack` files, are kept in `~/.cache/mineshell-screenshots/` between runs.
+  these, the `.mrpack` files, Mojang's jars and the generated world are kept in
+  `~/.cache/mineshell-screenshots/` between runs (delete it to start over).
 - **`shots.mjs`**: one entry per picture: page (or a function of `ctx.vars` giving it), the
   text to wait for, size, an element to crop to, clicks or scripts first, a pause for live
   numbers. Options are those of
@@ -74,6 +82,6 @@ sizes look real and take no disk.
 ## What it cannot show (yet)
 
 Connect shows this machine's LAN address. Players joined a minute ago (their sessions come
-from the fake's log). Pages that read real game files - the player editor, chunk and world maps, item
-pictures - need a scene that writes those files (NBT, region files, the client jar for
-pictures) before they can be added.
+from the fake's log). The rendered world map (BlueMap) is not drawn: it needs a render of
+the world first. A modded item's picture needs its real jar, which the scenes do not have
+(the inventory holds vanilla items).

@@ -22,7 +22,6 @@ export const shots = [
 	// Ends above Setup's Directory row, which shows the throwaway /tmp/ms-shots path.
 	{ name: 'overview', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, height: 900 },
 	{ name: 'console', path: '/instances/survival/console', waitFor: 'gg' },
-	{ name: 'mods', path: '/instances/meatballcraft/mods', waitFor: 'AbyssalCraft', height: 1100 },
 	// The Cobblemon pack's newest version previewed against the installed one (Settings > General > Modpack;
 	// the overview's update notice links here the same way): mods updated, added, removed, configs moved.
 	{
@@ -48,6 +47,34 @@ export const shots = [
 	// Feature sections: one picture each, the page without the sidebar.
 	// The crashed server's overview, its last-output panel: the verdict, the button that fixes it, the log.
 	{ name: 'crash', path: '/instances/creative', waitFor: 'Disable Simple Datapacks', element: 'main.content section.panel' },
+	{
+		// World > Pre-generate on Cobblemon (its real world, Chunky installed): a circle of 500 blocks
+		// round spawn on the chunk map, with how many chunks are new and about how much disk they take.
+		name: 'pregen',
+		path: '/instances/cobblemon/world',
+		// Tall, since the map's height follows the window's.
+		height: 1300,
+		element: 'form.planner',
+		steps: [
+			{ click: '.subtabs button:nth-of-type(3)' },
+			{
+				eval: `(async () => {
+					const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+					const form = document.querySelector('form.planner');
+					form.querySelector('input[name=shape][value=circle]').click();
+					await wait(300);
+					[...form.querySelectorAll('button')].find((b) => b.textContent.trim() === '500').click();
+					for (let i = 0; i < 60 && !/to generate/.test(form.textContent); i++) await wait(500);
+					// Fitted again once the map is up: a fit asked for while it starts can be lost to its first view.
+					[...form.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Show all of it').click();
+					await wait(2000);
+					return true;
+				})()`
+			}
+		]
+	},
+	// A player's inventory on Cobblemon (the world scene's file for Bramblewick, offline UUID), with the game's own item pictures.
+	{ name: 'player', path: '/instances/cobblemon/players/03ada41f-ef51-3b32-80b9-702ef95b4b72', waitFor: 'Bramblewick', height: 820, settle: 4000 },
 	{
 		// Add a server, step 2: Modrinth searched for Cobblemon, its official pack opened (live).
 		name: 'packs',
