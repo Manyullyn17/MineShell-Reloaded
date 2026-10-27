@@ -72,7 +72,7 @@ const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await 
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
 
-const served: Record<string, () => Response> = {
+const served: Record<string, (init?: RequestInit) => Response> = {
 	'https://api.modrinth.com/v2/version_files': () => Response.json({})
 };
 useRecordedHttp('none', { extra: served });
@@ -83,15 +83,19 @@ for (const [slug, builds] of Object.entries(BUILDS)) {
 const sha1 = (text: string) => crypto.createHash('sha1').update(text).digest('hex');
 
 /** A pack version: mods served with sha1 hashes (as the mirror gives them), plus overrides. */
-function definePack(id: string, minecraft: string, mods: string[], overrides: Record<string, string>) {
+function definePack(id: string, minecraft: string, mods: (string | { name: string; curseforge: string })[], overrides: Record<string, string>) {
 	PACKS[id] = () => {
-		for (const m of mods) served[`https://packs.test/${id}/${m}`] = () => new Response(`${m} from ${id}`);
+		const files = mods.map((m) => (typeof m === 'string' ? { name: m, curseforge: undefined } : m));
+		for (const { name: m } of files) served[`https://packs.test/${id}/${m}`] = () => new Response(`${m} from ${id}`);
 		served[`https://packs.test/${id}/overrides.zip`] = () =>
 			new Response(new Uint8Array(zipBuffer(Object.fromEntries(Object.entries(overrides).map(([k, v]) => [`overrides/${k}`, v])))));
 		return packFromFileList({
 			name: 'Test Pack', version: `Test Pack ${id}.zip`, minecraftVersion: minecraft, modloader: 'fabric', modloaderVersion: null,
 			files: [
-				...mods.map((m) => ({ path: 'mods/', name: m, url: `https://packs.test/${id}/${m}`, sha1: sha1(`${m} from ${id}`) })),
+				...files.map(({ name: m, curseforge }) => ({
+					path: 'mods/', name: m, url: `https://packs.test/${id}/${m}`, sha1: sha1(`${m} from ${id}`),
+					...(curseforge ? { curseforge: { projectId: curseforge, fileId: `${curseforge}-${m}` } } : {})
+				})),
 				{ path: './', name: 'overrides.zip', url: `https://packs.test/${id}/overrides.zip` }
 			]
 		});
@@ -102,6 +106,10 @@ function definePack(id: string, minecraft: string, mods: string[], overrides: Re
 definePack('v1', '1.20.1', ['a.jar', 'b.jar'], { 'config/pack.cfg': 'v1', 'scripts/old.zs': 'old script', 'mods/bundled.jar': 'bundled v1' });
 definePack('v2', '1.20.1', ['a.jar', 'c.jar'], { 'config/pack.cfg': 'v2', 'scripts/new.zs': 'new script', 'kubejs/x.js': 'x', 'mods/bundled.jar': 'bundled v2' });
 definePack('v3', '1.21.1', ['a.jar'], { 'config/pack.cfg': 'v3' });
+// A mod updated to a build with another file name: by its CurseForge project (jei), or the
+// Modrinth project its hash belongs to (sodium); homemade-*.jar has neither.
+definePack('r1', '1.20.1', [{ name: 'jei-1.0.jar', curseforge: '238222' }, 'sodium-1.0.jar', 'homemade-1.0.jar'], {});
+definePack('r2', '1.20.1', [{ name: 'jei-1.1.jar', curseforge: '238222' }, 'sodium-1.1.jar', 'homemade-1.1.jar'], {});
 
 let install: MockInstance<Modloader['install']>;
 
@@ -150,6 +158,38 @@ describe('changing the pack version', () => {
 		expect(byName.CorgiLib).toMatchObject({ status: 'current', blocking: false });
 		expect(byName.homemade).toMatchObject({ status: 'unknown', blocking: false });
 		expect(await tree(instance.path)).toEqual(before);
+	});
+
+	it('calls a mod shipped under a new file name an update of it, not one removed and one added', async () => {
+		const { instance, taskId } = await createFromPack('Renamed', PACKS.r1(), { source: 'curseforge', projectId: 'p', versionId: 'r1' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		// Sodium as a Modrinth install records it: by the project's slug.
+		const sodium = upsertMod({ source: 'modrinth', slug: 'sodium', name: 'Sodium' });
+		recordInstanceMod({ instanceId: instance.id, modId: sodium, version: '1.0', versionId: 's1', filePath: 'mods/sodium-1.0.jar', hash: null, hashAlgo: null, fromPack: true });
+		// Modrinth knows the new sodium jar by its hash, as a version of project AANobbMI (slug sodium).
+		const newSodium = sha1('sodium-1.1.jar from r2');
+		served['https://api.modrinth.com/v2/version_files'] = (init) => {
+			const { hashes } = JSON.parse(String(init?.body));
+			return Response.json(
+				hashes.includes(newSodium)
+					? { [newSodium]: { id: 's2', project_id: 'AANobbMI', name: '1.1', version_number: '1.1', version_type: 'release', date_published: '2026-01-01T00:00:00Z', game_versions: ['1.20.1'], loaders: ['fabric'], files: [], dependencies: [] } }
+					: {}
+			);
+		};
+		served[`https://api.modrinth.com/v2/projects?ids=${encodeURIComponent(JSON.stringify(['AANobbMI']))}`] = () =>
+			Response.json([{ id: 'AANobbMI', slug: 'sodium', title: 'Sodium', description: '', icon_url: null, downloads: 0, loaders: ['fabric'], game_versions: [] }]);
+		try {
+			const plan = await planPackChange(reload(instance.id), 'r2');
+			expect(plan.mods.replaced).toEqual([
+				{ from: 'jei-1.0.jar', to: 'jei-1.1.jar' },
+				{ from: 'sodium-1.0.jar', to: 'sodium-1.1.jar' }
+			]);
+			// Applying still works from the files: both old jars go, both new ones come.
+			expect(plan.mods.remove).toEqual(expect.arrayContaining(['jei-1.0.jar', 'sodium-1.0.jar', 'homemade-1.0.jar']));
+			expect(plan.mods.add).toEqual(['homemade-1.1.jar', 'jei-1.1.jar', 'sodium-1.1.jar']);
+		} finally {
+			served['https://api.modrinth.com/v2/version_files'] = () => Response.json({});
+		}
 	});
 
 	it('updates the pack, keeps old configs and the user’s own mods', async () => {

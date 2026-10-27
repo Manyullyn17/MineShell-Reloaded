@@ -43,6 +43,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Before this fix a pack shipping `world/datapacks` made `world` a "config folder" and the
   whole world went to old-configs; pack mods diffed by name, same-name ones compared by hash / bundled bytes;
   the user's own mods are never removed (update / current / no compatible version / unknown).
+  A renamed build of the same mod (almost every update: versions are in the file name) is
+  paired as an update in the preview (`replacedPackMods`, plan `mods.replaced`), by the
+  provider's project: the installed row's source + slug (a CurseForge project id; a Modrinth
+  project's *slug*, not its id) against the target's CurseForge project or the Modrinth
+  project of its hash (`version_files`, then `projects` for the slug). Until 2026-10-27 the
+  preview called each such update one mod removed and one added, and said "0 updated".
+  Applying still works from `add`/`remove`, which keep both files.
 - Config edits survive pack changes (`configmerge.ts`, built 2026-10-08): base =
   `.mineshell/pack-base.zip` (tagged with `baseTag(row)`; a mismatched tag is ignored and the
   installed version is fetched instead), merge step 5b in applyPackChange, report in

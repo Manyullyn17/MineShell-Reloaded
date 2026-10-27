@@ -51,7 +51,7 @@
 		target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 		minecraftChange: boolean;
 		loaderChange: boolean;
-		mods: { add: string[]; update: string[]; remove: string[]; keep: number };
+		mods: { add: string[]; update: string[]; remove: string[]; keep: number; replaced: { from: string; to: string }[] };
 		configs: string[];
 		world: {
 			folder: string;
@@ -154,6 +154,17 @@
 	const datapackChanges = $derived(
 		!!plan && plan.world.datapacks.add.length + plan.world.datapacks.update.length + plan.world.datapacks.remove.length > 0
 	);
+	/** A mod the new version ships as a renamed file is one updated mod, not one removed and one added. */
+	const modChanges = $derived.by(() => {
+		const replaced = plan?.mods.replaced ?? [];
+		const from = new Set(replaced.map((r) => r.from));
+		const to = new Set(replaced.map((r) => r.to));
+		return {
+			added: plan?.mods.add.filter((f) => !to.has(f)) ?? [],
+			removed: plan?.mods.remove.filter((f) => !from.has(f)) ?? [],
+			updated: (plan?.mods.update.length ?? 0) + replaced.length
+		};
+	});
 	let canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
 
@@ -292,8 +303,8 @@
 					</li>
 				{/if}
 				<li>
-					Pack mods: <strong>{plan.mods.add.length}</strong> added, <strong>{plan.mods.update.length}</strong>
-					updated, <strong>{plan.mods.remove.length}</strong> removed, {plan.mods.keep} unchanged
+					Pack mods: <strong>{modChanges.added.length}</strong> added, <strong>{modChanges.updated}</strong>
+					updated, <strong>{modChanges.removed.length}</strong> removed, {plan.mods.keep} unchanged
 				</li>
 				{#if plan.configs.length}
 					<li>
@@ -370,9 +381,10 @@
 				<details>
 					<summary>Pack mod changes</summary>
 					<ul class="files">
-						{#each plan.mods.add as f (f)}<li class="added">+ {f}</li>{/each}
+						{#each modChanges.added as f (f)}<li class="added">+ {f}</li>{/each}
 						{#each plan.mods.update as f (f)}<li>~ {f}</li>{/each}
-						{#each plan.mods.remove as f (f)}<li class="removed">− {f}</li>{/each}
+						{#each plan.mods.replaced as r (r.to)}<li>~ {r.from} → {r.to}</li>{/each}
+						{#each modChanges.removed as f (f)}<li class="removed">− {f}</li>{/each}
 					</ul>
 				</details>
 			{/if}

@@ -21,6 +21,7 @@ import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, 
 import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, PACK_DOWNLOAD_CANCEL, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
 import { missingNotice, recordMissing } from './packs/missing';
 import { hashFile } from './download';
+import { projectsByIds, versionsFromHashes } from './mods/modrinth';
 import { resolveProviderPack } from './packs/resolve';
 import { getLoader, type ModloaderId } from './modloaders';
 import { resolveJava } from './java';
@@ -240,8 +241,12 @@ export type PackChangePlan = {
 	target: { name: string; version: string | null; minecraft: string; loader: string; loaderVersion: string | null };
 	minecraftChange: boolean;
 	loaderChange: boolean;
-	/** `update`: pack mods kept under the same file name whose content changed. */
-	mods: { add: string[]; update: string[]; remove: string[]; keep: number };
+	/**
+	 * `update`: pack mods kept under the same file name whose content changed. `replaced`: pack
+	 * mods the new version ships as another file of the same project (a newer build, renamed);
+	 * each is also in `remove` (from) and `add` (to), which is what applying works from.
+	 */
+	mods: { add: string[]; update: string[]; remove: string[]; keep: number; replaced: { from: string; to: string }[] };
 	configs: string[];
 	/** The world: only the pack's data packs change; other files the pack ships there are added where missing. */
 	world: {
@@ -416,6 +421,57 @@ export async function changedPackMods(root: string, pack: ParsedPack, packFiles:
 	return changed;
 }
 
+/**
+ * Pack mods the target ships as another file of the same project: the installed
+ * file `from` (being removed) and the new one `to` (being added), so the preview
+ * can call it an update rather than one mod removed and another added. Paired by
+ * the provider's project: an installed row's source and slug against a target
+ * download's CurseForge project, or the Modrinth project its hash belongs to
+ * (rows from Modrinth keep the project's slug, so the lookup also fetches the
+ * projects). Files neither side can name, and a failed lookup, stay unpaired.
+ */
+async function replacedPackMods(pack: ParsedPack, removed: ModRow[], added: string[]): Promise<{ from: string; to: string }[]> {
+	if (!removed.length || !added.length) return [];
+	const addedSet = new Set(added);
+	const targets = pack.downloads.filter((d) => path.posix.dirname(d.target) === 'mods' && addedSet.has(path.posix.basename(d.target)));
+	/** Project keys ("curseforge:123", "modrinth:<id or slug>") of each added file. */
+	const keysOf = new Map<string, string[]>();
+	const addKey = (name: string, key: string) => keysOf.set(name, [...(keysOf.get(name) ?? []), key]);
+	for (const d of targets) if (d.curseforge) addKey(path.posix.basename(d.target), `curseforge:${d.curseforge.projectId}`);
+
+	const unnamed = targets.filter((d) => !d.curseforge && d.hash);
+	if (unnamed.length && removed.some((r) => r.source === 'modrinth')) {
+		try {
+			for (const algo of ['sha512', 'sha1'] as const) {
+				const byHash = new Map(unnamed.filter((d) => d.hash!.algo === algo).map((d) => [d.hash!.value, path.posix.basename(d.target)]));
+				if (!byHash.size) continue;
+				const versions = await versionsFromHashes([...byHash.keys()], algo);
+				const projects = await projectsByIds([...new Set([...versions.values()].map((v) => v.projectId))]);
+				for (const [hash, version] of versions) {
+					const name = byHash.get(hash)!;
+					addKey(name, `modrinth:${version.projectId}`);
+					const slug = projects.get(version.projectId)?.slug;
+					if (slug) addKey(name, `modrinth:${slug}`);
+				}
+			}
+		} catch {
+			// Unnamed, they show as removed and added, as before.
+		}
+	}
+
+	const pairs: { from: string; to: string }[] = [];
+	const taken = new Set<string>();
+	for (const row of removed) {
+		if (!row.slug) continue;
+		const key = `${row.source}:${row.slug}`;
+		const to = [...keysOf].find(([name, keys]) => !taken.has(name) && keys.includes(key))?.[0];
+		if (!to) continue;
+		taken.add(to);
+		pairs.push({ from: row.fileName, to });
+	}
+	return pairs.sort((a, b) => a.to.localeCompare(b.to));
+}
+
 async function buildPlan(instance: ServerInstance, versionId: string, pack: ParsedPack): Promise<PackChangePlan> {
 	const uploaded = isUploadedVersion(versionId);
 	const target = targetLoaderFor(instance, pack);
@@ -435,6 +491,11 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 		instance.path,
 		pack,
 		packRows.filter((r) => wanted.has(baseName(r.fileName))).map((r) => r.fileName)
+	);
+	const replaced = await replacedPackMods(
+		pack,
+		packRows.filter((r) => remove.includes(r.fileName)),
+		add
 	);
 
 	// A Minecraft or loader-family change is when a user mod is likely to break.
@@ -490,7 +551,8 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 			add,
 			update: packUpdates.map(baseName).sort(),
 			remove,
-			keep: packRows.length - remove.length - packUpdates.length
+			keep: packRows.length - remove.length - packUpdates.length,
+			replaced
 		},
 		configs,
 		world: {
