@@ -239,17 +239,41 @@ const ctx = {
 		const port = nextPort++;
 		const rconPort = port + 100;
 		const password = crypto.randomBytes(12).toString('base64url');
+		// A whole file, as a server has once MineShell (fillPropertyDefaults) or its first start wrote
+		// it: with keys missing, Settings shows those switches off and those fields blank.
 		const properties = {
 			'server-port': String(port),
+			'query.port': String(port),
 			'enable-rcon': 'true',
 			'rcon.port': String(rconPort),
 			'rcon.password': password,
+			'broadcast-rcon-to-ops': 'true',
 			'level-name': 'world',
+			'level-seed': '',
+			// As defaultLevelType has it: namespaced from 1.19.
+			'level-type': /^1\.([0-9]|1[0-8])(\.|$)/.test(o.minecraft) ? 'DEFAULT' : 'minecraft:normal',
+			'generate-structures': 'true',
+			'allow-nether': 'true',
+			'spawn-protection': '0',
 			motd: o.name,
 			'max-players': '10',
 			'online-mode': 'true',
+			'white-list': 'false',
+			'enforce-whitelist': 'false',
+			pvp: 'true',
+			'player-idle-timeout': '0',
+			'op-permission-level': '4',
 			difficulty: 'normal',
 			gamemode: 'survival',
+			'force-gamemode': 'false',
+			hardcore: 'false',
+			'allow-flight': 'true',
+			'spawn-monsters': 'true',
+			'enable-command-block': 'false',
+			'view-distance': '10',
+			'simulation-distance': '10',
+			'max-tick-time': '60000',
+			'sync-chunk-writes': 'true',
 			...o.properties
 		};
 		fs.writeFileSync(path.join(dir, 'server.properties'), Object.entries(properties).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
