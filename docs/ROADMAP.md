@@ -80,22 +80,30 @@ until after 1.0, and asked to keep the rest listed here):
   back needs that first), the copy brought back and restored: same seed, marker there.
 - **README and screenshots for the release** (user's call, 2026-10-27: with 1.0, so the
   project page looks finished; it changes nothing in MineShell itself, so the freeze and the
-  candidate's testing are untouched). A pass over README.md, and the screenshots saved for
-  later on 2026-10-19: the top gallery (`npm run screenshots`, tests/tools/screenshots) is
-  the general overview; feature sections could get one picture each where it shows what
-  text cannot, cropped to the part that matters (a shot's `element`), full width at the top
-  of its section. Not settings, files or accounts (generic, and stale with every UI change).
-  Proposed, cheapest first:
-  1. **Crash diagnosis** (Console, logs & crash diagnostics): a server whose last start
-     crashed, with MineShell's verdict. The fake server prints a real crash log and exits 1.
-  2. **Player editor with item pictures** (Player management): a scene writing a player file
-     with a filled inventory, and the client jar (~30 MB from Mojang, kept between runs).
-  3. **Pack update preview** (Modpack & instance management): mods updated, added, removed,
-     configs kept; the page asks Modrinth live.
-  4. **Chunk map with the prune heatmap** (World management): synthetic region files; the
-     heatmap needs only InhabitedTime, terrain colours need block palettes.
+  candidate's testing are untouched). The README pass is done (2026-10-27): highlights at the
+  top, MineShell's own updates, themes and phones in one section, tested systems, reaching it
+  from outside, updating; development, layout and theming moved to CONTRIBUTING.md.
+  Screenshots (agreed 2026-10-27): all redrawn, since the UI changed after 2026-10-19 and
+  the old ones show `/tmp/ms-shots/...` as the server directory (give the fake data a
+  realistic path, or end the shot above that row) and a mods table cut off at the right.
+  The tooling stays (`npm run screenshots`, tests/tools/screenshots); the set changes:
+  - **Top**: the overview, large; a gallery of the server list, the console, the **pack
+    update preview** (mods updated, added, removed, configs kept; the page asks Modrinth
+    live) instead of the installed mods, and the phone view.
+  - **One picture per feature section**, cropped to the part that matters (a shot's
+    `element`), full width at the top of its section, where it shows what text cannot:
+    1. **Modpacks**: the pack browser with results and their icons.
+    2. **Console and crashes**: crash diagnosis with its verdict and the one-click disable
+       (the fake server prints a real crash log and exits 1).
+    3. **Mods**: the mod browser (or the installed list, once it has icons).
+    4. **World**: the Chunky planner, a circle on the world's map with the chunk count
+       (synthetic region files; terrain colours need block palettes).
+    5. **Players**: the inventory editor with item pictures (a scene writing a player file
+       with a filled inventory, and the client jar, ~30 MB from Mojang, kept between runs).
 
-  Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draws as a box.
+    Not settings, files or accounts (generic, and stale with every UI change); no BlueMap
+    render for now (it needs a real world rendered).
+  - Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draws as a box.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.

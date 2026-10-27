@@ -19,6 +19,15 @@ Manage your own servers from a browser, or give friends access to specific serve
 </tr>
 </table>
 
+## Highlights
+
+- **Modpacks from Modrinth, CurseForge and FTB**, or a loader of your choice: installed, updated with your config changes kept, and rolled back if an update goes wrong.
+- **Snapshots and backups** that share unchanged files, on a schedule or before anything risky, copied to another disk if you want, and restored whole, by dimension or by chunk.
+- **Crash diagnosis** that names the likely mod, with a one-click fix, and a bisect assistant for the crashes it cannot name.
+- **Player and inventory editing**, modded items included, with their real item pictures.
+- **A map of your world** in the browser, on Minecraft 1.13 and newer without adding a mod to the server.
+- **Accounts for friends**, each limited to the servers and features you give them.
+
 ## Features
 
 ### Modpack & instance management
@@ -156,6 +165,16 @@ Manage server configuration and files without needing direct shell access for ro
 - Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds.
 - Match Java versions to individual servers using Minecraft's version metadata, with configurable defaults when multiple runtimes are available.
 
+### MineShell itself
+
+Keep MineShell up to date without replacing the installation by hand, and comfortable to use.
+
+- **Updates from the browser:** MineShell checks for new releases every 12 hours or on demand, shows their notes, and installs one with a click, restarting itself while the Minecraft servers keep running. An update waits for running tasks; if it fails, the old version keeps running and the installer's log is shown.
+- **Going back:** Browse every release with its notes, and go back to an older one of the same major version, or the last one before it, when a release brings a problem (with warnings, a database copy first, and a refusal where the older version could not work with the database).
+- **Database copies:** MineShell copies its own database (accounts, settings, history) before every update and once a day, keeping the last seven daily copies.
+- **Themes:** Deep Slate, Midnight, or the light Daylight.
+- **Phones and tablets:** Every page works on a narrow screen, and MineShell can be installed as an app when it is reached over https.
+
 ### Multi-user access & permissions
 
 Share MineShell with friends while controlling which servers and features each account can access.
@@ -169,22 +188,14 @@ Share MineShell with friends while controlling which servers and features each a
 - **Activity log:** Review recent actions and the account responsible for each one.
 - **Protected integrations:** Only the owner can manage the playit.gg and CurseForge connections or update MineShell.
 
-### MineShell updates
-
-Keep MineShell itself up to date without manually replacing the installation.
-
-- Check for new releases every 12 hours or on demand.
-- View release notes and install updates from the web interface.
-- A copy of MineShell's own database (accounts, settings, history) every day, the last seven kept.
-- Browse every release with its notes, and go back to an older one of the same major version, or the last one before it, when a release brings a problem (with warnings, a database backup first, and a refusal where the older version could not work with the database).
-- Apply updates in place and restart MineShell while Minecraft servers continue running.
-
 ## Requirements
 
 - Linux with systemd.
 - Node.js 22.12 or newer.
 - `journalctl`, provided by systemd.
 - A compatible Java runtime for each Minecraft version. MineShell can discover or download supported runtimes.
+
+Tested on Debian 12, Ubuntu 24.04, Fedora 44 and Arch Linux, on x86-64. ARM machines and musl-based distributions such as Alpine are untested.
 
 MineShell is intended for self-hosted use on a Linux machine. It is not a multi-tenant hosting panel: Minecraft servers run under the same Linux account as MineShell. Users granted access to files, mods, or Java and loader settings may be able to execute programs as that account. Only grant those permissions to people you trust.
 
@@ -200,44 +211,17 @@ The installer installs MineShell into `~/mineshell`, writes configuration to `~/
 
 Open MineShell in your browser and set the owner account's password on first visit. The initial account name is `admin`.
 
+To update, use the Update button under MineShell settings > Updates, or run the installer again. See [Upgrading](docs/DEPLOYMENT.md#upgrading).
+
 For installation options, directory layout, and uninstall instructions, see [Deployment](docs/DEPLOYMENT.md).
+
+### Reaching it from outside your network
+
+MineShell is designed for your local network. To use it from elsewhere, connect through [Tailscale](https://tailscale.com) or another VPN, or put it behind a reverse proxy with TLS. Never forward port 3000 itself through your router: it is plain http, passwords included. See [Remote access](docs/DEPLOYMENT.md#remote-access).
 
 ## Development
 
-Clone the repository and install dependencies:
-
-```sh
-npm ci
-cp .env.example .env
-npm run setup
-npm run doctor
-npm run dev
-```
-
-For a production build:
-
-```sh
-npm run build
-npm start
-```
-
-The production server respects `PORT` and `HOST` from `.env`.
-
-If `doctor` reports that lingering is not enabled, run the following so user services can continue running after logout:
-
-```sh
-loginctl enable-linger "$USER"
-```
-
-Keep development data separate from any production MineShell installation by using a separate `MINESHELL_DATA` and `MINESHELL_UNIT_PREFIX`.
-
-Run the test suite with:
-
-```sh
-npm test
-```
-
-Tests run offline and do not touch real server data. For watch mode and further details, see [tests/README.md](tests/README.md).
+To work on MineShell itself, see [Contributing](CONTRIBUTING.md): setup, tests, the project layout and adding a theme.
 
 ## Configuration
 
@@ -261,26 +245,7 @@ See [`.env.example`](.env.example) for the complete list.
 - [Architecture](docs/ARCHITECTURE.md) — implementation details and design decisions.
 - [Roadmap](docs/ROADMAP.md) — planned work and deferred features.
 - [Test documentation](tests/README.md) — test setup and behavior.
-
-## Project layout
-
-```text
-migrations/          SQL migrations applied at startup
-scripts/             Setup and diagnostic tools
-src/lib/server/      systemd, RCON, journal, mod providers, scheduling,
-                     monitoring, world operations, and other server-side logic
-src/lib/shared/      Shared browser/server utilities, formatting, console handling, NBT
-src/lib/components/  Shared UI components
-src/routes/          Pages and endpoints
-tests/               Test helpers, flow tests, fixtures, and recorded crash/log data
-docs/                Architecture, deployment, and roadmap documentation
-```
-
-## Theming
-
-MineShell's colors are defined using CSS custom properties in `src/app.css`. To add a theme, define a `[data-theme='name']` block and add an entry to `src/lib/shared/themes.ts`. The theme picker updates automatically.
-
-The default theme is Deep Slate.
+- [Contributing](CONTRIBUTING.md) — development setup, conventions, and project layout.
 
 ## Credits
 
