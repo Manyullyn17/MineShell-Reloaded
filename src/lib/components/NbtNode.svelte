@@ -296,9 +296,10 @@
 		visibility: visible;
 	}
 
-	/* Touch: hidden actions take no room (they made every row too wide for a phone), and a
-	   tapped row shows them on a line of their own. */
-	@media (pointer: coarse) {
+	/* Touch, and any narrow window: hidden actions take no room (they made every row too wide
+	   for a phone, and a mouse hovering in a narrow window showed them past its edge), and a
+	   tapped or clicked row shows them on a line of their own. */
+	@media (pointer: coarse), (max-width: 60rem) {
 		.row {
 			flex-wrap: wrap;
 		}
