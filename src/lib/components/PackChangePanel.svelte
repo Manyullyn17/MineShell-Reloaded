@@ -452,11 +452,13 @@
 		margin: var(--space-2) 0;
 	}
 
+	/* Each line carries its own +, ~ or − mark, so no bullet before it. */
 	.files {
 		max-height: 16rem;
 		overflow-y: auto;
 		font-family: var(--font-mono);
 		font-size: 0.8rem;
+		list-style: none;
 	}
 
 	.added {
