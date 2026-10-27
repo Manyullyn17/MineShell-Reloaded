@@ -21,7 +21,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
   suggested order of steps there (2026-10-27): upkeep and quick wins, files, mod configs,
-  world, players, diagnosis and copies, the status page. Then plugin servers as 2.0.
+  world, players, diagnosis and copies, GT New Horizons, item icons, the status page. Then
+  plugin servers as 2.0.
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
 (user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
@@ -127,45 +128,6 @@ update, once the modded and general features are finished. What it would take:
 - **Not planned**: hybrids that load Forge/NeoForge mods and plugins together (Mohist,
   Arclight, Youer): fragile with big packs, and every crash becomes "is it the hybrid".
 
-### GT New Horizons as its own install option
-
-Agreed (2026-10-07), not started. GTNH's own docs say to take server files only from
-`gtnewhorizons.com/downloads` (its wiki, "Server Setup"); the downloads page calls
-CurseForge and Technic "not recommended, provided for convenience" (Prism is recommended
-for clients). MineShell's pack browser would today build a server from the CurseForge
-listing (project 252507, on the mirror up to 2.8.4 and 2.9.0-RC-2): the client pack, on
-Forge 1.7.10, so Java 8 only. The official server pack has a Java 17-25 variant, which GTNH
-recommends for performance, and server and clients must run the exact same GTNH version.
-
-Shape: a fourth card on the first step of Add a server, next to Modpack / Upload / Mod
-loader: "GT New Horizons". Picking it never enters the Modrinth/CurseForge flow, so the
-browser needs no GTNH special case. Its step 2 lists GTNH versions (stable, and betas
-behind a toggle) and the Java variant (17-25 by default, 8 offered); step 3 is the usual
-configure step.
-
-Work it needs:
-- **Version list**: the server zips are
-  `downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_<version>_Server_Java_<range>.zip`,
-  but the folder listing answers "not found". The docker-minecraft-server image
-  (`TYPE=GTNH`, `GTNH_PACK_VERSION=latest|latest-beta|2.8.1`) resolves versions somehow;
-  read how before choosing (a page to scrape, a JSON in GTNH's GitHub, or their releases).
-- **Install**: the official server zip is already a server (its own Forge 1.7.10 and
-  libraries), so it unpacks rather than going through a loader install. The rejection of
-  CurseForge server packs below does not apply: this is one known, maintained layout, and
-  the pack's official route.
-- **Java 17+ launch**: lwjgl3ify's setup: `java9args.txt` and `lwjgl3ify-forgePatches.jar`
-  (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`), a new launch shape for
-  `isLoaderInstallEntry` and Java planning (needs 17+, not 8 as Forge 1.7.10 would say).
-  The Java 8 variant is a plain Forge 1.7.10 server.
-- **Updates**: GTNH's update steps replace mods and configs and keep the world, which is
-  what a pack version change does already (`old-configs/`); it needs the version list as
-  its source and GTNH's notes on files to delete (the wiki lists ones to remove when
-  switching to Java 17+). The docker image keeps old configs in `gtnh-upgrade-<date>` folders.
-- **Client side**: the client pack export has nothing to add here; GTNH clients install
-  from GTNH (Prism zip). The server page could link the matching client download.
-- **Map**: GTNH's own Web Map (its Dynmap fork, tuned for 1.7.10 mods) comes with this
-  option (ROADMAP-ARCHIVE, "A map of the world").
-
 ---
 
 ## Later
@@ -188,11 +150,14 @@ in the order to build them where one needs another.
    shared player lists, the server list preview, the server resource pack.
 6. **Diagnosis and copies**: where a stuck server hangs, the change history per server, then
    bringing a copy's changes back (the largest; the history's record of what changed helps it).
-7. **The status page**, once its open questions are answered; it reuses step 5's rendering
+7. **GT New Horizons** as its own install option (user's call, 2026-10-27).
+8. **Item icons and names**: the leftovers of that name (Leftovers), a whenever thing given
+   this slot (user's call, 2026-10-27): right after GT New Horizons, which brings more 1.7.10
+   item work anyway.
+9. **The status page**, once its open questions are answered; it reuses step 5's rendering
    of the description and icon.
 
-Not slotted: GT New Horizons as its own install option (Planned; no slot yet, the user's
-call); the item icon and name leftovers (whenever, decided case by case). The other
+The other
 leftovers are picked up when their area is worked on. Undecided entries, if agreed, join the
 step of their area: holding a mod step 1, maintenance mode and the management server step 5,
 the rest wherever they fit.
@@ -402,7 +367,53 @@ to the original after a snapshot, as one journalled operation. Needs the copy to
 its original (and when it was copied, to tell what changed on which side); a change made on
 both sides is shown, not overwritten, as the config merge does for pack updates.
 
-### 7. The status page
+### 7. GT New Horizons
+
+#### GT New Horizons as its own install option
+
+Agreed (2026-10-07), not started. GTNH's own docs say to take server files only from
+`gtnewhorizons.com/downloads` (its wiki, "Server Setup"); the downloads page calls
+CurseForge and Technic "not recommended, provided for convenience" (Prism is recommended
+for clients). MineShell's pack browser would today build a server from the CurseForge
+listing (project 252507, on the mirror up to 2.8.4 and 2.9.0-RC-2): the client pack, on
+Forge 1.7.10, so Java 8 only. The official server pack has a Java 17-25 variant, which GTNH
+recommends for performance, and server and clients must run the exact same GTNH version.
+
+Shape: a fourth card on the first step of Add a server, next to Modpack / Upload / Mod
+loader: "GT New Horizons". Picking it never enters the Modrinth/CurseForge flow, so the
+browser needs no GTNH special case. Its step 2 lists GTNH versions (stable, and betas
+behind a toggle) and the Java variant (17-25 by default, 8 offered); step 3 is the usual
+configure step.
+
+Work it needs:
+- **Version list**: the server zips are
+  `downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_<version>_Server_Java_<range>.zip`,
+  but the folder listing answers "not found". The docker-minecraft-server image
+  (`TYPE=GTNH`, `GTNH_PACK_VERSION=latest|latest-beta|2.8.1`) resolves versions somehow;
+  read how before choosing (a page to scrape, a JSON in GTNH's GitHub, or their releases).
+- **Install**: the official server zip is already a server (its own Forge 1.7.10 and
+  libraries), so it unpacks rather than going through a loader install. The rejection of
+  CurseForge server packs below does not apply: this is one known, maintained layout, and
+  the pack's official route.
+- **Java 17+ launch**: lwjgl3ify's setup: `java9args.txt` and `lwjgl3ify-forgePatches.jar`
+  (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`), a new launch shape for
+  `isLoaderInstallEntry` and Java planning (needs 17+, not 8 as Forge 1.7.10 would say).
+  The Java 8 variant is a plain Forge 1.7.10 server.
+- **Updates**: GTNH's update steps replace mods and configs and keep the world, which is
+  what a pack version change does already (`old-configs/`); it needs the version list as
+  its source and GTNH's notes on files to delete (the wiki lists ones to remove when
+  switching to Java 17+). The docker image keeps old configs in `gtnh-upgrade-<date>` folders.
+- **Client side**: the client pack export has nothing to add here; GTNH clients install
+  from GTNH (Prism zip). The server page could link the matching client download.
+- **Map**: GTNH's own Web Map (its Dynmap fork, tuned for 1.7.10 mods) comes with this
+  option (ROADMAP-ARCHIVE, "A map of the world").
+
+### 8. Item icons and names
+
+The "Item icons and names" leftovers (Leftovers of built features), picked up in any
+step when convenient; this slot is where they are done at the latest.
+
+### 9. The status page
 
 #### Status page
 
@@ -462,7 +473,7 @@ What the built entries in the archive left out, in one place:
   variants that exist only in code (Actually Additions crystals, Mekanism basic blocks),
   lang templates' filled-in text, banner patterns on banners and shields, player heads' own
   skins.
-- **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's under Planned).
+- **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 7).
 - **Installer and updates**: installing Node for the user (the installer says how to get
   it), installing updates automatically; restoring a database backup from the page (by hand
   in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
@@ -636,4 +647,4 @@ would download all of it). The client mod list plus `clientonly.ts` stays the on
 path. If the author's curation is ever wanted, the cheap form is reading only the server
 pack's file list (HTTP range requests on the zip's central directory, a few KB) and flagging
 client-list mods missing from its `mods/` as client-only - not installing from it. (GT New
-Horizons is the one exception planned, as its own install option: see Planned.)
+Horizons is the one exception planned, as its own install option: see Later, step 7.)
