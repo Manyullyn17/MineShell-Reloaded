@@ -14,7 +14,7 @@ Manage your own servers from a browser, or give friends access to specific serve
 <td><img src="docs/screenshots/console.png" alt="The live console, with filters for errors, joins and chat"></td>
 </tr>
 <tr>
-<td><img src="docs/screenshots/mods.png" alt="A modpack server's installed mods"></td>
+<td><img src="docs/screenshots/pack-update.png" alt="A pack update previewed: mods updated, added and removed, configs moved aside, your own files kept"></td>
 <td align="center"><img src="docs/screenshots/overview-phone.png" alt="The overview on a phone" width="260"></td>
 </tr>
 </table>
@@ -33,6 +33,8 @@ Manage your own servers from a browser, or give friends access to specific serve
 ### Modpack & instance management
 
 Install and maintain modded Minecraft servers without having to manage every step manually.
+
+![Browsing modpacks: Modrinth searched for Cobblemon, its official pack opened with its description and versions](docs/screenshots/packs.png)
 
 - **Multiple sources:** Browse Modrinth, CurseForge, and FTB, upload `.mrpack` or CurseForge archives, or create a server from a Minecraft version and loader.
 - **Loader support:** Vanilla, Fabric, Quilt, Forge, NeoForge, and Cleanroom.
@@ -69,6 +71,8 @@ Control server lifecycles and monitor what is happening without leaving the brow
 
 Find out what went wrong without manually digging through files and terminal output.
 
+![A crashed server's last output: Simple Datapacks needs Mod Menu, which only runs on clients, with a button to disable it](docs/screenshots/crash.png)
+
 - Live console output streamed from the systemd journal, with commands sent through RCON.
 - Filter log levels, search output, expand or collapse stack traces, and highlight player joins and departures.
 - Command history, saved commands, and a dedicated chat view.
@@ -82,6 +86,8 @@ Find out what went wrong without manually digging through files and terminal out
 ### Mod management & client exports
 
 Manage server mods and prepare matching client installations from the same interface.
+
+![Adding mods: Modrinth's popular Fabric mods for the server's version, installed ones marked, one opened](docs/screenshots/mod-browser.png)
 
 - Search Modrinth and CurseForge, resolve mod dependencies, install updates, or upload JARs manually.
 - Enable, disable, delete, and change mod versions.
@@ -97,6 +103,8 @@ Manage server mods and prepare matching client installations from the same inter
 ### World management & snapshots
 
 Manage worlds, recover from mistakes, and automate routine maintenance.
+
+![Planning a Chunky pre-generation: a circle round spawn on the world's chunk map, with the chunks to generate and the disk they take](docs/screenshots/pregen.png)
 
 - Create snapshots manually, on a schedule, or automatically before risky operations.
 - Snapshot a running server with saving paused, or stop and restart it around the operation.
@@ -115,6 +123,8 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 ### Player management & inventory editing
 
 Administer players and inspect their saved data, including inventories containing modded items.
+
+![A player's inventory with the game's own item pictures: armour, offhand, inventory and hotbar](docs/screenshots/player.png)
 
 - Manage whitelists, operators and operator levels, bans with reasons, and IP bans.
 - Remove a player from a world (their player file, stats and advancements go to the trash), for someone who joined once and should not stay in the list.
