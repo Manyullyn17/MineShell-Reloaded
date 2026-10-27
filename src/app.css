@@ -946,7 +946,8 @@ tbody tr:last-child td {
 .grid-2 {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-	gap: var(--space-4);
+	/* Across only: each .field keeps its own space below, and a row gap doubled it once columns stack. */
+	column-gap: var(--space-4);
 }
 .visually-hidden {
 	position: absolute;
