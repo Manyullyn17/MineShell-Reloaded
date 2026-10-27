@@ -6,8 +6,9 @@ import { parse } from 'svelte/compiler';
  * Svelte drops the whitespace at the start and end of every block branch ({#if}, {:else},
  * {#each}, {#key}, {#await}), so `{#if n}peak {n} · {/if}<a>` renders "peak 3 ·<a>" and
  * `{date}{#if by} by {by}{/if}` renders "…10:00by admin". A space that has to stay is written
- * `{' · '}` or moved outside the block. Only branches whose text runs straight on into what
- * is around the block count: a line break or a space outside it keeps the words apart.
+ * `{' · '}` or moved outside the block; a line break just inside the block is dropped the same
+ * way. Only branches whose text runs straight on into what is around the block count: a line
+ * break or a space outside it keeps the words apart.
  */
 
 type Node = { type: string; start: number; data?: string; [key: string]: unknown };
@@ -20,9 +21,9 @@ const BLOCK_BRANCHES: Record<string, string[]> = {
 	AwaitBlock: ['pending', 'then', 'catch']
 };
 
-/** Spaces (no line break) at a text's start or end. */
-const leading = (s: string) => /^[ \t]+/.test(s);
-const trailing = (s: string) => /[ \t]+$/.test(s);
+/** Whitespace at a text's start or end: a line break inside the block is dropped as well. */
+const leading = (s: string) => /^\s+/.test(s);
+const trailing = (s: string) => /\s+$/.test(s);
 
 function lostSpaces(source: string): number[] {
 	const found: number[] = [];
@@ -70,6 +71,8 @@ describe('spaces at the edge of a template block', () => {
 		expect(lostSpaces('<td>{d}{#if b} by {b}{/if}</td>')).toEqual([1]);
 		expect(lostSpaces('<p>{#if a}one {:else if b}two {:else}three {/if}<b>z</b></p>')).toEqual([1, 1, 1]);
 		expect(lostSpaces('<p>{#each xs as x}{x}, {/each}<b>z</b></p>')).toEqual([1]);
+		// A line break just inside the block goes too: "10.0 GB(Settings)".
+		expect(lostSpaces('<p>{size}{#if a}\n\t\t(<a>Settings</a>){/if}, plus</p>')).toEqual([1]);
 	});
 
 	it('are left alone where the words stay apart anyway', () => {

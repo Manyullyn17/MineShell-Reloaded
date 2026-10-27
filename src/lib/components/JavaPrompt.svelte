@@ -27,7 +27,7 @@
 			<button type="submit" name="downloadJava" value="zulu">Azul Zulu {missing.major}</button>
 		</div>
 		<p class="hint">
-			Kept in MineShell's data folder and matched automatically from then on.{#if page.data.access?.globalAdmin}
+			Kept in MineShell's data folder and matched automatically from then on.{#if page.data.access?.globalAdmin}{' '}
 				Downloaded runtimes are listed in <a href="/settings?tab=java">MineShell settings</a>.{/if}
 		</p>
 	</div>

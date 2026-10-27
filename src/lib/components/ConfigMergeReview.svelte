@@ -73,7 +73,7 @@
 <section class="merge">
 	<h3>Your config edits in the last update</h3>
 	<p class="muted small">
-		{new Date(report.createdAt).toLocaleString()} · your copies from before are in <code>{report.oldConfigs}/</code>{#if attention}
+		{new Date(report.createdAt).toLocaleString()} · your copies from before are in <code>{report.oldConfigs}/</code>{#if attention}{' '}
 			· <strong class="warn-text">{attention} to look at</strong>{/if}
 	</p>
 

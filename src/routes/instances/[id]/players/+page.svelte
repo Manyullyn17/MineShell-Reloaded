@@ -489,8 +489,8 @@
 				<li>
 					<a class="mono small" href={playerUrl(file.uuid)}>{file.uuid}</a>
 					<span class="faint small">
-						last saved {formatRelative(file.modifiedAt)}{#if file.offline}
-							· offline-mode player: the name cannot be looked up{:else if !lookedUp.ready}
+						last saved {formatRelative(file.modifiedAt)}{#if file.offline}{' '}
+							· offline-mode player: the name cannot be looked up{:else if !lookedUp.ready}{' '}
 							· asking Mojang for the name{/if}
 					</span>
 				</li>

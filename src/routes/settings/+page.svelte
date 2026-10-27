@@ -920,8 +920,7 @@
 <section class="panel">
 	<h2>MineShell version</h2>
 	<p>
-		Running <strong>{u.current}</strong>{#if !u.installed}
-			from a source checkout{/if}.
+		Running <strong>{u.current}</strong>{#if !u.installed}{' '}from a source checkout{/if}.
 	</p>
 
 	{#if updateTask || updateRun?.outcome === 'running'}

@@ -277,7 +277,7 @@
 					No world yet; the server creates <code>{data.levelName}</code> on its first start.
 				{/if}
 				At least the newest {data.snapshotPrompt.policy.keepMin} full and {data.snapshotPrompt.policy.partialMin} partial
-				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)}{#if may('settings.view')}
+				ones are kept, more while they fit in {formatBytes(data.snapshotPrompt.policy.budgetMb * 1024 * 1024)}{#if may('settings.view')}{' '}
 					(<a href="/instances/{encodeURIComponent(data.instance.id)}/settings?tab=snapshots">Settings</a>){/if}, plus any pinned. Restoring keeps
 				the current world as a snapshot first, unless you choose otherwise.
 			</p>

@@ -240,7 +240,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Bug | Test |
 |---|---|
 | `npm test` switched a running dev server onto the test's data | `config.test.ts` |
-| Svelte drops spaces at the edges of a block, so the overview read "peak today 3 ·all players" and allowed addresses "…10:00by admin" | `templates.test.ts` (every `.svelte` file) |
+| Svelte drops spaces and line breaks at the edges of a block, so the overview read "peak today 3 ·all players", allowed addresses "…10:00by admin" and the World tab "10.0 GB(Settings)" | `templates.test.ts` (every `.svelte` file) |
 | Messages counted in "3 file(s)" (pack changes, migrations, drops, backup folders) instead of words that fit the number | `wording.test.ts` (every page and server module) |
 | A pack change preview called every mod update with a new file name one mod removed and one added, and said "0 updated" | `flows/pack-change.test.ts` ("a new file name") |
 | A file saved in the Files editor got CRLF line endings (forms send newlines so), which breaks a shell script like run.sh | `routes/instances/[id]/files/files.test.ts` ("line endings") |
