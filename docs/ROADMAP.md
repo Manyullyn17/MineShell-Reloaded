@@ -21,8 +21,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   import are built (ROADMAP-ARCHIVE).
 - **After 1.0** (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
   suggested order of steps there (2026-10-27): upkeep and quick wins, files, mod configs,
-  world, players, diagnosis and copies, GT New Horizons, item icons, the status page. Then
-  plugin servers as 2.0.
+  world, players, schedules, diagnosis and copies, GT New Horizons, item icons, the status
+  page. Then plugin servers as 2.0.
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
 (user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
@@ -139,7 +139,8 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: Node's download crash, TypeScript 7, log retention, TPS per
-   dimension, the installed mods list, "required by" for mods. Small, mostly reading what
+   dimension, the installed mods list, "required by" for mods, packs' own backup mods,
+   holding a mod at its version, quiet hours for notifications. Small, mostly reading what
    MineShell already has: a calm first step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
    needs), then search in files, earlier versions of edited files, zips and folders.
@@ -147,20 +148,22 @@ in the order to build them where one needs another.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
 5. **Players and how the server shows itself**: game mode and teleport for online players,
-   shared player lists, the server list preview, the server resource pack.
-6. **Diagnosis and copies**: where a stuck server hangs, the change history per server, then
+   shared player lists, the server list preview, the server resource pack, maintenance mode
+   (which changes the description the preview shows).
+6. **Schedules**: hours a server runs, on the scheduler that restarts today, and one view of
+   everything scheduled, which then includes them.
+7. **Diagnosis and copies**: where a stuck server hangs, the change history per server, then
    bringing a copy's changes back (the largest; the history's record of what changed helps it).
-7. **GT New Horizons** as its own install option (user's call, 2026-10-27).
-8. **Item icons and names**: the leftovers of that name (Leftovers), a whenever thing given
+8. **GT New Horizons** as its own install option (user's call, 2026-10-27).
+9. **Item icons and names**: the leftovers of that name (Leftovers), a whenever thing given
    this slot (user's call, 2026-10-27): right after GT New Horizons, which brings more 1.7.10
    item work anyway.
-9. **The status page**, once its open questions are answered; it reuses step 5's rendering
-   of the description and icon.
+10. **The status page**, once its open questions are answered; it reuses step 5's rendering
+    of the description and icon.
 
-The other
-leftovers are picked up when their area is worked on. Undecided entries, if agreed, join the
-step of their area: holding a mod step 1, maintenance mode and the management server step 5,
-the rest wherever they fit.
+The other leftovers are picked up when their area is worked on. Undecided entries, if
+agreed, join the step of their area (the management server step 5), the rest wherever they
+fit. Steps 1, 5 and 6 took in undecided entries the user agreed to on 2026-10-27.
 
 ### 1. Upkeep and quick wins
 
@@ -209,6 +212,25 @@ declare them (`META-INF/mods.toml`/`neoforge.mods.toml`, `fabric.mod.json`,
 `quilt.mod.json`, `mcmod.info` for 1.12 where it lists any), read as the duplicate-mod check
 reads mod ids: the Mods tab shows what needs a mod, and disabling or deleting one that
 enabled mods require asks first, naming them. Optional dependencies are not a reason to ask.
+
+#### Packs' own backup mods
+
+Agreed 2026-10-27 (was undecided). Found 2026-10-22: MeatballCraft's AromaBackup zips the
+world at every start, 2 minutes of lag, and kept 24 GB. Point them out on the World tab or
+the disk usage page (AromaBackup, FTB Backups, Simple Backups, Textile Backup), with the
+folder they fill, so the owner can turn one off where snapshots and backup copies already do
+the job.
+
+#### Holding a mod at its version
+
+Agreed 2026-10-27 (was undecided). "Skip these" on the overview skips the mod updates on
+offer, and the next version is offered again. A hold per mod (on the Mods tab) would keep
+one left out of update checks for good, for a mod kept at a build on purpose.
+
+#### Quiet hours for notifications
+
+Agreed 2026-10-27 (was undecided). The optional events (joins, leaves, starts) held back
+during a time window, while crashes, memory kills and a full disk still go out.
 
 ### 2. Files
 
@@ -337,7 +359,27 @@ each Minecraft version reads (the prompt and `require-resource-pack` came in 1.1
 whether MineShell should also host an uploaded pack itself, which needs an address players
 can reach (playit.gg does not carry HTTP).
 
-### 6. Diagnosis and copies
+#### Maintenance mode
+
+Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks whoever is
+not on it with a message, and changes the description to say so; off puts all three back.
+For pack updates and other work players should stay out of.
+
+### 6. Schedules
+
+#### Hours a server runs
+
+Agreed 2026-10-27 (was undecided). Started and stopped on a schedule (only evenings, off
+overnight); the scheduler only restarts today. Fits beside scheduled restarts, with the same
+delay while players are online.
+
+#### One view of everything scheduled
+
+Agreed 2026-10-27 (was undecided). Upcoming restarts, snapshots, map renders and scheduled
+commands across all servers in one list, showing what runs tonight and where heavy jobs of
+different servers land at the same time.
+
+### 7. Diagnosis and copies
 
 #### Where a stuck server hangs
 
@@ -367,7 +409,7 @@ to the original after a snapshot, as one journalled operation. Needs the copy to
 its original (and when it was copied, to tell what changed on which side); a change made on
 both sides is shown, not overwritten, as the config merge does for pack updates.
 
-### 7. GT New Horizons
+### 8. GT New Horizons
 
 #### GT New Horizons as its own install option
 
@@ -408,12 +450,12 @@ Work it needs:
 - **Map**: GTNH's own Web Map (its Dynmap fork, tuned for 1.7.10 mods) comes with this
   option (ROADMAP-ARCHIVE, "A map of the world").
 
-### 8. Item icons and names
+### 9. Item icons and names
 
 The "Item icons and names" leftovers (Leftovers of built features), picked up in any
 step when convenient; this slot is where they are done at the latest.
 
-### 9. The status page
+### 10. The status page
 
 #### Status page
 
@@ -473,7 +515,7 @@ What the built entries in the archive left out, in one place:
   variants that exist only in code (Actually Additions crystals, Mekanism basic blocks),
   lang templates' filled-in text, banner patterns on banners and shields, player heads' own
   skins.
-- **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 7).
+- **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 8).
 - **Installer and updates**: installing Node for the user (the installer says how to get
   it), installing updates automatically; restoring a database backup from the page (by hand
   in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
@@ -539,15 +581,18 @@ What the built entries in the archive left out, in one place:
 Suggested, not yet confirmed or rejected:
 
 - **The chunk map as a map of its own** (user, 2026-10-17: ideas kept for later, a full
-  release addition or a 2.0 feature if at all): Restore chunks' flat map (`chunkmap.ts`)
-  as a built-in map option where BlueMap and Dynmap do not reach (pre-1.13 versions other
-  than 1.12.2, or 1.12.2 without adding a mod), with "save as image" (one block a pixel, no
-  grid; copying the canvas already gives the view as it is). Probably not worth it beside
-  a fully built map; it could grow into its own map tool.
-- **Packs' own backup mods** (found 2026-10-22: MeatballCraft's AromaBackup zips the world at
-  every start, 2 minutes of lag, and kept 24 GB): point them out on the World tab or the disk
-  usage page (AromaBackup, FTB Backups, Simple Backups, Textile Backup), with the folder they
-  fill, so the owner can turn one off where snapshots and backup copies already do the job.
+  release addition or a 2.0 feature if at all; 2026-10-27: kept undecided, not rejected):
+  Restore chunks' flat map (`chunkmap.ts`) as a built-in map option where BlueMap and Dynmap
+  do not reach (pre-1.13 versions other than 1.12.2, or 1.12.2 without adding a mod), with
+  "save as image" (one block a pixel, no grid; copying the canvas already gives the view as
+  it is). Probably not worth it beside a fully built map; it could grow into its own map
+  tool. To look at again (user, 2026-10-27): what it would cover that BlueMap and Dynmap do
+  not, what use that brings, the effort, and what it could do that the regular maps cannot.
+- **One map tab for the chunk tools** (user, 2026-10-27): pruning, restoring chunks and
+  planning a Chunky pre-generation each draw the same chunk map (`chunkmap.ts`) on their own
+  screens. One map tab with those as modes (pick chunks to prune, to restore from a
+  snapshot, an area to pre-generate) would put them in one place. Its own idea: it can be
+  done with or without the chunk map becoming a map of its own.
 - **The management server instead of RCON where there is one** (user, 2026-10-26: idea for
   later, if it is worth it): Minecraft 1.21.9+ has a JSON-RPC API over WebSocket
   (`management-server-enabled`/`-host`/`-port`/`-secret`, optional TLS in server.properties).
@@ -558,37 +603,18 @@ Suggested, not yet confirmed or rejected:
   older and the feature means two paths for the same things. Check first: the method list on
   a current server (and whether NeoForge/Fabric leave it as vanilla has it), and whether it
   takes arbitrary console commands (RCON would still be needed if not).
-- **Maintenance mode** (2026-10-27, user: maybe): one switch that turns the whitelist on,
-  kicks whoever is not on it with a message, and changes the description to say so; off puts
-  all three back. For pack updates and other work players should stay out of.
-- **Holding a mod at its version** (2026-10-27, user: maybe): "Skip these" on the overview
-  skips the mod updates on offer, and the next version is offered again. A hold per mod (on
-  the Mods tab) would keep one left out of update checks for good, for a mod kept at a build
-  on purpose.
 - **Chat to Discord** (2026-10-27, user: maybe): players' chat, deaths and advancements sent
   to a channel through the notification setup (webhook), read from the console. One way
   only: two-way needs a bot, which is what mods for it already do.
-- **Hours a server runs** (2026-10-27, user: maybe): started and stopped on a schedule (only
-  evenings, off overnight); the scheduler only restarts today. Fits beside scheduled
-  restarts, with the same delay while players are online.
 - **Command completion in the console** (2026-10-27, user: maybe): RCON cannot ask for
   completions, so suggestions would come from a command list read from the server (`help`
   over RCON), which modded commands make less complete.
-- **Acting on several servers at once** (2026-10-27, user: maybe): stop or restart all,
-  install the updates on offer everywhere; less needed with a few servers at home than
-  on a host with many.
 - **Quick switcher** (2026-10-27, user: unsure): Ctrl+K and a few letters jump to a server,
   one of its tabs or a setting (the settings search already knows the settings).
-- **One view of everything scheduled** (2026-10-27): upcoming restarts, snapshots, map
-  renders and scheduled commands across all servers in one list, showing what runs tonight
-  and where heavy jobs of different servers land at the same time.
 - **Permission presets** (2026-10-27): accounts' per-server permissions are ticked one by
   one; presets ("Moderator": console, players, start/stop; "Builder": start/stop) would make
   giving a friend access one click. Whether a preset stays linked (changing it changes
   everyone on it) or only fills the boxes is open.
-- **Quiet hours for notifications** (2026-10-27): the optional events (joins, leaves,
-  starts) held back during a time window, while crashes, memory kills and a full disk still
-  go out.
 
 ---
 
@@ -598,6 +624,10 @@ Suggested, not yet confirmed or rejected:
 console commands, reads who is online, edits player lists live and stops servers cleanly
 over RCON; without it most of the server tabs stop working. It stays managed: port and
 password are MineShell's, `enable-rcon` is not offered.
+
+**Acting on several servers at once** (user's call, 2026-10-27): stop or restart all,
+install the updates on offer everywhere; less needed with a few servers at home than on a
+host with many. Rejected for that reason; one server at a time stays.
 
 **Translations** (user's call, 2026-10-27). The interface stays English: the user reads
 only English and German, uses MineShell in English, and could not proofread any other
@@ -647,4 +677,4 @@ would download all of it). The client mod list plus `clientonly.ts` stays the on
 path. If the author's curation is ever wanted, the cheap form is reading only the server
 pack's file list (HTTP range requests on the zip's central directory, a few KB) and flagging
 client-list mods missing from its `mods/` as client-only - not installing from it. (GT New
-Horizons is the one exception planned, as its own install option: see Later, step 7.)
+Horizons is the one exception planned, as its own install option: see Later, step 8.)

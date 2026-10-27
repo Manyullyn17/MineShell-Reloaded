@@ -17,7 +17,7 @@ Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10
   settings. Plugin servers stay 2.0; GT New Horizons got its slot 2026-10-27 (below).
 - Minor dependency updates before the freeze; TypeScript 7 waits until after 1.0.
 - After 1.0 (2026-10-27): the work up to 2.0 is in ROADMAP, "Later", in a suggested order of
-  steps (upkeep and quick wins first); GT New Horizons is step 7, after the general features
+  steps (upkeep and quick wins first); GT New Horizons is step 8, after the general features
   and before the item icon leftovers and the status page.
 - Long running is covered: the installed MineShell has run a server with scheduled restarts
   and snapshots since it was installed.
