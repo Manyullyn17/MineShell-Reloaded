@@ -436,7 +436,7 @@
 			<div class="empty"><p>This folder is empty.</p></div>
 		{:else}
 			<div class="table-box">
-			<table>
+			<table class="file-table">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -650,28 +650,49 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* Phones: each item as a card, the path on its own line above size, time and buttons. */
+	/*
+	 * Phones: each item as a card, the name or path on its own line above size, time and
+	 * buttons. As table columns the buttons sat past the screen's edge, stacked, and made
+	 * every row tall.
+	 */
 	@media (max-width: 60rem) {
+		.file-table thead,
 		.trash-table thead {
 			display: none;
 		}
 
+		/* The buttons stay together: beside size and time where they fit, else on a line of their own. */
+		.file-table tr,
 		.trash-table tr {
-			display: grid;
-			grid-template-columns: auto auto 1fr;
+			display: flex;
+			flex-wrap: wrap;
 			align-items: center;
 			column-gap: var(--space-3);
 		}
 
+		.file-table td:first-child,
+		.file-table td[colspan],
 		.trash-table td:first-child {
-			grid-column: 1 / -1;
+			flex-basis: 100%;
 			padding-bottom: 0;
 		}
 
+		.file-table td:last-child:not([colspan]),
+		.trash-table td:last-child {
+			margin-left: auto;
+		}
+
+		.file-table .row-actions,
+		.trash-table .row-actions {
+			flex-wrap: nowrap;
+		}
+
+		.file-table td,
 		.trash-table td {
 			border: 0;
 		}
 
+		.file-table tr + tr,
 		.trash-table tr + tr {
 			border-top: 1px solid var(--line);
 		}
