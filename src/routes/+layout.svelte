@@ -7,6 +7,8 @@
 	import LogoMark from '#lib/components/LogoMark.svelte';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import TapTips from '#lib/components/TapTips.svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { revealCurrentTabs } from '#lib/shared/tabbars.js';
 
 	let { data, children } = $props();
 
@@ -28,6 +30,9 @@
 	/** A map on a page of its own: nothing around it. */
 	const mapOnly = $derived(page.route.id === '/instances/[id]/map/full');
 	const instances = $derived(data.railInstances ?? []);
+
+	// A phone's tab bars show the tab you are on, not only the first few (tabbars.ts).
+	afterNavigate(() => revealCurrentTabs());
 </script>
 
 {#snippet themeSelect(id: string)}
