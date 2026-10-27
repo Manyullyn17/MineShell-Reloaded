@@ -592,7 +592,12 @@ Suggested, not yet confirmed or rejected:
   planning a Chunky pre-generation each draw the same chunk map (`chunkmap.ts`) on their own
   screens. One map tab with those as modes (pick chunks to prune, to restore from a
   snapshot, an area to pre-generate) would put them in one place. Its own idea: it can be
-  done with or without the chunk map becoming a map of its own.
+  done with or without the chunk map becoming a map of its own. The shape (user,
+  2026-10-27): one tab (name open) with a mode switcher that swaps the controls and the
+  map's overlay where the mode has one (the prune heatmap, a snapshot's chunks, the
+  pre-generation area). If the chunk map becomes a map of its own, the three modes go into
+  that map instead of a tab beside it. Together they already work as a sort of map where
+  there is none, so how far this goes is left to see.
 - **The management server instead of RCON where there is one** (user, 2026-10-26: idea for
   later, if it is worth it): Minecraft 1.21.9+ has a JSON-RPC API over WebSocket
   (`management-server-enabled`/`-host`/`-port`/`-secret`, optional TLS in server.properties).
