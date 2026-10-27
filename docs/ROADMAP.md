@@ -22,7 +22,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
 - **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
   questions), the item icon and name leftovers, per-world game settings, game rules with world
   spawn and border, the server resource pack, a mod config editor, and game mode
-  and teleport for online players (below, added 2026-10-26); log retention (the
+  and teleport for online players (below, added 2026-10-26); zips and folders in Files, a
+  server list preview and shared player lists (below, added 2026-10-27); log retention (the
   Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
@@ -222,6 +223,33 @@ another online player, to the world spawn or to coordinates (`tp`, with the dime
 the version's `execute in` allows it, 1.13+). Over RCON, under the console permission
 (`console.command`) or a permission of its own.
 
+### Zips and folders in Files (after 1.0)
+
+Agreed 2026-10-27 (found in a completeness check). Files uploads, edits, renames, deletes
+and restores from the trash, but cannot unpack an uploaded zip or download a folder as one.
+Unpack: into the zip's folder or a new one named after it, refusing paths that leave the
+server folder and asking before overwriting (what would be replaced goes to the trash, as
+deletes do). A folder downloads as a zip streamed while it is made (`zip.ts`); a world
+folder of a running server carries the same warning as other copies of a live world (World
+tab's download pauses saving). Possibly packing chosen files into a zip in place.
+
+### Server list preview (after 1.0)
+
+Agreed 2026-10-27. The description (`motd`) is a plain text field, so `§` formatting is
+typed blind. Beside it: the server as the multiplayer list draws it (icon, description in
+its colours and styles, players online/max), with buttons that insert colour and format
+codes. To check: how each version escapes `§` and `§` in `server.properties`, and
+that the two-line limit and width match the client.
+
+### Shared player lists (after 1.0)
+
+Agreed 2026-10-27. Whitelist, ops and bans are per server, so someone running several
+servers for the same group adds each player everywhere. A shared list (named, in MineShell's
+settings) that servers follow: adding or removing there applies to each following server,
+over RCON while it runs and to its JSON file while stopped, as the Players tab already does
+for one. To decide: whether a following server can still have its own extra entries, and
+what joining a list does with the entries a server already has.
+
 ### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
@@ -386,6 +414,16 @@ Suggested, not yet confirmed or rejected:
 - **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
   own; the disk usage page offers to delete archived logs and crash reports older than 30
   days.
+- **Maintenance mode** (2026-10-27, user: maybe): one switch that turns the whitelist on,
+  kicks whoever is not on it with a message, and changes the description to say so; off puts
+  all three back. For pack updates and other work players should stay out of.
+- **Holding a mod at its version** (2026-10-27, user: maybe): "Skip these" on the overview
+  skips the mod updates on offer, and the next version is offered again. A hold per mod (on
+  the Mods tab) would keep one left out of update checks for good, for a mod kept at a build
+  on purpose.
+- **Chat to Discord** (2026-10-27, user: maybe): players' chat, deaths and advancements sent
+  to a channel through the notification setup (webhook), read from the console. One way
+  only: two-way needs a bot, which is what mods for it already do.
 
 ---
 
@@ -395,6 +433,12 @@ Suggested, not yet confirmed or rejected:
 console commands, reads who is online, edits player lists live and stops servers cleanly
 over RCON; without it most of the server tabs stop working. It stays managed: port and
 password are MineShell's, `enable-rcon` is not offered.
+
+**Translations** (user's call, 2026-10-27). The interface stays English: the user reads
+only English and German, uses MineShell in English, and could not proofread any other
+language, so a translation would help only other users of that one language. Proxy
+networks (Velocity, BungeeCord) and Bedrock players (Geyser) were set aside in the same
+check: they come with plugin servers (2.0).
 
 **A "Restarting" status** (user's call, 2026-10-18). A restart already reads as Stopping
 (systemd's `deactivating`), Starting (until `Done (`), Running; one label for the whole thing
