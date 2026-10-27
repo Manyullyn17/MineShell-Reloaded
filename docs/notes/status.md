@@ -11,7 +11,7 @@ Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10
   release candidate. Then (2026-10-25) one more: the mod list export (ROADMAP, "Road to 1.0"),
   and the rest of the small builds on that list were done the same day. Feature freeze from
   0.33.0 (user's call, 2026-10-25): only fixes, then 1.0 once it is stable without big issues.
-  Log retention moved to after 1.0. 0.33.2 is the release candidate (2026-10-26), running on
+  Log retention moved to after 1.0. 0.33.3 is the release candidate (2026-10-27; 0.33.2 before it, from 2026-10-26), running on
   the real install for a week or two; what is left besides that is "Left for the user" below.
 - The status page moves to after 1.0, with the item icon leftovers and per-world game
   settings. Plugin servers stay 2.0; GT New Horizons got its slot 2026-10-27 (below).

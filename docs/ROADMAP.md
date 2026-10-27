@@ -48,10 +48,14 @@ until after 1.0, and asked to keep the rest listed here):
   notes for 1.0 would start at it, and the self-updater's `compareVersions` reads
   `1.0.0-rc.1` as equal to `1.0.0`, so the candidate would never be offered 1.0), while a
   0.x needs none, and going back from 1.x then lands on the tested release.
-  **The candidate is 0.33.2** (user's call, 2026-10-26), running on the real install from
-  2026-10-26; it replaced 0.33.1 the same day with the two fixes the server export test found.
-  A `fix:` release in the meantime becomes the new candidate, and only the checks its fix
-  touches are repeated.
+  **The candidate is 0.33.3** (user's call, 2026-10-27), replacing 0.33.2 (on the real install
+  from 2026-10-26, which had replaced 0.33.1 with the two fixes the server export test found).
+  0.33.3 brings the UI fixes the README screenshots and the page sweep found (spacing, words
+  run together, phone layouts, tab bars) and the pack update preview counting renamed mod
+  builds as updated; the checks those touch are the pages themselves (swept at 390 and
+  1280 px) and the pack change preview (its flow test, and Cobblemon 1.8.1 -> 1.8.4 in the
+  screenshot world). A `fix:` release in the meantime becomes the new candidate, and only the
+  checks its fix touches are repeated.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
