@@ -1126,8 +1126,16 @@
 		width: 9.5rem;
 	}
 
-	.fields .field:has(textarea) {
+	/* Room for a list, and for a namespaced dimension id ("minecraft:overworld" was cut short). */
+	.fields .field:has(textarea),
+	.fields .field:has(#f-dimension) {
 		width: 16rem;
+	}
+
+	/* Game mode's four choices are wider than a field: the field takes their width rather than
+	   letting them run past it (and, at the end of a row, past the panel). */
+	.fields .field:has(:global(.segmented-choice)) {
+		width: auto;
 	}
 
 	.fields textarea {
