@@ -46,7 +46,14 @@ export const shots = [
 	{ name: 'overview-phone', path: '/instances/survival', waitFor: 'ms/tick', settle: 3000, width: 390, height: 844 },
 	// Feature sections: one picture each, the page without the sidebar.
 	// The crashed server's overview, its last-output panel: the verdict, the button that fixes it, the log.
-	{ name: 'crash', path: '/instances/creative', waitFor: 'Disable Simple Datapacks', element: 'main.content section.panel' },
+	{
+		name: 'crash',
+		path: '/instances/creative',
+		waitFor: 'Disable Simple Datapacks',
+		element: 'main.content section.panel',
+		// The number strip right under it would show as a line along the bottom edge.
+		steps: [{ eval: `document.querySelector('main.content section.panel').nextElementSibling.style.visibility = 'hidden'` }]
+	},
 	{
 		// World > Pre-generate on Cobblemon (its real world, Chunky installed): a circle of 500 blocks
 		// round spawn on the chunk map, with how many chunks are new and about how much disk they take.
@@ -65,8 +72,6 @@ export const shots = [
 					await wait(300);
 					[...form.querySelectorAll('button')].find((b) => b.textContent.trim() === '500').click();
 					for (let i = 0; i < 60 && !/to generate/.test(form.textContent); i++) await wait(500);
-					// Fitted again once the map is up: a fit asked for while it starts can be lost to its first view.
-					[...form.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Show all of it').click();
 					await wait(2000);
 					return true;
 				})()`
