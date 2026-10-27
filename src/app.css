@@ -737,6 +737,15 @@ tbody tr:last-child td {
 	white-space: nowrap;
 }
 
+/* Wider than a phone: tabs that do not fit go on to a second line instead of past the edge (at
+   1280 px MineShell settings hid Updates and Activity, a server's Settings its Snapshots). */
+@media (min-width: 60.01rem) {
+	.subtabs {
+		flex-wrap: wrap;
+		overflow: visible;
+	}
+}
+
 .subtabs button {
 	display: flex;
 	align-items: center;
