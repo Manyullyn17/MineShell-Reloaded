@@ -331,8 +331,10 @@
 {/await}
 
 <style>
-	.server-list {
+	/* Over .check below: a gap before the fields, and the box by the first line when the text wraps (a phone). */
+	.check.server-list {
 		margin-bottom: var(--space-3);
+		align-items: flex-start;
 	}
 
 	.block {
