@@ -2,7 +2,7 @@
 	import { whenClosedForGood } from '#lib/shared/eventsource.js';
 	import { refreshAll } from '$app/navigation';
 	import { copyText } from '#lib/shared/clipboard.js';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { segments } from '#lib/shared/highlight.js';
@@ -30,6 +30,16 @@
 		/** Saved commands for this server (lib/server/macros.ts). */
 		macros?: string[];
 	} = $props();
+
+	/** A phone's input fits a few words: shorter placeholders there ("Type a server comman" was cut). */
+	let narrow = $state(false);
+	onMount(() => {
+		const query = window.matchMedia('(max-width: 60rem)');
+		narrow = query.matches;
+		const change = () => (narrow = query.matches);
+		query.addEventListener('change', change);
+		return () => query.removeEventListener('change', change);
+	});
 
 	// Raw state, replaced whole once per batch: a deep proxy re-filtered and
 	// re-rendered the buffer for every line, and a full buffer shifted every
@@ -463,10 +473,16 @@
 				type="text"
 				bind:this={input}
 				placeholder={!canSend
-					? 'Start the server to send commands'
+					? narrow
+						? 'Start the server first'
+						: 'Start the server to send commands'
 					: chatMode
-						? 'Say something to everyone online (shows as [Rcon] in game)'
-						: 'Type a server command, e.g. say hello   ·   ↑ for history'}
+						? narrow
+							? 'Say something'
+							: 'Say something to everyone online (shows as [Rcon] in game)'
+						: narrow
+							? 'Server command'
+							: 'Type a server command, e.g. say hello   ·   ↑ for history'}
 				bind:value={command}
 				onkeydown={onKeydown}
 				disabled={!canSend || sending}
