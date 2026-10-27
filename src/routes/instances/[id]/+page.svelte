@@ -308,7 +308,7 @@
 		<dt>Players</dt>
 		<dd class="mono">{data.players ? `${data.players.online}/${data.players.max}` : '-'}</dd>
 		<dd class="sub">
-			{#if data.history.peakToday}peak today {data.history.peakToday} · {/if}<a href="/instances/{data.instance.id}/players">all players</a>
+			{#if data.history.peakToday}peak today {data.history.peakToday}{' · '}{/if}<a href="/instances/{data.instance.id}/players">all players</a>
 		</dd>
 	</div>
 	<div>

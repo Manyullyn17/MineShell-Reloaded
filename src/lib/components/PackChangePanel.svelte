@@ -165,7 +165,7 @@
 		{#each files as f (f)}
 			<li class="check">
 				<input id="keep-{f}" type="checkbox" name="keepOwn" value={f} bind:group={keepOwn} />
-				<label for="keep-{f}">{f}{#if looksLikeDatapack(f)} <span class="tag">data pack</span>{/if}</label>
+				<label for="keep-{f}">{f}{#if looksLikeDatapack(f)}{' '}<span class="tag">data pack</span>{/if}</label>
 			</li>
 		{/each}
 	</ul>

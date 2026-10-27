@@ -1345,7 +1345,7 @@
 				{#each data.downloads.allowed as allowed (allowed.address)}
 					<tr>
 						<td class="mono">{blockedLabel(allowed)}</td>
-						<td class="small faint">{formatDateTime(allowed.addedAt)}{#if allowed.addedBy} by {allowed.addedBy}{/if}</td>
+						<td class="small faint">{formatDateTime(allowed.addedAt)}{#if allowed.addedBy}{' '}by {allowed.addedBy}{/if}</td>
 						<td class="right">
 							<button class="button-quiet" onclick={() => removeAllowed(allowed.address)}>Remove</button>
 						</td>

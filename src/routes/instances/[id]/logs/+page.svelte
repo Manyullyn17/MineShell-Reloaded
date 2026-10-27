@@ -147,7 +147,7 @@
 						<a href="{base}?run={run.invocation}" class:current={currentKey === run.invocation}>
 							<span class="dot" class:running={end.tone === 'running'} class:failed={end.tone === 'bad'}></span>
 							<span class="item">
-								<span>{formatDateTime(run.startedAt)}{#if data.bisectRuns.includes(run.invocation)} <span class="tag">bisect test</span>{/if}</span>
+								<span>{formatDateTime(run.startedAt)}{#if data.bisectRuns.includes(run.invocation)}{' '}<span class="tag">bisect test</span>{/if}</span>
 								<span class="sub" class:bad={end.tone === 'bad'} class:good={end.tone === 'running'}
 									>{end.label}{run.endedAt ? ` after ${duration(run)}` : ''}{data.startTimes[run.invocation] !== undefined
 										? ` · started in ${formatSeconds(data.startTimes[run.invocation])}`
