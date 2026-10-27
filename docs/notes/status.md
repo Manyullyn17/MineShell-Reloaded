@@ -16,6 +16,8 @@ Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10
 - The status page moves to after 1.0, with the item icon leftovers and per-world game
   settings. Plugin servers stay 2.0; GT New Horizons has no slot yet.
 - Minor dependency updates before the freeze; TypeScript 7 waits until after 1.0.
+- After 1.0 (2026-10-27): the work up to 2.0 is in ROADMAP, "Later", in a suggested order of
+  steps (upkeep and quick wins first); GT New Horizons is still not slotted.
 - Long running is covered: the installed MineShell has run a server with scheduled restarts
   and snapshots since it was installed.
 - arm64 and musl stay untested (no such hardware; home servers are nearly always x64). Only

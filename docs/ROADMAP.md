@@ -19,15 +19,9 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   call, 2026-10-22) are built (ROADMAP-ARCHIVE). World backups to a folder (built
   2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
   import are built (ROADMAP-ARCHIVE).
-- **After 1.0** (user's call, 2026-10-21): the status page (still parked on its open
-  questions), the item icon and name leftovers, per-world game settings, game rules with world
-  spawn and border, the server resource pack, a mod config editor, and game mode
-  and teleport for online players (below, added 2026-10-26); zips and folders in Files, a
-  server list preview, shared player lists, earlier versions of edited files, single files
-  from a snapshot, search in files, bringing a copy's changes back, "required by" for mods,
-  a change history per server, where a stuck server hangs, a better file editor, TPS per
-  dimension and the installed mods list (below, added 2026-10-27); log retention (the
-  Undecided entry below; moved here 2026-10-25); Node's download crash (below).
+- **After 1.0** (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
+  suggested order of steps there (2026-10-27): upkeep and quick wins, files, mod configs,
+  world, players, diagnosis and copies, the status page. Then plugin servers as 2.0.
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
 (user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
@@ -158,9 +152,36 @@ Work it needs:
 
 ## Later
 
-None of these depends on another.
+After 1.0 and before 2.0 (plugin servers). A suggested order (2026-10-27; the user asked for
+one so there is a place to start after 1.0; any step can move): steps by theme, each a few
+entries that share code, the cheapest and most needed first. A step is not a version:
+`feat:` commits are released as minors whenever they are ready. Within a step, entries are
+in the order to build them where one needs another.
 
-### Node's download crash (after 1.0)
+1. **Upkeep and quick wins**: Node's download crash, TypeScript 7, log retention, TPS per
+   dimension, the installed mods list, "required by" for mods. Small, mostly reading what
+   MineShell already has: a calm first step after the freeze.
+2. **Files**: a better file editor first (line numbers and opening at a line are what search
+   needs), then search in files, earlier versions of edited files, zips and folders.
+3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
+4. **World**: game rules, world spawn and border, with the per-world game settings left from
+   "Several worlds" (Leftovers); single files from a snapshot.
+5. **Players and how the server shows itself**: game mode and teleport for online players,
+   shared player lists, the server list preview, the server resource pack.
+6. **Diagnosis and copies**: where a stuck server hangs, the change history per server, then
+   bringing a copy's changes back (the largest; the history's record of what changed helps it).
+7. **The status page**, once its open questions are answered; it reuses step 5's rendering
+   of the description and icon.
+
+Not slotted: GT New Horizons as its own install option (Planned; no slot yet, the user's
+call); the item icon and name leftovers (whenever, decided case by case); more README
+screenshots, as the features they would show settle. The other leftovers are picked up when
+their area is worked on. Undecided entries, if agreed, join the step of their area: holding a
+mod step 1, maintenance mode and the management server step 5, the rest wherever they fit.
+
+### 1. Upkeep and quick wins
+
+#### Node's download crash
 
 Node's built-in fetch (undici 7 in Node 22 and 24) can end the whole MineShell process during a
 download from a host that closes the connection after a full file (docs/notes/packs-and-mods.md
@@ -170,7 +191,98 @@ has the details; found 2026-10-25). No host MineShell downloads from does that, 
 package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
 1.x minor, raising the minimum within Node 22 to 22.19.
 
-### Game rules, world spawn and border (after 1.0)
+#### TypeScript 7
+
+Waits until after 1.0 (user's call, 2026-10-21, with the minor dependency updates done
+before the freeze). Development tooling only: check that svelte-check and Kit work with it
+before switching.
+
+#### Log rotation and retention
+
+Nothing deletes old `logs/` or `crash-reports/` on its own; the disk usage page offers to
+delete archived logs and crash reports older than 30 days. Moved to after 1.0 from
+Undecided (user's call, 2026-10-25).
+
+#### TPS per dimension
+
+Agreed 2026-10-27. `forge tps` and `neoforge tps` list every dimension's tick time and
+TPS, but `tps.ts` keeps only "Overall". Keeping the dimension lines (named as Dimension
+names does) shows which one lags; nothing more is asked of the server. Vanilla's `tick
+query` has no per-dimension figures.
+
+#### Installed mods list
+
+Agreed 2026-10-27. The list filters by name and by enabled/disabled/needs attention and
+shows sizes, but has no icons (only search results do), no sorting and no side filter.
+Icons from Modrinth/CurseForge for tracked mods (kept, not fetched per view) and from the
+jar's own logo (`logoFile` in mods.toml, `icon` in fabric.mod.json) for the rest; sorting by
+name, size and date added or updated; a filter for client-only mods.
+
+#### "Required by" for mods
+
+Agreed 2026-10-27. Installing shows a mod's dependencies, but disabling or deleting one
+says nothing about the mods that need it, and the server then refuses to start. The jars
+declare them (`META-INF/mods.toml`/`neoforge.mods.toml`, `fabric.mod.json`,
+`quilt.mod.json`, `mcmod.info` for 1.12 where it lists any), read as the duplicate-mod check
+reads mod ids: the Mods tab shows what needs a mod, and disabling or deleting one that
+enabled mods require asks first, naming them. Optional dependencies are not a reason to ask.
+
+### 2. Files
+
+#### A better file editor
+
+Agreed 2026-10-27. Files edits in a plain textarea: no line numbers, no colours, and a
+broken JSON or TOML file saves silently and fails at the next start. Line numbers and syntax
+colours (JSON/JSON5, TOML, `.cfg`, `.properties`, YAML, JS for KubeJS), and a check on save
+that names the line ("line 14: missing comma") with "save anyway". Opening at a line is what
+search in files needs. An editor library (CodeMirror 6) is the likely way; its size is
+loaded only on the editor.
+
+#### Search in files
+
+Agreed 2026-10-27. "Which config sets this?" means opening files one by one today. A search
+across the server's text files (`config/`, `defaultconfigs/`, `kubejs/`, `serverconfig/` in
+worlds, scripts), listing matching lines that open in the editor at that line; binary files,
+`mods/`, logs (the Logs tab has its own search) and worlds' region files left out. Belongs
+with the mod config editor.
+
+#### Earlier versions of edited files
+
+Agreed 2026-10-27. Snapshots hold only the world: configs, mods' settings and
+`server.properties` have no copy unless a pack change made one (pack rollback). Each save
+from the file editor (and later the mod config editor and the settings' raw editor) keeps
+the version it replaced, listed per file with "go back"; going back is itself a save, so it
+can be undone. Kept per file by count and age, in `.mineshell/` (left out of exports). The
+user's call: this rather than configs in snapshots, since a file's own history is what
+someone who broke one config reaches for. To decide: whether changes from outside the
+editor (a mod rewriting its config, SFTP) are noticed and kept too.
+
+#### Zips and folders in Files
+
+Agreed 2026-10-27 (found in a completeness check). Files uploads, edits, renames, deletes
+and restores from the trash, but cannot unpack an uploaded zip or download a folder as one.
+Unpack: into the zip's folder or a new one named after it, refusing paths that leave the
+server folder and asking before overwriting (what would be replaced goes to the trash, as
+deletes do). A folder downloads as a zip streamed while it is made (`zip.ts`); a world
+folder of a running server carries the same warning as other copies of a live world (World
+tab's download pauses saving). Possibly packing chosen files into a zip in place.
+
+### 3. Mod configs
+
+#### Mod config editor
+
+Planned for the old MineShell and forgotten (user, 2026-10-26). Today configs are edited as
+raw text in Files. A form view for the common formats: NeoForge/Forge TOML (with the
+comments above each key as hints, and their `# Range:`/`# Allowed Values:` lines as limits
+or choices), Forge 1.12 `.cfg` (typed `B:`/`I:`/`D:`/`S:` keys and `<...>` lists), and plain
+JSON/JSON5; anything else stays in the text editor. Writes keep comments and order (edit
+the lines, not reprint the file), and a running server is told which configs it only reads
+at start. Where it lives: a Configs view per mod on the Mods tab, and the same editor from
+Files.
+
+### 4. World
+
+#### Game rules, world spawn and border
 
 Asked for 2026-10-26 (user: no easy way to edit game rules yet; spawn and border agreed the
 same day). A list of a world's game rules with their values, edited in place: a checkbox for
@@ -194,7 +306,44 @@ over RCON; stopped: written to `level.dat` like the rules.
   server (Undecided) can list and set them with types, which would cover the running case
   without RCON.
 
-### Server resource pack (after 1.0)
+#### Single files from a snapshot
+
+Agreed 2026-10-27. A snapshot can be restored whole, by dimension, by chunk, or a player's
+data, but not one file: a mod's file in `world/data/`, one region file, `level.dat`. A
+snapshot browsed like Files, with "restore this file" (and folder); what it replaces goes
+to the trash. Files the running server writes (region files, `level.dat`) only with it
+stopped, as other world restores.
+
+### 5. Players and how the server shows itself
+
+#### Game mode and teleport for online players
+
+Asked for 2026-10-26. Online players can be kicked, opped and banned (overview, player
+drawer), but the player editor is read-only while they are online and nothing else acts on
+them. Buttons in the player drawer and on the overview's "Online now": game mode (the four
+modes, `gamemode <mode> <name>`; 1.12 takes the number or the name), and teleport to
+another online player, to the world spawn or to coordinates (`tp`, with the dimension where
+the version's `execute in` allows it, 1.13+). Over RCON, under the console permission
+(`console.command`) or a permission of its own.
+
+#### Shared player lists
+
+Agreed 2026-10-27. Whitelist, ops and bans are per server, so someone running several
+servers for the same group adds each player everywhere. A shared list (named, in MineShell's
+settings) that servers follow: adding or removing there applies to each following server,
+over RCON while it runs and to its JSON file while stopped, as the Players tab already does
+for one. To decide: whether a following server can still have its own extra entries, and
+what joining a list does with the entries a server already has.
+
+#### Server list preview
+
+Agreed 2026-10-27. The description (`motd`) is a plain text field, so `§` formatting is
+typed blind. Beside it: the server as the multiplayer list draws it (icon, description in
+its colours and styles, players online/max), with buttons that insert colour and format
+codes. To check: how each version escapes `§` and `§` in `server.properties`, and
+that the two-line limit and width match the client.
+
+#### Server resource pack
 
 Nothing yet (user, 2026-10-26: long meant to, never mentioned): the pack is only reachable as
 extra `server.properties` keys (`resource-pack`, `resource-pack-sha1`,
@@ -205,109 +354,9 @@ each Minecraft version reads (the prompt and `require-resource-pack` came in 1.1
 whether MineShell should also host an uploaded pack itself, which needs an address players
 can reach (playit.gg does not carry HTTP).
 
-### Mod config editor (after 1.0)
+### 6. Diagnosis and copies
 
-Planned for the old MineShell and forgotten (user, 2026-10-26). Today configs are edited as
-raw text in Files. A form view for the common formats: NeoForge/Forge TOML (with the
-comments above each key as hints, and their `# Range:`/`# Allowed Values:` lines as limits
-or choices), Forge 1.12 `.cfg` (typed `B:`/`I:`/`D:`/`S:` keys and `<...>` lists), and plain
-JSON/JSON5; anything else stays in the text editor. Writes keep comments and order (edit
-the lines, not reprint the file), and a running server is told which configs it only reads
-at start. Where it lives: a Configs view per mod on the Mods tab, and the same editor from
-Files.
-
-### Game mode and teleport for online players (after 1.0)
-
-Asked for 2026-10-26. Online players can be kicked, opped and banned (overview, player
-drawer), but the player editor is read-only while they are online and nothing else acts on
-them. Buttons in the player drawer and on the overview's "Online now": game mode (the four
-modes, `gamemode <mode> <name>`; 1.12 takes the number or the name), and teleport to
-another online player, to the world spawn or to coordinates (`tp`, with the dimension where
-the version's `execute in` allows it, 1.13+). Over RCON, under the console permission
-(`console.command`) or a permission of its own.
-
-### Zips and folders in Files (after 1.0)
-
-Agreed 2026-10-27 (found in a completeness check). Files uploads, edits, renames, deletes
-and restores from the trash, but cannot unpack an uploaded zip or download a folder as one.
-Unpack: into the zip's folder or a new one named after it, refusing paths that leave the
-server folder and asking before overwriting (what would be replaced goes to the trash, as
-deletes do). A folder downloads as a zip streamed while it is made (`zip.ts`); a world
-folder of a running server carries the same warning as other copies of a live world (World
-tab's download pauses saving). Possibly packing chosen files into a zip in place.
-
-### Server list preview (after 1.0)
-
-Agreed 2026-10-27. The description (`motd`) is a plain text field, so `§` formatting is
-typed blind. Beside it: the server as the multiplayer list draws it (icon, description in
-its colours and styles, players online/max), with buttons that insert colour and format
-codes. To check: how each version escapes `§` and `§` in `server.properties`, and
-that the two-line limit and width match the client.
-
-### Shared player lists (after 1.0)
-
-Agreed 2026-10-27. Whitelist, ops and bans are per server, so someone running several
-servers for the same group adds each player everywhere. A shared list (named, in MineShell's
-settings) that servers follow: adding or removing there applies to each following server,
-over RCON while it runs and to its JSON file while stopped, as the Players tab already does
-for one. To decide: whether a following server can still have its own extra entries, and
-what joining a list does with the entries a server already has.
-
-### Earlier versions of edited files (after 1.0)
-
-Agreed 2026-10-27. Snapshots hold only the world: configs, mods' settings and
-`server.properties` have no copy unless a pack change made one (pack rollback). Each save
-from the file editor (and later the mod config editor and the settings' raw editor) keeps
-the version it replaced, listed per file with "go back"; going back is itself a save, so it
-can be undone. Kept per file by count and age, in `.mineshell/` (left out of exports). The
-user's call: this rather than configs in snapshots, since a file's own history is what
-someone who broke one config reaches for. To decide: whether changes from outside the
-editor (a mod rewriting its config, SFTP) are noticed and kept too.
-
-### Single files from a snapshot (after 1.0)
-
-Agreed 2026-10-27. A snapshot can be restored whole, by dimension, by chunk, or a player's
-data, but not one file: a mod's file in `world/data/`, one region file, `level.dat`. A
-snapshot browsed like Files, with "restore this file" (and folder); what it replaces goes
-to the trash. Files the running server writes (region files, `level.dat`) only with it
-stopped, as other world restores.
-
-### Search in files (after 1.0)
-
-Agreed 2026-10-27. "Which config sets this?" means opening files one by one today. A search
-across the server's text files (`config/`, `defaultconfigs/`, `kubejs/`, `serverconfig/` in
-worlds, scripts), listing matching lines that open in the editor at that line; binary files,
-`mods/`, logs (the Logs tab has its own search) and worlds' region files left out. Belongs
-with the mod config editor.
-
-### Bringing a copy's changes back (after 1.0)
-
-Agreed 2026-10-27. "Copy server" is for trying changes safely, but nothing carries the
-result back: the owner redoes it on the original by hand. A comparison of a copy with the
-server it was copied from (mods added, removed, updated or disabled; config and other text
-files changed, as diffs; settings and `server.properties`), with the chosen changes applied
-to the original after a snapshot, as one journalled operation. Needs the copy to remember
-its original (and when it was copied, to tell what changed on which side); a change made on
-both sides is shown, not overwritten, as the config merge does for pack updates.
-
-### "Required by" for mods (after 1.0)
-
-Agreed 2026-10-27. Installing shows a mod's dependencies, but disabling or deleting one
-says nothing about the mods that need it, and the server then refuses to start. The jars
-declare them (`META-INF/mods.toml`/`neoforge.mods.toml`, `fabric.mod.json`,
-`quilt.mod.json`, `mcmod.info` for 1.12 where it lists any), read as the duplicate-mod check
-reads mod ids: the Mods tab shows what needs a mod, and disabling or deleting one that
-enabled mods require asks first, naming them. Optional dependencies are not a reason to ask.
-
-### Change history per server (after 1.0)
-
-Agreed 2026-10-27. One timeline per server, for "it crashes since yesterday, what
-changed?": mod installs, updates and removals, config saves, settings changes, pack and
-loader changes, Minecraft migrations, beside its crashes, restarts and starts. The Activity
-page has the actions, but for all servers and without the runs; history has the runs. A
-crash diagnosis could point at the changes made since the last clean run.
-
-### Where a stuck server hangs (after 1.0)
+#### Where a stuck server hangs
 
 Agreed 2026-10-27. Stuck detection says a server stopped ticking, not why. `heap.ts`
 already speaks the JVM's attach protocol (`GC.heap_info`); `Thread.print` the same way gives
@@ -317,31 +366,27 @@ thread's stack usually names the mod's package it hangs in, so the stuck notice 
 one-click disable. To check: a dump of a big modded server is several MB, and a JVM too
 far gone may not answer the attach at all (then as today).
 
-### A better file editor (after 1.0)
+#### Change history per server
 
-Agreed 2026-10-27. Files edits in a plain textarea: no line numbers, no colours, and a
-broken JSON or TOML file saves silently and fails at the next start. Line numbers and syntax
-colours (JSON/JSON5, TOML, `.cfg`, `.properties`, YAML, JS for KubeJS), and a check on save
-that names the line ("line 14: missing comma") with "save anyway". Opening at a line is what
-search in files needs. An editor library (CodeMirror 6) is the likely way; its size is
-loaded only on the editor.
+Agreed 2026-10-27. One timeline per server, for "it crashes since yesterday, what
+changed?": mod installs, updates and removals, config saves, settings changes, pack and
+loader changes, Minecraft migrations, beside its crashes, restarts and starts. The Activity
+page has the actions, but for all servers and without the runs; history has the runs. A
+crash diagnosis could point at the changes made since the last clean run.
 
-### TPS per dimension (after 1.0)
+#### Bringing a copy's changes back
 
-Agreed 2026-10-27. `forge tps` and `neoforge tps` list every dimension's tick time and
-TPS, but `tps.ts` keeps only "Overall". Keeping the dimension lines (named as Dimension
-names does) shows which one lags; nothing more is asked of the server. Vanilla's `tick
-query` has no per-dimension figures.
+Agreed 2026-10-27. "Copy server" is for trying changes safely, but nothing carries the
+result back: the owner redoes it on the original by hand. A comparison of a copy with the
+server it was copied from (mods added, removed, updated or disabled; config and other text
+files changed, as diffs; settings and `server.properties`), with the chosen changes applied
+to the original after a snapshot, as one journalled operation. Needs the copy to remember
+its original (and when it was copied, to tell what changed on which side); a change made on
+both sides is shown, not overwritten, as the config merge does for pack updates.
 
-### Installed mods list (after 1.0)
+### 7. The status page
 
-Agreed 2026-10-27. The list filters by name and by enabled/disabled/needs attention and
-shows sizes, but has no icons (only search results do), no sorting and no side filter.
-Icons from Modrinth/CurseForge for tracked mods (kept, not fetched per view) and from the
-jar's own logo (`logoFile` in mods.toml, `icon` in fabric.mod.json) for the rest; sorting by
-name, size and date added or updated; a filter for client-only mods.
-
-### Status page
+#### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
 the owner turns it on per server and ticks what it shows. Parked (user's call, 2026-10-18)
@@ -374,7 +419,9 @@ Proposal (not agreed):
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
 
-### More README screenshots
+### Not slotted
+
+#### More README screenshots
 
 Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
 tests/tools/screenshots) is the general overview; feature sections could get one picture
@@ -502,9 +549,6 @@ Suggested, not yet confirmed or rejected:
   older and the feature means two paths for the same things. Check first: the method list on
   a current server (and whether NeoForge/Fabric leave it as vanilla has it), and whether it
   takes arbitrary console commands (RCON would still be needed if not).
-- **Log rotation and retention**: nothing deletes old `logs/` or `crash-reports/` on its
-  own; the disk usage page offers to delete archived logs and crash reports older than 30
-  days.
 - **Maintenance mode** (2026-10-27, user: maybe): one switch that turns the whitelist on,
   kicks whoever is not on it with a message, and changes the description to say so; off puts
   all three back. For pack updates and other work players should stay out of.
