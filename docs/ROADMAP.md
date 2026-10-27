@@ -77,6 +77,24 @@ until after 1.0, and asked to keep the rest listed here):
   written over RCON, a snapshot copied to a compressed backup folder, the server deleted with
   its files, made again under the same name, the backup folder picked in its settings (copy
   back needs that first), the copy brought back and restored: same seed, marker there.
+- **README and screenshots for the release** (user's call, 2026-10-27: with 1.0, so the
+  project page looks finished; it changes nothing in MineShell itself, so the freeze and the
+  candidate's testing are untouched). A pass over README.md, and the screenshots saved for
+  later on 2026-10-19: the top gallery (`npm run screenshots`, tests/tools/screenshots) is
+  the general overview; feature sections could get one picture each where it shows what
+  text cannot, cropped to the part that matters (a shot's `element`), full width at the top
+  of its section. Not settings, files or accounts (generic, and stale with every UI change).
+  Proposed, cheapest first:
+  1. **Crash diagnosis** (Console, logs & crash diagnostics): a server whose last start
+     crashed, with MineShell's verdict. The fake server prints a real crash log and exits 1.
+  2. **Player editor with item pictures** (Player management): a scene writing a player file
+     with a filled inventory, and the client jar (~30 MB from Mojang, kept between runs).
+  3. **Pack update preview** (Modpack & instance management): mods updated, added, removed,
+     configs kept; the page asks Modrinth live.
+  4. **Chunk map with the prune heatmap** (World management): synthetic region files; the
+     heatmap needs only InhabitedTime, terrain colours need block palettes.
+
+  Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draws as a box.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.
@@ -174,10 +192,10 @@ in the order to build them where one needs another.
    of the description and icon.
 
 Not slotted: GT New Horizons as its own install option (Planned; no slot yet, the user's
-call); the item icon and name leftovers (whenever, decided case by case); more README
-screenshots, as the features they would show settle. The other leftovers are picked up when
-their area is worked on. Undecided entries, if agreed, join the step of their area: holding a
-mod step 1, maintenance mode and the management server step 5, the rest wherever they fit.
+call); the item icon and name leftovers (whenever, decided case by case). The other
+leftovers are picked up when their area is worked on. Undecided entries, if agreed, join the
+step of their area: holding a mod step 1, maintenance mode and the management server step 5,
+the rest wherever they fit.
 
 ### 1. Upkeep and quick wins
 
@@ -418,26 +436,6 @@ Proposal (not agreed):
 
 Open questions: A or B; are those field defaults right (names off); client pack download
 in the first version or later; the JSON or not.
-
-### Not slotted
-
-#### More README screenshots
-
-Saved for later (user's call, 2026-10-19). The top gallery (`npm run screenshots`,
-tests/tools/screenshots) is the general overview; feature sections could get one picture
-each where it shows what text cannot, cropped to the part that matters (a shot's `element`),
-full width at the top of its section. Not settings, files or accounts (generic, and stale
-with every UI change). Proposed, cheapest first:
-1. **Crash diagnosis** (Console, logs & crash diagnostics): a server whose last start
-   crashed, with MineShell's verdict. The fake server prints a real crash log and exits 1.
-2. **Player editor with item pictures** (Player management): a scene writing a player file
-   with a filled inventory, and the client jar (~30 MB from Mojang, kept between runs).
-3. **Pack update preview** (Modpack & instance management): mods updated, added, removed,
-   configs kept; the page asks Modrinth live.
-4. **Chunk map with the prune heatmap** (World management): synthetic region files; the
-   heatmap needs only InhabitedTime, terrain colours need block palettes.
-
-Also open: Jade's title has an emoji ("Jade 🔍") that the headless Chrome draws as a box.
 
 ### Leftovers of built features
 
