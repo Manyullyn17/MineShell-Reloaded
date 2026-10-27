@@ -24,8 +24,9 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   spawn and border, the server resource pack, a mod config editor, and game mode
   and teleport for online players (below, added 2026-10-26); zips and folders in Files, a
   server list preview, shared player lists, earlier versions of edited files, single files
-  from a snapshot, search in files, bringing a copy's changes back, "required by" for mods
-  and a change history per server (below, added 2026-10-27); log retention (the
+  from a snapshot, search in files, bringing a copy's changes back, "required by" for mods,
+  a change history per server, where a stuck server hangs, a better file editor, TPS per
+  dimension and the installed mods list (below, added 2026-10-27); log retention (the
   Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
@@ -306,6 +307,40 @@ loader changes, Minecraft migrations, beside its crashes, restarts and starts. T
 page has the actions, but for all servers and without the runs; history has the runs. A
 crash diagnosis could point at the changes made since the last clean run.
 
+### Where a stuck server hangs (after 1.0)
+
+Agreed 2026-10-27. Stuck detection says a server stopped ticking, not why. `heap.ts`
+already speaks the JVM's attach protocol (`GC.heap_info`); `Thread.print` the same way gives
+a thread dump, taken when a server is found stuck (and kept with the run). The server
+thread's stack usually names the mod's package it hangs in, so the stuck notice can say
+"stuck in <mod>" (packages mapped to jars as the crash diagnosis does) with the same
+one-click disable. To check: a dump of a big modded server is several MB, and a JVM too
+far gone may not answer the attach at all (then as today).
+
+### A better file editor (after 1.0)
+
+Agreed 2026-10-27. Files edits in a plain textarea: no line numbers, no colours, and a
+broken JSON or TOML file saves silently and fails at the next start. Line numbers and syntax
+colours (JSON/JSON5, TOML, `.cfg`, `.properties`, YAML, JS for KubeJS), and a check on save
+that names the line ("line 14: missing comma") with "save anyway". Opening at a line is what
+search in files needs. An editor library (CodeMirror 6) is the likely way; its size is
+loaded only on the editor.
+
+### TPS per dimension (after 1.0)
+
+Agreed 2026-10-27. `forge tps` and `neoforge tps` list every dimension's tick time and
+TPS, but `tps.ts` keeps only "Overall". Keeping the dimension lines (named as Dimension
+names does) shows which one lags; nothing more is asked of the server. Vanilla's `tick
+query` has no per-dimension figures.
+
+### Installed mods list (after 1.0)
+
+Agreed 2026-10-27. The list filters by name and by enabled/disabled/needs attention and
+shows sizes, but has no icons (only search results do), no sorting and no side filter.
+Icons from Modrinth/CurseForge for tracked mods (kept, not fetched per view) and from the
+jar's own logo (`logoFile` in mods.toml, `icon` in fabric.mod.json) for the rest; sorting by
+name, size and date added or updated; a filter for client-only mods.
+
 ### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
@@ -494,6 +529,13 @@ Suggested, not yet confirmed or rejected:
 - **One view of everything scheduled** (2026-10-27): upcoming restarts, snapshots, map
   renders and scheduled commands across all servers in one list, showing what runs tonight
   and where heavy jobs of different servers land at the same time.
+- **Permission presets** (2026-10-27): accounts' per-server permissions are ticked one by
+  one; presets ("Moderator": console, players, start/stop; "Builder": start/stop) would make
+  giving a friend access one click. Whether a preset stays linked (changing it changes
+  everyone on it) or only fills the boxes is open.
+- **Quiet hours for notifications** (2026-10-27): the optional events (joins, leaves,
+  starts) held back during a time window, while crashes, memory kills and a full disk still
+  go out.
 
 ---
 
