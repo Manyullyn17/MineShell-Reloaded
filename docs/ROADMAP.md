@@ -24,7 +24,8 @@ Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Lat
   spawn and border, the server resource pack, a mod config editor, and game mode
   and teleport for online players (below, added 2026-10-26); zips and folders in Files, a
   server list preview, shared player lists, earlier versions of edited files, single files
-  from a snapshot and search in files (below, added 2026-10-27); log retention (the
+  from a snapshot, search in files, bringing a copy's changes back, "required by" for mods
+  and a change history per server (below, added 2026-10-27); log retention (the
   Undecided entry below; moved here 2026-10-25); Node's download crash (below).
 
 Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
@@ -278,6 +279,33 @@ worlds, scripts), listing matching lines that open in the editor at that line; b
 `mods/`, logs (the Logs tab has its own search) and worlds' region files left out. Belongs
 with the mod config editor.
 
+### Bringing a copy's changes back (after 1.0)
+
+Agreed 2026-10-27. "Copy server" is for trying changes safely, but nothing carries the
+result back: the owner redoes it on the original by hand. A comparison of a copy with the
+server it was copied from (mods added, removed, updated or disabled; config and other text
+files changed, as diffs; settings and `server.properties`), with the chosen changes applied
+to the original after a snapshot, as one journalled operation. Needs the copy to remember
+its original (and when it was copied, to tell what changed on which side); a change made on
+both sides is shown, not overwritten, as the config merge does for pack updates.
+
+### "Required by" for mods (after 1.0)
+
+Agreed 2026-10-27. Installing shows a mod's dependencies, but disabling or deleting one
+says nothing about the mods that need it, and the server then refuses to start. The jars
+declare them (`META-INF/mods.toml`/`neoforge.mods.toml`, `fabric.mod.json`,
+`quilt.mod.json`, `mcmod.info` for 1.12 where it lists any), read as the duplicate-mod check
+reads mod ids: the Mods tab shows what needs a mod, and disabling or deleting one that
+enabled mods require asks first, naming them. Optional dependencies are not a reason to ask.
+
+### Change history per server (after 1.0)
+
+Agreed 2026-10-27. One timeline per server, for "it crashes since yesterday, what
+changed?": mod installs, updates and removals, config saves, settings changes, pack and
+loader changes, Minecraft migrations, beside its crashes, restarts and starts. The Activity
+page has the actions, but for all servers and without the runs; history has the runs. A
+crash diagnosis could point at the changes made since the last clean run.
+
 ### Status page
 
 Optional, off by default, for players without an account (accounts already cover users):
@@ -461,6 +489,11 @@ Suggested, not yet confirmed or rejected:
 - **Acting on several servers at once** (2026-10-27, user: maybe): stop or restart all,
   install the updates on offer everywhere; less needed with a few servers at home than
   on a host with many.
+- **Quick switcher** (2026-10-27, user: unsure): Ctrl+K and a few letters jump to a server,
+  one of its tabs or a setting (the settings search already knows the settings).
+- **One view of everything scheduled** (2026-10-27): upcoming restarts, snapshots, map
+  renders and scheduled commands across all servers in one list, showing what runs tonight
+  and where heavy jobs of different servers land at the same time.
 
 ---
 
