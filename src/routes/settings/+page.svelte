@@ -1554,6 +1554,8 @@
 	/* Sections rather than boxes, as on a server's Settings. */
 	.app-settings {
 		max-width: 62rem;
+		/* Fills the settings layout's column, so the save bar after it is at the window's bottom on a short tab. */
+		flex-grow: 1;
 	}
 
 	.app-settings :global(.panel) {

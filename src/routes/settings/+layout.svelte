@@ -53,8 +53,15 @@
 </div>
 
 {@render children()}
+</div>
 
 <style>
+	.settings-page {
+		display: flex;
+		flex-direction: column;
+		min-height: 100%;
+	}
+
 	.settings-head {
 		padding-top: 0.3rem;
 	}
