@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cancelCountdown, getCountdown, startCountdown } from './countdown';
 import { invalidateUnitState } from './systemd';
+import { db } from './db';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 import { createInstance } from '../../../tests/helpers/instances';
 
@@ -19,7 +20,10 @@ describe('stop or restart after a countdown', () => {
 		vi.useFakeTimers();
 		running();
 	});
-	afterEach(() => vi.useRealTimers());
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
 
 	it('acts when the countdown runs out, not before', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'eula.txt': 'eula=true' });
@@ -40,6 +44,18 @@ describe('stop or restart after a countdown', () => {
 		expect(cancelCountdown(instance.id)).toBe(true);
 		await vi.advanceTimersByTimeAsync(120_000);
 		expect(stops()).toEqual([]);
+	});
+
+	// Nothing awaits the countdown's timer: a failure there was a rejection nobody caught, which ends MineShell.
+	it('logs a failure at the end of the countdown instead of leaving it uncaught', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		await startCountdown(instance, 'restart', 60);
+		vi.spyOn(db, 'insert').mockImplementation(() => {
+			throw new Error('database or disk is full');
+		});
+		const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+		await vi.advanceTimersByTimeAsync(61_000);
+		await vi.waitFor(() => expect(logged).toHaveBeenCalledWith(expect.stringContaining("countdown's restart"), expect.any(Error)));
 	});
 
 	it('does not restart a server stopped in the meantime', async () => {

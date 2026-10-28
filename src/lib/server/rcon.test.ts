@@ -186,3 +186,25 @@ describe('rconExec', () => {
 		expect(fake.state.ran).toEqual(['list']);
 	});
 });
+
+describe('something else on the RCON port', () => {
+	// A length of -4 never moved past the packet: the loop reading it spun
+	// forever, and MineShell with it (its own timeout could not fire).
+	it.each([-4, 3, 2 ** 30])('is refused when it sends a packet of length %i', async (length) => {
+		const server = net.createServer((socket) => {
+			socket.on('error', () => undefined);
+			socket.on('data', () => {
+				const packet = Buffer.alloc(14);
+				packet.writeInt32LE(length, 0);
+				socket.write(packet);
+			});
+		});
+		await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+		try {
+			const port = (server.address() as net.AddressInfo).port;
+			await expect(rconExec({ port, password: 'pw', timeoutMs: 200 }, ['list'])).rejects.toThrow('not RCON');
+		} finally {
+			server.close();
+		}
+	});
+});

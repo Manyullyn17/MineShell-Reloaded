@@ -12,6 +12,7 @@ import { refreshTemplateUnit } from './systemd';
 import { applyServerCap } from './servercap';
 import { startUpdateChecks } from './selfupdate';
 import { startBackups } from './backups';
+import { keepRunningOnRejections } from './crashguard';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
@@ -24,6 +25,7 @@ const globals = globalThis as { __mineshellBooted?: boolean };
 export function boot(): void {
 	if (globals.__mineshellBooted) return;
 	globals.__mineshellBooted = true;
+	keepRunningOnRejections();
 
 	// Before anything else: servers a previous MineShell left mid-operation
 	// are put back (and stay marked busy, so unstartable, until then).

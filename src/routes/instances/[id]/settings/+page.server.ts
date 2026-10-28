@@ -977,7 +977,12 @@ export const actions: Actions = {
 		if (String(form.get('confirm') ?? '').trim().toUpperCase() !== 'DELETE') {
 			return fail(400, { ok: false, message: 'Type DELETE to confirm.' });
 		}
-		await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
+		try {
+			await deleteInstance(instance, { deleteFiles: form.get('deleteFiles') === 'on' });
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(409, { ok: false, message: err.message });
+			throw err;
+		}
 		forgetDiskBreakdown(instance.path);
 		redirect(303, '/');
 	},

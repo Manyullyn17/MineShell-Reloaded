@@ -174,6 +174,8 @@
 		font-size: 1rem;
 		font-weight: 500;
 		color: var(--text);
+		/* "1.2 GB" on one line: a long label left it a column wide on phones. */
+		white-space: nowrap;
 	}
 
 	.frame {

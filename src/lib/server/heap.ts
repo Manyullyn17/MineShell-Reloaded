@@ -195,7 +195,11 @@ let timer: NodeJS.Timeout | null = null;
 
 export function startHeapSampling(): void {
 	if (timer) return;
-	timer = setInterval(() => void sampleOnce(), SAMPLE_EVERY_MS);
+	// Caught: an uncaught rejection ends the process (monitor.ts, sampleResources).
+	timer = setInterval(
+		() => void sampleOnce().catch((err) => console.warn('[mineshell] sampling Java heaps failed:', err instanceof Error ? err.message : err)),
+		SAMPLE_EVERY_MS
+	);
 	timer.unref?.();
 }
 

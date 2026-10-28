@@ -16,6 +16,15 @@ const TYPE_RESPONSE = 0;
  * command's id: 1.12.2 and 1.21.11 alike, read from their RconClient with javap.
  */
 const MAX_FRAGMENT = 4096;
+/**
+ * A packet's length field outside this range is not RCON: id, type and the two
+ * NULs are 10 bytes. Vanilla's fragments stay under 16 KiB; the upper bound
+ * leaves room for a server that does not split, and stops a nonsense length
+ * from being buffered for. Taken as it was, -4 never moved past the packet
+ * and froze MineShell.
+ */
+const MIN_PACKET = 10;
+const MAX_PACKET = 1024 * 1024;
 
 function encode(id: number, type: number, body: string): Buffer {
 	const payload = Buffer.from(body, 'utf8');
@@ -68,6 +77,13 @@ export class RconClient {
 		this.inbox = Buffer.concat([this.inbox, chunk]);
 		while (this.inbox.length >= 4) {
 			const size = this.inbox.readInt32LE(0);
+			if (size < MIN_PACKET || size > MAX_PACKET) {
+				const waiting = this.waiting;
+				this.waiting = null;
+				waiting?.fail(new RconError(`The RCON port answered with something that is not RCON (a packet of ${size} bytes).`));
+				this.close();
+				return;
+			}
 			if (this.inbox.length < size + 4) break;
 			const id = this.inbox.readInt32LE(4);
 			const type = this.inbox.readInt32LE(8);

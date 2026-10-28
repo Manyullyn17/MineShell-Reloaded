@@ -59,6 +59,14 @@ is `Type=simple`, so `systemctl start` returns once systemd forks, possibly befo
 environment file is read: putting a one-off argument into `<id>.env` and taking it out again
 after the start would race.
 
+**MineShell's own process.** The game servers are units of their own, so MineShell ending
+does not stop them, but it does end every running task (installs, exports, countdowns).
+Background work runs on timers nobody awaits, so a rejection there would reach Node's
+default, which ends the process; `crashguard.ts` logs such rejections and keeps running
+instead. A synchronous throw nothing caught still ends it, and systemd restarts MineShell,
+whose boot recovers interrupted operations (`recovery.ts`): after one, state may be half
+changed in ways a log line would hide.
+
 ### Forge's startup questions
 
 Forge before 1.13, and Cleanroom, can stop loading a world to ask on the console: about
