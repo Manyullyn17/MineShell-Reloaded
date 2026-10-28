@@ -316,7 +316,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) =>
 				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
 			),
-			raw: serialiseProperties(shownProperties)
+			raw: serialiseProperties(shownProperties, { unicode: true })
 		},
 		bootNote: bootStartNote(),
 		/** May hand out access (the Copy form's "same access" option). */

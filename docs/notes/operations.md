@@ -57,3 +57,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   differ from built-in. Per-instance keys (ports, RCON, MOTD, level name/seed/type) are never
   defaults. Restart/console/property fields are shared components (`RestartFields`,
   `ConsoleFields`, `PropertyInput`) and parsers with the per-instance pages.
+- `server.properties` is Java's properties format, read and written as Java does
+  (`readJavaProperties`, `serialiseProperties`; 2026-10-28). Minecraft rewrites it at every start
+  with `\:` `\!` `\\` escaped (1.12.2 and 1.21.11 both), and up to 1.12 at least reads it as
+  Latin-1: a UTF-8 "Gemütlich" motd came back as `Gem\u00C3\u00BCtlich`. Letters past ASCII are
+  written as `\uXXXX` (every version reads that); the raw editor shows them as letters.
+  Tried by running both vanilla jars on a scratch file.

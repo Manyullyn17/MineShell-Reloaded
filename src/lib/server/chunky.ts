@@ -5,6 +5,7 @@ import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
 import { onlinePlayers, rconPassword } from './instances';
 import { hasEnabledMod } from './mods';
+import { readJavaProperties } from './properties';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import type { PregenShape } from '#lib/shared/pregen.js';
@@ -80,13 +81,7 @@ export type SavedTask = {
 
 /** Java .properties as Chunky writes them: key=value lines, `\:` and `\=` escaped. */
 export function parseProperties(text: string): Record<string, string> {
-	const values: Record<string, string> = {};
-	for (const line of text.split(/\r?\n/)) {
-		if (!line.trim() || /^\s*[#!]/.test(line)) continue;
-		const m = line.match(/^\s*((?:\\.|[^=:\s\\])+)\s*[=:]?\s*(.*)$/);
-		if (m) values[m[1].replace(/\\(.)/g, '$1')] = m[2].replace(/\\(.)/g, '$1');
-	}
-	return values;
+	return readJavaProperties(text);
 }
 
 /** Read like Chunky reads them: every .properties file under tasks/, at any depth; 1.2's from its config. */

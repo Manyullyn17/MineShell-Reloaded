@@ -29,6 +29,26 @@ describe('parseProperties', () => {
 		const values = { motd: 'A', 'server-port': '25565', 'level-seed': '' };
 		expect(parseProperties(serialiseProperties(values)).values).toEqual(values);
 	});
+
+	it('reads the escapes Minecraft writes', () => {
+		// As 1.12.2 and 1.21.11 wrote back `motd=Gemütlich Server: home! C:\\games` (UTF-8):
+		// 1.12.2 had read the file as Latin-1.
+		expect(parseProperties('motd=Gem\\u00C3\\u00BCtlich Server\\: home\\! C\\:\\\\games\n').values.motd).toBe('GemÃ¼tlich Server: home! C:\\games');
+		expect(parseProperties('motd=Gemütlich Server\\: home\\! C\\:\\\\games\nlevel-name=My\\: World\n').values).toEqual({ motd: 'Gemütlich Server: home! C:\\games', 'level-name': 'My: World' });
+		expect(parseProperties('motd=one \\\n    two\nkey\\ with\\=odd: value\r\n').values).toEqual({ motd: 'one two', 'key with=odd': 'value' });
+	});
+
+	it('writes what every Minecraft reads back the same: past ASCII escaped, backslashes doubled', () => {
+		const values = { motd: ' Gemütlich: home! C:\\games 🎮 #1 = best', 'level-name': 'world' };
+		const text = serialiseProperties(values);
+		expect(text).toContain('motd=\\ Gem\\u00FCtlich: home! C:\\\\games \\uD83C\\uDFAE #1 = best\n');
+		expect(text).not.toMatch(/[^\x00-\x7e]/);
+		expect(parseProperties(text).values).toEqual(values);
+		// The raw editor shows the letters themselves; either way reads back the same.
+		const shown = serialiseProperties(values, { unicode: true });
+		expect(shown).toContain('Gemütlich');
+		expect(parseProperties(shown).values).toEqual(values);
+	});
 });
 
 describe('server.properties on disk', () => {
