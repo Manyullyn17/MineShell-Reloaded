@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getInstance } from '#lib/server/instances.js';
-import { fileStream, listDirectory, statFile } from '#lib/server/files.js';
+import { attachment, fileStream, listDirectory, statFile } from '#lib/server/files.js';
 import { Readable } from 'node:stream';
 import path from 'node:path';
 
@@ -37,7 +37,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 			headers: {
 				'Content-Type': 'application/octet-stream',
 				'Content-Length': String(stat.size),
-				'Content-Disposition': `attachment; filename="${encodeURIComponent(path.basename(relative))}"`
+				'Content-Disposition': attachment(path.basename(relative))
 			}
 		});
 	} catch (err) {

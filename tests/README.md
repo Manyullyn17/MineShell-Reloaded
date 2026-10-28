@@ -442,3 +442,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A server's name had no limit when made or renamed (a copy's was cut at 80) | `routes/instances/[id]/settings/sections.test.ts` ("a server name"), `server/instances.test.ts` ("serverName") |
 | A JVM preset's name and description had no limit (both show in every server's preset picker) | `server/jvm-presets.test.ts` ("a saved preset") |
 | A daily time in the hour the spring clock change skips stayed an hour late the day after too; an "every N minutes" command saved in the hour the autumn change repeats got a slot before now and ran at every check | `server/scheduler.test.ts` ("spring clock change"), `server/scheduledcommands.test.ts` ("autumn clock change") |
+| Downloads sent their name percent-encoded in plain `filename`, which only Chrome decodes (`My%20Server.zip`, `Gr%C3%B6%C3%9Fe.txt` elsewhere) | `server/files.test.ts` ("a download's name") |

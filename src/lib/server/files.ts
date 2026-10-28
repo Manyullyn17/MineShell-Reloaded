@@ -41,6 +41,18 @@ const TEXT_EXTENSIONS = new Set([
 
 const MAX_EDIT_BYTES = 2 * 1024 * 1024;
 
+/**
+ * A Content-Disposition saving as `name`. Plain `filename` is taken as it is
+ * (RFC 6266): a percent-encoded name in it is decoded by Chrome, not by every
+ * browser (`My%20Server.zip`). `filename*` carries the real name, `filename`
+ * a plain one for anything that does not read it.
+ */
+export function attachment(name: string): string {
+	const plain = name.replace(/[^\x20-\x7e]|["\\%]/g, '_');
+	const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+	return `attachment; filename="${plain}"; filename*=UTF-8''${encoded}`;
+}
+
 export function looksEditable(name: string, size: number): boolean {
 	if (size > MAX_EDIT_BYTES) return false;
 	const ext = path.extname(name).toLowerCase();

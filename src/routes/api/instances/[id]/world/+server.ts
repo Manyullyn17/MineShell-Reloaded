@@ -10,6 +10,7 @@ import { getInstance, InstanceError, requireStopped } from '#lib/server/instance
 import { TMP_DIR } from '#lib/server/config.js';
 import { decideSnapshot, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
 import { downloadWorld, replaceWorld, worldFromZip } from '#lib/server/world.js';
+import { attachment } from '#lib/server/files.js';
 
 /** The world (or `?snapshot=<id>`, or another world: `?world=<folder>`) as a zip, streamed while it is built. */
 export const GET: RequestHandler = async ({ params, url, locals }) => {
@@ -21,7 +22,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		return new Response(Readable.toWeb(stream) as ReadableStream, {
 			headers: {
 				'Content-Type': 'application/zip',
-				'Content-Disposition': `attachment; filename="${encodeURIComponent(fileName)}"`
+				'Content-Disposition': attachment(fileName)
 			}
 		});
 	} catch (err) {

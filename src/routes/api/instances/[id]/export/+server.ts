@@ -4,6 +4,7 @@ import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { exportResult } from '#lib/server/packexport.js';
+import { attachment } from '#lib/server/files.js';
 
 /** A finished client pack export (`?task=<id>`), kept for an hour after it is built. */
 export const GET: RequestHandler = async ({ params, url, locals }) => {
@@ -15,7 +16,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		headers: {
 			'Content-Type': 'application/zip',
 			'Content-Length': String(stat.size),
-			'Content-Disposition': `attachment; filename="${encodeURIComponent(result.fileName)}"`
+			'Content-Disposition': attachment(result.fileName)
 		}
 	});
 };

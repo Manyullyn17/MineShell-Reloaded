@@ -1,8 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { saveUpload, uploadPath, writeTextFile } from './files';
+import { attachment, saveUpload, uploadPath, writeTextFile } from './files';
 import { tempDir } from '../../../tests/helpers/fs';
+
+describe('a download\'s name', () => {
+	it('carries the real name in filename*, and a plain one in filename', () => {
+		expect(attachment('My Server-world.zip')).toBe(`attachment; filename="My Server-world.zip"; filename*=UTF-8''My%20Server-world.zip`);
+		expect(attachment('Größe "1" 100%.txt')).toBe(`attachment; filename="Gr__e _1_ 100_.txt"; filename*=UTF-8''Gr%C3%B6%C3%9Fe%20%221%22%20100%25.txt`);
+		expect(attachment("it's (1).txt")).toContain(`filename*=UTF-8''it%27s%20%281%29.txt`);
+	});
+});
 
 describe('uploadPath', () => {
 	it('keeps the folders of a dropped folder, and only the name of a picked file', () => {
