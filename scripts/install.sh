@@ -4,7 +4,7 @@
 #
 #   curl -fsSL https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest/download/install.sh | bash
 #
-# Needs Linux with systemd, Node.js 22.12+, curl, tar and sha256sum. No root: it
+# Needs Linux with systemd, Node.js 22.19+, curl, tar and sha256sum. No root: it
 # installs for the account that runs it and never changes a file it did not write.
 #
 # Options (environment variables, all optional):
@@ -45,10 +45,10 @@ main() {
 	local unit_file="$unit_dir/$service.service"
 
 	local node="${MINESHELL_NODE:-$(command -v node || true)}"
-	[ -n "$node" ] || fail "Node.js not found. Install Node.js 22.12 or newer (https://nodejs.org, NodeSource or nvm), then run this again."
+	[ -n "$node" ] || fail "Node.js not found. Install Node.js 22.19 or newer (https://nodejs.org, NodeSource or nvm), then run this again."
 	node=$(readlink -f "$node")
-	"$node" -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit(a > 22 || (a === 22 && b >= 12) ? 0 : 1)' ||
-		fail "Node.js $("$node" -v) ($node) is too old: MineShell needs 22.12 or newer. Distributions often package an older one: install a current one (https://nodejs.org, NodeSource or nvm), then run this again; MINESHELL_NODE=/path/to/node picks one that is not first on PATH."
+	"$node" -e 'const [a, b] = process.versions.node.split(".").map(Number); process.exit(a > 22 || (a === 22 && b >= 19) ? 0 : 1)' ||
+		fail "Node.js $("$node" -v) ($node) is too old: MineShell needs 22.19 or newer. Distributions often package an older one: install a current one (https://nodejs.org, NodeSource or nvm), then run this again; MINESHELL_NODE=/path/to/node picks one that is not first on PATH."
 
 	# Everything that could refuse is checked before anything changes.
 	if [ -e "$home_dir" ] && [ ! -e "$home_dir/.mineshell-install" ]; then

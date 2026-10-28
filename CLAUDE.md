@@ -12,7 +12,8 @@ npm run dev          # uses .env: ~/mineshell-data, dev copies of the user's ser
 # Node 24 for development (.nvmrc; nvm use). better-sqlite3 13+ is N-API: one prebuilt
 # binary works on every Node, no rebuild after switching (11.x needed one, and crashed the
 # dev server on Node 24 with an assertion in Statement::~Statement). CI also runs 22
-# (22.12 is the minimum: Vite 8 / Kit 3), which catches anything only newer Node has.
+# (22.19 is the minimum: the undici 8 package, src/lib/server/undicifetch.ts), which catches
+# anything only newer Node has.
 npm run check        # svelte-check, must stay at 0 errors / 0 warnings
 npm test             # Vitest, ~7s (parallel workers, a database each), fully offline; CI (GitHub Actions) runs check + test + build on Node 22 and 24
 git config core.hooksPath .githooks   # once per clone: pre-push runs check + the tests related to the push

@@ -201,7 +201,7 @@ Share MineShell with friends while controlling which servers and features each a
 ## Requirements
 
 - Linux with systemd.
-- Node.js 22.12 or newer.
+- Node.js 22.19 or newer.
 - `journalctl`, provided by systemd.
 - A compatible Java runtime for each Minecraft version. MineShell can discover or download supported runtimes.
 

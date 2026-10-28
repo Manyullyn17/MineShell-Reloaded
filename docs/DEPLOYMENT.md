@@ -56,7 +56,7 @@ sudo machinectl shell mineshell@     # a full session as that user; install and 
 curl -fsSL https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest/download/install.sh | bash
 ```
 
-Run it as the account MineShell should run as (not root). It needs Node.js 22.12 or newer,
+Run it as the account MineShell should run as (not root). It needs Node.js 22.19 or newer,
 `curl`, `tar` and `sha256sum`. A distribution's own Node package is often older (Ubuntu
 24.04 ships 18): NodeSource's packages or nvm give a current one. The installer:
 
@@ -192,8 +192,10 @@ last 0.x:
   and drop-ins are MineShell's own and are rewritten by it when they change.
 - **Data folder**: its layout stays readable by every 1.x. Where a release leaves data an older
   one handles differently, the going-back dialog says so.
-- **Node.js**: the minimum rises only once a Node line has reached its end of life, announced in
-  the release notes before. With a Node too old, an update stops before changing anything.
+- **Node.js**: a Node line (22, 24) is dropped only once it has reached its end of life,
+  announced in the release notes before. Within a line, a newer release of it may be needed for
+  a fix (1.1 needs 22.19, for the undici package's fetch: docs/notes/packs-and-mods.md), also
+  named in the release notes. With a Node too old, an update stops before changing anything.
 
 Not kept: the database layout for other programs, MineShell's internal endpoints (there is no
 public API), and what a server's `.mineshell/` folder holds. Going back past the last 0.x is not

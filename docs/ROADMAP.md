@@ -148,8 +148,7 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 `feat:` commits are released as minors whenever they are ready. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: Node's download crash, TypeScript 7, log retention, the
-   installed mods list, packs' own backup mods,
+1. **Upkeep and quick wins**: TypeScript 7, log retention, the installed mods list, packs' own backup mods,
    holding a mod at its version, quiet hours for notifications. Small, mostly reading what
    MineShell already has: a calm first step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
@@ -176,16 +175,6 @@ agreed, join the step of their area (the management server step 5), the rest whe
 fit. Steps 1, 5 and 6 took in undecided entries the user agreed to on 2026-10-27.
 
 ### 1. Upkeep and quick wins
-
-#### Node's download crash
-
-Node's built-in fetch (undici 7 in Node 22 and 24) can end the whole MineShell process during a
-download from a host that closes the connection after a full file (docs/notes/packs-and-mods.md
-has the details; found 2026-10-25). No host MineShell downloads from does that, so it waits
-(user's call, 2026-10-25: not during the freeze, and the fix raises the Node minimum). After
-1.0: check whether a newer Node 22/24 or Node 26 ships a fixed undici (the separate undici
-package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
-1.x minor, raising the minimum within Node 22 to 22.19.
 
 #### Quoted JVM arguments
 

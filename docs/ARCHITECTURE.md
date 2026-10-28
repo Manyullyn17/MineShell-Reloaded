@@ -132,7 +132,11 @@ last failure, in memory on globalThis: no answer, a 5xx or a 429 fails, any othe
 answer (a 404 says the service works); a request MineShell aborted counts as neither. Activity
 lists them and warns while one fails. Only names, times and a short reason are kept, never
 URLs, which can carry tokens. The local map proxy (`/maps/<token>/live/`) is not outbound and does
-not use it. The template itself says `Restart=on-failure`, so a server
+not use it. The global `fetch` itself is the undici package's (`undicifetch.ts`, set by
+hooks.server.ts before anything runs): Node 22's and 24's own could end the process on a
+download from a host that closes the connection after the file. Only `fetch` is swapped, not
+Request or Response; a Node `FormData` body is copied into undici's, which is the only kind it
+sends. The template itself says `Restart=on-failure`, so a server
 with no drop-in yet still restarts after a crash.
 
 ### Stopping

@@ -35,6 +35,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Fabric and Quilt mavens, Adoptium, GitHub's release assets), so it was left as it is; a
   host that closes would take MineShell down mid-install. `tests/tools/update-source.mjs`
   serves with keep-alive for that reason.
+  Fixed 2026-10-28 (next, for 1.1): still in the newest Node 22.23.4 (undici 6.29.1) and 24.22.1
+  (7.30.1), not in Node 26.12 (8.12.2); the undici 8.12 package's fetch now stands in for Node's
+  (`undicifetch.ts`, set in hooks.server.ts), so the minimum is 22.19. `tests/tools/fetch-close.mjs`
+  shows it without Python (a raw HTTP/1.0 answer on loopback): built-in fetch crashes in round 2,
+  `--undici` passes. Node's own FormData is not undici 8's and went out as "[object FormData]",
+  so the wrapper copies one over; Headers, Response bodies and URLSearchParams mix fine.
 - Pack version change (`packchange.ts`): pack-shipped top-level folders move whole to
   `old-configs/<date>-<version name>/`; `server.properties`, world, player lists, logs are
   never moved or replaced. The world is whatever `level-name` says (pack side and server

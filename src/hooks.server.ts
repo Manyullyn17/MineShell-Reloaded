@@ -2,7 +2,9 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { boot } from '#lib/server/boot.js';
 import { guard, withSecurityHeaders } from '#lib/server/guard.js';
 import { runAs } from '#lib/server/requestcontext.js';
+import { useUndiciFetch } from '#lib/server/undicifetch.js';
 
+useUndiciFetch();
 boot();
 
 /**

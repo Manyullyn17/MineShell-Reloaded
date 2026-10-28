@@ -79,7 +79,7 @@ async function tryRun(cmd, args) {
 }
 
 async function main() {
-	// package.json's engines.node, e.g. ">=22.12". A distro's own Node is often older
+	// package.json's engines.node, e.g. ">=22.19". A distro's own Node is often older
 	// (Ubuntu 24.04 ships 18), and the service unit runs whatever /usr/bin/node is.
 	const engines = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).engines?.node ?? '';
 	const [wantMajor = 0, wantMinor = 0] = (engines.match(/\d+(\.\d+)?/)?.[0] ?? '0').split('.').map(Number);

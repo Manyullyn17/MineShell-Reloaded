@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Node's download crash
+
+Fixed 2026-10-28, on the `next` branch (for 1.1). Node's built-in fetch could end the whole
+MineShell process during a download from a host that closes the connection after a full file
+(docs/notes/packs-and-mods.md, found 2026-10-25). Checked then: still in the newest Node 22
+(22.23.4) and 24 (24.22.1), fixed in Node 26 and the undici 8.12 package. Every request now
+goes through that package's fetch (`undicifetch.ts`), which raises the Node minimum to 22.19
+(user's call, 2026-10-28; DEPLOYMENT's "What 1.x keeps" now allows a newer release within a
+line for a fix). `tests/tools/fetch-close.mjs` reproduces it. Not built: going back to Node's
+own fetch once the oldest supported line ships a fixed one (Node 26 is the first).
+
 ### A picker for long lists
 
 Built 2026-10-28 (`VersionPicker.svelte`; ARCHITECTURE, Frontend), on the `next` branch, after
