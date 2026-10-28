@@ -9,6 +9,7 @@
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import CpuInput from '#lib/components/CpuInput.svelte';
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
+	import SaveBar from '#lib/components/SaveBar.svelte';
 	import { formatGb } from '#lib/shared/memorylimit.js';
 
 	let { data, form } = $props();
@@ -255,22 +256,7 @@
 		<button class="button-quiet" type="submit" formaction="?/reset">Reset everything to the built-in defaults</button>
 	</div>
 
-	<div class="savebar" class:dirty={dirty.length > 0}>
-		<span class="summary">
-			{#if dirty.length}
-				<span class="wide">Changed: {dirty.map((s) => s.label).join(', ')}</span>
-				<span class="narrow">{dirty.length} section{dirty.length === 1 ? '' : 's'} changed</span>
-			{:else}
-				No unsaved changes
-			{/if}
-		</span>
-		{#if dirty.length}
-			<div class="button-row">
-				<button type="button" class="button-quiet" onclick={() => (v = fromData())} disabled={saving}>Discard</button>
-				<button type="submit" class="button-primary" disabled={saving}>{saving ? 'Saving' : 'Save defaults'}</button>
-			</div>
-		{/if}
-	</div>
+	<SaveBar changed={dirty.map((s) => s.label)} {saving} onDiscard={() => (v = fromData())} saveLabel="Save defaults" />
 </form>
 
 <style>
@@ -278,95 +264,7 @@
 		margin-bottom: 0;
 	}
 
-	/* None / Limit above the slider, together in the field's control column (as on a server's Settings). */
-	.limit-control {
-		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-		width: 100%;
-	}
-
-	.limit-control :global(.segmented-choice) {
-		align-self: flex-end;
-	}
-
 	.reset {
-		margin: var(--space-5) 0 var(--space-4);
-	}
-
-	/* ---- the save bar, pinned to the bottom of the window (as on a server's Settings) */
-
-	.savebar {
-		position: sticky;
-		bottom: 0;
-		z-index: 10;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		margin: 0 -2.5rem calc(var(--space-5) * -1);
-		padding: 0.75rem 2.5rem;
-		min-height: 4rem;
-		border-top: 1px solid var(--line);
-		background: var(--bg);
-		color: var(--text-faint);
-		font-size: 0.92rem;
-	}
-
-	.savebar.dirty {
-		color: var(--warning);
-		background: color-mix(in srgb, var(--warning) 7%, var(--bg));
-	}
-
-	.savebar .summary {
-		min-width: 0;
-	}
-
-	.savebar .narrow {
-		display: none;
-	}
-
-	@media (max-width: 60rem) {
-		.limit-control :global(.segmented-choice) {
-			align-self: flex-start;
-		}
-
-		.savebar {
-			flex-wrap: wrap;
-			gap: 0.5rem;
-			min-height: 0;
-			margin: 0 calc(var(--space-4) * -1) calc(var(--space-4) * -1);
-			padding: 0.6rem var(--space-4) calc(0.6rem + env(safe-area-inset-bottom));
-			font-size: 0.85rem;
-		}
-
-		.savebar:not(.dirty) {
-			display: none;
-		}
-
-		.savebar .summary {
-			width: 100%;
-		}
-
-		.savebar .wide {
-			display: none;
-		}
-
-		.savebar .narrow {
-			display: inline;
-		}
-
-		.savebar .button-row {
-			display: grid;
-			grid-auto-flow: column;
-			grid-auto-columns: minmax(0, 1fr);
-			gap: 0.5rem;
-			width: 100%;
-		}
-
-		.savebar .button-row button {
-			width: 100%;
-			margin: 0;
-		}
+		margin-top: var(--space-5);
 	}
 </style>

@@ -14,13 +14,26 @@
 	import { PORT_KIND_LABELS } from '#lib/shared/ports.js';
 	import { formatBytes, formatDateTime, plural } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
-	import { invalidateAll } from '$app/navigation';
+	import { beforeNavigate, invalidateAll } from '$app/navigation';
+	import SaveBar from '#lib/components/SaveBar.svelte';
+	import { SaveTracker } from '#lib/shared/savebar.svelte.js';
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 
 	let { data, form } = $props();
 
 	const tab = $derived(page.url.searchParams.get('tab') ?? 'system');
+
+	// One save bar for the settings forms on the open tab (each still posts to its own action).
+	const tracker = new SaveTracker();
+	// Data reloaded by something else (an action, a poll): forms nobody edited follow it.
+	$effect(() => {
+		void data;
+		void tracker.rebaseUnedited();
+	});
+	beforeNavigate((navigation) => {
+		if (tracker.changed.length && !confirm(`Unsaved changes in ${tracker.changed.join(', ')}. Leave without saving them?`)) navigation.cancel();
+	});
 	let showUnit = $state(false);
 	let manualJava = $state('');
 	/** The saved preset whose edit form is open. */
@@ -179,6 +192,7 @@
 <svelte:head><title>MineShell settings - MineShell</title></svelte:head>
 
 <Flash {form} />
+{#if tracker.message}<Flash form={tracker.message} />{/if}
 
 <div class="app-settings">
 
@@ -392,7 +406,7 @@
 	</form>
 </section>
 {:else if tab === 'snapshots'}
-<section class="panel">
+<section class="panel settings-section">
 	<h2>World snapshots</h2>
 	<p class="muted">
 		Before a pack version change or reinstall, a loader version change, a Cleanroom migration or revert, or a mod
@@ -400,13 +414,14 @@
 		disk space on big worlds. Resetting, replacing, restoring or pruning keeps what it replaces as a snapshot by
 		moving it, which costs no extra space. Snapshots of one dimension are partial ones.
 	</p>
-	<form method="POST" action="?/snapshots" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<SnapshotPolicyFields bind:values={snap} idPrefix="snap" />
-		<p class="faint small">
-			Each server can set its own in its settings; a blank field there follows these. Old snapshots go when the next one
-			is taken. Pinned snapshots are never deleted and not counted.
-		</p>
-		<button class="button-primary" type="submit">Save</button>
+	<form method="POST" action="?/snapshots" use:tracker.track={'World snapshots'} use:enhance>
+		<div class="rows">
+			<SnapshotPolicyFields bind:values={snap} idPrefix="snap" />
+			<p class="faint small">
+				Each server can set its own in its settings; a blank field there follows these. Old snapshots go when the next one
+				is taken. Pinned snapshots are never deleted and not counted.
+			</p>
+		</div>
 	</form>
 
 	{#if data.snapshotUsage.length}
@@ -639,7 +654,7 @@
 		{/if}
 	{/if}
 </section>
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Where new ports start</h2>
 	<div class="notice warning">
 		<p>
@@ -651,8 +666,8 @@
 		New servers, copies and "Free port" take the first port from here that no server has and nothing holds. Servers keep
 		the ports they have. Blank goes back to the default.
 	</p>
-	<form method="POST" action="?/portRanges" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="sftp-fields">
+	<form method="POST" action="?/portRanges" use:tracker.track={'Where new ports start'} use:enhance>
+		<div class="rows">
 			<div class="field">
 				<label for="rangeGame">Game ports from</label>
 				<input id="rangeGame" name="game" type="number" min="1024" max="65535" bind:value={ranges.game} placeholder={String(data.portRanges.defaults.game)} />
@@ -684,7 +699,6 @@
 			</div>
 		{/if}
 		<div class="range-actions">
-			<button class="button" type="submit">Save</button>
 			<button class="button-quiet" type="button" onclick={() => (ranges = { ...data.portRanges.defaults })}>Back to the defaults</button>
 		</div>
 	</form>
@@ -808,7 +822,7 @@
 			<a href={data.playit.dashboard} target="_blank" rel="noreferrer">All agents</a>
 			<span class="muted">(rename, remove, see its tunnels)</span>
 		</p>
-		<form method="POST" action="?/playitRouting" use:enhance={() => async ({ update }) => update({ reset: false })} class="inline-form">
+		<form method="POST" action="?/playitRouting" use:tracker.track={'playit.gg'} use:enhance class="inline-form">
 			<div class="field grow">
 				<label for="playit-routing">Connects through</label>
 				<select id="playit-routing" name="routing" value={data.playit.routing}>
@@ -818,7 +832,6 @@
 					{/each}
 				</select>
 			</div>
-			<button type="submit">Save</button>
 		</form>
 		<p class="muted small">
 			Which playit location this machine's agent connects out through; free on every plan. Where players
@@ -883,10 +896,11 @@
 		{@const last = data.notifications.lastResult}
 		<p class="small {last.ok ? 'muted' : 'warn-text'}">Last message {formatDateTime(last.at)}: {last.message}</p>
 	{/if}
-	<form method="POST" action="?/notifications" use:enhance>
+	<form method="POST" action="?/notifications" use:tracker.track={'Notifications'} use:enhance>
+		<!-- The default button: Enter in the address saves (through the bar) rather than sending a test. -->
+		<button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
 		<NotificationFields bind:values={notifyValues} savedHint={data.notifications?.hint ?? null} idPrefix="notify" />
 		<div class="button-row">
-			<button class="button-primary" type="submit">Save</button>
 			{#if data.notifications}
 				<button type="submit" formaction="?/notificationsTest">Send a test message</button>
 				<button class="button-quiet" type="submit" formaction="?/notificationsRemove">Stop sending</button>
@@ -1058,18 +1072,19 @@
 </section>
 
 {#if data.access.owner}
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Automatic checks</h2>
-	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="check field">
-			<input id="autoCheck" name="autoCheck" type="checkbox" class="switch" role="switch" bind:checked={autoCheck} />
-			<label for="autoCheck">Look for a new version every 12 hours</label>
+	<form method="POST" action="?/updateAuto" use:tracker.track={'Automatic checks'} use:enhance>
+		<div class="rows">
+			<div class="check field">
+				<input id="autoCheck" name="autoCheck" type="checkbox" class="switch" role="switch" bind:checked={autoCheck} />
+				<label for="autoCheck">Look for a new version every 12 hours</label>
+				<p class="hint">
+					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
+					installed until you press Update.
+				</p>
+			</div>
 		</div>
-		<p class="small muted">
-			It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is installed
-			until you press Update.
-		</p>
-		<button class="button" type="submit">Save</button>
 	</form>
 </section>
 {/if}
@@ -1157,7 +1172,7 @@
 	{/if}
 </section>
 
-<section class="panel">
+<section class="panel settings-section">
 	<h2>All servers together</h2>
 	<p class="small muted">
 		One cap on every server combined, on top of each server's own limits, so a few big packs cannot take the whole
@@ -1166,10 +1181,11 @@
 		does not give memory back under pressure, so the cap cannot shrink what the servers already hold. The CPU cap
 		slows them down; this machine has {data.serverCap.maxCpu / 100} cores.
 	</p>
-	<form method="POST" action="?/serverCap" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="sftp-fields">
+	<form method="POST" action="?/serverCap" use:tracker.track={'All servers together'} use:enhance>
+		<div class="rows">
 			<div class="field">
 				<span class="label" id="capMemoryLabel">Memory cap</span>
+				<div class="control limit-control">
 				<SegmentedChoice
 					options={[
 						{ value: 'none', label: 'No cap' },
@@ -1195,10 +1211,12 @@
 						bind:value={capMemoryMb}
 					/>
 				{/if}
+				</div>
 				<p class="hint">This machine has {formatMb(data.serverCap.totalMemoryMb)}.</p>
 			</div>
 			<div class="field">
 				<span class="label" id="capCpuLabel">CPU cap</span>
+				<div class="control limit-control">
 				<SegmentedChoice
 					options={[
 						{ value: 'none', label: 'No cap' },
@@ -1216,10 +1234,11 @@
 				{:else}
 					<CpuInput id="capCpuPercent" name="capCpuPercent" label="CPU cap" cores={data.serverCap.maxCpu / 100} bind:value={capCpuPercent} />
 				{/if}
+				</div>
 			</div>
 		</div>
 		{#if data.serverCap.running.length}
-			<p class="small">
+			<p class="small cap-running">
 				Running now, at most (heap plus what Java needs beyond it, or the server's own limit):
 				{#each data.serverCap.running as server, i (server.id)}{i ? ', ' : ''}<a href="/instances/{server.id}">{server.name}</a>
 					{formatMb(server.ceilingMb)}{/each}; together {formatMb(capRunningMb)}.
@@ -1243,38 +1262,38 @@
 				</div>
 			{/if}
 		{/if}
-		<button class="button" type="submit">Save</button>
 	</form>
 </section>
 
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Player editor</h2>
-	<form method="POST" action="?/itemIcons" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="check field">
-			<input id="itemIcons" name="itemIcons" type="checkbox" class="switch" role="switch" bind:checked={itemIcons} />
-			<label for="itemIcons">Show item pictures</label>
+	<form method="POST" action="?/itemIcons" use:tracker.track={'Player editor'} use:enhance>
+		<div class="rows">
+			<div class="check field">
+				<input id="itemIcons" name="itemIcons" type="checkbox" class="switch" role="switch" bind:checked={itemIcons} />
+				<label for="itemIcons">Show item pictures</label>
+				<p class="hint">
+					Inventories show each item's picture, read from the server's mod jars and Minecraft's client and drawn in the
+					browser. Off, they show names only: nothing is read or drawn, which spares memory and time on big packs.
+				</p>
+			</div>
 		</div>
-		<p class="small muted">
-			Inventories show each item's picture, read from the server's mod jars and Minecraft's client and drawn in the
-			browser. Off, they show names only: nothing is read or drawn, which spares memory and time on big packs.
-		</p>
-		<button class="button" type="submit">Save</button>
 	</form>
 </section>
 
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Files over SFTP</h2>
-	<form method="POST" action="?/sftp" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="check field">
-			<input id="sftpEnabled" name="sftpEnabled" type="checkbox" class="switch" role="switch" bind:checked={sftpEnabled} />
-			<label for="sftpEnabled">Show "Open in file manager" on the Files tab</label>
-		</div>
-		<p class="small muted">
-			An <code>sftp://</code> link to the folder you are looking at, which file managers (Nautilus, Dolphin, WinSCP,
-			FileZilla) open over this machine's SSH server, logging in with its account. MineShell runs no file server itself.
-			Blank fields use what MineShell finds.
-		</p>
-		<div class="sftp-fields">
+	<form method="POST" action="?/sftp" use:tracker.track={'Files over SFTP'} use:enhance>
+		<div class="rows">
+			<div class="check field">
+				<input id="sftpEnabled" name="sftpEnabled" type="checkbox" class="switch" role="switch" bind:checked={sftpEnabled} />
+				<label for="sftpEnabled">Show "Open in file manager" on the Files tab</label>
+				<p class="hint">
+					An <code>sftp://</code> link to the folder you are looking at, which file managers (Nautilus, Dolphin, WinSCP,
+					FileZilla) open over this machine's SSH server, logging in with its account. MineShell runs no file server
+					itself. Blank fields use what MineShell finds.
+				</p>
+			</div>
 			<div class="field">
 				<label for="sftpHost">Host</label>
 				<input id="sftpHost" name="sftpHost" value={data.sftp.host ?? ''} placeholder="The address MineShell was opened at" />
@@ -1288,22 +1307,22 @@
 				<input id="sftpUser" name="sftpUser" value={data.sftp.user ?? ''} placeholder={data.sftp.defaults.user} />
 			</div>
 		</div>
-		<button class="button" type="submit">Save</button>
 	</form>
 </section>
 
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Trash</h2>
-	<form method="POST" action="?/trashDays" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="field trash-days">
-			<label for="trashDays">Keep deleted files for (days)</label>
-			<input id="trashDays" name="trashDays" type="number" min="0" max={data.trash.max} step="1" value={data.trash.days} required />
+	<form method="POST" action="?/trashDays" use:tracker.track={'Trash'} use:enhance>
+		<div class="rows">
+			<div class="field">
+				<label for="trashDays">Keep deleted files for (days)</label>
+				<input id="trashDays" name="trashDays" type="number" min="0" max={data.trash.max} step="1" value={data.trash.days} required />
+				<p class="hint">
+					What is deleted in a server's Files tab goes to its trash first, where it can be restored, and is deleted for good
+					after this many days. 0 deletes straight away, with no undo.
+				</p>
+			</div>
 		</div>
-		<p class="small muted">
-			What is deleted in a server's Files tab goes to its trash first, where it can be restored, and is deleted for good
-			after this many days. 0 deletes straight away, with no undo.
-		</p>
-		<button class="button" type="submit">Save</button>
 	</form>
 </section>
 
@@ -1356,6 +1375,10 @@
 {/if}
 </div>
 
+{#if tracker.count}
+	<SaveBar changed={tracker.changed} saving={tracker.saving} onDiscard={() => void tracker.discard()} onSave={() => void tracker.save()} />
+{/if}
+
 <style>
 	.refused-at {
 		margin: calc(-1 * var(--space-2)) 0 var(--space-3);
@@ -1389,21 +1412,16 @@
 		width: 7rem;
 	}
 
+	/* Under the rows' last divider, not against it. */
+	.cap-running {
+		margin-top: var(--space-3);
+	}
+
 	.range-actions {
 		display: flex;
 		gap: var(--space-2);
 		flex-wrap: wrap;
-	}
-
-	.trash-days {
-		max-width: 16rem;
-	}
-
-	.sftp-fields {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-		gap: var(--space-3);
-		margin-bottom: var(--space-3);
+		margin-top: var(--space-3);
 	}
 
 	.release {

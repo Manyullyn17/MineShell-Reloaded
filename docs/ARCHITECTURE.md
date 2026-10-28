@@ -1236,8 +1236,17 @@ save bar stay in the page, which holds their shared field state. Their row layou
 `SettingsSection` as `:global(.settings-section ...)` rules. The tab bar and search stick
 under the server's header on desktop (`--instance-head`, the header's measured height, set by
 the instance layout). MineShell settings' New server defaults uses the same sections and rows
-(every section shown, through `provideSettingsView`) and a save bar of its own: one form, one
-action, the changed sections named in the bar. JVM flag presets are shared by every
+(every section shown, through `provideSettingsView`) and `SaveBar.svelte`: one form, one
+action, the changed sections named in the bar. MineShell settings' other tabs keep a form per
+section on its own action, with no Save buttons of their own: each joins one bar through
+`SaveTracker` (`lib/shared/savebar.svelte.ts`, `use:tracker.track={'Section'}`). There a form is
+changed while what it would post differs from what it posted when last saved, so a button
+that changes fields (Back to the defaults) counts too; saving posts the changed forms in page
+order and reloads the page's data only when all went through, so a refused one keeps its
+edits; Enter saves through the bar, and buttons with their own `formaction` (Send a test
+message) still post at once. Leaving the tab with changes asks first. The row rules
+(`.settings-section .rows ...`) are in app.css, so a page outside SettingsSection opts in
+with the class. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
 preset" posts to `/settings?/savePreset`, and only MineShell settings edits or deletes one.
 A saved preset's id is made from its first name and kept through renames (the defaults for
