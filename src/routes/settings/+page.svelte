@@ -232,7 +232,7 @@
 			<tbody>
 				{#each data.javaRuntimes as java (java.path)}
 					<tr>
-						<td class="mono">Java {java.majorVersion}</td>
+						<td class="mono nowrap">Java {java.majorVersion}</td>
 						<td class="mono small"><PathText path={java.path} /></td>
 						<td class="small faint">
 							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
@@ -586,7 +586,7 @@
 			<tbody>
 				{#each ports.rows as row (`${row.instanceId}:${row.kind}`)}
 					<tr class:problem={row.clashes.length || row.status === 'taken'}>
-						<td class="num mono">{row.port}<span class="faint">/{row.protocol}</span></td>
+						<td class="num mono nowrap">{row.port}<span class="faint">/{row.protocol}</span></td>
 						<td class="name"><a href="/instances/{encodeURIComponent(row.instanceId)}/settings?tab=network">{row.name}</a></td>
 						<td>
 							{PORT_KIND_LABELS[row.kind]}
@@ -639,7 +639,7 @@
 				<tbody>
 					{#each ports.others as other (`${other.protocol}:${other.port}`)}
 						<tr>
-							<td class="num mono">{other.port}<span class="faint">/{other.protocol}</span></td>
+							<td class="num mono nowrap">{other.port}<span class="faint">/{other.protocol}</span></td>
 							<td>
 								{#if other.oldPortOf}
 									{other.oldPortOf}, still on a port it no longer has: restart it to move
