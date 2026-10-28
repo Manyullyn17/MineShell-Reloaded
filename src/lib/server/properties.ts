@@ -322,8 +322,8 @@ export function defaultProperties(opts: {
 		'allow-nether': 'true',
 		'spawn-protection': '0',
 
-		// Higher than vanilla's own default (20) since anyone reaching for a
-		// server manager is usually planning for more than a couple of friends.
+		// Lower than vanilla's own 20: most servers MineShell runs are for a group
+		// of friends, and the slot count is what the server list shows them.
 		'max-players': '10',
 		'white-list': 'false',
 		'enforce-whitelist': 'false',
