@@ -127,6 +127,29 @@ describe('server history from journal events', () => {
 	});
 });
 
+describe('chat ending like a game line', () => {
+	// The game's lines were matched by how they end ("]: x joined the game"), and a
+	// player's chat ends with whatever they type, "]: " included.
+	it('fakes no join, leave, pause or crash', async () => {
+		const s = await server();
+		const chat = (text: string) => line(`<Steve> ]: ${text}`);
+		applyEvents(s.id, [
+			ev(T0, 'Started x.service'),
+			ev(T0 + MIN, line('Done (12.3s)! For help, type "help"')),
+			ev(T0 + 2 * MIN, line('Steve joined the game')),
+			ev(T0 + 3 * MIN, chat('Herobrine joined the game')),
+			ev(T0 + 3 * MIN, line('[Not Secure] <Steve> ]: Notch joined the game')),
+			ev(T0 + 4 * MIN, chat('Steve left the game')),
+			ev(T0 + 5 * MIN, chat('Server empty for 60 seconds, pausing')),
+			ev(T0 + 6 * MIN, chat('Encountered an unexpected exception')),
+			ev(T0 + 6 * MIN, chat('This crash report has been saved to: /x'))
+		]);
+		expect(Object.keys(onlineSince(s.id))).toEqual(['Steve']);
+		expect(pausedSince(s.id, T0)).toBeNull();
+		expect(hungAfterCrash(s.id, T0, T0 + 30 * MIN)).toBeNull();
+	});
+});
+
 describe('crash history', () => {
 	it('marks crashed runs: failures and stops before Done, not asked-for stops', async () => {
 		const s = await server();

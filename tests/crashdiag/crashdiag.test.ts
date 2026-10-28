@@ -54,6 +54,25 @@ describe('memory kills', () => {
 	});
 });
 
+describe('chat in the log', () => {
+	const sodium: ModJar = { fileName: 'sodium.jar', enabled: true, ids: ['sodium'], names: ['Sodium'], version: '0.5.8', authors: [], clientOnly: false, requires: [], classes: new Set(), mixinConfigs: [] };
+	const missing = "Mod 'Sodium' (sodium) 0.5.8 requires any version of mod 'fabric-api', which is missing!";
+	const run = (message: string) =>
+		[
+			'Started minecraft@pack.service - Minecraft server (pack) managed by MineShell.',
+			'[10:00:30] [Server thread/INFO]: Done (8.364s)! For help, type "help" or "?"',
+			`[10:05:00] [Server thread/INFO]: ${message}`,
+			'[10:06:00] [Server thread/ERROR]: Encountered an unexpected exception'
+		].join('\n');
+
+	// A diagnosis can offer to disable the mod it blames: a player must not be able to pick it.
+	it('is not read as the loader saying something', () => {
+		expect(diagnoseLog(run(`<Steve> ${missing}`), [sodium])).toEqual([]);
+		expect(diagnoseLog(run(`[Not Secure] <Steve> ${missing}`), [sodium])).toEqual([]);
+		expect(diagnoseLog(run(missing), [sodium])[0]?.culprit?.name).toBe('Sodium');
+	});
+});
+
 describe('indexMods', () => {
 	it('reads every loader metadata format, client-only flags and jar-in-jar classes', async () => {
 		const dir = await tempDir();
