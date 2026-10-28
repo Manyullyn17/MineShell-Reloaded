@@ -84,6 +84,10 @@ describe('console lines', () => {
 		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: .BedrockSteve joined the game')).toEqual({ event: 'join', name: '.BedrockSteve' });
 		expect(playerEventWithName('\x1b[32m[15:09:00] [Server thread/INFO] [minecraft/DedicatedServer]: Alex left the game\x1b[0m')).toEqual({ event: 'leave', name: 'Alex' });
 		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: [Server] Bob joined the game')).toBeNull();
+		// Chat ends with what the player typed: only the whole message counts.
+		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: <Alex> ]: Bob joined the game')).toBeNull();
+		expect(playerEventWithName('[15:08:31] [Server thread/INFO]: [Not Secure] <Alex> ]: Bob left the game')).toBeNull();
+		expect(playerEventWithName('[15:08:31] [Server thread/INFO] [minecraft/MinecraftServer]: [Admin] Alex: ]: Bob joined the game')).toBeNull();
 	});
 
 	it("hides the server's lines about RCON connections unless asked", () => {

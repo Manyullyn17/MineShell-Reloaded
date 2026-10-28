@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fixLink, sameOriginPath } from './links';
+import { fixLink, sameOriginPath, webLink } from './links';
 
 const base = 'https://www.curseforge.com/minecraft/modpacks/example';
 
@@ -55,5 +55,18 @@ describe('sameOriginPath', () => {
 	it('falls back to / for nothing', () => {
 		expect(sameOriginPath(null, origin)).toBe('/');
 		expect(sameOriginPath('', origin)).toBe('/');
+	});
+});
+
+describe('webLink', () => {
+	// Project pages and pack download links come from platforms, the modpacks.ch mirror and pack files.
+	it('keeps http(s) links and drops the rest', () => {
+		expect(webLink('https://modrinth.com/project/sodium')).toBe('https://modrinth.com/project/sodium');
+		expect(webLink('http://example.com/a b')).toBe('http://example.com/a%20b');
+		expect(webLink('javascript:alert(document.cookie)')).toBeNull();
+		expect(webLink(' JavaScript:alert(1)')).toBeNull();
+		expect(webLink('data:text/html,<script>alert(1)</script>')).toBeNull();
+		expect(webLink('/relative/page')).toBeNull();
+		expect(webLink(null)).toBeNull();
 	});
 });

@@ -54,8 +54,27 @@ export function continuesPrevious(text: string, previous: { level: Level | null 
 	return EXCEPTION_LINE.test(text) && (previous.level === 'error' || previous.level === 'warn');
 }
 
-const JOIN = /\]: ([.*]?\w{1,16}) joined the game$/;
-const LEAVE = /\]: ([.*]?\w{1,16}) (?:left the game|lost connection: .*)$/;
+/**
+ * The game's own prefix: "[time] [thread/LEVEL]", Forge's "[logger]" after it,
+ * then ": ". Bracket groups follow each other with one space and the last ends
+ * in the colon, so the first ": " ends it: whatever a player writes comes after.
+ */
+const LOGGER_PREFIX = /^(?:\[[^\]]*\] )*\[[^\]]*\]: /;
+
+/**
+ * A line's message, after the logger's prefix (null for a line without one:
+ * a stack frame, systemd's own). Game events are told apart by the whole
+ * message, never by how a line ends: chat ends with whatever the player
+ * typed, and "<Steve> ]: Alice joined the game" ended like a join.
+ */
+export function gameMessage(text: string): string | null {
+	const line = stripAnsi(text).trimEnd();
+	const prefix = line.match(LOGGER_PREFIX);
+	return prefix ? line.slice(prefix[0].length) : null;
+}
+
+const JOIN = /^([.*]?\w{1,16}) joined the game$/;
+const LEAVE = /^([.*]?\w{1,16}) (?:left the game|lost connection: .*)$/;
 
 /** A player name, then what happened; 1.12 adds "[/ip:port] logged in with entity id" first. */
 export function playerEventOf(text: string): PlayerEvent | null {
@@ -63,14 +82,16 @@ export function playerEventOf(text: string): PlayerEvent | null {
 }
 
 /**
- * The same, with who. Chat cannot fake it: a chat line is "<name> text", and
- * "[Server] x joined the game" from /say has a space inside the bracket.
+ * The same, with who. Chat cannot fake it: the whole message has to be the
+ * event (gameMessage), and a chat message starts with "<name> ", "* name" or
+ * "[Server] " - whatever a chat mod puts there, the player's text comes later.
  */
 export function playerEventWithName(text: string): { event: PlayerEvent; name: string } | null {
-	const line = stripAnsi(text).trimEnd();
-	const join = line.match(JOIN);
+	const message = gameMessage(text);
+	if (message === null) return null;
+	const join = message.match(JOIN);
 	if (join) return { event: 'join', name: join[1] };
-	const leave = line.match(LEAVE);
+	const leave = message.match(LEAVE);
 	return leave ? { event: 'leave', name: leave[1] } : null;
 }
 

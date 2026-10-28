@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 
 const { listSnapshots, saveSnapshotPolicy, DEFAULT_POLICY } = await import('#lib/server/snapshots.js');
-const { createWorld, deleteWorld, renameWorld, restoreSnapshot, snapshotNow, switchWorld, worldFromSnapshot, worldFromZip, WorldVersionError } =
+const { createWorld, deleteWorld, renameWorld, replaceWorld, restoreSnapshot, snapshotNow, switchWorld, worldFromSnapshot, worldFromZip, WorldVersionError } =
 	await import('#lib/server/world.js');
 const { listWorlds, worldFolderNames, freeWorldFolder, withSizes, readWorldMeta } = await import('#lib/server/worlds.js');
 const { readProperties } = await import('#lib/server/properties.js');
@@ -249,6 +249,26 @@ describe('several worlds per server', () => {
 		const notAWorld = await upload({ 'readme.txt': 'no' });
 		await expect(worldFromZip(instance, notAWorld, 'X')).rejects.toThrow(/no level.dat/);
 		await expect(fs.access(notAWorld)).rejects.toThrow();
+	});
+
+	// A small zip can unpack to gigabytes, and a full disk fails every server's saves.
+	it('refuses an upload that would unpack past the space kept free, before unpacking any of it', async () => {
+		const instance = await server();
+		const keepFree = DEFAULT_POLICY.minFreeMb * 1024 * 1024;
+		const world = { 'Big/level.dat': 'save', 'Big/region/r.0.0.mca': Buffer.alloc(100_000) };
+		const freeBytes = (free: number) =>
+			vi.spyOn(fs, 'statfs').mockResolvedValue({ bavail: free, bsize: 1 } as Awaited<ReturnType<typeof fs.statfs>>);
+
+		freeBytes(keepFree + 50_000);
+		const big = await upload(world);
+		await expect(worldFromZip(instance, big, 'Big')).rejects.toThrow(/unpacks to 97.\d KB, and only .* is free/);
+		await expect(fs.access(big)).rejects.toThrow();
+		await expect(replaceWorld(instance, await upload(world), { snapshot: false })).rejects.toThrow(/unpacks to/);
+		expect((await listWorlds(instance)).map((w) => w.folder)).toEqual(['world']);
+
+		freeBytes(keepFree + 200_000);
+		await waitForTask((await worldFromZip(instance, await upload(world), 'Big')).taskId);
+		expect((await listWorlds(instance)).map((w) => w.folder)).toContain('big');
 	});
 
 	it('makes an uploaded world the active one when asked, unless it is from a newer Minecraft', async () => {

@@ -917,7 +917,9 @@ which moves are on disk). A world last saved by a newer Minecraft (level.dat's
 `Data.Version.Name`, else the recorded run) needs `force`. New worlds come empty (generated
 on the next start, the active world's data packs copied in unless unticked), from a full
 snapshot, or from an uploaded zip (the world PUT with `?newWorld=`, unpacked beside the
-others; `activate=1` only on a stopped server, checked again once unpacked). Pack changes
+others; `activate=1` only on a stopped server, checked again once unpacked). An uploaded
+zip, as a new world or a replacement, is refused unread when its unpacked size would leave
+less free on the disk than snapshots keep free. Pack changes
 count every world folder as a world (never config, never written into), disk usage lists
 the inactive ones apart, and deleting one puts its folders in the trash.
 
