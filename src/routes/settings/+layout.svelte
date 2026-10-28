@@ -14,17 +14,22 @@
 		{ id: 'integrations', label: 'Integrations' },
 		{ id: 'notifications', label: 'Notifications' },
 		{ id: 'updates', label: 'Updates' },
-		{ id: 'activity', label: 'Activity' }
+		// "Log", not Activity: the sidebar's Activity is the operations running (ROADMAP, Undecided).
+		{ id: 'log', label: 'Log' }
 	];
+	/** The tab asked for; ?tab=activity is the Log's old address. */
+	const asked = $derived(page.url.searchParams.get('tab') === 'activity' ? 'log' : page.url.searchParams.get('tab'));
 	const current = $derived(
 		page.url.pathname.startsWith('/settings/defaults')
 			? 'defaults'
 			: page.url.pathname.startsWith('/settings/users')
 				? 'accounts'
-				: (TABS.find((t) => !t.href && t.id === page.url.searchParams.get('tab'))?.id ?? 'system')
+				: (TABS.find((t) => !t.href && t.id === asked)?.id ?? 'system')
 	);
 </script>
 
+<!-- A column at least the window's height, so a short tab's save bar sits at the bottom. -->
+<div class="settings-page">
 <header class="settings-head">
 	<h1>MineShell settings</h1>
 	<p class="muted">Apply to every server on this machine.</p>

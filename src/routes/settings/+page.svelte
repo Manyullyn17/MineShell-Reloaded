@@ -22,7 +22,8 @@
 
 	let { data, form } = $props();
 
-	const tab = $derived(page.url.searchParams.get('tab') ?? 'system');
+	// ?tab=activity is the Log's old address.
+	const tab = $derived(page.url.searchParams.get('tab') === 'activity' ? 'log' : (page.url.searchParams.get('tab') ?? 'system'));
 
 	// One save bar for the settings forms on the open tab (each still posts to its own action).
 	const tracker = new SaveTracker();
@@ -1088,7 +1089,7 @@
 	</form>
 </section>
 {/if}
-{:else if tab === 'activity'}
+{:else if tab === 'log'}
 <section class="panel">
 	<h2>Recent actions</h2>
 	{#if data.recent.length === 0}
