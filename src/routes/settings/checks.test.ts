@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { actions } from './+page.server';
 import { getSftpSettings, saveSftpSettings } from '#lib/server/sftp.js';
+import { logKeepDays, setLogKeepDays } from '#lib/server/logretention.js';
 import { createInstance, reload, systemdStopped } from '../../../tests/helpers/instances';
 import { testPorts } from '../../../tests/helpers/ports';
 import { resetProcesses } from '../../../tests/helpers/process';
@@ -9,6 +10,7 @@ import { post } from '../../../tests/helpers/routes';
 afterEach(() => {
 	resetProcesses();
 	saveSftpSettings({ enabled: true, host: null, port: null, user: null });
+	setLogKeepDays(0);
 });
 
 /** MineShell settings that take a number or a name: refused unless it is one, saving nothing. */
@@ -57,5 +59,19 @@ describe('the SFTP address shown under Files', () => {
 		expect(getSftpSettings()).toEqual({ enabled: true, host: 'nas.lan', port: 2222, user: 'minecraft' });
 		expect(await post(actions.sftp, { fields: { sftpHost: '', sftpUser: '', sftpPort: '' } })).toMatchObject({ ok: true });
 		expect(getSftpSettings()).toEqual({ enabled: false, host: null, port: null, user: null });
+	});
+});
+
+describe('how long old logs are kept', () => {
+	it('takes a whole number of days from 0 to 3650, saving nothing else', async () => {
+		const save = (logDays: string) => post(actions.logDays, { fields: { logDays } });
+		for (const bad of ['', 'abc', '-1', '1.5', '3651']) {
+			expect(await save(bad), bad).toMatchObject({ status: 400, data: { message: 'Keep logs 0 to 3650 days (0 keeps them all).' } });
+		}
+		expect(logKeepDays()).toBe(0);
+		expect(await save(' 90 ')).toMatchObject({ ok: true });
+		expect(logKeepDays()).toBe(90);
+		expect(await save('0')).toMatchObject({ ok: true });
+		expect(logKeepDays()).toBe(0);
 	});
 });

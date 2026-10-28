@@ -1338,6 +1338,23 @@
 	</form>
 </section>
 
+<section class="panel settings-section">
+	<h2>Old logs</h2>
+	<form method="POST" action="?/logDays" use:tracker.track={'Old logs'} use:enhance>
+		<div class="rows">
+			<div class="field">
+				<label for="logDays">Delete archived logs and crash reports after (days)</label>
+				<input id="logDays" name="logDays" type="number" min="0" max={data.logs.max} step="1" value={data.logs.days} required />
+				<p class="hint">
+					Each start archives the last log to <code>logs/</code>, and nothing removes them. With a number of days
+					here, every server's archived logs and crash reports older than that are deleted; the current log is kept.
+					0 keeps them all.
+				</p>
+			</div>
+		</div>
+	</form>
+</section>
+
 <section class="panel">
 	<h2>Downloads from local addresses</h2>
 	<p class="small muted">

@@ -148,8 +148,9 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 `feat:` commits are released as minors whenever they are ready. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: TypeScript 7, log retention, the installed mods list, packs' own backup mods,
-   holding a mod at its version, quiet hours for notifications. Small, mostly reading what
+1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit), the
+   installed mods list, packs' own backup mods, holding a mod at its version, quiet hours
+   for notifications. Small, mostly reading what
    MineShell already has: a calm first step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
    needs), then search in files, earlier versions of edited files, zips and folders.
@@ -197,12 +198,6 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 `build` all fail ("Cannot read properties of undefined (reading 'readFile')"). Kit 3 declares
 `typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
 again when Kit and svelte-check list 7 in their peer ranges.
-
-#### Log rotation and retention
-
-Nothing deletes old `logs/` or `crash-reports/` on its own; the disk usage page offers to
-delete archived logs and crash reports older than 30 days. Moved to after 1.0 from
-Undecided (user's call, 2026-10-25).
 
 #### Installed mods list
 

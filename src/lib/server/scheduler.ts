@@ -12,6 +12,7 @@ import { checkDiskSpace } from './diskspace';
 import { dailyDatabaseCopy } from './dbbackups';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
+import { expireOldLogs } from './logretention';
 import { runDueUpdateChecks } from './updatecheck';
 import { destinations, notify } from './notifications';
 import { notifyIfStuck } from './stuck';
@@ -169,6 +170,9 @@ async function checkAll(): Promise<void> {
 		);
 		await expireTrash(instance.path).catch((err) =>
 			console.error(`[mineshell] emptying old trash failed for ${instance.id}:`, err)
+		);
+		await expireOldLogs(instance.id, instance.path).catch((err) =>
+			console.error(`[mineshell] deleting old logs failed for ${instance.id}:`, err)
 		);
 		// Only read when someone is told: deciding reads the run's log once it is 10 minutes old.
 		if (destinations(instance.id, 'stuck').length) {

@@ -76,6 +76,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			itemIcons: 'globalAdmin',
 			sftp: 'globalAdmin',
 			trashDays: 'globalAdmin',
+			logDays: 'globalAdmin',
 			notifications: 'globalAdmin',
 			notificationsTest: 'globalAdmin',
 			notificationsRemove: 'globalAdmin',

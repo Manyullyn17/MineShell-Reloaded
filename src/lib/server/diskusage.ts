@@ -106,8 +106,8 @@ const SIBLING_LABELS: [suffix: string, label: string][] = [
 	['_the_end', 'The End']
 ];
 
-async function oldLogFiles(root: string): Promise<{ path: string; bytes: number }[]> {
-	const cutoff = Date.now() - OLD_LOG_DAYS * 86_400_000;
+async function oldLogFiles(root: string, days = OLD_LOG_DAYS, now = Date.now()): Promise<{ path: string; bytes: number }[]> {
+	const cutoff = now - days * 86_400_000;
 	const found: { path: string; bytes: number }[] = [];
 	for (const [folder, pattern] of [
 		['logs', /\.log\.gz$/i],
@@ -124,11 +124,12 @@ async function oldLogFiles(root: string): Promise<{ path: string; bytes: number 
 }
 
 /**
- * Deletes archived logs (`logs/*.log.gz`) and crash reports older than
- * OLD_LOG_DAYS. Never the running log: latest.log and debug.log are not archives.
+ * Deletes archived logs (`logs/*.log.gz`) and crash reports older than `days`
+ * (OLD_LOG_DAYS from the disk usage page, the kept days from the scheduler, logretention.ts).
+ * Never the running log: latest.log and debug.log are not archives.
  */
-export async function deleteOldLogs(root: string): Promise<{ files: number; bytes: number }> {
-	const old = await oldLogFiles(root);
+export async function deleteOldLogs(root: string, days = OLD_LOG_DAYS, now = Date.now()): Promise<{ files: number; bytes: number }> {
+	const old = await oldLogFiles(root, days, now);
 	for (const file of old) await fs.rm(path.join(root, file.path), { force: true });
 	return { files: old.length, bytes: old.reduce((sum, f) => sum + f.bytes, 0) };
 }

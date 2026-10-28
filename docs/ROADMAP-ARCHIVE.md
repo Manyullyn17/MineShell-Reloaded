@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Log rotation and retention
+
+Built 2026-10-28 (MineShell settings, Old logs; `logretention.ts`; ARCHITECTURE, "Old logs"),
+on the `next` branch. One number of days for every server, off (0) by default so an update
+deletes nothing: archived logs (`logs/*.log.gz`) and crash reports older than that are deleted
+by the scheduler, which reads each server's folders at most once an hour. latest.log, debug.log
+and other files in `logs/` stay. The disk usage page's "Delete them" (30 days) says whether it
+is on. Tried on a throwaway dev server: four files from June and July went within a minute of
+saving 30 days. Not built: a number per server (one for all, as the trash has), and Forge 1.12's
+rotated `fml-server-N.log`, which Forge itself keeps to three.
+
 ### Node's download crash
 
 Fixed 2026-10-28, on the `next` branch (for 1.1). Node's built-in fetch could end the whole

@@ -8,6 +8,12 @@
 
 	const base = $derived(`/instances/${encodeURIComponent(data.instance.id)}`);
 	const filesHref = (rel: string) => `${base}/files?path=${encodeURIComponent(rel)}`;
+	// Old logs' suggestion says whether MineShell already deletes them on its own.
+	const logsNote = $derived(
+		data.logKeepDays
+			? ` MineShell deletes those older than ${data.logKeepDays} days on its own.`
+			: ' MineShell settings, Old logs, can delete them on their own.'
+	);
 	const share = (bytes: number, total: number) => (total > 0 ? Math.max(0.5, (bytes / total) * 100) : 0);
 	const percent = (bytes: number, total: number) => {
 		const p = total > 0 ? (bytes / total) * 100 : 0;
@@ -51,7 +57,7 @@
 				{#each usage.suggestions as suggestion (suggestion.text)}
 					<li>
 						<span class="mono size">{formatBytes(suggestion.bytes)}</span>
-						<span class="text">{suggestion.text}</span>
+						<span class="text">{suggestion.text}{suggestion.action === 'deleteOldLogs' ? logsNote : ''}</span>
 						{#if suggestion.action === 'deleteOldLogs'}
 							<form method="POST" action="?/deleteOldLogs" use:enhance>
 								<button class="button-danger">Delete them</button>
