@@ -105,6 +105,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   client (read timeout 0), closes the connection unless a read holds exactly one packet (so
   never two in flight), and splits answers every 4096 characters - an end marker (unknown
   request type, answered "Unknown request") is sent once a full-size piece arrives.
+- A packet length outside 10 bytes to 1 MiB ends the connection as "not RCON" (2026-10-28): a
+  length of -4 used to leave the read loop on the same packet forever, freezing all of
+  MineShell, timers included. Whatever answers on the port is read, not only Minecraft.
 
 ## Crash diagnosis
 - `crashdiag.ts` (node built-ins only) indexes mods/ from zip central directories and reads
