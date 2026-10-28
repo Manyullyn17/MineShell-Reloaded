@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { sampleResources, recentSamples } = await import('#lib/server/monitor.js');
 const { db } = await import('#lib/server/db/index.js');
@@ -16,15 +16,25 @@ function running() {
 	});
 }
 
-afterEach(() => vi.restoreAllMocks());
+// Two rounds in the same millisecond have no elapsed time, and the second stores nothing.
+function nextRound() {
+	cpuNsec += 5e9;
+	vi.setSystemTime(Date.now() + 10_000);
+	invalidateUnitState();
+}
+
+beforeEach(() => vi.useFakeTimers({ toFake: ['Date'] }));
+afterEach(() => {
+	vi.useRealTimers();
+	vi.restoreAllMocks();
+});
 
 describe('CPU and memory sampling', () => {
 	it('stores a sample from the second round on', async () => {
 		const s = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' });
 		running();
 		await sampleResources();
-		cpuNsec += 5e9;
-		invalidateUnitState();
+		nextRound();
 		await sampleResources();
 		expect(recentSamples(s.id)).toHaveLength(1);
 		expect(recentSamples(s.id)[0].memoryBytes).toBe(1048576);
@@ -34,8 +44,7 @@ describe('CPU and memory sampling', () => {
 		await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' });
 		running();
 		await sampleResources();
-		cpuNsec += 5e9;
-		invalidateUnitState();
+		nextRound();
 		vi.spyOn(db, 'insert').mockImplementation(() => {
 			throw Object.assign(new Error('database or disk is full'), { code: 'SQLITE_FULL' });
 		});

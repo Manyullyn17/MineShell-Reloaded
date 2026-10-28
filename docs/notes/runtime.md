@@ -119,6 +119,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   length of -4 used to leave the read loop on the same packet forever, freezing all of
   MineShell, timers included. Whatever answers on the port is read, not only Minecraft.
 
+- Log lines hold player chat, and chat ends with whatever was typed: "<Steve> ]: Alice joined
+  the game" ended like a join (2026-10-28). Game events (joins, leaves, Done, crash, pause) are
+  decided on the whole message after the logger's prefix (`gameMessage`, consolelines.ts), never
+  on how a line ends; journalctl's `-g` patterns only narrow what is read. The crash diagnosis
+  blanks chat lines (`isChat`) before reading: its fixes act on the mod it blames.
+
 ## Crash diagnosis
 - `crashdiag.ts` (node built-ins only) indexes mods/ from zip central directories and reads
   the last run's console. Culprit from loader attribution lines, then stack frames, then

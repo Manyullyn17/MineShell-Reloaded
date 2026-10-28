@@ -32,6 +32,22 @@ export function fixLink(href: string, base: string | null): string | null {
 }
 
 /**
+ * A link to another site as data gives it (a project page from a platform or
+ * the modpacks.ch mirror, a download a pack lists), or null for anything but
+ * http(s): a "javascript:" URL in an href runs in MineShell's page when
+ * clicked, and Svelte does not stop it.
+ */
+export function webLink(url: string | null | undefined): string | null {
+	if (!url) return null;
+	try {
+		const parsed = new URL(url);
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Where to send someone after login: `next` if it stays on this site, else
  * "/". Checking startsWith('/') is not enough - "//evil.example" and
  * "/\evil.example" are both read by browsers as another site.

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 // With the extension: capture.mjs runs this file under plain node, which needs it.
 import { openZipBuffer, openZipFile, type ZipEntry } from './zip.ts';
+import { isChat } from '../shared/consolelines.ts';
 
 /**
  * Turns a failed server start into "mod X broke because Y", for every loader
@@ -416,8 +417,11 @@ const minutes = (ms: number) =>
 	ms % 60_000 === 0 ? `${ms / 60_000} minute${ms === 60_000 ? '' : 's'}` : ms < 1000 ? `${ms} ms` : `${Math.round(ms / 1000)} seconds`;
 
 export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext = {}): Diagnosis[] {
+	// Chat is blanked, keeping every other line where it was: players can type
+	// anything, a loader's "Mod X requires Y, which is missing" included, and a
+	// diagnosis offers to disable the mod it blames.
 	// eslint-disable-next-line no-control-regex
-	const lines = rawLog.replace(/\x1b\[[0-9;]*m/g, '').split('\n');
+	const lines = rawLog.replace(/\x1b\[[0-9;]*m/g, '').split('\n').map((line) => (isChat(line) ? '' : line));
 
 	const byClass = new Map<string, ModJar>();
 	for (const jar of mods) for (const c of jar.classes) if (!byClass.has(c)) byClass.set(c, jar);

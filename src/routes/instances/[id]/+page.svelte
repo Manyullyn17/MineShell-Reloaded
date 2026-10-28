@@ -2,6 +2,7 @@
 	import { channelNote } from '#lib/shared/updatecheck.js';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import { copyText } from '#lib/shared/clipboard.js';
+	import { webLink } from '#lib/shared/links.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { refreshAll } from '$app/navigation';
 	import Flash from '#lib/components/Flash.svelte';
@@ -277,8 +278,8 @@
 						</span>
 					</div>
 					<span class="links">
-						{#if missing.page}<a href={missing.page} target="_blank" rel="noreferrer">CurseForge page</a>{/if}
-						{#if missing.download.urls[0]}<a href={missing.download.urls[0]} target="_blank" rel="noreferrer">Direct link</a>{/if}
+						{#if webLink(missing.page)}<a href={webLink(missing.page)} target="_blank" rel="noreferrer">CurseForge page</a>{/if}
+						{#if webLink(missing.download.urls[0])}<a href={webLink(missing.download.urls[0])} target="_blank" rel="noreferrer">Direct link</a>{/if}
 					</span>
 				</li>
 			{/each}

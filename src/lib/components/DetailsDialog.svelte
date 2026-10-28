@@ -8,7 +8,7 @@
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 	import type { Snippet } from 'svelte';
-	import { fixLink } from '#lib/shared/links.js';
+	import { fixLink, webLink } from '#lib/shared/links.js';
 	import { formatRelative } from '#lib/shared/format.js';
 
 	function renderMarkdown(text: string, base: string | null): string {
@@ -203,8 +203,8 @@
 					{#if meta}<span>{meta}</span>{/if}
 					{#if details?.updatedAt}<span>updated {formatRelative(Date.parse(details.updatedAt))}</span>{/if}
 					{#if details?.license}<span>{details.license}</span>{/if}
-					{#if details?.projectUrl}
-						<a href={details.projectUrl} target="_blank" rel="noreferrer">Project page ↗</a>
+					{#if webLink(details?.projectUrl)}
+						<a href={webLink(details?.projectUrl)} target="_blank" rel="noreferrer">Project page ↗</a>
 					{/if}
 				</div>
 			</div>
@@ -271,9 +271,9 @@
 			{@render content(details)}
 		</div>
 
-		{#if details.projectUrl}
+		{#if webLink(details.projectUrl)}
 			<footer>
-				<a class="button button-quiet" href={details.projectUrl} target="_blank" rel="noreferrer">
+				<a class="button button-quiet" href={webLink(details.projectUrl)} target="_blank" rel="noreferrer">
 					Open the project page
 				</a>
 			</footer>

@@ -10,6 +10,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import InfoTip from '#lib/components/InfoTip.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
+	import { webLink } from '#lib/shared/links.js';
 	import BisectPanel from './BisectPanel.svelte';
 	import DependencyList, { type DependencyPlan } from './DependencyList.svelte';
 	import ModBrowser, { SOURCES } from './ModBrowser.svelte';
@@ -383,8 +384,8 @@
 							</td>
 							<td class="mod-cell">
 								<div class="mod-name">
-									{#if mod.projectUrl}
-										<a href={mod.projectUrl} target="_blank" rel="noreferrer">{mod.name}</a>
+									{#if webLink(mod.projectUrl)}
+										<a href={webLink(mod.projectUrl)} target="_blank" rel="noreferrer">{mod.name}</a>
 									{:else}
 										<span>{mod.name}</span>
 									{/if}
@@ -554,8 +555,8 @@
 					{#each data.datapacks.packs as pack (pack.fileName)}
 						<tr>
 							<td>
-								{#if pack.projectUrl}
-									<a href={pack.projectUrl} target="_blank" rel="noreferrer">{pack.name}</a>
+								{#if webLink(pack.projectUrl)}
+									<a href={webLink(pack.projectUrl)} target="_blank" rel="noreferrer">{pack.name}</a>
 								{:else}
 									<span class="mono small">{pack.name}</span>
 								{/if}

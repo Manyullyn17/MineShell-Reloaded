@@ -4,7 +4,7 @@ import { bisectSessions, playerSessions, serverInstances, serverRuns, settings, 
 import { readJournalEvents, readRun, type JournalEvent } from './journal';
 import { diagnoseRun } from './crashdiag';
 import { modsDir } from './mods/index';
-import { playerEventWithName } from '#lib/shared/consolelines.js';
+import { gameMessage, playerEventWithName } from '#lib/shared/consolelines.js';
 import { notify } from './notifications';
 
 /**
@@ -43,12 +43,11 @@ const isStart = (m: string) => /^Started /.test(m);
  * ended, and such startup crashes were never counted.
  */
 const isEnd = (m: string) => /^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed /.test(m);
-const isDone = (m: string) => /\]: Done \(/.test(m);
-const crashLine = new RegExp(CRASH_LINES);
-const pauseLine = new RegExp(PAUSE_LINE);
-const isPause = (m: string) => pauseLine.test(m);
+// PATTERN only narrows what journalctl returns; these decide, on the whole message, so chat cannot fake them (gameMessage).
+const isDone = (m: string) => /^Done \(/.test(gameMessage(m) ?? '');
+const isPause = (m: string) => /^Server empty for \d+ seconds, pausing$/.test(gameMessage(m) ?? '');
 /** A log line saying the server crashed. */
-export const isCrashLine = (m: string) => crashLine.test(m);
+export const isCrashLine = (m: string) => /^(?:Encountered an unexpected exception|This crash report has been saved to: )/.test(gameMessage(m) ?? '');
 
 function closeSessions(instanceId: string, at: number, player?: string): void {
 	db.update(playerSessions)
