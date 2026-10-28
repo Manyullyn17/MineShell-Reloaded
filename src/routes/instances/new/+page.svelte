@@ -976,9 +976,10 @@
 
 	.starts {
 		display: grid;
-		/* Two by two: four options in rows of three left one alone. */
-		grid-template-columns: repeat(2, minmax(15rem, 22rem));
+		/* All four in a row, or one under another when they do not fit (below). */
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: var(--space-3);
+		max-width: 72rem;
 	}
 
 	.start,
@@ -1004,14 +1005,18 @@
 		background: color-mix(in srgb, var(--accent) 6%, var(--panel));
 	}
 
+	/* A title on two lines keeps its radio beside the first. */
 	.start-head {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
+		gap: var(--space-2);
 		font-size: 1rem;
 	}
 
 	.radio {
+		flex-shrink: 0;
+		margin-top: 0.2rem;
 		width: 16px;
 		height: 16px;
 		border-radius: 50%;
@@ -1025,7 +1030,8 @@
 
 	.loader-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+		/* Three by two: six in a row made narrow boxes, tall with the longer descriptions. */
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-2);
 		max-width: 60rem;
 		margin-bottom: var(--space-4);
@@ -1384,11 +1390,16 @@
 		.browse.with-filters {
 			grid-template-columns: minmax(0, 1fr);
 		}
+
+		.starts {
+			grid-template-columns: minmax(0, 1fr);
+			max-width: 40rem;
+		}
 	}
 
 	@media (max-width: 60rem) {
-		.starts {
-			grid-template-columns: minmax(0, 1fr);
+		.loader-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 
 		.steps .line {
