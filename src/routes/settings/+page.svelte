@@ -334,11 +334,11 @@
 							<input type="hidden" name="presetId" value={preset.id} />
 							<div class="field">
 								<label for="edit-name-{preset.id}">Name</label>
-								<input id="edit-name-{preset.id}" name="presetName" value={preset.name} />
+								<input id="edit-name-{preset.id}" name="presetName" value={preset.name} maxlength="60" />
 							</div>
 							<div class="field">
 								<label for="edit-description-{preset.id}">Description <span class="muted">(optional)</span></label>
-								<input id="edit-description-{preset.id}" name="presetDescription" value={preset.description} />
+								<input id="edit-description-{preset.id}" name="presetDescription" value={preset.description} maxlength="200" />
 							</div>
 							<div class="field">
 								<label for="edit-flags-{preset.id}">Flags</label>
@@ -377,11 +377,11 @@
 	<form method="POST" action="?/savePreset" use:enhance class="preset-form">
 		<div class="field">
 			<label for="preset-name">Name</label>
-			<input id="preset-name" name="presetName" placeholder="My tuning" />
+			<input id="preset-name" name="presetName" placeholder="My tuning" maxlength="60" />
 		</div>
 		<div class="field">
 			<label for="preset-description">Description <span class="muted">(optional)</span></label>
-			<input id="preset-description" name="presetDescription" placeholder="What it is for, shown when picking it" />
+			<input id="preset-description" name="presetDescription" placeholder="What it is for, shown when picking it" maxlength="200" />
 		</div>
 		<div class="field">
 			<label for="preset-flags">Flags</label>

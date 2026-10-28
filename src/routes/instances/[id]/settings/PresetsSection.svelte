@@ -30,7 +30,7 @@
 	<div class="block">
 		{#if showSavePreset}
 			<form class="inline-row" onsubmit={savePreset}>
-				<input name="presetName" bind:value={presetName} placeholder="Preset name, e.g. My tuning" aria-label="Preset name" />
+				<input name="presetName" bind:value={presetName} placeholder="Preset name, e.g. My tuning" aria-label="Preset name" maxlength="60" />
 				<button class="button-primary" type="submit">Save preset</button>
 				<button type="button" class="button-quiet" onclick={() => (showSavePreset = false)}>Cancel</button>
 			</form>

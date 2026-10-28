@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { composeJvmArgs, getPreset, presetFlags, presetRunsOn, stripJava8OnlyFlags, stripMemoryFlags } from './jvm-presets';
+import { PRESET_DESCRIPTION_MAX, PRESET_NAME_MAX, composeJvmArgs, getPreset, presetFlags, presetRunsOn, saveCustomPreset, stripJava8OnlyFlags, stripMemoryFlags, updateCustomPreset } from './jvm-presets';
 
 describe('stripJava8OnlyFlags', () => {
 	it('removes flags that stop a modern JVM from starting', () => {
@@ -48,5 +48,21 @@ describe('the ZGC preset', () => {
 		expect(presetRunsOn(zgc, 17)).toBe(true);
 		expect(presetRunsOn(zgc, null)).toBe(true);
 		expect(presetRunsOn(getPreset('aikar')!, 8)).toBe(true);
+	});
+});
+
+// A preset's name and description had no limit; both show in every server's preset picker.
+describe('a saved preset', () => {
+	it('takes a name and description at their limits', () => {
+		const preset = saveCustomPreset('N'.repeat(PRESET_NAME_MAX), '-XX:+UseZGC', 'D'.repeat(PRESET_DESCRIPTION_MAX));
+		expect(preset.name).toHaveLength(PRESET_NAME_MAX);
+		expect(updateCustomPreset(preset.id, { name: preset.name, description: 'd'.repeat(PRESET_DESCRIPTION_MAX), flags: '' }).description).toHaveLength(PRESET_DESCRIPTION_MAX);
+	});
+
+	it('refuses a longer name or description', () => {
+		expect(() => saveCustomPreset('N'.repeat(PRESET_NAME_MAX + 1), '')).toThrow(/at most/);
+		expect(() => saveCustomPreset('Lean', '', 'D'.repeat(PRESET_DESCRIPTION_MAX + 1))).toThrow(/at most/);
+		const preset = saveCustomPreset('Lean', '');
+		expect(() => updateCustomPreset(preset.id, { name: 'N'.repeat(PRESET_NAME_MAX + 1), description: '', flags: '' })).toThrow(/at most/);
 	});
 });

@@ -440,3 +440,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | (feature) Compressed backup copies: zips with the manifest beside them, plain and compressed copies in one folder, partials left by a cut-short copy cleared, copy back from a zip | `flows/backups.test.ts` |
 | (feature) Snapshots sharing unchanged files: links by hash, deleting one (Delete, retention, by hand) leaves the others whole, no link to a file changed in place or a snapshot without records, the live world never shares a file, shared bytes counted once | `flows/snapshot-links.test.ts`, `flows/disk-usage.test.ts` ("share once") |
 | A server's name had no limit when made or renamed (a copy's was cut at 80) | `routes/instances/[id]/settings/sections.test.ts` ("a server name"), `server/instances.test.ts` ("serverName") |
+| A JVM preset's name and description had no limit (both show in every server's preset picker) | `server/jvm-presets.test.ts` ("a saved preset") |

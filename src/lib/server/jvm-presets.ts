@@ -184,10 +184,15 @@ export function stripJava8OnlyFlags(flags: string): { flags: string; removed: st
 	return { flags: kept.join(' '), removed };
 }
 
+/** The longest preset name and description: they show in every server's preset picker. */
+export const PRESET_NAME_MAX = 60;
+export const PRESET_DESCRIPTION_MAX = 200;
+
 /** A preset name that is free: not a built-in's, not another saved one's (`exceptId` is the one being edited). */
 function checkName(name: string, custom: StoredPreset[], exceptId: string | null): string {
 	const trimmed = name.trim();
 	if (!trimmed) throw new Error('A preset needs a name.');
+	if (trimmed.length > PRESET_NAME_MAX) throw new Error(`A preset name is at most ${PRESET_NAME_MAX} characters.`);
 	const same = (other: string) => other.toLowerCase() === trimmed.toLowerCase();
 	if (BUILT_IN_PRESETS.some((p) => same(p.name))) {
 		throw new Error('That is the name of a built-in preset. Pick another.');
@@ -203,10 +208,17 @@ function checkName(name: string, custom: StoredPreset[], exceptId: string | null
  * keeps its id; otherwise the id comes from the name and never changes, since
  * the defaults for new servers refer to it.
  */
+function checkDescription(description: string): string {
+	const trimmed = description.replace(/\s+/g, ' ').trim();
+	if (trimmed.length > PRESET_DESCRIPTION_MAX) throw new Error(`A preset description is at most ${PRESET_DESCRIPTION_MAX} characters.`);
+	return trimmed;
+}
+
 export function saveCustomPreset(name: string, flags: string, description = ''): JvmPreset {
 	const custom = readCustom();
 	const existing = custom.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
 	const trimmed = checkName(name, custom, existing?.id ?? null);
+	description = checkDescription(description);
 
 	let id = existing?.id;
 	if (!id) {
@@ -218,7 +230,7 @@ export function saveCustomPreset(name: string, flags: string, description = ''):
 		for (let n = 2; custom.some((p) => p.id === id); n++) id = `custom:${slug}-${n}`;
 	}
 
-	const entry: StoredPreset = { id, name: trimmed, description: description.trim(), flags: stripMemoryFlags(flags) };
+	const entry: StoredPreset = { id, name: trimmed, description, flags: stripMemoryFlags(flags) };
 	writeCustom([...custom.filter((p) => p.id !== id), entry]);
 	return { ...entry, builtIn: false };
 }
@@ -231,7 +243,7 @@ export function updateCustomPreset(id: string, fields: { name: string; descripti
 	const entry: StoredPreset = {
 		id,
 		name: checkName(fields.name, custom, id),
-		description: fields.description.trim(),
+		description: checkDescription(fields.description),
 		flags: stripMemoryFlags(fields.flags)
 	};
 	custom[index] = entry;
