@@ -76,7 +76,7 @@ setInterval(() => {
 	while (performance.now() < until);
 }, 100);
 
-/** Forge's `forge tps`, per dimension and overall (tps.ts reads the overall line). */
+/** Forge's `forge tps`, per dimension and overall (the overview shows both). */
 function forgeTps() {
 	const mspt = (config.mspt ?? 8) * (0.9 + Math.random() * 0.2);
 	const line = (/** @type {string} */ name, /** @type {number} */ ms) => `${name} : Mean tick time: ${ms.toFixed(3)} ms. Mean TPS: ${Math.min(20, 1000 / ms).toFixed(3)}`;
