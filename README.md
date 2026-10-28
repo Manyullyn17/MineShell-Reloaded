@@ -195,7 +195,7 @@ Share MineShell with friends while controlling which servers and features each a
 - **Automatic ownership:** The account that creates or copies a server becomes its administrator. Access to copied servers is not automatically granted to everyone who could access the original.
 - **Account management:** Create accounts, issue one-time passwords, require password replacement on first login, disable accounts, and sign them out everywhere.
 - **Permission-aware interface:** Accounts see only their permitted servers, tabs, and controls. Settings that are readable but not editable are marked accordingly.
-- **Activity log:** Review recent actions and the account responsible for each one.
+- **Log:** Review recent actions and the account responsible for each one.
 - **Protected integrations:** Only the owner can manage the playit.gg and CurseForge connections or update MineShell.
 
 ## Requirements

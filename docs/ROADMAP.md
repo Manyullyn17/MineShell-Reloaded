@@ -599,18 +599,18 @@ What the built entries in the archive left out, in one place:
 
 Suggested, not yet confirmed or rejected:
 
-- **Two things called Activity** (user, 2026-10-28: something should change, ideas noted for
-  now): the sidebar's Activity (`/tasks`) is operations running and lately finished (installs,
-  snapshots, updates) and the services MineShell asked; MineShell settings' Activity tab is the
-  audit log (who did what, the last 40 entries). Ideas, smallest first:
-  1. Rename only: the settings tab becomes "Log" or "Who did what"; the sidebar keeps Activity.
+- **One Activity page with the log** (user, 2026-10-28: maybe later, as 3 and 4 below): the
+  sidebar's Activity (`/tasks`) is operations running and lately finished (installs,
+  snapshots, updates) and the services MineShell asked; MineShell settings' tab with the audit
+  log (who did what, the last 40 entries) was called Activity too. Ideas, smallest first:
+  1. Rename only: the settings tab becomes "Log". Done 2026-10-28 (user's pick for now).
   2. Rename both: the sidebar "Tasks" (what it is, and its address already), the tab "Log".
   3. One Activity page with two tabs, "Running and recent" (tasks, everyone) and "Log" (the
      audit log, admins), and the settings tab goes. The log then gets what 40 rows lack:
      paging and filters by server, account and kind of action.
   4. With 3, each server's own part of the log on its page (who changed its settings, who
      stopped it), which is most of "Change history per server" (step 7).
-  Suggested: 3 (with 4 when step 7 comes); 1 if it should be small.
+  Kept for later: 3, with 4 when step 7 comes.
 - **The chunk map as a map of its own** (user, 2026-10-17: ideas kept for later, a full
   release addition or a 2.0 feature if at all; 2026-10-27: kept undecided, not rejected):
   Restore chunks' flat map (`chunkmap.ts`) as a built-in map option where BlueMap and Dynmap

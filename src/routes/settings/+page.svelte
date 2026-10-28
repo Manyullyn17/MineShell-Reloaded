@@ -22,7 +22,8 @@
 
 	let { data, form } = $props();
 
-	const tab = $derived(page.url.searchParams.get('tab') ?? 'system');
+	// ?tab=activity is the Log's old address.
+	const tab = $derived(page.url.searchParams.get('tab') === 'activity' ? 'log' : (page.url.searchParams.get('tab') ?? 'system'));
 
 	// One save bar for the settings forms on the open tab (each still posts to its own action).
 	const tracker = new SaveTracker();
@@ -232,7 +233,7 @@
 			<tbody>
 				{#each data.javaRuntimes as java (java.path)}
 					<tr>
-						<td class="mono">Java {java.majorVersion}</td>
+						<td class="mono nowrap">Java {java.majorVersion}</td>
 						<td class="mono small"><PathText path={java.path} /></td>
 						<td class="small faint">
 							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
@@ -586,7 +587,7 @@
 			<tbody>
 				{#each ports.rows as row (`${row.instanceId}:${row.kind}`)}
 					<tr class:problem={row.clashes.length || row.status === 'taken'}>
-						<td class="num mono">{row.port}<span class="faint">/{row.protocol}</span></td>
+						<td class="num mono nowrap">{row.port}<span class="faint">/{row.protocol}</span></td>
 						<td class="name"><a href="/instances/{encodeURIComponent(row.instanceId)}/settings?tab=network">{row.name}</a></td>
 						<td>
 							{PORT_KIND_LABELS[row.kind]}
@@ -639,7 +640,7 @@
 				<tbody>
 					{#each ports.others as other (`${other.protocol}:${other.port}`)}
 						<tr>
-							<td class="num mono">{other.port}<span class="faint">/{other.protocol}</span></td>
+							<td class="num mono nowrap">{other.port}<span class="faint">/{other.protocol}</span></td>
 							<td>
 								{#if other.oldPortOf}
 									{other.oldPortOf}, still on a port it no longer has: restart it to move
@@ -1031,6 +1032,34 @@
 	</div>
 {/snippet}
 
+<!-- Above the history, which grows with every release. -->
+{#if data.access.owner}
+<section class="panel settings-section">
+	<h2>Automatic checks</h2>
+	<!-- One switch: it saves when flipped, no save bar. -->
+	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="rows">
+			<div class="check field">
+				<input
+					id="autoCheck"
+					name="autoCheck"
+					type="checkbox"
+					class="switch"
+					role="switch"
+					bind:checked={autoCheck}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<label for="autoCheck">Look for a new version every 12 hours</label>
+				<p class="hint">
+					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
+					installed until you press Update.
+				</p>
+			</div>
+		</div>
+	</form>
+</section>
+{/if}
+
 <section class="panel">
 	<h2>Release history</h2>
 	{#if u.releases.length === 0}
@@ -1070,25 +1099,7 @@
 		</ul>
 	{/if}
 </section>
-
-{#if data.access.owner}
-<section class="panel settings-section">
-	<h2>Automatic checks</h2>
-	<form method="POST" action="?/updateAuto" use:tracker.track={'Automatic checks'} use:enhance>
-		<div class="rows">
-			<div class="check field">
-				<input id="autoCheck" name="autoCheck" type="checkbox" class="switch" role="switch" bind:checked={autoCheck} />
-				<label for="autoCheck">Look for a new version every 12 hours</label>
-				<p class="hint">
-					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
-					installed until you press Update.
-				</p>
-			</div>
-		</div>
-	</form>
-</section>
-{/if}
-{:else if tab === 'activity'}
+{:else if tab === 'log'}
 <section class="panel">
 	<h2>Recent actions</h2>
 	{#if data.recent.length === 0}
@@ -1553,6 +1564,8 @@
 	/* Sections rather than boxes, as on a server's Settings. */
 	.app-settings {
 		max-width: 62rem;
+		/* Fills the settings layout's column, so the save bar after it is at the window's bottom on a short tab. */
+		flex-grow: 1;
 	}
 
 	.app-settings :global(.panel) {
