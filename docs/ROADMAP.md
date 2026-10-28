@@ -187,6 +187,15 @@ has the details; found 2026-10-25). No host MineShell downloads from does that, 
 package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
 1.x minor, raising the minimum within Node 22 to 22.19.
 
+#### Quoted JVM arguments
+
+The unit's shell splits JVM and launch arguments at spaces only, so a quote reached Java as part
+of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when saved
+(`argsProblem`), which also means no value can hold a space (a path with one, mostly). After 1.0
+(user's call, 2026-10-28): split the arguments in MineShell, honouring quotes, and write each
+one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
+`JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
+
 #### TypeScript 7
 
 Waits until after 1.0 (user's call, 2026-10-21, with the minor dependency updates done

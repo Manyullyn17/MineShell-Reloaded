@@ -78,6 +78,7 @@ import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
 import { LOADER_LIST, findLoader, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
 import {
+	argsProblem,
 	composeJvmArgs,
 	getPreset,
 	listPresets,
@@ -536,6 +537,10 @@ export const actions: Actions = {
 
 		const body = preset ? presetFlags(preset, javaMajor) : stripMemoryFlags(String(form.get('jvmArgs') ?? instance.jvmArgs));
 		const jvmArgs = composeJvmArgs(body, instance.memoryMinMb ?? 1024, instance.memoryMaxMb ?? 4096);
+		const launchArgs = String(form.get('launchArgs') ?? instance.launchArgs).trim();
+		// Only changed ones: flags saved before this check keep saving the rest.
+		const quoted = (jvmArgs !== instance.jvmArgs && argsProblem(jvmArgs)) || (launchArgs !== instance.launchArgs && argsProblem(launchArgs));
+		if (quoted) return fail(400, { ok: false, message: quoted });
 		// A flag this Java does not know only showed as a failed start before.
 		// Unchanged flags on the same Java are not checked again, so a launch
 		// argument can still be saved for a server whose flags are already off.
@@ -548,7 +553,7 @@ export const actions: Actions = {
 		db.update(serverInstances)
 			.set({
 				jvmArgs,
-				launchArgs: String(form.get('launchArgs') ?? instance.launchArgs).trim(),
+				launchArgs,
 				javaPath,
 				updatedAt: Date.now()
 			})

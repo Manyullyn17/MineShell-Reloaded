@@ -184,6 +184,19 @@ export function stripJava8OnlyFlags(flags: string): { flags: string; removed: st
 	return { flags: kept.join(' '), removed };
 }
 
+/**
+ * Why `args` cannot be passed on as typed, or null. The unit's shell splits them on
+ * spaces only (ARCHITECTURE, "Quoting"): a quote reaches Java as part of the value,
+ * so `-Dx="a b"` was two broken arguments and `-Dfile="log4j2.xml"` looked for a
+ * file named with the quotes.
+ */
+export function argsProblem(args: string): string | null {
+	if (/["']/.test(args)) {
+		return 'Leave the quotes out: each argument reaches Java as written, quotes and all. A value cannot hold a space.';
+	}
+	return null;
+}
+
 /** The longest preset name and description: they show in every server's preset picker. */
 export const PRESET_NAME_MAX = 60;
 export const PRESET_DESCRIPTION_MAX = 200;
@@ -230,6 +243,8 @@ export function saveCustomPreset(name: string, flags: string, description = ''):
 		for (let n = 2; custom.some((p) => p.id === id); n++) id = `custom:${slug}-${n}`;
 	}
 
+	const problem = argsProblem(flags);
+	if (problem) throw new Error(problem);
 	const entry: StoredPreset = { id, name: trimmed, description, flags: stripMemoryFlags(flags) };
 	writeCustom([...custom.filter((p) => p.id !== id), entry]);
 	return { ...entry, builtIn: false };
@@ -240,6 +255,8 @@ export function updateCustomPreset(id: string, fields: { name: string; descripti
 	const custom = readCustom();
 	const index = custom.findIndex((p) => p.id === id);
 	if (index < 0) throw new Error('That preset no longer exists.');
+	const problem = argsProblem(fields.flags);
+	if (problem) throw new Error(problem);
 	const entry: StoredPreset = {
 		id,
 		name: checkName(fields.name, custom, id),

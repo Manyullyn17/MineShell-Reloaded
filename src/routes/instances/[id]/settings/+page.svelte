@@ -938,7 +938,8 @@
 					<textarea id="jvmArgs" name="jvmArgs" rows="3" class="mono" spellcheck="false" disabled={Boolean(presetToApply)} bind:value={sv.jvmArgs}
 					></textarea>
 					<p class="hint">
-						<code>-Xms</code> and <code>-Xmx</code> are rewritten from Memory, so you do not have to keep them in sync.
+						<code>-Xms</code> and <code>-Xmx</code> are rewritten from Memory, so you do not have to keep them in sync. No
+						quotes: each argument reaches Java as written, split at spaces.
 					</p>
 				</div>
 				<div class="field wide">

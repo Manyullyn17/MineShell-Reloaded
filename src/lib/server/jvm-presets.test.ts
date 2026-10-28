@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRESET_DESCRIPTION_MAX, PRESET_NAME_MAX, composeJvmArgs, getPreset, presetFlags, presetRunsOn, saveCustomPreset, stripJava8OnlyFlags, stripMemoryFlags, updateCustomPreset } from './jvm-presets';
+import { BUILT_IN_PRESETS, PRESET_DESCRIPTION_MAX, PRESET_NAME_MAX, argsProblem, composeJvmArgs, getPreset, presetFlags, presetRunsOn, saveCustomPreset, stripJava8OnlyFlags, stripMemoryFlags, updateCustomPreset } from './jvm-presets';
 
 describe('stripJava8OnlyFlags', () => {
 	it('removes flags that stop a modern JVM from starting', () => {
@@ -57,6 +57,13 @@ describe('a saved preset', () => {
 		const preset = saveCustomPreset('N'.repeat(PRESET_NAME_MAX), '-XX:+UseZGC', 'D'.repeat(PRESET_DESCRIPTION_MAX));
 		expect(preset.name).toHaveLength(PRESET_NAME_MAX);
 		expect(updateCustomPreset(preset.id, { name: preset.name, description: 'd'.repeat(PRESET_DESCRIPTION_MAX), flags: '' }).description).toHaveLength(PRESET_DESCRIPTION_MAX);
+	});
+
+	it('refuses quotes in its flags, which would reach Java as part of the value', () => {
+		expect(() => saveCustomPreset('Quoted', '-Dx="a b"')).toThrow(/quotes/);
+		const preset = saveCustomPreset('Plain', '-XX:+UseG1GC');
+		expect(() => updateCustomPreset(preset.id, { name: 'Plain', description: '', flags: "-Dx='a'" })).toThrow(/quotes/);
+		for (const builtIn of BUILT_IN_PRESETS) expect(argsProblem(builtIn.flags)).toBeNull();
 	});
 
 	it('refuses a longer name or description', () => {
