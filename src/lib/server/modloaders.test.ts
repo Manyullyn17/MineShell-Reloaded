@@ -3,7 +3,17 @@ import { compareSemver, LOADERS, neoforgePrefix, pickerLoaderVersions } from './
 import { compareVersions } from './java';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
-useRecordedHttp('loaders');
+// Mojang's manifest, cut down: releases with snapshots between them, down to 1.0.
+const RELEASES = ['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5', '1.2.4', '1.1', '1.0'];
+useRecordedHttp('loaders', {
+	extra: {
+		'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json': () =>
+			Response.json({
+				latest: { release: '26.3', snapshot: '26w44a' },
+				versions: [{ id: '26w44a', type: 'snapshot' }, ...RELEASES.map((id) => ({ id, type: 'release' }))]
+			})
+	}
+});
 
 describe('loader version lists', () => {
 	it('Cleanroom: only for 1.12.2, newest first', async () => {
@@ -75,6 +85,15 @@ describe('loader version lists', () => {
 	it('orders versions with pre-releases below their release', () => {
 		const sorted = ['0.20.0-beta.10', '0.20.1-beta.1', '0.20.0', '0.19.5', '0.20.0-beta.9', '0.20.0-rc.1'].sort((a, b) => compareSemver(b, a));
 		expect(sorted).toEqual(['0.20.1-beta.1', '0.20.0', '0.20.0-rc.1', '0.20.0-beta.10', '0.20.0-beta.9', '0.19.5']);
+	});
+});
+
+describe('Minecraft versions', () => {
+	// Add a server offered the newest 60 only, which ended at 1.10 although Forge and vanilla
+	// go much further back.
+	it('lists every release down to 1.2.5, the oldest Mojang has a server jar for', async () => {
+		expect(await LOADERS.vanilla.listGameVersions()).toEqual(['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5']);
+		expect(await LOADERS.forge.listGameVersions()).toEqual(['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5']);
 	});
 });
 

@@ -32,7 +32,7 @@ export const load: PageServerLoad = async () => {
 			supportsMods: l.supportsMods,
 			onlyGameVersions: l.onlyGameVersions ?? null
 		})),
-		minecraftVersions: minecraftVersions.slice(0, 60),
+		minecraftVersions,
 		javaRuntimes: listJavaRuntimes().map((j) => ({
 			path: j.path,
 			majorVersion: j.majorVersion,
