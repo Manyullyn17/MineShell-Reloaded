@@ -196,15 +196,6 @@ of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when
 one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
 `JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
 
-#### A picker for long lists
-
-The Minecraft and loader version lists are plain `<select>`s. The browser draws their popup and
-a page cannot set its height: Firefox makes it as tall as the screen, reaching the top (user,
-2026-10-28). A picker of MineShell's own for the long ones: a field to type into that filters
-the list (`1.20` shows the 1.20.x), a list of limited height that scrolls, the arrow keys and
-Enter, and releases apart from snapshots where the list has both. Short selects stay native.
-CSS `appearance: base-select` would style the native popup, but Firefox does not have it yet.
-
 #### TypeScript 7
 
 Waits until after 1.0 (user's call, 2026-10-21, with the minor dependency updates done

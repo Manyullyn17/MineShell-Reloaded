@@ -6,6 +6,7 @@
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
+	import VersionPicker from '#lib/components/VersionPicker.svelte';
 	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
 	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
 	import PackModList from '#lib/components/PackModList.svelte';
@@ -719,11 +720,13 @@
 				<div class="field">
 					<label for="minecraftVersion">Minecraft version</label>
 					{#if gameVersionChoices.length}
-						<select id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} onchange={() => (versionTouched = true)} required>
-							{#each gameVersionChoices as version (version)}
-								<option value={version}>{version}</option>
-							{/each}
-						</select>
+						<VersionPicker
+							id="minecraftVersion"
+							name="minecraftVersion"
+							bind:value={minecraftVersion}
+							options={gameVersionChoices.map((version) => ({ value: version, label: version }))}
+							onchange={() => (versionTouched = true)}
+						/>
 					{:else}
 						<input id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} placeholder="1.21.1" required />
 						<p class="hint">Mojang's version list was unreachable, so type the version.</p>
@@ -733,16 +736,17 @@
 					<div class="field">
 						<label for="modloaderVersion">Loader version</label>
 						{#if loadingLoaderVersions || loaderVersions.length}
-							<select id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} disabled={loadingLoaderVersions}>
-								{#if loadingLoaderVersions}
-									<option value="">Loading.</option>
-								{:else}
-									<option value="">Latest ({loaderVersions[0]})</option>
-									{#each loaderVersions.slice(0, 40) as version (version)}
-										<option value={version}>{version}</option>
-									{/each}
-								{/if}
-							</select>
+							<VersionPicker
+								id="modloaderVersion"
+								name="modloaderVersion"
+								bind:value={modloaderVersion}
+								disabled={loadingLoaderVersions}
+								busy={loadingLoaderVersions}
+								empty="Loading."
+								options={loadingLoaderVersions
+									? []
+									: [{ value: '', label: `Latest (${loaderVersions[0]})` }, ...loaderVersions.map((version) => ({ value: version, label: version }))]}
+							/>
 						{:else}
 							<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
 						{/if}

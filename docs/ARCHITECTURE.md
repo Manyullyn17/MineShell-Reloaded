@@ -1332,9 +1332,16 @@ and never for MineShell's own writing; and motion appears only on state change, 
 decoration, because a page that animates while a server is crashing is a page you stop
 trusting.
 
-Two shared controls stand in for plain form inputs. A setting that is on or off is a switch:
+Three shared controls stand in for plain form inputs. A setting that is on or off is a switch:
 a checkbox with `class="switch" role="switch"` (or a button with `aria-checked` where clicking
 posts at once, as on Mods and Players), styled in app.css; a checkbox for a one-off choice
 made before an action ("also delete every file", "snapshot first") stays a checkbox. A short
 choice of two to four options is a row of buttons, `SegmentedChoice.svelte` (radios in labels,
-so forms post it as before); longer lists and long labels stay selects or radio lists.
+so forms post it as before); longer lists and long labels stay selects or radio lists. The
+long version lists (Minecraft versions, loader builds) are `VersionPicker.svelte`: the browser
+draws a select's popup and a page cannot set its height (Firefox's reaches the top of the
+screen). It is a combobox: typing filters (`lib/shared/versionpicker.ts`: versions starting
+with the text first), the list scrolls within a limited height, fixed to the window like
+RowMenu's so a box's overflow does not cut it, releases apart from betas and snapshots when
+a list has both, and a hidden input posts the value under the select's old name. It shows
+whole lists, where the selects had cut them at 40 or 60 builds.

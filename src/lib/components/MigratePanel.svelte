@@ -2,6 +2,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
+	import VersionPicker from './VersionPicker.svelte';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
@@ -126,11 +127,12 @@
 <div class="pickers">
 	<div class="field">
 		<label for="migrate-mc">Minecraft</label>
-		<select id="migrate-mc" bind:value={minecraft} aria-busy={!minecraftVersions}>
-			{#each choices as version (version)}
-				<option value={version}>{version}{version === current.minecraft ? ' (installed)' : ''}</option>
-			{/each}
-		</select>
+		<VersionPicker
+			id="migrate-mc"
+			bind:value={minecraft}
+			busy={!minecraftVersions}
+			options={choices.map((version) => ({ value: version, label: `${version}${version === current.minecraft ? ' (installed)' : ''}` }))}
+		/>
 	</div>
 	<div class="field">
 		<label for="migrate-loader">Loader</label>
@@ -143,16 +145,16 @@
 	{#if loader !== 'vanilla'}
 		<div class="field">
 			<label for="migrate-loader-version">{labelOf(loader)} version</label>
-			<select id="migrate-loader-version" bind:value={loaderVersion} disabled={!loaderVersions?.length} aria-busy={!loaderVersions}>
-				{#if !loaderVersions}
-					<option value="">Loading</option>
-				{:else if !loaderVersions.length}
-					<option value="">None for {minecraft}</option>
-				{:else}
-					<option value="">Newest ({loaderVersions[0]})</option>
-					{#each loaderVersions.slice(0, 60) as v (v)}<option value={v}>{v}</option>{/each}
-				{/if}
-			</select>
+			<VersionPicker
+				id="migrate-loader-version"
+				bind:value={loaderVersion}
+				disabled={!loaderVersions?.length}
+				busy={!loaderVersions}
+				empty={loaderVersions ? `None for ${minecraft}` : 'Loading'}
+				options={loaderVersions?.length
+					? [{ value: '', label: `Newest (${loaderVersions[0]})` }, ...loaderVersions.map((v) => ({ value: v, label: v }))]
+					: []}
+			/>
 		</div>
 	{/if}
 </div>

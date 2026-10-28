@@ -7,6 +7,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import PackChangePanel from '#lib/components/PackChangePanel.svelte';
 	import PackRollback from '#lib/components/PackRollback.svelte';
+	import VersionPicker from '#lib/components/VersionPicker.svelte';
 	import MigratePanel from '#lib/components/MigratePanel.svelte';
 	import ConfigMergeReview from '#lib/components/ConfigMergeReview.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
@@ -551,20 +552,17 @@
 			<form method="POST" action="?/loaderVersion" use:enhance={keepValues} class="block">
 				<div class="inline-row">
 					{#if !loaderVersions || loaderVersions.length}
-						<select
+						<VersionPicker
 							id="modloaderVersion"
 							name="modloaderVersion"
 							bind:value={sv.modloaderVersion}
-							aria-label="Version to install"
-							aria-busy={!loaderVersions}
-						>
-							{#if sv.modloaderVersion && !loaderVersions?.includes(sv.modloaderVersion)}
-								<option value={sv.modloaderVersion}>{sv.modloaderVersion}{sv.modloaderVersion === data.settings.modloaderVersion ? ' (installed)' : ''}</option>
-							{/if}
-							{#each (loaderVersions ?? []).slice(0, 60) as version (version)}
-								<option value={version}>{version}{version === data.settings.modloaderVersion ? ' (installed)' : ''}</option>
-							{/each}
-						</select>
+							ariaLabel="Version to install"
+							busy={!loaderVersions}
+							options={[
+								...(sv.modloaderVersion && !loaderVersions?.includes(sv.modloaderVersion) ? [sv.modloaderVersion] : []),
+								...(loaderVersions ?? [])
+							].map((version) => ({ value: version, label: `${version}${version === data.settings.modloaderVersion ? ' (installed)' : ''}` }))}
+						/>
 					{:else}
 						<input
 							id="modloaderVersion"

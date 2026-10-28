@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### A picker for long lists
+
+Built 2026-10-28 (`VersionPicker.svelte`; ARCHITECTURE, Frontend), on the `next` branch, after
+the user found Firefox drawing the Minecraft version select's popup as tall as the screen. The
+Minecraft and loader version fields on Add a server, a server's loader version and the
+version move panel in Settings are a field to type into that filters the list (`1.20` shows
+the 1.20.x first, `2864` finds 14.23.5.2864), a list of limited height that scrolls, the arrow
+keys, Page Up/Down, Enter and Escape, and releases apart from betas and snapshots where a list
+has both (Quilt; Cleanroom's builds are all alphas, so no headings). Whole lists now, where the
+selects stopped at 40 or 60 builds. Short selects stay native. Not built: CSS
+`appearance: base-select`, which would style the native popup, once Firefox has it.
+
 ### TPS per dimension
 
 Built 2026-10-28 (overview, Tick rate; `tps.ts`), on the `next` branch. `forge tps` and
