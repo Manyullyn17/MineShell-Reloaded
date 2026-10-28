@@ -147,12 +147,16 @@ describe('scheduled snapshots', () => {
 
 	it('turns saving back on when the copy fails', async () => {
 		const s = await server();
-		await fs.chmod(path.join(s.path, 'world/region'), 0o000);
+		// Not a chmod: root reads through one, and CI containers often run as root.
+		const copyFile = fs.copyFile;
+		const spy = vi.spyOn(fs, 'copyFile').mockImplementation((from, to, mode) =>
+			String(from).includes('region') ? Promise.reject(new Error('EIO: i/o error, copyfile')) : copyFile(from, to, mode)
+		);
 		try {
 			const task = await waitForTask(sched.scheduledSnapshot(s, 'live'));
-			expect(task.error).toBeTruthy();
+			expect(task.error).toMatch(/EIO/);
 		} finally {
-			await fs.chmod(path.join(s.path, 'world/region'), 0o755);
+			spy.mockRestore();
 		}
 		expect(rcon.commands.at(-1)).toBe('save-on');
 		expect(await listSnapshots(s.path)).toEqual([]);
