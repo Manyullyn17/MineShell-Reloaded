@@ -80,6 +80,11 @@ async function mojangManifest(): Promise<MojangManifest> {
 	return data;
 }
 
+/** For tests: forget the manifest, which test files sharing a worker would otherwise hand on to each other. */
+export function forgetMojangManifest(): void {
+	manifestCache = null;
+}
+
 /**
  * The Java major Mojang declares for a Minecraft version (`javaVersion` in the
  * version's metadata), or null if the version or field is unknown.
