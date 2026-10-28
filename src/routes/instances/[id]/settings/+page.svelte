@@ -1196,8 +1196,14 @@
 		color: var(--error);
 	}
 
+	/* The tabs and search stay under the server's sticky header while the sections scroll;
+	   --instance-head is that header's height (instances/[id]/+layout.svelte). */
 	.subhead {
 		flex-wrap: nowrap;
+		position: sticky;
+		top: calc(3.25rem + var(--instance-head, 0px));
+		z-index: 14;
+		background: var(--bg);
 	}
 
 	/* No limit / Limit above the slider, together in the field's control column. */
@@ -1206,6 +1212,12 @@
 		flex-direction: column;
 		gap: 0.6rem;
 		width: 100%;
+	}
+
+	/* Its own width at the right, as the other choices in the column: stretched, it left an
+	   empty stretch after "Limit". */
+	.limit-control :global(.segmented-choice) {
+		align-self: flex-end;
 	}
 
 	.subhead .subtabs {
@@ -1223,8 +1235,15 @@
 
 	/* On a phone the tabs get the whole row and the search goes under them. */
 	@media (max-width: 60rem) {
+		/* The header scrolls away on a phone (instances/[id]/+layout.svelte); so do these. */
 		.subhead {
 			flex-wrap: wrap;
+			position: static;
+		}
+
+		/* Controls go under their labels, at the left. */
+		.limit-control :global(.segmented-choice) {
+			align-self: flex-start;
 		}
 
 		.subhead .subtabs {

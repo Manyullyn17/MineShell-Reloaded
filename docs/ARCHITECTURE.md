@@ -1242,7 +1242,11 @@ its tab is closed, so the search can look through all of them. Things that act a
 commands, copy and delete) keep their own buttons; the ones with state of their own are
 components beside the page (`IconSection.svelte` and friends), while the sections in the
 save bar stay in the page, which holds their shared field state. Their row layout lives in
-`SettingsSection` as `:global(.settings-section ...)` rules. JVM flag presets are shared by every
+`SettingsSection` as `:global(.settings-section ...)` rules. The tab bar and search stick
+under the server's header on desktop (`--instance-head`, the header's measured height, set by
+the instance layout). MineShell settings' New server defaults uses the same sections and rows
+(every section shown, through `provideSettingsView`) and a save bar of its own: one form, one
+action, the changed sections named in the bar. JVM flag presets are shared by every
 server, so they live in MineShell settings (Java): a server's "Save current flags as a
 preset" posts to `/settings?/savePreset`, and only MineShell settings edits or deletes one.
 A saved preset's id is made from its first name and kept through renames (the defaults for

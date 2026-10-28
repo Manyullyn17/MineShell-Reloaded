@@ -44,7 +44,22 @@
 </SettingsSection>
 
 <style>
-	.warn-text {
+	/* Outside a .field the hints were plain paragraphs: full-size text right under the
+	   button with a paragraph's margin below. Even gaps between button and lines instead. */
+	.block {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+
+	.block .hint {
+		margin: 0;
+		font-size: 0.8rem;
+		color: var(--text-faint);
+	}
+
+	.block .hint.warn-text {
 		color: var(--warning);
 	}
 </style>
