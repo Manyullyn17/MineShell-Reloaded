@@ -9,6 +9,8 @@
  *   npm run screenshots -- --keep           leave it running to look around (http://localhost:5198)
  *   npm run screenshots -- --serve          only the world and its running servers, no pictures (kept)
  *   npm run screenshots -- --cleanup        end a --keep or --serve run
+ *   npm run screenshots -- --long           the long world instead (scenes-long.mjs): every
+ *                                           field at its longest, signed in; kept, no pictures
  *
  * Its own data dir, port and unit prefix (msshot), so it never meets real
  * servers or another throwaway dev server. The template unit it installs and
@@ -23,6 +25,7 @@ import zlib from 'node:zlib';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { scenes, offlineUuid } from './scenes.mjs';
+import { longScenes, longForms } from './scenes-long.mjs';
 import { shots, visits } from './shots.mjs';
 
 const require = createRequire(import.meta.url);
@@ -42,7 +45,8 @@ const OUT = path.join(REPO, 'docs/screenshots');
 const UNIT_DIR = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'systemd/user');
 
 const args = process.argv.slice(2);
-const serve = args.includes('--serve');
+const long = args.includes('--long');
+const serve = long || args.includes('--serve');
 const keep = serve || args.includes('--keep');
 const only = args.filter((a) => !a.startsWith('--'));
 
@@ -70,6 +74,17 @@ if (args.includes('--cleanup')) {
 	process.exit(0);
 }
 
+/** The long world signs in: the owner's session cookie, sent with every post (name=value). */
+let session = '';
+
+/**
+ * A request to the throwaway MineShell, signed in when the world is.
+ * @param {string} page @param {RequestInit} init
+ */
+function call(page, init) {
+	return fetch(`${BASE}${page}`, { ...init, headers: { ...init.headers, origin: BASE, ...(session ? { cookie: session } : {}) } });
+}
+
 /**
  * A form action, posted the way an enhanced form does (tests/tools/act.mjs).
  * @param {string} page @param {string} action @param {Record<string, string>} [fields]
@@ -77,7 +92,7 @@ if (args.includes('--cleanup')) {
 async function act(page, action, fields = {}) {
 	const body = new FormData();
 	for (const [k, v] of Object.entries(fields)) body.append(k, v);
-	const res = await fetch(`${BASE}${page}?/${action}`, { method: 'POST', body, headers: { origin: BASE, 'x-sveltekit-action': 'true' } });
+	const res = await call(`${page}?/${action}`, { method: 'POST', body, headers: { 'x-sveltekit-action': 'true' } });
 	const result = await res.json();
 	if (result.type !== 'success') throw new Error(`${page}?/${action}: ${JSON.stringify(result)}`);
 }
@@ -124,6 +139,7 @@ exec "${realSystemctl}" "$@"
 );
 const started = sh('bash', ['tests/tools/devserver.sh', 'start', String(PORT), DATA], {
 	MINESHELL_UNIT_PREFIX: PREFIX,
+	MINESHELL_AUTH: long ? 'on' : 'off',
 	PATH: `${path.join(DATA, 'bin')}:${process.env.PATH}`
 });
 if (started.code !== 0) throw new Error(started.out);
@@ -131,6 +147,20 @@ console.log(started.out.trim());
 await fetch(`${BASE}/`); // the first page load runs the migrations and boot
 
 const db = new Database(path.join(DATA, 'mineshell.db'));
+// auth.ts sessionCookieName: named after the data folder.
+const COOKIE = `mineshell_session_${crypto.createHash('sha256').update(DATA).digest('hex').slice(0, 12)}`;
+/** A session for an account, as a cookie (name=value). @param {string} userId */
+function sessionFor(userId) {
+	const id = crypto.randomBytes(32).toString('base64url');
+	db.prepare('INSERT INTO sessions (id, user_id, created_at, expires_at, user_agent) VALUES (?, ?, ?, ?, ?)').run(id, userId, Date.now(), Date.now() + 7 * 24 * 3600_000, 'screenshots');
+	return `${COOKIE}=${id}`;
+}
+if (long) {
+	// The owner, as setup makes it (no password anyone signs in with: the sweep has the session).
+	const owner = crypto.randomUUID();
+	db.prepare("INSERT INTO users (id, username, password_hash, is_owner, created_at, updated_at) VALUES (?, 'admin', 'unusable', 1, ?, ?)").run(owner, Date.now(), Date.now());
+	session = sessionFor(owner);
+}
 const keyFile = path.join(DATA, 'secret.key');
 if (!fs.existsSync(keyFile)) fs.writeFileSync(keyFile, crypto.randomBytes(32).toString('base64'), { mode: 0o600 });
 const key = Buffer.from(fs.readFileSync(keyFile, 'utf8').trim(), 'base64');
@@ -346,7 +376,7 @@ const ctx = {
 };
 
 try {
-	for (const scene of scenes) {
+	for (const scene of long ? longScenes : scenes) {
 		console.log(`scene ${scene.name}`);
 		await scene.run(ctx);
 	}
@@ -376,10 +406,12 @@ for (const { id, uptimeMinutes, startSeconds } of toStart) {
 		ON CONFLICT (instance_id, invocation) DO UPDATE SET started_at = excluded.started_at, done_at = excluded.done_at`
 	).run(id, invocation, Math.round(startedAt), Math.round(startedAt + startSeconds * 1000));
 }
+const restrictedSession = long ? sessionFor(await longForms(act, call, ctx)) : '';
 db.close();
 const startedList = toStart.map((s) => s.id).join(', ');
 if (serve) {
 	console.log(`started ${startedList}. Running at ${BASE} (data ${DATA}). End it with: npm run screenshots -- --cleanup`);
+	if (long) console.log(`Signed in (page-sweep.mjs --cookie):\n  owner       ${session}\n  restricted  ${restrictedSession}`);
 	process.exit(0);
 }
 // Long enough for the monitor's samples, the RCON polls and history's journal read (every 30 s).

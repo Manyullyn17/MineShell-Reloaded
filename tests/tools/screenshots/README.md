@@ -10,6 +10,7 @@ npm run screenshots -- overview mods    # only these
 npm run screenshots -- --keep           # leave it running to look around: http://localhost:5198
 npm run screenshots -- --serve          # only build the world and start its servers, no pictures (kept)
 npm run screenshots -- --cleanup        # end a --keep or --serve run
+npm run screenshots -- --long           # the long world instead (below), kept, no pictures
 ```
 
 It uses its own data dir (`/tmp/ms-shots`, emptied first), port 5198 and unit prefix
@@ -78,6 +79,28 @@ of gzipped logs, so its disk use is more than the world.
 Players are invented names with offline-mode UUIDs (MineShell never looks those up, so no
 skins: their faces are the locator-bar colours). Jars and region files are sparse: their
 sizes look real and take no disk.
+
+## The long world
+
+`--long` builds a different world from `scenes-long.mjs`, for finding text that breaks pages
+rather than for pictures: every field MineShell limits is filled at its limit through its own
+form actions (`longForms`: notes, tags, scheduled commands, macros, world and snapshot names,
+snapshot tags, presets, backup folders, accounts), so a limit that changes shows up there.
+Text MineShell reads from elsewhere is written as long as it gets: server names at 80, pack
+names and versions, mods named both spaced and as one unbroken word with long file names and
+versions, twenty 16-character players online with 256-character chat, ban reasons, files and
+folders at 255 bytes, a modded dimension, items with long names, lore and ids, a crash naming
+long mods. No network. Sign-in is on, with sessions for the owner and a restricted account
+(32-character name, some permissions on two servers), printed at the end for the sweep:
+
+```sh
+npm run screenshots -- --long
+node tests/tools/page-sweep.mjs http://localhost:5198 /tmp/sweep --width 390 --overflow --spill \
+  --cookie <owner or restricted> --server spaced --server unbroken --server crashed --player unbroken/<uuid>
+```
+
+The player is `WWWWWWWWWWWWWWWW` (`offlineUuid` in `scenes.mjs`). Backup folders go in
+`/tmp/ms-shots-backups`.
 
 ## What it cannot show (yet)
 

@@ -5,14 +5,18 @@
  * For looking over the whole interface after a change, on a throwaway server
  * (the screenshot world: `npm run screenshots -- --serve`, port 5198).
  *
- *   node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow]
- *        [--server id]... [--player id/uuid]... [--only text]
+ *   node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill]
+ *        [--cookie name=value] [--server id]... [--player id/uuid]... [--only text]
  *
  * --server adds that server's pages (overview, console, logs, mods, world and
  * restore chunks, map, players, files and disk usage, settings tabs, exports),
  * --player a player page (server id/uuid). --only keeps pages whose path has
  * that text. Prints one line per page and sub-tab; with --overflow, the
- * elements past the edge under it.
+ * elements past the edge under it, with --spill, text running out of its box
+ * or cut off (pageshot.mjs). --cookie signs the sweep in as that session's
+ * account (the long world, `npm run screenshots -- --long`, prints the owner's
+ * and a restricted account's); the sign-in pages, the refusal page and a
+ * missing page are swept too (signed in, the first two may redirect).
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -22,13 +26,15 @@ import { fileURLToPath } from 'node:url';
 const args = process.argv.slice(2);
 const [base, out] = args;
 if (!base || !out) {
-	console.error('Usage: node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--server id]... [--player id/uuid]... [--only text]');
+	console.error('Usage: node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill] [--cookie name=value] [--server id]... [--player id/uuid]... [--only text]');
 	process.exit(1);
 }
 /** @param {string} name */
 const all = (name) => args.flatMap((a, i) => (a === name ? [args[i + 1]] : []));
 const width = all('--width')[0] ?? '390';
 const overflow = args.includes('--overflow');
+const spill = args.includes('--spill');
+const cookie = all('--cookie')[0];
 const only = all('--only');
 const pageshot = path.join(path.dirname(fileURLToPath(import.meta.url)), 'pageshot.mjs');
 
@@ -42,6 +48,10 @@ const pages = [
 	'/settings/users',
 	'/account',
 	'/about',
+	'/login',
+	'/setup',
+	'/denied',
+	'/no-such-page',
 	...all('--server').flatMap((id) => [
 		`/instances/${id}`,
 		`/instances/${id}/console`,
@@ -56,7 +66,8 @@ const pages = [
 		`/instances/${id}/settings`,
 		`/instances/${id}/export`,
 		`/instances/${id}/export/mods`,
-		`/instances/${id}/export/server`
+		`/instances/${id}/export/server`,
+		`/instances/${id}/no-such-page`
 	]),
 	...all('--player').map((p) => `/instances/${p.split('/')[0]}/players/${p.split('/')[1]}`)
 ].filter((p) => !only.length || only.some((o) => p.includes(o)));
@@ -67,7 +78,7 @@ const COUNT_SUBTABS = `document.querySelectorAll('.subtabs > button, .subtabs > 
 
 /** One pageshot run; its printed lines. @param {string} page @param {string} file @param {string[]} extra */
 function shoot(page, file, extra) {
-	const run = [pageshot, `${base}${page}`, path.join(out, file), '--width', width, '--eval', SETTLE, ...extra, ...(overflow ? ['--overflow'] : [])];
+	const run = [pageshot, `${base}${page}`, path.join(out, file), '--width', width, '--eval', SETTLE, ...extra, ...(overflow ? ['--overflow'] : []), ...(spill ? ['--spill'] : []), ...(cookie ? ['--cookie', cookie] : [])];
 	try {
 		return execFileSync(process.execPath, run, { encoding: 'utf8', timeout: 120_000 }).trim().split('\n');
 	} catch (err) {
@@ -76,7 +87,7 @@ function shoot(page, file, extra) {
 }
 
 /** The lines worth showing: overflow findings and failures, not the picture's path. @param {string[]} lines */
-const findings = (lines) => lines.filter((l) => !l.startsWith(out) && !/^Nothing past the right edge/.test(l) && l !== 'true' && l !== 'undefined');
+const findings = (lines) => lines.filter((l) => !l.startsWith(out) && !/^(Nothing past the right edge|No text out of its box)/.test(l) && l !== 'true' && l !== 'undefined');
 
 for (const page of pages) {
 	const name = page.replace(/^\//, '').replace(/[/?=]+/g, '_') || 'servers';

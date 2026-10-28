@@ -8,7 +8,8 @@
 #   tests/tools/devserver.sh clean [port] [data dir]
 #
 # start returns once the server answers (log in <data dir>/devserver-<port>.log).
-# MINESHELL_UNIT_PREFIX in the environment replaces the default mstest.
+# MINESHELL_UNIT_PREFIX in the environment replaces the default mstest, MINESHELL_AUTH
+# the default off (on: sign-in, for sweeping as an account).
 # stop ends the process listening on the port, with its process group.
 # clean stops it, stops and removes the prefix's units (template, drop-ins, the
 # playit agent, the servers' slice) from ~/.config/systemd/user, and deletes the
@@ -35,7 +36,7 @@ start)
 	log="$data/devserver-$port.log"
 	cd "$(dirname "$0")/../.." || exit 1
 	# Its own session, so stop can end vite and anything it started together.
-	MINESHELL_DATA="$data" MINESHELL_AUTH=off MINESHELL_UNIT_PREFIX="${MINESHELL_UNIT_PREFIX:-mstest}" \
+	MINESHELL_DATA="$data" MINESHELL_AUTH="${MINESHELL_AUTH:-off}" MINESHELL_UNIT_PREFIX="${MINESHELL_UNIT_PREFIX:-mstest}" \
 		setsid npx vite dev --port "$port" --strictPort >"$log" 2>&1 </dev/null &
 	for _ in $(seq 60); do
 		if curl -s -o /dev/null "http://localhost:$port/"; then

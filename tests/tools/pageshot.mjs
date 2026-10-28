@@ -12,6 +12,10 @@
  *     --wait-for <text>  wait until the page shows this text (default: 2 s after load)
  *     --timeout <ms>     give up waiting after this long (default 30000), then shoot anyway
  *     --overflow         also list elements reaching past the viewport's right edge
+ *     --spill            also list text running out of its own box (a long word over
+ *                        the next column) and text cut off with no way to read it all
+ *                        (an ellipsis without a title): long names, inside the page
+ *     --cookie <n=v>     send this cookie (a session: signed in as that account)
  *     --click <selector> once loaded, click the first element matching this CSS selector;
  *                        --wait-for then waits for what the click brings. Repeatable: the
  *                        clicks happen in order, half a second apart
@@ -56,6 +60,8 @@ const element = option('--element', null);
 const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
+const spill = flag('--spill');
+const cookie = option('--cookie', null);
 /** Every --click and --eval, in order: a sub-tab, then a button inside it. */
 const steps = [];
 for (let at = 0; at < args.length; ) {
@@ -66,7 +72,7 @@ const click = steps.length > 0;
 const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
-	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--drag x1,y1,x2,y2] [--dialog accept|dismiss]');
+	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--drag x1,y1,x2,y2] [--dialog accept|dismiss] [--spill] [--cookie name=value]');
 	process.exit(1);
 }
 
@@ -144,6 +150,10 @@ try {
 	});
 
 	await send('Page.enable');
+	if (cookie) {
+		const at = cookie.indexOf('=');
+		await send('Network.setCookie', { name: cookie.slice(0, at), value: cookie.slice(at + 1), url });
+	}
 	await send('Page.navigate', { url });
 	let found = !waitFor;
 	const deadline = Date.now() + timeout;
@@ -199,6 +209,30 @@ try {
 			.slice(0, 40)
 			.map((e) => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).join('.') : '') + ' right=' + Math.round(e.getBoundingClientRect().right))`);
 		console.log(wide.length ? `Past the right edge (${width}px):\n  ${wide.join('\n  ')}` : `Nothing past the right edge at ${width}px.`);
+	}
+
+	if (spill) {
+		// Text spilling: an element whose own text is wider than its box while the box lets it
+		// show (overflow visible), so it runs over what is next to it. Cut off: an ellipsis or a
+		// clipped box hiding part of a text with no title (nor one on a parent) to read it in.
+		const found = await evaluate(`(() => {
+			const label = (e) => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).join('.') : '');
+			const ownText = (e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+			const titled = (e) => { for (let a = e; a && a !== document.body; a = a.parentElement) if (a.title || a.getAttribute('aria-label') || a.tagName === 'SELECT') return true; return false; };
+			const out = [];
+			for (const e of document.querySelectorAll('body *')) {
+				// Not text on screen: screen-reader labels (1 px boxes) and SvelteKit's route announcer.
+				if (!ownText(e) || !e.offsetParent || e.clientWidth <= 2 || e.closest('pre, textarea, [aria-live]')) continue;
+				const style = getComputedStyle(e);
+				if (style.display === 'inline') continue;
+				if (e.scrollWidth <= e.clientWidth + 1) continue;
+				const text = e.textContent.trim().replace(/\\s+/g, ' ').slice(0, 50);
+				if (/visible/.test(style.overflowX)) out.push('spills ' + label(e) + ' by ' + (e.scrollWidth - e.clientWidth) + 'px: ' + text);
+				else if (!/auto|scroll/.test(style.overflowX) && !titled(e)) out.push('cut off ' + label(e) + ': ' + text);
+			}
+			return out.slice(0, 40);
+		})()`);
+		console.log(found.length ? `Text out of its box (${width}px):\n  ${found.join('\n  ')}` : `No text out of its box at ${width}px.`);
 	}
 
 	const height = fixedHeight ? Number(fixedHeight) : Math.min(await evaluate('document.documentElement.scrollHeight'), 4000);
