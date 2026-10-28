@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { compareSemver, LOADERS, neoforgePrefix, pickerLoaderVersions } from './modloaders';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { compareSemver, forgetMojangManifest, LOADERS, neoforgePrefix, pickerLoaderVersions } from './modloaders';
 import { compareVersions } from './java';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
@@ -14,6 +14,9 @@ useRecordedHttp('loaders', {
 			})
 	}
 });
+// Files in the shared project share modules: the cut-down manifest must not reach another file.
+beforeAll(forgetMojangManifest);
+afterAll(forgetMojangManifest);
 
 describe('loader version lists', () => {
 	it('Cleanroom: only for 1.12.2, newest first', async () => {

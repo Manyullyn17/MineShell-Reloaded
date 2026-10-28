@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { learnJavaRequirement, requiredJavaMajor } from './java';
 import { db } from './db';
 import { settings } from './db/schema';
+import { forgetMojangManifest } from './modloaders';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
 // A Minecraft version newer than any built-in rule, asking for a Java the
@@ -18,6 +19,9 @@ useRecordedHttp('none', {
 		'https://mojang.test/99.1.json': () => Response.json({ id: '99.1', javaVersion: { component: 'java-runtime-x', majorVersion: 30 } })
 	}
 });
+
+// Another file in the same worker may have left its own manifest in modloaders.ts' cache.
+beforeAll(forgetMojangManifest);
 
 describe('learnJavaRequirement', () => {
 	it("uses Mojang's declared Java over the built-in rules, and remembers it", async () => {

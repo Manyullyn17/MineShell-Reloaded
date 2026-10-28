@@ -55,7 +55,12 @@ until after 1.0, and asked to keep the rest listed here):
   builds as updated; the checks those touch are the pages themselves (swept at 390 and
   1280 px) and the pack change preview (its flow test, and Cobblemon 1.8.1 -> 1.8.4 in the
   screenshot world). A `fix:` release in the meantime becomes the new candidate, and only the
-  checks its fix touches are repeated.
+  checks its fix touches are repeated. Since then (2026-10-28): 0.33.4 to 0.33.6 (long names,
+  clock changes, server.properties and JVM argument escapes, the phone mods list, settings
+  pages), and **0.33.7 is the candidate** (user's call, 2026-10-28): Add a server's layout,
+  NeoForge builds for Minecraft 26.x, Fabric and Quilt after picking Cleanroom, Minecraft
+  versions down to 1.2.5. Its checks: the loader flow clicked through on a throwaway dev
+  server (every loader, 26.3 kept, lists filled) and the new loader list tests.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
