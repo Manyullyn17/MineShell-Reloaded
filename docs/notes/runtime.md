@@ -10,6 +10,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   ends the process on a rejection nobody catches; systemd then restarts MineShell, which drops
   running tasks. Each round catches at its timer (2026-10-28: a full disk failing the CPU sample
   insert would have restarted MineShell every 10 s, when its pages were needed to free space).
+  Behind that, `crashguard.ts` (installed by `boot()`) logs any rejection nothing caught and
+  keeps running; a synchronous throw nothing caught still ends the process, on purpose (state
+  may be half changed; the restart and operation recovery are the way back). Found with
+  typescript-eslint's no-floating-promises (`ignoreVoid: false`) run once, outside the repo:
+  every `void` left is a call that cannot reject or one this net covers.
 - Countdown stops/restarts (`countdown.ts`) are in memory; nobody online = act at once.
 - Clock changes (2026-10-28): daily times are built from each day's date (`dailySlot`), never by
   moving the last run a day on (a 02:30 the spring change turned into 03:30 stayed 03:30 the
