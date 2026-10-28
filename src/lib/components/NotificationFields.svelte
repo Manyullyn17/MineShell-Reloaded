@@ -38,6 +38,7 @@
 			data-1p-ignore
 			data-lpignore="true"
 			data-bwignore
+			data-save-clear
 			placeholder={savedHint ? `Saved: ${savedHint}. Paste a new one to replace it.` : info.placeholder}
 		/>
 	</div>

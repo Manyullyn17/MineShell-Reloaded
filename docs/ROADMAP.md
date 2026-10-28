@@ -196,6 +196,15 @@ of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when
 one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
 `JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
 
+#### A picker for long lists
+
+The Minecraft and loader version lists are plain `<select>`s. The browser draws their popup and
+a page cannot set its height: Firefox makes it as tall as the screen, reaching the top (user,
+2026-10-28). A picker of MineShell's own for the long ones: a field to type into that filters
+the list (`1.20` shows the 1.20.x), a list of limited height that scrolls, the arrow keys and
+Enter, and releases apart from snapshots where the list has both. Short selects stay native.
+CSS `appearance: base-select` would style the native popup, but Firefox does not have it yet.
+
 #### TypeScript 7
 
 Waits until after 1.0 (user's call, 2026-10-21, with the minor dependency updates done
@@ -590,6 +599,18 @@ What the built entries in the archive left out, in one place:
 
 Suggested, not yet confirmed or rejected:
 
+- **Two things called Activity** (user, 2026-10-28: something should change, ideas noted for
+  now): the sidebar's Activity (`/tasks`) is operations running and lately finished (installs,
+  snapshots, updates) and the services MineShell asked; MineShell settings' Activity tab is the
+  audit log (who did what, the last 40 entries). Ideas, smallest first:
+  1. Rename only: the settings tab becomes "Log" or "Who did what"; the sidebar keeps Activity.
+  2. Rename both: the sidebar "Tasks" (what it is, and its address already), the tab "Log".
+  3. One Activity page with two tabs, "Running and recent" (tasks, everyone) and "Log" (the
+     audit log, admins), and the settings tab goes. The log then gets what 40 rows lack:
+     paging and filters by server, account and kind of action.
+  4. With 3, each server's own part of the log on its page (who changed its settings, who
+     stopped it), which is most of "Change history per server" (step 7).
+  Suggested: 3 (with 4 when step 7 comes); 1 if it should be small.
 - **The chunk map as a map of its own** (user, 2026-10-17: ideas kept for later, a full
   release addition or a 2.0 feature if at all; 2026-10-27: kept undecided, not rejected):
   Restore chunks' flat map (`chunkmap.ts`) as a built-in map option where BlueMap and Dynmap

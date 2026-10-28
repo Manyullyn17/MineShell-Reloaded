@@ -200,7 +200,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		/** The preset new servers get (New server defaults). */
 		defaultPresetId: getInstanceDefaults().jvmPreset,
 		authEnabled: authEnabled(),
-		username: locals.user?.username ?? null,
 		curseforge: { source: curseforgeKeySource(), valid: curseforgeKeyValid() },
 		// Managing the playit.gg link (the account's pages, linking, routing) is the owner's;
 		// global admins see whether it works.

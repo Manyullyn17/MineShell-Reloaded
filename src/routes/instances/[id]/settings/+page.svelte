@@ -1206,20 +1206,6 @@
 		background: var(--bg);
 	}
 
-	/* No limit / Limit above the slider, together in the field's control column. */
-	.limit-control {
-		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-		width: 100%;
-	}
-
-	/* Its own width at the right, as the other choices in the column: stretched, it left an
-	   empty stretch after "Limit". */
-	.limit-control :global(.segmented-choice) {
-		align-self: flex-end;
-	}
-
 	.subhead .subtabs {
 		flex: 1;
 		min-width: 0;
@@ -1239,11 +1225,6 @@
 		.subhead {
 			flex-wrap: wrap;
 			position: static;
-		}
-
-		/* Controls go under their labels, at the left. */
-		.limit-control :global(.segmented-choice) {
-			align-self: flex-start;
 		}
 
 		.subhead .subtabs {

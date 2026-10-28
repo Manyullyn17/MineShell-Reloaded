@@ -1014,3 +1014,202 @@ tbody tr:last-child td {
 .dropzone.drop-refused::after {
 	color: var(--error);
 }
+
+/* ---- Settings rows: a server's Settings (SettingsSection), MineShell settings and its New server
+   defaults. A section with the class settings-section opts in. */
+
+/* Rows: label and help on the left, the control on the right. The shared
+   field components (PropertyInput, RestartFields, ConsoleFields,
+   SnapshotPolicyFields) keep their markup; this lays it out. */
+
+.settings-section .rows {
+	display: flex;
+	flex-direction: column;
+	margin-top: 0.4rem;
+}
+
+.settings-section .rows .grid-2,
+.settings-section .rows .policy {
+	display: contents;
+}
+
+.settings-section .rows fieldset {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	display: contents;
+}
+
+.settings-section .rows legend {
+	display: block;
+	padding: 1.2rem 0 0.2rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+
+.settings-section .rows .field {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(9rem, 20rem);
+	column-gap: 2rem;
+	row-gap: 0.2rem;
+	align-items: center;
+	margin: 0;
+	padding: 0.85rem 0;
+	border-bottom: 1px solid var(--panel-raised);
+}
+
+.settings-section .rows .field > label,
+.settings-section .rows .field > .label,
+.settings-section .rows .field .check > label {
+	grid-column: 1;
+	grid-row: 1;
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 500;
+	color: var(--text);
+}
+
+.settings-section .rows .field > input,
+.settings-section .rows .field > select,
+.settings-section .rows .field > .control,
+.settings-section .rows .field .check > input {
+	grid-column: 2;
+	grid-row: 1 / span 2;
+	justify-self: end;
+}
+
+.settings-section .rows .field > input:not([type='checkbox']),
+.settings-section .rows .field > select {
+	width: 100%;
+}
+
+.settings-section .rows .field > input[type='number'] {
+	max-width: 8rem;
+	text-align: right;
+}
+
+.settings-section .rows .field > .hint,
+.settings-section .rows .field > p {
+	grid-column: 1;
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--text-muted);
+}
+
+.settings-section .rows .field .check {
+	display: contents;
+}
+
+/* Wide controls (text areas) go under the label instead. */
+.settings-section .rows .field.wide,
+.settings-section .rows .field:has(> textarea) {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.settings-section .rows .field.wide > input,
+.settings-section .rows .field > textarea {
+	grid-column: 1;
+	grid-row: auto;
+	justify-self: stretch;
+	width: 100%;
+}
+
+/* A choice with what it reveals under it (None / Limit above a slider), in the control column.
+   The choice keeps its own width at the right: stretched, it left an empty stretch after "Limit". */
+.settings-section .rows .limit-control {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+	width: 100%;
+}
+
+.settings-section .rows .limit-control > .segmented-choice {
+	align-self: flex-end;
+}
+
+/* Checkboxes in rows are switches (ones marked .switch already are: app.css). */
+.settings-section .rows input[type='checkbox']:not(.switch) {
+	appearance: none;
+	width: 40px;
+	height: 22px;
+	margin: 0;
+	border-radius: 11px;
+	cursor: pointer;
+	background: var(--line-strong) radial-gradient(circle at 11px 11px, var(--text) 7px, transparent 7.5px) no-repeat;
+	background-position: 0 0;
+	transition:
+		background-position 0.12s,
+		background-color 0.12s;
+}
+
+.settings-section .rows input[type='checkbox']:not(.switch):checked {
+	background-color: var(--accent);
+	background-position: 18px 0;
+}
+
+.settings-section .rows .field.changed > label::before {
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 0.45rem;
+	vertical-align: middle;
+	border-radius: 1px;
+	background: var(--warning);
+}
+
+.settings-section .rows > p.faint,
+.settings-section .rows .policy > fieldset > p.faint {
+	margin: var(--space-2) 0 0;
+}
+
+@media (max-width: 60rem) {
+	/* Controls go under their labels, at the left. */
+	.settings-section .rows .limit-control > .segmented-choice {
+		align-self: flex-start;
+	}
+
+	.settings-section .rows .field {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.settings-section .rows .field > input,
+	.settings-section .rows .field > select,
+	.settings-section .rows .field > .control,
+	.settings-section .rows .field .check > input {
+		grid-column: 1;
+		grid-row: auto;
+		justify-self: start;
+	}
+}
+
+/* Blocks: things with their own buttons. */
+.settings-section .block {
+	margin-top: 0.9rem;
+	padding: var(--space-4);
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-lg);
+}
+
+.settings-section .inline-row {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	flex-wrap: wrap;
+}
+
+.settings-section .inline-row select,
+.settings-section .inline-row input {
+	width: auto;
+	min-width: 16rem;
+}
+
+.settings-section textarea.mono,
+.settings-section input.mono {
+	font-family: var(--font-mono);
+	font-size: 0.82rem;
+}
