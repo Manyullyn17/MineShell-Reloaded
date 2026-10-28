@@ -1032,6 +1032,34 @@
 	</div>
 {/snippet}
 
+<!-- Above the history, which grows with every release. -->
+{#if data.access.owner}
+<section class="panel settings-section">
+	<h2>Automatic checks</h2>
+	<!-- One switch: it saves when flipped, no save bar. -->
+	<form method="POST" action="?/updateAuto" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="rows">
+			<div class="check field">
+				<input
+					id="autoCheck"
+					name="autoCheck"
+					type="checkbox"
+					class="switch"
+					role="switch"
+					bind:checked={autoCheck}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<label for="autoCheck">Look for a new version every 12 hours</label>
+				<p class="hint">
+					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
+					installed until you press Update.
+				</p>
+			</div>
+		</div>
+	</form>
+</section>
+{/if}
+
 <section class="panel">
 	<h2>Release history</h2>
 	{#if u.releases.length === 0}
@@ -1071,24 +1099,6 @@
 		</ul>
 	{/if}
 </section>
-
-{#if data.access.owner}
-<section class="panel settings-section">
-	<h2>Automatic checks</h2>
-	<form method="POST" action="?/updateAuto" use:tracker.track={'Automatic checks'} use:enhance>
-		<div class="rows">
-			<div class="check field">
-				<input id="autoCheck" name="autoCheck" type="checkbox" class="switch" role="switch" bind:checked={autoCheck} />
-				<label for="autoCheck">Look for a new version every 12 hours</label>
-				<p class="hint">
-					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
-					installed until you press Update.
-				</p>
-			</div>
-		</div>
-	</form>
-</section>
-{/if}
 {:else if tab === 'log'}
 <section class="panel">
 	<h2>Recent actions</h2>
