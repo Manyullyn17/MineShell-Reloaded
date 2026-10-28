@@ -83,6 +83,20 @@ describe('scheduled commands', () => {
 		expect(slots).toEqual(['3 23:30', '4 0:00', '4 0:30']);
 	});
 
+	it('never gives a slot before now in the hour the autumn clock change repeats', () => {
+		const tz = process.env.TZ;
+		process.env.TZ = 'Europe/Vienna';
+		try {
+			// 02:15 the second time (CET): counting from midnight gave 02:30 summer time,
+			// an hour before, and the command ran at every check.
+			const from = Date.parse('2026-10-25T02:15:00+01:00');
+			expect(minuteSlot(15, from)).toBe(Date.parse('2026-10-25T02:30:00+01:00'));
+			expect(minuteSlot(15, Date.parse('2026-10-25T02:45:00+02:00'))).toBe(Date.parse('2026-10-25T02:00:00+01:00'));
+		} finally {
+			process.env.TZ = tz;
+		}
+	});
+
 	it('moves an interval set before it fell on the clock onto it at startup', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		const row = addScheduledCommand(instance.id, 'save-all', { everyMinutes: 60 });

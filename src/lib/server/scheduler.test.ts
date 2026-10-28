@@ -9,6 +9,28 @@ const instance = (o: Partial<ServerInstance>) =>
 const at = (y: number, mo: number, d: number, h: number, mi: number) => new Date(y, mo - 1, d, h, mi).getTime();
 
 describe('computeNextRun', () => {
+	it('goes back to a daily time the spring clock change skipped the day after', () => {
+		const tz = process.env.TZ;
+		process.env.TZ = 'Europe/Vienna';
+		try {
+			const daily = instance({ restartSchedule: 'daily', restartDailyTime: '02:30' });
+			let at = Date.parse('2026-03-28T12:00:00+01:00');
+			const runs: string[] = [];
+			for (let i = 0; i < 3; i++) {
+				at = computeNextRun(daily, at)!;
+				const d = new Date(at);
+				runs.push(`${d.getDate()} ${d.getHours()}:${d.getMinutes()}`);
+			}
+			// 02:30 does not exist on the 29th; the 30th kept its 03:30 before the fix.
+			expect(runs).toEqual(['29 3:30', '30 2:30', '31 2:30']);
+			// Autumn: 02:30 comes twice and runs once.
+			const first = computeNextRun(daily, Date.parse('2026-10-25T00:00:00+02:00'))!;
+			expect(computeNextRun(daily, first)).toBe(Date.parse('2026-10-26T02:30:00+01:00'));
+		} finally {
+			process.env.TZ = tz;
+		}
+	});
+
 	it('is off unless a schedule is set', () => {
 		expect(computeNextRun(instance({}), at(2026, 1, 1, 12, 0))).toBeNull();
 	});

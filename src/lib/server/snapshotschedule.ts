@@ -145,13 +145,23 @@ export function nextSnapshotAt(schedule: Pick<SnapshotSchedule, 'every' | 'inter
 	if (schedule.every === 'interval') return clockSlot(schedule.intervalHours, from);
 	if (schedule.every === 'daily') {
 		const [hour, minute] = schedule.dailyTime.split(':').map(Number);
-		const next = new Date(from);
-		next.setSeconds(0, 0);
-		next.setHours(hour, minute);
-		if (next.getTime() <= from) next.setDate(next.getDate() + 1);
-		return next.getTime();
+		return dailySlot(hour, minute, from);
 	}
 	return null;
+}
+
+/**
+ * The next time after `from` the clock shows hour:minute, today or tomorrow.
+ * Each day is worked out from its date, not by moving the day before on:
+ * moving a 02:30 that the spring clock change turned into 03:30 kept 03:30
+ * the next day too.
+ */
+export function dailySlot(hour: number, minute: number, from: number): number {
+	const day = new Date(from);
+	for (let i = 0; ; i++) {
+		const next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + i, hour, minute).getTime();
+		if (next > from) return next;
+	}
 }
 
 /**

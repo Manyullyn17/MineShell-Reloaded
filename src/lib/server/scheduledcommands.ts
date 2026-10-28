@@ -5,7 +5,7 @@ import { scheduledCommands, type ScheduledCommand, type ServerInstance } from '.
 import { audit, getInstance, rconPassword } from './instances';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
-import { clockSlot } from './snapshotschedule';
+import { clockSlot, dailySlot } from './snapshotschedule';
 
 /**
  * Console commands on a schedule - an announcement every hour, a save-all
@@ -25,10 +25,13 @@ export type CommandSchedule = { everyMinutes: number } | { dailyTime: string };
 export function minuteSlot(minutes: number, from: number): number {
 	if (minutes % 60 === 0) return clockSlot(minutes / 60, from);
 	if (1440 % minutes !== 0) return from + minutes * 60_000;
-	const next = new Date(from);
-	const sinceMidnight = next.getHours() * 60 + next.getMinutes();
-	next.setHours(0, (Math.floor(sinceMidnight / minutes) + 1) * minutes, 0, 0);
-	return next.getTime();
+	// Minute by minute as the clock shows them: counting from midnight put a
+	// slot in the hour the autumn clock change repeats before `from`, so the
+	// command ran at every check until that hour was over.
+	for (let next = Math.floor(from / 60_000) * 60_000 + 60_000; ; next += 60_000) {
+		const at = new Date(next);
+		if ((at.getHours() * 60 + at.getMinutes()) % minutes === 0) return next;
+	}
 }
 
 export function nextRunAt(schedule: { everyMinutes: number | null; dailyTime: string | null }, from = Date.now()): number | null {
@@ -36,11 +39,7 @@ export function nextRunAt(schedule: { everyMinutes: number | null; dailyTime: st
 	if (schedule.dailyTime) {
 		const [hour, minute] = schedule.dailyTime.split(':').map(Number);
 		if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
-		const next = new Date(from);
-		next.setSeconds(0, 0);
-		next.setHours(hour, minute);
-		if (next.getTime() <= from) next.setDate(next.getDate() + 1);
-		return next.getTime();
+		return dailySlot(hour, minute, from);
 	}
 	return null;
 }

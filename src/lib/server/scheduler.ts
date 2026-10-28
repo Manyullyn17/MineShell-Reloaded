@@ -7,7 +7,7 @@ import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
 import { autoPauseForPlayers } from './chunky';
-import { clockSlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
+import { clockSlot, dailySlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { checkDiskSpace } from './diskspace';
 import { dailyDatabaseCopy } from './dbbackups';
 import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
@@ -46,11 +46,7 @@ export function computeNextRun(instance: ServerInstance, from = Date.now()): num
 		const hour = Number(hourStr);
 		const minute = Number(minuteStr);
 		if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
-		const next = new Date(from);
-		next.setSeconds(0, 0);
-		next.setHours(hour, minute);
-		if (next.getTime() <= from) next.setDate(next.getDate() + 1);
-		return next.getTime();
+		return dailySlot(hour, minute, from);
 	}
 
 	return null;

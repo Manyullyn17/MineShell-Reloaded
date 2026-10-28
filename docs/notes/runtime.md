@@ -7,6 +7,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Dev: `boot()` is guarded on globalThis, so the scheduler's interval keeps running the code
   it started with. Changes to scheduler.ts/scheduledcommands.ts need a dev server restart.
 - Countdown stops/restarts (`countdown.ts`) are in memory; nobody online = act at once.
+- Clock changes (2026-10-28): daily times are built from each day's date (`dailySlot`), never by
+  moving the last run a day on (a 02:30 the spring change turned into 03:30 stayed 03:30 the
+  next day); "every N minutes" walks real minutes as the clock shows them (counting from
+  midnight put a slot in the repeated autumn hour before now, and the command ran at every
+  check). Tested under `TZ=Europe/Vienna`, set inside the test.
 - Paused (empty), built 2026-10-18: 1.21.2+ logs only "Server empty for N seconds, pausing";
   nothing marks the wake-up, so a join clears `server_runs.paused_at` (history.ts). The game
   still reports 20 TPS while paused. Tried live on vanilla 1.21.11 (throwaway setup).
