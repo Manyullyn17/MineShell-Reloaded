@@ -191,6 +191,13 @@ Waits until after 1.0 (user's call, 2026-10-21, with the minor dependency update
 before the freeze). Development tooling only: check that svelte-check and Kit work with it
 before switching.
 
+Tried 2026-10-28 (TypeScript 7.0.2, in a scratch worktree): not yet possible. Its package is
+the native compiler with no JavaScript API (`require('typescript')` has only `version`), and
+Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`, `dev` and
+`build` all fail ("Cannot read properties of undefined (reading 'readFile')"). Kit 3 declares
+`typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
+again when Kit and svelte-check list 7 in their peer ranges.
+
 #### Log rotation and retention
 
 Nothing deletes old `logs/` or `crash-reports/` on its own; the disk usage page offers to
