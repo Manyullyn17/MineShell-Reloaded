@@ -118,9 +118,24 @@
 	const duplicatesInfo = streamed(() => data.duplicates);
 	const duplicates = $derived((duplicatesInfo.ready ? duplicatesInfo.value : null) ?? []);
 	const duplicateFiles = $derived(new Set(duplicates.flatMap((d) => d.files)));
-	/** Untracked jars, records without a file, enabled client-only mods and duplicates ask to be looked at. */
+	const requiredByInfo = streamed(() => data.requiredBy);
+	/** By file name, the enabled mods that need it. */
+	const neededBy = $derived((requiredByInfo.ready ? requiredByInfo.value : null) ?? {});
+	/** "A, B and 3 more", for a row; the question before disabling or deleting names all of them. */
+	const nameList = (names: string[], max = names.length) =>
+		names.length <= max
+			? names.slice(0, -1).join(', ') + (names.length > 1 ? ' and ' : '') + names[names.length - 1]
+			: `${names.slice(0, max).join(', ')} and ${names.length - max} more`;
+	const needQuestion = (mod: { name: string; fileName: string }, doing: string) => {
+		const names = neededBy[mod.fileName];
+		return `${nameList(names, 12)} ${names.length === 1 ? 'needs' : 'need'} ${mod.name}: the server will not start without it. ${doing} it anyway?`;
+	};
+	/**
+	 * Untracked jars, records without a file, enabled client-only mods, duplicates and
+	 * disabled mods that enabled ones need ask to be looked at.
+	 */
 	const needsAttention = (m: (typeof data.mods)[number]) =>
-		m.untracked || m.missing || (m.clientOnly && m.enabled) || duplicateFiles.has(m.fileName);
+		m.untracked || m.missing || (m.clientOnly && m.enabled) || duplicateFiles.has(m.fileName) || (!m.enabled && !!neededBy[m.fileName]);
 	const filterCounts = $derived({
 		all: data.mods.length,
 		enabled: data.mods.filter((m) => m.enabled && !m.missing).length,
@@ -345,7 +360,13 @@
 						<tr class:disabled={!mod.enabled} class:missing={mod.missing}>
 							<td class="switch-col">
 								{#if !mod.missing}
-									<form method="POST" action="?/toggle" use:enhance>
+									<form
+										method="POST"
+										action="?/toggle"
+										use:enhance={({ cancel }) => {
+											if (mod.enabled && neededBy[mod.fileName] && !confirm(needQuestion(mod, 'Disable'))) cancel();
+										}}
+									>
 										<input type="hidden" name="fileName" value={mod.fileName} />
 										<input type="hidden" name="enabled" value={String(!mod.enabled)} />
 										<button
@@ -385,13 +406,21 @@
 								<div class="faint small mono">
 									{mod.fileName}{mod.sizeBytes ? ` · ${formatBytes(mod.sizeBytes)}` : ''}
 								</div>
+								{#if neededBy[mod.fileName] && !mod.missing}
+									{@const names = neededBy[mod.fileName]}
+									<div class="small needed-by" class:warn-text={!mod.enabled} title={names.length > 3 ? names.join(', ') : undefined}>
+										{mod.enabled ? 'Needed by' : 'Off, but needed by'} {nameList(names, 3)}
+									</div>
+								{/if}
 							</td>
 							<td class="mono small version">{mod.version ?? 'unknown'}</td>
 							<td class="small nowrap source">{sourceLabel(mod.source)}</td>
 							<td>
 								{#if pendingDelete === mod.fileName}
 									<div class="row-actions confirm">
-										<span class="small">Delete this mod?</span>
+										<span class="small" class:long={neededBy[mod.fileName] && mod.enabled}>
+											{neededBy[mod.fileName] && mod.enabled ? needQuestion(mod, 'Delete') : 'Delete this mod?'}
+										</span>
 										<form
 											method="POST"
 											action="?/remove"
@@ -816,6 +845,21 @@
 	.row-actions.confirm span {
 		color: var(--text-muted);
 		white-space: nowrap;
+	}
+
+	/* The question naming the mods that need this one is a sentence, not a word. */
+	.row-actions.confirm span.long {
+		white-space: normal;
+		max-width: 22rem;
+		text-align: right;
+	}
+
+	.needed-by {
+		color: var(--text-muted);
+	}
+
+	.needed-by.warn-text {
+		color: var(--warning);
 	}
 
 	.version-row td {

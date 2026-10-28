@@ -9,6 +9,19 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### "Required by" for mods
+
+Built 2026-10-28 (Mods tab; ARCHITECTURE, "What needs a mod"), the first post-1.0 entry, on
+the `next` branch during the 0.33.5 candidate's run. Each mod some enabled mod needs shows
+"Needed by ..." (a disabled one "Off, but needed by ...", under "Needs attention"), and
+disabling or deleting it asks first, naming them. From the jars' own declarations, which the
+crash diagnosis already read; optional ones and Forge's `side="CLIENT"` do not count, nor a
+mod whose ids another enabled jar also has (a second copy, or one nested inside a jar). Tried
+on the dev copies of the user's packs (ATM10: Curios needed by 13, Create by 12; MeatballCraft:
+24 libraries from mcmod.info). Not built: 1.12 mods that declare dependencies only in their
+`@Mod` annotation (most of them) are not seen; a server-side check on the toggle and remove
+actions (the question is the page's).
+
 ### Limits on going back
 
 Built 2026-10-25 (ARCHITECTURE, "Updating itself"; DEPLOYMENT), before 1.0, as agreed in

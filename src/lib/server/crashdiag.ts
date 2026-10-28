@@ -32,8 +32,10 @@ export type ModJar = {
 	authors: string[];
 	/** Declared client-only (Fabric/Quilt `environment: client`); the loader skips it on a server. */
 	clientOnly: boolean;
-	/** Mod ids it declares as required, lower-cased (Minecraft and loaders included). */
+	/** Mod ids it declares as required on a server, lower-cased (Minecraft and loaders included). */
 	requires: string[];
+	/** Further ids it brings, lower-cased: Fabric/Quilt `provides` and the mods nested inside it. */
+	provides: string[];
 	/** Class names (dotted) in the jar and in any jars nested inside it. */
 	classes: Set<string>;
 	/** Mixin config files shipped at the jar root. */
@@ -65,12 +67,42 @@ async function indexZip(zip: ZipSource, depth: number, into: Omit<ModJar, 'fileN
 			// Jar-in-jar: Fabric META-INF/jars, Forge/NeoForge META-INF/jarjar.
 			try {
 				const nested = openZipBuffer(await zip.read(e));
-				if (nested) await indexZip(nested, depth + 1, into);
+				if (nested) {
+					into.provides.push(...(await nestedIds(nested)));
+					await indexZip(nested, depth + 1, into);
+				}
 			} catch {
 				/* unreadable nested jar */
 			}
 		}
 	}
+}
+
+/** The mod ids a nested jar declares, so the jar around it counts as having them. */
+async function nestedIds(zip: ZipSource): Promise<string[]> {
+	const ids: string[] = [];
+	for (const name of ['fabric.mod.json', 'quilt.mod.json']) {
+		const text = await readText(zip, name);
+		if (!text) continue;
+		try {
+			const meta = JSON.parse(text);
+			const id = meta.id ?? meta.quilt_loader?.id;
+			if (id) ids.push(String(id));
+			if (Array.isArray(meta.provides)) ids.push(...meta.provides.map(providedId));
+		} catch {
+			/* malformed */
+		}
+	}
+	for (const name of ['META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+		const text = await readText(zip, name);
+		if (text) for (const block of tomlBlocks(text, /^mods\]\]/)) ids.push(...tomlValues(block, 'modId'));
+	}
+	return ids;
+}
+
+/** A `provides` entry: an id, or (Quilt) an object with one. */
+function providedId(entry: unknown): string {
+	return typeof entry === 'string' ? entry : String((entry as { id?: unknown })?.id ?? '');
 }
 
 function tomlValues(text: string, key: string): string[] {
@@ -84,11 +116,13 @@ function tomlBlocks(text: string, header: RegExp): string[] {
 
 /**
  * Required dependencies from a mods.toml: each `[[dependencies.<mod>]]` block
- * with `mandatory=true` (Forge) or `type="required"` (NeoForge).
+ * with `mandatory=true` (Forge) or `type="required"` (NeoForge), unless only
+ * the client needs it (`side="CLIENT"`).
  */
 function tomlRequired(text: string): string[] {
 	return tomlBlocks(text, /^dependencies\./)
 		.filter((b) => /^\s*mandatory\s*=\s*true/m.test(b) || /^\s*type\s*=\s*"required"/m.test(b))
+		.filter((b) => !/^\s*side\s*=\s*"CLIENT"/im.test(b))
 		.flatMap((b) => tomlValues(b, 'modId'));
 }
 
@@ -111,6 +145,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 		authors: [],
 		clientOnly: false,
 		requires: [],
+		provides: [],
 		classes: new Set(),
 		mixinConfigs: []
 	};
@@ -128,6 +163,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			info.authors.push(...personNames(meta.authors));
 			if (meta.environment === 'client') info.clientOnly = true;
 			if (meta.depends && typeof meta.depends === 'object') info.requires.push(...Object.keys(meta.depends));
+			if (Array.isArray(meta.provides)) info.provides.push(...meta.provides.map(providedId));
 		} catch {
 			info.ids.push(...[...fabric.matchAll(/"id"\s*:\s*"([^"]+)"/g)].slice(0, 1).map((m) => m[1]));
 			if (/"environment"\s*:\s*"client"/.test(fabric)) info.clientOnly = true;
@@ -140,6 +176,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.quilt_loader?.id) info.ids.push(String(meta.quilt_loader.id));
 			if (meta.quilt_loader?.metadata?.name) info.names.push(String(meta.quilt_loader.metadata.name));
 			if (meta.quilt_loader?.version) info.version ??= String(meta.quilt_loader.version);
+			if (Array.isArray(meta.quilt_loader?.provides)) info.provides.push(...meta.quilt_loader.provides.map(providedId));
 			// Quilt's contributors map names to roles.
 			const contributors = meta.quilt_loader?.metadata?.contributors;
 			if (contributors && typeof contributors === 'object') info.authors.push(...Object.keys(contributors));
@@ -183,6 +220,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 	if (info.version && /\$\{|@[a-z_]+@/i.test(info.version)) info.version = null;
 	info.authors = [...new Set(info.authors.map((a) => a.trim()).filter(Boolean))];
 	info.requires = [...new Set(info.requires.map((s) => s.toLowerCase()))];
+	info.provides = [...new Set(info.provides.map((s) => s.toLowerCase()).filter((id) => id && !info.ids.includes(id)))];
 	return info;
 }
 
@@ -246,6 +284,32 @@ export function duplicateMods(jars: ModJar[]): DuplicateMod[] {
 		if (!groups.has(key)) groups.set(key, { id, name: found.find((j) => j.names.length)?.names[0] ?? id, files });
 	}
 	return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * For each jar, the enabled mods that would not start without it, by name: they
+ * require an id the jar has (its own, or one it provides or nests) and no other
+ * enabled jar has it. Disabled jars are included, so a disabled library shows
+ * the mods missing it. Client-only mods do not count: the loader skips them on
+ * a server. Only jars something needs are listed.
+ */
+export function requiredBy(jars: ModJar[]): Record<string, string[]> {
+	const has = (j: ModJar) => [...j.ids, ...(j.provides ?? [])];
+	const enabledHaving = new Map<string, ModJar[]>();
+	for (const j of jars) {
+		if (!j.enabled) continue;
+		for (const id of has(j)) enabledHaving.set(id, [...(enabledHaving.get(id) ?? []), j]);
+	}
+	const out: Record<string, string[]> = {};
+	for (const jar of jars) {
+		const ids = has(jar).filter((id) => !PLACEHOLDER_IDS.has(id) && !(enabledHaving.get(id) ?? []).some((j) => j !== jar));
+		if (!ids.length) continue;
+		const dependents = jars.filter((j) => j !== jar && j.enabled && !j.clientOnly && j.requires.some((id) => ids.includes(id)));
+		if (dependents.length) {
+			out[jar.fileName] = [...new Set(dependents.map((j) => j.names[0] ?? j.fileName.replace(/\.jar$/i, '')))].sort((a, b) => a.localeCompare(b));
+		}
+	}
+	return out;
 }
 
 // ---------------------------------------------------------------- diagnosis ---

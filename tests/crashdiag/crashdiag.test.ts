@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagnoseLog, duplicateMods, indexMods, type ModJar } from '#lib/server/crashdiag.js';
+import { diagnoseLog, duplicateMods, indexMods, requiredBy, type ModJar } from '#lib/server/crashdiag.js';
 import { mcmodInfo, tempDir, writeJar, zipBuffer } from '../helpers/fs';
 
 /**
@@ -109,5 +109,46 @@ describe('the same mod installed twice', () => {
 		expect(duplicateMods(await indexMods(dir))).toEqual([
 			{ id: 'sodium', name: 'Sodium', files: ['sodium-fabric-0.6.0+mc1.21.1.jar', 'sodium-mc1.21.1-0.6.0.jar'] }
 		]);
+	});
+});
+
+describe('what needs a mod', () => {
+	const fabric = (id: string, name: string, extra: object = {}) => JSON.stringify({ schemaVersion: 1, id, name, version: '1', ...extra });
+	const forge = (id: string, deps: string) => `[[mods]]\nmodId="${id}"\ndisplayName="${id}"\n${deps}`;
+
+	it('names the enabled mods a jar is the only one to provide for', async () => {
+		const dir = await tempDir('needs-');
+		await writeJar(dir, 'cloth.jar', { 'fabric.mod.json': fabric('cloth-config', 'Cloth Config') });
+		await writeJar(dir, 'zoom.jar', { 'fabric.mod.json': fabric('zoom', 'Zoom', { depends: { 'cloth-config': '*', minecraft: '1.21.1' } }) });
+		await writeJar(dir, 'menu.jar', { 'fabric.mod.json': fabric('menu', 'Menu', { depends: { 'cloth-config': '*' } }) });
+		// Disabled, client-only and merely suggesting it: none of these stop a start without it.
+		await writeJar(dir, 'off.jar.disabled', { 'fabric.mod.json': fabric('off', 'Off', { depends: { 'cloth-config': '*' } }) });
+		await writeJar(dir, 'hud.jar', { 'fabric.mod.json': fabric('hud', 'Hud', { environment: 'client', depends: { 'cloth-config': '*' } }) });
+		await writeJar(dir, 'extra.jar', { 'fabric.mod.json': fabric('extra', 'Extra', { recommends: { zoom: '*' } }) });
+		expect(requiredBy(await indexMods(dir))).toEqual({ 'cloth.jar': ['Menu', 'Zoom'] });
+	});
+
+	it('leaves out optional and client-side Forge dependencies', async () => {
+		const dir = await tempDir('needs-');
+		await writeJar(dir, 'lib.jar', { 'META-INF/mods.toml': forge('lib', '') });
+		await writeJar(dir, 'a.jar', { 'META-INF/mods.toml': forge('a', '[[dependencies.a]]\nmodId="lib"\nmandatory=false\n') });
+		await writeJar(dir, 'b.jar', { 'META-INF/neoforge.mods.toml': forge('b', '[[dependencies.b]]\nmodId="lib"\ntype="optional"\n') });
+		await writeJar(dir, 'c.jar', { 'META-INF/mods.toml': forge('c', '[[dependencies.c]]\nmodId="lib"\nmandatory=true\nside="CLIENT"\n') });
+		expect(requiredBy(await indexMods(dir))).toEqual({});
+		await writeJar(dir, 'd.jar', { 'META-INF/neoforge.mods.toml': forge('d', '[[dependencies.d]]\nmodId="lib"\ntype="required"\nside="BOTH"\n') });
+		expect(requiredBy(await indexMods(dir))).toEqual({ 'lib.jar': ['d'] });
+	});
+
+	it('counts what another enabled jar provides or nests, and shows a disabled one the mods missing it', async () => {
+		const dir = await tempDir('needs-');
+		await writeJar(dir, 'cloth.jar', { 'fabric.mod.json': fabric('cloth-config', 'Cloth Config') });
+		// This one carries its own copy, so the separate jar is not the only one.
+		await writeJar(dir, 'bundle.jar', {
+			'fabric.mod.json': fabric('bundle', 'Bundle', { depends: { 'cloth-config': '*' } }),
+			'META-INF/jars/cloth.jar': zipBuffer({ 'fabric.mod.json': fabric('cloth-config', 'Cloth Config') })
+		});
+		await writeJar(dir, 'api.jar.disabled', { 'fabric.mod.json': fabric('fabric-api', 'Fabric API', { provides: ['fabric'] }) });
+		await writeJar(dir, 'old.jar', { 'fabric.mod.json': fabric('old', 'Old', { depends: { fabric: '*', 'cloth-config': '*' } }) });
+		expect(requiredBy(await indexMods(dir))).toEqual({ 'api.jar.disabled': ['Old'] });
 	});
 });

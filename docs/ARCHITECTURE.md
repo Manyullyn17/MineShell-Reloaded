@@ -583,6 +583,15 @@ Fabric refuse to start with an id present twice. Template ids unrelated mods kee
 above the Installed list (streamed: a big pack's jars take a while the first time) with a
 Disable button per copy, and counted under "Needs attention".
 
+**What needs a mod** (`requiredBy` in `crashdiag.ts`, Mods tab): for each jar, the enabled
+mods that require an id it has (its own, Fabric/Quilt `provides`, or a mod nested in it)
+when no other enabled jar has that id. Required means Fabric's `depends`, Quilt's
+non-optional `depends`, a mods.toml dependency with `mandatory=true` or `type="required"`
+that is not `side="CLIENT"`, and mcmod.info's `requiredMods` (1.12 mods mostly declare theirs
+in `@Mod` instead, which is not read). Client-only dependents do not count: the loader skips
+them. Streamed with the duplicates; the row says "Needed by ...", and the switch and Remove
+ask before disabling or deleting such a mod (in the page only, as a question, not a refusal).
+
 **Server icons** must be 64x64 PNGs. Scaling happens in the browser (`lib/shared/servericon.ts`),
 which decodes every format pack icons come in (PNG, WebP, JPEG); the server has no image
 library. A pack server's first overview without an icon applies the pack's icon (`packicon.ts`:

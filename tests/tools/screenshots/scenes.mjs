@@ -45,11 +45,13 @@ const CRASH_LOG = fileURLToPath(new URL('../../crashdiag/fixtures/real-vanillape
 /**
  * A Fabric mod jar holding only what the crash diagnosis reads: fabric.mod.json and the class files' names.
  * @param {string} id @param {string} name @param {boolean} clientOnly @param {string[]} classes
+ * @param {string[]} [depends] mod ids it requires (the Mods tab's "Needed by")
  * @returns {Promise<Buffer>}
  */
-function modJar(id, name, clientOnly, classes) {
+function modJar(id, name, clientOnly, classes, depends = []) {
 	const zip = new yazl.ZipFile();
-	zip.addBuffer(Buffer.from(JSON.stringify({ schemaVersion: 1, id, name, version: '1.0.0', environment: clientOnly ? 'client' : '*' })), 'fabric.mod.json');
+	const meta = { schemaVersion: 1, id, name, version: '1.0.0', environment: clientOnly ? 'client' : '*', depends: Object.fromEntries(depends.map((d) => [d, '*'])) };
+	zip.addBuffer(Buffer.from(JSON.stringify(meta)), 'fabric.mod.json');
 	for (const c of classes) zip.addBuffer(Buffer.alloc(0), `${c.replace(/\./g, '/')}.class`);
 	zip.end();
 	/** @type {Buffer[]} */
@@ -365,7 +367,9 @@ export const scenes = [
 			const creative = path.join(ctx.dataDir, 'instances/creative/mods');
 			for (const jar of JSON.parse(fs.readFileSync(CRASH_LOG.replace(/\.log$/, '.mods.json'), 'utf8'))) {
 				const file = path.join(creative, jar.enabled ? jar.fileName : `${jar.fileName}.disabled`);
-				fs.writeFileSync(file, await modJar(jar.ids[0], jar.names[0], jar.clientOnly, jar.classes));
+				// The crash is Simple Datapacks needing Mod Menu; its jar says so, as the real one does.
+				const depends = jar.ids[0] === 'simple_datapacks' ? ['modmenu'] : [];
+				fs.writeFileSync(file, await modJar(jar.ids[0], jar.names[0], jar.clientOnly, jar.classes, depends));
 			}
 			// Voice chat's own UDP port, clear of 24454 (a real server on this machine may hold it).
 			const config = path.join(ctx.dataDir, 'instances/cobblemon/config/voicechat');

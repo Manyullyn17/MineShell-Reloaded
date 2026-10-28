@@ -149,7 +149,7 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: Node's download crash, TypeScript 7, log retention, TPS per
-   dimension, the installed mods list, "required by" for mods, packs' own backup mods,
+   dimension, the installed mods list, packs' own backup mods,
    holding a mod at its version, quiet hours for notifications. Small, mostly reading what
    MineShell already has: a calm first step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
@@ -222,15 +222,6 @@ shows sizes, but has no icons (only search results do), no sorting and no side f
 Icons from Modrinth/CurseForge for tracked mods (kept, not fetched per view) and from the
 jar's own logo (`logoFile` in mods.toml, `icon` in fabric.mod.json) for the rest; sorting by
 name, size and date added or updated; a filter for client-only mods.
-
-#### "Required by" for mods
-
-Agreed 2026-10-27. Installing shows a mod's dependencies, but disabling or deleting one
-says nothing about the mods that need it, and the server then refuses to start. The jars
-declare them (`META-INF/mods.toml`/`neoforge.mods.toml`, `fabric.mod.json`,
-`quilt.mod.json`, `mcmod.info` for 1.12 where it lists any), read as the duplicate-mod check
-reads mod ids: the Mods tab shows what needs a mod, and disabling or deleting one that
-enabled mods require asks first, naming them. Optional dependencies are not a reason to ask.
 
 #### Packs' own backup mods
 
