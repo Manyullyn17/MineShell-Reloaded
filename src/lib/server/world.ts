@@ -45,6 +45,7 @@ import { constants as fsConstants } from 'node:fs';
 import {
 	finishSnapshot,
 	getSnapshot,
+	freeSpace,
 	getSnapshotPolicy,
 	newSnapshotId,
 	partialPath,
@@ -1055,17 +1056,20 @@ export function entryTarget(name: string, prefix: string): string | null {
 	return normal;
 }
 
-async function zipNames(file: string): Promise<string[]> {
+/** Each entry's name and unpacked size (yauzl holds the unpacking to that size). */
+async function zipListing(file: string): Promise<{ names: string[]; sizes: Map<string, number> }> {
 	const zip = await openZip(file);
 	const names: string[] = [];
+	const sizes = new Map<string, number>();
 	try {
 		await zipEntries(zip, async (entry) => {
 			names.push(entry.fileName);
+			sizes.set(entry.fileName, entry.uncompressedSize);
 		});
 	} finally {
 		zip.close();
 	}
-	return names;
+	return { names, sizes };
 }
 
 /** Unpacks the world inside a zip (its folder holding level.dat is `prefix`) into `target`. */
@@ -1096,19 +1100,34 @@ async function unpackWorld(zipFile: string, names: string[], prefix: string, tar
 	await fs.rm(path.join(target, 'session.lock'), { force: true });
 }
 
-/** The zip's entry names and the folder in it holding level.dat; the zip is deleted when it holds no world. */
-async function worldInZip(zipFile: string): Promise<{ names: string[]; prefix: string }> {
-	let names: string[];
+/**
+ * The zip's entry names and the folder in it holding level.dat; the zip is
+ * deleted when it holds no world, or when unpacking it would leave less free
+ * on the server's disk than snapshots keep free: a small zip can unpack to
+ * gigabytes, and a full disk fails every server's saves, not only this one's.
+ */
+async function worldInZip(instance: ServerInstance, zipFile: string): Promise<{ names: string[]; prefix: string }> {
+	let listing: Awaited<ReturnType<typeof zipListing>>;
 	try {
-		names = await zipNames(zipFile);
+		listing = await zipListing(zipFile);
 	} catch {
 		await fs.rm(zipFile, { force: true });
 		throw new InstanceError('That file is not a readable zip.');
 	}
+	const { names, sizes } = listing;
 	const prefix = worldRootIn(names);
 	if (prefix === null) {
 		await fs.rm(zipFile, { force: true });
 		throw new InstanceError('There is no level.dat in that zip, so it is not a Minecraft world.');
+	}
+	const unpacked = names.reduce((sum, name) => sum + (entryTarget(name, prefix) ? (sizes.get(name) ?? 0) : 0), 0);
+	const free = await freeSpace(instance.path);
+	const keepFree = getSnapshotPolicy(instance.id).minFreeMb * 1024 * 1024;
+	if (free !== null && free - unpacked < keepFree) {
+		await fs.rm(zipFile, { force: true });
+		throw new InstanceError(
+			`That world unpacks to ${formatBytes(unpacked)}, and only ${formatBytes(free)} is free on the server's disk: it would leave less than the ${formatBytes(keepFree)} kept free (Settings > Snapshots).`
+		);
 	}
 	return { names, prefix };
 }
@@ -1134,7 +1153,7 @@ export async function worldFromZip(
 		await fs.rm(zipFile, { force: true });
 		throw err instanceof InstanceError ? err : new InstanceError((err as Error).message);
 	}
-	const { names, prefix } = await worldInZip(zipFile);
+	const { names, prefix } = await worldInZip(instance, zipFile);
 	const root = instance.path;
 	const folder = await freeWorldFolder(root, name);
 	const taskId = startTask({ label: `New world from an upload: ${instance.name}`, instanceId: instance.id }, async (task) => {
@@ -1186,7 +1205,7 @@ async function activateUploaded(instanceId: string, folder: string, keepMap: boo
  * zip must hold a world.
  */
 export async function replaceWorld(instance: ServerInstance, zipFile: string, opts: { snapshot: boolean }): Promise<string> {
-	const { names, prefix } = await worldInZip(zipFile);
+	const { names, prefix } = await worldInZip(instance, zipFile);
 	const level = await serverWorldName(instance.path);
 	try {
 		return await runWorldChange(instance, {
