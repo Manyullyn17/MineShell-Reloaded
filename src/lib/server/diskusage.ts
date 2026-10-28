@@ -10,6 +10,7 @@ import { diskBytes, listSnapshots, snapshotFiles, SNAPSHOTS_DIR, worldFolders } 
 import { TRASH_DIR } from './trash';
 import { mapDataSize } from './worldmap';
 import { listWorlds } from './worlds';
+import { backupModNote, backupModsOf } from './backupmods';
 
 /**
  * Where a server's disk space goes, for the Files tab: the world split by
@@ -341,6 +342,13 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 			text: `${leftover.path} was left by an operation that did not finish. Check it in Files and delete it if nothing in it is needed.`,
 			bytes: leftover.bytes,
 			href: { tab: 'files', path: leftover.path }
+		});
+	}
+	for (const mod of await backupModsOf(instance)) {
+		suggestions.push({
+			text: `${backupModNote(mod)} Disable it on the Mods tab, then delete its copies in Files.`,
+			bytes: mod.bytes ?? 0,
+			...(mod.bytes !== null ? { href: { tab: 'files' as const, path: mod.folder } } : {})
 		});
 	}
 	const oldLogs = await oldLogFiles(root);

@@ -11,12 +11,15 @@
 	import PruneMap from '#lib/components/PruneMap.svelte';
 	import PregenPlanner from '#lib/components/PregenPlanner.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
 	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
 
 	const base = $derived(`/api/instances/${encodeURIComponent(data.instance.id)}/world`);
+	const backupModsInfo = streamed(() => data.backupMods);
+	const backupMods = $derived((backupModsInfo.ready ? backupModsInfo.value : null) ?? []);
 	const busy = $derived(data.instance.status === 'provisioning');
 
 	const VIEWS = ['snapshots', 'worlds', 'pregen', 'prune', 'reset'] as const;
@@ -294,6 +297,16 @@
 			</div>
 		{/if}
 	</div>
+
+	{#each backupMods as mod (mod.name)}
+		<div class="notice info">
+			<p>
+				{mod.note}{mod.bytes ? ` It holds ${formatBytes(mod.bytes)}.` : ''} Disabling it on the
+				<a href="/instances/{encodeURIComponent(data.instance.id)}/mods">Mods tab</a> stops the extra copies and the lag
+				while it makes them; its folder can then be deleted in Files.
+			</p>
+		</div>
+	{/each}
 
 	{#if data.snapshots.length === 0}
 		<div class="empty"><p>No snapshots yet.</p></div>

@@ -1055,6 +1055,15 @@ seconds on every look at the Map tab. The disk usage breakdown (`diskusage.ts`) 
 map" group: map mods' folders (`bluemap/`, `dynmap/`) and that render, which is outside the
 server folder (it links to the Map tab, not Files).
 
+**Backup mods** (`backupmods.ts`): an enabled jar with a known backup mod's id (AromaBackup,
+Simple Backups, FTB Backups, Textile Backup) that its config does not switch off is pointed
+out on the World tab's Snapshots (streamed: its folder is measured) and as a disk usage
+suggestion opening its folder in Files: the same job as snapshots and backup copies, with the
+server lagging while it zips. The folder comes from the mod's config where the format is known
+(AromaBackup's `S:location`, Simple Backups' `outputPath`), its default otherwise; a folder
+outside the server's is named but not measured. Nothing is changed for the owner: turning it
+off is the Mods tab's switch.
+
 Simple Voice Chat (`voicechat.ts`) listens on a UDP port of its own (`port` in
 `config/voicechat/voicechat-server.properties`, 24454 by default; `-1` is the game port's
 number), which clients reach directly, not through the game connection. Two servers with the

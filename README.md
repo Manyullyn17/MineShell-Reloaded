@@ -173,6 +173,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Recover deleted files from a per-server trash, with configurable automatic cleanup.
 - Open server directories in a file manager through SFTP links.
 - Inspect disk usage, including world-map data stored outside the server directory, and delete archived logs and crash reports after a chosen number of days.
+- Spot a pack's own backup mod (AromaBackup, Simple Backups, FTB Backups, Textile Backup) copying the world beside MineShell's snapshots, with the folder it fills.
 - Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds.
 - Match Java versions to individual servers using Minecraft's version metadata, with configurable defaults when multiple runtimes are available.
 

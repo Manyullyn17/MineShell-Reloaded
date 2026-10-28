@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Packs' own backup mods
+
+Built 2026-10-28 (World tab, Snapshots; disk usage page; ARCHITECTURE, "Backup mods"), on the
+`next` branch. AromaBackup, Simple Backups, FTB Backups and Textile Backup, when enabled and not
+switched off in their own config, are named with the folder they fill and its size, as the
+same job MineShell's snapshots and backup copies do; the Mods tab's switch turns one off and
+Files deletes its copies. Folder and on/off are read from AromaBackup's and Simple Backups'
+configs (docs/notes/worlds.md), defaults for the other two. Tried on a throwaway dev server
+with MeatballCraft's real AromaBackup jar and config. Not built: reading FTB Backups' and
+Textile Backup's configs (not checked against real jars), FTB Utilities' built-in backups
+(1.12; part of a larger mod), turning a mod's backups off in its config from MineShell.
+
 ### Installed mods list
 
 Built 2026-10-28 (Mods tab; ARCHITECTURE, "Mod pictures"), on the `next` branch. Each mod

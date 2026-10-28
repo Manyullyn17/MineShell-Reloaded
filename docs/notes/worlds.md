@@ -84,6 +84,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - MeatballCraft ships AromaBackup, which zips the whole world at every start ("the server may
   lag for a bit", 2 minutes) and kept 24 GB of zips in `backups/`: a pack's own backup mod
   doubles what snapshots and backup copies do.
+- Backup mods' configs, read from the user's dev copies (2026-10-28): AromaBackup 2.1.1.4 (1.12,
+  mod ids `aromabackup` and `aromabackuprecovery`) in `config/aroma1997/aromabackup.cfg`:
+  `S:location=./backups` (absolute or relative to the server folder), `I:delay=30` minutes
+  (0 = no schedule) and `B:onStartup=true` (the zip at every start). Simple Backups 4.0.30
+  (NeoForge 1.21, ATM10) in `config/simplebackups-common.toml`: `enabled`, `outputPath =
+  "simplebackups"`, and a `maxDiskSize` of its own (25 GB). FTB Backups (`ftbbackups`,
+  `ftbbackups2`) and Textile Backup (`textile_backup`, `backup/`) are known by id and default
+  folder only, not from a real jar's config yet.
 
 ## Scheduled snapshots
 - `snapshotschedule.ts`, from the scheduler tick (dev server restart needed after changes).

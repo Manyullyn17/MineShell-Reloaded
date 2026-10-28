@@ -51,6 +51,7 @@ import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
 import type { PregenShape } from '#lib/shared/pregen.js';
 import { withDimensionNames } from '#lib/server/dimensionnames.js';
 import { getTask } from '#lib/server/tasks.js';
+import { backupModNote, backupModsOf } from '#lib/server/backupmods.js';
 import {
 	cancelPregen,
 	chunkyLanguage,
@@ -86,6 +87,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		/** The seed the world was made with (level.dat); with level-seed blank, the random one it got. */
 		worldSeed: await worldSeed(instance.path),
 		snapshotPrompt: await snapshotPrompt(instance),
+		/** Mods that copy the world too, as a sentence each; unawaited, their folders are measured. */
+		backupMods: backupModsOf(instance).then((found) => found.map((m) => ({ name: m.name, note: backupModNote(m), bytes: m.bytes }))),
 		/** What the snapshots take on disk: files they share counted once. */
 		snapshotDiskBytes: (await snapshotUsage(instance.path)).bytes,
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
