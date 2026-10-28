@@ -134,6 +134,15 @@ describe('unit files', () => {
 		expect(env).toContain('MS_LAUNCH_ARGS=-jar server.jar nogui');
 	});
 
+	it('writes values systemd reads back as they are, each on its own line', async () => {
+		await writeUnitEnv('zeta', { java: '/usr/bin/java', jvmArgs: '-Dpath=C:\\games', launchArgs: '-jar server.jar nogui\nMS_JAVA=/bin/false' });
+		const env = await fs.readFile(path.join(UNITS_DIR, 'zeta.env'), 'utf8');
+		// systemd turns `\\` back into one backslash (tried with systemd-run).
+		expect(env).toContain('MS_JVM_ARGS=-Dpath=C:\\\\games\n');
+		expect(env).toContain('MS_LAUNCH_ARGS=-jar server.jar nogui MS_JAVA=/bin/false\n');
+		expect(env.match(/^MS_JAVA=/gm)).toHaveLength(1);
+	});
+
 	it('counts the exit code of a SIGTERM stop as a clean exit', () => {
 		// The JVM exits 128 + 15 after saving; without this every stop was logged as a failure.
 		expect(renderTemplateUnit()).toMatch(/^SuccessExitStatus=143$/m);

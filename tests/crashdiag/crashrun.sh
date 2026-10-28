@@ -13,9 +13,10 @@ OUT=${OUT:?set OUT to a folder for the logs}
 inst=${1:?instance id}; case=${2:?case name}; shift 2
 I=$DATA/instances/$inst
 ENV=$DATA/units/$inst.env
-MS_JAVA=$(sed -n 's/^MS_JAVA=//p' "$ENV")
-MS_JVM_ARGS=$(sed -n 's/^MS_JVM_ARGS=//p' "$ENV")
-MS_LAUNCH_ARGS=$(sed -n 's/^MS_LAUNCH_ARGS=//p' "$ENV")
+# A backslash is written doubled there, as systemd reads it (systemd.ts writeUnitEnv).
+MS_JAVA=$(sed -n 's/^MS_JAVA=//; T; s/\\\\/\\/g; p' "$ENV")
+MS_JVM_ARGS=$(sed -n 's/^MS_JVM_ARGS=//; T; s/\\\\/\\/g; p' "$ENV")
+MS_LAUNCH_ARGS=$(sed -n 's/^MS_LAUNCH_ARGS=//; T; s/\\\\/\\/g; p' "$ENV")
 mkdir -p "$OUT" "$I/mods"
 rm -f "${I:?}"/mods/mstest-*.jar
 for j in "$@"; do cp "$HERE/testmods/jars/$j" "$I/mods/"; done

@@ -46,6 +46,10 @@ splitting, then removes itself with `exec`.
 **Quoting.** `"$MS_JAVA"` is quoted because a path may contain spaces; the argument
 variables are deliberately unquoted because they must split. The line never uses `${...}`:
 systemd substitutes that form itself, even inside a quoted word, before the shell runs.
+Splitting is on whitespace only: quotes in JVM arguments are passed on as they are, not
+grouping (`-Dx="a b"` is two arguments). In `<id>.env` itself systemd takes a backslash as an
+escape, so `writeUnitEnv` doubles it, and puts a line break in a value as a space: it would
+otherwise start a line setting a variable of its own.
 
 **One start's arguments.** `<id>.once` holds JVM arguments for the next start only
 (`writeOnceArgs`); the start reads and deletes it, so a restart by systemd after a crash, or

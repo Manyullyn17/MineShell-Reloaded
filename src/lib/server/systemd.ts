@@ -166,13 +166,16 @@ export async function writeUnitEnv(
 	}
 ): Promise<void> {
 	ensureDirs();
+	// systemd reads a backslash as an escape (`C:\games` arrived as `C:games`), and a
+	// line break would start a line of its own, setting whatever it says.
+	const value = (v: string) => v.replace(/[\r\n]+/g, ' ').replace(/\\/g, '\\\\');
 	const lines = [
 		'# Managed by MineShell. Edits here are overwritten when you save instance settings.',
-		`MS_JAVA=${values.java}`,
-		`MS_JVM_ARGS=${values.jvmArgs}`,
-		`MS_LAUNCH_ARGS=${values.launchArgs}`
+		`MS_JAVA=${value(values.java)}`,
+		`MS_JVM_ARGS=${value(values.jvmArgs)}`,
+		`MS_LAUNCH_ARGS=${value(values.launchArgs)}`
 	];
-	for (const [k, v] of Object.entries(values.extra ?? {})) lines.push(`${k}=${v}`);
+	for (const [k, v] of Object.entries(values.extra ?? {})) lines.push(`${k}=${value(v)}`);
 	await fs.writeFile(unitEnvFile(id), lines.join('\n') + '\n', { mode: 0o600 });
 }
 
