@@ -31,7 +31,7 @@ import {
 	type UnitState
 } from './systemd';
 import { rconExec, parsePlayerList } from './rcon';
-import { getTask, startTask, type TaskHandle } from './tasks';
+import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
 import {
 	applyOverrides,
@@ -1419,6 +1419,14 @@ export async function deleteInstance(
 	instance: ServerInstance,
 	opts: { deleteFiles: boolean }
 ): Promise<void> {
+	// Work still running on it would carry on in a folder that is gone, and
+	// write parts of it back as a folder no server owns.
+	if (beingCopied.has(instance.id)) throw new InstanceError('This server is being copied; delete it once the copy has finished.');
+	const busy = listTasks().find((t) => t.instanceId === instance.id && t.state === 'running');
+	if (busy) throw new InstanceError(`"${busy.label}" is still running on this server: wait for it to finish, or cancel it in Activity.`);
+	if (listOperations().some((o) => o.instanceId === instance.id)) {
+		throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
+	}
 	await stopUnit(instance.id).catch(() => undefined);
 	await removeUnitArtifacts(instance.id);
 	if (opts.deleteFiles) {
