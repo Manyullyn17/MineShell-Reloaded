@@ -97,6 +97,9 @@
 
 
 	let copied = $state(false);
+	let showDimensions = $state(false);
+	// Slowest first: the one lagging is what the list is for.
+	const dimensionTicks = $derived([...(data.tick?.dimensions ?? [])].sort((a, b) => b.mspt - a.mspt));
 	async function copyAddress() {
 		if (!(await copyText(`${data.detail.host}:${data.detail.serverPort}`))) return;
 		copied = true;
@@ -317,6 +320,13 @@
 			{data.tick ? data.tick.tps.toFixed(1) : '-'}
 		</dd>
 		<dd class="sub">{data.tick ? `${data.tick.mspt.toFixed(1)} ms/tick` : 'TPS'}</dd>
+		{#if dimensionTicks.length > 1}
+			<dd class="sub">
+				<button type="button" class="link hit-area" class:warn-text={dimensionTicks[0].tps < 18} aria-expanded={showDimensions} onclick={() => (showDimensions = !showDimensions)}>
+					{showDimensions ? 'hide dimensions' : `per dimension (${dimensionTicks.length})`}
+				</button>
+			</dd>
+		{/if}
 	</div>
 	<div>
 		<dt>Memory</dt>
@@ -344,6 +354,25 @@
 		</dd>
 	</div>
 </dl>
+
+{#if showDimensions && dimensionTicks.length > 1}
+	<div class="table-box dimension-ticks">
+		<table>
+			<thead>
+				<tr><th>Dimension</th><th class="num">TPS</th><th class="num">ms/tick</th></tr>
+			</thead>
+			<tbody>
+				{#each dimensionTicks as dimension (dimension.id)}
+					<tr>
+						<td>{dimension.label}</td>
+						<td class="num mono" class:warn-text={dimension.tps < 18}>{dimension.tps.toFixed(1)}</td>
+						<td class="num mono">{dimension.mspt.toFixed(1)}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+{/if}
 
 <div class="columns">
 	<div class="column">
@@ -809,6 +838,33 @@
 
 	.stats .good {
 		color: var(--accent-hover);
+	}
+
+	.stats .link {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.stats .link:hover {
+		color: var(--text);
+	}
+
+	.dimension-ticks {
+		margin: 0 0 1.25rem;
+	}
+
+	.dimension-ticks td:first-child {
+		overflow-wrap: anywhere;
+	}
+
+	.dimension-ticks .num {
+		text-align: right;
+		white-space: nowrap;
 	}
 
 	.columns {

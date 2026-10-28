@@ -59,7 +59,7 @@ export function parseForgeDimensions(text: string): Map<number, string> {
 }
 
 /** deep_dark, DeepDark, ExtraUtils2_Quarry -> Deep Dark, Deep Dark, ExtraUtils2 Quarry. */
-function words(name: string): string {
+export function words(name: string): string {
 	return name
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.split(/[\s_.-]+/)

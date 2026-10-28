@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### TPS per dimension
+
+Built 2026-10-28 (overview, Tick rate; `tps.ts`), on the `next` branch. `forge tps` and
+`neoforge tps` already listed every loaded dimension; their lines are now kept, and a server
+with more than one shows "per dimension" under its tick rate, opening a table slowest first
+(amber below 18 TPS, as is the link when the slowest is). Named as the World tab names them:
+vanilla's by name, 1.12's numbered ones by their dimension type (`Twilight Forest (DIM7)`),
+1.13+ Forge ones by id; NeoForge names them itself. Tried on throwaway NeoForge 21.1.265 and
+Forge 1.12.2 servers (both answers are tests). Not built: vanilla's `tick query`, so Fabric and
+Quilt, has no per-dimension figures; no history per dimension (only the current answer).
+
 ### "Required by" for mods
 
 Built 2026-10-28 (Mods tab; ARCHITECTURE, "What needs a mod"), the first post-1.0 entry, on

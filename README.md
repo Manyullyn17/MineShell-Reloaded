@@ -62,7 +62,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting, misses a scheduled snapshot or fails to copy one to the backup folder, runs low on disk space or has an update, and optionally on restarts, starts, stops and players joining or leaving. A server can send to its own channel instead or as well.
 - Get a warning before starting a server the machine may not have the memory for, counting what the running servers can still grow into.
 - Choose which servers start after a machine reboot: restore their previous state, always start, or never start automatically.
-- Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available.
+- Monitor uptime, startup duration, online players, player session times, daily player peaks, CPU and memory usage, disk consumption, and tick rate where available (per dimension on Forge and NeoForge).
 - Inspect Java heap usage and receive guidance when memory allocation seems insufficient or excessive.
 - View server addresses and manage players directly from the overview.
 - See on the Activity page how the outside services MineShell uses (Modrinth, the modpacks.ch mirror, Mojang, Java and loader sites) answered since it started, with a warning while one is not answering.
