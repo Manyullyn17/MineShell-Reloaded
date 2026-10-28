@@ -783,6 +783,12 @@
 		min-width: 6rem;
 	}
 
+	/* Breaking anywhere lets the table squeeze a column to a letter or two: on a phone
+	   each name stood one letter per line, rows 700 px tall. The table scrolls instead. */
+	.mod-cell {
+		min-width: 12rem;
+	}
+
 	tr.disabled td:not(.switch-col) {
 		opacity: 0.5;
 	}
