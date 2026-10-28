@@ -514,7 +514,7 @@
 		</table>
 	{/if}
 	{#if data.owner}
-		<form method="POST" action="?/addBackupFolder" use:enhance class="inline-form">
+		<form method="POST" action="?/addBackupFolder" use:enhance class="inline-form text-aligned">
 			<div class="field grow">
 				<label for="backup-path">Add a folder</label>
 				<input id="backup-path" name="path" class="mono" placeholder="/mnt/backup/minecraft" value={(form as { backupPath?: string } | null)?.backupPath ?? ''} />
@@ -1660,6 +1660,12 @@
 	/* A field's own bottom margin left the button beside it sitting lower than the select. */
 	.inline-form .field {
 		margin-bottom: 0;
+	}
+
+	/* A switch beside inputs: lined up by the text in them, the Compressed switch sat lower than
+	   the inputs' middle (bottom edges lined up, and it is shorter). */
+	.inline-form.text-aligned {
+		align-items: last baseline;
 	}
 
 	.grow {
