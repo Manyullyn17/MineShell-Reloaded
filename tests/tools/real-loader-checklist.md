@@ -27,7 +27,7 @@ boot() {
 }
 ```
 
-One server at a time: every new server defaults to a 16 GB heap, and a start that would
+One server at a time: every new server defaults to an 8 GB heap (16 GB before 1.1), and a start that would
 overcommit memory asks first (the action answers with that question and starts nothing).
 Tasks (installs, changes, imports) are listed by `curl -s $U/api/tasks`; wait until none
 is `running` before the next step.

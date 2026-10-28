@@ -141,7 +141,7 @@
 					/>
 				</div>
 				<p class="hint">
-					{#if v.memoryMode === 'auto'}{formatGb(data.suggestedMaxMb)} on this machine: its RAM minus 2 GB, at most 16 GB.{/if}
+					{#if v.memoryMode === 'auto'}{formatGb(data.suggestedMaxMb)} on this machine: 8 GB, or its RAM minus 2 GB if that is less.{/if}
 					Either way, the add-a-server form lets you change it for that server.
 				</p>
 			</div>

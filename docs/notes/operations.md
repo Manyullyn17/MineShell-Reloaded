@@ -53,7 +53,8 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `instance-defaults.ts`: one JSON row in `settings` (`instance.defaults`), edited at
   `/settings/defaults`, read only at creation (`insertInstanceRow`, the new-server form).
   Every read goes through validation, so a stale or hand-edited row degrades to built-ins.
-  Max memory `null` = the RAM guess (`suggestedMaxMb`). Game settings store only values that differ from built-in; the other
+  Max memory `null` = the RAM guess (`suggestedMaxMb`: 8 GB, or RAM minus 2 GB when less; up to
+  16 GB before 2026-10-28). Game settings store only values that differ from built-in; the other
   sections are stored whole, so a built-in change (crash restarts 5 -> 3, 2026-10-28) reaches only
   installs that never saved the page. Per-instance keys (ports, RCON, MOTD, level name/seed/type)
   are never defaults. Restart/console/snapshot schedule/property fields are shared components

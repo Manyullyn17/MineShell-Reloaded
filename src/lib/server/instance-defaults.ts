@@ -126,10 +126,16 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 	properties: builtInProperties()
 };
 
-/** Total RAM minus 2 GB for the OS and MineShell, between 1 and 16 GB. */
+/**
+ * A new server's heap unless New server defaults set one: 8 GB, which a large modpack runs in
+ * and a small server does not miss, or less on a small machine (its RAM minus 2 GB for the OS
+ * and MineShell), at least 1 GB. Up to 16 GB before: every server on a 32 GB machine got 16 GB,
+ * and a second one then asked about overcommitting memory. Add a server asks for it each time.
+ */
+export const SUGGESTED_MAX_MB = 8192;
 export function suggestedMaxMb(): number {
 	const totalMb = Math.floor(totalmem() / (1024 * 1024));
-	return Math.max(1024, Math.min(totalMb - 2048, 16384));
+	return Math.max(1024, Math.min(totalMb - 2048, SUGGESTED_MAX_MB));
 }
 
 // ------------------------------------------------------------- validation ---
