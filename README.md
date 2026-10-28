@@ -169,6 +169,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Typed controls for common `server.properties` options, alongside an editor for additional keys and a raw configuration editor. Unrecognized properties are preserved.
 - Port availability checks, with options to swap ports with another server or move to a free port.
 - Browse, upload, download, rename, delete, and edit text files within an instance directory. The editor has line numbers and colours for JSON, TOML, YAML, Forge `.cfg`, `.properties`, scripts and shell files, marks a syntax error as you type, and before saving a broken JSON, JSON5, TOML or YAML file names the line and asks (with "Save anyway").
+- Search a server's configs and scripts for some text, or a folder of them, and open each matching line in the editor; file and folder names are matched too, mods and logs included.
 - Upload files and folders by dragging them into the file browser.
 - Recover deleted files from a per-server trash, with configurable automatic cleanup.
 - Open server directories in a file manager through SFTP links.

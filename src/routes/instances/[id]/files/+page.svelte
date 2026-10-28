@@ -9,6 +9,7 @@
 	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
 	import type { SubmitFunction } from '$app/forms';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
+	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { sftpLink } from '#lib/shared/sftp.js';
 	import { page } from '$app/state';
 
@@ -63,6 +64,28 @@
 	};
 
 	const base = $derived(`/instances/${data.instance.id}/files`);
+
+	// ---- search in files
+	const searchInfo = streamed(() => data.search);
+	/** Names shown before "Show all": the lines matched below are what is usually wanted. */
+	const NAMES_SHOWN = 10;
+	let allNames = $state(false);
+	$effect(() => {
+		void data.searchQuery;
+		allNames = false;
+	});
+	const searchResult = $derived(searchInfo.ready ? searchInfo.value : null);
+	/** A matching line in the editor, the match selected; Close goes back to the file's folder. */
+	function lineHref(file: string, line: number, find: string) {
+		const folder = file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '';
+		const params = new URLSearchParams({ ...(folder ? { path: folder } : {}), edit: file, line: String(line), find });
+		return `${base}?${params}`;
+	}
+	/** The line with the match picked out, for the result list. */
+	function parts(text: string, find: string) {
+		const at = text.toLowerCase().indexOf(find.toLowerCase());
+		return at < 0 ? { before: text, match: '', after: '' } : { before: text.slice(0, at), match: text.slice(at, at + find.length), after: text.slice(at + find.length) };
+	}
 	// The host the browser reached MineShell by, unless Settings names another.
 	const sftp = $derived(
 		data.sftp
@@ -301,6 +324,7 @@
 					value={data.editing.contents}
 					fileName={data.editing.path}
 					line={data.editing.line}
+					find={data.editing.find}
 				/>
 			{/key}
 			{#if blocked}
@@ -444,6 +468,17 @@
 			{#if data.parentDir !== null}
 				<a class="button button-quiet" href={href(data.parentDir)}>Up one level</a>
 			{/if}
+			<form method="GET" class="file-search" role="search">
+				{#if data.dir}<input type="hidden" name="path" value={data.dir} />{/if}
+				<input
+					type="search"
+					name="search"
+					value={data.searchQuery}
+					placeholder={data.dir ? `Search text in ${data.dir}/` : 'Search text in configs and scripts'}
+					aria-label="Search text in files"
+					minlength="2"
+				/>
+			</form>
 			<button class="button-quiet" onclick={() => (showNewFolder = !showNewFolder)}>New folder</button>
 			<a class="button button-quiet" href={trashHref} title="Deleted files, to restore or delete for good">
 				Trash{data.trashCount ? ` (${data.trashCount})` : ''}
@@ -494,6 +529,83 @@
 			</form>
 		{/if}
 
+		{#if data.search}
+			<div class="search-results">
+				<div class="search-head">
+					<div class="search-summary">
+					{#if !searchInfo.ready}
+						<p class="muted">Searching {data.dir ? `${data.dir}/` : 'the server'} for “{data.searchQuery}”.</p>
+					{:else if searchResult && 'error' in searchResult}
+						<p class="warn-text">{searchResult.error}</p>
+					{:else if searchResult}
+						<p>
+							{#if searchResult.query.length < 2}
+								Type at least two characters.
+							{:else if searchResult.total === 0}
+								{searchResult.names.length ? 'No text' : 'Nothing'} in the {searchResult.searched} text files searched contains “{searchResult.query}”{searchResult.names.length ? '' : ', and no name does'}.
+							{:else}
+								<strong>{searchResult.total}</strong> line{searchResult.total === 1 ? '' : 's'} in
+								<strong>{searchResult.files.length}</strong> file{searchResult.files.length === 1 ? '' : 's'} contain “{searchResult.query}”
+								({searchResult.searched} searched){searchResult.partial ? '; the search stopped there, narrow it or search a folder' : ''}.
+							{/if}
+						</p>
+						<p class="faint small">
+							Configs and scripts; mods, logs (the Logs tab searches those), libraries, backups and worlds apart from their
+							<code>serverconfig/</code> are left out of the text; names are matched in mods and logs too.
+						</p>
+					{/if}
+					</div>
+					<a class="button button-quiet" href={href(data.dir)}>Back to files</a>
+				</div>
+				{#if searchResult && !('error' in searchResult) && searchResult.names.length}
+					<section class="hit">
+						<h3 class="small names-head">
+							Name{searchResult.names.length === 1 ? '' : 's'} with “{searchResult.query}” ({searchResult.names.length}{searchResult.names.length >= 200 ? '+' : ''})
+						</h3>
+						<ul class="hit-lines">
+							{#each allNames ? searchResult.names : searchResult.names.slice(0, NAMES_SHOWN) as found (found.path)}
+								{@const p = parts(found.path.slice(found.path.lastIndexOf('/') + 1), searchResult.query)}
+								{@const folder = found.path.includes('/') ? found.path.slice(0, found.path.lastIndexOf('/') + 1) : ''}
+								<li>
+									<!-- A folder opens; a file shows in its folder (opened in the editor when it is text). -->
+									<a href={href(found.path)}>
+										<span class="line-text mono"
+											><span class="faint">{folder}</span>{p.before}<mark>{p.match}</mark>{p.after}{found.isDirectory ? '/' : ''}</span
+										>
+									</a>
+								</li>
+							{/each}
+						</ul>
+						{#if !allNames && searchResult.names.length > NAMES_SHOWN}
+							<button type="button" class="button-quiet show-all" onclick={() => (allNames = true)}>
+								Show all {searchResult.names.length} names
+							</button>
+						{/if}
+					</section>
+				{/if}
+				{#if searchResult && !('error' in searchResult)}
+					{#each searchResult.files as file (file.path)}
+						<section class="hit">
+							<a class="mono hit-path" href={lineHref(file.path, file.lines[0].n, searchResult.query)}>{file.path}</a>
+							<ol class="hit-lines">
+								{#each file.lines as line (line.n)}
+									{@const p = parts(line.text, searchResult.query)}
+									<li>
+										<a href={lineHref(file.path, line.n, searchResult.query)}>
+											<span class="line-no mono">{line.n}</span>
+											<span class="line-text mono">{p.before}<mark>{p.match}</mark>{p.after}</span>
+										</a>
+									</li>
+								{/each}
+							</ol>
+							{#if file.count > file.lines.length}
+								<p class="faint small">and {file.count - file.lines.length} more in this file</p>
+							{/if}
+						</section>
+					{/each}
+				{/if}
+			</div>
+		{:else}
 		<div class="listing" use:dropzone={{ onDrop, disabled: !!data.editing, label: `Drop to upload into ${data.instance.id}/${data.dir}` }}>
 		{#if data.entries.length === 0}
 			<div class="empty"><p>This folder is empty.</p></div>
@@ -515,6 +627,7 @@
 			</div>
 		{/if}
 		</div>
+		{/if}
 	</section>
 {/if}
 
@@ -626,6 +739,102 @@
 		align-items: center;
 		flex-wrap: wrap;
 		margin-bottom: var(--space-3);
+	}
+
+	.file-search {
+		flex: 1 1 16rem;
+		min-width: 0;
+		max-width: 26rem;
+	}
+
+	.file-search input {
+		width: 100%;
+	}
+
+	.search-head {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		margin-bottom: var(--space-3);
+	}
+
+	.search-summary {
+		flex: 1 1 20rem;
+		min-width: 0;
+	}
+
+	.search-summary p {
+		margin: 0 0 var(--space-1);
+	}
+
+	.show-all {
+		margin-top: var(--space-1);
+	}
+
+	.warn-text {
+		color: var(--warning);
+	}
+
+	.hit {
+		margin-bottom: var(--space-4);
+	}
+
+	.names-head {
+		margin: 0 0 var(--space-1);
+		color: var(--text-muted);
+		font-weight: 600;
+	}
+
+	.hit-path {
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+
+	.hit-lines {
+		list-style: none;
+		margin: var(--space-1) 0 0;
+		padding: 0;
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		background: var(--bg-sunken);
+		overflow: hidden;
+	}
+
+	.hit-lines a {
+		display: flex;
+		gap: var(--space-3);
+		padding: 0.15rem var(--space-2);
+		color: var(--text);
+		text-decoration: none;
+		font-size: 0.8rem;
+	}
+
+	.hit-lines li + li a {
+		border-top: 1px solid var(--line);
+	}
+
+	.hit-lines a:hover {
+		background: color-mix(in srgb, var(--text) 6%, transparent);
+	}
+
+	.line-no {
+		flex: 0 0 3.5rem;
+		text-align: right;
+		color: var(--text-faint);
+	}
+
+	.line-text {
+		min-width: 0;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	.line-text mark {
+		background: color-mix(in srgb, var(--warning) 35%, transparent);
+		color: inherit;
+		border-radius: 2px;
 	}
 
 	.inline-form {

@@ -15,6 +15,7 @@
 		value,
 		fileName,
 		line = null,
+		find = null,
 		problem = $bindable(null),
 		checks = $bindable(false)
 	}: {
@@ -24,6 +25,8 @@
 		fileName: string;
 		/** The line to open at, from 1. */
 		line?: number | null;
+		/** Text to select on that line. */
+		find?: string | null;
 		/** The first syntax error, as of the last check. */
 		problem?: SyntaxProblem | null;
 		/** Whether this file is checked: its kind has a check, and it parsed when it was opened. */
@@ -63,6 +66,7 @@
 				language,
 				check: checks,
 				line,
+				find,
 				onChange: (text) => {
 					if (textarea) textarea.value = text;
 				},

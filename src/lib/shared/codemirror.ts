@@ -120,8 +120,8 @@ async function languageSupport(language: EditorLanguage): Promise<Extension> {
 export type CodeEditorHandle = {
 	view: EditorView;
 	text: () => string;
-	/** Puts the cursor at the start of a line (from 1) and scrolls it into the middle. */
-	goToLine: (line: number) => void;
+	/** Puts the cursor on a line (from 1), on `find` in it when given, and scrolls it into the middle. */
+	goToLine: (line: number, find?: string | null) => void;
 	destroy: () => void;
 };
 
@@ -133,6 +133,8 @@ export async function createEditor(
 		/** Mark syntax errors as you type (only when the file parsed when it was opened). */
 		check: boolean;
 		line: number | null;
+		/** Text to select on that line (what a search found). */
+		find?: string | null;
 		onChange: (text: string) => void;
 		onProblem: (problem: SyntaxProblem | null) => void;
 	}
@@ -177,11 +179,13 @@ export async function createEditor(
 			]
 		})
 	});
-	const goToLine = (number: number) => {
+	const goToLine = (number: number, find?: string | null) => {
 		const line = view.state.doc.line(Math.min(Math.max(number, 1), view.state.doc.lines));
-		view.dispatch({ selection: EditorSelection.cursor(line.from), effects: EditorView.scrollIntoView(line.from, { y: 'center' }) });
+		const at = find ? line.text.toLowerCase().indexOf(find.toLowerCase()) : -1;
+		const selection = at >= 0 ? EditorSelection.range(line.from + at, line.from + at + find!.length) : EditorSelection.cursor(line.from);
+		view.dispatch({ selection, effects: EditorView.scrollIntoView(line.from, { y: 'center' }) });
 		view.focus();
 	};
-	if (opts.line) goToLine(opts.line);
+	if (opts.line) goToLine(opts.line, opts.find);
 	return { view, text: () => view.state.doc.toString(), goToLine, destroy: () => view.destroy() };
 }

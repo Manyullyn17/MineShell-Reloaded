@@ -36,7 +36,9 @@ export type DirEntry = {
 
 const TEXT_EXTENSIONS = new Set([
 	'.txt', '.json', '.json5', '.properties', '.yml', '.yaml', '.toml', '.cfg', '.conf',
-	'.ini', '.log', '.md', '.sh', '.env', '.lock', '.snbt', '.mcmeta', '.xml', '.csv', '.js', '.lua'
+	'.ini', '.log', '.md', '.sh', '.env', '.lock', '.snbt', '.mcmeta', '.xml', '.csv', '.js', '.lua',
+	// CraftTweaker's scripts (1.12 packs keep much of their recipes and balance there).
+	'.zs'
 ]);
 
 const MAX_EDIT_BYTES = 2 * 1024 * 1024;
@@ -58,6 +60,12 @@ export function looksEditable(name: string, size: number): boolean {
 	const ext = path.extname(name).toLowerCase();
 	if (TEXT_EXTENSIONS.has(ext)) return true;
 	return ext === '' && /^(eula|banned-ips|ops|whitelist)$/i.test(path.basename(name));
+}
+
+/** What search in files reads: what the editor opens, apart from logs and lock files. */
+export function isSearchable(name: string, size: number): boolean {
+	const ext = path.extname(name).toLowerCase();
+	return looksEditable(name, size) && ext !== '.log' && ext !== '.lock';
 }
 
 export async function listDirectory(root: string, relative: string): Promise<DirEntry[]> {

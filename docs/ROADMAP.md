@@ -163,8 +163,8 @@ in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
    mostly reading what MineShell already has: a calm first step after the freeze.
-2. **Files**: search in files, earlier versions of edited files, zips and folders (the better
-   file editor they build on is built).
+2. **Files**: earlier versions of edited files, zips and folders (the better file editor and
+   search in files are built).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -213,14 +213,6 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 again when Kit and svelte-check list 7 in their peer ranges.
 
 ### 2. Files
-
-#### Search in files
-
-Agreed 2026-10-27. "Which config sets this?" means opening files one by one today. A search
-across the server's text files (`config/`, `defaultconfigs/`, `kubejs/`, `serverconfig/` in
-worlds, scripts), listing matching lines that open in the editor at that line; binary files,
-`mods/`, logs (the Logs tab has its own search) and worlds' region files left out. Belongs
-with the mod config editor.
 
 #### Earlier versions of edited files
 

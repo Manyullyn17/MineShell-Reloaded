@@ -22,6 +22,8 @@ const BY_EXTENSION: Record<string, EditorLanguage> = {
 	js: 'javascript',
 	mjs: 'javascript',
 	ts: 'javascript',
+	// CraftTweaker's ZenScript reads close enough to JavaScript to colour as it.
+	zs: 'javascript',
 	sh: 'shell'
 };
 

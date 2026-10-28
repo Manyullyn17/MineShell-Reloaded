@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Search in files
+
+Built 2026-10-29 (Files; ARCHITECTURE, "Search in files"), on the `next` branch. A search box in
+Files' toolbar looks through the folder shown (the whole server at the top): configs and
+scripts by their lines, every line opening in the editor at that line with the match selected,
+and file and folder names (asked for by the user while it was being built), `mods/` and logs
+included. CraftTweaker's `.zs` scripts open in the editor now too. Tried on a throwaway dev
+server with MeatballCraft's real `config/` and `scripts/`: "Darklands" in 11 files of 10,319,
+"abyssal" stopping at 500 lines with 33 names, at 1280 and 390 px. Not built: regular
+expressions, case-sensitive matching, replacing across files.
+
 ### A better file editor
 
 Built 2026-10-28 (Files; ARCHITECTURE, "The file editor"), on the `next` branch, the first of

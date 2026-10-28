@@ -1309,6 +1309,15 @@ noise. `?edit=<path>&line=<n>` opens at a line. Each browser words `JSON.parse` 
 way (Chrome a position, Firefox a line and column, Safari neither); json5, stopping at the same
 spot, gives the line for the last.
 
+**Search in files** (`filesearch.ts`, Files' `?search=`, in the folder shown): one walk reads
+what the editor opens (`isSearchable`: no logs or lock files, nothing binary or over 2 MB) and
+matches names. Left out: hidden folders (MineShell's own), `libraries/`, `versions/`, the
+loader's files, `old-configs/`, map tiles, backup mods' folders, and worlds apart from their
+`serverconfig/`; `mods/`, `logs/` and `crash-reports/` are matched by name only. It stops at
+500 matching lines (names go on) or after 8 s, saying so; MeatballCraft's 10,319 config and
+script files take about 2.5 s. Streamed to the page. A line links to
+`?edit=<file>&line=<n>&find=<text>`, which opens the editor there with the match selected.
+
 **A server's Settings** is one page with nine tabs (server.properties and MineShell's own
 settings together) and one save bar. Each section is still its own form posting to the
 action that saves it (`general`, `properties`, `network`, `runtime`, `limits`, `restarts`,

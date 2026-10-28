@@ -18,11 +18,13 @@ import path from 'node:path';
 import { forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { sftpAccess } from '#lib/server/sftp.js';
 import { deleteToTrash, emptyTrash, listTrash, purgeTrashItem, restoreFromTrash, trashDays } from '#lib/server/trash.js';
+import { searchFiles } from '#lib/server/filesearch.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
 	const dir = url.searchParams.get('path') ?? '';
 	const edit = url.searchParams.get('edit');
+	const search = url.searchParams.get('search')?.trim() || null;
 	const trash = await listTrash(instance.path).catch(() => []);
 	// The trash, shown in place of a folder.
 	const showTrash = url.searchParams.has('trash');
@@ -54,12 +56,17 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		listError = err instanceof Error ? err.message : 'Could not read that folder.';
 	}
 
-	let editing: { path: string; contents: string; line: number | null } | null = null;
+	let editing: { path: string; contents: string; line: number | null; find: string | null } | null = null;
 	if (edit) {
 		try {
 			// ?line= opens it there (a search result).
 			const line = Number(url.searchParams.get('line'));
-			editing = { path: edit, contents: await readTextFile(instance.path, edit), line: Number.isInteger(line) && line > 0 ? line : null };
+			editing = {
+				path: edit,
+				contents: await readTextFile(instance.path, edit),
+				line: Number.isInteger(line) && line > 0 ? line : null,
+				find: url.searchParams.get('find')
+			};
 		} catch (err) {
 			listError = err instanceof Error ? err.message : 'Could not open that file.';
 		}
@@ -87,6 +94,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		trashCount: trash.length,
 		trashDays: trashDays(),
 		folder: listError ? instance.path : path.join(instance.path, dir),
+		// Search in files (?search=, in the folder shown): streamed, a big pack takes a moment.
+		search: search && !edit && !showTrash ? searchFiles(instance.path, search, dir).catch((err: unknown) => ({ error: err instanceof Error ? err.message : 'The search failed.' })) : null,
+		searchQuery: search ?? '',
 		// Streamed and reused for a minute: walking a big pack takes a moment.
 		usage: recentDiskBreakdown(instance)
 			.then((b) => ({ total: b.total, groups: b.groups.map((g) => ({ id: g.id, label: g.label, bytes: g.bytes })) }))
