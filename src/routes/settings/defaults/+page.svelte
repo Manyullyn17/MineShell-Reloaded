@@ -106,6 +106,7 @@
 <Flash {form} />
 
 <form method="POST" action="?/save" use:enhance={keepValues}>
+	<div class="sections">
 	<SettingsSection tab="defaults" title="Memory and Java" dirty={isDirty('Memory and Java')}>
 		<div class="rows">
 			<div class="field">
@@ -255,6 +256,7 @@
 	<div class="reset">
 		<button class="button-quiet" type="submit" formaction="?/reset">Reset everything to the built-in defaults</button>
 	</div>
+	</div>
 
 	<SaveBar changed={dirty.map((s) => s.label)} {saving} onDiscard={() => (v = fromData())} saveLabel="Save defaults" />
 </form>
@@ -262,6 +264,11 @@
 <style>
 	.intro {
 		margin-bottom: 0;
+	}
+
+	/* As wide as a server's Settings, so a control stays near its label; the save bar goes full width. */
+	.sections {
+		max-width: 54rem;
 	}
 
 	.reset {
