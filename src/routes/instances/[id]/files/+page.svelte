@@ -5,6 +5,9 @@
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
+	import CodeEditor from '#lib/components/CodeEditor.svelte';
+	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
+	import type { SubmitFunction } from '$app/forms';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
 	import { sftpLink } from '#lib/shared/sftp.js';
 	import { page } from '$app/state';
@@ -26,6 +29,37 @@
 		'old-configs': 'Old configs',
 		loader: 'Loader',
 		other: 'Other'
+	};
+
+	// ---- the editor
+	let editor = $state<ReturnType<typeof CodeEditor> | null>(null);
+	let saveForm = $state<HTMLFormElement | null>(null);
+	/** The first syntax error as the editor last saw it (marked in it as you type). */
+	let liveProblem = $state<SyntaxProblem | null>(null);
+	let checks = $state(false);
+	/** What stopped the last save, until it is saved anyway or fixed. */
+	let blocked = $state<SyntaxProblem | null>(null);
+	let saveAnyway = false;
+	$effect(() => {
+		// A fixed file needs no warning any more.
+		if (!liveProblem) blocked = null;
+	});
+	/**
+	 * A file that parsed when it was opened is checked again before it is saved:
+	 * a broken config saved silently and failed at the next start.
+	 */
+	const checkBeforeSave: SubmitFunction = async ({ formData, cancel }) => {
+		if (checks && !saveAnyway && data.editing) {
+			const problem = await syntaxProblem(languageOf(data.editing.path), String(formData.get('contents') ?? ''));
+			if (problem) {
+				blocked = problem;
+				cancel();
+				return;
+			}
+		}
+		saveAnyway = false;
+		blocked = null;
+		return async ({ update }) => update({ reset: false });
 	};
 
 	const base = $derived(`/instances/${data.instance.id}/files`);
@@ -256,9 +290,38 @@
 			</div>
 			<a class="button button-quiet" href={href(data.dir)}>Close</a>
 		</div>
-		<form method="POST" action="?/save" use:enhance>
+		<form method="POST" action="?/save" use:enhance={checkBeforeSave} bind:this={saveForm}>
 			<input type="hidden" name="path" value={data.editing.path} />
-			<textarea name="contents" rows="26" spellcheck="false" class="editor">{data.editing.contents}</textarea>
+			{#key data.editing.path}
+				<CodeEditor
+					bind:this={editor}
+					bind:problem={liveProblem}
+					bind:checks
+					name="contents"
+					value={data.editing.contents}
+					fileName={data.editing.path}
+					line={data.editing.line}
+				/>
+			{/key}
+			{#if blocked}
+				<div class="notice warning syntax-problem">
+					<p>
+						<strong>Line {blocked.line}: {blocked.message}.</strong> Saved like this, whatever reads the file at the
+						next start may refuse it or fall back to its defaults.
+					</p>
+					<div class="button-row">
+						<button type="button" onclick={() => editor?.goToLine(blocked!.line)}>Go to line {blocked.line}</button>
+						<button
+							type="button"
+							class="button-quiet"
+							onclick={() => {
+								saveAnyway = true;
+								saveForm?.requestSubmit();
+							}}>Save anyway</button
+						>
+					</div>
+				</div>
+			{/if}
 			<div class="button-row editor-actions">
 				<button class="button-primary" type="submit">Save file</button>
 				<a
@@ -633,13 +696,8 @@
 		padding: 0.2rem 0.5rem;
 	}
 
-	.editor {
-		font-family: var(--font-mono);
-		font-size: 0.8rem;
-		line-height: 1.5;
-		white-space: pre;
-		overflow-wrap: normal;
-		overflow-x: auto;
+	.syntax-problem {
+		margin-top: var(--space-3);
 	}
 
 	.editor-actions {

@@ -9,6 +9,20 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### A better file editor
+
+Built 2026-10-28 (Files; ARCHITECTURE, "The file editor"), on the `next` branch, the first of
+step 2. CodeMirror 6 in place of the textarea, loaded only with the editor: line numbers, the
+theme's colours for JSON/JSON5, TOML, YAML, properties, Forge `.cfg` (a mode of its own), JS
+for KubeJS and shell, search (Ctrl+F), and `?line=` to open at a line for search in files. A
+JSON, JSON5, TOML or YAML file that parsed when it was opened is marked as you type and checked
+before saving: "Line 3: Expected ',' or '}' after property value", with "Go to line" and
+"Save anyway" (user's question: the check never stops a save for good). Tried on a throwaway
+dev server: Simple Backups' real TOML opened at line 44, AbyssalCraft's `.cfg`, a JSON with a
+comma removed (stopped, then saved anyway), a commented `.json` saved without a question, and
+390 px. Not built: checks for `.cfg` and `.properties` (nothing to break that a parser would
+see), the settings' raw `server.properties` editor on the same component.
+
 ### Packs' own backup mods
 
 Built 2026-10-28 (World tab, Snapshots; disk usage page; ARCHITECTURE, "Backup mods"), on the

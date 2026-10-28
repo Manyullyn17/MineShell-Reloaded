@@ -145,6 +145,8 @@ expect(await tree(instance.path)).toEqual(before);   // nothing lost, nothing le
 
 Scripts in `tests/tools/` for trying changes by hand on a throwaway dev server (the command
 is in CLAUDE.md, "Trying things against real loaders"); outside the suite, plain node.
+To change the Files editor's text from `pageshot.mjs --eval` (CodeMirror ignores a textarea's
+value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispatch({ changes })`.
 
 | Tool | Use |
 |---|---|

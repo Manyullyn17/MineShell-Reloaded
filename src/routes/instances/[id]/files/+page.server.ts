@@ -54,10 +54,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		listError = err instanceof Error ? err.message : 'Could not read that folder.';
 	}
 
-	let editing: { path: string; contents: string } | null = null;
+	let editing: { path: string; contents: string; line: number | null } | null = null;
 	if (edit) {
 		try {
-			editing = { path: edit, contents: await readTextFile(instance.path, edit) };
+			// ?line= opens it there (a search result).
+			const line = Number(url.searchParams.get('line'));
+			editing = { path: edit, contents: await readTextFile(instance.path, edit), line: Number.isInteger(line) && line > 0 ? line : null };
 		} catch (err) {
 			listError = err instanceof Error ? err.message : 'Could not open that file.';
 		}

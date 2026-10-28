@@ -1293,6 +1293,22 @@ Files), a world upload streamed to disk (a form body would be
 held in memory whole), console commands and saved commands sent from the console, and the
 search and preview endpoints the browse-and-install forms call as you type.
 
+**The file editor** (`CodeEditor.svelte`, Files): CodeMirror 6, set up in
+`lib/shared/codemirror.ts` and imported when the editor mounts, so its ~115 KB (gzipped) load
+only there. A textarea under it is what the save form posts (kept in step with every change,
+hidden once CodeMirror is up, the editor itself if it never loads), so saving, its line
+endings (`writeTextFile`) and the action are as before. The language comes from the extension
+(`languageOf` in `lib/shared/syntaxcheck.ts`): JSON and `.mcmeta`, JSON5, TOML, YAML,
+properties, Forge 1.12's `.cfg` (a small stream mode of its own: categories, `B:`/`I:`/`D:`/`S:`
+keys), JS/TS and shell. Colours are the theme's own variables. JSON, JSON5, TOML and YAML are
+checked (`syntaxProblem`: `JSON.parse`, json5, smol-toml, yaml, imported on first use) as you
+type, marked on the line, and again before a save, which stops with the line, the error,
+"Go to line" and "Save anyway". Only a file that parsed when it was opened is checked: many
+mods' `.json` configs carry comments, and nagging about a file that was never strict would be
+noise. `?edit=<path>&line=<n>` opens at a line. Each browser words `JSON.parse` errors its own
+way (Chrome a position, Firefox a line and column, Safari neither); json5, stopping at the same
+spot, gives the line for the last.
+
 **A server's Settings** is one page with nine tabs (server.properties and MineShell's own
 settings together) and one save bar. Each section is still its own form posting to the
 action that saves it (`general`, `properties`, `network`, `runtime`, `limits`, `restarts`,

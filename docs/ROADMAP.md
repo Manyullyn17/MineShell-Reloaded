@@ -163,8 +163,8 @@ in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
    mostly reading what MineShell already has: a calm first step after the freeze.
-2. **Files**: a better file editor first (line numbers and opening at a line are what search
-   needs), then search in files, earlier versions of edited files, zips and folders.
+2. **Files**: search in files, earlier versions of edited files, zips and folders (the better
+   file editor they build on is built).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -196,6 +196,8 @@ of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when
 (user's call, 2026-10-28): split the arguments in MineShell, honouring quotes, and write each
 one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
 `JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
+Held until 1.0 is released and `next` goes into main (user's call, 2026-10-28): the rest of
+step 1 is built, and step 2 goes ahead of it.
 
 #### TypeScript 7
 
@@ -211,15 +213,6 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 again when Kit and svelte-check list 7 in their peer ranges.
 
 ### 2. Files
-
-#### A better file editor
-
-Agreed 2026-10-27. Files edits in a plain textarea: no line numbers, no colours, and a
-broken JSON or TOML file saves silently and fails at the next start. Line numbers and syntax
-colours (JSON/JSON5, TOML, `.cfg`, `.properties`, YAML, JS for KubeJS), and a check on save
-that names the line ("line 14: missing comma") with "save anyway". Opening at a line is what
-search in files needs. An editor library (CodeMirror 6) is the likely way; its size is
-loaded only on the editor.
 
 #### Search in files
 
