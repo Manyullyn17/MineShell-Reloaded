@@ -894,27 +894,6 @@
 		</div>
 	</form>
 </section>
-{:else if tab === 'security'}
-{#if data.authEnabled}
-	<section class="panel">
-		<h2>Sign-in</h2>
-		<p>
-			{#if data.username}Signed in as <strong>{data.username}</strong>.{/if}
-			Your password and where you are signed in are on <a href="/account">your account page</a>; other people's
-			accounts and what they may do are under <a href="/settings/users">Accounts</a>.
-		</p>
-	</section>
-{:else}
-	<section class="panel">
-		<h2>Authentication</h2>
-		<div class="notice warning">
-			<p>
-				Login is disabled (<code>MINESHELL_AUTH=off</code>). Anyone who can reach this page can
-				start, stop and delete your servers, and read every file in an instance.
-			</p>
-		</div>
-	</section>
-{/if}
 {:else if tab === 'updates'}
 {@const u = data.update}
 <section class="panel">
@@ -1120,6 +1099,15 @@
 	{/if}
 </section>
 {:else}
+<!-- System, and any other tab name (Security was folded in here: it only pointed at the account pages). -->
+{#if !data.authEnabled}
+	<div class="notice warning">
+		<p>
+			Login is disabled (<code>MINESHELL_AUTH=off</code>). Anyone who can reach this page can start, stop and delete your
+			servers, and read every file in an instance.
+		</p>
+	</div>
+{/if}
 <section class="panel">
 	<div class="panel-head">
 		<div>

@@ -13,7 +13,6 @@
 		{ id: 'accounts', label: 'Accounts', href: '/settings/users' },
 		{ id: 'integrations', label: 'Integrations' },
 		{ id: 'notifications', label: 'Notifications' },
-		{ id: 'security', label: 'Security' },
 		{ id: 'updates', label: 'Updates' },
 		{ id: 'activity', label: 'Activity' }
 	];
@@ -22,7 +21,7 @@
 			? 'defaults'
 			: page.url.pathname.startsWith('/settings/users')
 				? 'accounts'
-				: (page.url.searchParams.get('tab') ?? 'system')
+				: (TABS.find((t) => !t.href && t.id === page.url.searchParams.get('tab'))?.id ?? 'system')
 	);
 </script>
 
