@@ -172,8 +172,8 @@ async function checkAll(): Promise<void> {
 		);
 		// Only read when someone is told: deciding reads the run's log once it is 10 minutes old.
 		if (destinations(instance.id, 'stuck').length) {
-			const state = await unitState(instance.id);
-			if (state.active === 'active') await notifyIfStuck(instance, state.activeEnterTimestamp).catch(() => {});
+			const state = await unitState(instance.id).catch(() => null);
+			if (state?.active === 'active') await notifyIfStuck(instance, state.activeEnterTimestamp).catch(() => {});
 		}
 	}
 	await checkDiskSpace(listInstances()).catch((err) => console.error('[mineshell] disk space check failed:', err));
@@ -198,7 +198,8 @@ export function startScheduler(): void {
 	rollForwardMissed();
 	rollForwardSnapshots();
 	rollForwardMaps();
-	timer = setInterval(() => void checkAll(), CHECK_INTERVAL_MS);
+	// Caught: an uncaught rejection ends the process (monitor.ts, sampleResources).
+	timer = setInterval(() => void checkAll().catch((err) => console.error('[mineshell] scheduler round failed:', err)), CHECK_INTERVAL_MS);
 	timer.unref?.();
 }
 

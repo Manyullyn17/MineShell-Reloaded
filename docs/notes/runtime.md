@@ -6,6 +6,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 ## Runtime features (overview, scheduler)
 - Dev: `boot()` is guarded on globalThis, so the scheduler's interval keeps running the code
   it started with. Changes to scheduler.ts/scheduledcommands.ts need a dev server restart.
+- Background rounds (monitor, heap, scheduler) are started by timers nobody awaits, and Node
+  ends the process on a rejection nobody catches; systemd then restarts MineShell, which drops
+  running tasks. Each round catches at its timer (2026-10-28: a full disk failing the CPU sample
+  insert would have restarted MineShell every 10 s, when its pages were needed to free space).
 - Countdown stops/restarts (`countdown.ts`) are in memory; nobody online = act at once.
 - Clock changes (2026-10-28): daily times are built from each day's date (`dailySlot`), never by
   moving the last run a day on (a 02:30 the spring change turned into 03:30 stayed 03:30 the
