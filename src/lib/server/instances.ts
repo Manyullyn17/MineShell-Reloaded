@@ -79,6 +79,14 @@ import { claimVoicePort, voicePortProblem } from './voicechat';
 
 export class InstanceError extends Error {}
 
+/** The longest server name: the forms' maxlength, and what a pack's or export's own name is cut to. */
+export const SERVER_NAME_MAX = 80;
+
+/** A server's name as stored: one line, trimmed, at most SERVER_NAME_MAX characters. */
+export function serverName(name: string): string {
+	return name.replace(/\s+/g, ' ').trim().slice(0, SERVER_NAME_MAX).trim();
+}
+
 /** systemd instance names are unit-escaped; keeping ids boring avoids surprises. */
 export function slugify(name: string): string {
 	const slug = name
@@ -256,7 +264,7 @@ export async function insertInstanceRow(
 	db.insert(serverInstances)
 		.values({
 			id,
-			name: input.name.trim(),
+			name: serverName(input.name),
 			path: dir,
 			minecraftVersion: input.minecraftVersion,
 			modloader: input.modloader,
@@ -1515,7 +1523,7 @@ export async function cloneInstance(
 		.values({
 			...source,
 			id,
-			name: name.trim(),
+			name: serverName(name),
 			path: dir,
 			serverPort,
 			rconPort,

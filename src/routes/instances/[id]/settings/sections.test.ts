@@ -229,3 +229,15 @@ describe('a section saved unchanged keeps every value', () => {
 		await unchanged(instance, 'console', formFields(ConsoleFields, { values: instance }));
 	});
 });
+
+// A server's name had no limit when made or renamed (only a copy's was cut, at 80): a
+// pasted paragraph became the name every page and the systemd description carried.
+describe('a server name', () => {
+	it('is cut to 80 characters and one line on rename', async () => {
+		const instance = await server();
+		expect(await post(actions.general, instance.id, { name: `  ${'Long name '.repeat(30)}\nsecond line` })).toMatchObject({ ok: true });
+		const { name } = reload(instance.id);
+		expect(name).toHaveLength(79);
+		expect(name).toBe('Long name '.repeat(8).trim());
+	});
+});

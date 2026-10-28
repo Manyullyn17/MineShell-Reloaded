@@ -798,6 +798,7 @@
 				<input
 					id="server-name"
 					name="name"
+					maxlength="80"
 					bind:value={name}
 					oninput={() => (nameTouched = true)}
 					required={mode === 'loader'}

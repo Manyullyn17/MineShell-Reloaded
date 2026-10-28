@@ -23,6 +23,7 @@ import {
 	requireInstance,
 	revertToForge,
 	rconPassword,
+	serverName,
 	summarise,
 	syncPortsToProperties,
 	syncUnit
@@ -364,7 +365,7 @@ export const actions: Actions = {
 	general: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const name = String(form.get('name') ?? '').trim();
+		const name = serverName(String(form.get('name') ?? ''));
 		if (!name) return fail(400, { ok: false, message: 'The server needs a name.' });
 
 		// The Minecraft version is not edited here: it only relabelled the server.
@@ -955,7 +956,7 @@ export const actions: Actions = {
 	clone: async ({ request, params, locals }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		const name = String(form.get('name') ?? '').trim().slice(0, 80);
+		const name = serverName(String(form.get('name') ?? ''));
 		// Handing the same access to the copy is giving people access: a global admin's to do.
 		const copyAccess = form.get('copyAccess') === 'on';
 		if (copyAccess) requireGlobalAdmin(locals);

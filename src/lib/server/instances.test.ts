@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isLoaderInstallEntry, listEntries, removeEntries } from './instances';
+import { SERVER_NAME_MAX, isLoaderInstallEntry, listEntries, removeEntries, serverName } from './instances';
 import { ls, tempDir } from '../../../tests/helpers/fs';
 
 describe('isLoaderInstallEntry', () => {
@@ -58,5 +58,16 @@ describe('rollback cleanup', () => {
 		const dir = await instance();
 		await removeEntries(dir, isLoaderInstallEntry);
 		expect(await ls(dir)).toEqual(['config', 'server.properties', 'world']);
+	});
+});
+
+describe('serverName', () => {
+	it('keeps a name of SERVER_NAME_MAX characters', () => {
+		expect(serverName('W'.repeat(SERVER_NAME_MAX))).toBe('W'.repeat(SERVER_NAME_MAX));
+	});
+
+	it('cuts a longer one, and makes it one trimmed line', () => {
+		expect(serverName('W'.repeat(SERVER_NAME_MAX + 1))).toHaveLength(SERVER_NAME_MAX);
+		expect(serverName('  Survival\n\tworld  ')).toBe('Survival world');
 	});
 });

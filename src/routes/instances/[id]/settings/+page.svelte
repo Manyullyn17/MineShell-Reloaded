@@ -491,7 +491,7 @@
 		<form method="POST" action="?/general" class="rows" bind:this={forms.identity} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="name">Display name</label>
-				<input id="name" name="name" bind:value={sv.name} required />
+				<input id="name" name="name" bind:value={sv.name} maxlength="80" required />
 			</div>
 		</form>
 		{@render propertyForm('motd')}
