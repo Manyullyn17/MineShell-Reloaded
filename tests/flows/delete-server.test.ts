@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const { deleteInstance, getInstance } = await import('#lib/server/instances.js');
 const { beginOperation, endOperation } = await import('#lib/server/operations.js');
+const { db } = await import('#lib/server/db/index.js');
+const { operations } = await import('#lib/server/db/schema.js');
 const { startTask } = await import('#lib/server/tasks.js');
 const { createInstance, systemdStopped, waitForTask } = await import('../helpers/instances');
 
@@ -36,6 +38,15 @@ describe('deleting a server', () => {
 		await expect(deleteInstance(s, { deleteFiles: true })).rejects.toThrow(/still under way/);
 		expect(getInstance(s.id)).toBeDefined();
 		endOperation(s.id);
+		await deleteInstance(s, { deleteFiles: true });
+		expect(getInstance(s.id)).toBeUndefined();
+	});
+
+	// A recovery that failed at boot keeps its journal: the server must stay deletable.
+	it('is not held up by a journal an earlier MineShell left', async () => {
+		const s = await server();
+		beginOperation(s.id, { kind: 'create' });
+		db.update(operations).set({ process: 'an-earlier-process' }).run();
 		await deleteInstance(s, { deleteFiles: true });
 		expect(getInstance(s.id)).toBeUndefined();
 	});

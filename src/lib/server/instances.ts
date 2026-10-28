@@ -58,6 +58,7 @@ import {
 	endOperation,
 	listOperations,
 	OperationInProgressError,
+	PROCESS_TOKEN,
 	type Journal
 } from './operations';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
@@ -1424,9 +1425,11 @@ export async function deleteInstance(
 	if (beingCopied.has(instance.id)) throw new InstanceError('This server is being copied; delete it once the copy has finished.');
 	const busy = listTasks().find((t) => t.instanceId === instance.id && t.state === 'running');
 	if (busy) throw new InstanceError(`"${busy.label}" is still running on this server: wait for it to finish, or cancel it in Activity.`);
-	if (listOperations().some((o) => o.instanceId === instance.id)) {
-		throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
-	}
+	// Only this process's: a journal an earlier MineShell left is one recovery
+	// failed to put back, and nothing works on it any more.
+	const op = listOperations().find((o) => o.instanceId === instance.id && o.process === PROCESS_TOKEN);
+	if (op?.journal.kind === 'bisect') throw new InstanceError('A search for the mod behind a crash is running on this server: end it on the Mods page first.');
+	if (op) throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
 	await stopUnit(instance.id).catch(() => undefined);
 	await removeUnitArtifacts(instance.id);
 	if (opts.deleteFiles) {
