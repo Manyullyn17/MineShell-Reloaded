@@ -898,8 +898,9 @@
 		<p class="small {last.ok ? 'muted' : 'warn-text'}">Last message {formatDateTime(last.at)}: {last.message}</p>
 	{/if}
 	<form method="POST" action="?/notifications" use:tracker.track={'Notifications'} use:enhance>
-		<!-- The default button: Enter in the address saves (through the bar) rather than sending a test. -->
-		<button type="submit" hidden aria-hidden="true" tabindex="-1"></button>
+		<!-- The default button: Enter in the address saves (through the bar) rather than sending a test.
+		     Not `hidden`: app.css's button display overrides it (an empty button showed); out of sight instead. -->
+		<button type="submit" class="visually-hidden" aria-hidden="true" tabindex="-1"></button>
 		<NotificationFields bind:values={notifyValues} savedHint={data.notifications?.hint ?? null} idPrefix="notify" />
 		<div class="button-row">
 			{#if data.notifications}
