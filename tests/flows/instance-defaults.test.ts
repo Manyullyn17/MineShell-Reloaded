@@ -51,7 +51,7 @@ describe('defaults for new servers', () => {
 			memoryMinMb: 1024,
 			restartSchedule: 'none',
 			autoRestartOnCrash: true,
-			crashRestartLimit: 5,
+			crashRestartLimit: 3,
 			consoleBufferLines: 2000
 		});
 		expect(row.jvmArgs).toContain('-XX:+UseG1GC'); // Aikar's flags

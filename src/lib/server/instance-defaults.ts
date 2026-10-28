@@ -112,7 +112,7 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 		restartWarnMinutes: 5,
 		restartSkipIfPlayers: false,
 		autoRestartOnCrash: true,
-		crashRestartLimit: 5,
+		crashRestartLimit: 3,
 		crashRestartWindowSec: 600,
 		bootStart: 'if-running'
 	},
