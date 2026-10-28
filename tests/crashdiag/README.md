@@ -37,6 +37,8 @@ The cases cover each loader's own wording, old and new:
   Cleanroom 0.6 and Fugue 0.24 on Java 21, Fugue 0.21 on Cleanroom 0.5.17 (its patch to Quantum
   Things calls a Cleanroom method removed in 0.5.3), AvaritiaItem calling a client-only 1.12
   method on Cleanroom 0.5.2
+- The watchdog's stop (`crashdiag.test.ts`, "watchdog stops"): vanilla 1.21.11's and 1.12.2's
+  lines as recorded, and a crash report naming the mod from its module-prefixed frames
 
 ## Add a case from a real crash
 

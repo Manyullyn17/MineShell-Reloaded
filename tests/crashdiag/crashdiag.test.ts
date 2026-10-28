@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagnoseLog, duplicateMods, indexMods, requiredBy, type ModJar } from '#lib/server/crashdiag.js';
+import { diagnoseLog, diagnoseRun, duplicateMods, indexMods, raisedTickLimit, requiredBy, type ModJar } from '#lib/server/crashdiag.js';
 import { mcmodInfo, tempDir, writeJar, zipBuffer } from '../helpers/fs';
 
 /**
@@ -51,6 +51,76 @@ describe('memory kills', () => {
 		const [top] = diagnoseLog(log, []);
 		expect(top.kind).toBe('memory-killed');
 		expect(top.title).toBe('Killed for running out of memory');
+	});
+});
+
+describe('watchdog stops', () => {
+	// Recorded from vanilla with max-tick-time=1 (tests/tools/mc-probe.mjs): 1.21.11, then 1.12.2.
+	const modern = [
+		'Started minecraft@pack.service - Minecraft server (pack) managed by MineShell.',
+		'[18:17:26] [Server thread/INFO]: Done (1.502s)! For help, type "help"',
+		'[18:17:26] [Server thread/INFO]: Saving the game (this may take a moment!)',
+		'[18:17:26] [Server Watchdog/ERROR]: A single server tick took 61.20 seconds (should be max 0.05)',
+		'[18:17:26] [Server Watchdog/ERROR]: Considering it to be crashed, server will forcibly shutdown.',
+		'[18:17:27] [Server Watchdog/ERROR]: This crash report has been saved to: <instance>/crash-reports/crash-2026-10-28_18.17.27-server.txt'
+	].join('\n');
+	const legacy =
+		'[18:19:48] [Server Watchdog/FATAL]: A single server tick took 60,03 seconds (should be max 0.05)\n' +
+		'[18:19:48] [Server Watchdog/FATAL]: Considering it to be crashed, server will forcibly shutdown.';
+
+	it('names the watchdog and offers the next limit: 3 minutes from the 1 Minecraft uses, then 10', () => {
+		const [top] = diagnoseLog(modern, []);
+		expect(top).toMatchObject({ kind: 'watchdog', fatal: true, title: 'Stopped by the watchdog: one tick took 61 s', tickLimit: { ms: 180_000, label: 'Allow ticks up to 3 minutes' } });
+		expect(diagnoseLog(legacy, [], { maxTickTimeMs: 60_000 })[0]).toMatchObject({ kind: 'watchdog', tickLimit: { ms: 180_000 } });
+		// A limit raised to 3 minutes before, and the tick ran past that too.
+		const again = modern.replace('61.20', '181.00');
+		expect(diagnoseLog(again, [], { maxTickTimeMs: 180_000 })[0].tickLimit).toEqual({ ms: 600_000, label: 'Allow ticks up to 10 minutes' });
+		expect([raisedTickLimit(null), raisedTickLimit(90_000), raisedTickLimit(180_000), raisedTickLimit(600_000), raisedTickLimit(-1)]).toEqual([180_000, 180_000, 600_000, null, null]);
+	});
+
+	it('offers nothing higher past 10 minutes, where a tick is stuck rather than slow', () => {
+		const [top] = diagnoseLog(modern.replace('61.20', '601.00'), [], { maxTickTimeMs: 600_000 });
+		expect(top.tickLimit).toBeNull();
+		expect(top.detail).toMatch(/hung/);
+		expect(top.detail).toMatch(/-1 turns the watchdog off/);
+	});
+
+	it('says so when the limit was raised since that run', () => {
+		const [top] = diagnoseLog(modern, [], { maxTickTimeMs: 180_000 });
+		expect(top.tickLimit).toBeNull();
+		expect(top.detail).toMatch(/^The limit is 3 minutes now, raised since/);
+	});
+
+	it("names the mod whose code was running, from the crash report's stack, only inside crash-reports/", async () => {
+		const dir = await tempDir();
+		await writeJar(path.join(dir, 'mods'), 'create.jar', {
+			'META-INF/mods.toml': 'modLoader="javafml"\n[[mods]]\nmodId="create"\ndisplayName="Create"\n',
+			'com/simibubi/create/content/Contraption.class': 'x'
+		});
+		await fs.writeFile(path.join(dir, 'server.properties'), 'max-tick-time=60000\n');
+		await fs.mkdir(path.join(dir, 'crash-reports'));
+		const report = [
+			'---- Minecraft Crash Report ----',
+			'Description: Watching Server',
+			'',
+			'java.lang.Error: Watchdog',
+			'\tat java.base@21.0.12.1/java.util.concurrent.locks.LockSupport.park(LockSupport.java:221)',
+			'\tat TRANSFORMER/create@6.0.4/com.simibubi.create.content.Contraption.tick(Contraption.java:120)',
+			'\tat TRANSFORMER/minecraft@1.20.1/net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:900)',
+			'',
+			'A detailed walkthrough of the error, its code path and all known details is as follows:'
+		].join('\n');
+		await fs.writeFile(path.join(dir, 'crash-reports', 'crash-2026-10-28_18.17.27-server.txt'), report);
+		const log = modern.replace('<instance>', `${dir}/.`);
+
+		const [top] = await diagnoseRun(log, path.join(dir, 'mods'));
+		expect(top).toMatchObject({ kind: 'watchdog', culprit: { name: 'Create' }, tickLimit: { ms: 180_000 } });
+		expect(top.detail).toContain("Create's code was running");
+
+		// A report the log names outside the server's crash-reports/ is not read.
+		await fs.writeFile(path.join(dir, 'elsewhere.txt'), report);
+		const [outside] = await diagnoseRun(modern.replace(/<instance>\/crash-reports\/\S+/, `${dir}/crash-reports/../elsewhere.txt`), path.join(dir, 'mods'));
+		expect(outside.culprit).toBeNull();
 	});
 });
 

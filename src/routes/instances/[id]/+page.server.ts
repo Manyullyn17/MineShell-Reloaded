@@ -28,6 +28,8 @@ import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { forgetDiagnosis, lastCrash } from '#lib/server/lastcrash.js';
 import { setModEnabled } from '#lib/server/mods/index.js';
+import { TICK_LIMIT_STEPS } from '#lib/server/crashdiag.js';
+import { patchProperties } from '#lib/server/properties.js';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
 import { tickStats } from '#lib/server/tps.js';
 import { kickPlayer } from '#lib/server/players.js';
@@ -312,6 +314,18 @@ export const actions: Actions = {
 		noteCrashFix(instance.id);
 		const name = fileName.replace(/\.jar(\.disabled)?$/i, '');
 		return { ok: true, message: `${enable ? 'Enabled' : 'Disabled'} ${name}. Start the server to try again.` };
+	},
+
+	// The watchdog diagnosis' button: max-tick-time raised to one of its steps, nothing else.
+	tickLimit: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const ms = Number((await request.formData()).get('ms'));
+		if (!TICK_LIMIT_STEPS.includes(ms)) return fail(400, { ok: false, message: 'Not a tick limit MineShell offers.' });
+		if ((await summarise(instance)).running) return fail(400, { ok: false, message: 'Stop the server first.' });
+		await patchProperties(instance.path, { 'max-tick-time': String(ms) });
+		forgetDiagnosis(instance.id);
+		noteCrashFix(instance.id);
+		return { ok: true, message: `Ticks may now take up to ${ms / 60_000} minutes. Start the server to try again.` };
 	},
 
 	profile: async ({ request, params }) => {

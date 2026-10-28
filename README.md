@@ -78,7 +78,7 @@ Find out what went wrong without manually digging through files and terminal out
 - Command history, saved commands, and a dedicated chat view.
 - Search previous server runs, server logs, and crash reports together, including archived logs.
 - Analyze logs with mclo.gs for a second opinion, or share them through a link that MineShell can subsequently delete.
-- Diagnose crashes and identify likely problematic mods, with one-click mod disabling where supported. Old crashes can be cleared from the overview once the server starts cleanly again, and clear on their own when a one-click fix worked. A server the kernel killed for its memory (its limit, or the machine running out) is named as such.
+- Diagnose crashes and identify likely problematic mods, with one-click mod disabling where supported. Old crashes can be cleared from the overview once the server starts cleanly again, and clear on their own when a one-click fix worked. A server the kernel killed for its memory (its limit, or the machine running out) is named as such. So is one the watchdog ended for a tick that ran too long, with a button to allow longer ticks (3, then 10 minutes).
 - Detect crashes where the Java process remains alive but the server has stopped functioning.
 - Run timed Spark profiles and view uploaded results. If Spark's upload fails, download the saved profile or upload it again.
 - **Mod bisect assistant:** When ordinary diagnosis cannot identify the cause, systematically test individual mods or pairs of mods using a throwaway world, then restore the original server configuration.

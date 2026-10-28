@@ -197,7 +197,11 @@
 					{#if diagnosis.value.length}
 						<p class="small muted">Diagnosed against the mods installed now, which may differ from that run's.</p>
 					{/if}
-					<CrashDiagnosis diagnosis={diagnosis.value} fixAction={`/instances/${encodeURIComponent(data.instance.id)}?/modFix`} />
+					<CrashDiagnosis
+						diagnosis={diagnosis.value}
+						fixAction={`/instances/${encodeURIComponent(data.instance.id)}?/modFix`}
+						tickLimitAction={`/instances/${encodeURIComponent(data.instance.id)}?/tickLimit`}
+					/>
 				{/if}
 			{/if}
 			<div class="mclogs small">

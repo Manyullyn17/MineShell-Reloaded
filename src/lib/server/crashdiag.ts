@@ -326,7 +326,8 @@ export type DiagnosisKind =
 	| 'mixin-failure'
 	| 'java-version'
 	| 'loader-version'
-	| 'memory-killed';
+	| 'memory-killed'
+	| 'watchdog';
 
 export type ModRef = { fileName: string; name: string; enabled: boolean; clientOnly: boolean };
 
@@ -339,6 +340,8 @@ export type Diagnosis = {
 	/** The log line this came from, for the user to search for. */
 	evidence: string;
 	fix: { enable: boolean; fileName: string; label: string } | null;
+	/** For the watchdog: the tick limit to raise `max-tick-time` to, when there is a higher step. */
+	tickLimit?: { ms: number; label: string } | null;
 	/**
 	 * False for errors logged before the one that stopped the server. Big packs
 	 * log plenty of harmless errors on every start; those are listed apart.
@@ -386,8 +389,31 @@ function isClientMinecraftClass(name: string): boolean {
 	return /^(net\.minecraft\.client\.|com\.mojang\.blaze3d\.|net\.minecraft\.class_\d+$)/.test(name);
 }
 
-/** What the log does not say: the server's memory limit, if it has one. */
-export type RunContext = { memoryLimitMb?: number | null };
+/**
+ * What the log does not say: the server's memory limit, if it has one; its `max-tick-time` now
+ * (null: not set, Minecraft's 60000); the stack lines the watchdog's crash report holds
+ * (diagnoseRun reads them from the file the log names).
+ */
+export type RunContext = { memoryLimitMb?: number | null; maxTickTimeMs?: number | null; watchdogStack?: string[] };
+
+/** Minecraft's own watchdog limit, when server.properties does not set one. */
+const VANILLA_TICK_LIMIT_MS = 60_000;
+
+/**
+ * What a watchdog stop offers to raise `max-tick-time` to: 3 minutes from vanilla's 1, then
+ * 10 (the most the settings field takes). Past 10 minutes a tick is not slow but stuck, so
+ * nothing higher is offered; -1 (no watchdog) never is, since a hung server then stays up.
+ */
+export const TICK_LIMIT_STEPS = [180_000, 600_000];
+
+export function raisedTickLimit(currentMs: number | null | undefined): number | null {
+	const now = currentMs ?? VANILLA_TICK_LIMIT_MS;
+	if (now < 0) return null;
+	return TICK_LIMIT_STEPS.find((step) => step > now) ?? null;
+}
+
+const minutes = (ms: number) =>
+	ms % 60_000 === 0 ? `${ms / 60_000} minute${ms === 60_000 ? '' : 's'}` : ms < 1000 ? `${ms} ms` : `${Math.round(ms / 1000)} seconds`;
 
 export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext = {}): Diagnosis[] {
 	// eslint-disable-next-line no-control-regex
@@ -466,8 +492,12 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 
 	/** First stack frame after `from` that belongs to a mod jar (not the provider). */
 	function frameCulprit(from: number, exclude?: ModJar): ModJar | undefined {
-		for (let i = from + 1; i < Math.min(lines.length, from + 200); i++) {
-			const m = lines[i].match(FRAME);
+		return frameCulpritIn(lines.slice(from + 1, from + 200), exclude);
+	}
+
+	function frameCulpritIn(frames: string[], exclude?: ModJar): ModJar | undefined {
+		for (const frame of frames) {
+			const m = frame.match(FRAME);
 			if (!m) continue;
 			const cls = m[1];
 			const handler = jarForMixinHandler(m[2]);
@@ -535,6 +565,36 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 					fix: null
 				},
 				'memory-killed'
+			);
+			continue;
+		}
+
+		// ---- the watchdog ended a tick that ran past max-tick-time (vanilla's ServerHangWatchdog, every loader)
+		if ((m = line.match(/A single server tick took ([\d.,]+) seconds/))) {
+			const tookMs = Math.round(Number(m[1].replace(',', '.')) * 1000);
+			const limitMs = context.maxTickTimeMs ?? VANILLA_TICK_LIMIT_MS;
+			const jar = frameCulpritIn(context.watchdogStack ?? []);
+			const who = jar ? ` ${ref(jar)!.name}'s code was running when it stopped (the crash report's stack).` : '';
+			// Raised since the crash: the next start gets the new limit, nothing more to offer.
+			const raisedSince = limitMs > Math.max(tookMs, VANILLA_TICK_LIMIT_MS) * 1.5;
+			const next = raisedSince ? null : raisedTickLimit(limitMs);
+			const detail = raisedSince
+				? `The limit is ${minutes(limitMs)} now, raised since; start the server to try again.${who}`
+				: next
+					? `One tick ran past the watchdog's limit (max-tick-time, ${minutes(limitMs)}), so it ended the server. Heavy modpacks stall like this while generating chunks, at a first start or during a pregeneration.${who} Allowing ${minutes(next)} gets past a slow tick; if it stops the same way again, the server is stuck rather than slow.`
+					: `One tick ran past the watchdog's limit (max-tick-time, ${minutes(limitMs)}). A tick that long is not slow chunk generation but a server that hung, waiting for something that never came.${who} The crash report's "Server thread" shows where; disabling the mod there or updating it is the way out. -1 turns the watchdog off, but a hung server then stays up doing nothing.`;
+			push(
+				{
+					kind: 'watchdog',
+					title: `Stopped by the watchdog: one tick took ${tookMs >= 1000 ? `${(tookMs / 1000).toFixed(0)} s` : 'too long'}`,
+					detail,
+					culprit: ref(jar),
+					related: null,
+					evidence: line.trim(),
+					fix: null,
+					tickLimit: next ? { ms: next, label: `Allow ticks up to ${minutes(next)}` } : null
+				},
+				'watchdog'
 			);
 			continue;
 		}
@@ -909,7 +969,8 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 		/Loading errors encountered|ModLoadingException/, // NeoForge, modern Forge
 		/MissingModsException/, // legacy Forge
 		/Error: LinkageError occurred while loading main class|Exception in thread "main"/, // JVM
-		/A process of this unit has been killed by the OOM killer/ // systemd
+		/A process of this unit has been killed by the OOM killer/, // systemd
+		/A single server tick took [\d.,]+ seconds/ // the watchdog (all loaders)
 	];
 	const fatalAt = lines.findIndex((l) => FATAL.some((re) => re.test(l)));
 	// Loaders print the cause just before their marker; nothing logged before a memory kill caused it.
@@ -929,5 +990,39 @@ export function lastRun(journal: string): string {
 }
 
 export async function diagnoseRun(journal: string, modsDir: string, context: RunContext = {}): Promise<Diagnosis[]> {
-	return diagnoseLog(lastRun(journal), await indexMods(modsDir), context);
+	const log = lastRun(journal);
+	const serverDir = path.dirname(modsDir);
+	const watchdogStack = context.watchdogStack ?? (await watchdogReportStack(log, serverDir));
+	const maxTickTimeMs = context.maxTickTimeMs !== undefined ? context.maxTickTimeMs : await tickLimitOf(serverDir);
+	return diagnoseLog(log, await indexMods(modsDir), { ...context, watchdogStack, maxTickTimeMs });
+}
+
+/** `max-tick-time` from the server's server.properties now; null when it is not set. A number needs no unescaping. */
+export async function tickLimitOf(serverDir: string): Promise<number | null> {
+	const text = await fs.readFile(path.join(serverDir, 'server.properties'), 'latin1').catch(() => '');
+	const raw = text.match(/^[ \t]*max-tick-time[ \t]*[=:][ \t]*(-?\d+)[ \t]*$/m)?.[1];
+	return raw === undefined ? null : Number(raw);
+}
+
+/**
+ * The stalled thread's stack from the crash report a watchdog stop names ("This crash report
+ * has been saved to: <path>"): the log has only the one line, the report what was running. Read
+ * only from the server's own crash-reports/ folder. Frames lose their module prefix
+ * (`app//`, `TRANSFORMER/create@6.0/`) so they read like the log's.
+ */
+export async function watchdogReportStack(log: string, serverDir: string): Promise<string[]> {
+	if (!/A single server tick took/.test(log)) return [];
+	const saved = [...log.matchAll(/This crash report has been saved to: (\S+\.txt)/g)].at(-1)?.[1];
+	if (!saved) return [];
+	const folder = path.join(path.resolve(serverDir), 'crash-reports') + path.sep;
+	const file = path.resolve(serverDir, saved);
+	if (!file.startsWith(folder)) return [];
+	const text = await fs.readFile(file, 'utf8').catch(() => '');
+	if (!/Description: Watching Server/.test(text)) return [];
+	const body = text.slice(text.indexOf('Description: Watching Server'));
+	const end = body.indexOf('A detailed walkthrough');
+	return (end >= 0 ? body.slice(0, end) : body.slice(0, 64 * 1024))
+		.split('\n')
+		.filter((l) => /^\s*at\s/.test(l))
+		.map((l) => l.replace(/^(\s*at\s+)(?:[^\s(]*\/)+/, '$1'));
 }

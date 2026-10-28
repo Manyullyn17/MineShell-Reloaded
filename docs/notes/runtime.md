@@ -116,6 +116,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   reached `Done (`" counts as a crash.
 - `tests/crashdiag/` holds 30 recorded crashes across every loader and old/new versions, with
   `capture.mjs` to turn a new crash into a case.
+- The watchdog (checked 2026-10-28 on vanilla 1.21.11 and 1.12.2 via `mc-probe.mjs` with
+  `max-tick-time=1` and `save-all flush`): "A single server tick took N seconds (should be max
+  0.05)", where 0.05 is the normal tick, not the limit (read server.properties for that), then
+  "This crash report has been saved to: <path>" (1.12 with `/./` in it) and exit 1. The log has
+  no stack; the report's "Description: Watching Server" block does (1.21: `java.lang.Error:
+  Watchdog`, 1.12: `java.lang.Error`), with `app//` and `java.base@21/` frame prefixes. It first
+  checks after the first tick following `Done (`, so a limit of 1 ms trips at once.
 
 ## Spark
 - Spark runs commands on its own worker thread: RCON returns before Spark answers, and

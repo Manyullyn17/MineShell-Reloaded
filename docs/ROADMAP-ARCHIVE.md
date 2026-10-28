@@ -9,6 +9,16 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Watchdog crashes in crash diagnosis
+
+Built 2026-10-28 (ARCHITECTURE, "Watchdog stops"), on the `next` branch, after the defaults
+review (user's call). A server the watchdog ended is named as such, with the mod from the crash
+report's stack, and a button raises `max-tick-time` one step: 3 minutes from vanilla's 1, then
+10; past that the diagnosis says the server hung and offers nothing, never -1. Tried end to end
+on a throwaway vanilla 1.21.1 server at 1 ms: diagnosed on the overview, raised to 3 minutes by
+the button, then started and stayed up. Not built: telling a slow tick from a deadlock by the
+stack (both look the same to the watchdog).
+
 ### Log rotation and retention
 
 Built 2026-10-28 (MineShell settings, Old logs; `logretention.ts`; ARCHITECTURE, "Old logs"),

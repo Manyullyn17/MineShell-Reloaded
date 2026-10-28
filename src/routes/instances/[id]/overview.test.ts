@@ -3,6 +3,7 @@ import * as page from './+page.server';
 import { actions } from './+page.server';
 import { cancelCountdown, getCountdown } from '#lib/server/countdown.js';
 import { invalidateUnitState } from '#lib/server/systemd.js';
+import { readProperties } from '#lib/server/properties.js';
 import { createInstance, systemdStopped } from '../../../../tests/helpers/instances';
 import { fakeProcesses, resetProcesses, spawnCalls } from '../../../../tests/helpers/process';
 import { load, post as postTo } from '../../../../tests/helpers/routes';
@@ -68,6 +69,23 @@ describe('the power buttons', () => {
 
 		const forced = await post(actions.power, instance.id, { verb: 'start', force: 'on' });
 		expect(forced).not.toMatchObject({ data: { memoryWarning: true } });
+	});
+});
+
+describe("the watchdog diagnosis' button", () => {
+	it('raises max-tick-time to an offered step only, and only while the server is stopped', async () => {
+		systemdStopped();
+		const instance = await server();
+		for (const ms of ['-1', '0', '999999', '60000', 'lots', '']) {
+			expect(await post(actions.tickLimit, instance.id, { ms }), ms).toMatchObject({ status: 400, data: { message: 'Not a tick limit MineShell offers.' } });
+		}
+		expect((await readProperties(instance.path)).values['max-tick-time']).toBeUndefined();
+		expect(await post(actions.tickLimit, instance.id, { ms: '180000' })).toMatchObject({ ok: true, message: expect.stringMatching(/up to 3 minutes/) });
+		expect((await readProperties(instance.path)).values).toMatchObject({ 'max-tick-time': '180000' });
+
+		running();
+		expect(await post(actions.tickLimit, instance.id, { ms: '600000' })).toMatchObject({ status: 400, data: { message: 'Stop the server first.' } });
+		expect((await readProperties(instance.path)).values['max-tick-time']).toBe('180000');
 	});
 });
 

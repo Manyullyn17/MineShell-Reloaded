@@ -13,15 +13,19 @@
 		culprit?: { fileName: string; enabled: boolean } | null;
 		related?: { fileName: string } | null;
 		fix?: { fileName: string; enable: boolean; label: string } | null;
+		tickLimit?: { ms: number; label: string } | null;
 	};
 
 	let {
 		diagnosis,
-		fixAction = null
+		fixAction = null,
+		tickLimitAction = null
 	}: {
 		diagnosis: Diagnosis[] | null | undefined;
 		/** Where the fix buttons post (the overview's modFix); null hides them, e.g. while running. */
 		fixAction?: string | null;
+		/** Where the watchdog's "allow longer ticks" posts (the overview's tickLimit); null hides it. */
+		tickLimitAction?: string | null;
 	} = $props();
 
 	const fatal = $derived((diagnosis ?? []).filter((d) => d.fatal));
@@ -45,6 +49,12 @@
 				<input type="hidden" name="fileName" value={d.fix.fileName} />
 				<input type="hidden" name="enable" value={String(d.fix.enable)} />
 				<button type="submit">{d.fix.label}</button>
+			</form>
+		{/if}
+		{#if d.tickLimit && tickLimitAction}
+			<form method="POST" action={tickLimitAction} use:enhance>
+				<input type="hidden" name="ms" value={d.tickLimit.ms} />
+				<button type="submit">{d.tickLimit.label}</button>
 			</form>
 		{/if}
 	</div>

@@ -403,7 +403,18 @@ today's peak and time online (overview), playtime and last seen (Players), start
 (overview against the median of the five before, and per run in Logs). The overview's Recent
 crashes can be cleared once a start after the newest one got to `Done (` (a time per server in
 settings, `crashes.cleared:<id>`; the runs stay, Logs lists them all), and clear on their own
-when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix`).
+when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix` and
+`tickLimit`).
+
+**Watchdog stops** (`watchdog` in `crashdiag.ts`): Minecraft's watchdog ends a server whose
+tick ran past `max-tick-time` (60 s unless set) and logs one line, "A single server tick took
+N seconds"; what was running is only in the crash report it names, so `diagnoseRun` reads that
+report's stack (from the server's own `crash-reports/` only, module prefixes stripped) for the
+culprit, and the limit from `server.properties` as it is now. The overview's `tickLimit` action
+raises it one step (`TICK_LIMIT_STEPS`: 3 minutes, then 10) and nothing else; past 10 minutes
+the diagnosis says the server hung and offers no step, and never -1 (no watchdog), which leaves
+a hung server up. A limit raised since the run is recognised (well above the tick's time) and
+not offered again.
 
 **Starting vs running.** systemd calls the unit active as soon as Java runs; a server is
 "Starting" until its run logged `Done (` (`startphase.ts`, used by `summarise`): the run's

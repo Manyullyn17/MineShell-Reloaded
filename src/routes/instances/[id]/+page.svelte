@@ -237,7 +237,11 @@
 		{#if !diagnosis.ready}
 			<p class="muted small">Working out what went wrong.</p>
 		{:else if diagnosis.value}
-			<CrashDiagnosis diagnosis={diagnosis.value} fixAction={data.running || !may('mods') ? null : '?/modFix'} />
+			<CrashDiagnosis
+				diagnosis={diagnosis.value}
+				fixAction={data.running || !may('mods') ? null : '?/modFix'}
+				tickLimitAction={data.running || !may('settings.edit') ? null : '?/tickLimit'}
+			/>
 		{/if}
 		{#if crash.value.tail !== null}
 			<pre class="crash">{crash.value.tail}</pre>

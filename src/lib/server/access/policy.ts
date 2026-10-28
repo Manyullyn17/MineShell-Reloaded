@@ -136,6 +136,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			dismissNotice: on('power'),
 			clearCrashes: on('power'),
 			// Starts with fml.queryResult=confirm, which can drop registry entries from the world.
+			// server.properties, as Settings' game settings.
+			tickLimit: on('settings.edit'),
 			forgeAnswer: on('software'),
 			retryDownloads: on('software'),
 			forgetDownloads: on('software'),

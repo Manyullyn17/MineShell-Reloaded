@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import { db } from './db';
-import { bisectSessions, serverRuns } from './db/schema';
-import { diagnoseRun, lastRun, type Diagnosis } from './crashdiag';
+import { bisectSessions, serverRuns, type ServerInstance } from './db/schema';
+import { diagnoseRun, lastRun, tickLimitOf, type Diagnosis, type RunContext } from './crashdiag';
 import { wasStopIntentional, type InstanceSummary } from './instances';
 import { hungAfterCrash, isCrashLine } from './history';
 import { readLastRun } from './journal';
@@ -14,12 +14,14 @@ import { modsDir } from './mods/index';
  */
 const diagnosisCache = new Map<string, { key: string; result: Promise<Diagnosis[]> }>();
 
-function diagnoseLastRun(instanceId: string, instancePath: string, journal: string, memoryLimitMb: number | null): Promise<Diagnosis[]> {
-	const key = `${memoryLimitMb}:${journal.length}:${journal.slice(-200)}`;
-	const hit = diagnosisCache.get(instanceId);
+/** Read again on every poll: a limit raised in Settings changes the advice without a new run. */
+async function diagnoseLastRun(instance: ServerInstance, journal: string): Promise<Diagnosis[]> {
+	const context: RunContext = { memoryLimitMb: instance.limitMemoryMb, maxTickTimeMs: await tickLimitOf(instance.path) };
+	const key = `${context.memoryLimitMb}:${context.maxTickTimeMs}:${journal.length}:${journal.slice(-200)}`;
+	const hit = diagnosisCache.get(instance.id);
 	if (hit && hit.key === key) return hit.result;
-	const result = diagnoseRun(journal, modsDir(instancePath), { memoryLimitMb }).catch(() => [] as Diagnosis[]);
-	diagnosisCache.set(instanceId, { key, result });
+	const result = diagnoseRun(journal, modsDir(instance.path), context).catch(() => [] as Diagnosis[]);
+	diagnosisCache.set(instance.id, { key, result });
 	return result;
 }
 
@@ -62,7 +64,7 @@ export async function lastCrash(summary: InstanceSummary): Promise<LastCrash | n
 	const loggedCrash = log.split('\n').some(isCrashLine);
 	const crashed =
 		hung || loggedCrash || (!wasStopIntentional(instance.id) && (state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log))));
-	return crashed ? { log, diagnosis: diagnoseLastRun(instance.id, instance.path, log, instance.limitMemoryMb) } : null;
+	return crashed ? { log, diagnosis: diagnoseLastRun(instance, log) } : null;
 }
 
 /** The newest run in the history logged a crash. */
