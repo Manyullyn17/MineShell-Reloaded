@@ -62,4 +62,4 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   with `\:` `\!` `\\` escaped (1.12.2 and 1.21.11 both), and up to 1.12 at least reads it as
   Latin-1: a UTF-8 "Gemütlich" motd came back as `Gem\u00C3\u00BCtlich`. Letters past ASCII are
   written as `\uXXXX` (every version reads that); the raw editor shows them as letters.
-  Tried by running both vanilla jars on a scratch file.
+  Tried by running both vanilla jars on a scratch file (`tests/tools/mc-probe.mjs` does that).
