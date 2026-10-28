@@ -883,7 +883,7 @@
 			<button class="button-danger" type="submit">Unlink</button>
 		</form>
 		{/if}
-		<p class="muted small">The agent stays listed on playit.gg after unlinking; remove it there if you like.</p>
+		<p class="muted small unlink-note">The agent stays listed on playit.gg after unlinking; remove it there if you like.</p>
 	{/if}
 </section>
 {:else if tab === 'notifications'}
@@ -1421,6 +1421,11 @@
 
 	.port-form input[type='number'] {
 		width: 7rem;
+	}
+
+	/* The Unlink button's form has no margin below; the note sat against it. */
+	.unlink-note {
+		margin-top: var(--space-2);
 	}
 
 	/* Under the rows' last divider, not against it. */
