@@ -155,12 +155,22 @@
 	let modloader = $state('fabric');
 	// Loaders tied to specific Minecraft versions (Cleanroom is 1.12.2 only)
 	// narrow the picker, and selecting one snaps the version onto its list.
+	// Leaving it again puts back the version picked before: 1.12.2 stayed, and
+	// Fabric and Quilt have no builds for it.
 	let gameVersionChoices = $derived(
 		data.loaders.find((l) => l.id === modloader)?.onlyGameVersions ?? data.minecraftVersions
 	);
+	let snappedFrom: { from: string; to: string } | null = null;
 	$effect(() => {
 		const choices = gameVersionChoices;
-		if (choices.length && !choices.includes(minecraftVersion)) minecraftVersion = choices[0];
+		const current = untrack(() => minecraftVersion);
+		if (snappedFrom && current === snappedFrom.to && choices.includes(snappedFrom.from)) {
+			minecraftVersion = snappedFrom.from;
+			snappedFrom = null;
+		} else if (choices.length && !choices.includes(current)) {
+			snappedFrom = { from: current, to: choices[0] };
+			minecraftVersion = choices[0];
+		}
 	});
 	let loaderVersions = $state<string[]>([]);
 	let modloaderVersion = $state('');
@@ -746,7 +756,11 @@
 						{:else}
 							<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
 						{/if}
-						{#if loaderVersionError}<p class="hint">{loaderVersionError}</p>{/if}
+						{#if loaderVersionError}
+							<p class="hint">{loaderVersionError}</p>
+						{:else if !loadingLoaderVersions && !loaderVersions.length && minecraftVersion}
+							<p class="hint warn-text">No {labelOf(modloader)} build for Minecraft {minecraftVersion}: pick another version.</p>
+						{/if}
 						{#if modloader === 'cleanroom' && !loadingLoaderVersions && usesCleanMix(modloaderVersion || null)}
 							<p class="hint warn-text">{CLEANMIX_WARNING}</p>
 						{/if}

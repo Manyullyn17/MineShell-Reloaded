@@ -17,14 +17,23 @@ export { BlockedDownloadError };
 // Modrinth's API rules ask for a user agent that names the program, its version and where it lives.
 export const USER_AGENT = `MineShell/${__MINESHELL_VERSION__} (self-hosted Minecraft server manager; github.com/Manyullyn17/MineShell-Reloaded)`;
 
+/** An answer that was not 2xx: the host was reached and said no (`status` tells which no). */
+export class HttpError extends Error {
+	constructor(
+		readonly url: string,
+		readonly status: number,
+		statusText: string
+	) {
+		super(`${url} returned ${status} ${statusText}`);
+	}
+}
+
 export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
 	const res = await outboundFetch(url, {
 		...init,
 		headers: { Accept: 'application/json', 'User-Agent': USER_AGENT, ...(init.headers ?? {}) }
 	});
-	if (!res.ok) {
-		throw new Error(`${url} returned ${res.status} ${res.statusText}`);
-	}
+	if (!res.ok) throw new HttpError(url, res.status, res.statusText);
 	return (await res.json()) as T;
 }
 
@@ -33,7 +42,7 @@ export async function fetchText(url: string, init: RequestInit = {}): Promise<st
 		...init,
 		headers: { 'User-Agent': USER_AGENT, ...(init.headers ?? {}) }
 	});
-	if (!res.ok) throw new Error(`${url} returned ${res.status} ${res.statusText}`);
+	if (!res.ok) throw new HttpError(url, res.status, res.statusText);
 	return res.text();
 }
 

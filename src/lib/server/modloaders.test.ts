@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { compareSemver, LOADERS, pickerLoaderVersions } from './modloaders';
+import { compareSemver, LOADERS, neoforgePrefix, pickerLoaderVersions } from './modloaders';
 import { compareVersions } from './java';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
@@ -28,6 +28,34 @@ describe('loader version lists', () => {
 		expect(versions.length).toBeGreaterThan(10);
 		expect(versions.every((v) => v.startsWith('21.1.') && !v.includes('beta'))).toBe(true);
 		expect(versions).toContain('21.1.252');
+	});
+
+	// Minecraft's year versions (26.1, 26.3) came with NeoForge builds named after them whole:
+	// 26.3 asked for "3.0." and found nothing.
+	it('NeoForge: maps year versions whole, 26.3 to 26.3.0.x, betas only where there is no release, never snapshot alphas', async () => {
+		expect([neoforgePrefix('1.21.1'), neoforgePrefix('1.20.2'), neoforgePrefix('1.21'), neoforgePrefix('26.3'), neoforgePrefix('26.1.2')]).toEqual([
+			'21.1.',
+			'20.2.',
+			'21.0.',
+			'26.3.0.',
+			'26.1.2.'
+		]);
+		const releases = await LOADERS.neoforge.listLoaderVersions('26.1.2');
+		expect(releases.length).toBeGreaterThan(10);
+		expect(releases.every((v) => /^26\.1\.2\.\d+$/.test(v))).toBe(true);
+		expect(compareVersions(releases[0], releases[releases.length - 1])).toBeGreaterThan(0);
+		// With no release yet (26.3 when recorded), its betas, still without the alphas.
+		const betas = await LOADERS.neoforge.listLoaderVersions('26.3');
+		expect(betas[0]).toBe('26.3.0.43-beta');
+		expect(betas.every((v) => /^26\.3\.0\.\d+-beta$/.test(v))).toBe(true);
+		expect(await LOADERS.neoforge.listLoaderVersions('26.1')).toHaveLength(18);
+	});
+
+	// Leaving Cleanroom left 1.12.2 picked, and these answered 400 and 404: the new-server form
+	// said the metadata server could not be reached.
+	it('Fabric and Quilt: no builds, not a failure, for a Minecraft version they do not have', async () => {
+		expect(await LOADERS.fabric.listLoaderVersions('1.12.2')).toEqual([]);
+		expect(await LOADERS.quilt.listLoaderVersions('1.12.2')).toEqual([]);
 	});
 
 	it('Fabric and Quilt: loader builds for a game version', async () => {

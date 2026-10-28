@@ -27,6 +27,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Cleanroom sets its own Java: <= 0.4.4 -> 21, >= 0.5.0 -> 25 (measured from release jars'
   class-file versions; the Cleanroom wiki's "Java 21+" is stale).
 
+- Loader version lists (`listLoaderVersions`, checked 2026-10-28): NeoForge names builds after
+  Minecraft, `21.1.x` for 1.21.1 but year versions whole with a patch, `26.3.0.x` for 26.3 and
+  `26.1.2.x` for 26.1.2 (`neoforgePrefix`); some versions have only betas (26.1, 26.1.1, a new
+  one's first weeks), and the maven also holds `-alpha.N+snapshot-N` builds, never offered.
+  Fabric's meta answers 400 and Quilt's 404 for a Minecraft version they do not have (1.12.2):
+  no builds, not an outage. Cleanroom narrows the new-server form to 1.12.2, so leaving it put
+  that version on Fabric until the form restored the earlier pick.
+
 ## Cleanroom
 - Forge 1.12.2 fork; the older installer (0.5.x) takes `--installServer` and leaves
   `cleanroom-<ver>.jar` + `minecraft_server.1.12.2.jar`. Mod catalogs have no Cleanroom tag, so instances query

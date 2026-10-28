@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { downloadFile, fetchJson, fetchText } from './download';
+import { downloadFile, fetchJson, fetchText, HttpError } from './download';
 import { run } from './systemd';
 import type { TaskHandle } from './tasks';
 import { CLEANROOM_MINECRAFT } from '#lib/shared/cleanroom.js';
@@ -141,6 +141,20 @@ const vanilla: Modloader = {
 
 // ----------------------------------------------------------------- fabric ---
 
+/**
+ * Fabric's and Quilt's builds for a Minecraft version. A version they do not know (1.12.2:
+ * Fabric answers 400, Quilt 404) has none: an empty list, not a failure, which the new-server
+ * form showed as "could not reach the loader metadata server".
+ */
+async function loaderBuilds<T>(url: string): Promise<T[]> {
+	try {
+		return await fetchJson<T[]>(url);
+	} catch (err) {
+		if (err instanceof HttpError && (err.status === 400 || err.status === 404)) return [];
+		throw err;
+	}
+}
+
 const FABRIC_META = 'https://meta.fabricmc.net/v2';
 
 const fabric: Modloader = {
@@ -155,9 +169,7 @@ const fabric: Modloader = {
 		return versions.filter((v) => v.stable).map((v) => v.version);
 	},
 	listLoaderVersions: async (mc) => {
-		const loaders = await fetchJson<{ loader: { version: string; stable: boolean } }[]>(
-			`${FABRIC_META}/versions/loader/${encodeURIComponent(mc)}`
-		);
+		const loaders = await loaderBuilds<{ loader: { version: string; stable: boolean } }>(`${FABRIC_META}/versions/loader/${encodeURIComponent(mc)}`);
 		return loaders.map((l) => l.loader.version);
 	},
 	install: async (ctx) => {
@@ -259,7 +271,7 @@ export function compareSemver(a: string, b: string): number {
  * its global list and Fabric's.
  */
 async function quiltLoaderVersions(mc: string): Promise<string[]> {
-	const loaders = await fetchJson<{ loader: { version: string } }[]>(`${QUILT_META}/versions/loader/${encodeURIComponent(mc)}`);
+	const loaders = await loaderBuilds<{ loader: { version: string } }>(`${QUILT_META}/versions/loader/${encodeURIComponent(mc)}`);
 	return loaders.map((l) => l.loader.version).sort((a, b) => compareSemver(b, a));
 }
 
@@ -432,12 +444,14 @@ const forge: Modloader = {
 	}
 };
 
-/** NeoForge versions look like 21.1.72 where 21.1 maps to Minecraft 1.21.1. */
-function neoforgePrefix(minecraftVersion: string): string {
-	const parts = minecraftVersion.split('.');
-	const minor = parts[1] ?? '0';
-	const patch = parts[2] ?? '0';
-	return `${minor}.${patch}.`;
+/**
+ * NeoForge's builds start with their Minecraft version: 21.1.72 is Minecraft 1.21.1 (the "1."
+ * left off), 26.3.0.99 is 26.3 and 26.1.2.40 is 26.1.2 (year versions, kept whole, with a .0
+ * for a version without a patch).
+ */
+export function neoforgePrefix(minecraftVersion: string): string {
+	const [major = '1', minor = '0', patch = '0'] = minecraftVersion.split('.');
+	return major === '1' ? `${minor}.${patch}.` : `${major}.${minor}.${patch}.`;
 }
 
 const neoforge: Modloader = {
@@ -451,7 +465,11 @@ const neoforge: Modloader = {
 			'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge'
 		);
 		const prefix = neoforgePrefix(mc);
-		return data.versions.filter((v) => v.startsWith(prefix) && !v.includes('beta')).reverse();
+		// Releases; a Minecraft version with none yet (26.1, 26.1.1, a new one's first weeks) gets
+		// its betas. Never the alphas built for snapshots (26.1.0.0-alpha.1+snapshot-1).
+		const builds = data.versions.filter((v) => v.startsWith(prefix) && !v.includes('alpha')).reverse();
+		const releases = builds.filter((v) => !v.includes('-'));
+		return releases.length ? releases : builds;
 	},
 	install: async (ctx) => {
 		let loaderVersion = ctx.loaderVersion;
