@@ -1497,7 +1497,8 @@ const beingCopied = new Set<string>();
 
 /**
  * What a clone leaves out of `.mineshell/`: the source's world snapshots
- * (the clone starts its own history), its trash and whatever an operation left behind.
+ * (the clone starts its own history), its trash, earlier versions of edited files
+ * and whatever an operation left behind.
  * The Forge backup of a Cleanroom server is kept, so the copy can revert.
  */
 export function cloneSkips(relative: string): boolean {
@@ -1505,6 +1506,7 @@ export function cloneSkips(relative: string): boolean {
 	return (
 		rel === '.mineshell/snapshots' ||
 		rel === '.mineshell/trash' ||
+		rel === '.mineshell/file-history' ||
 		/^\.mineshell\/(pack-change|loader-previous|world-previous|world-incoming|mod-update)-\d+$/.test(rel) ||
 		/^\.mineshell\/[^/]*installer\.jar(\.log|\.part)?$/.test(rel)
 	);

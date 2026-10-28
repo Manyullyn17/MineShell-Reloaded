@@ -8,7 +8,7 @@
 	import CodeEditor from '#lib/components/CodeEditor.svelte';
 	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
 	import type { SubmitFunction } from '$app/forms';
-	import { formatBytes, formatRelative } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { sftpLink } from '#lib/shared/sftp.js';
 	import { page } from '$app/state';
@@ -41,6 +41,29 @@
 	/** What stopped the last save, until it is saved anyway or fixed. */
 	let blocked = $state<SyntaxProblem | null>(null);
 	let saveAnyway = false;
+	/** The earlier version in the editor now, unsaved: named above it until saved or the file is left. */
+	let loadedVersion = $state<number | null>(null);
+	let versionError = $state('');
+	async function loadVersion(id: string) {
+		if (!data.editing || !editor) return;
+		const unsaved = editor.text().replace(/\r\n/g, '\n') !== data.editing.contents.replace(/\r\n/g, '\n');
+		if (unsaved && !confirm('Your unsaved changes go out of the editor (Ctrl+Z brings them back). Load this version?')) return;
+		versionError = '';
+		const params = new URLSearchParams({ path: data.editing.path, version: id });
+		const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/file-history?${params}`).catch(() => null);
+		if (!res?.ok) {
+			versionError = 'That version could not be read.';
+			return;
+		}
+		editor.setText(await res.text());
+		loadedVersion = Number(id);
+	}
+	$effect(() => {
+		// A save, or another file: what is in the editor is no longer the loaded version.
+		void data.editing?.path;
+		void data.editing?.contents;
+		loadedVersion = null;
+	});
 	$effect(() => {
 		// A fixed file needs no warning any more.
 		if (!liveProblem) blocked = null;
@@ -327,6 +350,12 @@
 					find={data.editing.find}
 				/>
 			{/key}
+			{#if loadedVersion}
+				<p class="notice info loaded-version">
+					The version from {formatDateTime(loadedVersion)} is in the editor, not saved. Save to go back to it (the text it
+					replaces is kept too), or Close to leave the file as it is.
+				</p>
+			{/if}
 			{#if blocked}
 				<div class="notice warning syntax-problem">
 					<p>
@@ -356,6 +385,27 @@
 				</a>
 			</div>
 		</form>
+		{#if data.editing.versions.length}
+			<details class="versions">
+				<summary>
+					Earlier versions ({data.editing.versions.length}), kept by saves here
+				</summary>
+				<p class="faint small">
+					The newest 20 of each file are kept, for up to 90 days. Only saves in MineShell keep one: a mod rewriting the
+					file, or an edit over SFTP, does not.
+				</p>
+				{#if versionError}<p class="warn-text small">{versionError}</p>{/if}
+				<ul>
+					{#each data.editing.versions as version (version.id)}
+						<li>
+							<span>{formatDateTime(version.savedAt)}</span>
+							<span class="faint small">{formatRelative(version.savedAt)} · {formatBytes(version.bytes)}</span>
+							<button type="button" class="button-quiet" onclick={() => loadVersion(version.id)}>Load into the editor</button>
+						</li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
 	</section>
 {:else if data.trash}
 	<section class="panel">
@@ -903,6 +953,33 @@
 	.row-actions .button {
 		font-size: 0.82rem;
 		padding: 0.2rem 0.5rem;
+	}
+
+	.loaded-version {
+		margin-top: var(--space-3);
+	}
+
+	.versions {
+		margin-top: var(--space-4);
+	}
+
+	.versions summary {
+		cursor: pointer;
+	}
+
+	.versions ul {
+		list-style: none;
+		margin: var(--space-2) 0 0;
+		padding: 0;
+	}
+
+	.versions li {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+		flex-wrap: wrap;
+		padding: var(--space-1) 0;
+		border-top: 1px solid var(--line);
 	}
 
 	.syntax-problem {

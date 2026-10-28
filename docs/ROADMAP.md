@@ -163,8 +163,8 @@ in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
    mostly reading what MineShell already has: a calm first step after the freeze.
-2. **Files**: earlier versions of edited files, zips and folders (the better file editor and
-   search in files are built).
+2. **Files**: zips and folders (the better file editor, search in files and earlier versions
+   of edited files are built).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -213,17 +213,6 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 again when Kit and svelte-check list 7 in their peer ranges.
 
 ### 2. Files
-
-#### Earlier versions of edited files
-
-Agreed 2026-10-27. Snapshots hold only the world: configs, mods' settings and
-`server.properties` have no copy unless a pack change made one (pack rollback). Each save
-from the file editor (and later the mod config editor and the settings' raw editor) keeps
-the version it replaced, listed per file with "go back"; going back is itself a save, so it
-can be undone. Kept per file by count and age, in `.mineshell/` (left out of exports). The
-user's call: this rather than configs in snapshots, since a file's own history is what
-someone who broke one config reaches for. To decide: whether changes from outside the
-editor (a mod rewriting its config, SFTP) are noticed and kept too.
 
 #### Zips and folders in Files
 
@@ -542,6 +531,11 @@ What the built entries in the archive left out, in one place:
 ## Undecided
 
 Suggested, not yet confirmed or rejected:
+
+- **Versions of files changed outside MineShell** (user, 2026-10-29: maybe later): earlier
+  versions of edited files keeps only what MineShell's own saves replace. A mod rewriting its
+  config, or an edit over SFTP, leaves no version; noticing those would mean watching or
+  re-reading every config file.
 
 - **One Activity page with the log** (user, 2026-10-28: maybe later, as 3 and 4 below): the
   sidebar's Activity (`/tasks`) is operations running and lately finished (installs,

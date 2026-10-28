@@ -19,6 +19,7 @@ import { forgetDiskBreakdown, recentDiskBreakdown } from '#lib/server/diskusage.
 import { sftpAccess } from '#lib/server/sftp.js';
 import { deleteToTrash, emptyTrash, listTrash, purgeTrashItem, restoreFromTrash, trashDays } from '#lib/server/trash.js';
 import { searchFiles } from '#lib/server/filesearch.js';
+import { keepVersion, listVersions, type FileVersion } from '#lib/server/filehistory.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
@@ -56,7 +57,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		listError = err instanceof Error ? err.message : 'Could not read that folder.';
 	}
 
-	let editing: { path: string; contents: string; line: number | null; find: string | null } | null = null;
+	let editing: { path: string; contents: string; line: number | null; find: string | null; versions: FileVersion[] } | null = null;
 	if (edit) {
 		try {
 			// ?line= opens it there (a search result).
@@ -65,7 +66,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 				path: edit,
 				contents: await readTextFile(instance.path, edit),
 				line: Number.isInteger(line) && line > 0 ? line : null,
-				find: url.searchParams.get('find')
+				find: url.searchParams.get('find'),
+				versions: await listVersions(instance.path, edit).catch(() => [])
 			};
 		} catch (err) {
 			listError = err instanceof Error ? err.message : 'Could not open that file.';
@@ -109,12 +111,11 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		try {
-			await writeTextFile(
-				instance.path,
-				String(form.get('path') ?? ''),
-				String(form.get('contents') ?? '')
-			);
-			return { ok: true, message: 'Saved.' };
+			const file = String(form.get('path') ?? '');
+			const contents = String(form.get('contents') ?? '');
+			const kept = await keepVersion(instance.path, file, contents);
+			await writeTextFile(instance.path, file, contents);
+			return { ok: true, message: kept ? 'Saved. The version it replaced is kept under Earlier versions.' : 'Saved.' };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Save failed.' });
 		}

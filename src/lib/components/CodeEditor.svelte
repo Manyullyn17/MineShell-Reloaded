@@ -44,6 +44,12 @@
 		return editor?.text() ?? textarea?.value ?? '';
 	}
 
+	/** Puts other text in the editor, unsaved (an earlier version, to look at and save). */
+	export function setText(text: string): void {
+		if (editor) editor.setText(text);
+		if (textarea) textarea.value = text;
+	}
+
 	export function goToLine(number: number): void {
 		if (editor) return editor.goToLine(number);
 		if (!textarea) return;

@@ -9,6 +9,19 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Earlier versions of edited files
+
+Built 2026-10-29 (Files; ARCHITECTURE, "Earlier versions of edited files"), on the `next`
+branch. Each save in the file editor keeps the text it replaced (20 per file, up to 90 days,
+the newest 3 always), listed under the editor as "Earlier versions" with "Load into the
+editor": the version goes in unsaved, and saving it goes back, keeping what it replaced, so
+going back can be undone. Only MineShell's own saves keep versions (user's call, 2026-10-29;
+changes from outside, a mod or SFTP, moved to Undecided). Left out of exports and copies.
+Tried on a throwaway dev server: two saves, the first version loaded and saved back, three
+versions kept. Not built: the mod config editor and the settings' raw editor keeping
+versions (they come later and will call `keepVersion`), a diff between versions, versions
+following a renamed file.
+
 ### Search in files
 
 Built 2026-10-29 (Files; ARCHITECTURE, "Search in files"), on the `next` branch. A search box in

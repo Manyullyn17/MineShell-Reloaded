@@ -1318,6 +1318,16 @@ loader's files, `old-configs/`, map tiles, backup mods' folders, and worlds apar
 script files take about 2.5 s. Streamed to the page. A line links to
 `?edit=<file>&line=<n>&find=<text>`, which opens the editor there with the match selected.
 
+**Earlier versions of edited files** (`filehistory.ts`): the Files save action keeps the
+file's bytes as they were (`keepVersion`) before writing, unless the file is new or the save
+changes nothing but line endings, in `.mineshell/file-history/<path>.versions/<ms>`. 20 per
+file; past 90 days only the newest 3. "Load into the editor" fetches one
+(`/api/instances/[id]/file-history`) and puts it in the editor unsaved (`setText`, one change,
+so Ctrl+Z undoes it); saving it is an ordinary save, which keeps what it replaces. Only
+MineShell's own saves keep versions (user's call, 2026-10-29; outside changes are under
+Undecided). Left out of exports and copies (`cloneSkips`), named on the disk usage page. A
+renamed or deleted file's versions stay under its old path.
+
 **A server's Settings** is one page with nine tabs (server.properties and MineShell's own
 settings together) and one save bar. Each section is still its own form posting to the
 action that saves it (`general`, `properties`, `network`, `runtime`, `limits`, `restarts`,

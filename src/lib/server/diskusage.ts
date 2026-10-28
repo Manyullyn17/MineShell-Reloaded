@@ -152,7 +152,8 @@ export const BACKUP_MOD_FOLDERS: Record<string, string> = {
 
 const MINESHELL_LABELS: Record<string, string> = {
 	'forge-backup': 'Forge kept for undoing the Cleanroom migration',
-	'playerdata-backups': 'Player data backups from the player editor'
+	'playerdata-backups': 'Player data backups from the player editor',
+	'file-history': 'Earlier versions of files edited in MineShell'
 };
 
 const SUMMARY_TTL_MS = 60_000;

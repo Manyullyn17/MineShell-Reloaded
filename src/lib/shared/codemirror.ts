@@ -122,6 +122,8 @@ export type CodeEditorHandle = {
 	text: () => string;
 	/** Puts the cursor on a line (from 1), on `find` in it when given, and scrolls it into the middle. */
 	goToLine: (line: number, find?: string | null) => void;
+	/** Replaces the whole text (as one change, so Ctrl+Z brings back what was there). */
+	setText: (text: string) => void;
 	destroy: () => void;
 };
 
@@ -187,5 +189,6 @@ export async function createEditor(
 		view.focus();
 	};
 	if (opts.line) goToLine(opts.line, opts.find);
-	return { view, text: () => view.state.doc.toString(), goToLine, destroy: () => view.destroy() };
+	const setText = (text: string) => view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text }, selection: EditorSelection.cursor(0) });
+	return { view, text: () => view.state.doc.toString(), goToLine, setText, destroy: () => view.destroy() };
 }
