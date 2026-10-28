@@ -1069,6 +1069,11 @@
 		gap: 0.7rem;
 	}
 
+	/* Sixteen W's beside the face are wider than a phone's column. */
+	.who-name h2 {
+		min-width: 0;
+	}
+
 	.who p {
 		margin: 0.15rem 0 0;
 	}

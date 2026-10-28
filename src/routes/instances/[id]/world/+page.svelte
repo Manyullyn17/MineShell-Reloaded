@@ -1299,6 +1299,11 @@
 		color: var(--text-muted);
 		font-size: 0.85rem;
 		font-weight: 400;
+		/* A world's name or a tag can be one long word: it wraps inside the chip on a phone. */
+		max-width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		text-align: left;
 	}
 
 	.chip[aria-pressed='true'] {

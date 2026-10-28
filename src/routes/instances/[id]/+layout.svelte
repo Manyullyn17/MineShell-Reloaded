@@ -116,7 +116,7 @@
 		<div class="identity">
 			<div class="title">
 				<ServerIcon id={data.instance.id} name={data.instance.name} iconVersion={data.iconVersion} size={40} />
-				<h1>{data.instance.name}</h1>
+				<h1 title={data.instance.name}>{data.instance.name}</h1>
 				<StatusPill active={data.state.active} sub={data.state.sub} phase={data.phase} />
 			</div>
 			<div class="tags">
@@ -284,11 +284,23 @@
 		min-width: 0;
 	}
 
+	/* One line in the sticky head: a long name ends in an ellipsis (its title holds all of it)
+	   rather than pushing the status under it or the page sideways. */
 	.title {
 		display: flex;
 		align-items: center;
 		gap: 0.9rem;
-		flex-wrap: wrap;
+	}
+
+	.title h1 {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.title > :global(:not(h1)) {
+		flex: none;
 	}
 
 	.tags {

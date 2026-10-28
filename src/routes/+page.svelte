@@ -14,6 +14,8 @@
 	/** What this account may do on a server; the server checks every action again. */
 	const may = (id: string, permission: InstancePermission) => can(data.access, id, permission);
 
+	/** Players named on a card before "and N more". */
+	const ONLINE_SHOWN = 8;
 	let busy = $state<string | null>(null);
 	let search = $state('');
 	let statusFilter = $state<'all' | 'running' | 'stopped' | 'attention'>('all');
@@ -253,7 +255,7 @@
 				<div class="card-head">
 					<div class="title">
 						<ServerIcon id={instance.id} name={instance.name} iconVersion={instance.iconVersion} size={32} />
-						<a href="/instances/{instance.id}"><h2>{instance.name}</h2></a>
+						<a href="/instances/{instance.id}" title={instance.name}><h2>{instance.name}</h2></a>
 					</div>
 					<div class="status">
 						<StatusPill active={instance.active} sub={instance.sub} phase={instance.phase} />
@@ -374,7 +376,11 @@
 				</dl>
 
 				{#if instance.players?.names.length}
-					<p class="small muted online">Online: {instance.players.names.join(', ')}</p>
+					{@const names = instance.players.names}
+					<!-- A full server would make this card the tallest in its row: the first few, then a count. -->
+					<p class="small muted online" title={names.length > ONLINE_SHOWN ? names.join(', ') : undefined}>
+						Online: {names.slice(0, ONLINE_SHOWN).join(', ')}{names.length > ONLINE_SHOWN ? ` and ${names.length - ONLINE_SHOWN} more` : ''}
+					</p>
 				{/if}
 
 				<footer>
@@ -587,10 +593,14 @@
 		min-width: 0;
 	}
 
+	/* Three lines at most beside the status: a long name ends in an ellipsis (the link's title holds all of it). */
 	.title h2 {
 		font-size: 1.1rem;
-		/* Only a word wider than the whole card breaks. */
-		overflow-wrap: break-word;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		overflow: hidden;
 	}
 
 	.status {
@@ -621,10 +631,12 @@
 		flex-wrap: wrap;
 	}
 
+	/* Wrapping rather than four equal columns: 16 cores show as 1600% CPU, and an uptime of
+	   days or a large player limit is wider than a quarter of the card. */
 	.stats {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: var(--space-2);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
 		margin: 0;
 		padding: var(--space-3) 0;
 		border-top: 1px solid var(--line);
@@ -636,9 +648,14 @@
 		color: var(--text-faint);
 	}
 
+	.stats > div {
+		flex: 1 0 auto;
+	}
+
 	.stats dd {
 		margin: 0;
 		font-size: 1rem;
+		white-space: nowrap;
 	}
 
 	.online {

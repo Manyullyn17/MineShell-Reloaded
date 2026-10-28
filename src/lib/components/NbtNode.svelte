@@ -151,7 +151,7 @@
 				</span>
 			</form>
 		{:else}
-			<span class="value mono" class:muted={container} class:hit={marked && !container && shown.toLowerCase().includes(term)}>{shown}</span>
+			<span class="value mono" class:muted={container} class:hit={marked && !container && shown.toLowerCase().includes(term)} title={container ? undefined : shown}>{shown}</span>
 			{#if fieldAction && (!container || (tag.type === 'list' && PLAIN.includes(tag.itemType)))}
 				<button type="button" class="button-quiet field-action" onclick={() => fieldAction.run(path, tag, name)}>{fieldAction.label}</button>
 			{/if}

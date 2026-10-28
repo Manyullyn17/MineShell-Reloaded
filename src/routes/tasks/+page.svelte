@@ -171,6 +171,12 @@
 		align-items: flex-start;
 	}
 
+	/* A task named after a server or file with a long unbroken name wraps inside the panel. */
+	.head > .row:first-child,
+	.head > .row:first-child > div {
+		min-width: 0;
+	}
+
 	.head h2 {
 		font-size: 1rem;
 	}

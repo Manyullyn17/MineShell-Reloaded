@@ -672,9 +672,12 @@
 		margin-top: var(--space-2);
 	}
 
+	/* Notes take 4000 characters: read-only, they scroll in their panel as the editor does. */
 	.notes-text {
 		white-space: pre-wrap;
 		margin: var(--space-2) 0 0;
+		max-height: 20rem;
+		overflow-y: auto;
 	}
 
 	.missing {
@@ -880,6 +883,7 @@
 
 	.online-name {
 		flex: 1;
+		min-width: 0;
 		font-size: 0.92rem;
 	}
 

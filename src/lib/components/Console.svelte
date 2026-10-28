@@ -439,7 +439,7 @@
 				<span class="faint">Saved</span>
 				{#each macroList as macro (macro)}
 					<span class="macro">
-						<button type="button" class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line">{macro}</button>
+						<button type="button" class="button-quiet" onclick={() => useMacro(macro)} title="Put it in the command line: {macro}">{macro}</button>
 						<button
 							type="button"
 							class="button-quiet remove"
@@ -727,10 +727,18 @@
 		font-size: 0.8rem;
 	}
 
+	/* A saved command can be 200 characters: the chip ends in an ellipsis, its title holds it all. */
 	.macro {
 		display: inline-flex;
+		max-width: min(24rem, 100%);
 		border: 1px solid var(--line-strong);
 		border-radius: var(--radius);
+	}
+
+	.macro button:first-child {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.macro button {
@@ -743,6 +751,7 @@
 	}
 
 	.macro .remove {
+		flex: none;
 		color: var(--text-faint);
 		border-left: 1px solid var(--line);
 	}

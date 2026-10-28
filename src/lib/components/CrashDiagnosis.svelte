@@ -78,6 +78,14 @@
 		overflow-wrap: anywhere;
 	}
 
+	/* Its label names the mod ("Disable ..."), which can be one long word. */
+	.diagnosis button {
+		max-width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		text-align: left;
+	}
+
 	.other-errors {
 		margin-bottom: var(--space-3);
 		font-size: 0.88rem;

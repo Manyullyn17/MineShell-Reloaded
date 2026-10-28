@@ -359,7 +359,7 @@
 									</form>
 								{/if}
 							</td>
-							<td>
+							<td class="mod-cell">
 								<div class="mod-name">
 									{#if mod.projectUrl}
 										<a href={mod.projectUrl} target="_blank" rel="noreferrer">{mod.name}</a>
@@ -386,7 +386,7 @@
 									{mod.fileName}{mod.sizeBytes ? ` · ${formatBytes(mod.sizeBytes)}` : ''}
 								</div>
 							</td>
-							<td class="mono small nowrap">{mod.version ?? 'unknown'}</td>
+							<td class="mono small version">{mod.version ?? 'unknown'}</td>
 							<td class="small nowrap source">{sourceLabel(mod.source)}</td>
 							<td>
 								{#if pendingDelete === mod.fileName}
@@ -771,6 +771,16 @@
 
 	.source {
 		color: var(--text-muted);
+	}
+
+	/* Names, file names and versions can be long single words: they break so the table fits. */
+	.mod-cell,
+	.version {
+		overflow-wrap: anywhere;
+	}
+
+	.version {
+		min-width: 6rem;
 	}
 
 	tr.disabled td:not(.switch-col) {

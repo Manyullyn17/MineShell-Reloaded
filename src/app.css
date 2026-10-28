@@ -149,6 +149,10 @@ body {
 	font-size: 15px;
 	line-height: 1.55;
 	-webkit-font-smoothing: antialiased;
+	/* A word wider than its line (a mod's or file's name, a path) breaks instead of running
+	   over what is beside it. Sizes stay as they were: a flex or grid item still takes its
+	   longest word as its narrowest, so one that holds such names also needs min-width: 0. */
+	overflow-wrap: break-word;
 }
 
 h1,
@@ -866,7 +870,8 @@ tbody tr:last-child td {
 	background: var(--panel);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-lg);
-	overflow: hidden;
+	/* Clips to the corners; a table that still comes out wider scrolls rather than losing columns. */
+	overflow-x: auto;
 }
 
 .table-box th {

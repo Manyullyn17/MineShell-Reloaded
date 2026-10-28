@@ -418,7 +418,7 @@
 			<tbody>
 				{#each data.snapshotUsage as row (row.id)}
 					<tr>
-						<td>
+						<td class="name">
 							<a href="/instances/{encodeURIComponent(row.id)}/world">{row.name}</a>
 							{#if row.ownSettings}<span class="tag">own settings</span>{/if}
 						</td>
@@ -458,7 +458,7 @@
 			<tbody>
 				{#each data.backupFolders as folder (folder.id)}
 					<tr>
-						<td>{folder.name}</td>
+						<td class="name">{folder.name}</td>
 						<td class="mono small">
 							<PathText path={folder.path} />
 							{#if folder.problem}
@@ -491,7 +491,7 @@
 							{/if}
 						</td>
 						<td class="mono small nowrap">{folder.freeBytes === null ? '-' : formatBytes(folder.freeBytes)}</td>
-						<td class="small">
+						<td class="small name">
 							{#each folder.servers as server, i (server.id)}{i ? ', ' : ''}<a href="/instances/{encodeURIComponent(server.id)}/settings?tab=snapshots">{server.name}</a>{:else}<span class="faint">none yet</span>{/each}
 						</td>
 						{#if data.owner}
@@ -572,7 +572,7 @@
 				{#each ports.rows as row (`${row.instanceId}:${row.kind}`)}
 					<tr class:problem={row.clashes.length || row.status === 'taken'}>
 						<td class="num mono">{row.port}<span class="faint">/{row.protocol}</span></td>
-						<td><a href="/instances/{encodeURIComponent(row.instanceId)}/settings?tab=network">{row.name}</a></td>
+						<td class="name"><a href="/instances/{encodeURIComponent(row.instanceId)}/settings?tab=network">{row.name}</a></td>
 						<td>
 							{PORT_KIND_LABELS[row.kind]}
 							{#if row.followsGame}<span class="faint small">(the game port's number)</span>{/if}
@@ -1378,6 +1378,11 @@
 		margin-top: var(--space-3);
 	}
 
+	/* A server's or folder's name can be one long word; a table column takes its width from its longest. */
+	td.name {
+		overflow-wrap: anywhere;
+	}
+
 	.ports tr.problem td {
 		background: color-mix(in srgb, var(--warning) 6%, transparent);
 	}
@@ -1616,10 +1621,12 @@
 	.saved-presets li > div {
 		display: grid;
 		gap: 0.15rem;
+		flex: 1 1 0;
 		min-width: 0;
 	}
 
-	.saved-presets code {
+	/* Names, descriptions and flags can be one long word: the column must not take its width from them. */
+	.saved-presets li > div > * {
 		overflow-wrap: anywhere;
 	}
 

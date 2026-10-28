@@ -99,6 +99,13 @@ until after 1.0, and asked to keep the rest listed here):
   screens, a phone's tab bars not showing the current tab, sub-tabs hidden past the edge on
   desktop, doubled space in two-column fields, the planner's two hints, and spacing and
   overflow in the client export, the version and loader pickers and the player editor.
+  Then (2026-10-28) the longest text everywhere: the long world (`npm run screenshots --
+  --long`: every field at its limit, names from mods, packs and players as long as they come,
+  an owner and a restricted account) swept at 390 and 1280 px with the new check for text out
+  of its box. Found and fixed: server names and JVM presets had no length limit, and long
+  unbroken names ran out of the server header, cards, crash notes, Activity, the logs list,
+  saved commands, Settings' tables and preset list, the mods table (whose box hid its
+  version and source columns) and the player page.
 
 Long running is covered: the user's installed MineShell has run a server with scheduled
 restarts and snapshots since it was installed.

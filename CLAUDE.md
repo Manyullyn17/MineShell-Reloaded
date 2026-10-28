@@ -161,6 +161,12 @@ Cross-cutting UI facts stay here, since most UI work touches them:
   and outranks the children's own rules (RestartFields' amber boot note went grey).
 - List heights use the `fitToViewport` action (`src/lib/shared/fitToViewport.ts`), not
   `calc(100vh - ...)`.
+- Long names (servers 80, mods, files, versions, players, paths) are often one unbroken word.
+  `body` has `overflow-wrap: break-word`, which only breaks text inside a box of fixed width:
+  a flex item holding a name also needs `min-width: 0`, a grid track `minmax(0, 1fr)` (plain
+  `1fr` grows to the longest word), a table cell `overflow-wrap: anywhere`, a `nowrap` button
+  `white-space: normal` or an ellipsis with a `title`. Checked with the long world
+  (`npm run screenshots -- --long`, then `page-sweep.mjs --spill`; tests/tools/screenshots/README.md).
 
 ## Open work
 
