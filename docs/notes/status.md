@@ -11,7 +11,7 @@ Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10
   release candidate. Then (2026-10-25) one more: the mod list export (ROADMAP, "Road to 1.0"),
   and the rest of the small builds on that list were done the same day. Feature freeze from
   0.33.0 (user's call, 2026-10-25): only fixes, then 1.0 once it is stable without big issues.
-  Log retention moved to after 1.0. 0.33.7 is the release candidate (2026-10-28: Add a server's layout, NeoForge builds for 26.x, Fabric and Quilt after Cleanroom, Minecraft versions down to 1.2.5; 0.33.6 the same day: settings pages, one save bar for MineShell settings; 0.33.5 and 0.33.4 too: the phone mods list, long names, clock changes, server.properties and JVM argument escapes), running on
+  Log retention moved to after 1.0. 0.33.8 is the release candidate (2026-10-28: the fixes of a test review: crash safety, RCON, chat-proof console events, world upload limits, delete and server ids, outside links; ROADMAP, "Feature freeze"; before it 0.33.7: Add a server's layout, NeoForge builds for 26.x, Fabric and Quilt after Cleanroom, Minecraft versions down to 1.2.5; 0.33.6 the same day: settings pages, one save bar for MineShell settings; 0.33.5 and 0.33.4 too: the phone mods list, long names, clock changes, server.properties and JVM argument escapes), running on
   the real install for a week or two; what is left besides that is "Left for the user" below.
 - The status page moves to after 1.0, with the item icon leftovers and per-world game
   settings. Plugin servers stay 2.0; GT New Horizons got its slot 2026-10-27 (below).

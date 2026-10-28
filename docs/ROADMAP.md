@@ -61,6 +61,14 @@ until after 1.0, and asked to keep the rest listed here):
   NeoForge builds for Minecraft 26.x, Fabric and Quilt after picking Cleanroom, Minecraft
   versions down to 1.2.5. Its checks: the loader flow clicked through on a throwaway dev
   server (every loader, 26.3 kept, lists filled) and the new loader list tests.
+  **0.33.8 is the candidate** (2026-10-28), with the fixes a test review in a cloud session
+  found: background errors and a full disk no longer end MineShell, a bad RCON packet no
+  longer freezes it, chat can no longer fake joins, crashes or a crash diagnosis, uploaded
+  worlds are refused before they exhaust memory or fill the disk, deleting waits for running
+  work, new servers no longer take over a deleted server's kept folder, and outside links
+  open only as web pages. Its checks: the tests each fix brought, and the console line
+  formats in the real journal (vanilla/Fabric, NeoForge, Forge 1.12) checked against the
+  new chat-proof matching; nothing of it was tried live on a server.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
