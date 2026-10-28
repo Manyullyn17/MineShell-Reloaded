@@ -318,9 +318,9 @@ export async function longForms(act, call, ctx) {
 	await act('/instances/unbroken/world', 'createWorld', { name: words(60), seedMode: 'set', seed: '-9223372036854775808' });
 	// Back to the first world, which holds the player files.
 	await act('/instances/unbroken/world', 'switchWorld', { world: 'world' });
-	// MineShell settings: presets, backup folders and accounts named long.
-	await act('/settings', 'savePreset', { presetName: words(80), presetDescription: words(300, 3), jvmArgs: `-XX:+UseG1GC ${unbroken(400, '-XX:SomeVeryLongFlagName=1 ')}` });
-	await act('/settings', 'savePreset', { presetName: unbroken(80, 'W'), presetDescription: unbroken(300, 'W'), jvmArgs: '-XX:+UseZGC' });
+	// MineShell settings: presets (jvm-presets.ts PRESET_NAME_MAX, PRESET_DESCRIPTION_MAX), backup folders and accounts named long.
+	await act('/settings', 'savePreset', { presetName: words(60), presetDescription: words(200, 3), jvmArgs: `-XX:+UseG1GC ${unbroken(400, '-XX:SomeVeryLongFlagName=1 ')}` });
+	await act('/settings', 'savePreset', { presetName: unbroken(60, 'W'), presetDescription: unbroken(200, 'W'), jvmArgs: '-XX:+UseZGC' });
 	// Outside the data folder, which MineShell refuses; emptied each run.
 	const backups = `${ctx.dataDir}-backups`;
 	fs.rmSync(backups, { recursive: true, force: true });
