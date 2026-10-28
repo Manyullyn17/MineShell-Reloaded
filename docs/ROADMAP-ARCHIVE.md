@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Installed mods list
+
+Built 2026-10-28 (Mods tab; ARCHITECTURE, "Mod pictures"), on the `next` branch. Each mod
+shows its picture: the project icon for Modrinth and CurseForge mods, downloaded once and
+kept in MineShell's cache, the jar's own `icon`/`logoFile` for the rest, an empty square
+where there is neither. Sorting by name, size, or added or updated (newest first), and a
+"Client-only" filter chip, shown when there are any. Tried on the screenshot world: Cobblemon's
+33 Modrinth mods all with icons, MeatballCraft's CurseForge ones from the modpacks.ch mirror's
+records, size sort on its 374 mods, and the phone width (24 px pictures there). Not built: a
+filter by side beyond the client-only flag MineShell already keeps per mod, and pictures for
+jars MineShell has no record of that name none themselves.
+
 ### Quiet hours for notifications
 
 Built 2026-10-28 (Notifications in MineShell settings and a server's Settings; ARCHITECTURE,

@@ -189,6 +189,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/api/instances/[id]/mod-updates': { methods: { GET: on('mods') } },
 	'/api/instances/[id]/datapack-updates': { methods: { GET: on('datapacks') } },
 	'/api/instances/[id]/mod-versions': { methods: { GET: on('mods') } },
+	'/api/instances/[id]/mod-icon': { methods: { GET: on('view') } },
 
 	'/instances/[id]/world': {
 		load: on('view'),

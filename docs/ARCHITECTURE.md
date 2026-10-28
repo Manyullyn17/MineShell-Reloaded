@@ -621,6 +621,18 @@ in `@Mod` instead, which is not read). Client-only dependents do not count: the 
 them. Streamed with the duplicates; the row says "Needed by ...", and the switch and Remove
 ask before disabling or deleting such a mod (in the page only, as a question, not a refusal).
 
+**Mod pictures** (`modicons.ts`, `/api/instances/[id]/mod-icon?file=`): a Modrinth or
+CurseForge mod's project icon (`mods.icon_url`) is downloaded once into `cache/mod-icons/`
+(named by the address's SHA-1; a failed address is not tried again for an hour) and served
+from there, so a list of 370 mods does not ask the platforms 370 times per view; any other
+jar shows the picture it names itself (`logo` in `describeJar`: Fabric/Quilt `icon`, the
+largest of several sizes; mods.toml or mcmod.info `logoFile`, often a wide banner, hence
+`object-fit: contain`). Only PNG, JPEG, GIF and WebP up to 1 MB are served, by their first
+bytes, with `nosniff`: an SVG would run script on MineShell's origin. The page adds the
+mod's version (or size) as `v`, so the answer can be kept a day. Sorting (name, size, added
+or updated: `instance_mods.installed_at`, else the file's time) and the client-only filter
+are the page's own.
+
 **Server icons** must be 64x64 PNGs. Scaling happens in the browser (`lib/shared/servericon.ts`),
 which decodes every format pack icons come in (PNG, WebP, JPEG); the server has no image
 library. A pack server's first overview without an icon applies the pack's icon (`packicon.ts`:

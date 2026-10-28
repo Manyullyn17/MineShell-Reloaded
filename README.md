@@ -91,6 +91,7 @@ Manage server mods and prepare matching client installations from the same inter
 
 - Search Modrinth and CurseForge, resolve mod dependencies, install updates, or upload JARs manually.
 - Enable, disable, delete, and change mod versions. Each mod shows which mods need it, and disabling or deleting one that others need asks first.
+- See each installed mod with its picture, sorted by name, size or when it was added or updated, and filtered to the enabled, disabled, client-only or those that need attention.
 - Detect mods added outside MineShell and identify them rather than silently ignoring them.
 - Spot the same mod installed twice (for example once from Modrinth and once from CurseForge under another file name) by the mod ids inside the jars, and disable one copy.
 - Detect and disable client-only mods after pack installation.

@@ -125,7 +125,7 @@ describe('watchdog stops', () => {
 });
 
 describe('chat in the log', () => {
-	const sodium: ModJar = { fileName: 'sodium.jar', enabled: true, ids: ['sodium'], provides: [], names: ['Sodium'], version: '0.5.8', authors: [], clientOnly: false, requires: [], classes: new Set(), mixinConfigs: [] };
+	const sodium: ModJar = { fileName: 'sodium.jar', enabled: true, ids: ['sodium'], provides: [], names: ['Sodium'], version: '0.5.8', authors: [], clientOnly: false, requires: [], classes: new Set(), mixinConfigs: [], logo: null };
 	const missing = "Mod 'Sodium' (sodium) 0.5.8 requires any version of mod 'fabric-api', which is missing!";
 	const run = (message: string) =>
 		[

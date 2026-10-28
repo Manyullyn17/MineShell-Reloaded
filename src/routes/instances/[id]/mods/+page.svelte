@@ -7,6 +7,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Flash from '#lib/components/Flash.svelte';
 	import InfoTip from '#lib/components/InfoTip.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
@@ -33,7 +34,8 @@
 	// The overview's mod update notice links to ?view=updates.
 	// svelte-ignore state_referenced_locally
 	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(page.url.searchParams.get('view') === 'updates' ? 'updates' : 'installed');
-	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention'>('all');
+	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention' | 'client'>('all');
+	let modSort = $state<'name' | 'size' | 'added'>('name');
 	let uploadForm = $state<HTMLFormElement | null>(null);
 	let jarInput = $state<HTMLInputElement | null>(null);
 	let pendingDelete = $state<string | null>(null);
@@ -142,18 +144,27 @@
 		all: data.mods.length,
 		enabled: data.mods.filter((m) => m.enabled && !m.missing).length,
 		disabled: data.mods.filter((m) => !m.enabled && !m.missing).length,
-		attention: data.mods.filter(needsAttention).length
+		attention: data.mods.filter(needsAttention).length,
+		client: data.mods.filter((m) => m.clientOnly).length
 	});
+	// The server lists them by name; the others put the largest or newest first.
 	const visible = $derived(
-		data.mods.filter(
-			(m) =>
-				m.name.toLowerCase().includes(filter.trim().toLowerCase()) &&
-				(modFilter === 'all' ||
-					(modFilter === 'enabled' && m.enabled && !m.missing) ||
-					(modFilter === 'disabled' && !m.enabled && !m.missing) ||
-					(modFilter === 'attention' && needsAttention(m)))
-		)
+		data.mods
+			.filter(
+				(m) =>
+					m.name.toLowerCase().includes(filter.trim().toLowerCase()) &&
+					(modFilter === 'all' ||
+						(modFilter === 'enabled' && m.enabled && !m.missing) ||
+						(modFilter === 'disabled' && !m.enabled && !m.missing) ||
+						(modFilter === 'attention' && needsAttention(m)) ||
+						(modFilter === 'client' && m.clientOnly))
+			)
+			.sort((a, b) => (modSort === 'size' ? b.sizeBytes - a.sizeBytes : modSort === 'added' ? (b.addedAt ?? 0) - (a.addedAt ?? 0) : 0))
 	);
+	/** Mods whose picture would not load: they show the empty square instead. */
+	const noIcon = new SvelteSet<string>();
+	const iconSrc = (mod: { fileName: string; version: string | null; sizeBytes: number }) =>
+		`/api/instances/${encodeURIComponent(data.instance.id)}/mod-icon?${new URLSearchParams({ file: mod.fileName, v: mod.version ?? String(mod.sizeBytes) })}`;
 	const sourceLabel = (id: string) =>
 		({ modrinth: 'Modrinth', curseforge: 'CurseForge', manual: 'Uploaded' })[id] ?? id;
 
@@ -315,12 +326,22 @@
 {#if view === 'installed'}
 	<div class="list-controls">
 		<div class="chips" role="group" aria-label="Show">
-			{#each [['all', 'All'], ['enabled', 'Enabled'], ['disabled', 'Disabled'], ['attention', 'Needs attention']] as const as [id, label] (id)}
-				<button type="button" class="chip" aria-pressed={modFilter === id} onclick={() => (modFilter = id)}>
-					{label}<span class="count">{filterCounts[id]}</span>
-				</button>
+			{#each [['all', 'All'], ['enabled', 'Enabled'], ['disabled', 'Disabled'], ['attention', 'Needs attention'], ['client', 'Client-only']] as const as [id, label] (id)}
+				{#if id !== 'client' || filterCounts.client || modFilter === 'client'}
+					<button type="button" class="chip" aria-pressed={modFilter === id} onclick={() => (modFilter = id)}>
+						{label}<span class="count">{filterCounts[id]}</span>
+					</button>
+				{/if}
 			{/each}
 		</div>
+		<label class="sort">
+			Sort by
+			<select bind:value={modSort}>
+				<option value="name">Name</option>
+				<option value="size">Size</option>
+				<option value="added">Added or updated</option>
+			</select>
+		</label>
 		{#if data.packName}
 			<span class="pack-toggle">
 				<input id="pack-mods" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={data.running} />
@@ -383,6 +404,13 @@
 								{/if}
 							</td>
 							<td class="mod-cell">
+							<div class="mod-main">
+								{#if mod.missing || noIcon.has(mod.fileName)}
+									<span class="mod-icon" aria-hidden="true"></span>
+								{:else}
+									<img class="mod-icon" src={iconSrc(mod)} alt="" width="32" height="32" loading="lazy" onerror={() => noIcon.add(mod.fileName)} />
+								{/if}
+								<div class="mod-text">
 								<div class="mod-name">
 									{#if webLink(mod.projectUrl)}
 										<a href={webLink(mod.projectUrl)} target="_blank" rel="noreferrer">{mod.name}</a>
@@ -416,6 +444,8 @@
 										{mod.enabled ? 'Needed by' : 'Off, but needed by'} {nameList(names, 3)}
 									</div>
 								{/if}
+								</div>
+							</div>
 							</td>
 							<td class="mono small version">{mod.version ?? 'unknown'}</td>
 							<td class="small nowrap source">{sourceLabel(mod.source)}</td>
@@ -796,6 +826,52 @@
 
 	.switch-col .switch[aria-checked='true']::after {
 		left: 17px;
+	}
+
+	.mod-main {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+	}
+
+	.mod-text {
+		min-width: 0;
+	}
+
+	/* Forge's logoFile is often a wide banner: shown whole, not cropped. */
+	.mod-icon {
+		width: 32px;
+		height: 32px;
+		flex: 0 0 32px;
+		border-radius: var(--radius);
+		background: var(--panel-raised);
+		object-fit: contain;
+	}
+
+	/* Phones: the name column is narrow already. */
+	@media (max-width: 60rem) {
+		.mod-main {
+			gap: var(--space-2);
+		}
+
+		.mod-icon {
+			width: 24px;
+			height: 24px;
+			flex-basis: 24px;
+		}
+	}
+
+	.sort {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 0.85rem;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.sort select {
+		width: auto;
 	}
 
 	.mod-name {

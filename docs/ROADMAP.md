@@ -162,8 +162,8 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit), the
-   installed mods list, packs' own backup mods. Small, mostly reading what MineShell already
-   has: a calm first step after the freeze.
+   packs' own backup mods. Small, mostly reading what MineShell already has: a calm first
+   step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
    needs), then search in files, earlier versions of edited files, zips and folders.
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
@@ -210,14 +210,6 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 `build` all fail ("Cannot read properties of undefined (reading 'readFile')"). Kit 3 declares
 `typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
 again when Kit and svelte-check list 7 in their peer ranges.
-
-#### Installed mods list
-
-Agreed 2026-10-27. The list filters by name and by enabled/disabled/needs attention and
-shows sizes, but has no icons (only search results do), no sorting and no side filter.
-Icons from Modrinth/CurseForge for tracked mods (kept, not fetched per view) and from the
-jar's own logo (`logoFile` in mods.toml, `icon` in fabric.mod.json) for the rest; sorting by
-name, size and date added or updated; a filter for client-only mods.
 
 #### Packs' own backup mods
 

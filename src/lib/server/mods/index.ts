@@ -101,6 +101,8 @@ export type ModRow = {
 	filePath: string;
 	fileName: string;
 	sizeBytes: number;
+	/** When MineShell installed or last updated it; the file's time for a jar it did not install. */
+	addedAt: number | null;
 	enabled: boolean;
 	fromPack: boolean;
 	locked: boolean;
@@ -142,7 +144,8 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			filePath: instanceMods.filePath,
 			enabled: instanceMods.enabled,
 			fromPack: instanceMods.fromPack,
-			locked: instanceMods.locked
+			locked: instanceMods.locked,
+			installedAt: instanceMods.installedAt
 		})
 		.from(instanceMods)
 		.innerJoin(modsTable, eq(instanceMods.modId, modsTable.id))
@@ -156,12 +159,8 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 		const enabled = !fileName.endsWith(DISABLED_SUFFIX);
 		const baseName = enabled ? fileName : fileName.slice(0, -DISABLED_SUFFIX.length);
 		const record = byFile.get(fileName) ?? byFile.get(baseName);
-		let sizeBytes = 0;
-		try {
-			sizeBytes = (await fs.stat(path.join(dir, fileName))).size;
-		} catch {
-			/* ignore */
-		}
+		const stat = await fs.stat(path.join(dir, fileName)).catch(() => null);
+		const sizeBytes = stat?.size ?? 0;
 		rows.push({
 			id: record?.modId ?? null,
 			name: record?.name ?? baseName.replace(/\.jar$/i, ''),
@@ -172,6 +171,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			filePath: path.join('mods', fileName),
 			fileName,
 			sizeBytes,
+			addedAt: record?.installedAt ?? (stat ? Math.round(stat.mtimeMs) : null),
 			enabled,
 			fromPack: record?.fromPack ?? false,
 			locked: record?.locked ?? false,
@@ -199,6 +199,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 			filePath: record.filePath,
 			fileName,
 			sizeBytes: 0,
+			addedAt: record.installedAt,
 			enabled: false,
 			fromPack: record.fromPack,
 			locked: record.locked,

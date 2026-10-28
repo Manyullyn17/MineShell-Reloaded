@@ -41,6 +41,8 @@ export type ModJar = {
 	classes: Set<string>;
 	/** Mixin config files shipped at the jar root. */
 	mixinConfigs: string[];
+	/** The picture the jar names for itself (Fabric/Quilt `icon`, Forge `logoFile`), as a path inside it. */
+	logo: string | null;
 };
 
 const jarCache = new Map<string, { key: string; jar: Omit<ModJar, 'fileName' | 'enabled'> }>();
@@ -127,6 +129,14 @@ function tomlRequired(text: string): string[] {
 		.flatMap((b) => tomlValues(b, 'modId'));
 }
 
+/** Fabric's and Quilt's `icon`: a path, or paths by size (the largest is taken). */
+function iconPath(icon: unknown): string | null {
+	if (typeof icon === 'string') return icon || null;
+	if (!icon || typeof icon !== 'object') return null;
+	const sizes = Object.entries(icon as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string');
+	return sizes.sort((a, b) => Number(b[0]) - Number(a[0]))[0]?.[1] ?? null;
+}
+
 /** Fabric's authors: names, or objects with a name. */
 function personNames(list: unknown): string[] {
 	if (!Array.isArray(list)) return [];
@@ -148,7 +158,8 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 		requires: [],
 		provides: [],
 		classes: new Set(),
-		mixinConfigs: []
+		mixinConfigs: [],
+		logo: null
 	};
 	const zip = await openZipFile(file).catch(() => null);
 	if (!zip) return info;
@@ -163,6 +174,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.version) info.version ??= String(meta.version);
 			info.authors.push(...personNames(meta.authors));
 			if (meta.environment === 'client') info.clientOnly = true;
+			info.logo ??= iconPath(meta.icon);
 			if (meta.depends && typeof meta.depends === 'object') info.requires.push(...Object.keys(meta.depends));
 			if (Array.isArray(meta.provides)) info.provides.push(...meta.provides.map(providedId));
 		} catch {
@@ -177,6 +189,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.quilt_loader?.id) info.ids.push(String(meta.quilt_loader.id));
 			if (meta.quilt_loader?.metadata?.name) info.names.push(String(meta.quilt_loader.metadata.name));
 			if (meta.quilt_loader?.version) info.version ??= String(meta.quilt_loader.version);
+			info.logo ??= iconPath(meta.quilt_loader?.metadata?.icon);
 			if (Array.isArray(meta.quilt_loader?.provides)) info.provides.push(...meta.quilt_loader.provides.map(providedId));
 			// Quilt's contributors map names to roles.
 			const contributors = meta.quilt_loader?.metadata?.contributors;
@@ -200,7 +213,10 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 				info.names.push(...tomlValues(block, 'displayName'));
 				info.version ??= tomlValues(block, 'version')[0] ?? null;
 				info.authors.push(...splitAuthors(tomlValues(block, 'authors')[0]));
+				info.logo ??= tomlValues(block, 'logoFile')[0] ?? null;
 			}
+			// Forge also takes it above the [[mods]] blocks, for the whole jar.
+			info.logo ??= tomlValues(text.split(/^\s*\[/m)[0], 'logoFile')[0] ?? null;
 			info.requires.push(...tomlRequired(text));
 		}
 	}
@@ -209,6 +225,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 		info.ids.push(...[...mcmod.matchAll(/"modid"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.names.push(...[...mcmod.matchAll(/"name"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.version ??= mcmod.match(/"version"\s*:\s*"([^"]+)"/)?.[1] ?? null;
+		info.logo ??= mcmod.match(/"logoFile"\s*:\s*"([^"]+)"/)?.[1] || null;
 		const authorList = mcmod.match(/"(?:authorList|authors)"\s*:\s*\[([^\]]*)\]/);
 		if (authorList) info.authors.push(...[...authorList[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
 		for (const list of mcmod.matchAll(/"requiredMods"\s*:\s*\[([^\]]*)\]/g)) {
@@ -227,6 +244,19 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 
 const DISABLED_SUFFIX = '.disabled';
 
+/** One jar, from the same cache as indexMods; null when it is not there. */
+export async function describeModJar(file: string): Promise<Omit<ModJar, 'fileName' | 'enabled'> | null> {
+	const stat = await fs.stat(file).catch(() => null);
+	if (!stat?.isFile()) return null;
+	const key = `${stat.size}:${stat.mtimeMs}`;
+	let cached = jarCache.get(file);
+	if (!cached || cached.key !== key) {
+		cached = { key, jar: await describeJar(file) };
+		jarCache.set(file, cached);
+	}
+	return cached.jar;
+}
+
 export async function indexMods(modsDir: string): Promise<ModJar[]> {
 	let names: string[];
 	try {
@@ -238,16 +268,8 @@ export async function indexMods(modsDir: string): Promise<ModJar[]> {
 	for (const fileName of names) {
 		const enabled = /\.jar$/i.test(fileName);
 		if (!enabled && !fileName.toLowerCase().endsWith(`.jar${DISABLED_SUFFIX}`)) continue;
-		const full = path.join(modsDir, fileName);
-		const stat = await fs.stat(full).catch(() => null);
-		if (!stat?.isFile()) continue;
-		const key = `${stat.size}:${stat.mtimeMs}`;
-		let cached = jarCache.get(full);
-		if (!cached || cached.key !== key) {
-			cached = { key, jar: await describeJar(full) };
-			jarCache.set(full, cached);
-		}
-		jars.push({ fileName, enabled, ...cached.jar });
+		const jar = await describeModJar(path.join(modsDir, fileName));
+		if (jar) jars.push({ fileName, enabled, ...jar });
 	}
 	return jars;
 }
