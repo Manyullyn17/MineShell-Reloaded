@@ -60,11 +60,12 @@
 	<div class="check field">
 		<input id="modUpdateCheck" name="modUpdateCheck" type="checkbox" class="switch" role="switch" bind:checked={values.modUpdateCheck} disabled={!values.updateCheck} />
 		<label for="modUpdateCheck">Include mods</label>
+		<!-- Inside the field, so it is styled and placed as the field's hint (it was full-size text under it). -->
+		<p class="hint">
+			Servers without a pack: the check also looks for newer builds of the Modrinth and CurseForge mods (releases stay on
+			releases). A pack's mods change with the pack, and the Mods tab can still check them by hand.
+		</p>
 	</div>
-	<p class="hint">
-		Servers without a pack: the check also looks for newer builds of the Modrinth and CurseForge mods (releases stay on
-		releases). A pack's mods change with the pack, and the Mods tab can still check them by hand.
-	</p>
 {/if}
 {#if !values.updateCheck}
 	<!-- Disabled fields are not posted; the saved values go with the switch. -->
