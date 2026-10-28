@@ -4,6 +4,7 @@
 	import { plural } from '#lib/shared/format.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
+	import VersionPicker from './VersionPicker.svelte';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
@@ -209,14 +210,18 @@
 		{#if versionsError}
 			<p class="hint warn-text">{versionsError}</p>
 		{:else}
-			<select id="pack-version" bind:value={versionId} disabled={!versions.length}>
-				{#if !versions.length}<option value="">Loading.</option>{/if}
-				{#each versions as v (v.id)}
-					<option value={v.id}>
-						{v.versionNumber}{v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}{v.channel !== 'release' ? ` (${v.channel})` : ''}{v.id === pack.versionId ? ' (installed)' : ''}
-					</option>
-				{/each}
-			</select>
+			<VersionPicker
+				id="pack-version"
+				bind:value={versionId}
+				disabled={!versions.length}
+				busy={!versions.length}
+				empty="Loading."
+				options={versions.map((v) => ({
+					value: v.id,
+					label: `${v.versionNumber}${v.gameVersions.length ? ` - MC ${v.gameVersions.join(', ')}` : ''}${v.channel !== 'release' ? ` (${v.channel})` : ''}${v.id === pack.versionId ? ' (installed)' : ''}`,
+					prerelease: v.channel !== 'release'
+				}))}
+			/>
 		{/if}
 	</div>
 

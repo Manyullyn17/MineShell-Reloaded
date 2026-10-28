@@ -33,6 +33,16 @@ describe('versionGroups', () => {
 		expect(versionGroups(opts('0.7.13-alpha', '0.7.12-alpha'), '')).toEqual([{ heading: null, options: opts('0.7.13-alpha', '0.7.12-alpha') }]);
 	});
 
+	it('takes the channel from the option where the value is an id (pack and mod versions)', () => {
+		const list = [
+			{ value: 'aB3x', label: '1.8.4', prerelease: false },
+			{ value: 'Qz9k', label: '1.9.0-beta.1', prerelease: true }
+		];
+		expect(versionGroups(list, '').map((g) => g.heading)).toEqual(['Releases', 'Betas and snapshots']);
+		// The id is not matched: "q" is only in an id.
+		expect(filterVersions(list, 'q')).toEqual([]);
+	});
+
 	it('keeps "Latest" on top, and out of a filtered list', () => {
 		const list = [{ value: '', label: 'Latest (0.16.14)' }, ...opts('0.16.14', '0.16.13')];
 		expect(versionGroups(list, '')[0]).toEqual({ heading: null, options: [list[0]] });

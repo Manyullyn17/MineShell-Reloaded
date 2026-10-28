@@ -14,6 +14,7 @@
 	import DependencyList, { type DependencyPlan } from './DependencyList.svelte';
 	import ModBrowser, { SOURCES } from './ModBrowser.svelte';
 	import ModUpdates from './ModUpdates.svelte';
+	import VersionPicker from '#lib/components/VersionPicker.svelte';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
@@ -479,11 +480,12 @@
 											{#if packMods}<input type="hidden" name="packMods" value="on" />{/if}
 											<div class="field">
 												<label for="ver-{mod.fileName}">Switch {mod.name} to</label>
-												<select id="ver-{mod.fileName}" name="versionId" bind:value={versionPick}>
-													{#each versionList as v (v.id)}
-														<option value={v.id}>{versionLabel(v)}</option>
-													{/each}
-												</select>
+												<VersionPicker
+													id="ver-{mod.fileName}"
+													name="versionId"
+													bind:value={versionPick}
+													options={versionList.map((v) => ({ value: v.id, label: versionLabel(v), prerelease: v.channel !== 'release' }))}
+												/>
 											</div>
 											{#if versionDepsLoading}
 												<p class="muted small">Checking what this version needs.</p>
@@ -866,7 +868,7 @@
 		background: var(--bg-sunken);
 	}
 
-	.version-row select {
+	.version-row :global(.version-picker) {
 		width: min(36rem, 100%);
 	}
 

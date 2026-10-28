@@ -1,4 +1,9 @@
-export type VersionOption = { value: string; label: string };
+export type VersionOption = {
+	value: string;
+	label: string;
+	/** Set where the value is not a version number (a pack or mod version's id): its channel says. */
+	prerelease?: boolean;
+};
 
 /** Betas, alphas, release candidates and snapshots: "0.29.0-beta.3", "25w14a", "1.21.5-pre2". */
 export function isPrerelease(version: string): boolean {
@@ -16,7 +21,7 @@ export function filterVersions<T extends VersionOption>(options: T[], query: str
 	const holds: T[] = [];
 	for (const option of options) {
 		const text = option.label.toLowerCase();
-		if (text.startsWith(q) || option.value.toLowerCase().startsWith(q)) starts.push(option);
+		if (text.startsWith(q)) starts.push(option);
 		else if (text.includes(q)) holds.push(option);
 	}
 	return [...starts, ...holds];
@@ -34,12 +39,13 @@ export function versionGroups(options: VersionOption[], query: string): VersionG
 		options.filter((o) => o.value !== ''),
 		query
 	);
-	const releases = rest.filter((o) => !isPrerelease(o.value));
-	const pre = rest.filter((o) => isPrerelease(o.value));
+	const pre = (o: VersionOption) => o.prerelease ?? isPrerelease(o.value);
+	const releases = rest.filter((o) => !pre(o));
+	const betas = rest.filter(pre);
 	const groups: VersionGroup[] = [];
 	if (pinned.length) groups.push({ heading: null, options: pinned });
-	if (releases.length && pre.length) {
-		groups.push({ heading: 'Releases', options: releases }, { heading: 'Betas and snapshots', options: pre });
+	if (releases.length && betas.length) {
+		groups.push({ heading: 'Releases', options: releases }, { heading: 'Betas and snapshots', options: betas });
 	} else if (rest.length) {
 		groups.push({ heading: null, options: rest });
 	}
