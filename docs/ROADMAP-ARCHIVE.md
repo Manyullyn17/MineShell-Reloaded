@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Quiet hours for notifications
+
+Built 2026-10-28 (Notifications in MineShell settings and a server's Settings; ARCHITECTURE,
+notifications), on the `next` branch. Each destination can have a window (22:00 to 08:00
+when first switched on, the machine's clock) in which scheduled restarts, starts, stops,
+joins and leaves are not sent; crashes, memory kills, stuck starts, snapshot and backup
+failures, low disk and updates still are. Held back means dropped: news of a join hours late
+is noise. Per destination, since a server's own channel and the owner's phone may want
+different nights (migration 0029 for a server's own). Tried on a throwaway dev server: saved
+and read back on both pages, and the MineShell page at 390 px. Not built: days of the week, a
+summary of what was held back when the window ends.
+
 ### Holding a mod at its version
 
 Built 2026-10-28 (Mods tab; ARCHITECTURE, "Mods and packs"), on the `next` branch. "Hold" on a

@@ -134,6 +134,12 @@ caller. Addresses are encrypted, only a hint goes to the browser, and requests t
 addresses are refused unless allowed (`assertPublicUrl`), since a server admin chooses its
 address. Discord messages set `allowed_mentions: { parse: [] }`.
 
+Each destination can have quiet hours (`quiet`: `{ from, to }`, HH:MM on the machine's clock,
+past midnight when `from` is later): while they last, `destinations` leaves it out for
+`QUIET_KINDS` (scheduled restart, start, stop, join, leave), which are dropped, not sent
+afterwards: a join at 3:00 is no news at 8:00. Problems and updates are never held back. A
+server's own destination keeps its own quiet hours; MineShell's apply to what goes there.
+
 Every request to the outside goes through `outboundFetch` (`outbound.ts`), which keeps per
 service (hosts grouped by suffix: api/cdn.modrinth.com are Modrinth) the last answer and the
 last failure, in memory on globalThis: no answer, a 5xx or a 429 fails, any other status is an

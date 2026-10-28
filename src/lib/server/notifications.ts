@@ -6,9 +6,13 @@ import { assertPublicUrl, USER_AGENT } from './download';
 import { BlockedDownloadError } from './downloadaccess';
 import {
 	DEFAULT_NOTIFICATION_KINDS,
+	inQuietHours,
 	NOTIFICATION_KINDS,
+	QUIET_KINDS,
+	quietHoursProblem,
 	TARGET_TYPES,
 	type NotificationKind,
+	type QuietHours,
 	type TargetType,
 	type TargetView
 } from '#lib/shared/notifications.js';
@@ -24,7 +28,8 @@ import { outboundFetch } from './outbound';
  * happened as it happens; nothing older than a few minutes is sent, so the
  * history catching up after MineShell was down does not post a backlog.
  * Repeats of a problem (a crash loop) within FOLD_MS are counted into the
- * next message instead of each sent.
+ * next message instead of each sent. A destination's quiet hours drop the
+ * QUIET_KINDS (news, not problems) while they last; they are not sent later.
  */
 
 export type Notification = {
@@ -35,7 +40,7 @@ export type Notification = {
 	at: number;
 };
 
-type Target = { type: TargetType; url: string; kinds: NotificationKind[] };
+type Target = { type: TargetType; url: string; kinds: NotificationKind[]; quiet: QuietHours | null };
 
 const GLOBAL_KEY = 'notifications';
 const KINDS = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
@@ -60,6 +65,22 @@ function cleanKinds(input: unknown): NotificationKind[] {
 function storedKinds(input: NotificationKind[]): string[] {
 	const kinds = input.filter((k) => KINDS.has(k));
 	return [...kinds, ...ADDED_LATER.filter((k) => !kinds.includes(k)).map((k) => `!${k}`)];
+}
+
+/** Quiet hours as stored, or null when there are none or they make no sense. */
+function cleanQuiet(input: unknown): QuietHours | null {
+	if (!input || typeof input !== 'object') return null;
+	const { from, to } = input as Record<string, unknown>;
+	const quiet = { from: String(from), to: String(to) };
+	return quietHoursProblem(quiet) ? null : quiet;
+}
+
+/** Quiet hours as a settings form posts them: off, or a start and an end. */
+export function quietHoursFrom(form: FormData): { quiet: QuietHours | null } | { problem: string } {
+	if (form.get('quietOn') !== 'on') return { quiet: null };
+	const quiet = { from: String(form.get('quietFrom') ?? ''), to: String(form.get('quietTo') ?? '') };
+	const problem = quietHoursProblem(quiet);
+	return problem ? { problem } : { quiet };
 }
 
 /** Why an address cannot be used for this kind of destination, or null when it can. */
@@ -97,22 +118,22 @@ function addressHint(type: TargetType, url: string): string {
 export function globalTarget(): Target | null {
 	const raw = db.select().from(settings).where(eq(settings.key, GLOBAL_KEY)).get()?.value;
 	try {
-		const stored = JSON.parse(raw ?? 'null') as { type?: string; urlEnc?: string; kinds?: unknown } | null;
+		const stored = JSON.parse(raw ?? 'null') as { type?: string; urlEnc?: string; kinds?: unknown; quiet?: unknown } | null;
 		const url = decryptSecret(stored?.urlEnc);
 		if (!stored || !url || targetProblem(String(stored.type), url)) return null;
-		return { type: stored.type as TargetType, url, kinds: cleanKinds(stored.kinds) };
+		return { type: stored.type as TargetType, url, kinds: cleanKinds(stored.kinds), quiet: cleanQuiet(stored.quiet) };
 	} catch {
 		return null;
 	}
 }
 
 /** Saves MineShell's destination; a null url keeps the saved address (the form never holds it). */
-export function saveGlobalTarget(input: { type: TargetType; url: string | null; kinds: NotificationKind[] }): string | null {
+export function saveGlobalTarget(input: { type: TargetType; url: string | null; kinds: NotificationKind[]; quiet?: QuietHours | null }): string | null {
 	const url = input.url ?? globalTarget()?.url ?? null;
 	if (!url) return 'Paste the address to send to.';
 	const problem = targetProblem(input.type, url);
 	if (problem) return problem;
-	const value = JSON.stringify({ type: input.type, urlEnc: encryptSecret(url), kinds: storedKinds(input.kinds) });
+	const value = JSON.stringify({ type: input.type, urlEnc: encryptSecret(url), kinds: storedKinds(input.kinds), quiet: input.quiet ?? null });
 	db.insert(settings).values({ key: GLOBAL_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 	return null;
 }
@@ -128,24 +149,31 @@ export function serverTarget(instanceId: string): ServerTarget | null {
 	const row = db.select().from(instanceNotifications).where(eq(instanceNotifications.instanceId, instanceId)).get();
 	const url = decryptSecret(row?.urlEnc);
 	if (!row || !url || targetProblem(row.type, url)) return null;
-	let kinds: unknown = null;
-	try {
-		kinds = JSON.parse(row.kinds);
-	} catch {
-		/* the defaults */
-	}
-	return { type: row.type as TargetType, url, kinds: cleanKinds(kinds), alsoGlobal: row.alsoGlobal };
+	const parsed = (json: string | null) => {
+		try {
+			return JSON.parse(json ?? 'null') as unknown;
+		} catch {
+			return null;
+		}
+	};
+	return { type: row.type as TargetType, url, kinds: cleanKinds(parsed(row.kinds)), quiet: cleanQuiet(parsed(row.quiet)), alsoGlobal: row.alsoGlobal };
 }
 
 export function saveServerTarget(
 	instanceId: string,
-	input: { type: TargetType; url: string | null; kinds: NotificationKind[]; alsoGlobal: boolean }
+	input: { type: TargetType; url: string | null; kinds: NotificationKind[]; alsoGlobal: boolean; quiet?: QuietHours | null }
 ): string | null {
 	const url = input.url ?? serverTarget(instanceId)?.url ?? null;
 	if (!url) return 'Paste the address to send to.';
 	const problem = targetProblem(input.type, url);
 	if (problem) return problem;
-	const row = { type: input.type, urlEnc: encryptSecret(url), kinds: JSON.stringify(storedKinds(input.kinds)), alsoGlobal: input.alsoGlobal };
+	const row = {
+		type: input.type,
+		urlEnc: encryptSecret(url),
+		kinds: JSON.stringify(storedKinds(input.kinds)),
+		alsoGlobal: input.alsoGlobal,
+		quiet: input.quiet ? JSON.stringify(input.quiet) : null
+	};
 	db.insert(instanceNotifications)
 		.values({ instanceId, ...row })
 		.onConflictDoUpdate({ target: instanceNotifications.instanceId, set: row })
@@ -166,9 +194,9 @@ export function copyServerTarget(fromId: string, toId: string): void {
 
 const lastResults = new Map<string, { at: number; ok: boolean; message: string }>();
 
-export function targetView(key: 'global' | string, target: Target | null): (TargetView & { kinds: NotificationKind[] }) | null {
+export function targetView(key: 'global' | string, target: Target | null): (TargetView & { kinds: NotificationKind[]; quiet: QuietHours | null }) | null {
 	if (!target) return null;
-	return { type: target.type, hint: addressHint(target.type, target.url), kinds: target.kinds, lastResult: lastResults.get(key) ?? null };
+	return { type: target.type, hint: addressHint(target.type, target.url), kinds: target.kinds, quiet: target.quiet, lastResult: lastResults.get(key) ?? null };
 }
 
 // ------------------------------------------------------------- sending ---
@@ -278,13 +306,14 @@ async function sendOnce(target: Target, n: Notification): Promise<{ ok: boolean;
 	}
 }
 
-/** Where a server's notification of this kind goes. */
-export function destinations(instanceId: string, kind: NotificationKind): { key: string; target: Target }[] {
+/** Where a server's notification of this kind goes now. */
+export function destinations(instanceId: string, kind: NotificationKind, now = Date.now()): { key: string; target: Target }[] {
 	const own = serverTarget(instanceId);
 	const global = globalTarget();
+	const wants = (target: Target) => target.kinds.includes(kind) && !(QUIET_KINDS.includes(kind) && inQuietHours(target.quiet, new Date(now)));
 	const out: { key: string; target: Target }[] = [];
-	if (own && own.kinds.includes(kind)) out.push({ key: instanceId, target: own });
-	if (global && (!own || own.alsoGlobal) && global.kinds.includes(kind)) out.push({ key: 'global', target: global });
+	if (own && wants(own)) out.push({ key: instanceId, target: own });
+	if (global && (!own || own.alsoGlobal) && wants(global)) out.push({ key: 'global', target: global });
 	return out;
 }
 
@@ -294,7 +323,7 @@ export function destinations(instanceId: string, kind: NotificationKind): { key:
  */
 export function notify(n: Notification, now = Date.now()): Promise<void> {
 	if (now - n.at > FRESH_MS) return Promise.resolve();
-	const targets = destinations(n.instance.id, n.kind);
+	const targets = destinations(n.instance.id, n.kind, now);
 	if (!targets.length) return Promise.resolve();
 	let message = n.message;
 	if (FOLDED.has(n.kind)) {

@@ -90,7 +90,7 @@ import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { EVERY_MINUTES } from '#lib/shared/presets.js';
 import { checkForUpdates, checkModsForUpdates, modsChecked, updateKind } from '#lib/server/updatecheck.js';
-import { globalTarget, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
+import { globalTarget, quietHoursFrom, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 import { plural } from '#lib/shared/format.js';
 
@@ -764,11 +764,14 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const known = new Set(NOTIFICATION_KINDS.map((k) => k.kind));
 		const url = String(form.get('url') ?? '').trim();
+		const quiet = quietHoursFrom(form);
+		if ('problem' in quiet) return fail(400, { ok: false, message: quiet.problem });
 		const problem = saveServerTarget(instance.id, {
 			type: String(form.get('type')) as TargetType,
 			url: url || null,
 			kinds: form.getAll('kinds').map(String).filter((k): k is NotificationKind => known.has(k as NotificationKind)),
-			alsoGlobal: form.get('alsoGlobal') === 'on'
+			alsoGlobal: form.get('alsoGlobal') === 'on',
+			quiet: quiet.quiet
 		});
 		if (problem) return fail(400, { ok: false, message: problem });
 		return { ok: true, message: 'Saved. Send a test message to see it arrive.' };

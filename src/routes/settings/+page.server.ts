@@ -99,7 +99,7 @@ import { allowedAddresses, recentRefusals } from '#lib/server/downloadaccess.js'
 import { getSftpSettings, saveSftpSettings, sftpDefaults, validHost, validPort, validUser } from '#lib/server/sftp.js';
 import { deleteCustomPreset, getPreset, listPresets, saveCustomPreset, updateCustomPreset } from '#lib/server/jvm-presets.js';
 import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#lib/server/instance-defaults.js';
-import { globalTarget, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
+import { globalTarget, quietHoursFrom, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
 import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, setDestinationCompress, storeFor } from '#lib/server/backups.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
@@ -593,7 +593,9 @@ export const actions: Actions = {
 	notifications: async ({ request }) => {
 		const form = await request.formData();
 		const url = String(form.get('url') ?? '').trim();
-		const problem = saveGlobalTarget({ type: String(form.get('type')) as TargetType, url: url || null, kinds: kindsFrom(form) });
+		const quiet = quietHoursFrom(form);
+		if ('problem' in quiet) return fail(400, { ok: false, message: quiet.problem });
+		const problem = saveGlobalTarget({ type: String(form.get('type')) as TargetType, url: url || null, kinds: kindsFrom(form), quiet: quiet.quiet });
 		if (problem) return fail(400, { ok: false, message: problem });
 		audit('settings.notifications');
 		return { ok: true, message: 'Saved. Send a test message to see it arrive.' };

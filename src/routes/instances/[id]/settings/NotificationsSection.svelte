@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
 	import { formatDateTime } from '#lib/shared/format.js';
-	import { DEFAULT_NOTIFICATION_KINDS, NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
+	import { DEFAULT_NOTIFICATION_KINDS, NOTIFICATION_KINDS, quietValues, type TargetType } from '#lib/shared/notifications.js';
 	import SettingsSection from '#lib/components/SettingsSection.svelte';
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
 	import type { PageData } from './$types';
@@ -11,7 +11,8 @@
 	// Re-synced after a save, like the page's other bound fields.
 	const notificationValues = () => ({
 		type: (notifications.own?.type ?? notifications.global?.type ?? 'discord') as TargetType,
-		kinds: [...(notifications.own?.kinds ?? notifications.global?.kinds ?? DEFAULT_NOTIFICATION_KINDS)]
+		kinds: [...(notifications.own?.kinds ?? notifications.global?.kinds ?? DEFAULT_NOTIFICATION_KINDS)],
+		...quietValues(notifications.own ? notifications.own.quiet : (notifications.global?.quiet ?? null))
 	});
 	// svelte-ignore state_referenced_locally
 	let notifyValues = $state(notificationValues());

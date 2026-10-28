@@ -516,7 +516,9 @@ export const instanceNotifications = sqliteTable('instance_notifications', {
 	/** Also send to MineShell's own destination. */
 	alsoGlobal: integer('also_global', { mode: 'boolean' }).notNull().default(false),
 	/** JSON array of notification kinds sent to this destination. */
-	kinds: text('kinds').notNull()
+	kinds: text('kinds').notNull(),
+	/** JSON { from, to } (HH:MM) when QUIET_KINDS are not sent; null for none. */
+	quiet: text('quiet')
 });
 export type NewServerInstance = typeof serverInstances.$inferInsert;
 export type Mod = typeof mods.$inferSelect;

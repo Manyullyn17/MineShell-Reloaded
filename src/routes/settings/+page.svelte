@@ -9,7 +9,7 @@
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import NotificationFields from '#lib/components/NotificationFields.svelte';
-	import { DEFAULT_NOTIFICATION_KINDS, type TargetType } from '#lib/shared/notifications.js';
+	import { DEFAULT_NOTIFICATION_KINDS, quietValues, type TargetType } from '#lib/shared/notifications.js';
 	import { blockedLabel } from '#lib/shared/downloads.js';
 	import { PORT_KIND_LABELS } from '#lib/shared/ports.js';
 	import { formatBytes, formatDateTime, plural } from '#lib/shared/format.js';
@@ -48,7 +48,8 @@
 
 	const notificationValues = () => ({
 		type: (data.notifications?.type ?? 'discord') as TargetType,
-		kinds: [...(data.notifications?.kinds ?? DEFAULT_NOTIFICATION_KINDS)]
+		kinds: [...(data.notifications?.kinds ?? DEFAULT_NOTIFICATION_KINDS)],
+		...quietValues(data.notifications?.quiet ?? null)
 	});
 	// svelte-ignore state_referenced_locally
 	let notifyValues = $state(notificationValues());

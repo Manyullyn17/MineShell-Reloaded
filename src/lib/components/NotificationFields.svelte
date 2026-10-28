@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SegmentedChoice from './SegmentedChoice.svelte';
-	import { NOTIFICATION_KINDS, TARGET_TYPES, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
+	import { NOTIFICATION_KINDS, QUIET_KINDS, TARGET_TYPES, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 
 	/**
 	 * Where notifications go and which are sent, shared by MineShell settings
@@ -12,7 +12,7 @@
 		savedHint,
 		idPrefix
 	}: {
-		values: { type: TargetType; kinds: NotificationKind[] };
+		values: { type: TargetType; kinds: NotificationKind[]; quietOn: boolean; quietFrom: string; quietTo: string };
 		/** How the saved address shows ("Discord webhook 1234"), null when none is saved. */
 		savedHint: string | null;
 		idPrefix: string;
@@ -20,6 +20,9 @@
 
 	const typeChoices = TARGET_TYPES.map((t) => ({ value: t.type, label: t.label }));
 	const info = $derived(TARGET_TYPES.find((t) => t.type === values.type) ?? TARGET_TYPES[0]);
+	const quietLabels = NOTIFICATION_KINDS.filter((k) => QUIET_KINDS.includes(k.kind))
+		.map((k) => k.label.toLowerCase())
+		.join(', ');
 </script>
 
 <div class="grid-2">
@@ -55,6 +58,21 @@
 	{/each}
 </fieldset>
 
+<div class="check field quiet-switch">
+	<input id="{idPrefix}-quiet" name="quietOn" type="checkbox" class="switch" role="switch" bind:checked={values.quietOn} />
+	<label for="{idPrefix}-quiet">Quiet hours</label>
+</div>
+{#if values.quietOn}
+	<div class="quiet-times">
+		<label>From <input name="quietFrom" type="time" required bind:value={values.quietFrom} /></label>
+		<label>to <input name="quietTo" type="time" required bind:value={values.quietTo} /></label>
+	</div>
+{/if}
+<p class="hint">
+	During quiet hours (on this machine's clock) these are not sent, then or afterwards: {quietLabels}. Problems and
+	updates still are.
+</p>
+
 <style>
 	.kinds {
 		display: grid;
@@ -65,5 +83,15 @@
 
 	.kinds legend {
 		margin-bottom: var(--space-2);
+	}
+
+	.quiet-switch {
+		margin-top: var(--space-3);
+	}
+
+	.quiet-times {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
 	}
 </style>

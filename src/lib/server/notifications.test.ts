@@ -6,6 +6,7 @@ import {
 	destinations,
 	globalTarget,
 	notify,
+	quietHoursFrom,
 	removeGlobalTarget,
 	resetFolds,
 	saveGlobalTarget,
@@ -63,7 +64,7 @@ describe('destinations', () => {
 		expect(raw).not.toContain('secret-token');
 		expect(targetView('global', globalTarget())).toMatchObject({ type: 'discord', hint: 'Discord webhook 123456', kinds: ['crash'] });
 		expect(saveGlobalTarget({ type: 'discord', url: null, kinds: ['crash', 'update'] })).toBeNull();
-		expect(globalTarget()).toEqual({ type: 'discord', url: DISCORD, kinds: ['crash', 'update'] });
+		expect(globalTarget()).toEqual({ type: 'discord', url: DISCORD, kinds: ['crash', 'update'], quiet: null });
 	});
 
 	it('turns a kind added later on for destinations saved before it, unless turned off since', async () => {
@@ -132,5 +133,45 @@ describe('sending', () => {
 		await notify(event(s, 'crash', t0 + 11 * 60_000), t0 + 11 * 60_000);
 		expect(received).toHaveLength(2);
 		expect((received[1].body.embeds as { description: string }[])[0].description).toContain('2 more like this');
+	});
+});
+
+describe('quiet hours', () => {
+	/** A time today on the machine's clock. */
+	const at = (h: number, m = 0) => new Date(2026, 9, 28, h, m).getTime();
+	const kindsAt = (id: string, time: number) =>
+		(['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave'] as const).filter((k) => destinations(id, k, time).length);
+
+	it('holds back starts, joins and the like overnight, but never problems or updates', async () => {
+		const s = await server();
+		saveGlobalTarget({ type: 'discord', url: DISCORD, kinds: ['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave'], quiet: { from: '22:00', to: '07:30' } });
+		expect(kindsAt(s.id, at(21, 59))).toEqual(['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave']);
+		expect(kindsAt(s.id, at(22, 0))).toEqual(['crash', 'memory', 'disk', 'update']);
+		expect(kindsAt(s.id, at(3))).toEqual(['crash', 'memory', 'disk', 'update']);
+		expect(kindsAt(s.id, at(7, 30))).toHaveLength(7);
+	});
+
+	it("belong to each destination: a server's own, and MineShell's beside it", async () => {
+		const s = await server();
+		saveGlobalTarget({ type: 'discord', url: DISCORD, kinds: ['join'], quiet: { from: '13:00', to: '14:00' } });
+		saveServerTarget(s.id, { type: 'ntfy', url: NTFY, kinds: ['join'], alsoGlobal: true, quiet: null });
+		expect(destinations(s.id, 'join', at(13, 30)).map((d) => d.key)).toEqual([s.id]);
+		expect(destinations(s.id, 'join', at(14)).map((d) => d.key)).toEqual([s.id, 'global']);
+		saveServerTarget(s.id, { type: 'ntfy', url: null, kinds: ['join'], alsoGlobal: true, quiet: { from: '13:00', to: '13:45' } });
+		expect(serverTarget(s.id)?.quiet).toEqual({ from: '13:00', to: '13:45' });
+		expect(destinations(s.id, 'join', at(13, 50)).map((d) => d.key)).toEqual([s.id]);
+		expect(targetView('global', globalTarget())?.quiet).toEqual({ from: '13:00', to: '14:00' });
+	});
+
+	it('are read from the form, refusing a window without an end', () => {
+		const form = (entries: Record<string, string>) => {
+			const f = new FormData();
+			for (const [k, v] of Object.entries(entries)) f.set(k, v);
+			return f;
+		};
+		expect(quietHoursFrom(form({ quietFrom: '22:00', quietTo: '07:00' }))).toEqual({ quiet: null });
+		expect(quietHoursFrom(form({ quietOn: 'on', quietFrom: '22:00', quietTo: '07:00' }))).toEqual({ quiet: { from: '22:00', to: '07:00' } });
+		expect(quietHoursFrom(form({ quietOn: 'on', quietFrom: '22:00', quietTo: '' }))).toMatchObject({ problem: expect.stringMatching(/start and an end/) });
+		expect(quietHoursFrom(form({ quietOn: 'on', quietFrom: '22:00', quietTo: '22:00' }))).toMatchObject({ problem: expect.stringMatching(/another time/) });
 	});
 });
