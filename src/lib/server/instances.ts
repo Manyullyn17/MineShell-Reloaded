@@ -31,7 +31,7 @@ import {
 	type UnitState
 } from './systemd';
 import { rconExec, parsePlayerList } from './rcon';
-import { getTask, startTask, type TaskHandle } from './tasks';
+import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
 import {
 	applyOverrides,
@@ -98,14 +98,18 @@ export function slugify(name: string): string {
 	return slug || 'instance';
 }
 
-export function uniqueId(name: string): string {
+/**
+ * A free id for a server named `name`. The id names the folder too, so a
+ * folder without a row (a deleted server's kept files) takes it as well: a
+ * new server must not adopt another's world and mods.
+ */
+export async function uniqueId(name: string): Promise<string> {
+	const taken = async (candidate: string) =>
+		!!getInstance(candidate) || (await fs.access(instanceDir(candidate)).then(() => true, () => false));
 	const base = slugify(name);
-	let candidate = base;
-	let n = 2;
-	while (db.select().from(serverInstances).where(eq(serverInstances.id, candidate)).get()) {
-		candidate = `${base}-${n++}`;
-	}
-	return candidate;
+	let id = base;
+	for (let n = 2; await taken(id); n++) id = `${base}-${n}`;
+	return id;
 }
 
 export function listInstances(): ServerInstance[] {
@@ -248,7 +252,7 @@ export async function insertInstanceRow(
 ): Promise<ServerInstance> {
 	// Before anything is created: a refused port leaves nothing behind.
 	const { serverPort, rconPort } = await portsFor(input.serverPort);
-	const id = uniqueId(input.name);
+	const id = await uniqueId(input.name);
 	const dir = instanceDir(id);
 	await fs.mkdir(path.join(dir, 'mods'), { recursive: true });
 	await fs.mkdir(path.join(dir, '.mineshell'), { recursive: true });
@@ -1415,6 +1419,14 @@ export async function deleteInstance(
 	instance: ServerInstance,
 	opts: { deleteFiles: boolean }
 ): Promise<void> {
+	// Work still running on it would carry on in a folder that is gone, and
+	// write parts of it back as a folder no server owns.
+	if (beingCopied.has(instance.id)) throw new InstanceError('This server is being copied; delete it once the copy has finished.');
+	const busy = listTasks().find((t) => t.instanceId === instance.id && t.state === 'running');
+	if (busy) throw new InstanceError(`"${busy.label}" is still running on this server: wait for it to finish, or cancel it in Activity.`);
+	if (listOperations().some((o) => o.instanceId === instance.id)) {
+		throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
+	}
 	await stopUnit(instance.id).catch(() => undefined);
 	await removeUnitArtifacts(instance.id);
 	if (opts.deleteFiles) {
@@ -1509,12 +1521,7 @@ export async function cloneInstance(
 	if (!name.trim()) throw new InstanceError('Give the copy a name.');
 	await requireStopped(source);
 
-	// The id names the folder too; a deleted server's kept files must not be adopted.
-	const taken = async (candidate: string) =>
-		!!getInstance(candidate) || (await fs.access(instanceDir(candidate)).then(() => true, () => false));
-	const base = slugify(name);
-	let id = base;
-	for (let n = 2; await taken(id); n++) id = `${base}-${n}`;
+	const id = await uniqueId(name);
 	const dir = instanceDir(id);
 	const { serverPort, rconPort } = await allocatePortPair();
 	const password = randomPassword();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NbtError, peekNumber, writeNbt, type Tag } from './nbt';
+import { NbtError, parseNbt, peekNumber, writeNbt, type Tag } from './nbt';
 
 const compound = (value: [string, Tag][]): Extract<Tag, { type: 'compound' }> => ({ type: 'compound', value });
 const raw = (root: Extract<Tag, { type: 'compound' }>) => writeNbt({ name: '', gzipped: false, root });
@@ -51,5 +51,27 @@ describe('peekNumber', () => {
 		const data = raw(compound([...everything, ['InhabitedTime', { type: 'long', value: 7n }]]));
 		expect(() => peekNumber(data.subarray(0, data.length - 6), [['InhabitedTime']])).toThrow(NbtError);
 		expect(() => peekNumber(Buffer.from([8, 0, 0]), [['InhabitedTime']])).toThrow(NbtError);
+	});
+});
+
+describe('parseNbt limits', () => {
+	const file = (bytes: number, gzipped: boolean) =>
+		writeNbt({ name: '', gzipped, root: compound([['Data', { type: 'byteArray', value: new Array(bytes).fill(0) }]]) });
+
+	it('reads a file within the limit, gzipped or not', () => {
+		expect(parseNbt(file(1000, true), 2000).gzipped).toBe(true);
+		expect(parseNbt(file(1000, false), 2000).gzipped).toBe(false);
+	});
+
+	// An uploaded world's level.dat of a few MiB unpacked to gigabytes and took MineShell's memory.
+	it('refuses a gzipped file that unpacks to more, before unpacking all of it', () => {
+		const bomb = file(100_000, true);
+		expect(bomb.length).toBeLessThan(1000);
+		expect(() => parseNbt(bomb, 10_000)).toThrow(NbtError);
+		expect(() => parseNbt(bomb, 10_000)).toThrow('unpacks to more than 10000 bytes');
+	});
+
+	it('refuses an unpacked file over the limit', () => {
+		expect(() => parseNbt(file(100_000, false), 10_000)).toThrow(NbtError);
 	});
 });

@@ -200,9 +200,24 @@ function encodeModifiedUtf8(text: string): Buffer {
 
 export type NbtFile = { name: string; root: Compound; gzipped: boolean };
 
-export function parseNbt(data: Buffer): NbtFile {
+/**
+ * The most NBT read in one piece: far above any level.dat, player file or
+ * chunk Minecraft writes. Files come from uploaded worlds too, and a 1 MiB
+ * gzip unpacks to 1 GiB of zeros; parsed, a byte array takes about 8 bytes a
+ * byte, so this also bounds the memory a file can take.
+ */
+export const NBT_MAX_BYTES = 64 * 1024 * 1024;
+
+export function parseNbt(data: Buffer, maxBytes = NBT_MAX_BYTES): NbtFile {
 	const gzipped = data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b;
-	const raw = gzipped ? zlib.gunzipSync(data) : data;
+	let raw: Buffer;
+	try {
+		raw = gzipped ? zlib.gunzipSync(data, { maxOutputLength: maxBytes }) : data;
+	} catch (err) {
+		if ((err as { code?: string }).code === 'ERR_BUFFER_TOO_LARGE') throw new NbtError(`The file unpacks to more than ${maxBytes} bytes.`);
+		throw err;
+	}
+	if (raw.length > maxBytes) throw new NbtError(`The file is larger than ${maxBytes} bytes.`);
 	const reader = new Reader(raw);
 	if (reader.tagType() !== 'compound') throw new NbtError('The file does not start with a compound tag.');
 	const name = reader.string();

@@ -112,6 +112,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Live: 45 MB -> 8 MB on a pre-generated 1.20.1 world, which then loaded and regenerated.
   Since 2026-10-18 an analysis comes first (heatmap, threshold marks chunks live, protect on
   the map; ARCHITECTURE, "Worlds"); a prune removes only chunks that analysis marked.
+- NBT is read at most 64 MiB unpacked (`NBT_MAX_BYTES`, 2026-10-28): level.dat and region
+  chunks come from uploaded worlds, and 1 MiB of gzip unpacks to 1 GiB. A chunk over it reads
+  as unreadable, which pruning keeps and the chunk map leaves out.
 - Removing a world-generation data pack from a world that loaded it stops the world loading
   (level.dat's generation settings name its biomes); MineShell refuses unless confirmed.
 

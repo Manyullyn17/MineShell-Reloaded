@@ -72,11 +72,20 @@ async function sampleOnce(): Promise<void> {
 	}
 }
 
+/**
+ * One round, never rejecting: nothing awaits the timer's call, and a rejection
+ * nobody catches ends the process (a full disk failing the insert restarted
+ * MineShell every 10 seconds, when its pages were needed to free space).
+ */
+export function sampleResources(): Promise<void> {
+	return sampleOnce().catch((err) => console.warn('[mineshell] sampling CPU and memory failed:', err instanceof Error ? err.message : err));
+}
+
 export function startMonitor(): void {
 	if (timer) return;
-	timer = setInterval(() => void sampleOnce(), SAMPLE_INTERVAL_MS);
+	timer = setInterval(() => void sampleResources(), SAMPLE_INTERVAL_MS);
 	timer.unref?.();
-	void sampleOnce();
+	void sampleResources();
 }
 
 export function stopMonitor(): void {

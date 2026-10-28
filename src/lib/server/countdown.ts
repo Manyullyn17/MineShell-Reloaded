@@ -70,14 +70,16 @@ export async function startCountdown(
 		timers.push(setTimeout(() => void say(instance, `Server ${what} in ${describe(mark)}.`), (seconds - mark) * 1000));
 	}
 	timers.push(
-		setTimeout(async () => {
+		setTimeout(() => {
 			countdowns.delete(instance.id);
-			const current = getInstance(instance.id);
-			// Stopped in the meantime: a restart would start it again.
-			if (!current || !(await summarise(current)).running) return;
-			await say(current, `Server ${what} now.`);
-			audit(`instance.countdown_${verb}`, { instanceId: instance.id });
-			await (verb === 'stop' ? stop(current) : restart(current));
+			void (async () => {
+				const current = getInstance(instance.id);
+				// Stopped in the meantime: a restart would start it again.
+				if (!current || !(await summarise(current)).running) return;
+				await say(current, `Server ${what} now.`);
+				audit(`instance.countdown_${verb}`, { instanceId: instance.id });
+				await (verb === 'stop' ? stop(current) : restart(current));
+			})().catch((err) => console.error(`[mineshell] the countdown's ${verb} of ${instance.id} failed:`, err));
 		}, seconds * 1000)
 	);
 	for (const t of timers) t.unref?.();
