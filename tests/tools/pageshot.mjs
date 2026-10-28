@@ -13,8 +13,9 @@
  *     --timeout <ms>     give up waiting after this long (default 30000), then shoot anyway
  *     --overflow         also list elements reaching past the viewport's right edge
  *     --spill            also list text running out of its own box (a long word over
- *                        the next column) and text cut off with no way to read it all
- *                        (an ellipsis without a title): long names, inside the page
+ *                        the next column), text cut off with no way to read it all
+ *                        (an ellipsis without a title), and text squeezed into a column
+ *                        a few letters wide: long names, inside the page
  *     --cookie <n=v>     send this cookie (a session: signed in as that account)
  *     --click <selector> once loaded, click the first element matching this CSS selector;
  *                        --wait-for then waits for what the click brings. Repeatable: the
@@ -225,6 +226,13 @@ try {
 				if (!ownText(e) || !e.offsetParent || e.clientWidth <= 2 || e.closest('pre, textarea, [aria-live]')) continue;
 				const style = getComputedStyle(e);
 				if (style.display === 'inline') continue;
+				// Squeezed: text that breaks anywhere, in a column a few letters wide (a table
+				// giving the width to its other columns), one or two letters a line.
+				const words = e.textContent.trim();
+				if (words.length > 12 && e.clientWidth < 48 && e.clientHeight > 4 * parseFloat(style.lineHeight || style.fontSize)) {
+					out.push('squeezed ' + label(e) + ' to ' + e.clientWidth + 'px: ' + words.replace(/\\s+/g, ' ').slice(0, 50));
+					continue;
+				}
 				if (e.scrollWidth <= e.clientWidth + 1) continue;
 				const text = e.textContent.trim().replace(/\\s+/g, ' ').slice(0, 50);
 				if (/visible/.test(style.overflowX)) out.push('spills ' + label(e) + ' by ' + (e.scrollWidth - e.clientWidth) + 'px: ' + text);
@@ -238,7 +246,9 @@ try {
 	const height = fixedHeight ? Number(fixedHeight) : Math.min(await evaluate('document.documentElement.scrollHeight'), 4000);
 	await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
 	await sleep(300);
-	let clip = fixedHeight ? { x: 0, y: 0, width, height, scale: 1 } : undefined;
+	// Past the window Chrome captures the whole document, whatever the height above: a
+	// 197,000 px phone-width mod list came back as "Page is too large".
+	let clip = { x: 0, y: 0, width, height, scale: 1 };
 	if (element) {
 		const box = await evaluate(`(() => { const e = document.querySelector(${JSON.stringify(element)}); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }; })()`);
 		if (box) {
@@ -248,7 +258,8 @@ try {
 			clip = { x, y, width: Math.min(width - x, box.width + 2 * margin), height: box.height + 2 * margin, scale: 1 };
 		} else console.log(`Nothing matches ${element}; the whole page is captured.`);
 	}
-	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !fixedHeight || !!element, clip });
+	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip });
+	if (!shot.result) throw new Error(`Chrome took no picture: ${shot.error?.message ?? JSON.stringify(shot)}`);
 	await fs.writeFile(out, Buffer.from(shot.result.data, 'base64'));
 	console.log(`${out}${found ? '' : ` (gave up waiting for "${waitFor}")`}`);
 	ws.close();
