@@ -16,7 +16,7 @@ npm run dev          # uses .env: ~/mineshell-data, dev copies of the user's ser
 # anything only newer Node has.
 npm run check        # svelte-check, must stay at 0 errors / 0 warnings
 npm test             # Vitest, ~7s (parallel workers, a database each), fully offline; CI (GitHub Actions) runs check + test + build on Node 22 and 24
-git config core.hooksPath .githooks   # once per clone: pre-push runs check + the tests related to the push
+git config core.hooksPath .githooks   # once per clone: pre-push runs check + the whole test suite
 ```
 
 - **Tests** (`tests/README.md`): never touch real data, never start processes, never use the
