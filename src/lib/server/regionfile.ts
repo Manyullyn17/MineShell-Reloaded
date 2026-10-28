@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { NBT_MAX_BYTES } from './nbt';
 
 /**
  * Region files (.mca), shared by chunk pruning, chunk restore and the chunk
@@ -56,11 +57,12 @@ export function isExternal(file: Buffer, loc: Location): boolean {
 	return start + 5 <= file.length && (file[start + 4] & EXTERNAL) !== 0;
 }
 
+/** Over NBT_MAX_BYTES unpacked, a chunk is unreadable (pruning keeps those): an .mcc beside the region can be any size. */
 function decompress(type: number, data: Buffer): Buffer | null {
 	try {
-		if (type === 1) return zlib.gunzipSync(data);
-		if (type === 2) return zlib.inflateSync(data);
-		if (type === 3) return data;
+		if (type === 1) return zlib.gunzipSync(data, { maxOutputLength: NBT_MAX_BYTES });
+		if (type === 2) return zlib.inflateSync(data, { maxOutputLength: NBT_MAX_BYTES });
+		if (type === 3) return data.length <= NBT_MAX_BYTES ? data : null;
 	} catch {
 		/* damaged */
 	}

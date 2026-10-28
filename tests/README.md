@@ -453,3 +453,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A database write failing in the CPU and memory sampling (a full disk) was a rejection nobody caught, which ends the process: MineShell restarted every 10 seconds | `flows/monitor.test.ts` ("does not reject") |
 | Deleting a server while an install, pack change or other task ran on it removed the folder under the task, which carried on and wrote parts of it back as a folder no server owned | `flows/delete-server.test.ts` |
 | A packet length of -4 from whatever answered on the RCON port left the RCON client reading the same packet forever, freezing MineShell (its own timeouts included) | `server/rcon.test.ts` ("something else on the RCON port") |
+| NBT (level.dat, player files, region chunks, uploaded worlds' included) was unpacked without a limit: a level.dat of a few MiB could unpack to gigabytes and take MineShell's memory | `server/nbt.test.ts` ("parseNbt limits") |
