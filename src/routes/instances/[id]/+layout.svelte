@@ -41,6 +41,12 @@
 
 	const actionUrl = (name: string) => `${base}?/${name}`;
 	let menuOpen = $state(false);
+	/** The sticky header's height, for sub-tab bars that stick under it (Settings). */
+	let headHeight = $state(0);
+	$effect(() => {
+		document.documentElement.style.setProperty('--instance-head', `${headHeight}px`);
+		return () => document.documentElement.style.removeProperty('--instance-head');
+	});
 	/** The menu opens toward the side with room: leftward from the ⋯ at the right of a desktop
 	   header, rightward on a phone, where the header's buttons wrap to the left edge. */
 	let menuWrap = $state<HTMLElement | null>(null);
@@ -111,7 +117,7 @@
 <svelte:head><title>{data.instance.name} - MineShell</title></svelte:head>
 <svelte:window onkeydown={(e) => e.key === 'Escape' && (menuOpen = false)} />
 
-<div class="sticky-head">
+<div class="sticky-head" bind:offsetHeight={headHeight}>
 	<header class="instance-head">
 		<div class="identity">
 			<div class="title">
