@@ -16,6 +16,7 @@ import {
 import { getPreset, listPresets } from '#lib/server/jvm-presets.js';
 import { PROPERTY_GROUPS, propertiesFromForm } from '#lib/server/properties.js';
 import { audit } from '#lib/server/instances.js';
+import { scheduleFromForm } from '#lib/shared/snapshotschedule.js';
 import { totalMemoryMb } from '#lib/server/servercap.js';
 
 export const load: PageServerLoad = async () => {
@@ -50,6 +51,9 @@ export const actions: Actions = {
 		if (fixed && minMb > maxMb) {
 			return fail(400, { ok: false, message: 'Starting memory cannot exceed the maximum.' });
 		}
+		if (form.get('snapshotEvery') === 'daily' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(String(form.get('snapshotDailyTime') ?? ''))) {
+			return fail(400, { ok: false, message: 'Give the snapshot time as HH:MM.' });
+		}
 		const jvmPreset = String(form.get('jvmPreset') ?? '');
 		if (!getPreset(jvmPreset)) return fail(400, { ok: false, message: 'That JVM preset no longer exists.' });
 
@@ -61,6 +65,7 @@ export const actions: Actions = {
 			console: consoleFromForm(form, current.console),
 			limits: limitsFromForm(form, current.limits),
 			updates: updatesFromForm(form, current.updates),
+			snapshots: scheduleFromForm(form),
 			properties: { ...current.properties, ...propertiesFromForm(form, DEFAULTABLE_PROPERTIES) }
 		});
 		audit('settings.instance_defaults');

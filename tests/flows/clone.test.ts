@@ -14,6 +14,7 @@ const { createInstance, reload, systemdStopped, tree, waitForTask } = await impo
 const { hangForever, restartMineShell } = await import('../helpers/crash');
 const { grant, otherUser } = await import('../helpers/auth');
 const { grantsOf } = await import('#lib/server/accounts.js');
+const { getSnapshotSchedule, saveSnapshotSchedule, NEW_SERVER_SCHEDULE } = await import('#lib/server/snapshotschedule.js');
 
 const FILES = {
 	'server.jar': 'fabric launcher',
@@ -58,6 +59,19 @@ async function source() {
 describe('cloning a server', () => {
 	beforeEach(() => systemdStopped());
 	afterEach(() => vi.restoreAllMocks());
+
+	// New servers get daily snapshots; a copy is not new in that sense and keeps its source's.
+	it("gives the copy its source's snapshot schedule, none included", async () => {
+		const original = await source();
+		const none = await cloneInstance(original, 'No schedule');
+		expect((await waitForTask(none.taskId)).state).toBe('done');
+		expect(getSnapshotSchedule(none.instance.id).every).toBe('off');
+
+		saveSnapshotSchedule(original.id, { ...NEW_SERVER_SCHEDULE, dailyTime: '02:30' });
+		const daily = await cloneInstance(original, 'Daily');
+		expect((await waitForTask(daily.taskId)).state).toBe('done');
+		expect(getSnapshotSchedule(daily.instance.id)).toEqual({ ...NEW_SERVER_SCHEDULE, dailyTime: '02:30' });
+	});
 
 	it('copies files, settings and mod records under fresh ports and a new password', async () => {
 		const original = await source();

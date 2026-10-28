@@ -6,6 +6,7 @@ import { getPreset } from './jvm-presets';
 import { defaultProperties, PROPERTY_SCHEMA, type PropertyField } from './properties';
 import { suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
+import { NEW_SERVER_SCHEDULE, validSchedule, type SnapshotSchedule } from '#lib/shared/snapshotschedule.js';
 
 /**
  * What a new instance starts with, editable on the global settings page.
@@ -68,6 +69,8 @@ export type InstanceDefaults = {
 	console: ConsoleSettings;
 	limits: LimitSettings;
 	updates: UpdateCheckSettings;
+	/** Scheduled snapshots; defaults stored before they had this get NEW_SERVER_SCHEDULE. */
+	snapshots: SnapshotSchedule;
 	/** server.properties values for DEFAULTABLE_PROPERTIES keys, every key present. */
 	properties: Record<string, string>;
 };
@@ -119,6 +122,7 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 	console: { consoleBacklogLines: 300, consoleBufferLines: 2000 },
 	limits: { memory: 'none', cpuPercent: null },
 	updates: { updateCheck: true, updateCheckHours: 24, updateChannel: 'release', modUpdateCheck: true },
+	snapshots: NEW_SERVER_SCHEDULE,
 	properties: builtInProperties()
 };
 
@@ -266,6 +270,7 @@ function clean(input: Partial<InstanceDefaults>): InstanceDefaults {
 		console: cleanConsole((input.console ?? {}) as Record<string, unknown>, base.console),
 		limits: cleanLimits((input.limits ?? {}) as Record<string, unknown>, base.limits),
 		updates: cleanUpdates((input.updates ?? {}) as Record<string, unknown>, base.updates),
+		snapshots: input.snapshots && typeof input.snapshots === 'object' ? validSchedule(input.snapshots as Record<string, unknown>) : base.snapshots,
 		properties: cleanProperties(input.properties)
 	};
 }

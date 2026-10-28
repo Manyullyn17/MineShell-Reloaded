@@ -742,7 +742,9 @@ recovery sends `save-on` to a server left with saving paused and starts one left
 "Snapshot now" on a running server takes the live path too (`snapshotWhileRunning`, same journal),
 refused while the server is starting, stopping or about to restart.
 Retention is the ordinary policy, so frequent scheduled snapshots push out older
-pre-operation ones once over the limits (pin one to keep it).
+pre-operation ones once over the limits (pin one to keep it). A server without a stored schedule has
+none; a new one gets its schedule written at creation from New server defaults (built in:
+daily at 04:00, skipped when nobody played), so existing servers keep none after an update.
 
 "Every N hours" falls on the clock (`clockSlot`: multiples of N from midnight up to a day,
 whole days at midnight; the world map's schedule uses it too), and the next slots are worked

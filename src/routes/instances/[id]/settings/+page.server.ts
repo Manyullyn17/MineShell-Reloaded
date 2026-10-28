@@ -36,7 +36,7 @@ import { latestMergeReport, resolveMerge } from '#lib/server/configmerge.js';
 import { markMemoryChanged, memoryAdvice } from '#lib/server/memoryadvice.js';
 import { runningHeapMb } from '#lib/server/heap.js';
 import { formInt } from '#lib/server/formvalues.js';
-import { getSnapshotSchedule, lastScheduledResult, saveSnapshotSchedule, scheduledSnapshotAt, validSchedule } from '#lib/server/snapshotschedule.js';
+import { getSnapshotSchedule, lastScheduledResult, saveSnapshotSchedule, scheduledSnapshotAt, scheduleFromForm } from '#lib/server/snapshotschedule.js';
 import {
 	decideSnapshot,
 	getSnapshotPolicy,
@@ -810,14 +810,7 @@ export const actions: Actions = {
 		if (form.get('snapshotEvery') === 'daily' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
 			return fail(400, { ok: false, message: 'Give the snapshot time as HH:MM.' });
 		}
-		const schedule = validSchedule({
-			every: form.get('snapshotEvery'),
-			dailyTime: time,
-			intervalHours: Number(form.get('snapshotIntervalHours')),
-			whileRunning: form.get('snapshotWhileRunning'),
-			warnMinutes: Number(form.get('snapshotWarnMinutes')),
-			skipIdle: form.get('snapshotSkipIdle') === 'on'
-		});
+		const schedule = scheduleFromForm(form);
 		saveSnapshotSchedule(instance.id, schedule);
 		return { ok: true, message: schedule.every === 'off' ? 'Scheduled snapshots turned off.' : 'Snapshot schedule saved.' };
 	},

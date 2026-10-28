@@ -3,6 +3,7 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import RestartFields from '#lib/components/RestartFields.svelte';
 	import ConsoleFields from '#lib/components/ConsoleFields.svelte';
+	import SnapshotScheduleFields from '#lib/components/SnapshotScheduleFields.svelte';
 	import UpdateCheckFields from '#lib/components/UpdateCheckFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
@@ -29,6 +30,14 @@
 		limitMemory: 'none' | 'auto';
 		limitCpuPercent: number | string;
 		updates: typeof data.defaults.updates;
+		snapshots: {
+			snapshotEvery: string;
+			snapshotDailyTime: string;
+			snapshotIntervalHours: number;
+			snapshotWhileRunning: string;
+			snapshotWarnMinutes: number;
+			snapshotSkipIdle: boolean;
+		};
 		values: Record<string, string>;
 		checks: Record<string, boolean>;
 	};
@@ -52,6 +61,14 @@
 			limitMemory: d.limits.memory,
 			limitCpuPercent: d.limits.cpuPercent ?? '',
 			updates: { ...d.updates },
+			snapshots: {
+				snapshotEvery: d.snapshots.every,
+				snapshotDailyTime: d.snapshots.dailyTime,
+				snapshotIntervalHours: d.snapshots.intervalHours,
+				snapshotWhileRunning: d.snapshots.whileRunning,
+				snapshotWarnMinutes: d.snapshots.warnMinutes,
+				snapshotSkipIdle: d.snapshots.skipIdle
+			},
 			values,
 			checks
 		};
@@ -80,6 +97,7 @@
 		{ label: 'Resource limits', dirty: v.limitMemory !== saved.limitMemory || String(v.limitCpuPercent) !== String(saved.limitCpuPercent) },
 		{ label: 'Update checks', dirty: !same(v.updates, saved.updates) },
 		{ label: 'Restarts', dirty: !same(v.restarts, saved.restarts) },
+		{ label: 'Scheduled snapshots', dirty: !same(v.snapshots, saved.snapshots) },
 		{ label: 'Console', dirty: !same(v.console, saved.console) },
 		{ label: 'Game settings', dirty: data.propertyGroups.some((g) => g.fields.some((f) => changedProperty(f.key))) }
 	]);
@@ -221,6 +239,17 @@
 	<SettingsSection tab="defaults" title="Restarts" dirty={isDirty('Restarts')}>
 		<div class="rows">
 			<RestartFields bind:values={v.restarts} bootNote={data.bootNote} />
+		</div>
+	</SettingsSection>
+
+	<SettingsSection
+		tab="defaults"
+		title="Scheduled snapshots"
+		dirty={isDirty('Scheduled snapshots')}
+		description="A copy of the world on a schedule, kept by the snapshot settings under MineShell settings. Servers added before keep their own schedule."
+	>
+		<div class="rows">
+			<SnapshotScheduleFields bind:values={v.snapshots} />
 		</div>
 	</SettingsSection>
 

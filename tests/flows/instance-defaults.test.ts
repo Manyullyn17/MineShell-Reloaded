@@ -15,6 +15,7 @@ const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
 const { otherUser } = await import('../helpers/auth');
 const { grantsOf } = await import('#lib/server/accounts.js');
+const { getSnapshotSchedule, NEW_SERVER_SCHEDULE, DEFAULT_SCHEDULE } = await import('#lib/server/snapshotschedule.js');
 
 const served: Record<string, () => Response> = {};
 useRecordedHttp('none', { extra: served });
@@ -56,6 +57,15 @@ describe('defaults for new servers', () => {
 		});
 		expect(row.jvmArgs).toContain('-XX:+UseG1GC'); // Aikar's flags
 		expect((await readProperties(row.path)).values).toMatchObject({ 'max-players': '10', difficulty: 'normal' });
+	});
+
+	// A new server had no scheduled snapshots, so no copy of its world but those taken before changes.
+	it('gives a new server daily snapshots, or the schedule the defaults name', async () => {
+		expect(getSnapshotSchedule((await newServer()).id)).toEqual(NEW_SERVER_SCHEDULE);
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), snapshots: DEFAULT_SCHEDULE });
+		expect(getSnapshotSchedule((await newServer()).id)).toEqual(DEFAULT_SCHEDULE);
+		// A server made before it (no stored schedule) has none, as it always had.
+		expect(getSnapshotSchedule('made-before').every).toBe('off');
 	});
 
 	it('applies stored memory, JVM preset, restarts, console and game settings', async () => {

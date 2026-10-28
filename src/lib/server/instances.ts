@@ -63,7 +63,7 @@ import {
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
 import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, deleteSnapshotFilesCache, snapshotStep } from './snapshots';
 import { deleteMemorySettings } from './memoryadvice';
-import { copySnapshotSchedule, deleteSnapshotSchedule } from './snapshotschedule';
+import { copySnapshotSchedule, deleteSnapshotSchedule, saveSnapshotSchedule } from './snapshotschedule';
 import { deleteServerBackup } from './backups';
 import { deleteCrashMarks, pausedSince } from './history';
 import { doneStartingAt } from './startphase';
@@ -293,6 +293,9 @@ export async function insertInstanceRow(
 			updatedAt: now
 		})
 		.run();
+	// Its own schedule from the start: a server without one has none (DEFAULT_SCHEDULE), which
+	// is what existing servers keep. An import or a copy then puts its source's in place.
+	saveSnapshotSchedule(id, defaults.snapshots);
 	// Committed (and so dropped) with the final 'ready'; still there after a
 	// restart means the install never finished.
 	beginOperation(id, { kind: 'create' });

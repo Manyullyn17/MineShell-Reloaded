@@ -53,10 +53,17 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `instance-defaults.ts`: one JSON row in `settings` (`instance.defaults`), edited at
   `/settings/defaults`, read only at creation (`insertInstanceRow`, the new-server form).
   Every read goes through validation, so a stale or hand-edited row degrades to built-ins.
-  Max memory `null` = the RAM guess (`suggestedMaxMb`). Game settings store only values that
-  differ from built-in. Per-instance keys (ports, RCON, MOTD, level name/seed/type) are never
-  defaults. Restart/console/property fields are shared components (`RestartFields`,
-  `ConsoleFields`, `PropertyInput`) and parsers with the per-instance pages.
+  Max memory `null` = the RAM guess (`suggestedMaxMb`). Game settings store only values that differ from built-in; the other
+  sections are stored whole, so a built-in change (crash restarts 5 -> 3, 2026-10-28) reaches only
+  installs that never saved the page. Per-instance keys (ports, RCON, MOTD, level name/seed/type)
+  are never defaults. Restart/console/snapshot schedule/property fields are shared components
+  (`RestartFields`, `ConsoleFields`, `SnapshotScheduleFields`, `PropertyInput`) and parsers with
+  the per-instance pages.
+- Scheduled snapshots (2026-10-28): a new server gets its schedule written at creation
+  (`defaults.snapshots`, built in: daily at 04:00, skipping idle days), since a server with no
+  stored schedule reads as none (`DEFAULT_SCHEDULE`) and existing servers must stay that way.
+  Defaults saved before it have no `snapshots` and get the built-in one. An import then puts the
+  export's schedule in place; a copy takes its source's, "none" included.
 - `server.properties` is Java's properties format, read and written as Java does
   (`readJavaProperties`, `serialiseProperties`; 2026-10-28). Minecraft rewrites it at every start
   with `\:` `\!` `\\` escaped (1.12.2 and 1.21.11 both), and up to 1.12 at least reads it as

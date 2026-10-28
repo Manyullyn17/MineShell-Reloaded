@@ -8,6 +8,7 @@
 	import PackChangePanel from '#lib/components/PackChangePanel.svelte';
 	import PackRollback from '#lib/components/PackRollback.svelte';
 	import VersionPicker from '#lib/components/VersionPicker.svelte';
+	import SnapshotScheduleFields from '#lib/components/SnapshotScheduleFields.svelte';
 	import MigratePanel from '#lib/components/MigratePanel.svelte';
 	import ConfigMergeReview from '#lib/components/ConfigMergeReview.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
@@ -27,10 +28,7 @@
 	import { formatGb, minMemoryLimitMb, suggestedMemoryLimitMb, wholeGbAbove } from '#lib/shared/memorylimit.js';
 	import MemoryInput from '#lib/components/MemoryInput.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
-	import PresetSelect from '#lib/components/PresetSelect.svelte';
-	import WarnChoice from '#lib/components/WarnChoice.svelte';
 	import CpuInput from '#lib/components/CpuInput.svelte';
-	import { EVERY_HOURS, unevenHours } from '#lib/shared/presets.js';
 	import { BACKUP_COPY_CHOICES } from '#lib/shared/backups.js';
 	import IconSection from './IconSection.svelte';
 	import CleanroomSection from './CleanroomSection.svelte';
@@ -978,79 +976,16 @@
 		dirty={dirtyIds.has('snapshotSchedule')}
 	>
 		<form method="POST" action="?/snapshotSchedule" class="rows" bind:this={forms.snapshotSchedule} onsubmit={onSectionSubmit}>
-			<div class="field">
-				<label for="snapshotEvery">Take one</label>
-				<select id="snapshotEvery" name="snapshotEvery" bind:value={sv.snapshotEvery}>
-					<option value="off">Never</option>
-					<option value="daily">At a fixed time each day</option>
-					<option value="interval">Every few hours</option>
-				</select>
-				{#if sv.snapshotEvery !== 'off' && data.snapshotNextAt && !dirtyIds.has('snapshotSchedule')}
-					<p class="hint">Next: {formatDateTime(data.snapshotNextAt)}.</p>
-				{/if}
-				{#if sv.snapshotEvery !== 'off' && data.snapshotLastScheduled && !data.snapshotLastScheduled.ok}
-					<p class="hint backup-failed">Last one, {formatDateTime(data.snapshotLastScheduled.at)}: {data.snapshotLastScheduled.message}</p>
-				{/if}
-			</div>
-			{#if sv.snapshotEvery === 'daily'}
-				<div class="field">
-					<label for="snapshotDailyTime">At</label>
-					<input id="snapshotDailyTime" name="snapshotDailyTime" type="time" bind:value={sv.snapshotDailyTime} />
-				</div>
-			{:else}
-				<input type="hidden" name="snapshotDailyTime" value={sv.snapshotDailyTime} />
-			{/if}
-			{#if sv.snapshotEvery === 'interval'}
-				<div class="field">
-					<label for="snapshotIntervalHours">How often</label>
-					<PresetSelect id="snapshotIntervalHours" name="snapshotIntervalHours" choices={EVERY_HOURS} other={unevenHours} bind:value={sv.snapshotIntervalHours} />
-					<p class="hint">On the clock: every hour at :00; every 6 hours at 0:00, 6:00, 12:00 and 18:00.</p>
-				</div>
-			{:else}
-				<input type="hidden" name="snapshotIntervalHours" value={sv.snapshotIntervalHours} />
-			{/if}
-			{#if sv.snapshotEvery !== 'off'}
-				<div class="field">
-					<label for="snapshotWhileRunning">When the server is running</label>
-					<select id="snapshotWhileRunning" name="snapshotWhileRunning" bind:value={sv.snapshotWhileRunning}>
-						<option value="live">Copy it while it runs</option>
-						<option value="stop">Stop it, copy, start it again</option>
-					</select>
-					<p class="hint">
-						{#if sv.snapshotWhileRunning === 'live'}
-							Saving is paused for the copy (save-off, save-all), then turned back on; players keep playing. A mod that
-							writes its own files outside the world's saves can still be caught mid-write.
-						{:else}
-							Players are warned first, like a scheduled restart. It starts again as soon as the copy is done, also if the
-							copy failed. A stopped server is copied as it is either way.
-						{/if}
-					</p>
-				</div>
-				{#if sv.snapshotWhileRunning === 'stop'}
-					<div class="field">
-						<span class="label" id="snapshotWarnMinutes-label">Warn players ahead</span>
-						<div class="control">
-							<WarnChoice name="snapshotWarnMinutes" labelledby="snapshotWarnMinutes-label" bind:value={sv.snapshotWarnMinutes} />
-						</div>
-					</div>
-				{:else}
-					<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
-				{/if}
-				<div class="check field">
-					<input id="snapshotSkipIdle" name="snapshotSkipIdle" type="checkbox" class="switch" role="switch" bind:checked={sv.snapshotSkipIdle} />
-					<label for="snapshotSkipIdle">Skip when nobody was online since the last snapshot</label>
-				</div>
-				<div class="field">
-					<p class="hint">
-						Saves space: an empty server's world rarely changes. But chunk loaders keep farms and machines running
-						with nobody on, and those changes then wait for the next snapshot someone played before.
-					</p>
-				</div>
-			{:else}
-				<input type="hidden" name="snapshotWhileRunning" value={sv.snapshotWhileRunning} />
-				<input type="hidden" name="snapshotWarnMinutes" value={sv.snapshotWarnMinutes} />
-				{#if sv.snapshotSkipIdle}<input type="hidden" name="snapshotSkipIdle" value="on" />{/if}
-			{/if}
+			<SnapshotScheduleFields bind:values={sv}>
+				{#snippet status()}
+					{#if sv.snapshotEvery !== 'off' && data.snapshotNextAt && !dirtyIds.has('snapshotSchedule')}
+						<p class="hint">Next: {formatDateTime(data.snapshotNextAt)}.</p>
+					{/if}
+					{#if sv.snapshotEvery !== 'off' && data.snapshotLastScheduled && !data.snapshotLastScheduled.ok}
+						<p class="hint backup-failed">Last one, {formatDateTime(data.snapshotLastScheduled.at)}: {data.snapshotLastScheduled.message}</p>
+					{/if}
+				{/snippet}
+			</SnapshotScheduleFields>
 		</form>
 	</SettingsSection>
 

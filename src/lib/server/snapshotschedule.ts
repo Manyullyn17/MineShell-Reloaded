@@ -13,6 +13,7 @@ import { unitState } from './systemd';
 import { startTask, type TaskHandle } from './tasks';
 import { getSnapshotPolicy, listSnapshots, pruneSnapshots, snapshotPrompt, takeSnapshot, worldFolders, type SnapshotInput } from './snapshots';
 import { formatBytes } from '#lib/shared/format.js';
+import { DEFAULT_SCHEDULE, validSchedule, type SnapshotSchedule } from '#lib/shared/snapshotschedule.js';
 
 /**
  * World snapshots on a schedule ("daily at 4:00", "every 12 hours"), kept by
@@ -34,21 +35,7 @@ import { formatBytes } from '#lib/shared/format.js';
  * turn waits for a snapshot under way (scheduler.ts).
  */
 
-export type SnapshotSchedule = {
-	every: 'off' | 'daily' | 'interval';
-	/** HH:MM, local time, for 'daily'. */
-	dailyTime: string;
-	/** For 'interval'. */
-	intervalHours: number;
-	/** What happens to a running server. */
-	whileRunning: 'live' | 'stop';
-	/** Warnings before a stop (stop mode), in minutes; 0 for none. */
-	warnMinutes: number;
-	/** Skip a slot when nobody was online since the last full snapshot. */
-	skipIdle: boolean;
-};
-
-export const DEFAULT_SCHEDULE: SnapshotSchedule = { every: 'off', dailyTime: '04:00', intervalHours: 24, whileRunning: 'live', warnMinutes: 5, skipIdle: true };
+export { DEFAULT_SCHEDULE, NEW_SERVER_SCHEDULE, scheduleFromForm, validSchedule, type SnapshotSchedule } from '#lib/shared/snapshotschedule.js';
 
 /** How long a due slot waits for the server to be ready before it is let go. */
 const WAIT_MAX_MS = 30 * 60_000;
@@ -77,20 +64,6 @@ export function getSnapshotSchedule(instanceId: string): SnapshotSchedule {
 	}
 }
 
-/** Anything stored or sent, made into a schedule: unknown or out-of-range values fall back. */
-export function validSchedule(raw: Record<string, unknown>): SnapshotSchedule {
-	const time = typeof raw.dailyTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(raw.dailyTime) ? raw.dailyTime : DEFAULT_SCHEDULE.dailyTime;
-	const hours = Number(raw.intervalHours);
-	const warn = Number(raw.warnMinutes);
-	return {
-		every: raw.every === 'daily' || raw.every === 'interval' ? raw.every : 'off',
-		dailyTime: time,
-		intervalHours: Number.isInteger(hours) && hours >= 1 && hours <= 24 * 7 ? hours : DEFAULT_SCHEDULE.intervalHours,
-		whileRunning: raw.whileRunning === 'stop' ? 'stop' : 'live',
-		warnMinutes: Number.isInteger(warn) && warn >= 0 && warn <= 15 ? warn : DEFAULT_SCHEDULE.warnMinutes,
-		skipIdle: raw.skipIdle !== false
-	};
-}
 
 export function saveSnapshotSchedule(instanceId: string, schedule: SnapshotSchedule): void {
 	write(KEY(instanceId), JSON.stringify(schedule));
