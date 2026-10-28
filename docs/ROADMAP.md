@@ -162,9 +162,8 @@ entries that share code, the cheapest and most needed first. A step is not a ver
 in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit), the
-   installed mods list, packs' own backup mods, holding a mod at its version, quiet hours
-   for notifications. Small, mostly reading what
-   MineShell already has: a calm first step after the freeze.
+   installed mods list, packs' own backup mods, quiet hours for notifications. Small, mostly
+   reading what MineShell already has: a calm first step after the freeze.
 2. **Files**: a better file editor first (line numbers and opening at a line are what search
    needs), then search in files, earlier versions of edited files, zips and folders.
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
@@ -227,12 +226,6 @@ world at every start, 2 minutes of lag, and kept 24 GB. Point them out on the Wo
 the disk usage page (AromaBackup, FTB Backups, Simple Backups, Textile Backup), with the
 folder they fill, so the owner can turn one off where snapshots and backup copies already do
 the job.
-
-#### Holding a mod at its version
-
-Agreed 2026-10-27 (was undecided). "Skip these" on the overview skips the mod updates on
-offer, and the next version is offered again. A hold per mod (on the Mods tab) would keep
-one left out of update checks for good, for a mod kept at a build on purpose.
 
 #### Quiet hours for notifications
 

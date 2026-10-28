@@ -10,7 +10,8 @@ const { checkModUpdates, changeModVersions, listModVersions, pickUpdate } = awai
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { listSnapshots } = await import('#lib/server/snapshots.js');
-const { currentModNotice, saveModNotice } = await import('#lib/server/modnotice.js');
+const { currentModNotice, dropFromModNotice, saveModNotice } = await import('#lib/server/modnotice.js');
+const { setModLocked } = await import('#lib/server/mods/index.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { useRecordedHttp } = await import('../helpers/http');
@@ -150,9 +151,33 @@ describe('mod updates', () => {
 		]);
 		expect(check.dependencies).toMatchObject({ install: [{ name: 'Fabric API', versionNumber: '1.0', neededBy: ['Sodium'] }], unresolved: [] });
 		expect(check.skipped.map((s) => [s.name, s.reason])).toEqual([
-			['Lithium', 'Locked'],
+			['Lithium', 'Held at its version'],
 			['mine', 'Not from Modrinth or CurseForge']
 		]);
+	});
+
+	it('holds a mod by its file name, a disabled one recorded under its enabled name too, and lets it go', async () => {
+		const instance = await server();
+		db.update(instanceMods).set({ filePath: 'mods/lithium-1.0.jar' }).where(eq(instanceMods.filePath, 'mods/lithium-1.0.jar.disabled')).run();
+		expect(setModLocked(instance, 'mods/lithium-1.0.jar.disabled', false)).toBe(true);
+		expect((await checkModUpdates(instance)).updates.map((u) => u.name)).toEqual(['Lithium', 'Sodium']);
+		expect(setModLocked(instance, 'mods/sodium-0.5.0.jar', true)).toBe(true);
+		expect((await checkModUpdates(instance)).updates.map((u) => u.name)).toEqual(['Lithium']);
+		expect(setModLocked(instance, 'mods/not-there.jar', true)).toBe(false);
+	});
+
+	it('takes a held mod out of the overview notice, and drops the notice with the last one', async () => {
+		const { id } = await server();
+		saveModNotice(id, [
+			{ fileName: 'sodium-0.5.0.jar', name: 'Sodium', from: '0.5.0', to: '0.6.0' },
+			{ fileName: 'lithium-1.0.jar', name: 'Lithium', from: '1.0', to: '2.0' }
+		]);
+		dropFromModNotice(id, 'sodium-0.5.0.jar');
+		expect(currentModNotice(id)?.updates.map((u) => u.name)).toEqual(['Lithium']);
+		// The set that is left is the one a later check finds: not new, so not notified again.
+		expect(saveModNotice(id, [{ fileName: 'lithium-1.0.jar', name: 'Lithium', from: '1.0', to: '2.0' }])).toBe(false);
+		dropFromModNotice(id, 'lithium-1.0.jar');
+		expect(currentModNotice(id)).toBeNull();
 	});
 
 	it('lists every compatible version, older ones too, with the installed one marked', async () => {

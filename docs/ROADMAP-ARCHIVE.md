@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Holding a mod at its version
+
+Built 2026-10-28 (Mods tab; ARCHITECTURE, "Mods and packs"), on the `next` branch. "Hold" on a
+Modrinth or CurseForge mod keeps it out of update checks for good, where the overview's "Skip
+these" hides only the versions on offer; it shows as "held", and "Release" puts it back. The
+flag was already there (`locked`: kept through updates, pack and loader changes, exports, and
+left out of checks) with no way to set it; holding also takes the mod out of the overview's
+current notice. Versions still switches a held mod. Tried on the screenshot world (Cobblemon's
+mods) at 1280 and 390 px. Not built: holding a pack's mods against the pack's own version
+change (they move with the pack, as before).
+
 ### Watchdog crashes in crash diagnosis
 
 Built 2026-10-28 (ARCHITECTURE, "Watchdog stops"), on the `next` branch, after the defaults

@@ -185,7 +185,7 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 	const candidates: ModRow[] = [];
 	for (const row of rows) {
 		if (!trackable(row)) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Not from Modrinth or CurseForge' });
-		else if (row.locked) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Locked' });
+		else if (row.locked) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Held at its version' });
 		else candidates.push(row);
 	}
 

@@ -403,7 +403,9 @@
 									{/if}
 									{#if mod.untracked}<span class="tag warn">untracked</span>{/if}
 									{#if mod.missing}<span class="tag bad">file missing</span>{/if}
-									{#if mod.locked}<span class="tag">locked</span>{/if}
+									{#if mod.locked}
+										<span class="tag" title="Held at this version: update checks leave it out. Versions can still switch it.">held</span>
+									{/if}
 								</div>
 								<div class="faint small mono">
 									{mod.fileName}{mod.sizeBytes ? ` · ${formatBytes(mod.sizeBytes)}` : ''}
@@ -452,6 +454,17 @@
 											>
 												Versions
 											</button>
+											<form method="POST" action="?/lock" use:enhance>
+												<input type="hidden" name="fileName" value={mod.fileName} />
+												<input type="hidden" name="locked" value={String(!mod.locked)} />
+												<button
+													type="submit"
+													class="button-quiet"
+													title={mod.locked ? 'Put it back in update checks' : 'Keep this version: update checks leave it out'}
+												>
+													{mod.locked ? 'Release' : 'Hold'}
+												</button>
+											</form>
 										{/if}
 										<button type="button" class="button-quiet" onclick={() => (pendingDelete = mod.fileName)}>
 											Remove

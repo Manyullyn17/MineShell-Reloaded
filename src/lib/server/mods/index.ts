@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import { instanceMods, mods as modsTable, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
@@ -441,11 +441,20 @@ export async function deleteMod(instance: ServerInstance, fileName: string): Pro
 		.run();
 }
 
-export function setModLocked(instance: ServerInstance, filePath: string, locked: boolean): void {
-	db.update(instanceMods)
-		.set({ locked })
-		.where(and(eq(instanceMods.instanceId, instance.id), eq(instanceMods.filePath, filePath)))
-		.run();
+/**
+ * Holds a mod at its version (update checks leave it out) or lets it go. A
+ * disabled jar's record may be under its enabled name. False when MineShell
+ * has no record of the jar.
+ */
+export function setModLocked(instance: ServerInstance, filePath: string, locked: boolean): boolean {
+	const recorded = [...new Set([filePath, filePath.replace(/\.disabled$/, '')])];
+	return (
+		db
+			.update(instanceMods)
+			.set({ locked })
+			.where(and(eq(instanceMods.instanceId, instance.id), inArray(instanceMods.filePath, recorded)))
+			.run().changes > 0
+	);
 }
 
 export function upsertMod(input: {

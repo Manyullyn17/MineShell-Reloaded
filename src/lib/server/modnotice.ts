@@ -58,6 +58,26 @@ export function skipModNotice(instanceId: string, fingerprint: string): boolean 
 	return true;
 }
 
+/**
+ * Takes one mod out of the set (held at its version), keeping whether the rest
+ * was skipped: the next check would leave it out anyway.
+ */
+export function dropFromModNotice(instanceId: string, fileName: string): void {
+	const row = db.select().from(modUpdateNotices).where(eq(modUpdateNotices.instanceId, instanceId)).get();
+	if (!row) return;
+	let updates: ModNoticeEntry[];
+	try {
+		updates = (JSON.parse(row.updates) as ModNoticeEntry[]).filter((u) => u.fileName !== fileName);
+	} catch {
+		return;
+	}
+	if (!updates.length) return clearModNotice(instanceId);
+	db.update(modUpdateNotices)
+		.set({ updates: JSON.stringify(updates), fingerprint: fingerprintOf(updates) })
+		.where(eq(modUpdateNotices.instanceId, instanceId))
+		.run();
+}
+
 export function clearModNotice(instanceId: string): void {
 	db.delete(modUpdateNotices).where(eq(modUpdateNotices.instanceId, instanceId)).run();
 }

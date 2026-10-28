@@ -7,7 +7,7 @@ import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cl
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { duplicateMods, indexMods, requiredBy } from '#lib/server/crashdiag.js';
 import { fileVersionPairs } from '#lib/server/formvalues.js';
-import { applyDatapackUpdates, changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
+import { applyDatapackUpdates, changeModVersions, syncInstanceMods, trackable } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import {
@@ -20,6 +20,7 @@ import {
 	setModLocked,
 	trackManualJar
 } from '#lib/server/mods/index.js';
+import { dropFromModNotice } from '#lib/server/modnotice.js';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '#lib/server/modloaders.js';
 import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
 import { saveUpload } from '#lib/server/files.js';
@@ -199,9 +200,16 @@ export const actions: Actions = {
 		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
-		setModLocked(instance, String(form.get('filePath') ?? ''), form.get('locked') === 'true');
-		touchInstance(instance.id);
-		return { ok: true, message: 'Updated.' };
+		const fileName = String(form.get('fileName') ?? '');
+		const locked = form.get('locked') === 'true';
+		const mod = (await listInstanceMods(instance)).find((m) => m.fileName === fileName);
+		if (!mod || !trackable(mod) || !setModLocked(instance, mod.filePath, locked))
+			return fail(400, { ok: false, message: 'Only mods from Modrinth or CurseForge are in update checks.' });
+		if (locked) dropFromModNotice(instance.id, fileName);
+		return {
+			ok: true,
+			message: locked ? `${mod.name} is held at ${mod.version ?? 'its version'}: update checks leave it out.` : `${mod.name} is in update checks again.`
+		};
 	},
 
 	remove: async ({ request, params }) => {

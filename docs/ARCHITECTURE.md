@@ -683,6 +683,13 @@ found again keeps its skipped flag and is notified once; applying updates
 (`changeModVersions`) deletes the row. The overview's button opens the Mods tab at
 `?view=updates`, which runs the check on arrival.
 
+A mod held at its version (the Mods tab's Hold, the `locked` column) is left out of every
+check, by hand or scheduled, and out of the unneeded-dependency offer; holding one also takes
+it out of the current notice (`dropFromModNotice`, keeping the rest's skipped flag), since the
+next check would. Versions still switches a held mod, and it stays held, as through a pack or
+loader change. "Skip these" on the overview is the other kind: it hides one set of versions,
+and a newer one is offered again.
+
 ---
 
 ### Moving a server to another MineShell
