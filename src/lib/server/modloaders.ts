@@ -101,9 +101,15 @@ export async function minecraftClientDownload(minecraftVersion: string): Promise
 	return detail.downloads?.client ?? null;
 }
 
+/** Mojang's oldest release with a server jar: 1.0 to 1.2.4 have none (`downloads.server`). */
+const OLDEST_SERVER_RELEASE = '1.2.5';
+
+/** Minecraft releases a server can be made for, newest first, down to 1.2.5. */
 export async function listReleaseVersions(): Promise<string[]> {
 	const manifest = await mojangManifest();
-	return manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);
+	const releases = manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);
+	const oldest = releases.indexOf(OLDEST_SERVER_RELEASE);
+	return oldest === -1 ? releases : releases.slice(0, oldest + 1);
 }
 
 async function downloadVanillaServer(ctx: InstallContext, filename = 'server.jar'): Promise<string> {
