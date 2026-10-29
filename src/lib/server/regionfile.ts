@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { promisify } from 'node:util';
 import { NBT_MAX_BYTES } from './nbt';
 
 /**
@@ -57,11 +58,19 @@ export function isExternal(file: Buffer, loc: Location): boolean {
 	return start + 5 <= file.length && (file[start + 4] & EXTERNAL) !== 0;
 }
 
-/** Over NBT_MAX_BYTES unpacked, a chunk is unreadable (pruning keeps those): an .mcc beside the region can be any size. */
-function decompress(type: number, data: Buffer): Buffer | null {
+const gunzip = promisify(zlib.gunzip);
+const inflate = promisify(zlib.inflate);
+
+/**
+ * Over NBT_MAX_BYTES unpacked, a chunk is unreadable (pruning keeps those): an
+ * .mcc beside the region can be any size. On zlib's thread pool, not the one
+ * thread every request shares: unpacking was most of a prune analysis (18.6 s
+ * for MeatballCraft's 499 regions), and callers can unpack several at once.
+ */
+async function decompress(type: number, data: Buffer): Promise<Buffer | null> {
 	try {
-		if (type === 1) return zlib.gunzipSync(data, { maxOutputLength: NBT_MAX_BYTES });
-		if (type === 2) return zlib.inflateSync(data, { maxOutputLength: NBT_MAX_BYTES });
+		if (type === 1) return await gunzip(data, { maxOutputLength: NBT_MAX_BYTES });
+		if (type === 2) return await inflate(data, { maxOutputLength: NBT_MAX_BYTES });
 		if (type === 3) return data.length <= NBT_MAX_BYTES ? data : null;
 	} catch {
 		/* damaged */

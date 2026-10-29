@@ -949,10 +949,11 @@ InhabitedTime and size in one dimension (`analysePrunable`, read only, so also w
 server runs) and keeps it in memory, one per server; one runs at a time per server (reserved
 before anything is awaited), and the page shows its task's progress by the button, from its own
 data on the first paint and then from the task stream (the action answers with the task's id,
-so a click does not wait for the page's data to reload). Reading yields after every chunk, as the
-chunk map does, and takes only InhabitedTime out of each chunk (`peekNumber` in nbt.ts skips
-everything else by its length instead of building the tree: ~9x faster, decompression is now
-most of it); the terrain view reads its regions separately, as Restore chunks does; `/api/instances/[id]/prune-analysis`
+so a click does not wait for the page's data to reload). Chunks are unpacked on zlib's thread
+pool (`readChunk`, async inflate, for the chunk map too), eight at once, which also lets other
+requests in between, and only InhabitedTime is taken out of each (`peekNumber` in nbt.ts skips
+everything else by its length instead of building the tree: ~9x faster). MeatballCraft's 499
+regions: 18.6 s with the unpacking on the main thread, 10.8 s now (`tests/tools/analyse-bench.mjs`); the terrain view reads its regions separately, as Restore chunks does; `/api/instances/[id]/prune-analysis`
 sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
 chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
 chunks the threshold and spawn radius pick, the error colour, worked out in the browser on

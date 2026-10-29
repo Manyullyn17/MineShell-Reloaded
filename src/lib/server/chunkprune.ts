@@ -70,12 +70,22 @@ async function chunkTicks(dir: string, file: Buffer, region: [number, number], l
 }
 
 /**
- * Lets other requests in: reading a chunk awaits only microtasks once its
- * file is in memory, so a region would hold the one thread every request
- * shares for up to a second (the page waited seconds to learn an analysis had
- * started). As the chunk map does, after every chunk.
+ * Chunks unpacked at once: zlib's thread pool (libuv's, 4 threads by default)
+ * does the work, so a few more than it has keep it busy while the main thread
+ * reads the NBT of the ones done. Every chunk waits for its unpacking, which
+ * lets other requests in between (before, a yield after each chunk did).
+ * MeatballCraft's 499 regions: 18.6 s one at a time on the main thread, 10.8
+ * s like this; 16 at once or 8 threads made no difference.
  */
-const breathe = () => new Promise((resolve) => setImmediate(resolve));
+const AT_ONCE = 8;
+
+async function inParallel<T>(items: T[], work: (item: T) => Promise<void>): Promise<void> {
+	let next = 0;
+	const worker = async () => {
+		while (next < items.length) await work(items[next++]);
+	};
+	await Promise.all(Array.from({ length: Math.min(AT_ONCE, items.length) }, worker));
+}
 
 const regionFiles = async (dir: string) =>
 	(await fs.readdir(dir).catch(() => [] as string[])).filter((n) => REGION_NAME.test(n)).sort();
@@ -101,12 +111,11 @@ export async function analyseRegions(
 		if (file.length < HEADER) continue;
 		const ticks = new Uint32Array(1024).fill(NO_CHUNK);
 		const sectors = new Uint16Array(1024);
-		for (const loc of locations(file.subarray(0, HEADER))) {
-			await breathe();
+		await inParallel(locations(file.subarray(0, HEADER)), async (loc) => {
 			const t = await chunkTicks(dir, file, region, loc);
 			ticks[loc.index] = t === null ? UNREADABLE : Math.min(Math.max(0, t), UNREADABLE - 1);
 			sectors[loc.index] = Math.min(loc.sectors, 0xffff);
-		}
+		});
 		out.push({ x: region[0], z: region[1], ticks, sectors });
 	}
 	progress?.(names.length, names.length);
@@ -131,21 +140,20 @@ export async function planPrune(
 		const file = await fs.readFile(path.join(dir, name));
 		if (file.length < HEADER) continue;
 		const remove = new Set<number>();
-		for (const loc of locations(file.subarray(0, HEADER))) {
+		await inParallel(locations(file.subarray(0, HEADER)), async (loc) => {
 			plan.chunks++;
 			const [cx, cz] = chunkCoords(region, loc.index);
-			if (keptBySpawn(opts.keep, cx, cz) || (opts.allow && !opts.allow(cx, cz))) continue;
-			await breathe();
+			if (keptBySpawn(opts.keep, cx, cz) || (opts.allow && !opts.allow(cx, cz))) return;
 			const ticks = await chunkTicks(dir, file, region, loc);
 			if (ticks === null) {
 				plan.unreadable++;
-				continue;
+				return;
 			}
 			if (prunes(ticks, cx, cz, opts)) {
 				remove.add(loc.index);
 				plan.bytes += loc.sectors * SECTOR;
 			}
-		}
+		});
 		if (remove.size) {
 			plan.files.set(name, remove);
 			plan.remove += remove.size;

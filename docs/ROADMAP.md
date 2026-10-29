@@ -490,9 +490,7 @@ is open, and each needs a test setup.
   talked about, 2026-10-18, not built.
 - **Pruning chunks**: protection is per prune (named areas every prune skips were talked
   about, 2026-10-17, not built); the analysis lives in memory, so a MineShell restart means
-  analysing again; decompression is now most of an analysis (~20 s for 500 regions) and
-  runs on the main thread; zlib's thread pool could take it (async inflate, several chunks at
-  once). The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
+  analysing again. The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
   analysis, terrain only for the regions looked at).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked
