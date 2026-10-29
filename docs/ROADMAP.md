@@ -499,6 +499,13 @@ is open, and each needs a test setup.
   names come from lang files (no pictures for mobs); pre-1.8 numeric ids and achievements are
   shown raw or left out (not checked on a real world). Stats on the status page, once that is
   decided.
+- **Old and optional world formats** (found 2026-10-29, after 1.0): servers before 1.7.6 keep
+  their lists as `ops.txt`, `white-list.txt`, `banned-players.txt` (names, one per line) and
+  players as `world/players/<name>.dat`, so the Players tab's lists and the player editor are
+  empty there (checked on vanilla 1.6.4 with `mc-probe.mjs`); their log is `server.log` beside
+  the server, with "<name>[/ip] logged in" for joins (the Logs tab and join detection are
+  unchecked on it). Chunks stored with `region-file-compression=lz4` (1.20.5+, off by default)
+  are unreadable to the chunk map and kept by pruning.
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
