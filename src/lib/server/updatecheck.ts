@@ -1,18 +1,20 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { serverInstances, updateNotices, type ServerInstance, type UpdateNotice } from './db/schema';
+import { instanceDatapacks, serverInstances, updateNotices, type ServerInstance, type UpdateNotice } from './db/schema';
 import { getProvider } from './mods/index';
 import { compareSemver, forgePromotions, LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
 import { compareVersions } from './java';
 import { notify } from './notifications';
-import { checkModUpdates } from './modupdates';
-import { currentModNotice, saveModNotice, type ModNoticeEntry } from './modnotice';
+import { checkDatapackUpdates, checkModUpdates } from './modupdates';
+import { currentDatapackNotice, currentModNotice, saveDatapackNotice, saveModNotice, type ModNoticeEntry } from './modnotice';
 import { channelNote, UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } from '#lib/shared/updatecheck.js';
 
 /**
  * Periodic checks for something newer to install: the next pack version on a
  * pack server, the next loader build on a server set up from a loader (a
- * pack's author picks its loader, so pack servers are not offered one). The
+ * pack's author picks its loader, so pack servers are not offered one), and
+ * on every server newer builds of the data packs installed from the mod
+ * browser (a vanilla server is checked for those alone). The
  * scheduler runs them (`runDueUpdateChecks`); the result is one row in
  * update_notices, shown on the overview until it is installed or skipped.
  */
@@ -173,7 +175,9 @@ export function updateMarker(instance: ServerInstance): string | null {
 	const notice = currentNotice(instance);
 	if (notice) return notice.label;
 	const mods = instance.updateCheck && modsChecked(instance) ? currentModNotice(instance.id) : null;
-	return mods?.updates.length ? `${mods.updates.length} mod update${mods.updates.length === 1 ? '' : 's'}` : null;
+	if (mods?.updates.length) return `${mods.updates.length} mod update${mods.updates.length === 1 ? '' : 's'}`;
+	const packs = instance.updateCheck ? currentDatapackNotice(instance.id) : null;
+	return packs?.updates.length ? `${packs.updates.length} data pack update${packs.updates.length === 1 ? '' : 's'}` : null;
 }
 
 /** Hides this version's notice; a newer one shows again. */
@@ -184,9 +188,14 @@ export function skipNotice(instanceId: string, versionId: string): boolean {
 	return true;
 }
 
+/** Data packs from the mod browser: what the check looks up for them. */
+export function hasTrackedDatapacks(instanceId: string): boolean {
+	return !!db.select({ id: instanceDatapacks.instanceId }).from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instanceId)).get();
+}
+
 /** The server's check is on, it has something to check, and its interval has passed. */
 export function checkDue(instance: ServerInstance, now = Date.now()): boolean {
-	if (!instance.updateCheck || instance.status !== 'ready' || !updateKind(instance)) return false;
+	if (!instance.updateCheck || instance.status !== 'ready' || !(updateKind(instance) || hasTrackedDatapacks(instance.id))) return false;
 	return instance.updateCheckedAt === null || now - instance.updateCheckedAt >= instance.updateCheckHours * 3600_000;
 }
 
@@ -225,6 +234,34 @@ export async function checkModsForUpdates(
 	return { ok: true, count: updates.length };
 }
 
+/**
+ * The same for data packs from the mod browser, on every server that has
+ * some. Their own notice and notification: they are updated on the Mods
+ * tab's Data packs, not with the mods.
+ */
+export async function checkDatapacksForUpdates(
+	instance: ServerInstance,
+	check: (instance: ServerInstance) => Promise<{ updates: { fileName: string; name: string; currentVersion: string | null; targetVersion: string }[] }> = checkDatapackUpdates
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+	let updates: ModNoticeEntry[];
+	try {
+		updates = (await check(instance)).updates.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+	} catch (err) {
+		return { ok: false, error: err instanceof Error ? err.message : 'The lookup failed.' };
+	}
+	if (saveDatapackNotice(instance.id, updates)) {
+		const names = updates.slice(0, 5).map((u) => u.name).join(', ') + (updates.length > 5 ? ` and ${updates.length - 5} more` : '');
+		void notify({
+			kind: 'update',
+			instance: { id: instance.id, name: instance.name },
+			title: 'Data pack updates available',
+			message: `${updates.length === 1 ? 'A data pack has' : `${updates.length} data packs have`} a newer build: ${names}. The server's Mods tab in MineShell has them under Data packs.`,
+			at: Date.now()
+		});
+	}
+	return { ok: true, count: updates.length };
+}
+
 let checking = false;
 
 /** From the scheduler's tick: every due server, one after another; a tick while that runs does nothing. */
@@ -236,6 +273,7 @@ export async function runDueUpdateChecks(now = Date.now()): Promise<void> {
 			if (!checkDue(instance, now)) continue;
 			await checkForUpdates(instance);
 			if (modsChecked(instance)) await checkModsForUpdates(instance);
+			if (hasTrackedDatapacks(instance.id)) await checkDatapacksForUpdates(instance);
 		}
 	} finally {
 		checking = false;

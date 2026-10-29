@@ -449,8 +449,7 @@ What the built entries in the archive left out, in one place:
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
-  does not search; the mirror's coverage of it is unchecked). Data pack updates are checked
-  by hand in the Data packs sub-tab (built 2026-10-16), not in the periodic check.
+  does not search; the mirror's coverage of it is unchecked).
 - **Item icons and names**: 1.12 mod damage variants whose model names only the mod's code
   maps (AE2 material/part, IE metal, Botania manaresource; user's call: decide later), names
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),

@@ -586,18 +586,25 @@
 			</form>
 		</SettingsSection>
 		{#if !data.pack}{@render updateChecks()}{/if}
+	{:else if !data.pack}
+		{@render updateChecks()}
 	{/if}
 
 	{#snippet updateChecks()}
 		{@const found = data.updates.found}
-		{#if data.updates.kind}
+		{#if data.updates.kind || data.updates.datapacks}
 		<SettingsSection tab="general" id="updates" title="Update checks" editable={may('software')} dirty={dirtyIds.has('updates')}>
 			{#snippet description()}
-				Looks for a newer {data.updates.kind === 'pack' ? 'pack version' : `${data.instance.modloaderLabel} build`} now and then
-				and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
+				{#if data.updates.kind}
+					Looks for a newer {data.updates.kind === 'pack' ? 'pack version' : `${data.instance.modloaderLabel} build`}{data.updates.datapacks ? ' and newer builds of the data packs added from the mod browser' : ''}
+					now and then and shows it on the overview, with a button to review and install it. Nothing is installed on its own.
+				{:else}
+					Looks for newer builds of the data packs added from the mod browser now and then and shows them on the overview, to
+					review and install. Nothing is installed on its own.
+				{/if}
 			{/snippet}
 			<form method="POST" action="?/updates" class="rows" bind:this={forms.updates} onsubmit={onSectionSubmit}>
-				<UpdateCheckFields bind:values={sv} loader={data.updates.kind === 'loader' ? data.settings.modloader : null} mods={data.updates.kind === 'loader'}>
+				<UpdateCheckFields bind:values={sv} loader={data.updates.kind === 'loader' ? data.settings.modloader : null} mods={data.updates.kind === 'loader'} channel={!!data.updates.kind}>
 					{#snippet channelHint()}
 						{#if data.settings.modloader === 'cleanroom' && !data.pack}
 							<p class="hint">Cleanroom calls every build alpha; it is offered builds of its own line (0.5.x stays on 0.5.x).</p>

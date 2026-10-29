@@ -89,7 +89,7 @@ import {
 import { setVoiceConfig, voiceChat } from '#lib/server/voicechat.js';
 import { minMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { EVERY_MINUTES } from '#lib/shared/presets.js';
-import { checkForUpdates, checkModsForUpdates, modsChecked, updateKind } from '#lib/server/updatecheck.js';
+import { checkDatapacksForUpdates, checkForUpdates, checkModsForUpdates, hasTrackedDatapacks, modsChecked, updateKind } from '#lib/server/updatecheck.js';
 import { globalTarget, quietHoursFrom, removeServerTarget, saveServerTarget, sendTest, serverTarget, targetView } from '#lib/server/notifications.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 import { plural } from '#lib/shared/format.js';
@@ -265,6 +265,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		/** What the update check looks for, when it last did and what it found (skipped included). */
 		updates: {
 			kind: updateKind(instance),
+			/** Data packs from the mod browser are checked too (on vanilla, alone). */
+			datapacks: hasTrackedDatapacks(instance.id),
 			checkedAt: instance.updateCheckedAt,
 			found: db.select().from(updateNotices).where(eq(updateNotices.instanceId, instance.id)).get() ?? null
 		},
@@ -756,7 +758,10 @@ export const actions: Actions = {
 		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
 		const mods = modsChecked(instance) ? await checkModsForUpdates(instance) : null;
 		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${plural(mods.count, 'mod update')} found; ${mods.count === 1 ? 'it is' : 'they are'} on the overview.` : ' The mods are up to date.';
-		return { ok: true, message: (result.found ? `${result.found.label} is available.` : 'Nothing newer to install.') + modPart };
+		const packs = hasTrackedDatapacks(instance.id) ? await checkDatapacksForUpdates(instance) : null;
+		const packPart = !packs ? '' : !packs.ok ? ` Data packs could not be checked: ${packs.error}` : packs.count ? ` ${plural(packs.count, 'data pack update')} found; on the overview.` : ' The data packs are up to date.';
+		const main = result.found ? `${result.found.label} is available.` : updateKind(instance) ? 'Nothing newer to install.' : '';
+		return { ok: true, message: (main + modPart + packPart).trim() };
 	},
 
 	notifications: async ({ request, params }) => {

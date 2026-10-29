@@ -216,6 +216,25 @@
 	</div>
 {/if}
 
+{#if data.datapackUpdates}
+	{@const packs = data.datapackUpdates}
+	<div class="notice info update-notice">
+		<p>
+			<strong>{packs.updates.length === 1 ? 'A data pack has' : `${packs.updates.length} data packs have`} a newer build:</strong>
+			{packs.updates.slice(0, 4).map((u) => `${u.name} ${u.to}`).join(', ')}{packs.updates.length > 4 ? ` and ${packs.updates.length - 4} more` : ''}.
+		</p>
+		{#if may('datapacks')}
+			<div class="update-actions">
+				<a class="button button-primary" href="/instances/{data.instance.id}/mods?view=datapacks">Review data pack updates</a>
+				<form method="POST" action="?/skipDatapackUpdates" use:enhance>
+					<input type="hidden" name="fingerprint" value={packs.fingerprint} />
+					<button class="button-quiet" type="submit">Skip these</button>
+				</form>
+			</div>
+		{/if}
+	</div>
+{/if}
+
 {#if crash.ready && crash.value}
 	<section class="panel">
 		<div class="panel-head">

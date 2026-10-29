@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	checkDue,
 	checkForUpdates,
+	checkDatapacksForUpdates,
 	checkModsForUpdates,
+	hasTrackedDatapacks,
 	modsChecked,
 	currentNotice,
 	updateMarker,
@@ -15,7 +17,9 @@ import {
 	type FoundUpdate
 } from './updatecheck';
 import { createInstance, reload } from '../../../tests/helpers/instances';
-import { currentModNotice, skipModNotice } from './modnotice';
+import { currentDatapackNotice, currentModNotice, skipDatapackNotice, skipModNotice } from './modnotice';
+import { db } from './db';
+import { instanceDatapacks } from './db/schema';
 import { channelLabel, channelNote, channelsFor } from '#lib/shared/updatecheck.js';
 
 const v = (id: string, channel: string, date: string | null) => ({ id, name: id, versionNumber: id, channel, datePublished: date });
@@ -187,5 +191,40 @@ describe('mod update notices', () => {
 		await checkModsForUpdates(instance, found());
 		expect(currentModNotice(instance.id)).toBeNull();
 		expect(await checkModsForUpdates(instance, async () => Promise.reject(new Error('offline')))).toEqual({ ok: false, error: 'offline' });
+	});
+});
+
+describe('data pack update notices', () => {
+	const update = (fileName: string, to: string) => ({ fileName, name: fileName.replace(/\.zip$/, ''), currentVersion: '1', targetVersion: to });
+	const found = (...updates: ReturnType<typeof update>[]) => async () => ({ updates });
+	const track = (instanceId: string, fileName: string) =>
+		db.insert(instanceDatapacks).values({ instanceId, source: 'modrinth', projectId: 'p', slug: 's', name: 'n', fileName, installedAt: 1 }).run();
+
+	it('makes a server with data packs from the mod browser due, a vanilla one too, and only those', async () => {
+		const vanilla = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		// Nothing to look up: a vanilla server without them was never checked.
+		expect(checkDue(vanilla)).toBe(false);
+		track(vanilla.id, 'terralith.zip');
+		expect(hasTrackedDatapacks(vanilla.id)).toBe(true);
+		expect(checkDue(reload(vanilla.id))).toBe(true);
+		expect(checkDue({ ...reload(vanilla.id), updateCheck: false })).toBe(false);
+	});
+
+	it('shows them until skipped, a different set again, apart from the mods', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		expect(await checkDatapacksForUpdates(instance, found(update('terralith.zip', '2')))).toEqual({ ok: true, count: 1 });
+		const notice = currentDatapackNotice(instance.id)!;
+		expect(notice.updates).toEqual([{ fileName: 'terralith.zip', name: 'terralith', from: '1', to: '2' }]);
+		expect(currentModNotice(instance.id)).toBeNull();
+		expect(updateMarker(reload(instance.id))).toBe('1 data pack update');
+
+		expect(skipDatapackNotice(instance.id, notice.fingerprint)).toBe(true);
+		await checkDatapacksForUpdates(instance, found(update('terralith.zip', '2')));
+		expect(currentDatapackNotice(instance.id)).toBeNull();
+		await checkDatapacksForUpdates(instance, found(update('terralith.zip', '3')));
+		expect(currentDatapackNotice(instance.id)?.updates[0].to).toBe('3');
+		await checkDatapacksForUpdates(instance, found());
+		expect(currentDatapackNotice(instance.id)).toBeNull();
+		expect(await checkDatapacksForUpdates(instance, async () => Promise.reject(new Error('offline')))).toEqual({ ok: false, error: 'offline' });
 	});
 });

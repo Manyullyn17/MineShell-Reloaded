@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { modUpdateNotices } from './db/schema';
+import { modUpdateNotices, settings } from './db/schema';
 
 /**
  * Mod updates the periodic check found on a server without a pack
@@ -80,4 +80,62 @@ export function dropFromModNotice(instanceId: string, fileName: string): void {
 
 export function clearModNotice(instanceId: string): void {
 	db.delete(modUpdateNotices).where(eq(modUpdateNotices.instanceId, instanceId)).run();
+}
+
+// ------------------------------------------------------------- data packs ---
+
+/**
+ * The same for data packs from the mod browser (instance_datapacks), on every
+ * server that has some: they are the user's own, a pack's never. One settings
+ * row per server, as the set is small and read only by the overview.
+ */
+const DATAPACK_KEY = (instanceId: string) => `datapacks.notice:${instanceId}`;
+
+type DatapackNoticeRow = { updates: ModNoticeEntry[]; fingerprint: string; foundAt: number; skipped: boolean };
+
+function readDatapackRow(instanceId: string): DatapackNoticeRow | null {
+	const row = db.select().from(settings).where(eq(settings.key, DATAPACK_KEY(instanceId))).get();
+	if (!row) return null;
+	try {
+		return JSON.parse(row.value) as DatapackNoticeRow;
+	} catch {
+		return null;
+	}
+}
+
+function writeDatapackRow(instanceId: string, value: DatapackNoticeRow): void {
+	const json = JSON.stringify(value);
+	db.insert(settings).values({ key: DATAPACK_KEY(instanceId), value: json }).onConflictDoUpdate({ target: settings.key, set: { value: json } }).run();
+}
+
+/** As saveModNotice: true for a set not seen before. */
+export function saveDatapackNotice(instanceId: string, updates: ModNoticeEntry[], now = Date.now()): boolean {
+	if (!updates.length) {
+		clearDatapackNotice(instanceId);
+		return false;
+	}
+	const fingerprint = fingerprintOf(updates);
+	const existing = readDatapackRow(instanceId);
+	if (existing?.fingerprint === fingerprint) {
+		writeDatapackRow(instanceId, { ...existing, updates });
+		return false;
+	}
+	writeDatapackRow(instanceId, { updates, fingerprint, foundAt: now, skipped: false });
+	return true;
+}
+
+export function currentDatapackNotice(instanceId: string): { updates: ModNoticeEntry[]; fingerprint: string; foundAt: number } | null {
+	const row = readDatapackRow(instanceId);
+	return row && !row.skipped && Array.isArray(row.updates) ? { updates: row.updates, fingerprint: row.fingerprint, foundAt: row.foundAt } : null;
+}
+
+export function skipDatapackNotice(instanceId: string, fingerprint: string): boolean {
+	const row = readDatapackRow(instanceId);
+	if (!row || row.fingerprint !== fingerprint) return false;
+	writeDatapackRow(instanceId, { ...row, skipped: true });
+	return true;
+}
+
+export function clearDatapackNotice(instanceId: string): void {
+	db.delete(settings).where(eq(settings.key, DATAPACK_KEY(instanceId))).run();
 }

@@ -9,7 +9,8 @@
 		values = $bindable(),
 		channelHint,
 		loader = null,
-		mods = false
+		mods = false,
+		channel = true
 	}: {
 		values: UpdateValues;
 		channelHint?: Snippet;
@@ -17,6 +18,8 @@
 		loader?: string | null;
 		/** Show "Include mods": servers without a pack, and the new-server defaults. */
 		mods?: boolean;
+		/** Show "Offer": off where only data packs are checked, which stay on releases. */
+		channel?: boolean;
 	} = $props();
 
 	const channels = $derived(channelsFor(loader));
@@ -33,7 +36,7 @@
 	<input id="updateCheck" name="updateCheck" type="checkbox" class="switch" role="switch" bind:checked={values.updateCheck} />
 	<label for="updateCheck">Check for updates</label>
 </div>
-<div class="grid-2">
+<div class:grid-2={channel}>
 	<div class="field">
 		<label for="updateCheckHours">How often</label>
 		<select id="updateCheckHours" name="updateCheckHours" bind:value={values.updateCheckHours} disabled={!values.updateCheck}>
@@ -42,6 +45,7 @@
 			{/each}
 		</select>
 	</div>
+	{#if channel}
 	<div class="field">
 		<span class="label" id="updateChannel-label">Offer</span>
 		<div class="control">
@@ -55,6 +59,7 @@
 		</div>
 		{@render channelHint?.()}
 	</div>
+	{/if}
 </div>
 {#if mods}
 	<div class="check field">
@@ -70,6 +75,8 @@
 {#if !values.updateCheck}
 	<!-- Disabled fields are not posted; the saved values go with the switch. -->
 	<input type="hidden" name="updateCheckHours" value={values.updateCheckHours} />
+{/if}
+{#if !values.updateCheck || !channel}
 	<input type="hidden" name="updateChannel" value={values.updateChannel} />
 {/if}
 {#if (!values.updateCheck || !mods) && values.modUpdateCheck}

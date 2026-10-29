@@ -51,7 +51,7 @@ import { isAllowedAddress } from '#lib/server/downloadaccess.js';
 import { assignServerTag, createOrFindServerTag, findServerTag, removeServerTag } from '#lib/server/servertags.js';
 import { isBisecting } from '#lib/server/bisect.js';
 import { currentNotice, modsChecked, skipNotice } from '#lib/server/updatecheck.js';
-import { currentModNotice, skipModNotice } from '#lib/server/modnotice.js';
+import { currentDatapackNotice, currentModNotice, skipDatapackNotice, skipModNotice } from '#lib/server/modnotice.js';
 import { startMemoryWarning } from '#lib/server/memoryguard.js';
 import { unitState } from '#lib/server/systemd.js';
 import { stuckStarting } from '#lib/server/stuck.js';
@@ -114,6 +114,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		update: update && { kind: update.kind, versionId: update.versionId, label: update.label, channel: update.channel },
 		/** Mod updates the periodic check found (servers without a pack; modnotice.ts). */
 		modUpdates: modNotice,
+		/** Data pack updates the periodic check found (packs from the mod browser, on any server). */
+		datapackUpdates: instance.updateCheck ? currentDatapackNotice(instance.id) : null,
 		summary: {
 			uptimeMs: summary.uptimeMs,
 			/** When it finished starting, which uptime counts from; null while starting or stopped. */
@@ -430,6 +432,13 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const fingerprint = String((await request.formData()).get('fingerprint') ?? '');
 		if (!skipModNotice(instance.id, fingerprint)) return fail(400, { ok: false, message: 'Those updates are no longer the ones on offer.' });
+		return { ok: true, message: 'Hidden. Other updates show again when the check finds them.' };
+	},
+
+	skipDatapackUpdates: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const fingerprint = String((await request.formData()).get('fingerprint') ?? '');
+		if (!skipDatapackNotice(instance.id, fingerprint)) return fail(400, { ok: false, message: 'Those updates are no longer the ones on offer.' });
 		return { ok: true, message: 'Hidden. Other updates show again when the check finds them.' };
 	},
 

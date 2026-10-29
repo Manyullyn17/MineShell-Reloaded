@@ -701,6 +701,14 @@ found again keeps its skipped flag and is notified once; applying updates
 (`changeModVersions`) deletes the row. The overview's button opens the Mods tab at
 `?view=updates`, which runs the check on arrival.
 
+Data packs added from the mod browser (`instance_datapacks` rows) are checked on every
+server that has some, pack servers and vanilla included (they are the user's, never the
+pack's; a vanilla server with some is due for them alone, and its Settings show Update
+checks without "Offer": data packs stay on releases). `checkDatapackUpdates`, the Data
+packs sub-tab's own check; the result is a settings row (`datapacks.notice:<id>`, the same
+shape and fingerprint as the mods' row) with its own overview notice (to `?view=datapacks`),
+skip and notification; updating data packs (`applyDatapackUpdates`) deletes it.
+
 A mod held at its version (the Mods tab's Hold, the `locked` column) is left out of every
 check, by hand or scheduled, and out of the unneeded-dependency offer; holding one also takes
 it out of the current notice (`dropFromModNotice`, keeping the rest's skipped flag), since the

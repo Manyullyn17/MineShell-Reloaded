@@ -3,6 +3,7 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
+import { clearDatapackNotice } from './modnotice';
 import { auditLog, instanceMods, serverInstances, type ServerInstance } from './db/schema';
 import { INSTANCES_DIR, instanceDir, unitName } from './config';
 import { decryptSecret, encryptSecret, randomPassword } from './crypto';
@@ -1468,6 +1469,7 @@ export async function deleteInstance(
 	deleteServerBackup(instance.id);
 	deleteCrashMarks(instance.id);
 	deleteDimensionNames(instance.id);
+	clearDatapackNotice(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);
 	await deleteChunkMapCache(instance.id).catch(() => undefined);
 	await deleteSnapshotFilesCache(instance.path).catch(() => undefined);

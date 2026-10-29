@@ -30,7 +30,7 @@ import { resolveProviderPack } from './packs/resolve';
 import { hashFile } from './download';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
-import { clearModNotice } from './modnotice';
+import { clearDatapackNotice, clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
 import { indexMods } from './crashdiag';
@@ -340,6 +340,8 @@ export async function applyDatapackUpdates(instance: ServerInstance, changes: Ve
 			task.log(`${row.name}: ${row.version ?? '?'} -> ${version.versionNumber}`);
 		}
 		audit('instance.datapacks_updated', { instanceId: instance.id, detail: changes.map((c) => rows.get(c.fileName)!.name).join(', ') });
+		// What the periodic check found is out of date now; its next run finds what is left.
+		clearDatapackNotice(instance.id);
 		task.setProgress(100, 'Done');
 	});
 }

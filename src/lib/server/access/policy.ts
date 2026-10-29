@@ -143,6 +143,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			forgetDownloads: on('software'),
 			skipUpdate: on('software'),
 			skipModUpdates: on('mods'),
+			skipDatapackUpdates: on('datapacks'),
 			modFix: on('mods'),
 			profile: on('console.command'),
 			profileStop: on('console.command'),
