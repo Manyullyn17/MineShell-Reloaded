@@ -905,9 +905,11 @@ export const actions: Actions = {
 			result.disabled.length && `disabled ${plural(result.disabled.length, 'mod')}`,
 			result.added.length && `added ${result.added.join(', ')}`
 		].filter(Boolean);
+		const nothing = 'Nothing needed changing: Fugue and Scalar Legacy are in, and no mod on the guide\'s must-remove list is enabled.';
+		const advised = result.advise.length ? ' The suggested replacements are never made automatically.' : '';
 		return {
 			ok: result.failures.length === 0,
-			message: [done.length ? `Done: ${done.join('; ')}.` : 'Nothing needed changing.', ...result.failures].join(' ')
+			message: [done.length ? `Done: ${done.join('; ')}.` : nothing + advised, ...result.failures].join(' ')
 		};
 	},
 
