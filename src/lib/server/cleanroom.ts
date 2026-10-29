@@ -11,6 +11,7 @@ import {
 	DISABLED_SUFFIX,
 	getModProvider,
 	installModVersion,
+	listInstanceMods,
 	modsDir,
 	setModEnabled,
 	type ProjectVersion,
@@ -118,6 +119,8 @@ type RequiredMod = {
 	reason: string;
 	source: SourceId;
 	projectId: string;
+	/** The same mod on CurseForge, for servers whose mods come from there (sourceFor). */
+	curseforgeProjectId?: string;
 	modids: string[];
 	file: RegExp;
 	/**
@@ -134,6 +137,7 @@ const REQUIRED_MODS: RequiredMod[] = [
 		reason: 'Patches Forge-era mods to run on Cleanroom.',
 		source: 'modrinth',
 		projectId: 'fugue',
+		curseforgeProjectId: '1005815',
 		modids: ['fugue'],
 		file: /fugue/i,
 		// Measured from the release jars' class-file versions (and a failed
@@ -448,11 +452,26 @@ export function pickVersionForJava(
 	return bestVersion(usableForJava(versions, java25From, java));
 }
 
+/**
+ * Where a required mod comes from: CurseForge when it is there and most of
+ * the server's tracked mods come from CurseForge (a CurseForge pack, uploaded
+ * or not), else its usual source. A CurseForge pack got its Fugue from
+ * Modrinth, the one mod there, and a later copy from the pack was not seen as
+ * the same project.
+ */
+async function sourceFor(instance: ServerInstance, mod: RequiredMod): Promise<{ source: SourceId; projectId: string }> {
+	if (!mod.curseforgeProjectId) return { source: mod.source, projectId: mod.projectId };
+	const rows = await listInstanceMods(instance);
+	const count = (source: SourceId) => rows.filter((r) => r.source === source).length;
+	return count('curseforge') > count('modrinth') ? { source: 'curseforge', projectId: mod.curseforgeProjectId } : { source: mod.source, projectId: mod.projectId };
+}
+
 async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
-	const provider = getModProvider(mod.source);
+	const { source, projectId } = await sourceFor(instance, mod);
+	const provider = getModProvider(source);
 	const [project, all] = await Promise.all([
-		provider.getProject(mod.projectId),
-		provider.listVersions(mod.projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
+		provider.getProject(projectId),
+		provider.listVersions(projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
 	]);
 	const java = cleanroomJavaMajor(instance.modloaderVersion);
 	const cleanroom = instance.modloaderVersion;
@@ -466,7 +485,7 @@ async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): P
 
 	return installModVersion(
 		instance,
-		mod.source,
+		source,
 		{
 			id: project.id,
 			slug: project.slug,
