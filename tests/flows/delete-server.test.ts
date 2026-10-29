@@ -8,6 +8,7 @@ const { db } = await import('#lib/server/db/index.js');
 const { operations } = await import('#lib/server/db/schema.js');
 const { startTask } = await import('#lib/server/tasks.js');
 const { createInstance, systemdStopped, waitForTask } = await import('../helpers/instances');
+const { spawnCalls } = await import('../helpers/process');
 
 async function server() {
 	systemdStopped();
@@ -38,6 +39,32 @@ describe('deleting a server', () => {
 		await expect(deleteInstance(s, { deleteFiles: true })).rejects.toThrow(/still under way/);
 		expect(getInstance(s.id)).toBeDefined();
 		endOperation(s.id);
+		await deleteInstance(s, { deleteFiles: true });
+		expect(getInstance(s.id)).toBeUndefined();
+	});
+
+	// Clicked again while the server stopped (a big world's last save): each
+	// click was one more deletion waiting behind the stop, all going through.
+	it('is refused a second time while the first waits for the server to stop', async () => {
+		const s = await server();
+		const first = deleteInstance(s, { deleteFiles: true });
+		await expect(deleteInstance(s, { deleteFiles: false })).rejects.toThrow(/already being deleted/);
+		expect(() => beginOperation(s.id, { kind: 'create' })).toThrow(/being deleted/);
+		await first;
+		expect(getInstance(s.id)).toBeUndefined();
+		expect(spawnCalls.filter((c) => c.args.includes('stop'))).toHaveLength(1);
+	});
+
+	it('stops short when a task starts while the server stops', async () => {
+		const s = await server();
+		const first = deleteInstance(s, { deleteFiles: true });
+		let finish = () => {};
+		const taskId = startTask({ label: 'Export', instanceId: s.id }, () => new Promise<void>((resolve) => (finish = resolve)));
+		await expect(first).rejects.toThrow(/"Export" started while the server stopped/);
+		expect(getInstance(s.id)).toBeDefined();
+		expect(await fs.readFile(path.join(s.path, 'world/level.dat'), 'utf8')).toBe('level');
+		finish();
+		await waitForTask(taskId);
 		await deleteInstance(s, { deleteFiles: true });
 		expect(getInstance(s.id)).toBeUndefined();
 	});

@@ -54,6 +54,7 @@ import { deleteChunkMapCache } from './chunkmap';
 import { deletePlayitData, syncTunnels } from './playit';
 import {
 	beginOperation,
+	beingDeleted,
 	commitOperation,
 	endOperation,
 	listOperations,
@@ -1435,6 +1436,9 @@ export async function deleteInstance(
 	instance: ServerInstance,
 	opts: { deleteFiles: boolean }
 ): Promise<void> {
+	// Each click of Delete while the server stopped was one more deletion
+	// waiting behind the stop.
+	if (beingDeleted.has(instance.id)) throw new InstanceError('This server is already being deleted: it is stopping first.');
 	// Work still running on it would carry on in a folder that is gone, and
 	// write parts of it back as a folder no server owns.
 	if (beingCopied.has(instance.id)) throw new InstanceError('This server is being copied; delete it once the copy has finished.');
@@ -1445,7 +1449,20 @@ export async function deleteInstance(
 	const op = listOperations().find((o) => o.instanceId === instance.id && o.process === PROCESS_TOKEN);
 	if (op?.journal.kind === 'bisect') throw new InstanceError('A search for the mod behind a crash is running on this server: end it on the Mods page first.');
 	if (op) throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
-	await stopUnit(instance.id).catch(() => undefined);
+	// Stopping can take a minute (a big world's last save); no operation may
+	// start meanwhile (beginOperation), and a task that did is waited for.
+	beingDeleted.add(instance.id);
+	try {
+		await stopUnit(instance.id).catch(() => undefined);
+		const started = listTasks().find((t) => t.instanceId === instance.id && t.state === 'running');
+		if (started) throw new InstanceError(`"${started.label}" started while the server stopped: delete it once that has finished.`);
+		await removeServer(instance, opts);
+	} finally {
+		beingDeleted.delete(instance.id);
+	}
+}
+
+async function removeServer(instance: ServerInstance, opts: { deleteFiles: boolean }): Promise<void> {
 	await removeUnitArtifacts(instance.id);
 	if (opts.deleteFiles) {
 		// Guard against a hand-edited path pointing somewhere unfortunate.

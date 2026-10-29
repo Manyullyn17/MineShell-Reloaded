@@ -23,6 +23,8 @@
 	let showClone = $state(false);
 	let showDelete = $state(false);
 	let confirmName = $state('');
+	// Delete waits for the server to stop, which can take a minute.
+	let deleting = $state(false);
 </script>
 
 {#if mayCopy || mayDelete}
@@ -75,7 +77,18 @@
 			{/if}
 		</div>
 		{#if showDelete}
-			<form method="POST" action="?/delete" use:enhance class="danger-form bad">
+			<form
+				method="POST"
+				action="?/delete"
+				use:enhance={() => {
+					deleting = true;
+					return async ({ update }) => {
+						await update();
+						deleting = false;
+					};
+				}}
+				class="danger-form bad"
+			>
 				<div class="field">
 					<label for="confirm">
 						Type <strong>DELETE</strong> to confirm you want to remove <strong>{name}</strong>
@@ -87,11 +100,14 @@
 					<label for="deleteFiles">Also delete every file, including the world. This cannot be undone.</label>
 				</div>
 				<div class="button-row">
-					<button class="button-danger" type="submit" disabled={confirmName.trim().toUpperCase() !== 'DELETE'}>
-						Delete permanently
+					<button class="button-danger" type="submit" disabled={deleting || confirmName.trim().toUpperCase() !== 'DELETE'}>
+						{deleting ? (running ? 'Stopping the server…' : 'Deleting…') : 'Delete permanently'}
 					</button>
-					<button class="button-quiet" type="button" onclick={() => (showDelete = false)}>Cancel</button>
+					<button class="button-quiet" type="button" disabled={deleting} onclick={() => (showDelete = false)}>Cancel</button>
 				</div>
+				{#if deleting && running}
+					<p class="hint">It saves its world before it stops, which takes a while for a big one.</p>
+				{/if}
 			</form>
 		{/if}
 		{/if}
