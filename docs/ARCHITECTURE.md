@@ -817,8 +817,10 @@ timestamp, never decoded), in `region/`, `entities/` and `poi/` alike; a chosen 
 snapshot lacks goes and generates again; `.mcc` files of oversized chunks move with them.
 It is a world change whose `moving`/`placing` are those files, planned from the headers
 while the server is stopped. The replaced files are always kept as a partial snapshot (a
-rename, a few MB; no question asked), which restores them. A region file the restore created
-(the live world had none) is not in that snapshot, so restoring it leaves that file.
+rename, a few MB; no question asked), which restores them. Files the restore created (a
+region or `.mcc` the live world had none of) are named in its manifest as `created`, and
+restoring a partial snapshot moves those aside too, so it undoes the restore whole; a
+restore that only creates files still gets one (`worlds` empty).
 
 **The chunk map** (`chunkmap.ts`, `ChunkMap.svelte`, `lib/shared/chunkmap.ts`) is drawn in
 the browser from two endpoints: the overview (every region header's chunk list, cheap for

@@ -412,8 +412,8 @@
 									<input type="hidden" name="id" value={s.id} />
 									{#if s.reason === 'world-restore-chunks'}
 										<p>
-											Puts back the {s.worlds.length} region file{s.worlds.length === 1 ? '' : 's'} a chunk restore changed, as they were on
-											{formatDateTime(s.createdAt)}. The rest of the world stays as it is.
+											{#if s.worlds.length}Puts back the {s.worlds.length} region file{s.worlds.length === 1 ? '' : 's'} a chunk restore changed, as they were on
+												{formatDateTime(s.createdAt)}{/if}{#if s.created?.length}{s.worlds.length ? ', and removes' : 'Removes'} the {s.created.length} it created where the world had none{/if}. The rest of the world stays as it is.
 										</p>
 									{:else if s.partial}
 										<p>

@@ -143,8 +143,15 @@ async function runWorldChange(instance: ServerInstance, change: WorldChange): Pr
 				(p): p is string => p !== null
 			)
 		: await worldFolders(root);
+	// A change of some files can create others (a chunk restore's region file where the
+	// world had none): its snapshot names them, so restoring it takes them away again.
+	const created = change.moving
+		? (await Promise.all(change.placing.map(async (p) => (worlds.includes(p) || (await exists(path.join(root, p))) ? null : p)))).filter(
+				(p): p is string => p !== null
+			)
+		: [];
 	const now = Date.now();
-	const snapshotId = change.snapshot && worlds.length ? await newSnapshotId(root, `world-${change.action}`) : null;
+	const snapshotId = change.snapshot && (worlds.length || created.length) ? await newSnapshotId(root, `world-${change.action}`) : null;
 	const rel = (p: string) => path.relative(root, p);
 	let propertiesBefore: Record<string, string> | null = null;
 	if (change.properties) {
@@ -164,7 +171,7 @@ async function runWorldChange(instance: ServerInstance, change: WorldChange): Pr
 	begin(instance.id, journal);
 	setStatus(instance.id, 'provisioning', change.label);
 	const taskId = startTask({ label: `${change.label}: ${instance.name}`, instanceId: instance.id }, (task) =>
-		applyWorldChange(instance, change, journal, snapshotId, worlds, task).finally(() => change.afterwards?.())
+		applyWorldChange(instance, change, journal, snapshotId, worlds, created, task).finally(() => change.afterwards?.())
 	);
 	return taskId;
 }
@@ -175,6 +182,7 @@ async function applyWorldChange(
 	journal: WorldChangeJournal,
 	snapshotId: string | null,
 	worlds: string[],
+	created: string[],
 	task: TaskHandle
 ): Promise<void> {
 	const root = instance.path;
@@ -207,7 +215,7 @@ async function applyWorldChange(
 				snapshotId,
 				{ reason: `world-${change.action}`, label: `Before ${change.label.toLowerCase()}` },
 				worlds,
-				{ partial: !!change.moving }
+				{ partial: !!change.moving, created }
 			);
 			task.log(`${change.moving ? 'What was there' : 'The previous world'} is kept as snapshot ${snapshot.id}.`);
 		}
@@ -279,8 +287,9 @@ export async function restoreSnapshot(instance: ServerInstance, id: string, opts
 		action: 'restore',
 		label: snapshot.partial ? 'Restoring part of the world' : 'Restoring a world snapshot',
 		snapshot: opts.snapshot,
-		// A partial snapshot (one dimension) replaces just its folders.
-		moving: snapshot.partial ? snapshot.worlds : undefined,
+		// A partial snapshot (one dimension) replaces just its folders, and takes away
+		// what the change after it created.
+		moving: snapshot.partial ? [...snapshot.worlds, ...(snapshot.created ?? [])] : undefined,
 		placing: snapshot.worlds,
 		// Copied, not moved: the snapshot stays usable.
 		assemble: async (incoming, task) => {
