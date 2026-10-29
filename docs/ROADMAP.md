@@ -246,6 +246,19 @@ the user's MeatballCraft copy: Modrinth's Forge 1.12.2 Dynmap builds stop at 3.7
   boot it with Dynmap on Forge 1.12.2 (where Dynmap beta-6 itself does not load) and on
   Cleanroom, and check modded blocks are still drawn.
 
+#### Fugue on Cleanroom: what the jar range cannot say
+
+Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges the jars
+declare (loaders.md, Cleanroom). Two gaps left:
+- An older Fugue that breaks on a newer Cleanroom: ranges only give a minimum
+  (`cleanroom@[min,)`), so nothing marks it. The one known case (Fugue <= 0.23.2 calling
+  `ReflectionHackery.getURL`, removed in Cleanroom 0.5.3) is a rule written by hand; the crash
+  then names the mod Fugue patched, not Fugue (Quantum Things). Crash diagnosis could tell
+  Fugue's patched classes failing from the trace and name Fugue and the Cleanroom version.
+- The Java a build needs is a constant (`FUGUE_JAVA25_FROM`, 0.23.4 needs 25), measured from
+  the jars' class-file versions by hand. Read it from the jar instead (the class file's major
+  version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
+
 ### 2. Files
 
 All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
