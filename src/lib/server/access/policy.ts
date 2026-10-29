@@ -206,6 +206,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			deleteSnapshot: on('backups.delete'),
 			// Another server's copies (one that is gone): a global admin.
 			copyBack: handler(on('backups.create'), "another server's copies: global admin"),
+			chunkyInstall: on('mods'),
 			chunkyStart: on('world'),
 			chunkyConfirm: on('world'),
 			chunkyPause: on('world'),

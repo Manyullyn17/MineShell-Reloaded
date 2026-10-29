@@ -3,16 +3,21 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings, type ServerInstance } from './db/schema';
-import { onlinePlayers, rconPassword } from './instances';
-import { hasEnabledMod } from './mods';
+import { InstanceError, onlinePlayers, rconPassword } from './instances';
+import { compareVersions } from './java';
+import { installRequiredMods } from './moddeps';
+import { getLoader } from './modloaders';
+import { bestVersion, hasEnabledMod, installModVersion, syncMods } from './mods';
+import { compatibleVersions, filterFor } from './modupdates';
+import { startTask } from './tasks';
 import { readJavaProperties } from './properties';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import type { PregenShape } from '#lib/shared/pregen.js';
 
 /**
- * Chunk pre-generation with Chunky (Fabric, Forge, NeoForge; 1.14+, so not
- * 1.12). Unlike Spark, Chunky answers its commands synchronously, so RCON gets
+ * Chunk pre-generation with Chunky (Fabric from Minecraft 1.16, Forge from
+ * 1.16.5, NeoForge; so not 1.12 or Cleanroom). Unlike Spark, Chunky answers its commands synchronously, so RCON gets
  * the reply. Two things to know:
  * - Replies are in Chunky's language (its config, "en" by default). Live
  *   progress is read from `chunky progress` in English only; other languages
@@ -31,6 +36,42 @@ export class ChunkyError extends Error {}
 
 export function hasChunky(root: string): Promise<boolean> {
 	return hasEnabledMod(root, 'chunky');
+}
+
+/** One Modrinth project for every loader's build. */
+const CHUNKY_PROJECT = 'chunky';
+
+/**
+ * Why this server cannot have Chunky, or null when it can. Its builds start
+ * at Minecraft 1.16 on Fabric and 1.16.5 on Forge (NeoForge has its own from
+ * 1.20.2 and takes Forge's before); whether one exists for the exact version
+ * is asked when installing.
+ */
+export function chunkyUnsupported(instance: Pick<ServerInstance, 'modloader' | 'minecraftVersion'>): string | null {
+	if (instance.modloader === 'vanilla') return 'Pre-generating uses the Chunky mod, and a vanilla server cannot load mods.';
+	const fabric = instance.modloader === 'fabric' || instance.modloader === 'quilt';
+	if (instance.modloader === 'cleanroom' || compareVersions(instance.minecraftVersion, fabric ? '1.16' : '1.16.5') < 0) {
+		return `Pre-generating uses the Chunky mod, which has no build for ${getLoader(instance.modloader).label} ${instance.minecraftVersion}: it starts at Minecraft 1.16 on Fabric and 1.16.5 on Forge.`;
+	}
+	return null;
+}
+
+/** Adds Chunky (and Fabric API on a Fabric server without it), as a task; it loads on the next start. */
+export async function installChunky(instance: ServerInstance): Promise<string> {
+	const reason = chunkyUnsupported(instance);
+	if (reason) throw new ChunkyError(reason);
+	if (await hasChunky(instance.path)) throw new ChunkyError('Chunky is installed already.');
+	return startTask({ label: `Install Chunky on ${instance.name}`, instanceId: instance.id }, async (task) => {
+		task.setProgress(null, 'Installing Chunky');
+		const best = bestVersion(await compatibleVersions('modrinth', CHUNKY_PROJECT, filterFor(instance)));
+		if (!best) throw new InstanceError(`Chunky has no build for ${getLoader(instance.modloader).label} ${instance.minecraftVersion}.`);
+		await installModVersion(instance, 'modrinth', { id: CHUNKY_PROJECT, slug: CHUNKY_PROJECT, name: 'Chunky', projectUrl: null, iconUrl: null }, best);
+		task.log(`Installed Chunky ${best.versionNumber}.`);
+		await installRequiredMods(instance, best, task);
+		// Other untracked jars are the user's own, not a pack's.
+		await syncMods(instance, { fromPack: false }).catch(() => undefined);
+		task.setProgress(100, 'Installed; Chunky loads the next time the server starts');
+	});
 }
 
 const chunkyDir = (root: string) => path.join(root, 'config', 'chunky');

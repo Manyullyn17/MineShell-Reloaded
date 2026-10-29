@@ -57,11 +57,13 @@ import {
 	cancelPregen,
 	chunkyLanguage,
 	chunkyStatus,
+	chunkyUnsupported,
 	continuesOnRestart,
 	ChunkyError,
 	confirmPregen,
 	continuePregen,
 	hasChunky,
+	installChunky,
 	pausedForPlayers,
 	pausePregen,
 	pausesForPlayers,
@@ -82,6 +84,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 	return {
 		running,
 		chunky: (await hasChunky(instance.path)) ? await chunkyData(instance, running) : null,
+		/** Why Chunky cannot be added to this server; null when it can. */
+		chunkyUnsupported: chunkyUnsupported(instance),
 		levelName,
 		worlds: await worldFolders(instance.path),
 		seed: values['level-seed'] ?? '',
@@ -230,6 +234,16 @@ function refused(err: unknown) {
 const STARTED = 'Follow it in Activity; the server stays stopped until it finishes.';
 
 export const actions: Actions = {
+	chunkyInstall: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		try {
+			await installChunky(instance);
+			return { ok: true, message: 'Installing Chunky. It loads the next time the server starts.' };
+		} catch (err) {
+			return chunkyRefused(err);
+		}
+	},
+
 	chunkyStart: async ({ request, params }) => {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();

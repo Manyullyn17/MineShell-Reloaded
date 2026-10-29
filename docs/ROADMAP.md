@@ -272,6 +272,16 @@ over RCON; stopped: written to `level.dat` like the rules.
   server (Undecided) can list and set them with types, which would cover the running case
   without RCON.
 
+#### Pre-generation before 1.16 (Chunk Pregenerator)
+
+Asked for 2026-10-29 (user: something for 1.12.2). Chunky starts at 1.16, so 1.12.2 and
+Cleanroom servers only get the reason on World > Pre-generate. Speiger's Chunk Pregenerator
+(CurseForge 267193) covers Forge 1.7.10 to 1.21.1: the same tab with it as a second
+backend (install, start with shape/centre/radius from the planner, progress, stop). To find
+out first, on its 1.12.2 jar: the command syntax (`/pregen ...`), whether it answers over
+RCON, how it reports progress and keeps tasks across restarts, and whether its radius is
+in chunks or blocks. Whether it is worth it for one Minecraft version is open.
+
 #### Single files from a snapshot
 
 Agreed 2026-10-27. A snapshot can be restored whole, by dimension, by chunk, or a player's

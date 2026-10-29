@@ -968,6 +968,12 @@ analysis stays. A finished prune drops the analysis. The last one per server is 
 too (`pruneanalysisstore.ts`, `cache/prune-analysis/<id>.bin.gz`, the page's own encoding), so
 a restart of MineShell finds it again; deleting the server drops it.
 
+**Adding Chunky** (World > Pre-generate, without it): `installChunky` takes the newest
+Modrinth build for the server's loader and version, and what it requires (Fabric API on a
+server without it; `moddeps.ts`, shared with the BlueMap mod's install). `chunkyUnsupported`
+says why a server cannot have it instead of offering the button: none before Minecraft 1.16
+(Fabric) / 1.16.5 (Forge), so none for 1.12.2 or Cleanroom, and none on vanilla.
+
 **Planning a pre-generation** (World > Pre-generate; `PregenPlanner.svelte`,
 `lib/shared/pregen.ts`) draws the area Chunky would cover on the chunk map, and a click
 there moves its middle; the middle can also be typed, or taken from spawn (1.21.9+ names

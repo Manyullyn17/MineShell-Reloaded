@@ -1028,10 +1028,21 @@
 	</section>
 {:else}
 	<div class="empty">
-		<p>
-			Pre-generating uses the Chunky mod, which this server does not have. Add it from Mods → Add mods and restart;
-			this tab then offers a dimension, shape and radius to generate.
-		</p>
+		{#if data.chunkyUnsupported}
+			<p>{data.chunkyUnsupported}</p>
+		{:else}
+			<p>
+				Pre-generating uses the Chunky mod, which this server does not have. Once it is installed and the server has
+				restarted, this tab offers a dimension, shape and radius to generate.
+			</p>
+			{#if may('mods')}
+				<form method="POST" action="?/chunkyInstall" use:enhance>
+					<button class="button-primary" type="submit">Install Chunky</button>
+				</form>
+			{:else}
+				<p class="muted small">Someone who manages this server's mods can add it.</p>
+			{/if}
+		{/if}
 	</div>
 {/if}
 {:else if view === 'prune'}

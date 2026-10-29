@@ -182,6 +182,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   every start and restart (`applyChunkyConfig`), since Chunky reads it only at startup and
   1.2 writes its in-memory copy back whenever it saves a task. A missing config is not made:
   older versions may not fill in fields it lacks.
+- Builds (Modrinth, 2026-10-29): Fabric from 1.16, Forge from 1.16.5, NeoForge from 1.20.2
+  (one project, `chunky`; the Fabric build requires Fabric API). Nothing for 1.12.2 and no
+  backport. Older versions' tool is Speiger's Chunk Pregenerator (CurseForge 267193, Forge
+  1.7.10 to 1.21.1 and NeoForge, a single file for 1.12.2), with commands and output of its
+  own (ROADMAP, World). Install tried on a throwaway Fabric 1.21.1 server: Chunky 1.4.23 and
+  Fabric API 0.116.17 came in, tracked in Mods, and the tab turned into the planner.
 - Live-tested with Chunky 1.3.146 on Fabric 1.20.1 (start, progress, pause, continue,
   confirm, cancel); pausing for players only in tests.
 
