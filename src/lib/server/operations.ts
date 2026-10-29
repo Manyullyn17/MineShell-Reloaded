@@ -177,6 +177,18 @@ export function commitOperation(instanceId: string, changes: Partial<ServerInsta
 	});
 }
 
+/**
+ * Entries of `.mineshell/` that only an operation that did not finish leaves
+ * behind: its staging folders and loader installers (with their logs and
+ * partial downloads). Everything else there is kept on purpose.
+ */
+export function isOperationLeftover(name: string): boolean {
+	return (
+		/^(pack-change|loader-previous|world-previous|world-incoming|mod-update|migrate)-\d+$/.test(name) ||
+		/installer\.jar(\.log|\.part)?$/.test(name)
+	);
+}
+
 export type RecordedOperation = { instanceId: string; journal: Journal; process: string; startedAt: number };
 
 export function listOperations(): RecordedOperation[] {
