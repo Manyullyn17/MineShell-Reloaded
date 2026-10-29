@@ -229,6 +229,23 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 `typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
 again when Kit and svelte-check list 7 in their peer ranges.
 
+#### Mods from outside Modrinth's hash lookup
+
+Asked for 2026-10-29. Sync recognises a jar it has no record of by its Modrinth hash only,
+and only once: a CurseForge-only jar stays "Other" for good (Dynmap's Forge 3.7-beta-6 on
+the user's MeatballCraft copy: Modrinth's Forge 1.12.2 Dynmap builds stop at 3.7-beta-4).
+- CurseForge fingerprints: the official API's fingerprint lookup (murmur2 of the jar without
+  whitespace bytes) identifies CurseForge files; it needs the API key (the modpacks.ch
+  mirror has no such lookup, packs-and-mods.md). Run for untracked jars, and for `manual`
+  records again whenever a key is set or Sync runs, so a jar recorded as "Other" can still
+  become tracked.
+- DynmapBlockScan updates: it is on no catalog. dynmap.us/builds/DynmapBlockScan/ is a plain
+  directory listing with builds per Minecraft version and a `.MD5` beside the newer ones;
+  1.12.2 has 3.6 (2023) and 3.7-beta-6 (2025-01-09) besides the 3.4-beta-1 MineShell
+  installs, so the update check could read it. Before offering or installing a newer one:
+  boot it with Dynmap on Forge 1.12.2 (where Dynmap beta-6 itself does not load) and on
+  Cleanroom, and check modded blocks are still drawn.
+
 ### 2. Files
 
 All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
