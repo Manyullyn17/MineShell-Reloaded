@@ -18,6 +18,7 @@ import {
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
 import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
+import { dropKeptChunkyTasks, swapChunkyTasks, unswapChunkyTasks } from './chunky';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
 import { deleteToTrash } from './trash';
@@ -752,16 +753,17 @@ export async function restoreWorldSwitch(instanceId: string, root: string, journ
 	} else if (await exists(web)) {
 		await putBack();
 	}
+	await unswapChunkyTasks(root, journal.from);
 	await patchProperties(root, journal.propertiesBefore);
 }
 
 /**
  * Makes `to` the active world: what the leaving world had is recorded for
  * when it comes back, the map's web app swaps with the arriving world's kept
- * one (the leaving one kept, or deleted without `keepMap`), and `level-name`
- * and the world's own settings are written. Journalled: nothing in the
- * server folder moves, so a failure only has the map and the properties to
- * put back.
+ * one (the leaving one kept, or deleted without `keepMap`), so do Chunky's
+ * saved tasks, and `level-name` and the world's own settings are written.
+ * Journalled: no world moves, so a failure only has the map, Chunky's tasks
+ * and the properties to put back.
  */
 async function activateWorld(
 	instance: ServerInstance,
@@ -776,6 +778,8 @@ async function activateWorld(
 	const hadMap = await exists(web);
 	// A leftover from before would read as this switch's move.
 	await fs.rm(keptWeb(instance.id, from), { recursive: true, force: true });
+	// Also a leftover; the active world's tasks are the ones in use.
+	await dropKeptChunkyTasks(root, from);
 	// Measured now, while nothing writes to it: it does not change until it is active again.
 	const leavingBytes = await worldBytes(root, from);
 	const journal: WorldSwitchJournal = {
@@ -820,6 +824,8 @@ async function activateWorld(
 			await fs.rename(web, aside);
 		}
 		if (await exists(keptWeb(instance.id, to))) await fs.rename(keptWeb(instance.id, to), web);
+		// Chunky's tasks are per dimension: each world keeps its own.
+		await swapChunkyTasks(root, from, to);
 		await patchProperties(root, setting);
 		await writeWorldMeta(root, meta);
 		commitOperation(instance.id, { packDatapacks: opts.packDatapacks });
@@ -833,6 +839,7 @@ async function activateWorld(
 		throw err;
 	}
 	if (journal.discard) await fs.rm(journal.discard, { recursive: true, force: true });
+	await dropKeptChunkyTasks(root, to);
 	await fs.rm(keptMapDir(instance.id, to), { recursive: true, force: true });
 	// Only when empty: the other worlds' kept maps are in it.
 	await fs.rmdir(path.dirname(keptMapDir(instance.id, to))).catch(() => undefined);
@@ -933,6 +940,7 @@ export async function deleteWorld(instance: ServerInstance, folder: string, opts
 	delete meta.worlds[folder];
 	await writeWorldMeta(root, meta);
 	await fs.rm(keptMapDir(instance.id, folder), { recursive: true, force: true });
+	await dropKeptChunkyTasks(root, folder);
 	let removed = 0;
 	if (opts.snapshots) {
 		const names = worlds.map((w) => w.folder);

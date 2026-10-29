@@ -597,9 +597,7 @@ What the built entries in the archive left out, in one place:
   once). The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
   analysis, terrain only for the regions looked at).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
-  (user's call: server settings for now, maybe later); Chunky's saved tasks
-  (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished
-  pre-generation shows for the next world too; the BlueMap mod's live map was not checked
+  (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
   researched). Whether pre-generation (Chunky) keeps running while paused is unchecked.

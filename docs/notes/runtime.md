@@ -153,7 +153,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   from `chunky progress` in English only; the pause-for-players loop runs only in English.
 - `config/chunky/tasks/<namespace>/<path>.properties` (one folder per namespace, read
   recursively) is written when a task stops and at shutdown, never while it runs. A finished
-  task is saved as `cancelled=true`; unfinished = not cancelled.
+  task is saved as `cancelled=true`; unfinished = not cancelled. Keyed by dimension
+  (`minecraft:overworld`), not by world folder: a world switch swaps them
+  (`swapChunkyTasks`), or another world would continue the last one's task.
 - `chunky cancel` and starting over an unfinished task both wait for `chunky confirm`;
   pending actions are keyed by sender name, so a later RCON connection can confirm. The
   confirm prompt contains the literal "chunky confirm" in every language.

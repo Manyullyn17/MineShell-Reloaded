@@ -912,8 +912,11 @@ and generator settings, `pack_datapacks`, what the server ran, its map's render 
 writes the arriving world's back with `level-name` (an inactive world's size is measured
 then, or when first listed, and kept until it is active again), and swaps BlueMap's `web/` with the
 arriving world's kept one (`$DATA/maps/<id>/worlds/<folder>/web`) - the leaving map is kept
-there or deleted. A crash puts the map and the properties back (`restoreWorldSwitch`, from
-which moves are on disk). A world last saved by a newer Minecraft (level.dat's
+there or deleted. Chunky's saved tasks are keyed by dimension, not world, so they swap too:
+the leaving world's are copied to `.mineshell/chunky-tasks/<folder>/` (1.3's `tasks/`, 1.2's
+`tasks` from `config/chunky.json`), the arriving world's copied in, and its kept copy removed
+once the switch has committed. A crash puts the map, Chunky's tasks (from a complete kept
+copy) and the properties back (`restoreWorldSwitch`, from which moves are on disk). A world last saved by a newer Minecraft (level.dat's
 `Data.Version.Name`, else the recorded run) needs `force`. New worlds come empty (generated
 on the next start, the active world's data packs copied in unless unticked), from a full
 snapshot, or from an uploaded zip (the world PUT with `?newWorld=`, unpacked beside the

@@ -129,6 +129,88 @@ function legacyTasks(raw: unknown): SavedTask[] {
 		}));
 }
 
+// ---------------------------------------------------- tasks per world ---
+
+/**
+ * Chunky keys its saved tasks by dimension, not by world folder, so with
+ * several worlds the leaving world's unfinished task stayed for the arriving
+ * one, shown as its own and continued in it on the next start
+ * (continueOnRestart). A switch keeps each world's tasks here while it is not
+ * active: 1.3's tasks/ folder, and 1.2's "tasks" from its config.
+ */
+export const KEPT_TASKS_DIR = path.join('.mineshell', 'chunky-tasks');
+const keptTasks = (root: string, world: string) => path.join(root, KEPT_TASKS_DIR, encodeURIComponent(world));
+const LEGACY_KEPT = 'chunky.json-tasks.json';
+
+const exists = (p: string) => fs.access(p).then(() => true, () => false);
+
+async function legacyConfig(root: string): Promise<{ file: string; config: Record<string, unknown> } | null> {
+	const read = await readConfig(root);
+	return read?.legacy ? read : null;
+}
+
+/** Marks a world's kept copy as complete: only then does undoing a switch put it back. */
+const COMPLETE = 'complete';
+
+/** Writes `world`'s Chunky tasks into its keeping folder, a copy of what is active now. */
+async function keepActive(root: string, world: string): Promise<void> {
+	const dir = keptTasks(root, world);
+	await fs.rm(dir, { recursive: true, force: true });
+	await fs.mkdir(dir, { recursive: true });
+	const tasks = path.join(chunkyDir(root), 'tasks');
+	if (await exists(tasks)) await fs.cp(tasks, path.join(dir, 'tasks'), { recursive: true });
+	const legacy = await legacyConfig(root);
+	const current = legacy?.config.tasks;
+	if (current && typeof current === 'object' && Object.keys(current).length) {
+		await fs.writeFile(path.join(dir, LEGACY_KEPT), JSON.stringify(current));
+	}
+	await fs.writeFile(path.join(dir, COMPLETE), '');
+}
+
+/** Makes `world`'s kept tasks (none if it has none) the active ones; its keeping folder stays. */
+async function bringBack(root: string, world: string): Promise<void> {
+	const dir = keptTasks(root, world);
+	const tasks = path.join(chunkyDir(root), 'tasks');
+	await fs.rm(tasks, { recursive: true, force: true });
+	if (await exists(path.join(dir, 'tasks'))) await fs.cp(path.join(dir, 'tasks'), tasks, { recursive: true });
+	const legacy = await legacyConfig(root);
+	if (!legacy) return;
+	const kept = await fs.readFile(path.join(dir, LEGACY_KEPT), 'utf8').then((t) => JSON.parse(t) as unknown, () => null);
+	const current = legacy.config.tasks;
+	const has = current && typeof current === 'object' && Object.keys(current).length > 0;
+	// Rewritten only when its tasks change, so a config with none is left as it is.
+	if (has || kept) await fs.writeFile(legacy.file, JSON.stringify({ ...legacy.config, tasks: kept ?? {} }, null, 2));
+}
+
+/**
+ * On a world switch from `from` to `to` (stopped server): `from`'s tasks are
+ * kept, `to`'s come in. Copies, not moves, so an interrupted switch always
+ * has a whole set to go back to; `to`'s kept copy goes once the switch has
+ * committed (dropKeptChunkyTasks).
+ */
+export async function swapChunkyTasks(root: string, from: string, to: string): Promise<void> {
+	await keepActive(root, from);
+	await bringBack(root, to);
+}
+
+/**
+ * Undoes swapChunkyTasks after a failed or interrupted switch: `from`'s
+ * complete copy back, or nothing when the copy was not finished (then
+ * nothing active had changed yet).
+ */
+export async function unswapChunkyTasks(root: string, from: string): Promise<void> {
+	const dir = keptTasks(root, from);
+	if (await exists(path.join(dir, COMPLETE))) await bringBack(root, from);
+	await fs.rm(dir, { recursive: true, force: true });
+	await fs.rmdir(path.join(root, KEPT_TASKS_DIR)).catch(() => undefined);
+}
+
+/** A world's kept tasks, gone: it is active now (they are in use) or deleted. */
+export async function dropKeptChunkyTasks(root: string, world: string): Promise<void> {
+	await fs.rm(keptTasks(root, world), { recursive: true, force: true });
+	await fs.rmdir(path.join(root, KEPT_TASKS_DIR)).catch(() => undefined);
+}
+
 // --------------------------------------------------------------- progress ---
 
 export type TaskProgress = {
