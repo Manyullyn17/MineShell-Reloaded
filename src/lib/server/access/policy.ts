@@ -92,7 +92,11 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			updateAuto: 'owner',
 			update: 'owner',
 			downgradePlan: 'owner',
-			downgrade: 'owner'
+			downgrade: 'owner',
+			// Replaces every account, setting and server row with a copy's.
+			restoreDatabase: 'owner',
+			cancelRestore: 'owner',
+			dismissRestore: 'owner'
 		}
 	},
 	'/settings/defaults': { load: 'globalAdmin', actions: { save: 'globalAdmin', reset: 'globalAdmin' } },

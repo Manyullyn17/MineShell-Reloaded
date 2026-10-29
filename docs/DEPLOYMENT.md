@@ -210,8 +210,13 @@ page, the database is copied to `$MINESHELL_DATA/db-backups/mineshell-<date>-<fr
 (the newest five are kept), and once a day to `db-backups/daily-<date>.db` (the newest seven).
 They hold the accounts, settings, history and the server list, not the servers' own files:
 back up `db-backups/` with `secret.key` beside it (it unlocks the saved RCON passwords and
-notification addresses). To put one back by hand - servers created or changed since then
-will be missing from it, their folders still on disk:
+notification addresses). Settings > Updates, "Database copies", puts one back (the owner
+only): it shows which servers the copy lacks (made since: their folders stay on disk) or
+brings back, copies the database as it is to `before-restore-<time>.db` first, and puts the
+copy in at the next start of MineShell, before the database opens; an installed MineShell
+restarts itself for that, a source checkout waits for its next start. A copy from a newer
+MineShell is refused. By hand, when MineShell does not start at all - servers created or
+changed since then will be missing from it, their folders still on disk:
 
 ```sh
 systemctl --user stop mineshell

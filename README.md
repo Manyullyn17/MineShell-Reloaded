@@ -186,7 +186,7 @@ Keep MineShell up to date without replacing the installation by hand, and comfor
 
 - **Updates from the browser:** MineShell checks for new releases every 12 hours or on demand, shows their notes, and installs one with a click, restarting itself while the Minecraft servers keep running. An update waits for running tasks; if it fails, the old version keeps running and the installer's log is shown.
 - **Going back:** Browse every release with its notes, and go back to an older one of the same major version, or the last one before it, when a release brings a problem (with warnings, a database copy first, and a refusal where the older version could not work with the database).
-- **Database copies:** MineShell copies its own database (accounts, settings, history) before every update and once a day, keeping the last seven daily copies.
+- **Database copies:** MineShell copies its own database (accounts, settings, history) before every update and once a day, keeping the last seven daily copies. Settings > Updates puts one back, showing first which servers it lacks or brings back, and keeps the database as it was as a copy of its own; an installed MineShell restarts itself to finish.
 - **Themes:** Deep Slate, Midnight, or the light Daylight.
 - **Phones and tablets:** Every page works on a narrow screen, and MineShell can be installed as an app when it is reached over https.
 

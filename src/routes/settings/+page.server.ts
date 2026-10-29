@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { cancelPendingRestore, dismissLastRestore, lastRestore, listDatabaseCopies, pendingRestore, requestRestore, restoreBlocker } from '#lib/server/dbrestore.js';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	DATA_DIR,
@@ -247,7 +248,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			backupDir: DB_BACKUP_DIR(),
 			run: await updateRunState(),
 			blocker: updateBlocker()
-		}
+		},
+		/** MineShell's database copies, to put one back (owner only: it replaces every account and setting). */
+		database: locals.access.owner
+			? {
+					copies: await listDatabaseCopies(),
+					servers: listInstances().map((i) => ({ id: i.id, name: i.name })),
+					pending: await pendingRestore(),
+					last: await lastRestore(),
+					blocker: restoreBlocker(),
+					installed: installInfo() !== null
+				}
+			: null
 	};
 };
 
@@ -669,6 +681,32 @@ export const actions: Actions = {
 			if (err instanceof UpdateRefused) return fail(409, { ok: false, message: err.message });
 			throw err;
 		}
+	},
+
+	restoreDatabase: async ({ request, locals }) => {
+		const form = await request.formData();
+		if (form.get('understood') !== 'on') return fail(400, { ok: false, message: 'Tick that you understand what it replaces first.' });
+		try {
+			const { restarting, kept } = await requestRestore(String(form.get('file') ?? ''), locals.user?.username ?? null);
+			return {
+				ok: true,
+				message: restarting
+					? `MineShell restarts with the copy in a moment; reload this page then. The database as it was is kept as ${kept}.`
+					: `Restart MineShell to put the copy in; it goes in before the database opens. The database as it is now is kept as ${kept}.`
+			};
+		} catch (err) {
+			return fail(409, { ok: false, message: err instanceof Error ? err.message : 'The copy could not be put back.' });
+		}
+	},
+
+	cancelRestore: async () => {
+		await cancelPendingRestore();
+		return { ok: true, message: 'Not put back: the database stays as it is.' };
+	},
+
+	dismissRestore: async () => {
+		await dismissLastRestore();
+		return { ok: true };
 	},
 
 	// Going back: first what it means (shown to confirm), then doing it, which checks again.

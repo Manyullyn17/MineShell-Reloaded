@@ -4,7 +4,8 @@ import { startHeapSampling } from './heap';
 import { startHistory } from './history';
 import { startScheduler } from './scheduler';
 import { learnJavaRequirement, scanJavaRuntimes } from './java';
-import { listInstances } from './instances';
+import { listInstances, syncUnit } from './instances';
+import { restoredThisStart } from './db/restore';
 import { stopAllTails } from './journal';
 import { recoverInterruptedOperations } from './recovery';
 import { removePartialJava } from './javadownload';
@@ -22,6 +23,12 @@ import { keepRunningOnRejections } from './crashguard';
  */
 const globals = globalThis as { __mineshellBooted?: boolean };
 
+async function resyncUnits(): Promise<void> {
+	for (const instance of listInstances()) {
+		await syncUnit(instance).catch((err) => console.warn(`[mineshell] syncing ${instance.id}'s unit failed:`, err instanceof Error ? err.message : err));
+	}
+}
+
 export function boot(): void {
 	if (globals.__mineshellBooted) return;
 	globals.__mineshellBooted = true;
@@ -33,6 +40,8 @@ export function boot(): void {
 	// (bootstart.ts); only once recovery is done, so none starts half-changed.
 	void recoverInterruptedOperations()
 		.catch((err) => console.error('[mineshell] recovering interrupted operations failed:', err))
+		// A database copy put back at this start: each server's unit as its restored row says.
+		.then(() => (restoredThisStart() ? resyncUnits() : undefined))
 		.then(() => startServersAfterBoot())
 		.then((taskId) => taskId && console.log('[mineshell] starting servers after the reboot'))
 		.catch((err) => console.error('[mineshell] starting servers after the reboot failed:', err));

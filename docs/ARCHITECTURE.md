@@ -340,7 +340,23 @@ installer runs, the database is copied (SQLite's online backup) to `$DATA/db-bac
 newest five kept. The scheduler's tick also makes one a day (`dbbackups.ts`,
 `daily-<local date>.db`, newest seven, written as `.part` and renamed), kept apart from the
 pre-update ones so neither pushes the other out. Never a file copy: in WAL mode the file alone
-can miss what is still in `-wal`.
+can miss what is still in `-wal`. Each copy is switched out of WAL mode once made
+(`copyDatabase`): a copy in WAL mode grows `-wal`/`-shm` beside it whenever anything opens it.
+
+Putting a copy back (`dbrestore.ts`, Settings > Updates): the database is open for as long
+as MineShell runs, so the request is a marker (`$DATA/restore-pending.json`) and the copy goes
+in at the next start, before `db/index.ts` opens the database (`db/restore.ts`: integrity
+check, then it replaces `mineshell.db`, the old `-wal`/`-shm` removed). What the copy held
+mid-way is of its moment, not of now, and goes: journalled operations (recovery would roll
+them back onto today's files) and a running `update.run`. That start re-syncs every server's
+unit from the restored rows (`boot.ts`). The database as it was is copied first
+(`before-restore-<time>.db`, newest three), so a restore is undone the same way; an installed
+MineShell restarts itself (`systemd-run --user` around `systemctl --user restart`, which
+outlives this process), and the outcome is in the restored database (`database.restored`) or,
+when it failed, in `$DATA/restore-failed.json`. Refused while a task or operation runs, and for
+a copy with migrations this version does not know (a newer MineShell's). Reading a copy's
+servers and accounts switches an old WAL copy out of WAL mode and puts its modification time
+back, which is when it was made.
 
 Going back to an older release (`startDowngrade`) is the same install with the older archive
 and its own installer. Which ones are offered is a rule (`mayGoBackTo`): any while on 0.x; from

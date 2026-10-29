@@ -436,13 +436,16 @@ in the first version or later; the JSON or not.
 
 ### Leftovers of built features
 
-What the built entries in the archive left out, in one place:
+What the built entries in the archive left out, in one place. Picked first (user,
+2026-10-29), in this order: restoring the database from the page (built 2026-10-29), the
+pruning ones, cancelling an install or pack change with a rollback, then backing up a whole
+server with progress and Cancel for a copy. Other backup destinations wait: which to support
+is open, and each needs a test setup.
 
 - **Limits on going back**: the last 0.x, once gone back to from 1.x, offers the older betas
   again; it could refuse going below itself once its database has seen 1.x (optional). The
   release candidate can be that last 0.x, so going back lands on a tested release.
-- **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
-  copying them to a backup folder along with the snapshots.
+- **MineShell's database copies**: copying them to a backup folder along with the snapshots.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
@@ -457,8 +460,7 @@ What the built entries in the archive left out, in one place:
   `.7z`); a diff between earlier versions of a file, and versions following a rename.
 - **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 8).
 - **Installer and updates**: installing Node for the user (the installer says how to get
-  it), installing updates automatically; restoring a database backup from the page (by hand
-  in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
+  it), installing updates automatically.
 - **Server export and import**: data packs, resource packs and other files from Modrinth are
   carried, not linked (only mods/ jars are); not tried for real with a CurseForge pack or a world of
   gigabytes.

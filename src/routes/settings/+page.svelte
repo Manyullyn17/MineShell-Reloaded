@@ -103,6 +103,17 @@
 		warnings: string[];
 	};
 	const downgrade = $derived((form as { downgrade?: DowngradePlan } | null)?.downgrade ?? null);
+
+	// ---- database copies: the one opened to put back, and what that changes
+	let restoring = $state<string | null>(null);
+	const COPY_KINDS = { daily: 'Daily copy', update: 'Before an update', 'before-restore': 'Before a restore' } as const;
+	function restoreChanges(copy: { servers: { id: string; name: string }[] }) {
+		const now = data.database?.servers ?? [];
+		return {
+			missing: now.filter((s) => !copy.servers.some((c) => c.id === s.id)),
+			returning: copy.servers.filter((c) => !now.some((s) => s.id === c.id))
+		};
+	}
 	let understood = $state(false);
 	$effect(() => {
 		void downgrade;
@@ -1062,6 +1073,86 @@
 </section>
 {/if}
 
+{#if data.database}
+	{@const d = data.database}
+	<section class="panel">
+		<h2>Database copies</h2>
+		<p class="small muted">
+			MineShell's own database (accounts, settings, history, the server list; not the servers' files) is copied before every
+			update and once a day, to <code>{data.update.backupDir}</code>. Putting one back replaces all of that with the copy's,
+			and keeps the database as it is now as a copy first, so that can be put back the same way.
+		</p>
+		{#if d.last}
+			<div class="notice {d.last.error ? 'error' : 'success'} flash">
+				<p>
+					{#if d.last.error}Putting {d.last.file} back failed, and the database stayed as it was: {d.last.error}
+					{:else}The database was put back from {d.last.file} on {formatDateTime(d.last.at)}.{/if}
+				</p>
+				<form method="POST" action="?/dismissRestore" use:enhance><button class="button-quiet" type="submit">Dismiss</button></form>
+			</div>
+		{/if}
+		{#if d.pending}
+			<div class="notice warning">
+				<p>
+					<strong>{d.pending.file} goes in at the next start of MineShell.</strong>
+					{d.installed ? 'It is restarting; reload in a moment.' : 'Restart MineShell (this runs from a source checkout, so it does not restart itself).'}
+				</p>
+				<form method="POST" action="?/cancelRestore" use:enhance><button class="button-quiet" type="submit">Do not put it back</button></form>
+			</div>
+		{/if}
+		{#if d.copies.length === 0}
+			<p class="muted">No copies yet: the first daily one is made within a minute of MineShell running.</p>
+		{:else}
+			<ul class="copy-list">
+				{#each d.copies as c (c.file)}
+					{@const changes = restoreChanges(c)}
+					<li>
+						<div class="copy-row">
+							<div class="copy-name">
+								<strong>{COPY_KINDS[c.kind]}</strong>
+								<span class="small muted">{formatDateTime(c.madeAt)} · {formatBytes(c.bytes)} · {plural(c.servers.length, 'server')}, {plural(c.accounts, 'account')}</span>
+								<span class="mono small faint">{c.file}</span>
+							</div>
+							{#if c.refusal}
+								<span class="small warn-text">{c.refusal}</span>
+							{:else if !d.pending}
+								<button class="button" type="button" onclick={() => (restoring = restoring === c.file ? null : c.file)}>Put back…</button>
+							{/if}
+						</div>
+						{#if restoring === c.file && !c.refusal}
+							<form method="POST" action="?/restoreDatabase" use:enhance class="restore-panel">
+								<input type="hidden" name="file" value={c.file} />
+								<ul class="small">
+									<li>Every account, password, setting and server setting goes back to how it was on {formatDateTime(c.madeAt)}; anyone signed in since may need to sign in again.</li>
+									{#if changes.missing.length}
+										<li>
+											<strong>{plural(changes.missing.length, 'server')} made since {changes.missing.length === 1 ? 'is' : 'are'} not in it</strong>
+											({changes.missing.map((s) => s.name).join(', ')}): {changes.missing.length === 1 ? 'it goes' : 'they go'} from the list, the
+											folders stay on disk.
+										</li>
+									{/if}
+									{#if changes.returning.length}
+										<li>
+											{plural(changes.returning.length, 'server')} deleted since {changes.returning.length === 1 ? 'comes' : 'come'} back to the list
+											({changes.returning.map((s) => s.name).join(', ')}), {changes.returning.length === 1 ? 'its' : 'their'} folder only if still on disk.
+										</li>
+									{/if}
+									<li>Servers' files, worlds and snapshots are not touched; operations the copy was in the middle of are dropped, not repeated.</li>
+								</ul>
+								{#if d.blocker}<p class="small warn-text">{d.blocker}</p>{/if}
+								<label class="check small"><input type="checkbox" name="understood" /> I understand this replaces MineShell's accounts and settings</label>
+								<div class="release-actions">
+									<button class="button-primary" type="submit" disabled={!!d.blocker}>{d.installed ? 'Put it back and restart MineShell' : 'Put it back at the next start'}</button>
+									<button class="button-quiet" type="button" onclick={() => (restoring = null)}>Cancel</button>
+								</div>
+							</form>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</section>
+{/if}
 <section class="panel">
 	<h2>Release history</h2>
 	{#if u.releases.length === 0}
@@ -1482,6 +1573,42 @@
 
 	.release-notes :global(h2) {
 		font-size: 0.95rem;
+	}
+
+	.copy-list {
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+	}
+
+	.copy-list > li {
+		padding: var(--space-2) 0;
+	}
+
+	.copy-list > li + li {
+		border-top: 1px solid var(--line);
+	}
+
+	.copy-row {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+
+	.copy-name {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.restore-panel {
+		margin-top: var(--space-2);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
 	}
 
 	.release-list {

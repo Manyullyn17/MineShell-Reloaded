@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Restoring MineShell's database from a copy
+
+Built 2026-10-29 (Settings > Updates, "Database copies"; ARCHITECTURE, "Updating itself"), on
+the `next` branch, from the leftovers (user's pick). Each copy (daily, before an update,
+before a restore) is listed with its servers and accounts; putting one back shows which
+servers it lacks or brings back, keeps the database as it is first, and goes in at the next
+start, which an installed MineShell does at once. Tried on a throwaway dev server: a copy
+from before a second server was made put back (the server left the list, its folder stayed),
+then the copy made before that restore put back (both servers again). Found on the way:
+copies were left in WAL mode, so opening one grew -wal/-shm files beside it. Not built:
+copying the database copies to a backup folder (a leftover still).
+
 ### Zips and folders in Files
 
 Built 2026-10-29 (Files; ARCHITECTURE, "Zips in Files"), on the `next` branch. Every folder's

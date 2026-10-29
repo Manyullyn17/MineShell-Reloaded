@@ -11,7 +11,7 @@ import { downloadFile, fetchJson, fetchText } from './download';
 import { listOperations } from './operations';
 import { run } from './systemd';
 import { listTasks, startTask } from './tasks';
-import { DB_BACKUP_DIR } from './dbbackups';
+import { copyDatabase, DB_BACKUP_DIR } from './dbbackups';
 
 export { DB_BACKUP_DIR };
 
@@ -338,7 +338,7 @@ async function backupDatabase(from: string, to: string): Promise<string> {
 	await fs.mkdir(dir, { recursive: true });
 	const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const file = path.join(dir, `mineshell-${stamp}-${from}-to-${to}.db`);
-	await raw.backup(file);
+	await copyDatabase(file);
 	const old = (await fs.readdir(dir)).filter((f) => /^mineshell-.*\.db$/.test(f)).sort().reverse().slice(DB_BACKUPS_KEPT);
 	for (const f of old) await fs.rm(path.join(dir, f), { force: true });
 	return file;
