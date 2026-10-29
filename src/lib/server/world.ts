@@ -39,6 +39,7 @@ import {
 import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { withDimensionNames } from './dimensionnames';
+import { deleteAnalysis, loadAnalysis, saveAnalysis } from './pruneanalysisstore';
 import { analyseRegions, applyPrune, planPrune } from './chunkprune';
 import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
@@ -454,15 +455,30 @@ export type PruneAnalysis = {
 };
 
 /**
- * The last analysis per server, for the World tab. In memory: it is a
- * picture of a moment, quick to redo, and a few MB for a big world. On
- * globalThis, so a dev reload does not lose it.
+ * The last analysis per server, for the World tab: a few MB for a big world,
+ * in memory while in use and on disk (pruneanalysisstore.ts), so a restart of
+ * MineShell finds it again. On globalThis, so a dev reload does not lose it.
  */
 const analysisGlobals = globalThis as {
-	__mineshellPruneAnalyses?: Map<string, PruneAnalysis>;
+	__mineshellPruneAnalyses?: Map<string, PruneAnalysis | null>;
 	__mineshellAnalysing?: Map<string, { taskId: string; dimension: string }>;
 };
-const pruneAnalyses = (analysisGlobals.__mineshellPruneAnalyses ??= new Map());
+/** Null: looked for on disk, none there. */
+const analysisCache = (analysisGlobals.__mineshellPruneAnalyses ??= new Map());
+const pruneAnalyses = {
+	get(instanceId: string): PruneAnalysis | undefined {
+		if (!analysisCache.has(instanceId)) analysisCache.set(instanceId, loadAnalysis(instanceId));
+		return analysisCache.get(instanceId) ?? undefined;
+	},
+	set(instanceId: string, analysis: PruneAnalysis): void {
+		analysisCache.set(instanceId, analysis);
+		void saveAnalysis(instanceId, analysis).catch((err) => console.warn(`[mineshell] keeping ${instanceId}'s prune analysis failed:`, err instanceof Error ? err.message : err));
+	},
+	delete(instanceId: string): void {
+		analysisCache.set(instanceId, null);
+		deleteAnalysis(instanceId);
+	}
+};
 /** The analysis running per server, so the page shows its progress by the button, also when opened again. */
 const analysing = (analysisGlobals.__mineshellAnalysing ??= new Map());
 

@@ -153,6 +153,28 @@ describe('chunk pruning', () => {
 		expect(await readRegion(path.join(instance.path, 'world/region/r.0.0.mca'))).toEqual({ 0: 0, 1: 30 * MINUTE });
 	});
 
+	it('finds the last analysis again after MineShell restarts, until a prune makes it out of date', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'server.properties': 'level-name=world\n' });
+		await writeRegion(path.join(instance.path, 'world', 'region'), 0, 0, [{ index: 0, ticks: 0 }, { index: 1, ticks: 30 * MINUTE }]);
+		const analysedAt = await analyse(instance);
+		const before = pruneAnalysis(instance.id)!;
+		// Kept on disk in the background; a restart empties the memory.
+		const restart = () => (globalThis as { __mineshellPruneAnalyses?: Map<string, unknown> }).__mineshellPruneAnalyses!.clear();
+		await vi.waitFor(async () => {
+			restart();
+			expect(pruneAnalysis(instance.id)).not.toBeNull();
+		});
+		const after = pruneAnalysis(instance.id)!;
+		expect(after).toMatchObject({ dimension: before.dimension, label: before.label, at: analysedAt, chunks: 2, unreadable: 0, spawn: before.spawn });
+		expect([...after.regions[0].ticks.slice(0, 3)]).toEqual([0, 30 * MINUTE, NO_CHUNK]);
+
+		// The prune can use it as it was, and then it is gone, also after another restart.
+		const settings = { maxTicks: MINUTE, keepAroundSpawn: 0 };
+		expect((await waitForTask(await pruneChunks(instance, 'world/region', settings, { snapshot: false, analysedAt, protect: new Set() }))).state).toBe('done');
+		restart();
+		expect(pruneAnalysis(instance.id)).toBeNull();
+	});
+
 	it('reports the analysis under way, refuses a second one meanwhile, and clears it when done', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		await writeRegion(path.join(instance.path, 'world', 'region'), 0, 0, [{ index: 0 }]);

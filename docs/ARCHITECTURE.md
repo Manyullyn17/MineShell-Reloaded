@@ -946,7 +946,7 @@ can have two chunks near 0,0 and the rest kilometres away.
 **Pruning** (`chunkprune.ts`, `PruneMap.svelte`, rules shared with the browser in
 `lib/shared/chunkprune.ts`) starts with an analysis: a task reads every chunk's
 InhabitedTime and size in one dimension (`analysePrunable`, read only, so also while the
-server runs) and keeps it in memory, one per server; one runs at a time per server (reserved
+server runs) and keeps it, one per server; one runs at a time per server (reserved
 before anything is awaited), and the page shows its task's progress by the button, from its own
 data on the first paint and then from the task stream (the action answers with the task's id,
 so a click does not wait for the page's data to reload). Chunks are unpacked on zlib's thread
@@ -961,7 +961,9 @@ every change. Chunks picked on the map are protected. The prune posts the analys
 the protected list; `pruneChunks` refuses an analysis that is no longer the latest, and
 removes a chunk only when the analysis showed it going, it is not protected, and on the copy
 being pruned it is still under the threshold, so a chunk generated or visited after the
-analysis stays. A finished prune drops the analysis.
+analysis stays. A finished prune drops the analysis. The last one per server is kept on disk
+too (`pruneanalysisstore.ts`, `cache/prune-analysis/<id>.bin.gz`, the page's own encoding), so
+a restart of MineShell finds it again; deleting the server drops it.
 
 **Planning a pre-generation** (World > Pre-generate; `PregenPlanner.svelte`,
 `lib/shared/pregen.ts`) draws the area Chunky would cover on the chunk map, and a click
