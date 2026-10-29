@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Updating mods and switching one mod's version (modupdates.ts), against a fake Modrinth. */
 
-const { checkModUpdates, changeModVersions, listModVersions, pickUpdate } = await import('#lib/server/modupdates.js');
+const { changelogNote, checkModUpdates, changeModVersions, listModVersions, pickUpdate } = await import('#lib/server/modupdates.js');
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { listSnapshots } = await import('#lib/server/snapshots.js');
@@ -133,6 +133,20 @@ const both = [
 	{ fileName: 'sodium-0.5.0.jar', versionId: 'S2' },
 	{ fileName: 'lithium-1.0.jar.disabled', versionId: 'L2' }
 ];
+
+describe('changelog notes', () => {
+	it('gives the first line of substance, as plain text', () => {
+		expect(changelogNote('## 1.2\n\n- **Fixes** a [crash](https://x.test) on load')).toBe('Fixes a crash on load');
+		expect(changelogNote('Added 2 new blocks')).toBe('Added 2 new blocks');
+		expect(changelogNote(null)).toBeNull();
+	});
+
+	it('gives none for a list of git commits', () => {
+		expect(changelogNote("- f6b80ec feature: resolve LoadingProfiler's single classloading thread assumption\n- 2f43224 fix: x")).toBeNull();
+		// A word that happens to be hex is not a commit.
+		expect(changelogNote('- deadbeef added')).toBe('deadbeef added');
+	});
+});
 
 describe('mod updates', () => {
 	beforeEach(() => {

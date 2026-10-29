@@ -109,7 +109,9 @@ export function pickUpdate(versions: ProjectVersion[], current: { versionId: str
 /**
  * A changelog's first line of substance, as plain text, for one line in the
  * update list: headings that only repeat the name or version are skipped,
- * list markers and markdown links and emphasis dropped.
+ * list markers and markdown links and emphasis dropped. A changelog that is
+ * a list of git commits (Fugue's: "f6b80ec feature: resolve ...") says
+ * nothing to someone updating, so it gives none.
  */
 export function changelogNote(changelog: string | null | undefined): string | null {
 	for (const raw of (changelog ?? '').split('\n')) {
@@ -120,6 +122,7 @@ export function changelogNote(changelog: string | null | undefined): string | nu
 			.replace(/<[^>]+>/g, '')
 			.replace(/[*_`]/g, '')
 			.trim();
+		if (/^(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b/.test(line)) return null;
 		if (line.length > 2) return line.length > 120 ? `${line.slice(0, 117)}...` : line;
 	}
 	return null;
