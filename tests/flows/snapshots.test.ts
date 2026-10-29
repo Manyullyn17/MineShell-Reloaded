@@ -164,10 +164,11 @@ describe('world snapshots', () => {
 
 	it('is taken by hand too', async () => {
 		const instance = await instanceWithWorld();
+		const changed = reload(instance.id).updatedAt;
 		expect((await waitForTask(await snapshotNow(instance))).state).toBe('done');
 		const [snapshot] = await listSnapshots(instance.path);
 		expect(snapshot).toMatchObject({ reason: 'manual', worlds: ['world', 'world_nether'] });
-		expect(reload(instance.id)).toMatchObject({ status: 'ready', statusMessage: null });
+		expect(reload(instance.id)).toMatchObject({ status: 'ready', statusMessage: null, updatedAt: changed });
 		expect(listOperations().some((op) => op.instanceId === instance.id)).toBe(false);
 	});
 

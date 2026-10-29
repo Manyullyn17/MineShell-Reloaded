@@ -59,7 +59,8 @@ export function rescheduleInstance(instanceId: string, from = Date.now()): void 
 	if (!instance) return;
 	const next = computeNextRun(instance, from);
 	db.update(serverInstances)
-		.set({ restartNextAt: next, updatedAt: Date.now() })
+		// Bookkeeping after every restart, not a change ("Last changed"); saving the settings stamps that.
+		.set({ restartNextAt: next })
 		.where(eq(serverInstances.id, instanceId))
 		.run();
 	warned.delete(instanceId);

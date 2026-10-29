@@ -165,11 +165,20 @@ export function endOperation(instanceId: string): void {
 /** Writes the operation's result and drops its journal in one transaction. */
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** `also` writes what belongs to the result in the same transaction (a pack change's record). */
-export function commitOperation(instanceId: string, changes: Partial<ServerInstance>, also?: (tx: Transaction) => void): void {
+/**
+ * `also` writes what belongs to the result in the same transaction (a pack
+ * change's record). `changed: false` is for one that leaves the server as it
+ * was (a snapshot), so it does not count as its "Last changed".
+ */
+export function commitOperation(
+	instanceId: string,
+	changes: Partial<ServerInstance>,
+	also?: (tx: Transaction) => void,
+	{ changed = true }: { changed?: boolean } = {}
+): void {
 	db.transaction((tx) => {
 		tx.update(serverInstances)
-			.set({ ...changes, updatedAt: Date.now() })
+			.set(changed ? { ...changes, updatedAt: Date.now() } : changes)
 			.where(eq(serverInstances.id, instanceId))
 			.run();
 		also?.(tx);

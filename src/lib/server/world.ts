@@ -760,7 +760,7 @@ export async function snapshotNow(
 			setStatus(instance.id, 'ready', `Snapshotting the world failed: ${err instanceof Error ? err.message : 'unknown error'}`);
 			throw err;
 		}
-		commitOperation(instance.id, { status: 'ready', statusMessage: null });
+		commitOperation(instance.id, { status: 'ready', statusMessage: null }, undefined, { changed: false });
 		await opts.then?.(task);
 		task.setProgress(100, 'Ready');
 	});

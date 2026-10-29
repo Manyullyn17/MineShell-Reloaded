@@ -80,6 +80,7 @@ afterEach(() => {
 describe('scheduled restarts', () => {
 	it('restarts a running server once it is due, and picks the next day', async () => {
 		const s = await server({ restartNextAt: null });
+		const changed = reload(s.id).updatedAt;
 		vi.setSystemTime(new Date(2026, 9, 20, 4, 59, 30).getTime());
 		await evaluateRestart(reload(s.id));
 		await evaluateRestart(reload(s.id));
@@ -91,6 +92,8 @@ describe('scheduled restarts', () => {
 		expect(restarted()).toBe(1);
 		expect(reload(s.id).restartNextAt).toBe(new Date(2026, 9, 21, 5, 0).getTime());
 		expect(audits(s.id, 'scheduler.restart')).toHaveLength(1);
+		// Restarting changes nothing about the server: "Last changed" stays.
+		expect(reload(s.id).updatedAt).toBe(changed);
 	});
 
 	it('warns in game at the marks inside the warning window, each once', async () => {
