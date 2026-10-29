@@ -249,6 +249,27 @@ export function duplicateMods(jars: ModJar[]): DuplicateMod[] {
 	return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Disabled jars of a mod that an enabled jar also provides, each with the
+ * enabled one: what a replacement leaves (Cleanroom's fixes disable an old
+ * Fugue once its successor is in, often from the other platform). By the
+ * jars' own ids, like duplicateMods.
+ */
+export function disabledCopies(jars: ModJar[]): Record<string, string> {
+	const inUse = new Map<string, string>();
+	for (const jar of jars) {
+		if (!jar.enabled) continue;
+		for (const id of jar.ids) if (!PLACEHOLDER_IDS.has(id) && !inUse.has(id)) inUse.set(id, jar.fileName);
+	}
+	const copies: Record<string, string> = {};
+	for (const jar of jars) {
+		if (jar.enabled) continue;
+		const copy = jar.ids.map((id) => !PLACEHOLDER_IDS.has(id) && inUse.get(id)).find(Boolean);
+		if (copy) copies[jar.fileName] = copy;
+	}
+	return copies;
+}
+
 // ---------------------------------------------------------------- diagnosis ---
 
 export type DiagnosisKind =

@@ -119,6 +119,8 @@
 	const duplicatesInfo = streamed(() => data.duplicates);
 	const duplicates = $derived((duplicatesInfo.ready ? duplicatesInfo.value : null) ?? []);
 	const duplicateFiles = $derived(new Set(duplicates.flatMap((d) => d.files)));
+	const copiesInfo = streamed(() => data.disabledCopies);
+	const copies = $derived((copiesInfo.ready ? copiesInfo.value : null) ?? {});
 	/** Untracked jars, records without a file, enabled client-only mods and duplicates ask to be looked at. */
 	const needsAttention = (m: (typeof data.mods)[number]) =>
 		m.untracked || m.missing || (m.clientOnly && m.enabled) || duplicateFiles.has(m.fileName);
@@ -379,6 +381,11 @@
 											class="tag warn"
 											title="Known to do nothing on a dedicated server, or to crash it. MineShell disables these when a pack installs them; re-enable it only if another mod needs it."
 										>client-only</span>
+									{/if}
+									{#if copies[mod.fileName]}
+										<span class="tag" title="Disabled: {copies[mod.fileName]} is the same mod and is the copy in use. This one can be deleted."
+											>other copy in use</span
+										>
 									{/if}
 									{#if data.cleanroomOff[mod.fileName]}
 										<span class="tag" title="Disabled because it breaks on Cleanroom or Cleanroom already does its job. {data.cleanroomOff[mod.fileName]}"

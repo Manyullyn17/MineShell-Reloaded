@@ -5,7 +5,7 @@ import { bisectState, cancelBisect, clearBisectState, isBisecting, startBisect }
 import { OperationInProgressError } from '#lib/server/operations.js';
 import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
-import { duplicateMods, indexMods } from '#lib/server/crashdiag.js';
+import { disabledCopies, duplicateMods, indexMods } from '#lib/server/crashdiag.js';
 import { fileVersionPairs } from '#lib/server/formvalues.js';
 import { applyDatapackUpdates, changeModVersions, syncInstanceMods } from '#lib/server/modupdates.js';
 import { decideSnapshot, snapshotPrompt, SnapshotChoiceNeeded } from '#lib/server/snapshots.js';
@@ -45,10 +45,13 @@ export const load: PageServerLoad = async ({ params }) => {
 	const loader = getLoader(instance.modloader);
 	const catalogLoader = loader.catalogLoader ?? loader.id;
 
+	const jars = indexMods(modsDir(instance.path));
 	return {
 		mods,
 		/** Enabled jars declaring the same mod id; streamed, since a big pack's jars take a while to read the first time. */
-		duplicates: indexMods(modsDir(instance.path)).then(duplicateMods),
+		duplicates: jars.then(duplicateMods),
+		/** Disabled jars of a mod another jar provides, with that jar: an older copy a replacement left. */
+		disabledCopies: jars.then(disabledCopies),
 		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */
 		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
