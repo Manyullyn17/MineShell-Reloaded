@@ -53,6 +53,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   time on every write. Records keep times to the millisecond (utimes), live files finer, hence
   the 1 ms tolerance. Nothing is hashed, since page loads ask.
 - If linking fails (a file system without hard links, too many names), the file is copied.
+- Tried on the real install 2026-10-29 (irithyll, 6 GB, live snapshots): a snapshot of a nearly
+  unchanged world added 632 KB, and deleting older snapshots through the World tab (twice, each
+  time the one the newest shared nearly every file with) left the rest matching their
+  `hashes.json` and the live world sharing nothing (`tests/tools/snapshot-check.mjs`).
 
 ## Snapshot retention
 - Policy (`snapshots.ts`): newest `keepMin` full / `partialMin` partial always stay, more
