@@ -1472,10 +1472,19 @@ and anything but an error closes itself after 8 s. The Activity page keeps the l
 
 **Cancelling** is cooperative: work checks `task.isCancelled()` and stops. A task offers
 Cancel only when it was started with `cancel` (what cancelling does, said back to whoever
-cancels): pack downloads (installs, pack changes and the missing-files retry stop after
-the files under way, and the rest are listed as missing, as failed downloads are; before,
-they were forgotten and a retry counted them as done), the map render, a Spark profile, the
-prune analysis. Everything else runs to the end: most operations cannot stop halfway.
+cancels): a pack change (`PACK_CHANGE_CANCEL`) stops at its next step - downloads after the
+files under way, a loader install once it has finished - and is put back from its journal as a
+failure is, ending as cancelled, not failed; just before its commit it closes cancelling
+(`closeCancel`: Cancel goes, one asked for in between is dropped, so a change in place never
+reads as cancelled). A pack install (`PACK_INSTALL_CANCEL`) has nothing to go back to: up to
+the end of its downloads, cancelling removes the new server, folder, unit and row, and its
+pages send back to the server list for a while rather than to "not found". The missing-files
+retry stops after the files under way and keeps the rest listed as missing (before, they were
+forgotten and a retry counted them as done). Also the map render, a Spark profile, the prune
+analysis. Everything else runs to the end: most operations cannot stop halfway. Tried on a
+throwaway dev server with the Cobblemon pack: an install cancelled at 8 of 36 mods left
+nothing, and a change 1.8.4 -> 1.8.3 cancelled during its downloads left all 2475 files as
+they were, byte for byte.
 
 Phones: layout changes for narrow windows sit under `@media (max-width: 60rem)` (the rail
 slides in, the instance header stops sticking, tab bars scroll with a fade, tables scroll

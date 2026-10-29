@@ -39,7 +39,6 @@ import {
 	curseforgeOrigins,
 	downloadPackFiles,
 	loadOverridesArchive,
-	PACK_DOWNLOAD_CANCEL,
 	parsePack,
 	type ParsedPack
 } from './packs';
@@ -481,6 +480,17 @@ export async function createFromArchive(
 	return { ...created, pack };
 }
 
+/** Servers a cancelled install removed lately: their pages go back to the list instead of a 404. */
+const removedByCancel = ((globalThis as { __mineshellRemovedByCancel?: Map<string, number> }).__mineshellRemovedByCancel ??= new Map());
+
+export function removedByCancelledInstall(id: string, now = Date.now()): boolean {
+	const at = removedByCancel.get(id);
+	return at !== undefined && now - at < 10 * 60_000;
+}
+
+/** What cancelling a pack install does, said to whoever cancels. */
+export const PACK_INSTALL_CANCEL = 'Stops at the next step and removes the new server, its folder and all: nothing of it is left.';
+
 /** Shared provisioning task for any pack shape, archive or file list. */
 function provisionFromPack(
 	instance: ServerInstance,
@@ -490,11 +500,22 @@ function provisionFromPack(
 	choices: Pick<CreateInstanceInput, 'startWhenReady' | 'acceptEula' | 'disableMods' | 'keepMods' | 'enableMods'> = {}
 ): string {
 	return startTask(
-		{ label: `Install ${pack.name}`, instanceId: instance.id, cancel: PACK_DOWNLOAD_CANCEL },
+		{ label: `Install ${pack.name}`, instanceId: instance.id, cancel: PACK_INSTALL_CANCEL },
 		(task) => endJournalOnFailure(instance.id, async () => {
+			// A new server has nothing to go back to: cancelled, it is removed, folder and all.
+			const cancelled = async () => {
+				if (!task.isCancelled()) return false;
+				task.log('Cancelled; removing the server.');
+				endOperation(instance.id);
+				await removeInstance(requireInstance(instance.id), { deleteFiles: true });
+				removedByCancel.set(instance.id, Date.now());
+				task.log(`${instance.name} was removed: nothing of it is left.`);
+				return true;
+			};
 			for (const note of notes) task.log(note);
 			task.setProgress(null, 'Resolving Java');
 			const javaPath = await obtainJava(java, javaTarget(instance), task);
+			if (await cancelled()) return;
 
 			// The instance row, not the pack, decides the loader: a Forge 1.12.2
 			// pack can be installed onto Cleanroom instead.
@@ -508,6 +529,7 @@ function provisionFromPack(
 				task
 			});
 
+			if (await cancelled()) return;
 			// The overrides first: they say where the pack's world files belong.
 			await loadOverridesArchive(pack, task);
 			// The server ends up with the pack's server.properties, so its world is
@@ -523,6 +545,9 @@ function provisionFromPack(
 				instance.path,
 				task
 			);
+			// Downloads stop at a cancel, after the files under way. From here on it finishes.
+			if (await cancelled()) return;
+			task.closeCancel();
 
 			const copied = await applyOverrides(pack, instance.path, toWorld);
 			if (copied) task.log(`Copied ${copied} files from the pack's overrides.`);
@@ -1451,6 +1476,11 @@ export async function deleteInstance(
 	const op = listOperations().find((o) => o.instanceId === instance.id && o.process === PROCESS_TOKEN);
 	if (op?.journal.kind === 'bisect') throw new InstanceError('A search for the mod behind a crash is running on this server: end it on the Mods page first.');
 	if (op) throw new InstanceError('A change to this server is still under way: delete it once that has finished.');
+	await removeInstance(instance, opts);
+}
+
+/** Removes a server without asking what runs on it: its own install, cancelled, removes itself. */
+async function removeInstance(instance: ServerInstance, opts: { deleteFiles: boolean }): Promise<void> {
 	await stopUnit(instance.id).catch(() => undefined);
 	await removeUnitArtifacts(instance.id);
 	if (opts.deleteFiles) {

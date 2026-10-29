@@ -46,6 +46,12 @@ export type TaskHandle = {
 	setProgress: (percent: number | null, step?: string) => void;
 	log: (line: string) => void;
 	isCancelled: () => boolean;
+	/**
+	 * Past the point where cancelling can undo the work (a change committed): Cancel goes
+	 * from the task, and one asked for just before is dropped, so the task ends as done.
+	 * Returns whether one had been asked for, for the log to say it came too late.
+	 */
+	closeCancel: () => boolean;
 };
 
 const cancelled = shared.cancelled;
@@ -138,7 +144,15 @@ export function startTask(
 			if (task.log.length > MAX_LOG_LINES) task.log.shift();
 			touch(task);
 		},
-		isCancelled: () => cancelled.has(id)
+		isCancelled: () => cancelled.has(id),
+		closeCancel() {
+			const asked = cancelled.delete(id);
+			if (task.cancel) {
+				task.cancel = null;
+				touch(task);
+			}
+			return asked;
+		}
 	};
 
 	current

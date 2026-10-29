@@ -1,6 +1,6 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { getInstance, summarise } from '#lib/server/instances.js';
+import { getInstance, removedByCancelledInstall, summarise } from '#lib/server/instances.js';
 import { getCountdown } from '#lib/server/countdown.js';
 import { activeProfile, hasSpark } from '#lib/server/spark.js';
 import { primaryLanAddress } from '#lib/server/network.js';
@@ -10,7 +10,11 @@ import type { ModloaderId } from '#lib/server/modloaders.js';
 
 export const load: LayoutServerLoad = async ({ params, url }) => {
 	const instance = getInstance(params.id);
-	if (!instance) error(404, 'No server with that name.');
+	if (!instance) {
+		// Its install was cancelled, which removed it: back to the list rather than "not found".
+		if (removedByCancelledInstall(params.id)) redirect(303, '/');
+		error(404, 'No server with that name.');
+	}
 
 	const summary = await summarise(instance);
 	return {

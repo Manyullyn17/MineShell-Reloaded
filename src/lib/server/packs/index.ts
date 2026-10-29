@@ -435,7 +435,8 @@ export async function downloadPackFiles(
 		const label = item.curseforge && !item.target ? `CurseForge file ${item.curseforge.fileId}` : item.target || 'unknown file';
 		failures.push({ file: label, error: 'Not downloaded: cancelled', download: item });
 	}
-	if (skipped.length) task?.log(`Cancelled: ${skipped.length} files not downloaded, listed as missing.`);
+	// What becomes of them is the caller's to say (listed as missing, or put back with the rest).
+	if (skipped.length) task?.log(`Cancelled with ${skipped.length} files not downloaded.`);
 	return { installed, failures };
 }
 

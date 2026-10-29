@@ -69,6 +69,8 @@ const { patchProperties, readProperties } = await import('#lib/server/properties
 const { serverInstances } = await import('#lib/server/db/schema.js');
 const { eq } = await import('drizzle-orm');
 const { addJava, clearJava, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
+const { cancelTask, getTask, listTasks } = await import('#lib/server/tasks.js');
+const { getInstance, removedByCancelledInstall } = await import('#lib/server/instances.js');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
 
@@ -293,6 +295,83 @@ describe('changing the pack version', () => {
 		expect(after).toMatchObject({ packVersionId: before.row.packVersionId, packVersionName: before.row.packVersionName, status: 'ready' });
 		expect(after.statusMessage).toMatch(/restored/);
 	}
+
+	/** Cancels the running task of `instanceId` (from inside a download or install, as a click would). */
+	const cancelRunning = (instanceId: string) => {
+		const running = listTasks().find((t) => t.instanceId === instanceId && t.state === 'running');
+		expect(running && cancelTask(running.id)).toBeTruthy();
+	};
+
+	it('puts everything back when the change is cancelled during its downloads', async () => {
+		const instance = await installedAndUsed();
+		const before = { files: await tree(instance.path), row: reload(instance.id) };
+		// Resolving the version registers its files; the change then uses that (prepared) version.
+		await planPackChange(instance, 'v2');
+		const original = served['https://packs.test/v2/c.jar'];
+		served['https://packs.test/v2/c.jar'] = (init) => {
+			cancelRunning(instance.id);
+			return original(init);
+		};
+		try {
+			const taskId = await applyPackChange(instance, 'v2', { updateMods: ['chunky-1.0.jar'], confirmMinecraftChange: false });
+			const task = await waitForTask(taskId);
+			expect(task.state).toBe('cancelled');
+			expect(task.log.join('\n')).toMatch(/Cancelled; putting everything back/);
+			expect(await tree(instance.path)).toEqual(before.files);
+			expect(reload(instance.id)).toMatchObject({ packVersionId: 'v1', packVersionName: before.row.packVersionName, status: 'ready', statusMessage: null });
+			expect(listOperations()).toEqual([]);
+		} finally {
+			served['https://packs.test/v2/c.jar'] = original;
+		}
+	});
+
+	it('puts everything back when cancelled during the loader install, which it waits for', async () => {
+		const instance = await installedAndUsed();
+		const before = await tree(instance.path);
+		install.mockImplementation(async (ctx) => {
+			cancelRunning(instance.id);
+			await fs.writeFile(path.join(ctx.dir, 'server.jar'), 'fabric for 1.21.1');
+			return { launchArgs: '-jar server.jar nogui', loaderVersion: '0.16.0' };
+		});
+		const task = await waitForTask(await applyPackChange(instance, 'v3', { updateMods: [], confirmMinecraftChange: true }));
+		expect(task.state).toBe('cancelled');
+		expect(await tree(instance.path)).toEqual(before);
+		expect(reload(instance.id)).toMatchObject({ minecraftVersion: '1.20.1', packVersionId: 'v1' });
+	});
+
+	it('removes a new pack server whose install is cancelled', async () => {
+		const pack = PACKS.v1();
+		const original = served['https://packs.test/v1/b.jar'];
+		let id = '';
+		served['https://packs.test/v1/b.jar'] = (init) => {
+			cancelRunning(id);
+			return original(init);
+		};
+		try {
+			const { instance, taskId } = await createFromPack('Cancelled', pack, { source: 'modrinth', projectId: 'p', versionId: 'v1' });
+			id = instance.id;
+			// Cancel is offered, saying what it does.
+			expect(getTask(taskId)?.cancel).toMatch(/removes the new server/);
+			const task = await waitForTask(taskId);
+			expect(task.state).toBe('cancelled');
+			expect(getInstance(instance.id)).toBeUndefined();
+			// Its pages go back to the server list for a while, not to "not found".
+			expect(removedByCancelledInstall(instance.id)).toBe(true);
+			expect(await fs.stat(instance.path).catch(() => null)).toBeNull();
+			expect(listOperations()).toEqual([]);
+		} finally {
+			served['https://packs.test/v1/b.jar'] = original;
+		}
+	});
+
+	it('cannot be cancelled once the change is in place', async () => {
+		const instance = await installedAndUsed();
+		const taskId = await applyPackChange(instance, 'v2', { updateMods: [], confirmMinecraftChange: false });
+		await vi.waitFor(() => expect(getTask(taskId)?.cancel ?? null).toBeNull(), { timeout: 4000 });
+		expect(cancelTask(taskId)).toBeNull();
+		expect((await waitForTask(taskId)).state).toBe('done');
+		expect(reload(instance.id).packVersionId).toBe('v2');
+	});
 
 	it('restores everything when moving configs aside fails part-way', async () => {
 		await expectRestoredAfter(() => {

@@ -9,6 +9,16 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Cancelling a pack install or change, with a rollback
+
+Built 2026-10-29 (ARCHITECTURE, "Cancelling"), on the `next` branch, from the leftovers (user's
+pick). Cancelling stopped the downloads but the install or change went on to the end, with the
+rest listed as missing. A pack change now stops at its next step and is put back from its
+journal, and a pack install removes the new server; once a change has committed, Cancel goes.
+Tried for real with the Cobblemon pack (see ARCHITECTURE). Not built: stopping a loader
+installer under way (the change waits for it), Cancel for Minecraft and loader moves outside a
+pack change.
+
 ### Pruning leftovers: faster analysis, kept analysis, saved areas
 
 Built 2026-10-29 (World > Prune chunks; ARCHITECTURE, "Pruning"), on the `next` branch, from

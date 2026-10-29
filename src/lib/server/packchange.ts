@@ -19,7 +19,7 @@ import {
 import { describeClientOnlyResult, disableClientOnlyMods } from './clientonly';
 import { snapshotStep, type Snapshot } from './snapshots';
 import { BASE_FILE, baseFromFiles, baseTag, mergeConfigs, packFiles, PROTECTED, readBase, REPORTS_DIR, walk, writeBase, type Base } from './configmerge';
-import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, PACK_DOWNLOAD_CANCEL, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
+import { applyOverrides, curseforgeOrigins, downloadPackFiles, loadOverridesArchive, parsePack, resolvePackTargets, type FailedDownload, type ParsedPack } from './packs';
 import { missingNotice, recordMissing } from './packs/missing';
 import { hashFile } from './download';
 import { projectsByIds, versionsFromHashes } from './mods/modrinth';
@@ -231,6 +231,12 @@ export type ManualModCheck = {
 	blocking: boolean;
 	message: string | null;
 };
+
+/** What cancelling a pack change does, said to whoever cancels. */
+export const PACK_CHANGE_CANCEL = 'Stops at the next step and puts the server back as it was before the change. A snapshot taken for it stays.';
+
+/** Thrown between a pack change's steps when it was cancelled; the change is put back. */
+class ChangeCancelled extends Error {}
 
 export type PackChangePlan = {
 	versionId: string;
@@ -764,7 +770,11 @@ export async function applyPackChange(
 		throw err;
 	}
 	setStatus(instance.id, 'provisioning', `Changing pack to ${label}`);
-	const taskId = startTask({ label: `Change ${instance.name} to ${label}`, instanceId: instance.id, cancel: PACK_DOWNLOAD_CANCEL }, async (task) => {
+	const taskId = startTask({ label: `Change ${instance.name} to ${label}`, instanceId: instance.id, cancel: PACK_CHANGE_CANCEL }, async (task) => {
+		// Between steps: everything done so far is journalled, so cancelling puts it back as a failure would.
+		const checkCancel = () => {
+			if (task.isCancelled()) throw new ChangeCancelled();
+		};
 		const staging = path.join(root, journal.staging);
 		const oldConfigs = path.join(root, journal.oldConfigs);
 		const modsBefore = new Set(journal.modsBefore);
@@ -773,10 +783,11 @@ export async function applyPackChange(
 		let recordId = 0;
 		let downloadFailures: FailedDownload[] = [];
 		const problems: string[] = [];
+		let snapshot: Snapshot | null = null;
 
 		try {
 			const javaPath = javaPlan ? await obtainJava(javaPlan, javaFor, task) : null;
-			let snapshot: Snapshot | null = null;
+			checkCancel();
 			if (opts.snapshot) {
 				const what = rollback
 					? `rolling back to ${label}`
@@ -785,6 +796,7 @@ export async function applyPackChange(
 						: `changing the pack to ${label}`;
 				snapshot = await snapshotStep(instance, { reason: 'pack-change', label: `Before ${what}` }, task);
 			}
+			checkCancel();
 			await fs.mkdir(path.join(staging, 'mods'), { recursive: true });
 			// The installed version's originals, to tell the user's config edits from the pack's.
 			// A rollback puts back the configs as they were instead.
@@ -853,8 +865,11 @@ export async function applyPackChange(
 				if ((PROTECTED.has(top) || worldTops.has(top)) && dir !== 'mods') continue;
 				if (dir !== 'mods' || !present.has(path.posix.basename(d.target))) toDownload.push(d);
 			}
+			checkCancel();
 			task.setProgress(0, 'Downloading pack files');
 			({ failures: downloadFailures } = await downloadPackFiles({ ...pack, downloads: toDownload }, root, task));
+			// Downloads stop at a cancel, after the files under way.
+			checkCancel();
 
 			// 5. Overrides, minus protected files and jars that are already there.
 			const overrideEntries = pack.overrideEntries.filter((e) => {
@@ -923,6 +938,7 @@ export async function applyPackChange(
 				await fs.rename(path.join(staging, 'config-merge'), path.join(root, REPORTS_DIR, path.basename(journal.oldConfigs)));
 			}
 
+			checkCancel();
 			// 6. User mods the user chose to update.
 			for (const fileName of opts.updateMods) {
 				const update = plan.updates?.get(fileName);
@@ -944,6 +960,7 @@ export async function applyPackChange(
 			// 7. The loader, when the pack's loader or Minecraft version moved.
 			let launchArgs = instance.launchArgs;
 			let loaderVersion = instance.modloaderVersion;
+			checkCancel();
 			if (plan.loaderChange && javaPath) {
 				task.setProgress(null, `Installing ${loader.label} ${plan.target.loaderVersion ?? '(latest)'}`);
 				// Journalled before anything moves, so a restart mid-move knows
@@ -965,6 +982,9 @@ export async function applyPackChange(
 				loaderVersion = result.loaderVersion;
 			}
 
+			// The last moment to cancel: from the commit on, the change stays.
+			checkCancel();
+			task.closeCancel();
 			// What a rollback of this change needs (packrollback.ts).
 			const record = {
 				instanceId: instance.id,
@@ -997,11 +1017,18 @@ export async function applyPackChange(
 				}
 			);
 		} catch (err) {
-			task.log('The change failed; putting everything back.');
+			const cancelled = err instanceof ChangeCancelled;
+			task.log(cancelled ? 'Cancelled; putting everything back.' : 'The change failed; putting everything back.');
 			await restorePackChange(root, journal);
 			endOperation(instance.id);
 			// Back as before: what is untracked now was the user's before the change too.
 			await syncMods(requireInstance(instance.id), { fromPack: false }).catch(() => undefined);
+			if (cancelled) {
+				setStatus(instance.id, 'ready', null);
+				task.log(`The server is as it was before the change${snapshot ? `; the snapshot taken for it stays (${snapshot.id})` : ''}.`);
+				// Returns: the task ends as cancelled, not failed.
+				return;
+			}
 			setStatus(
 				instance.id,
 				'ready',

@@ -437,8 +437,8 @@ in the first version or later; the JSON or not.
 ### Leftovers of built features
 
 What the built entries in the archive left out, in one place. Picked first (user,
-2026-10-29), in this order: restoring the database from the page and the pruning ones
-(both built 2026-10-29), cancelling an install or pack change with a rollback, then backing up a whole
+2026-10-29), in this order: restoring the database from the page, the pruning ones and cancelling
+an install or pack change with a rollback (all built 2026-10-29), then backing up a whole
 server with progress and Cancel for a copy. Other backup destinations wait: which to support
 is open, and each needs a test setup.
 
@@ -481,9 +481,9 @@ is open, and each needs a test setup.
   (Forestry/ExtraTrees leaves, Tinkers' slime grass and molten metals) are grey or untinted, and so are ones
   whose model only the mod's code names (Chisel's variants); the overview is chunk
   presence only, not shaded by InhabitedTime as first planned.
-- **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; an install
-  or pack change cancelled stops downloading but still finishes, with the rest listed as
-  missing (no rollback to before it).
+- **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; a pack
+  change waits for a loader installer under way (the installer is not stopped), and Minecraft
+  moves and loader changes outside a pack change have no Cancel.
 - **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask).
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was

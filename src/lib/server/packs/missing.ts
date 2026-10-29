@@ -138,6 +138,7 @@ export async function retryMissing(instance: ServerInstance, task: TaskHandle): 
 	task.setProgress(0, 'Downloading pack files');
 	const { failures } = await downloadPackFiles(pack, instance.path, task);
 	await recordMissing(instance.path, failures);
+	if (task.isCancelled()) task.log('The files not downloaded stay listed as missing on the overview.');
 	if (failures.length < missing.length) {
 		task.setProgress(null, 'Identifying mods');
 		const packFiles = new Set(missing.filter((m) => path.posix.dirname(m.download.target) === 'mods').map((m) => path.posix.basename(m.download.target)));

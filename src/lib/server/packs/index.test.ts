@@ -158,7 +158,7 @@ describe('downloadPackFiles', () => {
 				downloads: [file('a.jar'), file('b.jar'), file('c.jar'), file('optional.jar', false)],
 				overrideEntries: [], zip: null
 			} satisfies ParsedPack;
-			const task = { id: 't', setProgress: () => {}, log: () => {}, isCancelled: () => cancelled };
+			const task = { id: 't', setProgress: () => {}, log: () => {}, isCancelled: () => cancelled, closeCancel: () => false };
 			const result = await downloadPackFiles(pack, dir, task, 1);
 			expect(result.installed).toBe(1);
 			expect(result.failures.map((f) => [f.file, f.error])).toEqual([
