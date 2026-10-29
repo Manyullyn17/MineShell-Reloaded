@@ -9,6 +9,7 @@
 	import { busiestRegion } from '#lib/shared/chunkmap.js';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatDateTime } from '#lib/shared/format.js';
+	import { page } from '$app/state';
 
 	let { data, form } = $props();
 	const may = (permission: InstancePermission) => can(data.access, data.instance.id, permission);
@@ -23,8 +24,17 @@
 		['reset', 'Replace or reset']
 	] as const;
 
+	// A snapshot row's "Restore chunks from it" (?snapshot=): that one, on the dimension it holds
+	// (the overworld when it holds several).
+	const asked = untrack(() => data.snapshots.find((s) => s.id === page.url.searchParams.get('snapshot')) ?? null);
 	// The dimension to work on, and the snapshot to take chunks from (only ones that hold it).
-	let dimension = $state(untrack(() => data.dimensions[0]?.key ?? data.snapshots[0]?.dimensions[0]?.key ?? ''));
+	let dimension = $state(
+		untrack(() =>
+			asked
+				? (asked.dimensions.find((d) => d.overworld) ?? asked.dimensions.find((d) => data.dimensions.some((l) => l.key === d.key)) ?? asked.dimensions[0]).key
+				: (data.dimensions[0]?.key ?? data.snapshots[0]?.dimensions[0]?.key ?? '')
+		)
+	);
 	const dimensionLabel = $derived(
 		data.dimensions.find((d) => d.key === dimension)?.label ?? data.snapshots.flatMap((s) => s.dimensions).find((d) => d.key === dimension)?.label ?? dimension
 	);
@@ -35,7 +45,7 @@
 	const usable = $derived(data.snapshots.filter((s) => s.dimensions.some((d) => d.key === dimension)));
 	// The newest snapshot first, passing over the ones a chunk restore left behind.
 	const preferred = (list: typeof data.snapshots) => (list.find((s) => !s.beforeChunkRestore) ?? list[0])?.id ?? '';
-	let snapshotId = $state(untrack(() => preferred(data.snapshots)));
+	let snapshotId = $state(untrack(() => asked?.id ?? preferred(data.snapshots)));
 	$effect(() => {
 		if (!usable.some((s) => s.id === snapshotId)) snapshotId = preferred(usable);
 	});

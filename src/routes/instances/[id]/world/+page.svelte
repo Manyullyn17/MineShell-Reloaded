@@ -388,7 +388,7 @@
 									<button type="button" class="button-quiet wide-only" disabled={busy} onclick={() => openRow('delete', s.id)}>Delete</button>
 								{/if}
 								<!-- The rarer actions; in narrow windows Edit and Delete too. -->
-								{#if may('files') || (may('world') && !s.partial) || may('backups.create') || may('backups.delete')}
+								{#if may('files') || (may('world') && !s.partial) || (may('backups.restore') && s.dimensions.length) || may('backups.create') || may('backups.delete')}
 									<RowMenu>
 										{#snippet children(close)}
 											{#if may('backups.create')}
@@ -396,6 +396,9 @@
 											{/if}
 											{#if may('files')}
 												<a role="menuitem" href="{base}?snapshot={encodeURIComponent(s.id)}" download onclick={close}>Download as zip</a>
+											{/if}
+											{#if may('backups.restore') && s.dimensions.length}
+												<a role="menuitem" href="/instances/{encodeURIComponent(data.instance.id)}/world/chunks?snapshot={encodeURIComponent(s.id)}" title="Put chosen chunks back as this snapshot has them">Restore chunks from it</a>
 											{/if}
 											{#if may('world') && !s.partial}
 												<button type="button" role="menuitem" title="Copy it out as a world of its own, beside the others" onclick={() => (openRow('world', s.id), close())}

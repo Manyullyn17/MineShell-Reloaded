@@ -479,8 +479,7 @@ What the built entries in the archive left out, in one place:
   source's backup setting; no progress within one copy, and no Cancel. exFAT/NTFS drives and
   NFS/SMB shares not tried (only folders on ext4).
 - **Restoring chunks**: a setting for other map controls (user's call, 2026-10-17: kept
-  open; built is drag to pan, click to toggle, Shift/Ctrl-drag); a snapshot row's link to
-  the page with that snapshot picked. Map colours: blocks a mod tints in code
+  open; built is drag to pan, click to toggle, Shift/Ctrl-drag). Map colours: blocks a mod tints in code
   (Forestry/ExtraTrees leaves, Tinkers' slime grass and molten metals) are grey or untinted, and so are ones
   whose model only the mod's code names (Chisel's variants); the overview is chunk
   presence only, not shaded by InhabitedTime as first planned.

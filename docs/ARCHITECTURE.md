@@ -863,8 +863,8 @@ numbers); a one-word name gets the mod in front. On MeatballCraft's 21 numbered 
 named 16, Twilight Forest and Erebus among them; DIM20 is claimed by two mods' configs, which
 only Forge's answer settles.
 
-**Restoring chunks** (World > Restore chunks; `chunkrestore.ts`, `restoreChunks` in
-`world.ts`): every region file holding a chosen chunk is rebuilt from the live file and the
+**Restoring chunks** (World > Restore chunks, or a snapshot row's "Restore chunks from it",
+which opens it with `?snapshot=` picked; `chunkrestore.ts`, `restoreChunks` in `world.ts`): every region file holding a chosen chunk is rebuilt from the live file and the
 snapshot's (`assembleRegion` in `regionfile.ts` copies chunks as stored, sectors and
 timestamp, never decoded), in `region/`, `entities/` and `poi/` alike; a chosen chunk the
 snapshot lacks goes and generates again; `.mcc` files of oversized chunks move with them.
