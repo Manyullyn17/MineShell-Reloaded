@@ -42,6 +42,7 @@ import {
 	isLoaderInstallEntry,
 	javaTarget,
 	listEntries,
+	dropLoaderCaches,
 	obtainJava,
 	planJava,
 	requireInstance,
@@ -322,6 +323,7 @@ export async function applyMigration(
 
 		// Committed.
 		await fs.rm(staging, { recursive: true, force: true });
+		await dropLoaderCaches(root);
 		prepared.delete(instance.id);
 		for (const line of done) task.log(line);
 		const problems: string[] = [];

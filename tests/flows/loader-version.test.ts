@@ -128,6 +128,31 @@ describe('changing the loader version', () => {
 		expect(install.mock.calls[0][0].javaPath).toBe('/fake/jvm/java-25/bin/java');
 	});
 
+	it('drops the caches of the old version, which a change used to keep for good', async () => {
+		addJava(21);
+		vi.spyOn(LOADERS.quilt, 'install').mockImplementation(async (ctx) => {
+			await fs.writeFile(path.join(ctx.dir, 'quilt-server-launch.jar'), 'new');
+			return { launchArgs: '-jar quilt-server-launch.jar nogui', loaderVersion: ctx.loaderVersion! };
+		});
+		const instance = await createInstance(
+			{ modloader: 'quilt', minecraftVersion: '1.21.1', modloaderVersion: '0.29.0', launchArgs: '-jar quilt-server-launch.jar nogui' },
+			{
+				'quilt-server-launch.jar': 'old',
+				'.fabric-cache/vanilla.jar': 'vanilla',
+				'versions/1.21.1/server-1.21.1.jar': 'unpacked',
+				'.cache/quilt_loader/transform-cache-0.29.0/game.jar': 'remapped',
+				'.cache/other-mod/keep.bin': 'not the loader\'s',
+				'config/mod.toml': 'mine'
+			}
+		);
+		expect((await waitForTask(await changeLoaderVersion(instance, '0.29.1'))).state).toBe('done');
+		expect(await tree(instance.path)).toEqual({
+			'quilt-server-launch.jar': 'new',
+			'.cache/other-mod/keep.bin': 'not the loader\'s',
+			'config/mod.toml': 'mine'
+		});
+	});
+
 	it('has nothing to change on vanilla', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		await expect(changeLoaderVersion(instance, '1')).rejects.toThrow(/Vanilla/);

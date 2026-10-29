@@ -672,9 +672,9 @@ Like a modpack, a mod MineShell can download again is listed instead of carried:
 Modrinth knows by its sha512 (one `version_files` call), or one whose row is a CurseForge
 project and file id (resolved to a URL on import by `downloadPackFiles`, as pack files are).
 Everything else is carried: unknown jars, configs, worlds and the rest. The loader is not:
-the import installs the same version, so `isLoaderInstallEntry` entries stay out, and so do
-`.fabric-cache/`, `versions/` and `.cache/quilt_loader/` (the vanilla jar Fabric's install caches,
-what the vanilla server unpacks on first start, and Quilt's remapped game jars), `eula.txt`, `session.lock` and what a clone skips. Worlds are
+the import installs the same version, so `isLoaderInstallEntry` entries stay out (with the
+vanilla jar Fabric's install caches, `.fabric-cache/`, and what the vanilla server unpacks on
+first start, `versions/`), and so do Quilt's remapped game jars (`.cache/quilt_loader/`), `eula.txt`, `session.lock` and what a clone skips. Worlds are
 in by default; snapshots, logs, a map mod's tiles and a backup mod's own backups (`backups/`,
 `simplebackups/`: AromaBackup's zips were 21 GB on a 7 GB world) only when ticked (`bundleCategory`). A
 running server's saving is paused (save-off, flush) while the zip is written and turned back on

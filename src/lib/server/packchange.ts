@@ -45,6 +45,7 @@ import {
 	InstanceError,
 	isLoaderInstallEntry,
 	listEntries,
+	dropLoaderCaches,
 	obtainJava,
 	planJava,
 	restoreAside,
@@ -1002,6 +1003,7 @@ export async function applyPackChange(
 
 		// Committed. Tidy up and re-track; problems here are reported, not rolled back.
 		await fs.rm(staging, { recursive: true, force: true });
+		if (journal.loaderBefore) await dropLoaderCaches(root);
 		prepared.delete(instance.id);
 		await recordMissing(root, downloadFailures);
 		if (downloadFailures.length) problems.push(missingNotice(downloadFailures.length));

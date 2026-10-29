@@ -9,8 +9,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Quilt -> installer -> `quilt-server-launch.jar`; Forge < 1.17 and Cleanroom -> runnable jar
   in the root; Forge 1.17+ / NeoForge -> `@user_jvm_args.txt @libraries/.../unix_args.txt`.
 - `isLoaderInstallEntry` (instances.ts) defines what a loader install owns (libraries, loader
-  and vanilla jars, run scripts, `.fabric`); loader switching and pack changes move exactly
-  that aside. Rollbacks only delete what the operation created or moved
+  and vanilla jars, run scripts, `.fabric`, and since 2026-10-29 `.fabric-cache/` and
+  `versions/`, which come back by themselves); loader switching and pack changes move exactly
+  that aside. Quilt's `.cache/quilt_loader` (remapped game jars, a set per loader build and
+  Minecraft version, rebuilt at start) is dropped after a committed change instead
+  (`dropLoaderCaches`): `.cache` itself may hold anything. Before that, every change kept the
+  old ones for good. Rollbacks only delete what the operation created or moved
   (`removeEntries(dir, test, keep)`) - a failure while moving must never delete originals.
 - Java per Minecraft version comes from Mojang's version metadata (`javaVersion`), learned
   before installs/changes and at startup, stored in settings (`java.minecraftRequirements`);

@@ -209,11 +209,10 @@ export function bundleCategory(rel: string, worldTops: Set<string>): keyof Bundl
 	if (name === 'session.lock' || rel === 'eula.txt') return 'never';
 	if (rel.startsWith('.mineshell/snapshots/') || rel === '.mineshell/snapshots') return 'snapshots';
 	for (let i = 1; i <= parts.length; i++) if (cloneSkips(parts.slice(0, i).join('/'))) return 'never';
-	// The import installs the loader again. More comes back by itself: the vanilla jar
-	// Fabric's install caches (.fabric-cache), what the vanilla server unpacks on its first
-	// start (versions/) and Quilt's remapped game jars, one set per loader and Minecraft
-	// version it ever ran (.cache/quilt_loader, tens of MB each).
-	if (isLoaderInstallEntry(top) || top === '.fabric-cache' || top === 'versions') return 'never';
+	// The import installs the loader again (with .fabric-cache and versions/, which come
+	// back by itself), and Quilt's remapped game jars are rebuilt at start
+	// (.cache/quilt_loader: one set per loader and Minecraft version it ever ran).
+	if (isLoaderInstallEntry(top)) return 'never';
 	if (parts[0] === '.cache' && parts[1] === 'quilt_loader') return 'never';
 	if (worldTops.has(top)) return 'worlds';
 	if (top === 'logs' || top === 'crash-reports') return 'logs';
