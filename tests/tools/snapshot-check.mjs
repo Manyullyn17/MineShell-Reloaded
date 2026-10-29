@@ -19,7 +19,10 @@ const server = process.argv[2];
 if (!server) throw new Error('Usage: snapshot-check.mjs <server folder>');
 const snapshots = path.join(server, '.mineshell', 'snapshots');
 
-/** Every file under dir, as paths relative to it. */
+/**
+ * Every file under dir, as paths relative to it.
+ * @param {string} dir @param {string} [rel] @returns {string[]}
+ */
 function walk(dir, rel = '') {
 	const out = [];
 	for (const entry of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
@@ -30,7 +33,9 @@ function walk(dir, rel = '') {
 	return out;
 }
 
+/** @type {Map<number, string>} */
 const hashed = new Map();
+/** @param {string} file @param {number} ino */
 function sha256(file, ino) {
 	if (!hashed.has(ino)) hashed.set(ino, crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'));
 	return hashed.get(ino);
@@ -86,7 +91,7 @@ for (const id of fs.readdirSync(snapshots).sort()) {
 
 const properties = fs.readFileSync(path.join(server, 'server.properties'), 'utf8');
 const world = properties.match(/^level-name=(.*)$/m)?.[1].trim() || 'world';
-const shared = fs.existsSync(path.join(server, world)) ? walk(path.join(server, world)).filter((rel) => snapshotInodes.has(fs.statSync(path.join(server, world, rel)).ino)) : [];
+const shared = fs.existsSync(path.join(server, world)) ? walk(path.join(server, world)).filter((/** @type {string} */ rel) => snapshotInodes.has(fs.statSync(path.join(server, world, rel)).ino)) : [];
 console.log(`Live world (${world}): ${shared.length ? `${shared.length} files shared with a snapshot: ${shared.slice(0, 5).join(', ')}` : 'shares no file with a snapshot'}`);
 bad += shared.length;
 console.log(`All snapshots: ${(total / 1024 ** 3).toFixed(2)} GB on disk, each file counted once`);
