@@ -106,7 +106,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   replaces it). Pack servers: UI toggle + server-side `packMods=on` check.
 - Disabled mods start unticked in the review, with why they are off where MineShell knows
   (client-only, off for Cleanroom); a disabled copy of a mod that is also enabled (the old
-  Fugue a replacement left) is skipped, or updating both made two copies. `incompatible` dependencies (Modrinth only) are
+  Fugue a replacement left) is skipped, or updating both made two copies, and Installed tags
+  it "other copy in use". Copies are told by the jars' mod ids (`disabledCopies`), not
+  source + project: MeatballCraft's old Fugue was the pack's CurseForge one, its successor
+  MineShell's Modrinth one. `incompatible` dependencies (Modrinth only) are
   warned about; `unneededDependencies` offers to disable deps only the old versions required
   (platform metadata old vs new, then no other enabled jar requires its ids). Disabling inside
   a journalled change goes through `disableStaged` (original staged, copy back as .disabled).

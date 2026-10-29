@@ -33,7 +33,7 @@ import { beginOperation, commitOperation, endOperation, OperationInProgressError
 import { clearDatapackNotice, clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
-import { indexMods } from './crashdiag';
+import { disabledCopies, indexMods } from './crashdiag';
 import { cleanroomDisabledReasons, fugueUpdate, isFugueJar } from './cleanroom';
 import { installDatapackVersion, isDatapackVersion, listDatapacks } from './mods/datapacks';
 
@@ -198,11 +198,12 @@ export async function checkModUpdates(
 	const targets: Target[] = [];
 	const changes: { row: ModRow; version: ProjectVersion }[] = [];
 	const candidates: ModRow[] = [];
-	// A disabled copy of a mod that is also enabled (an older Fugue left when a newer one came in)
-	// would become a second copy of the new version.
-	const enabledCopy = new Map(rows.filter((r) => r.enabled && trackable(r)).map((r) => [`${r.source}:${r.slug}`, r.fileName]));
+	// A disabled copy of a mod that is also enabled (an older Fugue left when a newer one came in,
+	// from the pack's CurseForge beside MineShell's Modrinth one) would become a second copy of
+	// the new version. Told by the jars' own mod ids: the two platforms share no project id.
+	const copies = disabledCopies(await indexMods(modsDir(instance.path)));
 	for (const row of rows) {
-		const copy = row.enabled ? undefined : enabledCopy.get(`${row.source}:${row.slug}`);
+		const copy = copies[row.fileName];
 		if (!trackable(row)) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Not from Modrinth or CurseForge' });
 		else if (row.locked) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Held at its version' });
 		else if (copy) result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Disabled; ${copy} is the copy in use` });

@@ -60,8 +60,9 @@ const { checkModUpdates } = await import('#lib/server/modupdates.js');
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { createInstance } = await import('../helpers/instances');
+const { mcmodInfo, zipBuffer } = await import('../helpers/fs');
 
-type Jar = { version: string; enabled?: boolean; clientOnly?: boolean };
+type Jar = { version: string; enabled?: boolean; clientOnly?: boolean; source?: 'modrinth' | 'curseforge' };
 
 /** A Cleanroom server with these Fugue jars, tracked as Modrinth's. */
 async function server(cleanroom: string, ...jars: (string | Jar)[]) {
@@ -69,11 +70,13 @@ async function server(cleanroom: string, ...jars: (string | Jar)[]) {
 	const file = (j: Jar) => `+Fugue-${j.version}.jar${j.enabled === false ? '.disabled' : ''}`;
 	const instance = await createInstance(
 		{ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: cleanroom },
-		Object.fromEntries(all.map((j) => [`mods/${file(j)}`, `fugue ${j.version}`]))
+		// Each declares Fugue's mod id, as the real jars do; the version keeps them apart.
+		Object.fromEntries(all.map((j) => [`mods/${file(j)}`, zipBuffer({ 'mcmod.info': mcmodInfo('fugue', 'Fugue'), version: j.version })]))
 	);
 	db.insert(mods).values({ source: 'modrinth', slug: 'fugue', name: 'Fugue' }).onConflictDoNothing().run();
-	const modId = db.select().from(mods).where(eq(mods.slug, 'fugue')).get()!.id;
+	db.insert(mods).values({ source: 'curseforge', slug: '1005815', name: 'Fugue' }).onConflictDoNothing().run();
 	for (const j of all) {
+		const modId = db.select().from(mods).where(eq(mods.slug, j.source === 'curseforge' ? '1005815' : 'fugue')).get()!.id;
 		db.insert(instanceMods)
 			.values({ instanceId: instance.id, modId, filePath: `mods/${file(j)}`, version: j.version, versionId: `fugue-${j.version}`, enabled: j.enabled !== false, clientOnly: !!j.clientOnly, installedAt: 1 })
 			.run();
@@ -103,6 +106,13 @@ describe('mod updates on Cleanroom', () => {
 		const check = await checkModUpdates(await server('0.5.17-alpha', '0.23.4', { version: '0.21.0', enabled: false }));
 		expect(check.updates.map((u) => u.fileName)).toEqual(['+Fugue-0.23.4.jar']);
 		expect(check.skipped).toEqual([{ fileName: '+Fugue-0.21.0.jar.disabled', name: 'Fugue', reason: 'Disabled; +Fugue-0.23.4.jar is the copy in use' }]);
+	});
+
+	it('tells the copies apart by mod id, so one from the other platform counts too', async () => {
+		// MeatballCraft: the pack's old Fugue (CurseForge), disabled once Cleanroom's fixes added one from Modrinth.
+		const check = await checkModUpdates(await server('0.5.17-alpha', '0.23.7', { version: '0.21.0', enabled: false, source: 'curseforge' }));
+		expect(check.updates).toEqual([]);
+		expect(check.skipped).toEqual([{ fileName: '+Fugue-0.21.0.jar.disabled', name: 'Fugue', reason: 'Disabled; +Fugue-0.23.7.jar is the copy in use' }]);
 	});
 
 	it('says why a disabled mod is off, where it is known', async () => {

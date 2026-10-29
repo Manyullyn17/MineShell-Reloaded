@@ -122,6 +122,8 @@
 	const duplicatesInfo = streamed(() => data.duplicates);
 	const duplicates = $derived((duplicatesInfo.ready ? duplicatesInfo.value : null) ?? []);
 	const duplicateFiles = $derived(new Set(duplicates.flatMap((d) => d.files)));
+	const copiesInfo = streamed(() => data.disabledCopies);
+	const copies = $derived((copiesInfo.ready ? copiesInfo.value : null) ?? {});
 	const requiredByInfo = streamed(() => data.requiredBy);
 	/** By file name, the enabled mods that need it. */
 	const neededBy = $derived((requiredByInfo.ready ? requiredByInfo.value : null) ?? {});
@@ -214,7 +216,7 @@
 				/>
 			</span>
 			<button type="button" onclick={() => browser?.search()} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
-		{:else}
+		{:else if view === 'installed'}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>
 				<input type="search" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
@@ -429,6 +431,11 @@
 											class="tag warn"
 											title="Known to do nothing on a dedicated server, or to crash it. MineShell disables these when a pack installs them; re-enable it only if another mod needs it."
 										>client-only</span>
+									{/if}
+									{#if copies[mod.fileName]}
+										<span class="tag" title="Disabled: {copies[mod.fileName]} is the same mod and is the copy in use. This one can be deleted."
+											>other copy in use</span
+										>
 									{/if}
 									{#if data.cleanroomOff[mod.fileName]}
 										<span class="tag" title="Disabled because it breaks on Cleanroom or Cleanroom already does its job. {data.cleanroomOff[mod.fileName]}"
@@ -671,6 +678,22 @@
 />
 
 <style>
+	/* The tabs stay under the server's sticky header while a long mod list scrolls, as on
+	   Settings; --instance-head is that header's height (instances/[id]/+layout.svelte). */
+	.subhead {
+		position: sticky;
+		top: calc(3.25rem + var(--instance-head, 0px));
+		z-index: 14;
+		background: var(--bg);
+	}
+
+	/* The header scrolls away on a phone; so do these. */
+	@media (max-width: 60rem) {
+		.subhead {
+			position: static;
+		}
+	}
+
 	.duplicates ul {
 		list-style: none;
 		margin: var(--space-2) 0 0;

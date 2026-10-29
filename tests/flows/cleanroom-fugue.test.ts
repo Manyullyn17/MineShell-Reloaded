@@ -5,7 +5,9 @@ import type { ProjectVersion } from '#lib/server/mods/index.js';
 import { mcmodInfo, zipBuffer } from '../helpers/fs';
 
 const { applyCleanroomModFixes } = await import('#lib/server/cleanroom.js');
-const { listInstanceMods, modrinthProvider } = await import('#lib/server/mods/index.js');
+const { curseforgeModProvider, listInstanceMods, modrinthProvider } = await import('#lib/server/mods/index.js');
+const { db } = await import('#lib/server/db/index.js');
+const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { createInstance, tree } = await import('../helpers/instances');
 
 const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
@@ -99,6 +101,48 @@ describe('Cleanroom fixes and Fugue', () => {
 		// Run again: nothing left to do.
 		const again = await applyCleanroomModFixes(instance);
 		expect([again.added, again.disabled, again.failures]).toEqual([[], [], []]);
+	});
+
+	it("takes Fugue from CurseForge on a server whose mods come from there, as a CurseForge pack's do", async () => {
+		globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+			const href = String(input instanceof Request ? input.url : input);
+			const release = RELEASES.find(([v]) => href === url(v));
+			if (!release) throw new Error(`unexpected fetch ${href}`);
+			return new Response(new Uint8Array(fugueJar(release[2], false)));
+		}) as typeof fetch;
+		const fromModrinth = vi.spyOn(modrinthProvider, 'listVersions');
+		vi.spyOn(curseforgeModProvider, 'getProject').mockResolvedValue({
+			source: 'curseforge',
+			id: '1005815',
+			slug: '1005815',
+			name: 'Fugue',
+			author: null,
+			summary: null,
+			iconUrl: null,
+			downloads: null,
+			projectUrl: 'https://www.curseforge.com/minecraft/mc-mods/fugue',
+			loaders: ['forge'],
+			gameVersions: ['1.12.2']
+		});
+		vi.spyOn(curseforgeModProvider, 'listVersions').mockResolvedValue(versions().map((v) => ({ ...v, projectId: '1005815' })));
+
+		const instance = await createInstance(
+			{ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: '0.5.17-alpha' },
+			{
+				'mods/jei.jar': zipBuffer({ 'mcmod.info': mcmodInfo('jei', 'Had Enough Items') }),
+				'mods/Scalar Legacy-1.0.1.jar': zipBuffer({ 'mcmod.info': mcmodInfo('scalar', 'Scalar Legacy') })
+			}
+		);
+		for (const [slug, file] of [['557549', 'jei.jar'], ['1235372', 'Scalar Legacy-1.0.1.jar']]) {
+			const mod = db.insert(mods).values({ source: 'curseforge', slug, name: file }).returning().get();
+			db.insert(instanceMods).values({ instanceId: instance.id, modId: mod.id, filePath: `mods/${file}`, installedAt: 1, fromPack: true }).run();
+		}
+
+		const result = await applyCleanroomModFixes(instance);
+		expect(result.failures).toEqual([]);
+		expect(result.added).toEqual(['+Fugue-0.23.7.jar']);
+		expect(fromModrinth).not.toHaveBeenCalled();
+		expect((await listInstanceMods(instance)).find((m) => m.fileName === '+Fugue-0.23.7.jar')).toMatchObject({ source: 'curseforge', slug: '1005815' });
 	});
 
 	it('keeps the old Fugue when no replacement can be had', async () => {

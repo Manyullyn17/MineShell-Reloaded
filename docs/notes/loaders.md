@@ -58,7 +58,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   missing", `/fml confirm`; forge_early.cfg turns it off). Every Cleanroom server gets both:
   packs moving to it always did, a new plain one since 2026-10-21 (user's call: no reason to
   run without them), with a failure to add one shown in its status, not failing the install.
-- `cleanroom.ts`: adds Fugue (Modrinth) and Scalar Legacy (CurseForge, CDN fallback), disables
+- `cleanroom.ts`: adds Fugue (Modrinth; CurseForge 1005815 when most of the server's tracked
+  mods are CurseForge's, `sourceFor`: a CurseForge pack otherwise had its one Modrinth mod) and
+  Scalar Legacy (CurseForge, CDN fallback), disables
   a curated must-remove list (never content mods), reports the "replace with fork" list.
   Mods are matched by mcmod.info name/modid and filename because modids lie (Born in a Barn =
   "examplemod", Relictium = "vintagium").
