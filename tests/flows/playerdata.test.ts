@@ -162,6 +162,28 @@ describe('player data', () => {
 		await expect(removePlayerFiles(instance, ALEX)).rejects.toThrow(/no files/);
 	});
 
+	// A 26.3 server's players were not found: Minecraft 26 moved them into players/.
+	it('finds Minecraft 26 players in players/data, with their stats and advancements', async () => {
+		const { allPlayerStats } = await import('#lib/server/playerstats.js');
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '26.3', rconPort: 25599, rconPasswordEnc: encryptSecret('pw') },
+			{
+				'server.properties': 'level-name=world\n',
+				[`world/players/data/${ALEX}.dat`]: playerFile(3),
+				[`world/players/stats/${ALEX}.json`]: JSON.stringify({ stats: { 'minecraft:custom': { 'minecraft:jump': 3 } }, DataVersion: 5023 }),
+				[`world/players/advancements/${ALEX}.json`]: '{}'
+			}
+		);
+		expect((await listPlayerData(instance)).map((f) => f.uuid)).toEqual([ALEX]);
+		expect(await xpOf(instance, ALEX)).toBe(3);
+		expect((await allPlayerStats(instance)).map((s) => [s.uuid, s.stats.custom])).toEqual([[ALEX, { 'minecraft:jump': 3 }]]);
+		rcon.answers['list uuids'] = 'There are 0 of a max of 20 players online: ';
+		running();
+		expect((await removePlayerFiles(instance, ALEX)).sort()).toEqual(
+			[`world/players/advancements/${ALEX}.json`, `world/players/data/${ALEX}.dat`, `world/players/stats/${ALEX}.json`].sort()
+		);
+	});
+
 	it('maps names to UUIDs when the server cannot list UUIDs (1.12), and refuses when it cannot tell', async () => {
 		const instance = await server();
 		running();

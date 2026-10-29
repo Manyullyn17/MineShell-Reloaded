@@ -500,13 +500,18 @@ export function pruneAnalysisSummary(instanceId: string) {
 }
 
 /**
- * The seed the world was generated with, from level.dat: Data.WorldGenSettings.seed
- * from 1.16, Data.RandomSeed before. Null without a world (or an unreadable one).
+ * The seed the world was generated with: data/minecraft/world_gen_settings.dat
+ * (data.seed) from Minecraft 26, else level.dat's Data.WorldGenSettings.seed from
+ * 1.16, Data.RandomSeed before. Null without a world (or an unreadable one).
  * With level-seed blank in server.properties this is the random one picked at creation.
  */
 export async function worldSeed(root: string): Promise<string | null> {
 	try {
-		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
+		const world = path.join(root, await serverWorldName(root));
+		const settings = await fs.readFile(path.join(world, 'data', 'minecraft', 'world_gen_settings.dat')).catch(() => null);
+		const own = settings ? child(child(parseNbt(settings).root, 'data'), 'seed') : undefined;
+		if (own?.type === 'long') return String(own.value);
+		const level = parseNbt(await fs.readFile(path.join(world, 'level.dat')));
 		const data = child(level.root, 'Data');
 		const seed = child(child(data, 'WorldGenSettings'), 'seed') ?? child(data, 'RandomSeed');
 		return seed?.type === 'long' ? String(seed.value) : null;
@@ -553,7 +558,11 @@ export async function worldBorder(root: string, dimension: Dimension): Promise<{
 		return { x: Math.round(cx), z: Math.round(cz), radius: Math.round(width / 2) };
 	};
 	try {
-		const own = await fs.readFile(path.join(dimensionBase(root, dimension), 'data', 'world_border.dat')).catch(() => null);
+		// Minecraft 26 namespaces it: data/minecraft/world_border.dat.
+		const data = path.join(dimensionBase(root, dimension), 'data');
+		const own =
+			(await fs.readFile(path.join(data, 'minecraft', 'world_border.dat')).catch(() => null)) ??
+			(await fs.readFile(path.join(data, 'world_border.dat')).catch(() => null));
 		if (own) return read(child(parseNbt(own).root, 'data'), 'center_x', 'center_z', 'size');
 		if (!dimension.overworld) return null;
 		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));

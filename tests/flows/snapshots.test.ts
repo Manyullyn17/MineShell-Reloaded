@@ -286,6 +286,23 @@ describe('world tools', () => {
 		expect((await readProperties(modern.path)).values['level-seed']).toBe('-4172144997902289642');
 	});
 
+	// A 26.3 world read no seed, so "Keep it" gave the reset world a new random one.
+	it('reads a Minecraft 26 seed from world_gen_settings.dat, and keeps it on a reset', async () => {
+		const settings = writeNbt({
+			name: '',
+			gzipped: true,
+			root: { type: 'compound', value: [['data', { type: 'compound', value: [['seed', { type: 'long', value: 8746194770267081567n }]] }]] }
+		});
+		const empty = writeNbt({ name: '', gzipped: true, root: { type: 'compound', value: [['Data', { type: 'compound', value: [] }]] } });
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '26.3' },
+			{ 'server.properties': 'level-seed=\n', 'world/level.dat': empty, 'world/data/minecraft/world_gen_settings.dat': settings }
+		);
+		expect(await worldSeed(instance.path)).toBe('8746194770267081567');
+		await waitForTask(await resetWorld(instance, { snapshot: false, seed: { mode: 'keep' } }));
+		expect((await readProperties(instance.path)).values['level-seed']).toBe('8746194770267081567');
+	});
+
 	it('restores a snapshot, keeping the world it replaces', async () => {
 		const instance = await instanceWithWorld();
 		await waitForTask(await snapshotNow(instance));

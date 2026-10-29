@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { ServerInstance } from './db/schema';
 import { itemIconsEnabled, itemName, serverResources } from './itemicons';
 import { serverWorldName } from './packworld';
+import { playerFolder } from './playerdata';
 import { HEADLINES, headlineValue, STAT_CATEGORIES, statUnit, type StatCategory, type StatTable, type StatUnit } from '#lib/shared/playerstats.js';
 
 /**
@@ -118,7 +119,7 @@ export type PlayerStats = { uuid: string; stats: StatTable; modifiedAt: number }
 const cache = new Map<string, { mtimeMs: number; size: number; stats: StatTable }>();
 
 async function statsDir(instance: ServerInstance): Promise<string> {
-	return path.join(instance.path, await serverWorldName(instance.path), 'stats');
+	return playerFolder(path.join(instance.path, await serverWorldName(instance.path)), 'stats');
 }
 
 async function readFile(file: string, uuid: string): Promise<PlayerStats | null> {

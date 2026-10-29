@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
-import { dimensionLabel, isDimensionFolder, listDimensions } from './dimensions';
+import { dimensionIdLabel, dimensionLabel, isDimensionFolder, listDimensions } from './dimensions';
 import { dimensionNames, namedLabel } from './dimensionnames';
 import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
@@ -87,7 +87,7 @@ async function worldItems(root: string, world: string, label: (folder: string) =
 					const dimRel = path.join(rel, ns.name, dim.name);
 					const bytes = await sizeOf(path.join(root, dimRel));
 					if (dim.isDirectory() && (await isDimensionFolder(path.join(root, dimRel)))) {
-						items.push({ label: `${ns.name}:${dim.name}`, path: dimRel, bytes });
+						items.push({ label: dimensionIdLabel(`${ns.name}:${dim.name}`), path: dimRel, bytes });
 					} else rest += bytes;
 				}
 			}

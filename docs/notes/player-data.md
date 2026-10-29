@@ -5,10 +5,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 
 ## Player data
 - `nbt.ts` reads/writes NBT losslessly (typed tags, compounds as ordered entries, longs as
-  bigint, modified UTF-8). `playerdata.ts` edits `<world>/playerdata/<uuid>.dat` through edit
+  bigint, modified UTF-8). `playerdata.ts` edits `<world>/playerdata/<uuid>.dat` (`players/data/` from Minecraft 26) through edit
   operations (never a whole tree from the browser), so what the UI does not show survives.
 - Item layout follows the file's DataVersion: <1519 Count+Damage, <3837 Count+tag, then
   count+components; 1.21.5+ (4325) armor/offhand in `equipment`, not Inventory slots 100-103/-106.
+  26.3 (5023) is read as it is: items, enchantments, equipment and stats checked on the user's
+  own player file (2026-10-29); only the folders moved.
   Before 1.8 (no DataVersion, server version < 1.8) ids are shorts: `itemids.ts` reads them as
   names through FML > ItemData (`\u0002` = item, `\u0001` = block) or vanilla 1.7.10's fixed
   table, and writes numbers back (`idTag`); an id the world lacks is refused (a string id

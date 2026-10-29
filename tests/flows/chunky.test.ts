@@ -233,5 +233,15 @@ describe('Chunky', () => {
 		expect(await worldBorder(recent.path, overworld2)).toBeNull();
 		expect(await worldBorder(recent.path, nether2)).toEqual({ x: 16, z: 32, radius: 1000 });
 		expect(await worldSpawn(recent.path)).toBeNull();
+
+		// Minecraft 26: the overworld in dimensions/, and the file under data/minecraft/.
+		const o = 'world/dimensions/minecraft/overworld';
+		const modern = await server({
+			[`${o}/region/r.0.0.mca`]: '',
+			'world/level.dat': nbt('Data', []),
+			[`${o}/data/minecraft/world_border.dat`]: nbt('data', [['center_x', -64], ['center_z', 128], ['size', 4000]])
+		});
+		const [overworld3] = await listDimensions(modern.path);
+		expect(await worldBorder(modern.path, overworld3)).toEqual({ x: -64, z: 128, radius: 2000 });
 	});
 });
