@@ -34,6 +34,7 @@ import { clearDatapackNotice, clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
 import { indexMods } from './crashdiag';
+import { cleanroomDisabledReasons, fugueUpdate, isFugueJar } from './cleanroom';
 import { installDatapackVersion, isDatapackVersion, listDatapacks } from './mods/datapacks';
 
 /**
@@ -108,7 +109,9 @@ export function pickUpdate(versions: ProjectVersion[], current: { versionId: str
 /**
  * A changelog's first line of substance, as plain text, for one line in the
  * update list: headings that only repeat the name or version are skipped,
- * list markers and markdown links and emphasis dropped.
+ * list markers and markdown links and emphasis dropped. A changelog that is
+ * a list of git commits (Fugue's: "f6b80ec feature: resolve ...") says
+ * nothing to someone updating, so it gives none.
  */
 export function changelogNote(changelog: string | null | undefined): string | null {
 	for (const raw of (changelog ?? '').split('\n')) {
@@ -119,6 +122,7 @@ export function changelogNote(changelog: string | null | undefined): string | nu
 			.replace(/<[^>]+>/g, '')
 			.replace(/[*_`]/g, '')
 			.trim();
+		if (/^(?=[0-9a-f]*\d)[0-9a-f]{7,40}\b/.test(line)) return null;
 		if (line.length > 2) return line.length > 120 ? `${line.slice(0, 117)}...` : line;
 	}
 	return null;
@@ -134,6 +138,8 @@ export type ModUpdate = {
 	channel: string;
 	enabled: boolean;
 	fromPack: boolean;
+	/** Why a disabled one is off, where MineShell knows (client-only, off for Cleanroom). */
+	disabledReason: string | null;
 	/** The first line of the new version's changelog, where the source has one. */
 	note: string | null;
 };
@@ -147,6 +153,9 @@ export type UpdateCheck = {
 	/** What the sync run first did, when there were untracked jars. */
 	synced: string | null;
 };
+
+/** How far a check is: identifying untracked jars, looking mods up (`done` of `total`), then dependencies. */
+export type CheckProgress = { phase: 'sync' | 'check' | 'dependencies'; done: number; total: number };
 
 const LOOKUP_CONCURRENCY = 6;
 
@@ -168,10 +177,16 @@ export function trackable(row: ModRow): boolean {
  * of are synced first (identified as Modrinth/CurseForge where possible),
  * so a folder filled by hand can be updated too.
  */
-export async function checkModUpdates(instance: ServerInstance, opts: { dependencies?: boolean } = {}): Promise<UpdateCheck> {
+export async function checkModUpdates(
+	instance: ServerInstance,
+	opts: { dependencies?: boolean; onProgress?: (progress: CheckProgress) => void } = {}
+): Promise<UpdateCheck> {
 	const filter = filterFor(instance);
 	let synced: string | null = null;
-	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) synced = await syncInstanceMods(instance);
+	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) {
+		opts.onProgress?.({ phase: 'sync', done: 0, total: 0 });
+		synced = await syncInstanceMods(instance);
+	}
 	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing);
 	const result: UpdateCheck = {
 		updates: [],
@@ -183,11 +198,32 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 	const targets: Target[] = [];
 	const changes: { row: ModRow; version: ProjectVersion }[] = [];
 	const candidates: ModRow[] = [];
+	// A disabled copy of a mod that is also enabled (an older Fugue left when a newer one came in)
+	// would become a second copy of the new version.
+	const enabledCopy = new Map(rows.filter((r) => r.enabled && trackable(r)).map((r) => [`${r.source}:${r.slug}`, r.fileName]));
 	for (const row of rows) {
+		const copy = row.enabled ? undefined : enabledCopy.get(`${row.source}:${row.slug}`);
 		if (!trackable(row)) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Not from Modrinth or CurseForge' });
 		else if (row.locked) result.skipped.push({ fileName: row.fileName, name: row.name, reason: 'Held at its version' });
+		else if (copy) result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Disabled; ${copy} is the copy in use` });
 		else candidates.push(row);
 	}
+	const cleanroomOff = instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {};
+	const disabledReason = (row: ModRow) =>
+		row.enabled
+			? null
+			: row.clientOnly
+				? 'client-only: does nothing on a dedicated server, or crashes it'
+				: cleanroomOff[row.fileName]
+					? `off for Cleanroom (${cleanroomOff[row.fileName].replace(/\.$/, '')})`
+					: null;
+
+	let done = 0;
+	const tick = (n = 1) => {
+		done += n;
+		opts.onProgress?.({ phase: 'check', done, total: candidates.length });
+	};
+	tick(0);
 
 	// Modrinth answers "is there anything newer" for 100 files per request; only
 	// mods with something newer get their version list read.
@@ -205,11 +241,14 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 		else if (newest.id === row.versionId || installedFile) result.upToDate++;
 		else toList.push(row);
 	}
+	tick(modrinth.length - toList.filter((r) => r.source === 'modrinth').length);
 
 	await eachLimited(toList, async (row) => {
 		try {
 			const versions = await compatibleVersions(row.source, row.slug!, filter);
-			const target = pickUpdate(versions, row);
+			// Fugue builds are tied to Cleanroom versions: only one that runs on this one.
+			const target =
+				instance.modloader === 'cleanroom' && isFugueJar(row.fileName) ? await fugueUpdate(instance, versions, row.version) : pickUpdate(versions, row);
 			if (!target) {
 				result.upToDate++;
 				return;
@@ -227,16 +266,20 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 				channel: target.channel,
 				enabled: row.enabled,
 				fromPack: row.fromPack,
+				disabledReason: disabledReason(row),
 				note: changelogNote(target.changelog)
 			});
 		} catch (err) {
 			result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });
+		} finally {
+			tick();
 		}
 	});
 	result.updates.sort((a, b) => a.name.localeCompare(b.name));
 	result.skipped.sort((a, b) => a.name.localeCompare(b.name));
 	// The scheduled check only counts updates; dependencies matter once someone applies them.
 	if (opts.dependencies !== false) {
+		opts.onProgress?.({ phase: 'dependencies', done, total: candidates.length });
 		const deps = await resolveDependencies(instance, targets);
 		result.dependencies = {
 			...deps.plan,

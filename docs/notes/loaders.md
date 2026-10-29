@@ -67,7 +67,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   0.6.10, so "newest" broke every 0.5.x server): `pickFugue` downloads candidates newest-first
   and reads it (`inspectFugueJar`); `cleanroomReport(path, version)` lists an installed Fugue
   that does not fit (`replace`), and the fixes, pack installs/changes and Cleanroom version
-  changes swap it (old one disabled only once the new one is in).
+  changes swap it (old one disabled only once the new one is in). The mod update check goes
+  through it too (`fugueUpdate`): until 2026-10-29 it offered the newest Fugue like any mod,
+  0.25.5 (needs Cleanroom 0.7.3) to MeatballCraft on 0.5.17, ticked by default.
 - Migration keeps Forge in `.mineshell/forge-backup/` with a manifest; revert restores it all.
 - Fugue 0.21 rewrites other mods' `getURLs()` calls into `com.cleanroommc.hackery.ReflectionHackery.getURL`,
   which Cleanroom 0.5.3 removed (0.23.x has its own `HookHelper.getURL`); the crash shows only
