@@ -64,7 +64,8 @@ hold that the live world never shares a file after a snapshot, a restore or a wo
 snapshot, and that a file changed in place since its record is not linked to. Sizes on disk count
 each file once (retention, Settings, World tab, disk usage, whose "delete unpinned snapshots"
 offer is what that really frees). Measured on MeatballCraft's 7.1 GB world: three snapshots in
-7.2 GB instead of 21, the next snapshot of an unchanged world 9 s instead of 12. Leftovers:
+7.2 GB instead of 21, the next snapshot of an unchanged world 9 s instead of 12. Tried on the
+real install 2026-10-29: snapshots made and older ones deleted, the rest intact (notes/worlds.md). Leftovers:
 ROADMAP, "Leftovers of built features".
 
 ### World backups to another place
