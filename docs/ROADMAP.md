@@ -487,8 +487,7 @@ What the built entries in the archive left out, in one place:
 - **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; an install
   or pack change cancelled stops downloading but still finishes, with the rest listed as
   missing (no rollback to before it).
-- **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask);
-  1.12 task labels ("Pruning DIM-11325") still use the folder name.
+- **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask).
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was
   talked about, 2026-10-18, not built.

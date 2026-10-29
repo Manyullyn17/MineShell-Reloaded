@@ -38,6 +38,7 @@ import {
 } from './worlds';
 import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
+import { withDimensionNames } from './dimensionnames';
 import { analyseRegions, applyPrune, planPrune } from './chunkprune';
 import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
@@ -310,7 +311,7 @@ export async function restoreSnapshot(instance: ServerInstance, id: string, opts
  * new terrain.
  */
 export async function resetDimension(instance: ServerInstance, key: string, opts: { snapshot: boolean }): Promise<string> {
-	const dimension = await findDimension(instance.path, key);
+	const dimension = await named(instance, await findDimension(instance.path, key));
 	if (!dimension) throw new InstanceError('That dimension is not in the world.');
 	return runWorldChange(instance, {
 		action: 'reset-dimension',
@@ -333,7 +334,7 @@ export async function restoreDimension(
 	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
 	await requireOfActiveWorld(instance.path, snapshot);
 	const from = snapshotPath(instance.path, snapshot.id);
-	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
+	const dimension = await named(instance, (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key));
 	if (!dimension) throw new InstanceError('That snapshot does not have this dimension.');
 	return runWorldChange(instance, {
 		action: 'restore-dimension',
@@ -375,7 +376,7 @@ export async function restoreChunks(
 	if (!snapshot) throw new InstanceError('That snapshot no longer exists.');
 	await requireOfActiveWorld(instance.path, snapshot);
 	const from = snapshotPath(instance.path, snapshot.id);
-	const dimension = (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key);
+	const dimension = await named(instance, (await snapshotDimensions(instance, snapshot)).find((d) => d.paths[0] === key));
 	if (!dimension) throw new InstanceError('That snapshot does not have this dimension.');
 	const base = path.relative(instance.path, dimensionBase(instance.path, dimension));
 	const plan = await planChunkRestore(instance.path, base, from, base, chunks);
@@ -417,6 +418,14 @@ export async function chunkMapFolder(instance: ServerInstance, source: string, k
 	const own = path.join(root, level);
 	const worldDir = (await exists(path.join(own, 'level.dat'))) ? own : path.join(instance.path, level);
 	return { base: dimensionBase(root, dimension), worldDir, dimension };
+}
+
+/**
+ * The dimension with its name in the label, as the World tab shows it: a 1.12
+ * mod's "DIM-11325" is "Deep Dark (DIM-11325)" in task labels and logs too.
+ */
+async function named(instance: ServerInstance, dimension: Dimension | null | undefined): Promise<Dimension | null> {
+	return dimension ? (await withDimensionNames(instance, [dimension]))[0] : null;
 }
 
 /** The dimensions a snapshot holds, found the way the live world's are. */
@@ -567,7 +576,7 @@ export async function analysePrunable(instance: ServerInstance, key: string): Pr
 	let dimension: Dimension | null;
 	let spawn: { x: number; z: number } | null;
 	try {
-		dimension = await findDimension(instance.path, key);
+		dimension = await named(instance, await findDimension(instance.path, key));
 		if (!dimension) throw new InstanceError('That dimension is not in the world.');
 		spawn = dimension.overworld ? await worldSpawn(instance.path) : null;
 	} catch (err) {
@@ -655,7 +664,7 @@ export async function pruneChunks(
 	opts: { snapshot: boolean; analysedAt: number; protect: Set<string> }
 ): Promise<string> {
 	validSettings(settings);
-	const dimension = await findDimension(instance.path, key);
+	const dimension = await named(instance, await findDimension(instance.path, key));
 	if (!dimension) throw new InstanceError('That dimension is not in the world.');
 	const analysis = pruneAnalyses.get(instance.id);
 	if (!analysis || analysis.dimension !== key || analysis.at !== opts.analysedAt) {

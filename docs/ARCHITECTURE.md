@@ -850,7 +850,8 @@ keeps `level.dat` and player data. A snapshot of only some folders is marked `pa
 restores only those.
 
 1.12 mods' dimensions are folders with only a number (`DIM-11325`); `dimensionnames.ts` names
-them on the World tab, Restore chunks and disk usage. Forge 1.12 and Cleanroom list every
+them on the World tab, Restore chunks, disk usage and the labels of the tasks run on them
+(`named` in `world.ts`: resetting, restoring, analysing, pruning). Forge 1.12 and Cleanroom list every
 dimension type with its ids (`forge dimensions`: the header, then "deep_dark: {-11325}" per
 type, read from the command's bytecode), so a running server is asked once per run, in the
 background (page loads never wait), and the answer kept (`dimensions.names:<id>`): "Deep Dark

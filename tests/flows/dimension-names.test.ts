@@ -14,7 +14,8 @@ const names = await import('#lib/server/dimensionnames.js');
 const { listDimensions } = await import('#lib/server/dimensions.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
-const { createInstance } = await import('../helpers/instances');
+const { createInstance, waitForTask } = await import('../helpers/instances');
+const { resetDimension } = await import('#lib/server/world.js');
 const { fakeProcesses } = await import('../helpers/process');
 
 let active = true;
@@ -123,6 +124,19 @@ describe('names for numbered dimensions', () => {
 		fakeUnit();
 		await names.askForDimensionNames(s);
 		expect(rcon.commands).toHaveLength(2);
+	});
+
+	it('names the dimension in the labels of what is done to it, not only its folder', async () => {
+		const s = await server();
+		// Forge's answer from the last run, then the server stopped.
+		await names.askForDimensionNames(s);
+		active = false;
+		fakeUnit();
+		const task = await waitForTask(await resetDimension(s, 'world/DIM-11325', { snapshot: false }));
+		expect(task.label).toMatch(/^Resetting Deep Dark \(DIM-11325\)/);
+		// Only guessed from a config: said so.
+		names.deleteDimensionNames(s.id);
+		expect((await waitForTask(await resetDimension(s, 'world/DIM66', { snapshot: false }))).label).toMatch(/^Resetting DIM66 \(Erebus\?\)/);
 	});
 
 	it('asks nothing of servers whose folders carry their names (1.13+), or that are not Forge', async () => {
