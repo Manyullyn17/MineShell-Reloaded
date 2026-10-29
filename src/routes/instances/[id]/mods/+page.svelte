@@ -165,8 +165,14 @@
 	const noIcon = new SvelteSet<string>();
 	const iconSrc = (mod: { fileName: string; version: string | null; sizeBytes: number }) =>
 		`/api/instances/${encodeURIComponent(data.instance.id)}/mod-icon?${new URLSearchParams({ file: mod.fileName, v: mod.version ?? String(mod.sizeBytes) })}`;
-	const sourceLabel = (id: string) =>
-		({ modrinth: 'Modrinth', curseforge: 'CurseForge', manual: 'Uploaded' })[id] ?? id;
+	/** A jar from no catalog shows where it came from when known (DynmapBlockScan: dynmap.us); "Uploaded" claimed too much. */
+	const sourceLabel = (mod: { source: string; projectUrl: string | null }) => {
+		if (mod.source === 'manual') {
+			const link = webLink(mod.projectUrl);
+			return link ? new URL(link).hostname : 'Other';
+		}
+		return ({ modrinth: 'Modrinth', curseforge: 'CurseForge' } as Record<string, string>)[mod.source] ?? mod.source;
+	};
 
 	// ---- the other sub-tabs: kept mounted, so a check or search outlives switching tabs
 	let browser = $state<ModBrowser | null>(null);
@@ -448,7 +454,7 @@
 							</div>
 							</td>
 							<td class="mono small version">{mod.version ?? 'unknown'}</td>
-							<td class="small nowrap source">{sourceLabel(mod.source)}</td>
+							<td class="small nowrap source">{sourceLabel(mod)}</td>
 							<td>
 								{#if pendingDelete === mod.fileName}
 									<div class="row-actions confirm">

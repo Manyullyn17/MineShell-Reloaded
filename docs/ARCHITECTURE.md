@@ -1064,7 +1064,7 @@ checked on the scheduler's tick; slots missed while MineShell was down move forw
 Map mods: Forge/Cleanroom 1.12.2 is mapped by Dynmap with DynmapBlockScan (no standalone
 renderer reads RoughlyEnoughIDs/JEID worlds; without BlockScan modded blocks are black), and
 1.13+ can add the BlueMap mod for a live map. MineShell installs them (Dynmap's newest
-1.12.2 build from CurseForge - on Forge's own the newest that loads there, `DYNMAP_NOT_ON_FORGE`, BlockScan from dynmap.us, BlueMap from Modrinth with the mods it requires, such as Fabric API on a server without a pack), gives each
+1.12.2 build from CurseForge - on Forge's own the newest that loads there, `DYNMAP_NOT_ON_FORGE`, BlockScan from dynmap.us, recorded with its version and link since it is on no catalog, BlueMap from Modrinth with the mods it requires, such as Fabric API on a server without a pack), gives each
 server one port of its own for the mod's web server (`modPort`, from 8123, not another
 server's), and writes it with a localhost-only bind into the mod's config before every start
 (`applyMapModConfig`; BlueMap's config is created during install, so its first start uses

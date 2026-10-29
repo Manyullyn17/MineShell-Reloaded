@@ -563,16 +563,23 @@ export function markClientOnly(instance: ServerInstance, fileName: string): void
 }
 
 /** Register a hand-uploaded jar (or an unidentifiable pack jar) so it stops showing as untracked. */
+/**
+ * Records a jar from no mod catalog. MineShell's own downloads from elsewhere
+ * (DynmapBlockScan, from dynmap.us) give its name, version and where it came
+ * from, which the Mods list shows instead of "Other".
+ */
 export async function trackManualJar(
 	instance: ServerInstance,
 	fileName: string,
-	opts: { fromPack?: boolean; hash?: string | null } = {}
+	opts: { fromPack?: boolean; hash?: string | null; name?: string; version?: string | null; projectUrl?: string } = {}
 ): Promise<void> {
-	const modId = upsertMod({ source: 'manual', slug: fileName, name: fileName.replace(/\.jar$/i, '') });
+	const modId = upsertMod({ source: 'manual', slug: fileName, name: opts.name ?? fileName.replace(/\.jar$/i, ''), projectUrl: opts.projectUrl });
+	// The same jar recorded earlier without them (by Sync, on another server) gets them too.
+	if (opts.name && opts.projectUrl) db.update(modsTable).set({ name: opts.name, projectUrl: opts.projectUrl }).where(eq(modsTable.id, modId)).run();
 	recordInstanceMod({
 		instanceId: instance.id,
 		modId,
-		version: null,
+		version: opts.version ?? null,
 		versionId: null,
 		filePath: path.join('mods', fileName),
 		hash: opts.hash ?? null,

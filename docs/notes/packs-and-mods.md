@@ -136,7 +136,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `modlist.ts`. The `mods` table's author is mostly empty: Modrinth's project endpoint has no
   author (only search results carry one) and a mod is first recorded from a hash lookup. Jars
   know their authors, so the list reads them first.
-- Uploaded (`manual`) records are named after the file (`sodium-0.6.0`), and a disabled one
-  keeps `.jar.disabled` in its name; the jar's own name is used instead.
+- `manual` records (jars from no catalog; the Mods list says "Other", not "Uploaded": MineShell
+  cannot tell an upload from a jar copied in or a pack's override) are named after the file
+  (`sodium-0.6.0`), and a disabled one keeps `.jar.disabled` in its name; the jar's own name
+  is used instead. Sync identifies them by Modrinth hash only, once: a CurseForge-only jar
+  (Dynmap's Forge 3.7-beta-6; Modrinth's Forge 1.12.2 builds stop at 3.7-beta-4) stays
+  `manual`. MineShell's own downloads from elsewhere (DynmapBlockScan) are recorded with
+  name, version and link, and the list shows the link's host.
 - Forge/NeoForge mods.toml `version` is often `${file.jarVersion}` left unreplaced; treated as
   no version.

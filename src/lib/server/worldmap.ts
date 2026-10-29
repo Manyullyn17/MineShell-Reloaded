@@ -12,7 +12,7 @@ import { directorySize } from './files';
 import { compareVersions, listJavaRuntimes, scanJavaRuntimes } from './java';
 import { installJava, type JavaVendor } from './javadownload';
 import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
-import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods } from './mods';
+import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods, trackManualJar } from './mods';
 import { compatibleVersions, filterFor } from './modupdates';
 import { installRequiredMods } from './moddeps';
 import { allocatePort, portRanges } from './ports';
@@ -642,7 +642,14 @@ export async function installMapMod(instance: ServerInstance): Promise<string> {
 			if (!mods.blockScan) {
 				task.setProgress(null, 'Installing DynmapBlockScan');
 				const url = DYNMAP[instance.minecraftVersion].blockScan;
-				await downloadFile(url, path.join(modsDir(instance.path), path.posix.basename(url)));
+				const file = path.posix.basename(url);
+				await downloadFile(url, path.join(modsDir(instance.path), file));
+				// On no mod catalog: recorded as from dynmap.us, not as a jar someone put there.
+				await trackManualJar(instance, file, {
+					name: 'DynmapBlockScan',
+					version: file.match(/^DynmapBlockScan-(.+)-forge-/)?.[1] ?? null,
+					projectUrl: path.posix.dirname(url) + '/'
+				});
 				task.log(`Installed ${path.posix.basename(url)} (from dynmap.us; it reads the mods' block models so Dynmap can draw modded blocks).`);
 			}
 		} else {

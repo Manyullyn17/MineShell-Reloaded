@@ -16,6 +16,7 @@ const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
+const { listInstanceMods } = await import('#lib/server/mods/index.js');
 
 const JAR = Buffer.from('bluemap cli');
 const RELEASE = 'https://api.github.com/repos/BlueMap-Minecraft/BlueMap/releases/latest';
@@ -249,6 +250,14 @@ describe('map mods', () => {
 		const instance = await forge1122();
 		expect((await waitForTask(await installMapMod(instance))).state).toBe('done');
 		expect((await fs.readdir(path.join(instance.path, 'mods'))).sort()).toEqual(['Dynmap-3.7-beta-6-forge-1.12.2.jar', 'DynmapBlockScan-3.4-beta-1-forge-1.12.2.jar']);
+		// BlockScan is on no catalog: recorded as from dynmap.us, not as a jar of unknown origin.
+		expect((await listInstanceMods(instance)).find((m) => m.fileName.startsWith('DynmapBlockScan'))).toMatchObject({
+			source: 'manual',
+			name: 'DynmapBlockScan',
+			version: '3.4-beta-1',
+			projectUrl: 'https://dynmap.us/builds/DynmapBlockScan/',
+			untracked: false
+		});
 		await expect(installMapMod(instance)).rejects.toThrow(/installed already/);
 
 		// Dynmap writes its config on its first start; from then on MineShell sets the port before each start.
