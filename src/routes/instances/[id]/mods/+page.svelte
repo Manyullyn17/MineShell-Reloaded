@@ -187,7 +187,7 @@
 				/>
 			</span>
 			<button type="button" onclick={() => browser?.search()} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
-		{:else}
+		{:else if view === 'installed'}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>
 				<input type="search" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
@@ -597,6 +597,22 @@
 />
 
 <style>
+	/* The tabs stay under the server's sticky header while a long mod list scrolls, as on
+	   Settings; --instance-head is that header's height (instances/[id]/+layout.svelte). */
+	.subhead {
+		position: sticky;
+		top: calc(3.25rem + var(--instance-head, 0px));
+		z-index: 14;
+		background: var(--bg);
+	}
+
+	/* The header scrolls away on a phone; so do these. */
+	@media (max-width: 60rem) {
+		.subhead {
+			position: static;
+		}
+	}
+
 	.duplicates ul {
 		list-style: none;
 		margin: var(--space-2) 0 0;
