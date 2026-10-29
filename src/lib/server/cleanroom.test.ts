@@ -8,6 +8,7 @@ import {
 	inspectFugueJar,
 	inVersionRange,
 	isCleanroomRequiredJar,
+	belowRangeMinimum,
 	pickFugue
 } from './cleanroom';
 import type { ProjectVersion } from './mods';
@@ -228,5 +229,35 @@ describe('pickFugue', () => {
 	it('keeps Java 21 Cleanroom on Java 21 builds', async () => {
 		expect(await pick('0.4.4-alpha', true)).toBe('0.23.3');
 		expect(await pick('0.4.3-alpha', true)).toBe('0.21.0');
+	});
+
+	it('finds the build however many newer ones there are, reading a handful of jars', async () => {
+		// Forty builds for Cleanroom 0.7.3 on top: checking the newest twelve found nothing for 0.5.x.
+		const newer = Array.from({ length: 40 }, (_, i) => fugueVersion(`0.30.${40 - i}`, `2026-12-${String(30 - (i % 28)).padStart(2, '0')}`));
+		const all = [...newer, ...versions].map((v, i) => ({ ...v, datePublished: new Date(Date.UTC(2027, 0, 1) - i * 86_400_000).toISOString() }));
+		const read: string[] = [];
+		const counted = async (v: ProjectVersion) => {
+			read.push(v.versionNumber);
+			return v.versionNumber.startsWith('0.30.') ? { range: '[0.7.3-alpha,)', callsGetUrl: false } : info(v);
+		};
+		expect((await pickFugue(all, '0.5.17-alpha', false, counted))?.versionNumber).toBe('0.23.7');
+		expect(new Set(read).size).toBeLessThanOrEqual(8);
+	});
+
+	it('never picks a build whose jar does not say what it needs', async () => {
+		const unreadable = async (v: ProjectVersion) => (v.versionNumber === '0.24.4' || v.versionNumber === '0.23.7' ? { range: null, callsGetUrl: false } : info(v));
+		// Counted as fitting, the newest would win; the newest known one does instead.
+		expect((await pickFugue(versions, '0.6.13-alpha', false, unreadable))?.versionNumber).toBe('0.23.4');
+		expect(await pickFugue(versions, '0.6.13-alpha', false, async () => ({ range: null, callsGetUrl: false }))).toBeNull();
+	});
+});
+
+describe('belowRangeMinimum', () => {
+	it('compares against the lowest version a range accepts', () => {
+		expect(belowRangeMinimum('0.5.17-alpha', '[0.7.3-alpha,)')).toBe(true);
+		expect(belowRangeMinimum('0.7.3-alpha', '[0.7.3-alpha,)')).toBe(false);
+		expect(belowRangeMinimum('0.7.3-alpha', '(0.7.3-alpha,)')).toBe(true);
+		expect(belowRangeMinimum('0.1', '[,0.5)')).toBe(false);
+		expect(belowRangeMinimum('0.1', 'garbled')).toBe(false);
 	});
 });
