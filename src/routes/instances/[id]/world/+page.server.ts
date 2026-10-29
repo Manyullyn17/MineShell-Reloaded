@@ -47,7 +47,7 @@ import {
 import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder, withSizes } from '#lib/server/worlds.js';
 import { webRoot } from '#lib/server/worldmap.js';
 import { snapshotWhileRunning } from '#lib/server/snapshotschedule.js';
-import { listDimensions, type Dimension } from '#lib/server/dimensions.js';
+import { listDimensions, MODERN_OVERWORLD, type Dimension } from '#lib/server/dimensions.js';
 import type { PregenShape } from '#lib/shared/pregen.js';
 import { withDimensionNames } from '#lib/server/dimensionnames.js';
 import { getTask } from '#lib/server/tasks.js';
@@ -165,11 +165,20 @@ async function pregenDimensions(instance: ReturnType<typeof requireInstance>) {
 	const onDisk = (await withDimensionNames(instance, await listDimensions(instance.path))).filter((d) => d.id.includes(':'));
 	const spawn = await worldSpawn(instance.path);
 	const level = await serverWorldName(instance.path);
-	// A vanilla dimension without terrain yet can still have its border file (1.21.11 makes all three).
+	// A vanilla dimension without terrain yet can still have its border file (1.21.11 makes all three),
+	// from Minecraft 26 in dimensions/minecraft/ beside the overworld.
+	const modern = await fs.access(path.join(instance.path, level, MODERN_OVERWORLD)).then(
+		() => true,
+		() => false
+	);
+	const folderOf = (v: (typeof VANILLA_DIMENSIONS)[number]) =>
+		modern
+			? path.join(level, 'dimensions', 'minecraft', v.id.slice('minecraft:'.length), ...(v.folder ? [] : ['region']))
+			: path.join(level, v.folder || 'region');
 	const entries: { id: string; label: string; dimension: Dimension | null; borderFrom: Dimension }[] = [
 		...VANILLA_DIMENSIONS.map((v) => {
 			const dimension = onDisk.find((d) => d.id === v.id) ?? null;
-			const unvisited = { id: v.id, label: v.label, paths: [v.folder ? path.join(level, v.folder) : path.join(level, 'region')], overworld: !v.folder };
+			const unvisited = { id: v.id, label: v.label, paths: [folderOf(v)], overworld: !v.folder };
 			return { id: v.id, label: dimension?.label ?? v.label, dimension, borderFrom: dimension ?? unvisited };
 		}),
 		...onDisk.filter((d) => !VANILLA_DIMENSIONS.some((v) => v.id === d.id)).map((d) => ({ id: d.id, label: d.label, dimension: d, borderFrom: d }))

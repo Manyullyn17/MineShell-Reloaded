@@ -113,6 +113,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   1.12 DIM<n> and named mod folders, `dimensions/<ns>/<name>`, Bukkit siblings. The
   overworld is its region/entities/poi only. World changes take `moving` paths; a snapshot of
   some folders is `partial: true` and restores only those.
+- Minecraft 26 (checked on the user's 26.3 world, 2026-10-29) moved the overworld into
+  `dimensions/minecraft/overworld/` beside the nether and end, each with its own
+  `data/minecraft/` (world_border.dat, raids.dat). Out of level.dat: the seed
+  (`data/minecraft/world_gen_settings.dat`, data.seed), game rules (`game_rules.dat`, names with
+  `minecraft:`), weather and clocks; difficulty is `difficulty_settings`, spawn stays
+  `spawn.pos`. Players are in `players/data|stats|advancements/` (`playerFolder`). Before this
+  was read, "Keep it" on a reset gave a new random seed, prune skipped the area round spawn
+  (the overworld was not recognised) and the player editor listed nobody.
 - Pruning reads InhabitedTime (top level 1.18+, Level.* before); a pruned chunk goes from
   region/, entities/ and poi/ alike, and files are rewritten (zeroing the header frees nothing).
   Live: 45 MB -> 8 MB on a pre-generated 1.20.1 world, which then loaded and regenerated.

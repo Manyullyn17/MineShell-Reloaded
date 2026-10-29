@@ -66,8 +66,21 @@ export const OFFHAND_SLOT = -106;
 
 // ------------------------------------------------------------------ files ---
 
+/**
+ * Where a world keeps one kind of player file: players/data, players/stats and
+ * players/advancements from Minecraft 26, playerdata/, stats/ and advancements/
+ * before. (Before 1.7.6 players/ held <name>.dat files, with no data/ in it.)
+ */
+export async function playerFolder(worldDir: string, kind: 'data' | 'stats' | 'advancements'): Promise<string> {
+	const modern = await fs.access(path.join(worldDir, 'players', 'data')).then(
+		() => true,
+		() => false
+	);
+	return modern ? path.join(worldDir, 'players', kind) : path.join(worldDir, kind === 'data' ? 'playerdata' : kind);
+}
+
 async function playerDir(instance: ServerInstance): Promise<string> {
-	return path.join(instance.path, await serverWorldName(instance.path), 'playerdata');
+	return playerFolder(path.join(instance.path, await serverWorldName(instance.path)), 'data');
 }
 
 /** Where a player's file is, relative to the server folder (for Files' download), and when it was saved. */
@@ -797,14 +810,15 @@ export async function removePlayerFiles(instance: ServerInstance, uuid: string):
 		throw new PlayerDataError('The server is running and MineShell cannot tell who is online (RCON is not answering). Stop the server to remove a player.');
 	}
 	if (online.has(id)) throw new PlayerDataError('That player is online, and the server would write their files back when they leave. Kick them first.');
-	const world = await serverWorldName(instance.path);
+	const world = path.join(instance.path, await serverWorldName(instance.path));
+	const data = await playerFolder(world, 'data');
 	const candidates = [
-		path.join(world, 'playerdata', `${id}.dat`),
-		path.join(world, 'playerdata', `${id}.dat_old`),
-		path.join(world, 'stats', `${id}.json`),
-		path.join(world, 'advancements', `${id}.json`),
-		path.relative(instance.path, backupDir(instance, id))
-	];
+		path.join(data, `${id}.dat`),
+		path.join(data, `${id}.dat_old`),
+		path.join(await playerFolder(world, 'stats'), `${id}.json`),
+		path.join(await playerFolder(world, 'advancements'), `${id}.json`),
+		backupDir(instance, id)
+	].map((file) => path.relative(instance.path, file));
 	const removed: string[] = [];
 	for (const rel of candidates) {
 		if (!(await fs.lstat(path.join(instance.path, rel)).catch(() => null))) continue;

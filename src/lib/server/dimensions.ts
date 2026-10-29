@@ -5,7 +5,8 @@ import { serverWorldName } from './packworld';
 /**
  * A world's dimensions as folders on disk, for resetting or restoring one:
  * - the overworld is the level folder's own region/, entities/ and poi/ (its
- *   level.dat, player data and data/ belong to the whole world and stay);
+ *   level.dat, player data and data/ belong to the whole world and stay); from
+ *   Minecraft 26 those are in dimensions/minecraft/overworld/, beside its own data/;
  * - vanilla keeps the nether and end in DIM-1/ and DIM1/, mods add DIM<n>/
  *   (1.12) or their own named folders, and 1.16+ datapack and mod dimensions
  *   live in dimensions/<namespace>/<name>/;
@@ -37,6 +38,21 @@ const VANILLA: Record<string, { id: string; label: string }> = {
 	DIM1: { id: 'minecraft:the_end', label: 'The End' }
 };
 
+/** Minecraft 26 keeps its own dimensions with the others, under these ids. */
+const VANILLA_IDS: Record<string, string> = {
+	'minecraft:overworld': 'Overworld',
+	'minecraft:the_nether': 'The Nether',
+	'minecraft:the_end': 'The End'
+};
+
+/** minecraft:the_nether -> The Nether; other ids stay as they are. */
+export function dimensionIdLabel(id: string): string {
+	return VANILLA_IDS[id] ?? id;
+}
+
+/** The overworld's folder in Minecraft 26, relative to the world folder. */
+export const MODERN_OVERWORLD = path.join('dimensions', 'minecraft', 'overworld');
+
 /** "DIM-1" -> The Nether; other folders keep their name. */
 export function dimensionLabel(folder: string): string {
 	return VANILLA[folder]?.label ?? folder;
@@ -59,9 +75,13 @@ export async function listDimensions(root: string, world?: string): Promise<Dime
 	const dimensions: Dimension[] = [];
 
 	const overworld: string[] = [];
-	for (const name of OVERWORLD_FOLDERS) {
-		if (await exists(path.join(dir, name))) overworld.push(path.join(world, name));
+	for (const base of [world, path.join(world, MODERN_OVERWORLD)]) {
+		for (const name of OVERWORLD_FOLDERS) {
+			if (await exists(path.join(root, base, name))) overworld.push(path.join(base, name));
+		}
+		if (overworld.length) break;
 	}
+	const modernOverworld = overworld[0]?.startsWith(path.join(world, MODERN_OVERWORLD) + path.sep);
 	if (overworld.length) dimensions.push({ id: 'minecraft:overworld', label: 'Overworld', paths: overworld, overworld: true });
 
 	for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
@@ -72,9 +92,10 @@ export async function listDimensions(root: string, world?: string): Promise<Dime
 				if (!ns.isDirectory()) continue;
 				for (const dim of await fs.readdir(path.join(root, rel, ns.name), { withFileTypes: true }).catch(() => [])) {
 					const dimRel = path.join(rel, ns.name, dim.name);
+					if (modernOverworld && dimRel === path.join(world, MODERN_OVERWORLD)) continue;
 					if (dim.isDirectory() && (await isDimensionFolder(path.join(root, dimRel)))) {
 						const id = `${ns.name}:${dim.name}`;
-						dimensions.push({ id, label: id, paths: [dimRel], overworld: false });
+						dimensions.push({ id, label: dimensionIdLabel(id), paths: [dimRel], overworld: false });
 					}
 				}
 			}

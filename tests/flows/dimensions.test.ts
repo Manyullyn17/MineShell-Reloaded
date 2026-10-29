@@ -43,6 +43,35 @@ describe('one dimension at a time', () => {
 		]);
 	});
 
+	// A 26.3 world listed its overworld as a dimension named minecraft:overworld:
+	// pruning skipped the area round spawn, a reset took the overworld's data/ too.
+	it('finds a Minecraft 26 overworld in dimensions/minecraft/overworld, and resets only its terrain', async () => {
+		const instance = await createInstance(
+			{ modloader: 'fabric', minecraftVersion: '26.3' },
+			{
+				'server.properties': 'level-name=world\n',
+				'world/level.dat': 'level',
+				[`world/players/data/alex.dat`]: 'alex',
+				'world/dimensions/minecraft/overworld/region/r.0.0.mca': 'overworld',
+				'world/dimensions/minecraft/overworld/entities/r.0.0.mca': 'overworld mobs',
+				'world/dimensions/minecraft/overworld/poi/r.0.0.mca': 'overworld poi',
+				'world/dimensions/minecraft/overworld/data/minecraft/raids.dat': 'raids',
+				'world/dimensions/minecraft/the_nether/region/r.0.0.mca': 'nether',
+				'world/dimensions/minecraft/the_end/data/minecraft/raids.dat': 'end not generated yet'
+			}
+		);
+		const dims = await listDimensions(instance.path);
+		const o = 'world/dimensions/minecraft/overworld';
+		expect(dims.map((d) => [d.id, d.label, d.overworld, d.paths])).toEqual([
+			['minecraft:overworld', 'Overworld', true, [`${o}/region`, `${o}/entities`, `${o}/poi`]],
+			['minecraft:the_nether', 'The Nether', false, ['world/dimensions/minecraft/the_nether']]
+		]);
+		expect((await waitForTask(await resetDimension(instance, `${o}/region`, { snapshot: false }))).state).toBe('done');
+		const after = await tree(instance.path);
+		expect(Object.keys(after).filter((f) => f.startsWith(o))).toEqual([`${o}/data/minecraft/raids.dat`]);
+		expect(after['world/players/data/alex.dat']).toBe('alex');
+	});
+
 	it('resets the nether into a partial snapshot and leaves the rest alone', async () => {
 		const instance = await server();
 		const before = await tree(instance.path);
