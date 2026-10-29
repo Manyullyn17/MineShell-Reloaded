@@ -76,6 +76,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `upload:<uuid>` in the same `prepared` map; a CurseForge zip's entries are resolved first
   (`resolvePackTargets`), since a nameless entry would diff as a dropped mod. After it the
   server has `packVersionId` null (no provider version) and the file's name/version.
+- Data pack loader folders (`datapackloaders.ts`): Open Loader 21.1.5 (ATM10, NeoForge 1.21.1)
+  reads `config/openloader/packs/` plus the server's `datapacks/` (`load_datapacks_dir`, on by
+  default, for CurseForge's launcher) and `additional_locations` from
+  `config/openloader/options.json` (strings in its jar; ATM10 ships `packs/` with its own).
+  Older Open Loader builds' `config/openloader/data` and `openloader/data`, Paxi's
+  `config/paxi/datapacks` and Global Packs' `global_packs/required_data`/`optional_data` are
+  from their documentation, not checked in a jar.
 
 ## Pack install form
 - Picking a provider pack version fetches `/api/packs/preview` (`packs/preview.ts`): the pack's

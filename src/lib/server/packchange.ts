@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { lostDatapackLoaders, type LostDatapackLoader } from './datapackloaders';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
@@ -264,6 +265,8 @@ export type PackChangePlan = {
 	manual: ManualModCheck[];
 	/** The user's own files in the folders that move (ownConfigFiles). */
 	ownFiles: OwnFiles;
+	/** Mods loading the user's data packs from a folder that the new version drops (datapackloaders.ts). */
+	lostLoaders: LostDatapackLoader[];
 	/** Reached into while applying; not sent to the client. On-disk names of `mods.update`. */
 	packUpdates?: string[];
 	/** Reached into while applying; not sent to the client. */
@@ -569,6 +572,12 @@ async function buildPlan(instance: ServerInstance, versionId: string, pack: Pars
 		},
 		manual: checks.map((c) => c.check),
 		ownFiles: await ownConfigFiles(instance, configs, packFiles(pack, worldTops)),
+		lostLoaders: await lostDatapackLoaders(
+			instance.path,
+			remove.filter((r) => !replaced.some((x) => x.from === r)),
+			add,
+			await installedPackPaths(instance)
+		),
 		updates,
 		packUpdates
 	};

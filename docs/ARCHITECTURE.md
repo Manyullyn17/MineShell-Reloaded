@@ -553,7 +553,12 @@ default off, so the pack wins as before; a kept one is recorded as resolved `min
 report). Without any base nothing tells the user's files from the pack's and no merge runs:
 the files the new version does not ship are offered to bring back, otherwise they stay in
 old-configs only. Only paths the plan offered are copied, from old-configs, inside the
-journalled change.
+journalled change. A mod that loads data packs from a folder of its own (Open Loader,
+Paxi, Global Packs, KubeJS: `datapackloaders.ts`, by mod id or file name) going away while
+that folder holds data packs the installed version did not ship is a warning
+(`lostLoaders`): they come back, but nothing loads them, and a world-generation one the
+world has loaded can stop it loading; the preview names them and the move into the world's
+`datapacks/`.
 
 **Rolling a pack change back** (`packrollback.ts`). Each committed change writes a
 `pack_changes` row in its commit transaction (`commitOperation`'s `also`): the version and

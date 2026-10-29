@@ -743,6 +743,27 @@ describe('your config edits across a pack change', () => {
 		expect(entry).toMatchObject({ outcome: 'both-added', resolved: 'mine' });
 	});
 
+	// A pack loading data packs with Paxi, then a version without it, and one with a newer build.
+	definePack('px1', '1.20.1', ['a.jar', 'paxi-1.0.jar'], { 'config/paxi/datapacks/packs-own.zip': 'the pack’s data pack' });
+	definePack('px2', '1.20.1', ['a.jar'], {});
+	definePack('px3', '1.20.1', ['a.jar', 'paxi-1.1.jar'], {});
+
+	it('warns when the new version drops the mod that loads the user’s own data packs', async () => {
+		const { instance, taskId } = await createFromPack('Paxi', PACKS.px1(), { source: 'modrinth', projectId: 'p', versionId: 'px1' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		const datapacks = path.join(instance.path, 'config/paxi/datapacks');
+		await fs.writeFile(path.join(datapacks, 'mine.zip'), zipBuffer({ 'pack.mcmeta': '{}', 'data/mine/worldgen/biome/x.json': '{}' }));
+		await fs.writeFile(path.join(datapacks, 'notes.txt'), 'not a data pack');
+
+		expect((await planPackChange(reload(instance.id), 'px2')).lostLoaders).toEqual([
+			{ mod: 'Paxi', fileName: 'paxi-1.0.jar', packs: ['config/paxi/datapacks/mine.zip'], worldgen: true }
+		]);
+		// A newer build of it in the new version, or no data pack of the user's: nothing to say.
+		expect((await planPackChange(reload(instance.id), 'px3')).lostLoaders).toEqual([]);
+		await fs.rm(path.join(datapacks, 'mine.zip'));
+		expect((await planPackChange(reload(instance.id), 'px2')).lostLoaders).toEqual([]);
+	});
+
 	it('without a record of the installed version’s files, brings back only the files ticked', async () => {
 		const instance = await edited();
 		await fs.rm(path.join(instance.path, BASE_FILE));

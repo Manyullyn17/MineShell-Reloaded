@@ -63,6 +63,7 @@
 		};
 		manual: ManualMod[];
 		ownFiles: { known: boolean; back: string[]; packWins: string[]; stays: string[] };
+		lostLoaders: { mod: string; fileName: string; packs: string[]; worldgen: boolean }[];
 	};
 
 	let versions = $state<PackVersion[]>([]);
@@ -338,6 +339,23 @@
 					afterwards.
 				</p>
 			{/if}
+
+			{#each plan.lostLoaders as lost (lost.fileName)}
+				<div class="notice warning small">
+					<p>
+						<strong>The new version drops {lost.mod}</strong>, which loads {lost.packs.length === 1 ? 'a data pack' : `${lost.packs.length} data packs`}
+						the installed version did not ship. {lost.packs.length === 1 ? 'It stays' : 'They stay'} where {lost.packs.length === 1 ? 'it is' : 'they are'},
+						but nothing loads {lost.packs.length === 1 ? 'it' : 'them'} after the change: move {lost.packs.length === 1 ? 'it' : 'them'} into
+						<code>{plan.world.folder}/datapacks</code>, or add {lost.mod} back.
+						{#if lost.worldgen}
+							One adds world generation: if the world has loaded it, the world may not load without it, so move it before the next start.
+						{/if}
+					</p>
+					<ul class="files">
+						{#each lost.packs as f (f)}<li>{f}</li>{/each}
+					</ul>
+				</div>
+			{/each}
 
 			{#if datapackChanges}
 				<details>

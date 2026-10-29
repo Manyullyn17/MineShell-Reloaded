@@ -443,9 +443,6 @@ What the built entries in the archive left out, in one place:
   release candidate can be that last 0.x, so going back lands on a tested release.
 - **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
   copying them to a backup folder along with the snapshots.
-- **Pack change preview**: a warning when the new version drops the mod that loads a folder
-  of the user's data packs (Paxi, OpenLoader): the files come back but nothing loads them,
-  and a world-generation one going away can stop the world loading.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser

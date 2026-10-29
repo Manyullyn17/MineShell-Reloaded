@@ -94,7 +94,7 @@ export async function installDatapackVersion(
  */
 const WORLDGEN = /^data\/[^/]+\/(worldgen|dimension|dimension_type)\//;
 
-async function changesWorldgen(full: string, isDirectory: boolean): Promise<boolean> {
+export async function changesWorldgen(full: string, isDirectory: boolean): Promise<boolean> {
 	if (!isDirectory) return ((await zipEntryNames(full)) ?? []).some((name) => WORLDGEN.test(name));
 	const data = path.join(full, 'data');
 	for (const ns of await fs.readdir(data, { withFileTypes: true }).catch(() => [])) {
