@@ -86,6 +86,28 @@ until after 1.0, and asked to keep the rest listed here):
   user's own 26.3 world with all three dimensions and a player file (items, enchantments,
   stats), and on a 1.21 world, which reads as before. Not yet seen: the Delete button's
   "Stopping the server" in a browser.
+  **0.33.14 is the candidate** (2026-10-29), after 0.33.11 to 0.33.13 the same evening, each
+  from what the user found clicking around (0.33.13 ran on the real install, where its
+  MeatballCraft showed the two Fugues 0.33.14 fixes). 0.33.11: Cleanroom's replacement
+  suggestions no longer naming the maintained forks themselves (they keep the old modids),
+  "Apply required fixes" answering next to its button, a copied server no longer lighting
+  up its original in the sidebar. 0.33.12: disk usage no longer offering the pack's config
+  base (`pack-base.zip`) and other kept files as leftovers; "Last changed" no longer moved
+  by the nightly restart, snapshots or an operation's status. 0.33.13: the mod update list
+  offering a Cleanroom server only a Fugue its Cleanroom runs (it offered MeatballCraft on
+  0.5.17 Fugue 0.25.5, which needs 0.7.3, ticked), saying why a disabled mod is off, no raw
+  commit lines as notes, progress while checking, a table; DynmapBlockScan shown as from
+  dynmap.us and unknown jars as "Other". 0.33.14: the Mods tab bar staying in view and its
+  filter only on Installed, a disabled old copy recognised across Modrinth and CurseForge,
+  Fugue from CurseForge on a server whose mods come from there, and picking Fugue by binary
+  search over the ranges the jars declare (the build for 0.5.x was eleventh of twelve
+  checked), each build read once ever, a build that does not say what it needs never picked.
+  Its checks: the tests each fix brought (each failing without it); on throwaway servers
+  against real Modrinth and the CurseForge mirror: the update list's progress and table (and
+  at 390 px), the Dynmap install's sources, Fugue 0.23.7 for Cleanroom 0.5.17 in 6 jar reads
+  of 46 builds and 0.25.5 for 0.7.3, from CurseForge on a CurseForge server; the Mods tab
+  bar scrolled at desktop and phone width. Not yet seen: the update list and Mods tab on the
+  real MeatballCraft with 0.33.14.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
