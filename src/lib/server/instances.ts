@@ -324,9 +324,10 @@ export async function insertInstanceRow(
 	return requireInstance(id);
 }
 
+/** Not a change to the server ("Last changed"): what an operation changes is stamped when it commits. */
 export function setStatus(id: string, status: string, message: string | null) {
 	db.update(serverInstances)
-		.set({ status, statusMessage: message, updatedAt: Date.now() })
+		.set({ status, statusMessage: message })
 		.where(eq(serverInstances.id, id))
 		.run();
 }
