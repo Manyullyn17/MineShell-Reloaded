@@ -291,10 +291,11 @@ export function destinations(instanceId: string, kind: NotificationKind): { key:
 /**
  * Reports something that happened. Fire and forget: callers are mid-way
  * through their own work, and a slow destination must not hold them up.
+ * `only` limits it to those destinations (keys as `destinations` gives them).
  */
-export function notify(n: Notification, now = Date.now()): Promise<void> {
+export function notify(n: Notification, now = Date.now(), only?: string[]): Promise<void> {
 	if (now - n.at > FRESH_MS) return Promise.resolve();
-	const targets = destinations(n.instance.id, n.kind);
+	const targets = destinations(n.instance.id, n.kind).filter(({ key }) => !only || only.includes(key));
 	if (!targets.length) return Promise.resolve();
 	let message = n.message;
 	if (FOLDED.has(n.kind)) {

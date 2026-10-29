@@ -540,8 +540,6 @@ What the built entries in the archive left out, in one place:
   release candidate can be that last 0.x, so going back lands on a tested release.
 - **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
   copying them to a backup folder along with the snapshots.
-- **Disk running low**: a server with only its own notification destination hears of a shared
-  disk only when the message goes under it.
 - **Pack change preview**: a warning when the new version drops the mod that loads a folder
   of the user's data packs (Paxi, OpenLoader): the files come back but nothing loads them,
   and a world-generation one going away can stop the world loading.

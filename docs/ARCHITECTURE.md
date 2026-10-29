@@ -758,8 +758,9 @@ idle skip and a slot skipped for another operation are not failures.
 
 **Low disk space** (`diskspace.ts`, every scheduler tick): servers grouped by the disk they are
 on (`stat().dev`); a disk below its line - the largest "keep free on the disk" of its servers,
-where their snapshots stop, or 2 GB when all have it off - is notified once (kind `disk`),
-under the first of its servers whose destinations take it, naming the others; again only
+where their snapshots stop, or 2 GB when all have it off - is notified once (kind `disk`)
+to each destination any of its servers sends disk warnings to, under the first server
+using it, naming the others (`notify`'s `only`); again only
 after it was 10% above the line. Kept in memory, so a restart while low says it once more.
 
 **Backup copies** (`backups.ts`): snapshots copied to a backup folder off the server's disk.
