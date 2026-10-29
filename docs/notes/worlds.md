@@ -141,6 +141,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   1.12 sections (MeatballCraft) carry a `Palette` int array of `id << 4 | meta`; Blocks/Add/
   Data hold the palette index split the way vanilla splits a state, so index =
   `(add << 12) | (blocks << 4) | data` (checked on 6921 real sections: always in range).
+- Minecraft 26 (DataVersion 5023 on the user's 26.3 Fabric test, 2026-10-29) writes block
+  palettes differently: a plain string per block, `{id, properties}` for one with
+  properties, and in a list mixing the two each string wrapped as `{"": name}` (how NBT
+  lists mix tag types now). Read only as `{Name}`, every block was air and the whole map
+  said "Nothing to draw: no blocks"; BlueMap (its own reader) was fine. Its overworld is in
+  `world/dimensions/minecraft/overworld/`.
 - Chunks nobody loaded since an update keep old block names (1.21.11 irithyll still has
   `minecraft:grass`): `RENAMED` in chunkmap.ts. Vanilla 1.12 variants (granite = stone 1)
   come from the item table, not the blockstate's key order (`blockLook`).

@@ -67,6 +67,32 @@ describe('chunk map: top blocks', () => {
 		expect(tops[2]).toEqual({ key: 'minecraft:stone', y: 3, depth: 0 });
 	});
 
+	// A 26.3 world showed "Nothing to draw: no blocks" everywhere: every entry read as air.
+	it('reads Minecraft 26 palettes: plain names, {id, properties}, and names wrapped as {""} in a mixed list', () => {
+		const entry = (name: string, i: number): Tag =>
+			name === 'minecraft:grass_block'
+				? compound([['id', string(name)], ['properties', compound([['snowy', string('false')]])]])
+				: i % 2
+					? compound([['', string(name)]])
+					: string(name);
+		const mixed: Tag = { type: 'list', itemType: 'compound', value: palette.map((name, i) => entry(name, i)) };
+		const root = compound([
+			['DataVersion', int(5023)],
+			['sections', list([
+				compound([['Y', byte(-1)], ['block_states', compound([['palette', list([string('minecraft:deepslate')])]])]]),
+				compound([['Y', byte(0)], ['block_states', compound([['palette', mixed], ['data', { type: 'longArray', value: pack(indices(layout), 5, false) }]])]]),
+				compound([['Y', byte(1)], ['block_states', compound([['palette', list([string('minecraft:air')])]])]])
+			])]
+		]);
+		const tops = chunkTops(root, null)!;
+		expect(tops[0]).toEqual({ key: 'minecraft:water', y: 6, depth: 1 });
+		expect(tops[1]).toEqual({ key: 'minecraft:grass_block', y: 4, depth: 0 });
+		expect(tops[2]).toEqual({ key: 'minecraft:stone', y: 3, depth: 0 });
+		// Below the drawn ones: a section of plain names alone.
+		const deep = compound([['DataVersion', int(5023)], ['sections', list([compound([['Y', byte(-1)], ['block_states', compound([['palette', list([string('minecraft:deepslate')])]])]])])]]);
+		expect(chunkTops(deep, null)![0]).toEqual({ key: 'minecraft:deepslate', y: -1, depth: 0 });
+	});
+
 	it('reads 1.13-1.15 sections, whose indices span longs', () => {
 		const root = compound([
 			['DataVersion', int(1976)],

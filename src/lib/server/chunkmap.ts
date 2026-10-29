@@ -198,8 +198,14 @@ function unpack(longs: bigint[], bits: number, spanning: boolean): Uint16Array {
 /** One section's blocks as keys by index (y*256 + z*16 + x), decoded only when a column needs it. */
 type Section = { y: number; block: (i: number) => string };
 
+/**
+ * A palette entry's block. Up to 1.21: {Name, Properties}. Minecraft 26: a plain
+ * string, {id, properties} for a block with properties, and in a list that mixes
+ * the two each string wrapped as {"": string} (how NBT lists mix types now).
+ */
 function propsKey(state: Tag): string {
-	return str(child(state, 'Name')) ?? 'minecraft:air';
+	if (state.type === 'string') return state.value;
+	return str(child(state, 'Name')) ?? str(child(state, 'id')) ?? str(child(state, '')) ?? 'minecraft:air';
 }
 
 function modernSection(sec: Tag, spanning: boolean): Section | null {
