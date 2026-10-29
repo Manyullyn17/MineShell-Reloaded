@@ -190,35 +190,49 @@
 					</div>
 				</div>
 				{@render checkProgress()}
-				<ul class="update-list">
-					{#each updateCheck.updates as u (u.fileName)}
-						<li>
-							<label class="update">
-								<input
-									type="checkbox"
-									name="change"
-									value={`${u.fileName}\n${u.targetVersionId}`}
-									bind:checked={chosenUpdates[u.fileName]}
-								/>
-								<span class="update-name">
-									<span>
-										{u.name}
-										{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
-									</span>
-									{#if u.note}<span class="muted small">{u.note}</span>{/if}
-									{#if !u.enabled}
-										<span class="faint small">
-											{u.disabledReason ? `Disabled, ${u.disabledReason}.` : 'Disabled.'} Not updated unless ticked, and stays disabled.
-										</span>
-									{/if}
-								</span>
-								<span class="mono small versions">
-									{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span>
-								</span>
-							</label>
-						</li>
-					{/each}
-				</ul>
+				<div class="table-box updates-box">
+					<table class="updates">
+						<thead>
+							<tr>
+								<th class="tick-col"><span class="visually-hidden">Update</span></th>
+								<th>Mod</th>
+								<th class="nowrap">Installed</th>
+								<th class="nowrap">Update to</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each updateCheck.updates as u, i (u.fileName)}
+								<tr>
+									<td class="tick-col">
+										<input
+											id="update-{i}"
+											type="checkbox"
+											name="change"
+											value={`${u.fileName}\n${u.targetVersionId}`}
+											bind:checked={chosenUpdates[u.fileName]}
+										/>
+									</td>
+									<td class="mod-cell">
+										<div class="mod-info">
+											<label for="update-{i}">
+												{u.name}
+												{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
+											</label>
+											{#if u.note}<span class="muted small">{u.note}</span>{/if}
+											{#if !u.enabled}
+												<span class="faint small">
+													{u.disabledReason ? `Disabled, ${u.disabledReason}.` : 'Disabled.'} Not updated unless ticked, and stays disabled.
+												</span>
+											{/if}
+										</div>
+									</td>
+									<td class="mono small version">{u.currentVersion ?? '?'}</td>
+									<td class="mono small version to">{u.targetVersion}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 				<DependencyList plan={updateCheck.dependencies} />
 				<SnapshotChoice prompt={snapshotPrompt} idPrefix="update-mods" />
 			</form>
@@ -250,42 +264,48 @@
 		margin: 0;
 	}
 
-	.update-list {
-		list-style: none;
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		background: var(--panel);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
+	.updates-box {
+		margin-bottom: var(--space-3);
 	}
 
-	.update-list li + li {
-		border-top: 1px solid var(--line);
+	.tick-col {
+		width: 1%;
+		padding-right: 0;
 	}
 
-	.update {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
+	.tick-col input {
 		margin: 0;
-		padding: 0.75rem var(--space-4);
+	}
+
+	.mod-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+	}
+
+	.mod-info label {
+		margin: 0;
 		color: var(--text);
-		font-size: 0.93rem;
 		cursor: pointer;
 	}
 
-	.update-name {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
+	/* Names and versions can be long single words: they break so the table fits, but
+	   not down to a letter a line (the Installed table's phone lesson); it scrolls instead. */
+	.mod-cell,
+	.version {
+		overflow-wrap: anywhere;
 	}
 
-	.versions {
+	.mod-cell {
+		min-width: 12rem;
+	}
+
+	.version {
+		min-width: 6rem;
 		color: var(--text-muted);
 	}
 
-	.versions .to {
+	.version.to {
 		color: var(--accent-hover);
 	}
 
