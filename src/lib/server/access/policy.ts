@@ -282,6 +282,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 		actions: {
 			save: on('files'),
 			upload: on('files'),
+			unpack: on('files'),
 			mkdir: on('files'),
 			rename: on('files'),
 			delete: on('files'),

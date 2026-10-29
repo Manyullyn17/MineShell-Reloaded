@@ -172,6 +172,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Every save in the editor keeps the version it replaced (the last 20 per file, up to 90 days), to load back and save again.
 - Search a server's configs and scripts for some text, or a folder of them, and open each matching line in the editor; file and folder names are matched too, mods and logs included.
 - Upload files and folders by dragging them into the file browser.
+- Unpack an uploaded zip where it lies or into a folder named after it (asking before replacing anything, which goes to the trash), and download any folder as a zip; a running server's world folder pauses saving while it downloads.
 - Recover deleted files from a per-server trash, with configurable automatic cleanup.
 - Open server directories in a file manager through SFTP links.
 - Inspect disk usage, including world-map data stored outside the server directory, and delete archived logs and crash reports after a chosen number of days.

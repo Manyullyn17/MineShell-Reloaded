@@ -1,13 +1,15 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getInstance } from '#lib/server/instances.js';
 import { attachment, fileStream, listDirectory, statFile } from '#lib/server/files.js';
+import { getInstance, InstanceError } from '#lib/server/instances.js';
+import { zipFolder } from '#lib/server/filezips.js';
 import { Readable } from 'node:stream';
 import path from 'node:path';
 
 /**
- * Streams a file out of an instance directory as a download; with `list`,
- * returns a folder's entries instead (Files expands folders in place).
+ * Streams a file out of an instance directory as a download, a folder as a
+ * zip made while it streams (filezips.ts); with `list`, returns a folder's
+ * entries instead (Files expands folders in place).
  */
 export const GET: RequestHandler = async ({ params, url, locals }) => {
 	if (!locals.authenticated) error(401, 'Not signed in.');
@@ -23,11 +25,16 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 	}
 
 	const relative = url.searchParams.get('path');
-	if (!relative) error(400, 'A path is required.');
+	if (relative === null) error(400, 'A path is required.');
 
 	try {
 		const stat = await statFile(instance.path, relative);
-		if (stat.isDirectory()) error(400, 'That is a folder.');
+		if (stat.isDirectory()) {
+			const { stream, fileName } = await zipFolder(instance, relative);
+			return new Response(Readable.toWeb(stream) as ReadableStream, {
+				headers: { 'Content-Type': 'application/zip', 'Content-Disposition': attachment(fileName) }
+			});
+		}
 
 		const stream = Readable.toWeb(
 			fileStream(instance.path, relative)
@@ -42,6 +49,7 @@ export const GET: RequestHandler = async ({ params, url, locals }) => {
 		});
 	} catch (err) {
 		if ((err as { status?: number }).status) throw err;
+		if (err instanceof InstanceError) error(409, err.message);
 		error(404, 'No such file.');
 	}
 };

@@ -163,8 +163,8 @@ in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
    mostly reading what MineShell already has: a calm first step after the freeze.
-2. **Files**: zips and folders (the better file editor, search in files and earlier versions
-   of edited files are built).
+2. **Files**: built (the better file editor, search in files, earlier versions of edited
+   files, zips and folders).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -214,15 +214,7 @@ again when Kit and svelte-check list 7 in their peer ranges.
 
 ### 2. Files
 
-#### Zips and folders in Files
-
-Agreed 2026-10-27 (found in a completeness check). Files uploads, edits, renames, deletes
-and restores from the trash, but cannot unpack an uploaded zip or download a folder as one.
-Unpack: into the zip's folder or a new one named after it, refusing paths that leave the
-server folder and asking before overwriting (what would be replaced goes to the trash, as
-deletes do). A folder downloads as a zip streamed while it is made (`zip.ts`); a world
-folder of a running server carries the same warning as other copies of a live world (World
-tab's download pauses saving). Possibly packing chosen files into a zip in place.
+All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
 
 ### 3. Mod configs
 
@@ -467,6 +459,8 @@ What the built entries in the archive left out, in one place:
   variants that exist only in code (Actually Additions crystals, Mekanism basic blocks),
   lang templates' filled-in text, banner patterns on banners and shields, player heads' own
   skins.
+- **Files**: packing chosen files into a zip in place; unpacking other archives (`.tar.gz`,
+  `.7z`); a diff between earlier versions of a file, and versions following a rename.
 - **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 8).
 - **Installer and updates**: installing Node for the user (the installer says how to get
   it), installing updates automatically; restoring a database backup from the page (by hand

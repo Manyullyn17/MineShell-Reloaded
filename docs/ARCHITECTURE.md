@@ -1328,6 +1328,20 @@ MineShell's own saves keep versions (user's call, 2026-10-29; outside changes ar
 Undecided). Left out of exports and copies (`cloneSkips`), named on the disk usage page. A
 renamed or deleted file's versions stay under its old path.
 
+**Zips in Files** (`filezips.ts`): a folder's Download (`/api/instances/[id]/files?path=`
+on a folder) is a zip streamed while yazl makes it, entries named from inside the folder; it
+leaves out what a server copy leaves out (`cloneSkips`: snapshots, trash, file history) and
+`session.lock`. A folder that holds the active world or is inside it pauses a running
+server's saving (`pauseSaving`, shared with the World tab's download) until the zip is done.
+A zip's "Unpack" (row ⋯ menu, the `unpack` action) goes where it lies or into a folder named
+after it, without nesting a folder of that name the zip already holds. The plan is made
+before anything is written (`planUnpack`): an entry leaving the folder (absolute, `..`, which
+yauzl refuses itself) refuses the whole zip, as do entries into the trash and one of the
+zip's own name beside it; Mac clutter (`__MACOSX/`, `.DS_Store`) is skipped. What is in the
+way (a file where the zip has anything, a folder where it has a file) is listed, and posted
+again with `replace` it goes to the trash first, one item each. The disk check is the
+world upload's: what it unpacks to must leave the snapshots' free space.
+
 **A server's Settings** is one page with nine tabs (server.properties and MineShell's own
 settings together) and one save bar. Each section is still its own form posting to the
 action that saves it (`general`, `properties`, `network`, `runtime`, `limits`, `restarts`,

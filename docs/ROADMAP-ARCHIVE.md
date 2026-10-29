@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Zips and folders in Files
+
+Built 2026-10-29 (Files; ARCHITECTURE, "Zips in Files"), on the `next` branch. Every folder's
+Download is a zip streamed while it is made; one holding the active world, or inside it,
+pauses a running server's saving as the World tab's download does. A zip's row menu unpacks
+it where it lies or into a folder named after it; a zip with an entry leaving that folder is
+refused whole, and what it would replace is listed first and goes to the trash once agreed.
+Tried on a throwaway dev server: a KubeJS scripts zip unpacked over an existing script (asked,
+replaced, the old one in the trash), and a folder downloaded as a zip. Not built: packing
+chosen files into a zip in place (the entry's "possibly"), unpacking other archive kinds
+(`.tar.gz`, `.7z`).
+
 ### Earlier versions of edited files
 
 Built 2026-10-29 (Files; ARCHITECTURE, "Earlier versions of edited files"), on the `next`

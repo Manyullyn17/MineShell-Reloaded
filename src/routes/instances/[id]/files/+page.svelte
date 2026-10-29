@@ -5,6 +5,7 @@
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { untrack } from 'svelte';
 	import Flash from '#lib/components/Flash.svelte';
+	import RowMenu from '#lib/components/RowMenu.svelte';
 	import CodeEditor from '#lib/components/CodeEditor.svelte';
 	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
 	import type { SubmitFunction } from '$app/forms';
@@ -126,6 +127,12 @@
 	// The trash opens over the folder you were in, so leaving it goes back there.
 	const trashHref = $derived(data.dir ? `${href(data.dir)}&trash` : `${base}?trash`);
 	const undoId = $derived(form && 'undo' in form && typeof form.undo === 'string' ? form.undo : null);
+	/** An unpack that would replace files: what, to post again once agreed. */
+	const unpackAsk = $derived(
+		form && 'unpack' in form && form.unpack ? (form.unpack as { path: string; into: string; conflicts: string[]; conflictCount: number }) : null
+	);
+
+	const isZip = (name: string) => /\.zip$/i.test(name) && name.length > 4;
 
 	/** The trash itself (or what holds it, or what is in it), or anything with the trash off: no undo. */
 	function deletesForGood(relPath: string) {
@@ -279,13 +286,24 @@
 			<td class="small nowrap faint">{formatRelative(entry.modified)}</td>
 			<td>
 				<div class="row-actions">
-					{#if !entry.isDirectory}
-						<a
-							class="button button-quiet"
-							href="/api/instances/{data.instance.id}/files?path={encodeURIComponent(entry.relPath)}"
-						>
-							Download
-						</a>
+					<a
+						class="button button-quiet"
+						href="/api/instances/{data.instance.id}/files?path={encodeURIComponent(entry.relPath)}"
+						title={entry.isDirectory ? 'As a zip, made while it downloads' : undefined}
+						download
+					>
+						Download
+					</a>
+					{#if !entry.isDirectory && isZip(entry.name)}
+						<RowMenu label="Unpack {entry.name}">
+							{#snippet children(close)}
+								<form method="POST" action="?/unpack" use:enhance>
+									<input type="hidden" name="path" value={entry.relPath} />
+									<button type="submit" role="menuitem" name="into" value="here" onclick={close}>Unpack here</button>
+									<button type="submit" role="menuitem" name="into" value="folder" onclick={close}>Unpack into {entry.name.slice(0, -4)}/</button>
+								</form>
+							{/snippet}
+						</RowMenu>
 					{/if}
 					<button
 						class="button-quiet"
@@ -314,14 +332,33 @@
 	{/each}
 {/snippet}
 
-<Flash {form} lasts={undoId ? 20000 : 6000}>
-	{#if undoId}
-		<form method="POST" action="?/restore" use:enhance>
-			<input type="hidden" name="id" value={undoId} />
-			<button class="button-quiet" type="submit">Undo</button>
+{#if unpackAsk}
+	<div class="notice warning unpack-ask">
+		<p>
+			<strong>{form?.message}</strong> Unpacked anyway, {unpackAsk.conflictCount === 1 ? 'it goes' : 'they go'} to the trash first, to restore from there.
+		</p>
+		<ul class="mono small">
+			{#each unpackAsk.conflicts as conflict (conflict)}<li>{conflict}</li>{/each}
+			{#if unpackAsk.conflictCount > unpackAsk.conflicts.length}<li class="faint">and {unpackAsk.conflictCount - unpackAsk.conflicts.length} more</li>{/if}
+		</ul>
+		<form method="POST" action="?/unpack" use:enhance class="actions">
+			<input type="hidden" name="path" value={unpackAsk.path} />
+			<input type="hidden" name="into" value={unpackAsk.into} />
+			<input type="hidden" name="replace" value="1" />
+			<button class="button-primary" type="submit">Replace {unpackAsk.conflictCount === 1 ? 'it' : 'them'}</button>
+			<a class="button button-quiet" href={href(data.dir)}>Cancel</a>
 		</form>
-	{/if}
-</Flash>
+	</div>
+{:else}
+	<Flash {form} lasts={undoId ? 20000 : 6000}>
+		{#if undoId}
+			<form method="POST" action="?/restore" use:enhance>
+				<input type="hidden" name="id" value={undoId} />
+				<button class="button-quiet" type="submit">Undo</button>
+			</form>
+		{/if}
+	</Flash>
+{/if}
 
 {#if data.listError}
 	<div class="notice error"><p>{data.listError}</p></div>
@@ -947,6 +984,7 @@
 		gap: var(--space-1);
 		justify-content: flex-end;
 		flex-wrap: wrap;
+		align-items: center;
 	}
 
 	.row-actions button,
@@ -957,6 +995,18 @@
 
 	.loaded-version {
 		margin-top: var(--space-3);
+	}
+
+	.unpack-ask ul {
+		margin: var(--space-2) 0;
+		padding-left: 1.2rem;
+		overflow-wrap: anywhere;
+	}
+
+	.unpack-ask .actions {
+		display: flex;
+		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 
 	.versions {

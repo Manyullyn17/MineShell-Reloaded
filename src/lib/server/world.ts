@@ -1255,6 +1255,31 @@ export async function zipWorlds(dir: string, worlds: string[]): Promise<Readable
 	return zip.outputStream as Readable;
 }
 
+/**
+ * Tells a running server to stop writing its world (save-off, save-all flush)
+ * while something copies it; the function returned turns saving back on, once
+ * however often it is called. Throws when RCON cannot pause it: `what` is what
+ * the refusal asks to stop the server to download.
+ */
+export async function pauseSaving(instance: ServerInstance, what: string): Promise<() => void> {
+	const password = rconPassword(instance);
+	if (!password) throw new InstanceError(`RCON is not set up for this server; stop it to download ${what}.`);
+	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
+	try {
+		await rcon(['save-off', 'save-all flush']);
+	} catch {
+		throw new InstanceError(`The server did not answer over RCON, so saving could not be paused. Stop it to download ${what}.`);
+	}
+	let resumed = false;
+	return () => {
+		if (resumed) return;
+		resumed = true;
+		void rcon(['save-on']).catch(() => {
+			setStatus(instance.id, 'ready', 'Saving was paused for a download and could not be turned back on. Run "save-on" in the console.');
+		});
+	};
+}
+
 export type WorldDownload = { stream: Readable; fileName: string };
 
 /**
@@ -1284,22 +1309,7 @@ export async function downloadWorld(instance: ServerInstance, snapshotId: string
 	const { running } = await summarise(instance);
 	if (!running) return { stream: await zipWorlds(instance.path, worlds), fileName };
 
-	const password = rconPassword(instance);
-	if (!password) throw new InstanceError('RCON is not set up for this server; stop it to download the world.');
-	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
-	try {
-		await rcon(['save-off', 'save-all flush']);
-	} catch {
-		throw new InstanceError('The server did not answer over RCON, so saving could not be paused. Stop it to download the world.');
-	}
-	let resumed = false;
-	const resume = () => {
-		if (resumed) return;
-		resumed = true;
-		void rcon(['save-on']).catch(() => {
-			setStatus(instance.id, 'ready', 'Saving was paused for a world download and could not be turned back on. Run "save-on" in the console.');
-		});
-	};
+	const resume = await pauseSaving(instance, 'the world');
 	try {
 		const stream = await zipWorlds(instance.path, worlds);
 		stream.once('close', resume);

@@ -20,6 +20,7 @@ import { sftpAccess } from '#lib/server/sftp.js';
 import { deleteToTrash, emptyTrash, listTrash, purgeTrashItem, restoreFromTrash, trashDays } from '#lib/server/trash.js';
 import { searchFiles } from '#lib/server/filesearch.js';
 import { keepVersion, listVersions, type FileVersion } from '#lib/server/filehistory.js';
+import { CONFLICTS_SHOWN, UnpackConflict, unpackZip, type UnpackInto } from '#lib/server/filezips.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
@@ -136,6 +137,35 @@ export const actions: Actions = {
 			return { ok: true, message: `Uploaded ${files.length} file${files.length === 1 ? '' : 's'}.` };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Upload failed.' });
+		}
+	},
+
+	/**
+	 * Unpacks a zip where it lies or into a folder named after it. What it
+	 * would replace is listed first; posted again with `replace`, that goes
+	 * to the trash.
+	 */
+	unpack: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const file = String(form.get('path') ?? '');
+		const into: UnpackInto = form.get('into') === 'folder' ? 'folder' : 'here';
+		try {
+			const done = await unpackZip(instance, file, into, { replace: form.get('replace') === '1' });
+			forgetDiskBreakdown(instance.path);
+			const where = done.target ? `${done.target}/` : 'the server folder';
+			const replaced = done.replaced ? ` What it replaced (${done.replaced}) is in the trash.` : '';
+			return { ok: true, message: `Unpacked ${done.files} file${done.files === 1 ? '' : 's'} into ${where}.${replaced}` };
+		} catch (err) {
+			if (err instanceof UnpackConflict) {
+				const { conflicts, target } = err.plan;
+				return fail(409, {
+					ok: false,
+					message: err.message,
+					unpack: { path: file, into, target, conflicts: conflicts.slice(0, CONFLICTS_SHOWN), conflictCount: conflicts.length }
+				});
+			}
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not unpack it.' });
 		}
 	},
 
