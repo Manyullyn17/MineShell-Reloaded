@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { THEMES, THEME_STORAGE_KEY } from '#lib/shared/themes.js';
 	import { describeState } from '#lib/shared/format.js';
+	import { isUnder } from '#lib/shared/links.js';
 	import NotificationCenter from '#lib/components/NotificationCenter.svelte';
 	import LogoMark from '#lib/components/LogoMark.svelte';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
@@ -96,7 +97,7 @@
 							<li>
 								<a
 									class="rail-instance"
-									class:current={page.url.pathname.startsWith(`/instances/${instance.id}`)}
+									class:current={isUnder(page.url.pathname, `/instances/${instance.id}`)}
 									data-tone={state.tone}
 									href="/instances/{instance.id}"
 									onclick={() => (railOpen = false)}
@@ -138,7 +139,7 @@
 				{#if data.access.globalAdmin}
 					<a
 						class="rail-link"
-						class:current={page.url.pathname.startsWith('/settings')}
+						class:current={isUnder(page.url.pathname, '/settings')}
 						href="/settings"
 						onclick={() => (railOpen = false)}
 					>
