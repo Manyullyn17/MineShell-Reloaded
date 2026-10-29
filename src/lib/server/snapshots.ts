@@ -72,6 +72,12 @@ export type Snapshot = {
 	 * whole world: restoring it puts back just them.
 	 */
 	partial?: boolean;
+	/**
+	 * Partial ones: files the change after it created, where there were none
+	 * (a chunk restore's region file for chunks the world did not have).
+	 * Restoring it removes them, so it undoes the change whole.
+	 */
+	created?: string[];
 	sizeBytes: number;
 	/** What the world was last run on, to warn before restoring it onto something else. */
 	minecraftVersion: string;
@@ -641,7 +647,8 @@ function manifestFor(
 	worlds: string[],
 	world: string,
 	sizeBytes: number,
-	partial: boolean
+	partial: boolean,
+	created: string[] = []
 ): Snapshot {
 	return {
 		id,
@@ -651,6 +658,7 @@ function manifestFor(
 		worlds,
 		world,
 		...(partial ? { partial: true } : {}),
+		...(partial && created.length ? { created } : {}),
 		sizeBytes,
 		minecraftVersion: instance.minecraftVersion,
 		modloader: instance.modloader,
@@ -679,11 +687,11 @@ export async function finishSnapshot(
 	id: string,
 	input: SnapshotInput,
 	worlds: string[],
-	opts: { partial?: boolean } = {}
+	opts: { partial?: boolean; created?: string[] } = {}
 ): Promise<Snapshot> {
 	const partial = partialPath(instance.path, id);
 	const world = await serverWorldName(instance.path);
-	const manifest = manifestFor(instance, id, input, worlds, world, await directorySize(partial), opts.partial ?? false);
+	const manifest = manifestFor(instance, id, input, worlds, world, await directorySize(partial), opts.partial ?? false, opts.created);
 	await fs.writeFile(path.join(partial, MANIFEST), JSON.stringify(manifest, null, 2), 'utf8');
 	await fs.rename(partial, snapshotPath(instance.path, id));
 	bus.publish('snapshot:finished', { instanceId: instance.id, snapshotId: id });

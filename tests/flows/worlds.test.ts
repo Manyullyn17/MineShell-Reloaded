@@ -19,6 +19,7 @@ const { listTrash } = await import('#lib/server/trash.js');
 const { listOperations } = await import('#lib/server/operations.js');
 const { writeNbt } = await import('#lib/server/nbt.js');
 const { packTopLevel } = await import('#lib/server/packchange.js');
+const { savedTasks } = await import('#lib/server/chunky.js');
 const { createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { restartMineShell, runAndDieAtMove } = await import('../helpers/crash');
 const { zipBuffer } = await import('../helpers/fs');
@@ -195,6 +196,63 @@ describe('several worlds per server', () => {
 			expect(await fs.readFile(path.join(webRoot(instance.id), 'index.html'), 'utf8')).toBe('map of world');
 			expect(await fs.readFile(path.join(keptMapDir(instance.id, 'other'), 'web', 'index.html'), 'utf8')).toBe('map of other');
 			expect(listOperations()).toEqual([]);
+		}
+	});
+
+	it("keeps each world's Chunky tasks, which Chunky keys by dimension, not world", async () => {
+		const task = 'world=minecraft\\:overworld\ncancelled=false\nshape=square\ncenter-x=0\ncenter-z=0\nradius=500\nchunks=12\ntime=1000\n';
+		const instance = await server({ ...FILES, 'config/chunky/config.json': '{"continueOnRestart":true}', 'config/chunky/tasks/minecraft/overworld.properties': task });
+		await createWorld(instance, { name: 'Next', seed: null, copyDatapacks: false, keepMap: true });
+		// The new world does not get the old one's unfinished task, to show or to continue.
+		expect(await savedTasks(instance.path)).toEqual([]);
+		await switchWorld(reload(instance.id), 'world', { keepMap: true });
+		expect(await savedTasks(instance.path)).toMatchObject([{ world: 'minecraft:overworld', radius: 500, cancelled: false }]);
+		await deleteWorld(reload(instance.id), 'next', { snapshots: false });
+		expect(Object.keys(await tree(instance.path)).filter((f) => f.includes('chunky-tasks'))).toEqual([]);
+	});
+
+	it('keeps Chunky 1.2 tasks per world too, in its one config file', async () => {
+		const config = { continueOnRestart: true, language: 'en', tasks: { 'minecraft:overworld': { cancelled: false, radius: 300, centerX: 0, centerZ: 0, shape: 'square', count: 5, time: 1 } } };
+		const instance = await server({ ...FILES, 'config/chunky.json': JSON.stringify(config) });
+		await createWorld(instance, { name: 'Next', seed: null, copyDatapacks: false, keepMap: true });
+		const read = async () => JSON.parse(await fs.readFile(path.join(instance.path, 'config/chunky.json'), 'utf8'));
+		expect(await read()).toEqual({ ...config, tasks: {} });
+		await switchWorld(reload(instance.id), 'world', { keepMap: true });
+		expect(await read()).toEqual(config);
+	});
+
+	it("puts Chunky's tasks back wherever MineShell stopped during a switch", async () => {
+		const task = 'world=minecraft\\:overworld\ncancelled=false\nradius=500\n';
+		const other = 'world=minecraft\\:overworld\ncancelled=false\nradius=64\n';
+		for (let n = 1; ; n++) {
+			const instance = await server({ ...FILES, 'config/chunky/tasks/minecraft/overworld.properties': task, 'other/level.dat': levelDat('1.21.1') });
+			// The other world's tasks, kept from when it was left.
+			await fs.mkdir(path.join(instance.path, '.mineshell/chunky-tasks/other/tasks/minecraft'), { recursive: true });
+			await fs.writeFile(path.join(instance.path, '.mineshell/chunky-tasks/other/tasks/minecraft/overworld.properties'), other);
+			// The tasks are copied (small files): it stops at the n-th copy, until there are none left.
+			const realCp = fs.cp.bind(fs);
+			let copies = 0;
+			const cp = vi.spyOn(fs, 'cp').mockImplementation(async (...args: Parameters<typeof fs.cp>) => {
+				if (++copies === n) return new Promise<void>(() => {});
+				return realCp(...args);
+			});
+			const outcome = await Promise.race([
+				switchWorld(reload(instance.id), 'other', { keepMap: true }).then(() => 'finished' as const),
+				new Promise<'died'>((resolve) => setTimeout(() => resolve('died'), 100))
+			]);
+			cp.mockRestore();
+			if (outcome === 'finished') {
+				expect(await savedTasks(instance.path)).toMatchObject([{ radius: 64 }]);
+				break;
+			}
+			await restartMineShell();
+			expect(listOperations()).toEqual([]);
+			expect((await props(instance.path))['level-name']).toBe('world');
+			expect(await savedTasks(instance.path)).toMatchObject([{ radius: 500 }]);
+			// And the other world's are still kept for it.
+			await switchWorld(reload(instance.id), 'other', { keepMap: true });
+			expect(await savedTasks(instance.path)).toMatchObject([{ radius: 64 }]);
+			vi.restoreAllMocks();
 		}
 	});
 

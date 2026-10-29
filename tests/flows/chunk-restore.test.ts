@@ -56,6 +56,22 @@ describe('restoring chunks from a snapshot', () => {
 			expect(await readRegion(path.join(world, folder, 'r.0.0.mca'))).toEqual({ 0: 9, 1: 9, 2: 9, 3: 9 });
 		}
 		expect(await readRegion(path.join(world, 'region', 'r.-1.0.mca'))).toEqual({ 31: 9 });
+		// And what the restore created, the snapshot's chunk 2 in its own file, is gone again.
+		expect(before.created?.sort()).toEqual(['world/entities/c.2.0.mcc', 'world/poi/c.2.0.mcc', 'world/region/c.2.0.mcc']);
+		for (const folder of ['region', 'entities', 'poi']) expect(await fs.readdir(path.join(world, folder))).not.toContain('c.2.0.mcc');
+	});
+
+	it('undoes a restore of chunks the world never had, which only created files', async () => {
+		const { instance, world, snapshot } = await serverWithSnapshot();
+		// The world loses a region the snapshot still has; restoring a chunk of it creates the file.
+		await fs.rm(path.join(world, 'DIM-1', 'region', 'r.0.0.mca'));
+		expect((await waitForTask(await restoreChunks(instance, snapshot.id, 'world/DIM-1', [[0, 0]], { snapshot: true }))).state).toBe('done');
+		expect(await readRegion(path.join(world, 'DIM-1', 'region', 'r.0.0.mca'))).toEqual({ 0: 2 });
+
+		const before = (await listSnapshots(instance.path)).find((s) => s.reason === 'world-restore-chunks')!;
+		expect(before).toMatchObject({ partial: true, worlds: [], created: ['world/DIM-1/region/r.0.0.mca'] });
+		expect((await waitForTask(await restoreSnapshot(instance, before.id, { snapshot: false }))).state).toBe('done');
+		expect(await fs.readdir(path.join(world, 'DIM-1', 'region'))).toEqual([]);
 	});
 
 	it('moves a chosen chunk kept in its own file aside, and leaves the others', async () => {

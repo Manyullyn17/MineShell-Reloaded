@@ -22,7 +22,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   default is 512 KB, which also broke jar/pack uploads); dev has no limit.
 - Several worlds (built 2026-10-15, user's calls in ROADMAP-ARCHIVE): the active world is
   `level-name`; switching moves no world, only BlueMap's `web/` (swapped with the arriving
-  world's kept one) and properties. Snapshots carry `world` and restore only onto it
+  world's kept one), Chunky's saved tasks (since 2026-10-29: keyed by dimension, so the next
+  world showed the last one's unfinished task and, with continueOnRestart, went on generating
+  it) and properties. Snapshots carry `world` and restore only onto it
   (manifests before 0.17.3 are judged by folders). `worlds.ts` must stay free of heavy
   imports: packchange.ts uses it, and instances.ts -> packchange -> worlds -> instances
   would be a cycle. Per-world records: `.mineshell/worlds.json` (copied with clones).

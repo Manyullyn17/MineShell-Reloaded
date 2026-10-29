@@ -721,9 +721,9 @@ Like a modpack, a mod MineShell can download again is listed instead of carried:
 Modrinth knows by its sha512 (one `version_files` call), or one whose row is a CurseForge
 project and file id (resolved to a URL on import by `downloadPackFiles`, as pack files are).
 Everything else is carried: unknown jars, configs, worlds and the rest. The loader is not:
-the import installs the same version, so `isLoaderInstallEntry` entries stay out, and so do
-`.fabric-cache/`, `versions/` and `.cache/quilt_loader/` (the vanilla jar Fabric's install caches,
-what the vanilla server unpacks on first start, and Quilt's remapped game jars), `eula.txt`, `session.lock` and what a clone skips. Worlds are
+the import installs the same version, so `isLoaderInstallEntry` entries stay out (with the
+vanilla jar Fabric's install caches, `.fabric-cache/`, and what the vanilla server unpacks on
+first start, `versions/`), and so do Quilt's remapped game jars (`.cache/quilt_loader/`), `eula.txt`, `session.lock` and what a clone skips. Worlds are
 in by default; snapshots, logs, a map mod's tiles and a backup mod's own backups (`backups/`,
 `simplebackups/`: AromaBackup's zips were 21 GB on a 7 GB world) only when ticked (`bundleCategory`). A
 running server's saving is paused (save-off, flush) while the zip is written and turned back on
@@ -809,8 +809,9 @@ idle skip and a slot skipped for another operation are not failures.
 
 **Low disk space** (`diskspace.ts`, every scheduler tick): servers grouped by the disk they are
 on (`stat().dev`); a disk below its line - the largest "keep free on the disk" of its servers,
-where their snapshots stop, or 2 GB when all have it off - is notified once (kind `disk`),
-under the first of its servers whose destinations take it, naming the others; again only
+where their snapshots stop, or 2 GB when all have it off - is notified once (kind `disk`)
+to each destination any of its servers sends disk warnings to, under the first server
+using it, naming the others (`notify`'s `only`); again only
 after it was 10% above the line. Kept in memory, so a restart while low says it once more.
 
 **Backup copies** (`backups.ts`): snapshots copied to a backup folder off the server's disk.
@@ -868,8 +869,10 @@ timestamp, never decoded), in `region/`, `entities/` and `poi/` alike; a chosen 
 snapshot lacks goes and generates again; `.mcc` files of oversized chunks move with them.
 It is a world change whose `moving`/`placing` are those files, planned from the headers
 while the server is stopped. The replaced files are always kept as a partial snapshot (a
-rename, a few MB; no question asked), which restores them. A region file the restore created
-(the live world had none) is not in that snapshot, so restoring it leaves that file.
+rename, a few MB; no question asked), which restores them. Files the restore created (a
+region or `.mcc` the live world had none of) are named in its manifest as `created`, and
+restoring a partial snapshot moves those aside too, so it undoes the restore whole; a
+restore that only creates files still gets one (`worlds` empty).
 
 **The chunk map** (`chunkmap.ts`, `ChunkMap.svelte`, `lib/shared/chunkmap.ts`) is drawn in
 the browser from two endpoints: the overview (every region header's chunk list, cheap for
@@ -963,8 +966,11 @@ and generator settings, `pack_datapacks`, what the server ran, its map's render 
 writes the arriving world's back with `level-name` (an inactive world's size is measured
 then, or when first listed, and kept until it is active again), and swaps BlueMap's `web/` with the
 arriving world's kept one (`$DATA/maps/<id>/worlds/<folder>/web`) - the leaving map is kept
-there or deleted. A crash puts the map and the properties back (`restoreWorldSwitch`, from
-which moves are on disk). A world last saved by a newer Minecraft (level.dat's
+there or deleted. Chunky's saved tasks are keyed by dimension, not world, so they swap too:
+the leaving world's are copied to `.mineshell/chunky-tasks/<folder>/` (1.3's `tasks/`, 1.2's
+`tasks` from `config/chunky.json`), the arriving world's copied in, and its kept copy removed
+once the switch has committed. A crash puts the map, Chunky's tasks (from a complete kept
+copy) and the properties back (`restoreWorldSwitch`, from which moves are on disk). A world last saved by a newer Minecraft (level.dat's
 `Data.Version.Name`, else the recorded run) needs `force`. New worlds come empty (generated
 on the next start, the active world's data packs copied in unless unticked), from a full
 snapshot, or from an uploaded zip (the world PUT with `?newWorld=`, unpacked beside the

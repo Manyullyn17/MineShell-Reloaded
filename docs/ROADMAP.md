@@ -443,8 +443,6 @@ What the built entries in the archive left out, in one place:
   release candidate can be that last 0.x, so going back lands on a tested release.
 - **MineShell's database copies**: restoring one from the page (DEPLOYMENT has the steps), and
   copying them to a backup folder along with the snapshots.
-- **Disk running low**: a server with only its own notification destination hears of a shared
-  disk only when the message goes under it.
 - **Pack change preview**: a warning when the new version drops the mod that loads a folder
   of the user's data packs (Paxi, OpenLoader): the files come back but nothing loads them,
   and a world-generation one going away can stop the world loading.
@@ -466,10 +464,7 @@ What the built entries in the archive left out, in one place:
   it), installing updates automatically; restoring a database backup from the page (by hand
   in DEPLOYMENT, "Upgrading": servers made since would be missing from it).
 - **Server export and import**: data packs, resource packs and other files from Modrinth are
-  carried, not linked (only mods/ jars are); `isLoaderInstallEntry` does not count
-  `.fabric-cache/`, `versions/` or `.cache/quilt_loader/` either, so loader switches and pack changes
-  leave them (Quilt's gains a set of remapped jars with every change; the
-  export leaves them out by itself); not tried for real with a CurseForge pack or a world of
+  carried, not linked (only mods/ jars are); not tried for real with a CurseForge pack or a world of
   gigabytes.
 - **Client pack export**: a pack icon (none of the formats has a place both launchers read),
   CurseForge fingerprint lookups to link manually added jars in a CurseForge pack (needs the
@@ -485,8 +480,7 @@ What the built entries in the archive left out, in one place:
   NFS/SMB shares not tried (only folders on ext4).
 - **Restoring chunks**: a setting for other map controls (user's call, 2026-10-17: kept
   open; built is drag to pan, click to toggle, Shift/Ctrl-drag); a snapshot row's link to
-  the page with that snapshot picked; undoing a restore leaves a region file the restore
-  created (the live world had none there). Map colours: blocks a mod tints in code
+  the page with that snapshot picked. Map colours: blocks a mod tints in code
   (Forestry/ExtraTrees leaves, Tinkers' slime grass and molten metals) are grey or untinted, and so are ones
   whose model only the mod's code names (Chisel's variants); the overview is chunk
   presence only, not shaded by InhabitedTime as first planned.
@@ -505,9 +499,7 @@ What the built entries in the archive left out, in one place:
   once). The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
   analysis, terrain only for the regions looked at).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
-  (user's call: server settings for now, maybe later); Chunky's saved tasks
-  (`config/chunky/tasks/`, by dimension) are not swapped with the world, so an unfinished
-  pre-generation shows for the next world too; the BlueMap mod's live map was not checked
+  (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
   researched). Whether pre-generation (Chunky) keeps running while paused is unchecked.

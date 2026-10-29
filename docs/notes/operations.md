@@ -22,7 +22,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 ## Server export and import
 - `serverbundle.ts` (built 2026-10-19): one zip, `mineshell-export.json` + `files/`. Mods Modrinth
   knows by sha512 or with a CurseForge row are listed and downloaded again on import; the loader
-  is installed again. Besides `isLoaderInstallEntry`, `.fabric-cache/` (MineShell's Fabric install
+  is installed again. Besides the rest of `isLoaderInstallEntry`, `.fabric-cache/` (MineShell's Fabric install
   caches the vanilla jar there, 52 MB) and `versions/` (the vanilla bundler unpacks it on start)
   stay out: with them a small Fabric server's export was 69.7 MB, without 467 KB. So does
   `.cache/quilt_loader` (2026-10-25): Quilt's remapped game jars, a set per loader build and

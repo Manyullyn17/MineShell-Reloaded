@@ -18,6 +18,7 @@ import {
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
 import { patchProperties, readProperties } from './properties';
 import { rconExec } from './rcon';
+import { dropKeptChunkyTasks, swapChunkyTasks, unswapChunkyTasks } from './chunky';
 import { startTask, type TaskHandle } from './tasks';
 import { serverWorldName } from './packworld';
 import { deleteToTrash } from './trash';
@@ -142,8 +143,15 @@ async function runWorldChange(instance: ServerInstance, change: WorldChange): Pr
 				(p): p is string => p !== null
 			)
 		: await worldFolders(root);
+	// A change of some files can create others (a chunk restore's region file where the
+	// world had none): its snapshot names them, so restoring it takes them away again.
+	const created = change.moving
+		? (await Promise.all(change.placing.map(async (p) => (worlds.includes(p) || (await exists(path.join(root, p))) ? null : p)))).filter(
+				(p): p is string => p !== null
+			)
+		: [];
 	const now = Date.now();
-	const snapshotId = change.snapshot && worlds.length ? await newSnapshotId(root, `world-${change.action}`) : null;
+	const snapshotId = change.snapshot && (worlds.length || created.length) ? await newSnapshotId(root, `world-${change.action}`) : null;
 	const rel = (p: string) => path.relative(root, p);
 	let propertiesBefore: Record<string, string> | null = null;
 	if (change.properties) {
@@ -163,7 +171,7 @@ async function runWorldChange(instance: ServerInstance, change: WorldChange): Pr
 	begin(instance.id, journal);
 	setStatus(instance.id, 'provisioning', change.label);
 	const taskId = startTask({ label: `${change.label}: ${instance.name}`, instanceId: instance.id }, (task) =>
-		applyWorldChange(instance, change, journal, snapshotId, worlds, task).finally(() => change.afterwards?.())
+		applyWorldChange(instance, change, journal, snapshotId, worlds, created, task).finally(() => change.afterwards?.())
 	);
 	return taskId;
 }
@@ -174,6 +182,7 @@ async function applyWorldChange(
 	journal: WorldChangeJournal,
 	snapshotId: string | null,
 	worlds: string[],
+	created: string[],
 	task: TaskHandle
 ): Promise<void> {
 	const root = instance.path;
@@ -206,7 +215,7 @@ async function applyWorldChange(
 				snapshotId,
 				{ reason: `world-${change.action}`, label: `Before ${change.label.toLowerCase()}` },
 				worlds,
-				{ partial: !!change.moving }
+				{ partial: !!change.moving, created }
 			);
 			task.log(`${change.moving ? 'What was there' : 'The previous world'} is kept as snapshot ${snapshot.id}.`);
 		}
@@ -278,8 +287,9 @@ export async function restoreSnapshot(instance: ServerInstance, id: string, opts
 		action: 'restore',
 		label: snapshot.partial ? 'Restoring part of the world' : 'Restoring a world snapshot',
 		snapshot: opts.snapshot,
-		// A partial snapshot (one dimension) replaces just its folders.
-		moving: snapshot.partial ? snapshot.worlds : undefined,
+		// A partial snapshot (one dimension) replaces just its folders, and takes away
+		// what the change after it created.
+		moving: snapshot.partial ? [...snapshot.worlds, ...(snapshot.created ?? [])] : undefined,
 		placing: snapshot.worlds,
 		// Copied, not moved: the snapshot stays usable.
 		assemble: async (incoming, task) => {
@@ -752,16 +762,17 @@ export async function restoreWorldSwitch(instanceId: string, root: string, journ
 	} else if (await exists(web)) {
 		await putBack();
 	}
+	await unswapChunkyTasks(root, journal.from);
 	await patchProperties(root, journal.propertiesBefore);
 }
 
 /**
  * Makes `to` the active world: what the leaving world had is recorded for
  * when it comes back, the map's web app swaps with the arriving world's kept
- * one (the leaving one kept, or deleted without `keepMap`), and `level-name`
- * and the world's own settings are written. Journalled: nothing in the
- * server folder moves, so a failure only has the map and the properties to
- * put back.
+ * one (the leaving one kept, or deleted without `keepMap`), so do Chunky's
+ * saved tasks, and `level-name` and the world's own settings are written.
+ * Journalled: no world moves, so a failure only has the map, Chunky's tasks
+ * and the properties to put back.
  */
 async function activateWorld(
 	instance: ServerInstance,
@@ -776,6 +787,8 @@ async function activateWorld(
 	const hadMap = await exists(web);
 	// A leftover from before would read as this switch's move.
 	await fs.rm(keptWeb(instance.id, from), { recursive: true, force: true });
+	// Also a leftover; the active world's tasks are the ones in use.
+	await dropKeptChunkyTasks(root, from);
 	// Measured now, while nothing writes to it: it does not change until it is active again.
 	const leavingBytes = await worldBytes(root, from);
 	const journal: WorldSwitchJournal = {
@@ -820,6 +833,8 @@ async function activateWorld(
 			await fs.rename(web, aside);
 		}
 		if (await exists(keptWeb(instance.id, to))) await fs.rename(keptWeb(instance.id, to), web);
+		// Chunky's tasks are per dimension: each world keeps its own.
+		await swapChunkyTasks(root, from, to);
 		await patchProperties(root, setting);
 		await writeWorldMeta(root, meta);
 		commitOperation(instance.id, { packDatapacks: opts.packDatapacks });
@@ -833,6 +848,7 @@ async function activateWorld(
 		throw err;
 	}
 	if (journal.discard) await fs.rm(journal.discard, { recursive: true, force: true });
+	await dropKeptChunkyTasks(root, to);
 	await fs.rm(keptMapDir(instance.id, to), { recursive: true, force: true });
 	// Only when empty: the other worlds' kept maps are in it.
 	await fs.rmdir(path.dirname(keptMapDir(instance.id, to))).catch(() => undefined);
@@ -933,6 +949,7 @@ export async function deleteWorld(instance: ServerInstance, folder: string, opts
 	delete meta.worlds[folder];
 	await writeWorldMeta(root, meta);
 	await fs.rm(keptMapDir(instance.id, folder), { recursive: true, force: true });
+	await dropKeptChunkyTasks(root, folder);
 	let removed = 0;
 	if (opts.snapshots) {
 		const names = worlds.map((w) => w.folder);

@@ -809,6 +809,17 @@ export async function removeEntries(
 	}
 }
 
+/**
+ * After a loader or Minecraft change has committed: Quilt's remapped game jars
+ * (`.cache/quilt_loader`), a set per loader build and Minecraft version it ever
+ * ran, tens of MB each, rebuilt at start. Not a loader entry: `.cache` is a
+ * folder anything may use, and a rollback does not need them back.
+ */
+export async function dropLoaderCaches(root: string): Promise<void> {
+	await fs.rm(path.join(root, '.cache', 'quilt_loader'), { recursive: true, force: true });
+	await fs.rmdir(path.join(root, '.cache')).catch(() => undefined);
+}
+
 /** Entries in `dir` matching `test`, for working out what a rollback must leave alone. */
 export async function listEntries(dir: string, test: (name: string) => boolean): Promise<string[]> {
 	return (await fs.readdir(dir)).filter(test);
@@ -1047,11 +1058,14 @@ export async function revertToForge(instance: ServerInstance, opts: { snapshot?:
 /**
  * Root entries a loader install creates, for every loader MineShell installs:
  * the libraries tree, the loader/launcher/vanilla jars and modern Forge's run
- * scripts. Worlds, configs, mods and anything else are never matched.
+ * scripts, and what comes back by itself for the version installed: the vanilla
+ * jar Fabric's install caches (.fabric-cache) and what the vanilla server unpacks
+ * on its first start (versions/). Left in place, a loader or Minecraft change kept
+ * the old ones for good. Worlds, configs, mods and anything else are never matched.
  */
 export function isLoaderInstallEntry(name: string): boolean {
 	return (
-		['libraries', '.fabric', 'run.sh', 'run.bat', 'user_jvm_args.txt', 'cleanroom-server.json'].includes(name) ||
+		['libraries', '.fabric', '.fabric-cache', 'versions', 'run.sh', 'run.bat', 'user_jvm_args.txt', 'cleanroom-server.json'].includes(name) ||
 		/^(server|quilt-server-launch|fabric-server-launch|minecraft_server\..*|(forge|neoforge|cleanroom)-.*)\.jar$/.test(name) ||
 		// An installer's log lands in the server folder (and is left there if it fails).
 		/^(forge|neoforge|cleanroom)-.*-installer\.jar\.log$/.test(name)
@@ -1119,6 +1133,7 @@ export async function changeLoaderVersion(
 					launchArgs: result.launchArgs
 				});
 				await fs.rm(aside, { recursive: true, force: true });
+				await dropLoaderCaches(instance.path);
 				task.log(`Switched ${loader.label} ${from} -> ${result.loaderVersion ?? 'latest'}.`);
 			} catch (err) {
 				task.log(`Install failed; restoring ${loader.label} ${from}.`);
