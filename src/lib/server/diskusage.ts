@@ -5,6 +5,7 @@ import { dimensionIdLabel, dimensionLabel, isDimensionFolder, listDimensions } f
 import { dimensionNames, namedLabel } from './dimensionnames';
 import { directorySize } from './files';
 import { isLoaderInstallEntry } from './instances';
+import { isOperationLeftover } from './operations';
 import { serverWorldName } from './packworld';
 import { diskBytes, listSnapshots, snapshotFiles, SNAPSHOTS_DIR, worldFolders } from './snapshots';
 import { TRASH_DIR } from './trash';
@@ -148,9 +149,17 @@ export const BACKUP_MOD_FOLDERS: Record<string, string> = {
 	simplebackups: "Simple Backups' backups (simplebackups)"
 };
 
+/** Kept on purpose; only what isOperationLeftover names is offered for deleting. */
 const MINESHELL_LABELS: Record<string, string> = {
 	'forge-backup': 'Forge kept for undoing the Cleanroom migration',
-	'playerdata-backups': 'Player data backups from the player editor'
+	'playerdata-backups': 'Player data backups from the player editor',
+	'pack-base.zip': "The pack's own configs, for merging your edits into pack updates",
+	'config-merges': 'Config merge reports from pack changes',
+	'bisect-config': 'Configs kept while a mod bisect runs',
+	'chunky-tasks': "Chunky's pre-generation progress of the worlds not in use",
+	'worlds.json': "Details of the server's worlds",
+	'missing-downloads.json': 'Pack files that could not be downloaded',
+	'spark-uploads.json': 'Links of Spark profiles uploaded again'
 };
 
 const SUMMARY_TTL_MS = 60_000;
@@ -263,7 +272,9 @@ export async function diskBreakdown(instance: ServerInstance): Promise<DiskBreak
 					}
 				} else {
 					items.mineshell.push({
-						label: MINESHELL_LABELS[sub.name] ?? `Left over from an interrupted operation (${sub.name})`,
+						label:
+							MINESHELL_LABELS[sub.name] ??
+							(isOperationLeftover(sub.name) ? `Left over from an interrupted operation (${sub.name})` : sub.name),
 						path: rel,
 						bytes: await sizeOf(path.join(root, rel))
 					});

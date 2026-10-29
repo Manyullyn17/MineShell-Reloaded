@@ -21,7 +21,7 @@ import { mapDir } from './worldmap';
 import { restoreModUpdate } from './modupdates';
 import { restoreMigration } from './migrate';
 import { syncMods } from './mods';
-import { endOperation, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
+import { endOperation, isOperationLeftover, listOperations, PROCESS_TOKEN, type Journal, type RecordedOperation } from './operations';
 
 /**
  * Runs once when MineShell starts: puts back every operation that a previous
@@ -135,10 +135,7 @@ async function removeLeftovers(instance: ServerInstance): Promise<boolean> {
 	const internal = path.join(instance.path, '.mineshell');
 	let removed = false;
 	for (const name of await fs.readdir(internal).catch(() => [] as string[])) {
-		if (
-			/^(pack-change|loader-previous|world-previous|world-incoming|mod-update|migrate)-\d+$/.test(name) ||
-			/installer\.jar(\.log|\.part)?$/.test(name)
-		) {
+		if (isOperationLeftover(name)) {
 			await fs.rm(path.join(internal, name), { recursive: true, force: true });
 			removed = true;
 		}

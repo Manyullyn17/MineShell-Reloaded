@@ -32,7 +32,9 @@ async function server() {
 		'server.jar': bytes(300),
 		'config/a.cfg': bytes(20),
 		'.mineshell/forge-backup/forge.jar': bytes(70),
-		'.mineshell/pack-change-1791000000000/mods/old.jar': bytes(65)
+		'.mineshell/pack-change-1791000000000/mods/old.jar': bytes(65),
+		// Kept on purpose, not left over: the pack's configs for merging into pack updates.
+		'.mineshell/pack-base.zip': bytes(64)
 	};
 	const instance = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, files);
 	// Two months old: archived logs and crash reports past the cutoff.
@@ -101,13 +103,15 @@ describe('disk usage breakdown', () => {
 				['Snapshot: Before the boss fight', 'pinned'],
 				['Snapshot: Old one', undefined],
 				['Forge kept for undoing the Cleanroom migration', undefined],
-				['Left over from an interrupted operation (pack-change-1791000000000)', undefined]
+				['Left over from an interrupted operation (pack-change-1791000000000)', undefined],
+				["The pack's own configs, for merging your edits into pack updates", undefined]
 			])
 		);
 		const texts = usage.suggestions.map((s) => s.text);
 		expect(texts.some((t) => t.startsWith('1 unpinned world snapshot.'))).toBe(true);
 		expect(texts.some((t) => t.startsWith('Configs that pack changes moved aside (2 versions)'))).toBe(true);
 		expect(texts.some((t) => t.includes('pack-change-1791000000000 was left by an operation'))).toBe(true);
+		expect(texts.some((t) => t.includes('pack-base.zip'))).toBe(false);
 		expect(usage.suggestions.find((s) => s.action === 'deleteOldLogs')).toMatchObject({ bytes: 25 + 12 });
 	});
 
