@@ -62,3 +62,12 @@ export function sameOriginPath(next: string | null | undefined, origin: string):
 		return '/';
 	}
 }
+
+/**
+ * Whether `pathname` is the page at `base` or one below it. A bare
+ * startsWith also matched siblings sharing the prefix: a server's copy,
+ * `/instances/pack-copy`, lit up `/instances/pack` in the sidebar too.
+ */
+export function isUnder(pathname: string, base: string): boolean {
+	return pathname === base || pathname.startsWith(`${base}/`);
+}

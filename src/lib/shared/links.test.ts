@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fixLink, sameOriginPath, webLink } from './links';
+import { fixLink, isUnder, sameOriginPath, webLink } from './links';
 
 const base = 'https://www.curseforge.com/minecraft/modpacks/example';
 
@@ -68,5 +68,14 @@ describe('webLink', () => {
 		expect(webLink('data:text/html,<script>alert(1)</script>')).toBeNull();
 		expect(webLink('/relative/page')).toBeNull();
 		expect(webLink(null)).toBeNull();
+	});
+});
+
+describe('isUnder', () => {
+	it('matches the page and pages below it, not siblings sharing the prefix', () => {
+		expect(isUnder('/instances/pack', '/instances/pack')).toBe(true);
+		expect(isUnder('/instances/pack/settings', '/instances/pack')).toBe(true);
+		expect(isUnder('/instances/pack-copy', '/instances/pack')).toBe(false);
+		expect(isUnder('/instances/pack-copy/mods', '/instances/pack')).toBe(false);
 	});
 });
