@@ -254,6 +254,27 @@ export async function pickFugue(
 	return null;
 }
 
+/**
+ * What an installed Fugue updates to: the newest build that runs on the
+ * server's Cleanroom (pickFugue), if newer than `installed`. The newest Fugue
+ * alone follows the newest Cleanroom (0.25 needs 0.7.3), and offered to a
+ * 0.5.x server it left the server unable to boot.
+ */
+export async function fugueUpdate(
+	instance: Pick<ServerInstance, 'path' | 'modloaderVersion'>,
+	versions: ProjectVersion[],
+	installed: string | null
+): Promise<ProjectVersion | null> {
+	const cleanroom = instance.modloaderVersion;
+	if (!cleanroom) return null;
+	const best = await pickFugue(versions, cleanroom, await cleanroomHasGetUrl(instance.path, cleanroom));
+	return best && (!installed || compareVersions(best.versionNumber, installed) > 0) ? best : null;
+}
+
+export function isFugueJar(fileName: string): boolean {
+	return REQUIRED_MODS.find((m) => m.label === 'Fugue')!.file.test(fileName);
+}
+
 /** True for Fugue/Scalar Legacy jars, which MineShell manages for Cleanroom instances itself. */
 export function isCleanroomRequiredJar(fileName: string): boolean {
 	return REQUIRED_MODS.some((mod) => mod.file.test(fileName));

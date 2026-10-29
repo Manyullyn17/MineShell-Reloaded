@@ -34,6 +34,7 @@ import { clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
 import { snapshotStep } from './snapshots';
 import { indexMods } from './crashdiag';
+import { fugueUpdate, isFugueJar } from './cleanroom';
 import { installDatapackVersion, isDatapackVersion, listDatapacks } from './mods/datapacks';
 
 /**
@@ -209,7 +210,9 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 	await eachLimited(toList, async (row) => {
 		try {
 			const versions = await compatibleVersions(row.source, row.slug!, filter);
-			const target = pickUpdate(versions, row);
+			// Fugue builds are tied to Cleanroom versions: only one that runs on this one.
+			const target =
+				instance.modloader === 'cleanroom' && isFugueJar(row.fileName) ? await fugueUpdate(instance, versions, row.version) : pickUpdate(versions, row);
 			if (!target) {
 				result.upToDate++;
 				return;
