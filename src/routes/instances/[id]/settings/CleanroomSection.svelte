@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
 	import { CLEANROOM_GUIDE_URL } from '#lib/shared/cleanroom.js';
 	import SettingsSection from '#lib/components/SettingsSection.svelte';
 	import CleanroomOption from '#lib/components/CleanroomOption.svelte';
+	import Flash from '#lib/components/Flash.svelte';
 	import SnapshotChoice from '#lib/components/SnapshotChoice.svelte';
 	import JavaPrompt from '#lib/components/JavaPrompt.svelte';
 	import type { ActionData, PageData } from './$types';
@@ -22,6 +25,20 @@
 		form: ActionData;
 		editable: boolean;
 	} = $props();
+
+	/**
+	 * The fixes and the revert answer next to their buttons: the page's own
+	 * message sits above the tabs, out of sight this far down General.
+	 */
+	let notice: { ok?: boolean; message?: string } | null = $state(null);
+	const inPlace: SubmitFunction = () => {
+		notice = null;
+		return async ({ result }) => {
+			if (result.type === 'success' || result.type === 'failure') notice = (result.data as typeof notice) ?? null;
+			else if (result.type === 'error') notice = { ok: false, message: result.error?.message ?? 'Something went wrong.' };
+			await invalidateAll();
+		};
+	};
 </script>
 
 <SettingsSection tab="general" title="Cleanroom" {editable}>
@@ -97,15 +114,16 @@
 
 		{#if cr.onCleanroom}
 			<div class="button-row">
-				<form method="POST" action="?/cleanroomFixes" use:enhance>
+				<form method="POST" action="?/cleanroomFixes" use:enhance={inPlace}>
 					<button type="submit" disabled={cr.running}>Apply required fixes</button>
 				</form>
 				{#if cr.backupCreatedAt}
 					<form
 						method="POST"
 						action="?/revertForge"
-						use:enhance={({ cancel }) => {
-							if (!confirm('Put the Forge install back? Mods the migration disabled are re-enabled and Fugue/Scalar Legacy are removed.')) cancel();
+						use:enhance={(input) => {
+							if (!confirm('Put the Forge install back? Mods the migration disabled are re-enabled and Fugue/Scalar Legacy are removed.')) return input.cancel();
+							return inPlace(input);
 						}}
 					>
 						<SnapshotChoice prompt={snapshotPrompt} idPrefix="revert" />
@@ -113,6 +131,7 @@
 					</form>
 				{/if}
 			</div>
+			<Flash form={notice} />
 		{:else}
 			<form method="POST" action="?/migrateCleanroom" use:enhance>
 				<CleanroomOption {javaMajors} toggle={false} idPrefix="migrate-cleanroom" />
