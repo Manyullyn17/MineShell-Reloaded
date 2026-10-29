@@ -36,7 +36,23 @@ describe('cleanroomReport', () => {
 	it('does not flag forks that kept the original modid', async () => {
 		const r = await report({
 			'jei.jar': { 'mcmod.info': mcmodInfo('jei', 'Just Enough Items') },
-			'hei.jar': { 'mcmod.info': mcmodInfo('jei', 'Had Enough Items') }
+			'hei.jar': { 'mcmod.info': mcmodInfo('jei', 'Had Enough Items') },
+			// Names and modids as the forks' own jars declare them.
+			'RoughlyEnoughIDs-2.2.4.jar': { 'mcmod.info': mcmodInfo('jeid', 'RoughlyEnoughIDs') },
+			'QuantumThings-MC-1.12.2-1.0.8.jar': { 'mcmod.info': mcmodInfo('randomthings', 'Quantum Things') },
+			// Two entries: the fork and a stand-in under the old modid.
+			'Forgelin-Continuous-2.1.10.0.jar': {
+				'mcmod.info': JSON.stringify([
+					{ modid: 'forgelin_continuous', name: 'Forgelin-Continuous' },
+					{ modid: 'forgelin', name: "Shadowfacts' Forgelin (Dummy)" }
+				])
+			},
+			'OpenBlocksReopened-1.12.2-1.8.3.1.jar': {
+				'mcmod.info': JSON.stringify([
+					{ modid: 'openmods', name: 'OpenModsLib' },
+					{ modid: 'openblocks', name: 'OpenBlocks Reopened' }
+				])
+			}
 		});
 		expect(r.advise.map((a) => a.fileName)).toEqual(['jei.jar']);
 	});

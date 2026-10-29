@@ -97,16 +97,16 @@ const ADVISE_RULES: Rule[] = [
 	{ label: 'Clumps', reason: 'Outdated.', replacement: 'Fixeroo', modids: ['clumps'] },
 	{ label: 'Spark', reason: 'Better features elsewhere.', replacement: 'Flare', modids: ['spark'] },
 	{ label: 'Just Enough Items', reason: 'Outdated.', replacement: 'HadEnoughItems (HEI)', modids: ['jei'], unlessName: /had ?enough/i },
-	{ label: 'JustEnoughIDs / NotEnoughIDs', reason: 'Outdated.', replacement: 'RoughlyEnoughIDs (REID)', modids: ['jeid', 'neid'] },
+	{ label: 'JustEnoughIDs / NotEnoughIDs', reason: 'Outdated.', replacement: 'RoughlyEnoughIDs (REID)', modids: ['jeid', 'neid'], unlessName: /roughly ?enough ?ids/i },
 	{ label: 'The One Probe', reason: 'Unmaintained.', replacement: 'The One Probe Community Edition', modids: ['theoneprobe'], unlessName: /community/i },
 	{ label: 'Baubles', reason: 'Unmaintained.', replacement: 'BaublesEX or Bubbles', modids: ['baubles'], unlessName: /baublesex|bubbles/i },
-	{ label: "Shadowfacts' Forgelin", reason: 'Unmaintained.', replacement: 'Forgelin-Continuous', modids: ['forgelin'] },
+	{ label: "Shadowfacts' Forgelin", reason: 'Unmaintained.', replacement: 'Forgelin-Continuous', modids: ['forgelin'], unlessName: /forgelin-continuous/i },
 	{ label: 'AppleSkin', reason: 'Outdated.', replacement: 'LemonSkin', modids: ['appleskin'] },
 	{ label: 'Applied Energistics 2', reason: 'Outdated.', replacement: 'AE2 Unofficial Extended Life', file: /^appliedenergistics2-rv/i },
 	{ label: "Tinkers' Construct", reason: 'Outdated.', replacement: "Tinkers' Antique", file: /^tconstruct-1\.12/i },
-	{ label: 'OpenModsLib', reason: 'Merged.', replacement: 'OpenBlocks Reopened', modids: ['openmods'] },
-	{ label: 'GeckoLib 3', reason: 'Outdated; Cleanroom-only fork available.', replacement: 'SauriaLib', modids: ['geckolib3'] },
-	{ label: 'Random Things', reason: 'Outdated.', replacement: 'Quantum Things', modids: ['randomthings'] },
+	{ label: 'OpenModsLib', reason: 'Merged.', replacement: 'OpenBlocks Reopened', modids: ['openmods'], unlessName: /reopened/i },
+	{ label: 'GeckoLib 3', reason: 'Outdated; Cleanroom-only fork available.', replacement: 'SauriaLib', modids: ['geckolib3'], unlessName: /sauria/i },
+	{ label: 'Random Things', reason: 'Outdated.', replacement: 'Quantum Things', modids: ['randomthings'], unlessName: /quantum ?things/i },
 	{ label: "Oh The Biomes You'll Go", reason: 'MCreator-based with extensive bugs.', modids: ['biomesyougo'] }
 ];
 
