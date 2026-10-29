@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Pruning leftovers: faster analysis, kept analysis, saved areas
+
+Built 2026-10-29 (World > Prune chunks; ARCHITECTURE, "Pruning"), on the `next` branch, from
+the leftovers (user's pick). Chunks are unpacked on zlib's thread pool, eight at once (the
+analysis of MeatballCraft's 499 regions went from 18.6 s to 10.8 s; `tests/tools/analyse-bench.mjs`);
+the last analysis is kept on disk, so a restart does not mean analysing again; and the chunks
+protected on the map can be saved as a named area that every prune of the dimension skips.
+Tried on a throwaway dev server with a copy of ATM10's world: an area saved from a protected
+chunk and through the action, drawn in amber (the first colour, the theme's info blue, could
+not be told from the heatmap's light blue). Not built: editing an area's chunks (delete it and
+save it again), areas following a renamed world folder.
+
 ### Restoring MineShell's database from a copy
 
 Built 2026-10-29 (Settings > Updates, "Database copies"; ARCHITECTURE, "Updating itself"), on

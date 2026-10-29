@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { deletePruneArea, listPruneAreas, PruneAreaError, savePruneArea } from '#lib/server/pruneareas.js';
 import path from 'node:path';
 import { fail } from '@sveltejs/kit';
 import { requireAccess, requireGlobalAdmin } from '#lib/server/access.js';
@@ -94,6 +95,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		// Dimensions travel to the page as the first of their folders, which is how actions name them.
 		dimensions: (await withDimensionNames(instance, await listDimensions(instance.path))).map(dimensionOption),
 		pruneAnalysis: pruneAnalysisSummary(instance.id),
+		/** Named areas every prune of their dimension skips. */
+		pruneAreas: listPruneAreas(instance.id),
 		pruneAnalysing: analysingNow(instance.id),
 		// Copies of another server's snapshots there (one that is gone, made again) are for global admins.
 		backups: await backupView(instance, backupsOf(url, locals) ?? instance.id),
@@ -402,6 +405,24 @@ export const actions: Actions = {
 		} catch (err) {
 			return refused(err);
 		}
+	},
+
+	savePruneArea: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			const area = savePruneArea(instance.id, String(form.get('dimension') ?? ''), String(form.get('name') ?? ''), parseChunkList(String(form.get('chunks') ?? '')));
+			return { ok: true, message: `Saved ${area.name}: every prune of this dimension skips its ${area.chunks.length} chunk${area.chunks.length === 1 ? '' : 's'}.` };
+		} catch (err) {
+			if (err instanceof PruneAreaError) return fail(400, { ok: false, message: err.message });
+			return refused(err);
+		}
+	},
+
+	deletePruneArea: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		if (!deletePruneArea(instance.id, String((await request.formData()).get('id') ?? ''))) return fail(400, { ok: false, message: 'That area is gone already.' });
+		return { ok: true, message: 'Deleted the area; its chunks can be pruned again.' };
 	},
 
 	resetDimension: async ({ request, params }) => {

@@ -40,6 +40,7 @@ import { formatBytes } from '#lib/shared/format.js';
 import { findDimension, listDimensions, type Dimension } from './dimensions';
 import { withDimensionNames } from './dimensionnames';
 import { deleteAnalysis, loadAnalysis, saveAnalysis } from './pruneanalysisstore';
+import { areaChunks, deletePruneArea, listPruneAreas } from './pruneareas';
 import { analyseRegions, applyPrune, planPrune } from './chunkprune';
 import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
@@ -687,7 +688,8 @@ export async function pruneChunks(
 		throw new InstanceError(`Analyse ${dimension.label} again: the map this was picked on is no longer the latest.`);
 	}
 	const rule = await pruneOptions(instance.path, dimension, settings);
-	const { allowed, protectedCount } = analysedPrunable(analysis, rule, opts.protect);
+	// The dimension's named areas, whatever the page sent: they are skipped by every prune.
+	const { allowed, protectedCount } = analysedPrunable(analysis, rule, new Set([...opts.protect, ...areaChunks(instance.id, key)]));
 	if (!allowed.size) throw new InstanceError('No chunk would go: every one the threshold picks is protected.');
 	return runWorldChange(instance, {
 		action: 'prune',
@@ -975,6 +977,9 @@ export async function deleteWorld(instance: ServerInstance, folder: string, opts
 	await writeWorldMeta(root, meta);
 	await fs.rm(keptMapDir(instance.id, folder), { recursive: true, force: true });
 	await dropKeptChunkyTasks(root, folder);
+	for (const area of listPruneAreas(instance.id)) {
+		if (world.folders.some((f) => area.dimension.startsWith(`${f}/`))) deletePruneArea(instance.id, area.id);
+	}
 	let removed = 0;
 	if (opts.snapshots) {
 		const names = worlds.map((w) => w.folder);

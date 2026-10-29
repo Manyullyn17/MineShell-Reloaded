@@ -36,7 +36,8 @@
 		mayCancel,
 		running,
 		busy,
-		snapshotPrompt
+		snapshotPrompt,
+		areas = []
 	}: {
 		instanceId: string;
 		dimensions: { key: string; label: string; overworld: boolean }[];
@@ -49,7 +50,11 @@
 		running: boolean;
 		busy: boolean;
 		snapshotPrompt: ComponentProps<typeof SnapshotChoice>['prompt'];
+		/** Named areas every prune of their dimension skips (pruneareas.ts). */
+		areas?: { id: string; name: string; dimension: string; chunks: string[] }[];
 	} = $props();
+
+	let areaName = $state('');
 
 	const id = $derived(encodeURIComponent(instanceId));
 
@@ -111,7 +116,7 @@
 		fetch(`/api/instances/${id}/prune-analysis?dimension=${encodeURIComponent(wanted.dimension)}&at=${wanted.at}`)
 			.then(async (res) => {
 				if (stale) return;
-				if (res.status === 204) loadError = 'The analysis is gone (MineShell restarted, or the world was pruned): analyse again.';
+				if (res.status === 204) loadError = 'The analysis is gone (the world was pruned since): analyse again.';
 				else if (!res.ok) loadError = 'The analysis could not be read.';
 				else regions = decodeAnalysis(await res.arrayBuffer()).regions;
 			})
@@ -135,11 +140,16 @@
 		keep: isOverworld && current?.spawn && keepAroundSpawn > 0 ? { ...current.spawn, radius: keepAroundSpawn } : null
 	});
 
-	// Codes per chunk for the map's layer: 1-7 the heat steps, 8 would go, 9 unreadable.
+	/** This dimension's areas, by chunk: their chunks are never pruned. */
+	const dimensionAreas = $derived(areas.filter((a) => a.dimension === dimension));
+	const inArea = $derived(new Map(dimensionAreas.flatMap((a) => a.chunks.map((c) => [c, a.name] as const))));
+
+	// Codes per chunk for the map's layer: 1-7 the heat steps, 8 would go, 9 unreadable, 10 in an area.
 	const PRUNED = 8;
 	const UNREAD = 9;
-	const HEAT_COLOURS = ['', ...HEAT_STEPS.map((_, i) => `--heat-${i + 1}`), '--error', '--text-faint'];
-	const TERRAIN_COLOURS = ['', ...HEAT_STEPS.map(() => ''), '--error', ''];
+	const AREA = 10;
+	const HEAT_COLOURS = ['', ...HEAT_STEPS.map((_, i) => `--heat-${i + 1}`), '--error', '--text-faint', '--warning'];
+	const TERRAIN_COLOURS = ['', ...HEAT_STEPS.map(() => ''), '--error', '', '--warning'];
 
 	const byRegion = $derived(new Map((regions ?? []).map((r) => [`${r.x},${r.z}`, r])));
 	const overview = $derived(
@@ -169,6 +179,11 @@
 				}
 				const cx = r.x * 32 + (i % 32);
 				const cz = r.z * 32 + Math.floor(i / 32);
+				if (inArea.has(chunkKey(cx, cz))) {
+					next[i] = AREA;
+					if (prunes(t, cx, cz, rule)) saved++;
+					continue;
+				}
 				if (prunes(t, cx, cz, rule)) {
 					if (protect.has(chunkKey(cx, cz))) {
 						saved++;
@@ -210,7 +225,8 @@
 		if (t === undefined || t === NO_CHUNK) return null;
 		if (t === UNREADABLE) return 'Could not be read: stays';
 		const going = prunes(t, cx, cz, rule);
-		const fate = !going ? 'stays' : protect.has(chunkKey(cx, cz)) ? 'protected' : 'would go';
+		const area = inArea.get(chunkKey(cx, cz));
+		const fate = area ? `in ${area}: never pruned` : !going ? 'stays' : protect.has(chunkKey(cx, cz)) ? 'protected' : 'would go';
 		return `Visited ${formatTicks(t)} · ${fate}`;
 	}
 </script>
@@ -332,6 +348,7 @@
 		{/if}
 		<li><span class="swatch" style:background="var(--error)"></span>Would go</li>
 		<li><span class="swatch protected"></span>Protected</li>
+		{#if inArea.size}<li><span class="swatch" style:background="var(--warning)"></span>In a saved area</li>{/if}
 		{#if showing === 'heat' && current.unreadable}
 			<li><span class="swatch" style:background="var(--text-faint)"></span>Could not be read</li>
 		{/if}
@@ -373,6 +390,57 @@
 			Prune {preview.remove.toLocaleString()} chunks
 		</button>
 	</form>
+	{#if protect.size}
+		<!-- Its own form after the prune's: posting here must not prune. -->
+		<form
+			class="save-area"
+			method="POST"
+			action="?/savePruneArea"
+			use:enhance={({ formData }) => {
+				formData.set('chunks', [...protect].join(';'));
+				return async ({ result, update }) => {
+					if (result.type === 'success') {
+						protect.clear();
+						areaName = '';
+					}
+					await update({ reset: false });
+				};
+			}}
+		>
+			<input type="hidden" name="dimension" value={dimension} />
+			<label for="prune-area-name">Save the {protect.size.toLocaleString()} protected chunk{protect.size === 1 ? '' : 's'} as an area</label>
+			<div class="inline">
+				<input id="prune-area-name" name="name" bind:value={areaName} maxlength="60" placeholder="Spawn town, my base…" />
+				<button type="submit" disabled={!areaName.trim()}>Save area</button>
+			</div>
+		</form>
+	{/if}
+{/if}
+
+{#if dimensionAreas.length}
+	<div class="areas">
+		<h3>Saved areas</h3>
+		<p class="hint small">Every prune of this dimension skips them, whatever the threshold.</p>
+		<ul>
+			{#each dimensionAreas as area (area.id)}
+				<li>
+					<span class="area-name">{area.name}</span>
+					<span class="small muted">{area.chunks.length.toLocaleString()} chunk{area.chunks.length === 1 ? '' : 's'}</span>
+					<form
+						method="POST"
+						action="?/deletePruneArea"
+						use:enhance={({ cancel }) => {
+							if (!confirm(`Delete the area ${area.name}? Its chunks can be pruned again.`)) return cancel();
+							return async ({ update }) => update({ reset: false });
+						}}
+					>
+						<input type="hidden" name="id" value={area.id} />
+						<button class="button-quiet button-danger small" type="submit">Delete</button>
+					</form>
+				</li>
+			{/each}
+		</ul>
+	</div>
 {/if}
 
 <style>
@@ -497,5 +565,52 @@
 
 	.prune p {
 		margin: 0;
+	}
+
+	.save-area {
+		margin-top: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.save-area .inline {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.save-area input {
+		flex: 1 1 14rem;
+		min-width: 0;
+		max-width: 24rem;
+	}
+
+	.areas {
+		margin-top: 1.25rem;
+	}
+
+	.areas ul {
+		list-style: none;
+		margin: 0.5rem 0 0;
+		padding: 0;
+	}
+
+	.areas li {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.35rem 0;
+		border-top: 1px solid var(--line);
+	}
+
+	.area-name {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		flex: 0 1 auto;
+	}
+
+	.areas form {
+		margin-left: auto;
 	}
 </style>

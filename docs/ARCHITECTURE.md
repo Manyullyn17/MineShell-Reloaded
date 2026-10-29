@@ -957,7 +957,10 @@ regions: 18.6 s with the unpacking on the main thread, 10.8 s now (`tests/tools/
 sends it in binary (4 bytes of ticks and 2 of sectors a chunk). The page draws it through the
 chunk map as a layer, a colour per chunk: the heatmap's steps (`--heat-1`..`7`), or, for the
 chunks the threshold and spawn radius pick, the error colour, worked out in the browser on
-every change. Chunks picked on the map are protected. The prune posts the analysis's time and
+every change. Chunks picked on the map are protected, for that prune; saved as a named area
+(`pruneareas.ts`, a settings row per server, by dimension key) they are skipped by every
+prune of that dimension, added on the server whatever the page posts, and drawn in their own
+colour. Deleting the world or the server drops its areas. The prune posts the analysis's time and
 the protected list; `pruneChunks` refuses an analysis that is no longer the latest, and
 removes a chunk only when the analysis showed it going, it is not protected, and on the copy
 being pruned it is still under the threshold, so a chunk generated or visited after the

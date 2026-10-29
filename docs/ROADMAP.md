@@ -437,8 +437,8 @@ in the first version or later; the JSON or not.
 ### Leftovers of built features
 
 What the built entries in the archive left out, in one place. Picked first (user,
-2026-10-29), in this order: restoring the database from the page (built 2026-10-29), the
-pruning ones, cancelling an install or pack change with a rollback, then backing up a whole
+2026-10-29), in this order: restoring the database from the page and the pruning ones
+(both built 2026-10-29), cancelling an install or pack change with a rollback, then backing up a whole
 server with progress and Cancel for a copy. Other backup destinations wait: which to support
 is open, and each needs a test setup.
 
@@ -488,8 +488,7 @@ is open, and each needs a test setup.
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was
   talked about, 2026-10-18, not built.
-- **Pruning chunks**: protection is per prune (named areas every prune skips were talked
-  about, 2026-10-17, not built). The terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
+- **Pruning chunks**: the terrain view is a second read (the user's call, 2026-10-18: a fast heatmap-only
   analysis, terrain only for the regions looked at).
 - **Several worlds**: difficulty, gamemode, hardcore and other game settings per world
   (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked

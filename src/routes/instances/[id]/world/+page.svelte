@@ -1034,6 +1034,7 @@
 			running={data.running}
 			{busy}
 			snapshotPrompt={data.snapshotPrompt}
+			areas={data.pruneAreas}
 		/>
 	</section>
 {:else}

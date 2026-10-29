@@ -6,6 +6,8 @@ import { NO_CHUNK, UNREADABLE } from '#lib/shared/chunkprune.js';
 import { listSnapshots } from '#lib/server/snapshots.js';
 import { analysePrunable, pruneAnalysis, pruneChunks, restoreSnapshot, runningPruneAnalysis, worldSpawn, type PruneSettings } from '#lib/server/world.js';
 import { cancelTask } from '#lib/server/tasks.js';
+import { areaChunks, listPruneAreas, PruneAreaError, savePruneArea } from '#lib/server/pruneareas.js';
+import { deleteInstance } from '#lib/server/instances.js';
 import { writeNbt, type Tag } from '#lib/server/nbt.js';
 import type { ServerInstance } from '#lib/server/db/schema.js';
 import { createInstance, systemdStopped, tree, waitForTask } from '../helpers/instances';
@@ -173,6 +175,28 @@ describe('chunk pruning', () => {
 		expect((await waitForTask(await pruneChunks(instance, 'world/region', settings, { snapshot: false, analysedAt, protect: new Set() }))).state).toBe('done');
 		restart();
 		expect(pruneAnalysis(instance.id)).toBeNull();
+	});
+
+	it('never prunes a saved area, whatever the page protects', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'server.properties': 'level-name=world\n' });
+		await writeRegion(path.join(instance.path, 'world', 'region'), 0, 0, [{ index: 0, ticks: 0 }, { index: 1, ticks: 0 }, { index: 2, ticks: 0 }]);
+		savePruneArea(instance.id, 'world/region', 'My base', new Set(['1,0']));
+		expect(() => savePruneArea(instance.id, 'world/region', 'my base', new Set(['2,0']))).toThrow(PruneAreaError);
+		expect(() => savePruneArea(instance.id, 'world/region', 'Empty', new Set())).toThrow(/Protect the chunks/);
+		// Another dimension's area protects nothing here.
+		savePruneArea(instance.id, 'world/DIM-1', 'Nether hub', new Set(['2,0']));
+		expect([...areaChunks(instance.id, 'world/region')]).toEqual(['1,0']);
+
+		const analysedAt = await analyse(instance);
+		const settings = { maxTicks: 1, keepAroundSpawn: 0 };
+		const task = await waitForTask(await pruneChunks(instance, 'world/region', settings, { snapshot: false, analysedAt, protect: new Set() }));
+		expect(task.state).toBe('done');
+		expect(task.log.join('\n')).toMatch(/1 protected/);
+		expect(await readRegion(path.join(instance.path, 'world/region/r.0.0.mca'))).toEqual({ 1: 0 });
+
+		// Deleting the server takes its areas with it, so one made under its name starts with none.
+		await deleteInstance(instance, { deleteFiles: true });
+		expect(listPruneAreas(instance.id)).toEqual([]);
 	});
 
 	it('reports the analysis under way, refuses a second one meanwhile, and clears it when done', async () => {
