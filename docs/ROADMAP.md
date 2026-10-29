@@ -69,6 +69,23 @@ until after 1.0, and asked to keep the rest listed here):
   open only as web pages. Its checks: the tests each fix brought, and the console line
   formats in the real journal (vanilla/Fabric, NeoForge, Forge 1.12) checked against the
   new chat-proof matching; nothing of it was tried live on a server.
+  On the real install from the evening of 2026-10-28, it was tried there the next day: shared
+  snapshot files (made and deleted through the World tab, checked with
+  `tests/tools/snapshot-check.mjs`), Delete during a running snapshot (found the one deletion
+  per click below) and a new Fabric 26.3 server (found the format changes below).
+  **0.33.10 is the candidate** (2026-10-29), after 0.33.9 the same day. 0.33.9: the leftover
+  sweep's four fixes (loader caches kept after a version change, Chunky tasks following a world
+  switch, a chunk restore's undo leaving its new files, the low-disk warning reaching only the
+  first destination), the World tab's snapshot note no longer saying a running server cannot
+  be snapshotted, pre-generation's two settings as choices instead of buttons naming the
+  opposite, and Delete clicked again while the server stops no longer deleting once per click.
+  0.33.10: Minecraft 26 worlds, whose chunk palettes, overworld folder, seed, players and
+  border files moved (the chunk map drew nothing, "Keep it" on a reset lost the seed, the
+  player editor listed nobody). Its checks: the tests each fix brought; the Chunky choices
+  clicked, reloaded and swept at 390 px on the screenshot world; the 26.x readers on the
+  user's own 26.3 world with all three dimensions and a player file (items, enchantments,
+  stats), and on a 1.21 world, which reads as before. Not yet seen: the Delete button's
+  "Stopping the server" in a browser.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
