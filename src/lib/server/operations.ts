@@ -132,7 +132,11 @@ export const PROCESS_TOKEN = (globals.__mineshellProcessToken ??= crypto.randomU
 
 export class OperationInProgressError extends Error {}
 
+/** Servers whose deletion is under way (deleteInstance): nothing new starts on them. */
+export const beingDeleted = new Set<string>();
+
 export function beginOperation(instanceId: string, journal: Journal): void {
+	if (beingDeleted.has(instanceId)) throw new OperationInProgressError('This server is being deleted.');
 	const existing = db.select().from(operations).where(eq(operations.instanceId, instanceId)).get();
 	if (existing) {
 		throw new OperationInProgressError(`Another operation (${existing.kind}) is still recorded as running on this server.`);
