@@ -91,7 +91,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Apply: journalled `mod-update` with the instance_mods rows in the journal; rollback rewrites
   them exactly. Keeps enabled/locked/fromPack per mod (fromPack, so a later pack change still
   replaces it). Pack servers: UI toggle + server-side `packMods=on` check.
-- Disabled mods start unticked in the review. `incompatible` dependencies (Modrinth only) are
+- Disabled mods start unticked in the review, with why they are off where MineShell knows
+  (client-only, off for Cleanroom); a disabled copy of a mod that is also enabled (the old
+  Fugue a replacement left) is skipped, or updating both made two copies. `incompatible` dependencies (Modrinth only) are
   warned about; `unneededDependencies` offers to disable deps only the old versions required
   (platform metadata old vs new, then no other enabled jar requires its ids). Disabling inside
   a journalled change goes through `disableStaged` (original staged, copy back as .disabled).

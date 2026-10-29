@@ -61,16 +61,24 @@ const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods } = await import('#lib/server/db/schema.js');
 const { createInstance } = await import('../helpers/instances');
 
-/** A Cleanroom server with Fugue `installed`, tracked as Modrinth's. */
-async function server(cleanroom: string, installed: string) {
-	const file = `+Fugue-${installed}.jar`;
-	const instance = await createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: cleanroom }, { [`mods/${file}`]: `fugue ${installed}` });
+type Jar = { version: string; enabled?: boolean; clientOnly?: boolean };
+
+/** A Cleanroom server with these Fugue jars, tracked as Modrinth's. */
+async function server(cleanroom: string, ...jars: (string | Jar)[]) {
+	const all = jars.map((j) => (typeof j === 'string' ? { version: j } : j));
+	const file = (j: Jar) => `+Fugue-${j.version}.jar${j.enabled === false ? '.disabled' : ''}`;
+	const instance = await createInstance(
+		{ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: cleanroom },
+		Object.fromEntries(all.map((j) => [`mods/${file(j)}`, `fugue ${j.version}`]))
+	);
 	db.insert(mods).values({ source: 'modrinth', slug: 'fugue', name: 'Fugue' }).onConflictDoNothing().run();
 	const modId = db.select().from(mods).where(eq(mods.slug, 'fugue')).get()!.id;
-	db.insert(instanceMods)
-		.values({ instanceId: instance.id, modId, filePath: `mods/${file}`, version: installed, versionId: `fugue-${installed}`, installedAt: 1 })
-		.run();
-	await fs.access(path.join(instance.path, 'mods', file));
+	for (const j of all) {
+		db.insert(instanceMods)
+			.values({ instanceId: instance.id, modId, filePath: `mods/${file(j)}`, version: j.version, versionId: `fugue-${j.version}`, enabled: j.enabled !== false, clientOnly: !!j.clientOnly, installedAt: 1 })
+			.run();
+		await fs.access(path.join(instance.path, 'mods', file(j)));
+	}
 	return instance;
 }
 
@@ -89,5 +97,16 @@ describe('mod updates on Cleanroom', () => {
 	it('offers the newest Fugue to a server on the newest Cleanroom', async () => {
 		const check = await checkModUpdates(await server('0.7.3-alpha', '0.24.4'));
 		expect(check.updates).toMatchObject([{ targetVersion: '0.25.5' }]);
+	});
+
+	it('leaves out a disabled older copy of the Fugue in use, saying which one is', async () => {
+		const check = await checkModUpdates(await server('0.5.17-alpha', '0.23.4', { version: '0.21.0', enabled: false }));
+		expect(check.updates.map((u) => u.fileName)).toEqual(['+Fugue-0.23.4.jar']);
+		expect(check.skipped).toEqual([{ fileName: '+Fugue-0.21.0.jar.disabled', name: 'Fugue', reason: 'Disabled; +Fugue-0.23.4.jar is the copy in use' }]);
+	});
+
+	it('says why a disabled mod is off, where it is known', async () => {
+		const check = await checkModUpdates(await server('0.5.17-alpha', { version: '0.23.4', enabled: false, clientOnly: true }));
+		expect(check.updates).toMatchObject([{ enabled: false, disabledReason: 'client-only: does nothing on a dedicated server, or crashes it' }]);
 	});
 });
