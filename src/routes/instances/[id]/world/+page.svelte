@@ -81,6 +81,14 @@
 		const timer = setInterval(() => void refreshAll(), 5000);
 		return () => clearInterval(timer);
 	});
+	// Saved on choosing; local state re-synced, so a save from elsewhere shows.
+	let pauseForPlayers = $state<'true' | 'false'>('false');
+	let continueOnRestart = $state<'true' | 'false'>('false');
+	$effect(() => {
+		pauseForPlayers = data.chunky?.pauseForPlayers ? 'true' : 'false';
+		continueOnRestart = data.chunky?.continueOnRestart ? 'true' : 'false';
+	});
+	const keepChoice = () => async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => update({ reset: false });
 	const confirmCancel = (world: string) => ({ cancel }: { cancel: () => void }) => {
 		if (!confirm(`Cancel pre-generating ${world}? A cancelled task cannot be continued.`)) cancel();
 	};
@@ -956,9 +964,19 @@
 			generating={data.chunky.status?.running.map((t) => t.world) ?? []}
 		/>
 
-		<form method="POST" action="?/chunkyAuto" use:enhance class="auto">
-			<input type="hidden" name="enabled" value={String(!data.chunky.pauseForPlayers)} />
-			<span class="small">
+		<form method="POST" action="?/chunkyAuto" use:enhance={keepChoice} onchange={(e) => e.currentTarget.requestSubmit()} class="auto field">
+			<span class="label" id="chunky-players-label">While players are online</span>
+			<SegmentedChoice
+				options={[
+					{ value: 'true', label: 'Pause' },
+					{ value: 'false', label: 'Keep running' }
+				]}
+				bind:value={pauseForPlayers}
+				name="enabled"
+				labelledby="chunky-players-label"
+				disabled={!data.chunky.english && !data.chunky.pauseForPlayers}
+			/>
+			<p class="hint">
 				{#if data.chunky.english}
 					{data.chunky.pauseForPlayers
 						? 'Pre-generation pauses while anyone is online and continues when the server is empty.'
@@ -968,19 +986,24 @@
 					config/chunky.json before Minecraft 1.19.3):
 					MineShell reads which tasks run from its messages.
 				{/if}
-			</span>
-			<button class="button-quiet" disabled={!data.chunky.english && !data.chunky.pauseForPlayers}>
-				{data.chunky.pauseForPlayers ? 'Run it regardless' : 'Pause while players are online'}
-			</button>
+			</p>
 		</form>
-		<form method="POST" action="?/chunkyRestart" use:enhance class="auto">
-			<input type="hidden" name="enabled" value={String(!data.chunky.continueOnRestart)} />
-			<span class="small">
+		<form method="POST" action="?/chunkyRestart" use:enhance={keepChoice} onchange={(e) => e.currentTarget.requestSubmit()} class="auto field">
+			<span class="label" id="chunky-restart-label">After a restart</span>
+			<SegmentedChoice
+				options={[
+					{ value: 'true', label: 'Continue' },
+					{ value: 'false', label: 'Wait for Continue' }
+				]}
+				bind:value={continueOnRestart}
+				name="enabled"
+				labelledby="chunky-restart-label"
+			/>
+			<p class="hint">
 				{data.chunky.continueOnRestart
 					? 'Unfinished pre-generation continues by itself when the server starts again, after a scheduled restart too.'
 					: 'After a restart, unfinished pre-generation waits until you press Continue.'}
-			</span>
-			<button class="button-quiet">{data.chunky.continueOnRestart ? 'Wait for Continue' : 'Continue after a restart'}</button>
+			</p>
 		</form>
 		<p class="faint small">
 			To run it only at certain hours, add scheduled commands <code>chunky continue</code> and <code>chunky pause</code>
@@ -1185,18 +1208,15 @@
 	}
 
 	.auto {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: var(--space-3);
 		margin-top: var(--space-4);
+		margin-bottom: var(--space-3);
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--line);
 	}
 
 	.auto + .auto {
-		margin-top: 0;
+		margin-top: var(--space-3);
+		padding-top: 0;
 		border-top: 0;
 	}
 
