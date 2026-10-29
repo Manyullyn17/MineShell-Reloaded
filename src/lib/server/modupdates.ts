@@ -154,6 +154,9 @@ export type UpdateCheck = {
 	synced: string | null;
 };
 
+/** How far a check is: identifying untracked jars, looking mods up (`done` of `total`), then dependencies. */
+export type CheckProgress = { phase: 'sync' | 'check' | 'dependencies'; done: number; total: number };
+
 const LOOKUP_CONCURRENCY = 6;
 
 export async function eachLimited<T>(items: T[], run: (item: T) => Promise<void>): Promise<void> {
@@ -174,10 +177,16 @@ export function trackable(row: ModRow): boolean {
  * of are synced first (identified as Modrinth/CurseForge where possible),
  * so a folder filled by hand can be updated too.
  */
-export async function checkModUpdates(instance: ServerInstance, opts: { dependencies?: boolean } = {}): Promise<UpdateCheck> {
+export async function checkModUpdates(
+	instance: ServerInstance,
+	opts: { dependencies?: boolean; onProgress?: (progress: CheckProgress) => void } = {}
+): Promise<UpdateCheck> {
 	const filter = filterFor(instance);
 	let synced: string | null = null;
-	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) synced = await syncInstanceMods(instance);
+	if ((await listInstanceMods(instance)).some((r) => r.untracked || r.missing)) {
+		opts.onProgress?.({ phase: 'sync', done: 0, total: 0 });
+		synced = await syncInstanceMods(instance);
+	}
 	const rows = (await listInstanceMods(instance)).filter((r) => !r.missing);
 	const result: UpdateCheck = {
 		updates: [],
@@ -209,6 +218,13 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 					? `off for Cleanroom (${cleanroomOff[row.fileName].replace(/\.$/, '')})`
 					: null;
 
+	let done = 0;
+	const tick = (n = 1) => {
+		done += n;
+		opts.onProgress?.({ phase: 'check', done, total: candidates.length });
+	};
+	tick(0);
+
 	// Modrinth answers "is there anything newer" for 100 files per request; only
 	// mods with something newer get their version list read.
 	const modrinth = candidates.filter((r) => r.source === 'modrinth');
@@ -225,6 +241,7 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 		else if (newest.id === row.versionId || installedFile) result.upToDate++;
 		else toList.push(row);
 	}
+	tick(modrinth.length - toList.filter((r) => r.source === 'modrinth').length);
 
 	await eachLimited(toList, async (row) => {
 		try {
@@ -254,12 +271,15 @@ export async function checkModUpdates(instance: ServerInstance, opts: { dependen
 			});
 		} catch (err) {
 			result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });
+		} finally {
+			tick();
 		}
 	});
 	result.updates.sort((a, b) => a.name.localeCompare(b.name));
 	result.skipped.sort((a, b) => a.name.localeCompare(b.name));
 	// The scheduled check only counts updates; dependencies matter once someone applies them.
 	if (opts.dependencies !== false) {
+		opts.onProgress?.({ phase: 'dependencies', done, total: candidates.length });
 		const deps = await resolveDependencies(instance, targets);
 		result.dependencies = {
 			...deps.plan,

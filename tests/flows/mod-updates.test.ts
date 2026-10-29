@@ -169,6 +169,18 @@ describe('mod updates', () => {
 		]);
 	});
 
+	it('reports how far it is: each mod looked up, then the dependencies', async () => {
+		const progress: { phase: string; done: number; total: number }[] = [];
+		await checkModUpdates(await server(), { onProgress: (p) => progress.push(p) });
+		// Its own jar has no record: identified first.
+		expect(progress.slice(0, 2)).toEqual([
+			{ phase: 'sync', done: 0, total: 0 },
+			{ phase: 'check', done: 0, total: 1 }
+		]);
+		expect(progress.at(-2)).toEqual({ phase: 'check', done: 1, total: 1 });
+		expect(progress.at(-1)).toEqual({ phase: 'dependencies', done: 1, total: 1 });
+	});
+
 	it('lists every compatible version, older ones too, with the installed one marked', async () => {
 		const instance = await server();
 		const { versions: list } = await listModVersions(instance, 'sodium-0.5.0.jar');

@@ -44,6 +44,16 @@
 	};
 	let updateCheck = $state<UpdateCheck | null>(null);
 	let checking = $state(false);
+	let progress = $state<{ phase: 'sync' | 'check' | 'dependencies'; done: number; total: number } | null>(null);
+	const progressText = $derived(
+		progress?.phase === 'sync'
+			? 'Identifying jars MineShell has no record of'
+			: progress?.phase === 'dependencies'
+				? 'Working out what the updates need'
+				: progress?.total
+					? `Checked ${progress.done} of ${progress.total} mods`
+					: 'Checking for updates'
+	);
 	let checkError = $state('');
 	let chosenUpdates = $state<Record<string, boolean>>({});
 	const chosenCount = $derived(Object.values(chosenUpdates).filter(Boolean).length);
@@ -58,24 +68,57 @@
 		void checkUpdates();
 	});
 
+	/** The check answers a line per step (`progress`), then `result`; the last list stays up meanwhile. */
 	async function checkUpdates() {
 		checking = true;
 		checkError = '';
-		updateCheck = null;
+		progress = null;
 		try {
 			const res = await fetch(`/api/instances/${encodeURIComponent(instanceId)}/mod-updates`);
-			const body = await res.json();
-			if (!res.ok) throw new Error(body.message ?? 'Checking for updates failed.');
-			updateCheck = body;
+			if (!res.ok || !res.body) {
+				const body = await res.json().catch(() => ({}));
+				throw new Error(body.message ?? 'Checking for updates failed.');
+			}
+			const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+			let buffer = '';
+			let result: UpdateCheck | null = null;
+			for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+				const lines = (buffer + chunk.value).split('\n');
+				buffer = lines.pop() ?? '';
+				for (const line of lines.filter((l) => l.trim())) {
+					const message = JSON.parse(line);
+					if (message.progress) progress = message.progress;
+					else if (message.result) result = message.result;
+					else throw new Error(message.message ?? 'Checking for updates failed.');
+				}
+			}
+			if (!result) throw new Error('Checking for updates failed.');
+			updateCheck = result;
 			// A disabled mod is updated only when ticked: it is off for a reason.
-			chosenUpdates = Object.fromEntries(body.updates.map((u: { fileName: string; enabled: boolean }) => [u.fileName, u.enabled]));
+			chosenUpdates = Object.fromEntries(result.updates.map((u) => [u.fileName, u.enabled]));
 		} catch (err) {
 			checkError = err instanceof Error ? err.message : 'Checking for updates failed.';
 		} finally {
 			checking = false;
+			progress = null;
 		}
 	}
 </script>
+
+{#snippet checkProgress()}
+	{#if checking}
+		<div class="check-progress" role="status">
+			<p class="small muted">{progressText}</p>
+			<div class="progress" aria-hidden="true">
+				{#if progress?.phase === 'check' && progress.total}
+					<span style="width: {(progress.done / progress.total) * 100}%"></span>
+				{:else}
+					<span class="indeterminate"></span>
+				{/if}
+			</div>
+		</div>
+	{/if}
+{/snippet}
 
 {#if active}
 	{#if checkError}
@@ -107,6 +150,7 @@
 				</button>
 			</div>
 		</div>
+		{@render checkProgress()}
 		{#if running}
 			<p class="faint small">Stop the server to update its mods.</p>
 		{/if}
@@ -122,6 +166,7 @@
 				</div>
 				<button type="button" onclick={checkUpdates} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
 			</div>
+			{@render checkProgress()}
 		{:else}
 			<form
 				method="POST"
@@ -139,11 +184,12 @@
 					</div>
 					<div class="button-row">
 						<button type="button" onclick={checkUpdates} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-						<button class="button-primary" type="submit" disabled={!chosenCount || running}>
+						<button class="button-primary" type="submit" disabled={!chosenCount || running || checking}>
 							Update {chosenCount} mod{chosenCount === 1 ? '' : 's'}
 						</button>
 					</div>
 				</div>
+				{@render checkProgress()}
 				<ul class="update-list">
 					{#each updateCheck.updates as u (u.fileName)}
 						<li>
@@ -245,5 +291,13 @@
 
 	.skipped {
 		margin-top: var(--space-3);
+	}
+
+	.check-progress {
+		margin-bottom: var(--space-3);
+	}
+
+	.check-progress p {
+		margin-bottom: var(--space-1);
 	}
 </style>
