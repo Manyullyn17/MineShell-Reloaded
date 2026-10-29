@@ -1,8 +1,10 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { eq } from 'drizzle-orm';
 import { TMP_DIR } from './config';
-import type { ServerInstance } from './db/schema';
+import { db } from './db';
+import { settings, type ServerInstance } from './db/schema';
 import { downloadFile } from './download';
 import type { TaskHandle } from './tasks';
 import {
@@ -217,32 +219,50 @@ export function fugueMismatch(info: FugueJarInfo, cleanroomVersion: string, hasG
 	return null;
 }
 
-/** Fugue builds' jar info by version id: checking a candidate means downloading it. */
-const fugueInfoCache = new Map<string, FugueJarInfo>();
+/** Whether `version` is below the lowest version `range` accepts; an unreadable range says nothing. */
+export function belowRangeMinimum(version: string, range: string): boolean {
+	const m = range.match(/^([[(])\s*([^,]*?)\s*,/);
+	if (!m || !m[2]) return false;
+	const diff = compareVersions(version, m[2]);
+	return m[1] === '[' ? diff < 0 : diff <= 0;
+}
 
+/**
+ * Fugue builds' jar info, kept in the database by project and version id: a
+ * build's jar never changes, and reading it means downloading it.
+ */
 async function fugueVersionInfo(version: ProjectVersion): Promise<FugueJarInfo> {
-	const cached = fugueInfoCache.get(version.id);
-	if (cached) return cached;
+	const key = `fugue-jar:${version.projectId}:${version.id}`;
+	const row = db.select().from(settings).where(eq(settings.key, key)).get();
+	if (row) return JSON.parse(row.value) as FugueJarInfo;
 	const file = version.files.find((f) => f.primary) ?? version.files[0];
 	if (!file) return { range: null, callsGetUrl: false };
 	const temp = path.join(TMP_DIR, `fugue-${crypto.randomUUID()}.jar`);
 	try {
 		await downloadFile(file.url, temp, { hash: file.hash });
 		const info = await inspectFugueJar(temp);
-		fugueInfoCache.set(version.id, info);
+		db.insert(settings).values({ key, value: JSON.stringify(info) }).onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(info) } }).run();
 		return info;
 	} finally {
 		await fs.rm(temp, { force: true });
 	}
 }
 
-/** Candidates checked before giving up: each one is a download. */
-const FUGUE_CANDIDATES = 12;
+/** Builds checked past the newest one not too new, before giving up (a getURL caller, an upper bound). */
+const FUGUE_WALK = 8;
 
 /**
  * The best Fugue build that runs on this Cleanroom: release first, newest
  * first, skipping builds whose jar rules this Cleanroom out (newest Fugue
  * needs Cleanroom 0.6.10, so "newest" alone broke every 0.5.x server).
+ *
+ * Each build needs at least the Cleanroom the one before it needs, so the
+ * builds too new for this Cleanroom are a run at the start of the list, and a
+ * binary search finds its end in a handful of downloads however many builds
+ * there are (checking the newest twelve one by one ran out once Fugue had made
+ * eleven builds for newer Cleanroom). A build whose jar does not say what it
+ * needs is never picked: counted as fitting, it was the newest, the one
+ * that broke 0.5.x servers.
  */
 export async function pickFugue(
 	versions: ProjectVersion[],
@@ -251,9 +271,25 @@ export async function pickFugue(
 	info: (version: ProjectVersion) => Promise<FugueJarInfo> = fugueVersionInfo
 ): Promise<ProjectVersion | null> {
 	const java = cleanroomJavaMajor(cleanroomVersion);
-	const candidates = [...usableForJava(versions, FUGUE_JAVA25_FROM, java)].sort(compareVersionPriority);
-	for (const version of candidates.slice(0, FUGUE_CANDIDATES)) {
-		if (!fugueMismatch(await info(version), cleanroomVersion, hasGetUrl)) return version;
+	const sorted = [...usableForJava(versions, FUGUE_JAVA25_FROM, java)].sort(compareVersionPriority);
+	// Releases, then betas, then alphas: each its own newest-first run.
+	for (const channel of [...new Set(sorted.map((v) => v.channel))]) {
+		const builds = sorted.filter((v) => v.channel === channel);
+		const tooNew = async (v: ProjectVersion) => {
+			const { range } = await info(v);
+			return !range || belowRangeMinimum(cleanroomVersion, range);
+		};
+		let lo = 0;
+		let hi = builds.length;
+		while (lo < hi) {
+			const mid = (lo + hi) >> 1;
+			if (await tooNew(builds[mid])) lo = mid + 1;
+			else hi = mid;
+		}
+		for (const version of builds.slice(lo, lo + FUGUE_WALK)) {
+			const found = await info(version);
+			if (found.range && !fugueMismatch(found, cleanroomVersion, hasGetUrl)) return version;
+		}
 	}
 	return null;
 }

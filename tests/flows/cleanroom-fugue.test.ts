@@ -4,10 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectVersion } from '#lib/server/mods/index.js';
 import { mcmodInfo, zipBuffer } from '../helpers/fs';
 
-const { applyCleanroomModFixes } = await import('#lib/server/cleanroom.js');
+const { applyCleanroomModFixes, pickFugue } = await import('#lib/server/cleanroom.js');
 const { curseforgeModProvider, listInstanceMods, modrinthProvider } = await import('#lib/server/mods/index.js');
 const { db } = await import('#lib/server/db/index.js');
-const { instanceMods, mods } = await import('#lib/server/db/schema.js');
+const { instanceMods, mods, settings } = await import('#lib/server/db/schema.js');
+const { eq } = await import('drizzle-orm');
 const { createInstance, tree } = await import('../helpers/instances');
 
 const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
@@ -87,8 +88,8 @@ describe('Cleanroom fixes and Fugue', () => {
 
 		const result = await applyCleanroomModFixes(instance);
 		expect(result.failures).toEqual([]);
-		// 0.24.4 needs Cleanroom 0.6.10: checked and passed over.
-		expect(downloads.slice(0, 2)).toEqual(['0.24.4', '0.23.7']);
+		// 0.24.4 needs Cleanroom 0.6.10: checked and passed over; 0.23.7 checked, then installed.
+		expect([...downloads].sort()).toEqual(['0.23.7', '0.23.7', '0.24.4']);
 		expect(result.added).toEqual(['+Fugue-0.23.7.jar']);
 		expect(result.disabled).toEqual(['+Fugue-0.21.0.jar']);
 		expect(Object.keys(await tree(path.join(instance.path, 'mods'))).sort()).toEqual([
@@ -143,6 +144,26 @@ describe('Cleanroom fixes and Fugue', () => {
 		expect(result.added).toEqual(['+Fugue-0.23.7.jar']);
 		expect(fromModrinth).not.toHaveBeenCalled();
 		expect((await listInstanceMods(instance)).find((m) => m.fileName === '+Fugue-0.23.7.jar')).toMatchObject({ source: 'curseforge', slug: '1005815' });
+	});
+
+	it('remembers what each build needs, so a jar is downloaded once', async () => {
+		const downloads: string[] = [];
+		globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+			const href = String(input instanceof Request ? input.url : input);
+			const release = RELEASES.find(([v]) => href === url(v))!;
+			downloads.push(release[0]);
+			return new Response(new Uint8Array(fugueJar(release[2], false)));
+		}) as typeof fetch;
+		// Ids of their own, so no other test's reads count here.
+		const fresh = versions().map((v) => ({ ...v, id: `remember-${v.id}` }));
+		expect((await pickFugue(fresh, '0.5.17-alpha', false))?.versionNumber).toBe('0.23.7');
+		expect(downloads.length).toBeGreaterThan(0);
+		downloads.length = 0;
+		expect((await pickFugue(fresh, '0.5.17-alpha', false))?.versionNumber).toBe('0.23.7');
+		expect(downloads).toEqual([]);
+		// Kept in the database, not only in memory: a restart of MineShell does not read them again.
+		const kept = db.select().from(settings).where(eq(settings.key, 'fugue-jar:fugue:remember-fugue-0.23.7')).get();
+		expect(JSON.parse(kept!.value)).toEqual({ range: '[0.5.14-alpha,)', callsGetUrl: false });
 	});
 
 	it('keeps the old Fugue when no replacement can be had', async () => {
