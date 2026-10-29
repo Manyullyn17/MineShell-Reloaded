@@ -16,8 +16,9 @@ import { formatBytes } from '#lib/shared/format.js';
  * Copies of a server's world taken before MineShell does something that can
  * damage it: a pack version change (or reinstall), a loader version change,
  * a Cleanroom migration or revert, and the world tools (reset, replace,
- * restore). Not general backups - the server is always stopped, so the copy
- * is consistent without save-off/save-on.
+ * restore), and the ones taken by hand or on a schedule. Those before an
+ * operation are of a stopped server; one taken while it runs pauses its
+ * saving for the copy (snapshotschedule.ts).
  *
  * Each snapshot is a folder in `.mineshell/snapshots/` holding the world
  * folder(s) at their usual relative paths plus a manifest. It is written as

@@ -627,8 +627,8 @@
 	{/if}
 	{#if data.running && data.worlds.length}
 		<p class="faint small after">
-			Stop the server to take or restore a snapshot. While it runs, a download pauses saving (<code>save-off</code>) until
-			the zip is done.
+			While the server runs, taking a snapshot or downloading the world pauses saving (<code>save-off</code>) until the
+			copy or zip is done. Stop the server to restore a snapshot.
 		</p>
 	{/if}
 </section>
