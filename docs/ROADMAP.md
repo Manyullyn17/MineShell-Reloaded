@@ -228,7 +228,8 @@ update, once the modded and general features are finished. What it would take:
 After 1.0 and before 2.0 (plugin servers). A suggested order (2026-10-27; the user asked for
 one so there is a place to start after 1.0; any step can move): steps by theme, each a few
 entries that share code, the cheapest and most needed first. A step is not a version:
-`feat:` commits are released as minors whenever they are ready. Within a step, entries are
+finished `feat:` commits are gathered into a minor every few days or more (DEPLOYMENT,
+"Publishing a release"), not released one by one as in 0.x. Within a step, entries are
 in the order to build them where one needs another.
 
 1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
