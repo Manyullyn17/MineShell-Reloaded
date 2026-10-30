@@ -122,6 +122,14 @@ until after 1.0, and asked to keep the rest listed here):
   update list on MeatballCraft offers nothing for Fugue 0.23.7 (the newest for its Cleanroom
   0.5.17) and leaves the disabled 0.21.0 unchecked as an old copy; Irithyll's "Last changed"
   stayed on the 29th through the nightly restart.
+  **0.33.15 is the candidate** (2026-10-30), a small fix under the three-day rule (it does not
+  restart the days): difficulty and game mode written as numbers for Minecraft up to 1.13.2,
+  which read a name as Easy and Survival (a name already in the file is rewritten before a
+  start), and PvP, the Nether, monsters and command blocks no longer offered on 1.21.9+, where
+  they are game rules (the Rules section names them). Its checks: the tests the fix brought
+  (each failing without it), mc-probe.mjs on 1.12.2, 1.13.2, 1.14.4, 1.21.8 to 1.21.11 and
+  26.3, and the Gameplay tab and new server defaults on a throwaway 1.12.2 and 1.21.11 server.
+  Not yet seen: MeatballCraft's first start on the real install writing `difficulty=2`.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
