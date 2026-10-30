@@ -147,6 +147,10 @@ Cross-cutting UI facts stay here, since most UI work touches them:
 - Selects/checkboxes bound one-way to `data` miss post-save updates; use `bind:` on local state
   re-synced by `$effect`.
 - An `$effect` calling an async function tracks everything read before its first `await`.
+- An `$effect` reading a prop that comes from page data (`instanceId={data.instance.id}`) runs
+  again on every reload of the data, same value or not: a starting server's tabs reload every
+  3 s, and the console reopened its stream each time. Key it on the value: `followKey`
+  (`lib/shared/follow.svelte.ts`) or a `$derived` of the prop.
 - Phones: narrow-window layout under `max-width: 60rem`, touch sizing under
   `pointer: coarse` (ARCHITECTURE, Frontend). Small controls get `class="hit-area"` instead
   of growing. Checked with a script that loads every page at 390 px and lists anything past

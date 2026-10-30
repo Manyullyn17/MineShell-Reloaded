@@ -104,6 +104,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   prefix take the previous line's level (multi-line messages like Fabric's mod list) unless
   they are systemd's own lines; frames, "Caused by" and an exception line after an
   error/warning fold into that entry. Modern Forge prints ANSI colour codes; they are stripped.
+- The browser keeps the last `consoleBufferLines` (2000) entries, and a newly opened console
+  stream starts with the last `consoleBacklogLines` (300). The streams (console, status) are
+  opened once per server through `followKey` - opened on every reload of the page's data
+  (each 3 s while a server starts or stops, 0.30.0 to 0.33.15) they emptied the view and
+  refilled it with the backlog.
+  The status stream's state comes from the monitor's samples, every 10 s: a restart quicker
+  than that is not seen as a change, and the view is not cleared for it.
 - The server logs every RCON connection twice; MineShell used to open one per command
   (several a minute), so those lines are hidden by default. Now one connection per server
   (`rcon.ts`): Minecraft (1.12.2 and 1.21.11 read with javap) never drops an idle RCON

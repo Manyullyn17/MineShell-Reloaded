@@ -2,6 +2,7 @@
 	import { can } from '#lib/shared/access.js';
 	import { refreshAll } from '$app/navigation';
 	import Console from '#lib/components/Console.svelte';
+	import { followKey } from '#lib/shared/follow.svelte.js';
 
 	let { data } = $props();
 
@@ -9,10 +10,11 @@
 	// whole console on a fixed cadence whether or not anything had changed.
 	// The stats stream already pushes state, so reload only on a real
 	// transition (started, stopped, crashed) and leave the console alone
-	// otherwise.
+	// otherwise. Opened once per server (followKey): reopened on each reload of the page's
+	// data, it forgot the last state every 3 s while the server started.
 	let consoleGeneration = $state(0);
-	$effect(() => {
-		const source = new EventSource(`/api/instances/${data.instance.id}/stats`);
+	followKey(() => data.instance.id, (id) => {
+		const source = new EventSource(`/api/instances/${id}/stats`);
 		let last: string | null = null;
 
 		source.addEventListener('state', (event) => {
