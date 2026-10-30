@@ -408,8 +408,9 @@ over RCON; stopped: written to `level.dat` like the rules.
 - From 1.21.9 PvP, the Nether, monsters and command blocks are game rules only (`pvp`,
   `spawnMonsters`, `allowEnteringNetherUsingPortals`, `commandBlocksEnabled`; from 1.21.11
   `spawn_monsters`, `allow_entering_nether_using_portals`, `command_blocks_work`): Settings
-  hides their server.properties controls there and names the rules (0.33.15). They are the
-  first rules this list should show prominently.
+  hides their server.properties controls there and names the rules (0.33.15). Once rules can
+  be edited, those four come back on 1.21.9+ as controls in the same places, set as game
+  rules, and the Rules section's console note goes (user's call, 2026-10-30).
 
 #### Single files from a snapshot
 
