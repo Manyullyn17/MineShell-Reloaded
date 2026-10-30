@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendLine, isRconConnection, levelOf, matchesFilter, playerEventOf, playerEventWithName, stripAnsi, type ConsoleEntry, type Level } from './consolelines';
+import { appendLine, isRconConnection, levelOf, matchesFilter, playerEventOf, playerEventWithName, stripAnsi, trimBuffer, type ConsoleEntry, type Level } from './consolelines';
 
 /** Lines recorded from real servers' journals (MeatballCraft on Cleanroom, Pixelmon on NeoForge, a Fabric 1.20.1 server). */
 const FORGE_1_12_ERROR = [
@@ -161,5 +161,29 @@ describe('console lines', () => {
 		expect(show(['error'])).toEqual(['[16:02:15] [Server thread/ERRO', '[rcon] There are 1 of a max of']);
 		expect(show(['error', 'warn', 'info', 'debug'], 'DimensionManager')).toEqual(['[16:02:15] [Server thread/ERRO']);
 		expect(show(['error', 'warn', 'info', 'debug'], '', true)).toEqual(['[15:08:31] [Server thread/INFO']);
+	});
+});
+
+describe('the console buffer', () => {
+	const line = (level: Level, n: number) => `[16:02:${String(n % 60).padStart(2, '0')}] [Server thread/${level.toUpperCase()}]: ${level} ${n}`;
+	const build = (levels: Level[]) => {
+		const entries: ConsoleEntry[] = [];
+		levels.forEach((level, n) => appendLine(entries, line(level, n), n));
+		return entries;
+	};
+
+	// The bug: one limit for every line, so a big start pushed its early errors out and the
+	// error count went down as often as up.
+	it('keeps errors and warnings past the limit, dropping the oldest other lines first', () => {
+		const entries = build(['error', 'info', 'info', 'warn', 'info', 'info', 'info', 'error']);
+		const trimmed = trimBuffer(entries, 3);
+		expect(trimmed.map((e) => e.text.replace(/^.*: /, ''))).toEqual(['error 0', 'warn 3', 'info 4', 'info 5', 'info 6', 'error 7']);
+		expect(trimBuffer(entries, 10)).toBe(entries);
+	});
+
+	it('lets warnings go before errors once both pass the limit of their own', () => {
+		const text = (entries: ConsoleEntry[]) => entries.map((e) => e.text.replace(/^.*: /, ''));
+		expect(text(trimBuffer(build(['error', 'warn', 'info', 'warn', 'error']), 2))).toEqual(['error 0', 'info 2', 'error 4']);
+		expect(text(trimBuffer(build(['error', 'warn', 'error', 'error']), 2))).toEqual(['error 2', 'error 3']);
 	});
 });

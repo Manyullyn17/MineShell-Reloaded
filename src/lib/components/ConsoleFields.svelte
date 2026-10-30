@@ -15,7 +15,7 @@
 		<p class="hint">
 			{values.consoleBufferLines > 20000
 				? 'Above about 20,000 lines the console gets sluggish in most browsers.'
-				: 'Older lines drop off once this is reached.'}
+				: 'Older lines drop off once this is reached; errors and warnings are kept for as many again.'}
 		</p>
 	</div>
 </div>

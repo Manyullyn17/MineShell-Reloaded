@@ -129,7 +129,8 @@ until after 1.0, and asked to keep the rest listed here):
   they are game rules (the Rules section names them). Its checks: the tests the fix brought
   (each failing without it), mc-probe.mjs on 1.12.2, 1.13.2, 1.14.4, 1.21.8 to 1.21.11 and
   26.3, and the Gameplay tab and new server defaults on a throwaway 1.12.2 and 1.21.11 server.
-  Not yet seen: MeatballCraft's first start on the real install writing `difficulty=2`.
+  On the real install (2026-10-30): MeatballCraft's first start left `difficulty=2`,
+  `gamemode=0`.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back

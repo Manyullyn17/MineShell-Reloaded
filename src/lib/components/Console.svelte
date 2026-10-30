@@ -3,8 +3,9 @@
 	import { refreshAll } from '$app/navigation';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import { onDestroy, onMount } from 'svelte';
-	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
+	import { appendLine, matchesFilter, trimBuffer, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import { followKey } from '#lib/shared/follow.svelte.js';
 	import { segments } from '#lib/shared/highlight.js';
 
 	/**
@@ -147,7 +148,7 @@
 		if (last >= 0) next[last] = { ...next[last], trace: [...next[last].trace] };
 		for (const text of pending) appendLine(next, text, nextId++);
 		pending = [];
-		lines = next.length > bufferLines ? next.slice(-bufferLines) : next;
+		lines = trimBuffer(next, bufferLines);
 	}
 
 	function clearView() {
@@ -175,18 +176,21 @@
 		whenClosedForGood(source, () => void refreshAll());
 	}
 
-	$effect(() => {
-		// Re-subscribe when the instance changes.
-		const id = instanceId;
-		clearView();
-		nextId = 0;
-		loadHistory(id);
-		connect();
-		return () => {
-			source?.close();
-			source = null;
-		};
-	});
+	// Re-subscribed when the server changes, and only then (followKey: a reload of the page's
+	// data, every 3 s while a server starts, emptied the view and reopened the stream).
+	followKey(
+		() => instanceId,
+		(id) => {
+			clearView();
+			nextId = 0;
+			loadHistory(id);
+			connect();
+			return () => {
+				source?.close();
+				source = null;
+			};
+		}
+	);
 
 	$effect(() => {
 		// Touch the length so this reruns on every appended line.

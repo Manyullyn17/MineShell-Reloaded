@@ -55,8 +55,10 @@ const version = JSON.parse(fs.readFileSync('package.json', 'utf8')).version as s
 const allTests = testing
   ? fs.globSync(['src/**/*.test.ts', 'tests/**/*.test.ts']).map((f) => f.split(path.sep).join('/'))
   : [];
-const mockingTests = allTests.filter((f) => /\bvi\.mock\(/.test(fs.readFileSync(f, 'utf8')));
-const otherTests = allTests.filter((f) => !mockingTests.includes(f));
+// Runes in a test (`*.svelte.test.ts`) need Svelte's browser build: effects do not run in its server one.
+const runeTests = allTests.filter((f) => f.endsWith('.svelte.test.ts'));
+const mockingTests = allTests.filter((f) => !runeTests.includes(f) && /\bvi\.mock\(/.test(fs.readFileSync(f, 'utf8')));
+const otherTests = allTests.filter((f) => !runeTests.includes(f) && !mockingTests.includes(f));
 
 export default defineConfig({
   define: { __MINESHELL_VERSION__: JSON.stringify(version) },
@@ -108,7 +110,12 @@ export default defineConfig({
       // again for every file was half of the suite's time. The price: module
       // state (caches, registries) outlives a file, so a test must leave none
       // behind that another file could trip over - or use vi.mock after all.
-      { extends: true, test: { name: 'shared', include: otherTests, isolate: false } }
+      { extends: true, test: { name: 'shared', include: otherTests, isolate: false } },
+      {
+        extends: true,
+        resolve: { conditions: ['browser'] },
+        test: { name: 'runes', include: runeTests, environment: './tests/helpers/runes-environment.ts' }
+      }
     ]
   },
   server: {
