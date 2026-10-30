@@ -61,11 +61,21 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - An RCON stop waits up to 5 min for the JVM to exit (`awaitStop`) before systemctl stop; it
   used to fire after a fixed 20 s, mid-save on big packs, and could stop a run started again.
 - `pkill -f` in a shell whose own command line contains the pattern kills that shell.
+- User units' sandboxing (PrivateTmp, ProtectHome, ProtectSystem, PrivateUsers, ...) needs a
+  user namespace, and Ubuntu 24.04's `apparmor_restrict_unprivileged_userns=1` moves systemd's
+  into the `unprivileged_userns` profile, which takes its capabilities (kernel log:
+  `apparmor="AUDIT" operation="userns_create" ... target="unprivileged_userns"`). systemd
+  255 then runs the unit in the host's mount namespace and logs nothing; some combinations
+  fail with 218/CAPABILITIES instead. Found 2026-10-31: `readlink /proc/<pid>/ns/mnt` of a
+  server equals MineShell's. Not affected: options without a namespace (seccomp
+  `SystemCallFilter=`, `RestrictNamespaces=`, `LockPersonality=`, `UMask=` applied in a
+  transient unit). Probe: `systemd-run --user --wait --pipe -p PrivateTmp=yes readlink
+  /proc/self/ns/mnt`. The fix is open: ROADMAP, "Servers that are really sandboxed".
 
 ## Java heap (memory advice)
 - `heap.ts` reads heap use over the JVM attach socket (what jcmd does): `.attach_pid<pid>` in
   the cwd + SIGQUIT, then `/proc/<pid>/root/tmp/.java_pid<pid>` (PrivateTmp; on this machine
-  user units' PrivateTmp is not actually applied). Protocol "1\0jcmd\0<cmd>\0\0\0", answer
+  user units' PrivateTmp is not actually applied, above). Protocol "1\0jcmd\0<cmd>\0\0\0", answer
   starts "0\n". `PerfCounter.print` is jcmd-side, not a JVM command; `GC.heap_info` works on
   Java 8 (8u backport) to 25. Tried on throwaway JVMs (8 G1/Parallel, 17 G1, 21 ZGC/Shenandoah/
   Parallel, 25 G1): nothing logged, trigger removed. All four real servers use
