@@ -192,8 +192,10 @@ last 0.x:
   and drop-ins are MineShell's own and are rewritten by it when they change.
 - **Data folder**: its layout stays readable by every 1.x. Where a release leaves data an older
   one handles differently, the going-back dialog says so.
-- **Node.js**: the minimum rises only once a Node line has reached its end of life, announced in
-  the release notes before. With a Node too old, an update stops before changing anything.
+- **Node.js**: no Node line is dropped before its end of life, announced in the release notes
+  before. Within a supported line the minimum may rise to a newer point release (a fix MineShell
+  needs, such as undici's for downloads, ROADMAP "Node's download crash"), announced the same way.
+  With a Node too old, an update stops before changing anything.
 
 Not kept: the database layout for other programs, MineShell's internal endpoints (there is no
 public API), and what a server's `.mineshell/` folder holds. Going back past the last 0.x is not
@@ -275,6 +277,12 @@ pushes nothing. The rules:
 
 `npm run release -- patch|minor|major|<x.y.z>` overrides it. 1.0 is a decision, not a rule:
 the first version to recommend to other people as stable.
+
+From 1.0 on, a change that breaks "What 1.x keeps" (above) waits for 2.0: before a `feat:`
+or `fix:` goes in, its migrations are `-- downgrade: safe` and no setting is renamed or
+removed. Fixes found close together go out as one patch rather than one release each. A
+release that brings many features at once (1.1, from the `next` branch) runs on the real
+install for a few days before it is published.
 
 The pushed tag starts the Release workflow: the CI checks, the archive
 (`scripts/package.sh`), one start of it on a throwaway data directory (`scripts/smoke.sh`),

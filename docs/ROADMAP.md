@@ -12,6 +12,14 @@ functionality is there and stable. After it, maybe a few minor additions, then p
 servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
+Releasing after 1.0 (user's calls, 2026-10-30): the same as before (DEPLOYMENT, "Publishing a
+release"), but bound by "What 1.x keeps" there. `feat:` work for after 1.0 is on the `next`
+branch (from 2026-10-28; `fix:` commits go on `main` and are merged into it). Once 1.0 is out,
+`next` merges into `main` and becomes 1.1: weeks of features at once, so 1.1 gets a candidate
+run of its own on the real install, under the same rule as 1.0 (a few days with nothing big).
+After that `next` is dropped and work goes back to `main`; a branch comes back only for 2.0's
+breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
+
 Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
 "sooner" ones are built: ROADMAP-ARCHIVE):
 
@@ -42,7 +50,11 @@ until after 1.0, and asked to keep the rest listed here):
   the mod list, snapshot and disk notifications, the daily database copy, the update marker,
   limits on going back); frozen from 0.33.0 on (user's call, 2026-10-25): only `fix:` commits,
   and 1.0 once it runs stable without big issues;
-  cut a release candidate, run it on the real install for a week or two, then 1.0. The
+  cut a release candidate, run it on the real install for a week or two, then 1.0. From
+  2026-10-30 (user's call): 1.0 once the candidate has run about three days on the real
+  install with nothing big (lost data, a server that will not start, MineShell ending, a
+  failed install or update, a permission leak). Small things (a layout issue and the like)
+  delay it only by their fix and checking that it works; they do not restart the three days. The
   candidate is a last 0.x (checked 2026-10-25): a `-rc` tag would need four changes (the
   workflow publishes it as a full release, `release.sh` cannot bump from it, the release
   notes for 1.0 would start at it, and the self-updater's `compareVersions` reads
@@ -84,8 +96,8 @@ until after 1.0, and asked to keep the rest listed here):
   player editor listed nobody). Its checks: the tests each fix brought; the Chunky choices
   clicked, reloaded and swept at 390 px on the screenshot world; the 26.x readers on the
   user's own 26.3 world with all three dimensions and a player file (items, enchantments,
-  stats), and on a 1.21 world, which reads as before. Not yet seen: the Delete button's
-  "Stopping the server" in a browser.
+  stats), and on a 1.21 world, which reads as before. The Delete button's "Stopping the
+  server" seen in a browser by the user (2026-10-30).
   **0.33.14 is the candidate** (2026-10-29), after 0.33.11 to 0.33.13 the same evening, each
   from what the user found clicking around (0.33.13 ran on the real install, where its
   MeatballCraft showed the two Fugues 0.33.14 fixes). 0.33.11: Cleanroom's replacement
@@ -106,8 +118,10 @@ until after 1.0, and asked to keep the rest listed here):
   against real Modrinth and the CurseForge mirror: the update list's progress and table (and
   at 390 px), the Dynmap install's sources, Fugue 0.23.7 for Cleanroom 0.5.17 in 6 jar reads
   of 46 builds and 0.25.5 for 0.7.3, from CurseForge on a CurseForge server; the Mods tab
-  bar scrolled at desktop and phone width. Not yet seen: the update list and Mods tab on the
-  real MeatballCraft with 0.33.14.
+  bar scrolled at desktop and phone width. On the real install with 0.33.14 (2026-10-30): the
+  update list on MeatballCraft offers nothing for Fugue 0.23.7 (the newest for its Cleanroom
+  0.5.17) and leaves the disabled 0.21.0 unchecked as an old copy; Irithyll's "Last changed"
+  stayed on the 29th through the nightly restart.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
@@ -237,7 +251,8 @@ has the details; found 2026-10-25). No host MineShell downloads from does that, 
 (user's call, 2026-10-25: not during the freeze, and the fix raises the Node minimum). After
 1.0: check whether a newer Node 22/24 or Node 26 ships a fixed undici (the separate undici
 package is fixed from 8.12, which needs Node 22.19); if not, download through that package in a
-1.x minor, raising the minimum within Node 22 to 22.19.
+1.x minor, raising the minimum within Node 22 to 22.19 (allowed within 1.x, user's call
+2026-10-30: DEPLOYMENT, "What 1.x keeps"; announced in the release notes).
 
 #### Quoted JVM arguments
 
