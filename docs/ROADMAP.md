@@ -687,6 +687,12 @@ is open, and each needs a test setup.
   unchecked on it). Chunks stored with `region-file-compression=lz4` (1.20.5+, off by default)
   are unreadable to the chunk map and kept by pruning: to be read (Later, "server.properties
   coverage").
+- **Installed mods list** (user, 2026-10-30): sorting is a "Sort by" select above the table,
+  always one way (name A-Z, size and added or updated newest first), and the date it sorts by
+  (`addedAt`: the install record, else the jar's mtime) is shown nowhere; size only sits in
+  the file name line. Sort by clicking the column headers instead, a second click turning the
+  order round, with columns for size and added/updated so each sort can be seen; default
+  stays name, A-Z.
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
