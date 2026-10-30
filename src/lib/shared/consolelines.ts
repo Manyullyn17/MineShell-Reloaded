@@ -182,6 +182,32 @@ export function appendLine(entries: ConsoleEntry[], raw: string, id: number): Co
 	return entry;
 }
 
+/**
+ * The buffer cut down to `limit` entries plus up to `limit` errors and warnings, the oldest
+ * going first and warnings before errors; the rest keep their order. With one limit for
+ * everything a big pack's start (MeatballCraft's: 46,000 lines, 2,600 of them warnings and
+ * errors, 1,700 warnings) pushed its early errors out within seconds, and the error and
+ * warning counts went down as often as up.
+ */
+export function trimBuffer(entries: ConsoleEntry[], limit: number): ConsoleEntry[] {
+	let errors = 0;
+	let warnings = 0;
+	for (const e of entries) {
+		if (e.level === 'error') errors++;
+		else if (e.level === 'warn') warnings++;
+	}
+	const over = Math.max(0, errors + warnings - limit);
+	let dropWarnings = Math.min(warnings, over);
+	let dropErrors = over - dropWarnings;
+	let dropOther = Math.max(0, entries.length - errors - warnings - limit);
+	if (!over && !dropOther) return entries;
+	return entries.filter((e) => {
+		if (e.level === 'error') return !(dropErrors-- > 0);
+		if (e.level === 'warn') return !(dropWarnings-- > 0);
+		return !(dropOther-- > 0);
+	});
+}
+
 export type ConsoleFilter = { levels: Set<Level>; playersOnly: boolean; chatOnly?: boolean; search: string; rconConnections: boolean };
 
 /**

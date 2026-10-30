@@ -3,7 +3,7 @@
 	import { refreshAll } from '$app/navigation';
 	import { copyText } from '#lib/shared/clipboard.js';
 	import { onDestroy, onMount } from 'svelte';
-	import { appendLine, matchesFilter, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
+	import { appendLine, matchesFilter, trimBuffer, type ConsoleEntry, type Level } from '#lib/shared/consolelines.js';
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { followKey } from '#lib/shared/follow.svelte.js';
 	import { segments } from '#lib/shared/highlight.js';
@@ -148,7 +148,7 @@
 		if (last >= 0) next[last] = { ...next[last], trace: [...next[last].trace] };
 		for (const text of pending) appendLine(next, text, nextId++);
 		pending = [];
-		lines = next.length > bufferLines ? next.slice(-bufferLines) : next;
+		lines = trimBuffer(next, bufferLines);
 	}
 
 	function clearView() {

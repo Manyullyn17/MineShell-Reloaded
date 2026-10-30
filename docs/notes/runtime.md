@@ -104,8 +104,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   prefix take the previous line's level (multi-line messages like Fabric's mod list) unless
   they are systemd's own lines; frames, "Caused by" and an exception line after an
   error/warning fold into that entry. Modern Forge prints ANSI colour codes; they are stripped.
-- The browser keeps the last `consoleBufferLines` (2000) entries, and a newly opened console
-  stream starts with the last `consoleBacklogLines` (300). The streams (console, status) are
+- The browser keeps the last `consoleBufferLines` (2000) entries and as many errors and
+  warnings again, warnings going before errors (`trimBuffer`): with one limit MeatballCraft's
+  start (2,600 warnings and errors in 46,000 lines) pushed its early errors out and the
+  counts went down as often as up. A newly opened console stream starts with the last
+  `consoleBacklogLines` (300). The streams (console, status) are
   opened once per server through `followKey` - opened on every reload of the page's data
   (each 3 s while a server starts or stops, 0.30.0 to 0.33.15) they emptied the view and
   refilled it with the backlog.
