@@ -283,6 +283,12 @@ pushes nothing. The rules:
 `npm run release -- patch|minor|major|<x.y.z>` overrides it. 1.0 is a decision, not a rule:
 the first version to recommend to other people as stable.
 
+From 1.0 on, a change that breaks "What 1.x keeps" (above) waits for 2.0: before a `feat:`
+or `fix:` goes in, its migrations are `-- downgrade: safe` and no setting is renamed or
+removed. Fixes found close together go out as one patch rather than one release each. A
+release that brings many features at once (1.1, from the `next` branch) runs on the real
+install for a few days before it is published.
+
 The pushed tag starts the Release workflow: the CI checks, the archive
 (`scripts/package.sh`), one start of it on a throwaway data directory (`scripts/smoke.sh`),
 then the release with its checksum and `install.sh`. CI packs and smoke-tests on every push too.
