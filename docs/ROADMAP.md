@@ -396,6 +396,52 @@ each Minecraft version reads (the prompt and `require-resource-pack` came in 1.1
 whether MineShell should also host an uploaded pack itself, which needs an address players
 can reach (playit.gg does not carry HTTP).
 
+#### server.properties coverage
+
+Agreed 2026-10-30 (user's call: after 1.0). A vanilla 1.21.11 server (Irithyll) has 37 keys
+without a control, all Minecraft's own, so "Other keys" saying they are "usually added by a mod
+or the pack" is wrong: it becomes "settings MineShell has no control for: newer or niche
+Minecraft settings, and ones a mod or the pack adds".
+
+- **Own controls**, with a note each and the version they came in (`since`):
+  `hide-online-players`, `enable-status`, `enforce-secure-profile` (chat signing; offline mode,
+  No Chat Reports), `rate-limit` (0 off; some mods trip it), `accepts-transfers`, `log-ips`,
+  `query.port` (beside "Enable query protocol"), `region-file-compression` (below);
+  `generator-settings`, `initial-enabled-packs` and `initial-disabled-packs` in World as "only
+  used when the world is first generated" (the packs ones pointing to Data packs);
+  `max-world-size` with "Game rules, world spawn and border".
+- **Elsewhere**: the `resource-pack*` keys are "Server resource pack" above. The
+  `management-server-*` keys and `status-heartbeat-interval` (Minecraft's management API,
+  already under "Loader, modpack and Java") get notes on what each does and why it is
+  dangerous; controls only if MineShell ever uses the API itself.
+- **Notes only**, shown beside the key in Other keys from a table of known vanilla keys (a key
+  not in it is then plainly a mod's): `broadcast-console-to-ops`, `broadcast-rcon-to-ops`
+  (MineShell turns it on, so console commands echo to ops in chat), `enable-code-of-conduct`
+  (its text in `codeofconduct/`), `bug-report-link`, `function-permission-level`,
+  `max-chained-neighbor-updates`, `use-native-transport`, `prevent-proxy-connections`,
+  `enable-jmx-monitoring`, `text-filtering-config` and `text-filtering-version` (Realms only).
+- **Notes on existing controls**: `network-compression-threshold` (packets above this many
+  bytes are compressed; -1 off, good on a LAN; lower costs CPU),
+  `entity-broadcast-range-percentage`, `enable-query`, `generate-structures`,
+  `spawn-protection` (ops are exempt, 0 off).
+- **LZ4 chunks** (user's call: support it, not just warn): with `region-file-compression=lz4`
+  (1.20.5+) the chunk map draws every chunk plain and pruning keeps every chunk, silently
+  (`regionfile.ts` reads gzip, zlib and none). MineShell learns to read LZ4 chunks (lz4-java's
+  block stream format, as Minecraft writes them), so the control needs no warning.
+- **Across versions** (probed 2026-10-30 with `mc-probe.mjs`: the last release of each line
+  1.2.5-1.19 and every 1.20.x, 1.21.x and 26.x; a key's first version is the first probed that
+  wrote it, so up to 1.14 it can be older, and RCON/query keys are written only when used):
+  new in 26.2 `chat-spam-threshold-seconds` and `command-spam-threshold-seconds` (default 10,
+  own controls in Players); `management-server-allowed-origins` from 1.21.11. Gone:
+  `texture-pack` (to 1.6.4, then `resource-pack`), `resource-pack-hash` (1.8, then
+  `resource-pack-sha1`), `announce-player-achievements` (to 1.11.2), `max-build-height` (to
+  1.16.5), `snooper-enabled` (to 1.17.1), `spawn-animals` and `spawn-npcs` (to 1.21.1),
+  `pvp`, `allow-nether`, `spawn-monsters`, `enable-command-block` (to 1.21.8; game rules from
+  1.21.9, which ignores the keys even for a world made on 1.21.8). 1.17.1 leaves the seed,
+  level type, generator settings and structures out of a new file but reads them. Each
+  control gets `since` and an `until`, and a renamed key maps to its name per version
+  (`mc-probe.mjs <version> --keep <dir>` repeats a probe).
+
 #### Maintenance mode
 
 Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks whoever is
@@ -598,7 +644,8 @@ is open, and each needs a test setup.
   empty there (checked on vanilla 1.6.4 with `mc-probe.mjs`); their log is `server.log` beside
   the server, with "<name>[/ip] logged in" for joins (the Logs tab and join detection are
   unchecked on it). Chunks stored with `region-file-compression=lz4` (1.20.5+, off by default)
-  are unreadable to the chunk map and kept by pruning.
+  are unreadable to the chunk map and kept by pruning: to be read (Later, "server.properties
+  coverage").
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
