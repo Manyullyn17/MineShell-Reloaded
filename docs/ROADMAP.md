@@ -313,6 +313,23 @@ declare (loaders.md, Cleanroom). Two gaps left:
   the jars' class-file versions by hand. Read it from the jar instead (the class file's major
   version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
 
+#### Minecraft versions the loader has builds for
+
+Asked for 2026-10-30, looking at the new version pickers. Add a server lists every Minecraft
+release whatever the loader; only Cleanroom narrows it (`onlyGameVersions`), and a version the
+loader has no build for shows up only after picking it ("No Fabric build for Minecraft …").
+List only the versions the picked loader has builds for, there and in Settings' version move
+panel.
+- Fabric and Quilt: `listGameVersions` already reads their meta's game list
+  (`/api/loaders/versions?kind=game`), but nothing on the form asks for it.
+- Forge and NeoForge: `listGameVersions` is the plain release list. Their maven metadata,
+  which `listLoaderVersions` already fetches, names the Minecraft version in each build
+  (Forge `1.20.1-47.3.0`; NeoForge `21.1.x` is 1.21.1 and `26.3.0.x` is 26.3, `neoforgePrefix`,
+  loaders.md), so the list can come from the same file. Betas count: some versions have only
+  those.
+- Keep the warning for a version picked another way (a pack, an import, an old server's
+  version in the move panel), and keep the fallback to a free field when the lookup fails.
+
 ### 2. Files
 
 All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
