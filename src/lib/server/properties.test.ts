@@ -2,10 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+	choiceValueFor,
 	defaultProperties,
+	fieldForVersion,
 	fieldsForVersion,
 	fillPropertyDefaults,
 	levelTypeOptionsFor,
+	matchPropertiesToVersion,
+	movedGameRules,
 	parseProperties,
 	PROPERTY_SCHEMA,
 	patchProperties,
@@ -94,5 +98,50 @@ describe('fields by Minecraft version', () => {
 		expect(pause('1.21.11')).toBe(true);
 		expect(pause('26.1')).toBe(true);
 		expect(pause('')).toBe(true);
+	});
+
+	it('offers PvP, the Nether, monsters and command blocks up to 1.21.8, which they became game rules after', () => {
+		const moved = ['pvp', 'allow-nether', 'spawn-monsters', 'enable-command-block'];
+		const keys = (version: string) => fieldsForVersion(PROPERTY_SCHEMA, version).map((f) => f.key);
+		for (const version of ['1.12.2', '1.21.8', '']) expect(keys(version)).toEqual(expect.arrayContaining(moved));
+		for (const version of ['1.21.9', '1.21.11', '26.3']) for (const key of moved) expect(keys(version)).not.toContain(key);
+		expect(movedGameRules('1.21.8')).toBeNull();
+		expect(movedGameRules('1.21.10')).toEqual(['pvp', 'spawnMonsters', 'allowEnteringNetherUsingPortals', 'commandBlocksEnabled']);
+		expect(movedGameRules('26.3')).toEqual(['pvp', 'spawn_monsters', 'allow_entering_nether_using_portals', 'command_blocks_work']);
+	});
+});
+
+describe('difficulty and game mode', () => {
+	// 1.12.2 read difficulty=hard as Easy and wrote back difficulty=1 (mc-probe.mjs).
+	it('are numbers before 1.14 and names from it, whichever the file holds', () => {
+		expect(choiceValueFor('difficulty', 'hard', '1.12.2')).toBe('3');
+		expect(choiceValueFor('gamemode', 'creative', '1.13.2')).toBe('1');
+		expect(choiceValueFor('difficulty', '2', '1.12.2')).toBe('2');
+		expect(choiceValueFor('difficulty', '3', '1.14')).toBe('hard');
+		expect(choiceValueFor('gamemode', 'Survival', '26.3')).toBe('survival');
+		expect(choiceValueFor('difficulty', 'normal', '')).toBe('normal');
+		// Not one of them: left as it is.
+		expect(choiceValueFor('difficulty', 'nightmare', '1.12.2')).toBe('nightmare');
+		expect(choiceValueFor('max-players', '3', '1.12.2')).toBe('3');
+		const difficulty = PROPERTY_SCHEMA.find((f) => f.key === 'difficulty')!;
+		expect(fieldForVersion(difficulty, '1.7.10').options).toEqual([
+			{ value: '0', label: 'Peaceful' },
+			{ value: '1', label: 'Easy' },
+			{ value: '2', label: 'Normal' },
+			{ value: '3', label: 'Hard' }
+		]);
+		expect(fieldForVersion(difficulty, '1.21.1').options?.map((o) => o.value)).toEqual(['peaceful', 'easy', 'normal', 'hard']);
+	});
+
+	it('are rewritten as numbers before a server older than 1.14 starts, and the file is otherwise left alone', async () => {
+		const dir = await tempDir();
+		const file = path.join(dir, 'server.properties');
+		await fs.writeFile(file, 'difficulty=normal\ngamemode=creative\nmotd=Hi\n');
+		await matchPropertiesToVersion(dir, '1.12.2');
+		expect((await readProperties(dir)).values).toEqual({ difficulty: '2', gamemode: '1', motd: 'Hi' });
+
+		await fs.writeFile(file, 'difficulty=2\nmotd=Hi\n');
+		await matchPropertiesToVersion(dir, '1.12.2');
+		expect(await fs.readFile(file, 'utf8')).toBe('difficulty=2\nmotd=Hi\n');
 	});
 });

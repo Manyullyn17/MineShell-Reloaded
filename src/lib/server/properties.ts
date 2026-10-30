@@ -23,6 +23,8 @@ export type PropertyField = {
 	slider?: { unit: string };
 	/** The first Minecraft version that reads it; older servers do not get the field. */
 	since?: string;
+	/** The last Minecraft version that reads it; newer servers do not get the field. */
+	until?: string;
 };
 
 export const PROPERTY_GROUPS = ['World', 'Players', 'Gameplay', 'Performance', 'Network'] as const;
@@ -55,13 +57,13 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 		restartRequired: true
 	},
 	{ key: 'generate-structures', label: 'Generate structures', type: 'boolean', group: 'World' },
-	{ key: 'allow-nether', label: 'Allow the Nether', type: 'boolean', group: 'World' },
+	{ key: 'allow-nether', label: 'Allow the Nether', type: 'boolean', group: 'World', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
 	{ key: 'spawn-protection', label: 'Spawn protection radius', type: 'number', min: 0, max: 256, group: 'World' },
 
 	{ key: 'max-players', label: 'Player slots', type: 'number', min: 1, max: 2000, group: 'Players' },
 	{ key: 'white-list', label: 'Whitelist only', type: 'boolean', group: 'Players', help: 'When on, only players on the whitelist can join.' },
 	{ key: 'enforce-whitelist', label: 'Kick players removed from the whitelist', type: 'boolean', group: 'Players' },
-	{ key: 'pvp', label: 'Player versus player', type: 'boolean', group: 'Players' },
+	{ key: 'pvp', label: 'Player versus player', type: 'boolean', group: 'Players', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
 	{ key: 'player-idle-timeout', label: 'Idle kick after (minutes)', type: 'number', min: 0, max: 600, group: 'Players', help: '0 never kicks.' },
 	{
 		key: 'op-permission-level',
@@ -103,8 +105,8 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'force-gamemode', label: 'Force game mode on join', type: 'boolean', group: 'Gameplay' },
 	{ key: 'hardcore', label: 'Hardcore', type: 'boolean', group: 'Gameplay' },
 	{ key: 'allow-flight', label: 'Allow flight', type: 'boolean', group: 'Gameplay', help: 'Needed by most flight mods; otherwise players get kicked.' },
-	{ key: 'spawn-monsters', label: 'Spawn monsters', type: 'boolean', group: 'Gameplay' },
-	{ key: 'enable-command-block', label: 'Enable command blocks', type: 'boolean', group: 'Gameplay' },
+	{ key: 'spawn-monsters', label: 'Spawn monsters', type: 'boolean', group: 'Gameplay', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
+	{ key: 'enable-command-block', label: 'Enable command blocks', type: 'boolean', group: 'Gameplay', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
 
 	{ key: 'view-distance', label: 'View distance', type: 'number', min: 2, max: 32, slider: { unit: 'chunks' }, group: 'Performance' },
 	{ key: 'simulation-distance', label: 'Simulation distance', type: 'number', min: 2, max: 32, slider: { unit: 'chunks' }, group: 'Performance' },
@@ -126,10 +128,27 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 
 const SCHEMA_KEYS = new Set(PROPERTY_SCHEMA.map((f) => f.key));
 
-/** The fields a server on this Minecraft version reads (an unknown version gets them all). */
+/**
+ * The fields a server on this Minecraft version reads (an unknown version gets them all).
+ * 1.21.9 made `pvp`, `allow-nether`, `spawn-monsters` and `enable-command-block` game rules
+ * and ignores the keys, also for a world made on 1.21.8 (tried with mc-probe.mjs).
+ */
 export function fieldsForVersion(fields: PropertyField[], minecraftVersion: string): PropertyField[] {
 	const version = minecraftVersion.trim();
-	return fields.filter((f) => !f.since || !version || compareVersions(version, f.since) >= 0);
+	if (!version) return fields;
+	return fields.filter((f) => (!f.since || compareVersions(version, f.since) >= 0) && (!f.until || compareVersions(version, f.until) <= 0));
+}
+
+/**
+ * The game rules 1.21.9 and newer read instead of the four keys above (1.21.11 renamed
+ * them; `pvp` kept its name), for the console note; null where the keys still work.
+ */
+export function movedGameRules(minecraftVersion: string): string[] | null {
+	const version = minecraftVersion.trim();
+	if (!version || compareVersions(version, '1.21.9') < 0) return null;
+	return compareVersions(version, '1.21.11') >= 0
+		? ['pvp', 'spawn_monsters', 'allow_entering_nether_using_portals', 'command_blocks_work']
+		: ['pvp', 'spawnMonsters', 'allowEnteringNetherUsingPortals', 'commandBlocksEnabled'];
 }
 
 /**
@@ -180,6 +199,48 @@ export function levelTypeOptionsFor(minecraftVersion: string): { value: string; 
 
 function defaultLevelType(minecraftVersion: string): string {
 	return usesNamespacedLevelType(minecraftVersion) ? 'minecraft:normal' : 'DEFAULT';
+}
+
+/**
+ * Up to 1.13.2 Minecraft reads `difficulty` and `gamemode` as numbers only: a name
+ * (`difficulty=hard`) falls back to the default (Easy, Survival) without a word, and the
+ * server writes the number back. 1.14 and newer read both and write the name (tried with
+ * mc-probe.mjs on 1.12.2, 1.13.2, 1.14.4 and 26.3; Cleanroom 1.12 wrote numbers too). A
+ * choice's number is its place in the schema's options.
+ */
+const NUMBERED_CHOICES = ['difficulty', 'gamemode'];
+
+export function usesNamedChoices(minecraftVersion: string): boolean {
+	const version = minecraftVersion.trim();
+	return !version || compareVersions(version, '1.14') >= 0;
+}
+
+/** A difficulty or game mode, by name or number, as this version reads it; anything else as it is. */
+export function choiceValueFor(key: string, value: string, minecraftVersion: string): string {
+	if (!NUMBERED_CHOICES.includes(key)) return value;
+	const names = PROPERTY_SCHEMA.find((f) => f.key === key)?.options?.map((o) => o.value) ?? [];
+	const given = value.trim().toLowerCase();
+	const index = /^\d+$/.test(given) ? Number(given) : names.indexOf(given);
+	if (index < 0 || index >= names.length) return value;
+	return usesNamedChoices(minecraftVersion) ? names[index] : String(index);
+}
+
+/** `values` with the difficulty and game mode as this version reads them. */
+export function propertiesForVersion(values: Record<string, string>, minecraftVersion: string): Record<string, string> {
+	const out = { ...values };
+	for (const key of NUMBERED_CHOICES) if (Object.hasOwn(out, key)) out[key] = choiceValueFor(key, out[key], minecraftVersion);
+	return out;
+}
+
+/**
+ * A field as this version reads it: the level types and numbered choices in its format, and
+ * no note on the versions it is for (only the defaults for new servers, of any version, need it).
+ */
+export function fieldForVersion(field: PropertyField, minecraftVersion: string): PropertyField {
+	if (field.until && minecraftVersion.trim()) return { ...field, help: undefined };
+	if (field.key === 'level-type') return { ...field, options: levelTypeOptionsFor(minecraftVersion) };
+	if (!NUMBERED_CHOICES.includes(field.key)) return field;
+	return { ...field, options: field.options?.map((o) => ({ ...o, value: choiceValueFor(field.key, o.value, minecraftVersion) })) };
 }
 
 export type ParsedProperties = {
@@ -282,6 +343,19 @@ export async function writeProperties(
 	values: Record<string, string>
 ): Promise<void> {
 	await fs.writeFile(propertiesPath(instancePath), serialiseProperties(values), 'utf8');
+}
+
+/**
+ * Rewrites the difficulty and game mode in the format this version reads, when they are
+ * not: names written for a server before 1.14 (by MineShell up to 0.33.14, a pack, a
+ * version change). Run before every start; the server would read them as its defaults.
+ */
+export async function matchPropertiesToVersion(instancePath: string, minecraftVersion: string): Promise<void> {
+	// Newer versions read a number too, and write the name back themselves.
+	if (usesNamedChoices(minecraftVersion)) return;
+	const { values } = await readProperties(instancePath);
+	const matched = propertiesForVersion(values, minecraftVersion);
+	if (NUMBERED_CHOICES.some((k) => values[k] !== matched[k])) await writeProperties(instancePath, matched);
 }
 
 /** Merge a partial update into the file on disk without dropping unknown keys. */

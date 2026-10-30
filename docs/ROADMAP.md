@@ -405,6 +405,11 @@ over RCON; stopped: written to `level.dat` like the rules.
   whether pre-1.13 worlds store every rule or only changed ones. On 1.21.9+ the management
   server (Undecided) can list and set them with types, which would cover the running case
   without RCON.
+- From 1.21.9 PvP, the Nether, monsters and command blocks are game rules only (`pvp`,
+  `spawnMonsters`, `allowEnteringNetherUsingPortals`, `commandBlocksEnabled`; from 1.21.11
+  `spawn_monsters`, `allow_entering_nether_using_portals`, `command_blocks_work`): Settings
+  hides their server.properties controls there and names the rules (0.33.15). They are the
+  first rules this list should show prominently.
 
 #### Single files from a snapshot
 

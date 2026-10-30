@@ -110,3 +110,37 @@ describe('the game port in the raw editor', () => {
 		expect((await file(instance.path)).motd).toBe('Hello');
 	});
 });
+
+describe('settings that changed form between Minecraft versions', () => {
+	type Shown = { values: Record<string, string>; schema: { key: string; options?: { value: string }[] }[]; gameRules: string[] | null };
+	const shown = async (id: string) => (await load(page, { params: { id } })).properties as Shown;
+
+	it('shows and saves difficulty and game mode as numbers before 1.14, which reads no names', async () => {
+		systemdStopped();
+		const instance = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, { 'server.properties': 'difficulty=normal\ngamemode=1\nlevel-name=world\n' });
+		const before = await shown(instance.id);
+		expect(before.values).toMatchObject({ difficulty: '2', gamemode: '1' });
+		expect(before.schema.find((f) => f.key === 'difficulty')?.options?.map((o) => o.value)).toEqual(['0', '1', '2', '3']);
+
+		// Saving any section puts a name left in the file right too.
+		expect(await post(actions.properties, { params: { id: instance.id }, fields: { motd: 'Changed' } })).toMatchObject({ ok: true });
+		expect(await file(instance.path)).toMatchObject({ difficulty: '2', gamemode: '1', motd: 'Changed' });
+		expect(await post(actions.properties, { params: { id: instance.id }, fields: { difficulty: '3' } })).toMatchObject({ ok: true });
+		expect((await file(instance.path)).difficulty).toBe('3');
+	});
+
+	it('leaves out PvP, the Nether, monsters and command blocks from 1.21.9, and names the game rules instead', async () => {
+		systemdStopped();
+		const props = 'pvp=false\nspawn-monsters=true\nlevel-name=world\ndifficulty=2\n';
+		const newer = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.11' }, { 'server.properties': props });
+		const after = await shown(newer.id);
+		expect(after.schema.map((f) => f.key)).not.toContain('pvp');
+		expect(after.gameRules).toEqual(['pvp', 'spawn_monsters', 'allow_entering_nether_using_portals', 'command_blocks_work']);
+		expect(after.values.difficulty).toBe('normal');
+
+		const older = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.8' }, { 'server.properties': props });
+		const before = await shown(older.id);
+		expect(before.schema.map((f) => f.key)).toContain('pvp');
+		expect(before.gameRules).toBeNull();
+	});
+});

@@ -12,8 +12,12 @@ import { BUILT_IN_PRESETS, composeJvmArgs, getPreset, presetFlags, presetRunsOn,
 import { allocatePort, allocatePortPair, portConflict, portIsFree, portRanges, portUser, rconPortFor, rconStart } from './ports';
 import {
 	defaultProperties,
+	fieldsForVersion,
 	fillPropertyDefaults,
+	matchPropertiesToVersion,
 	patchProperties,
+	PROPERTY_SCHEMA,
+	propertiesForVersion,
 	writeProperties
 } from './properties';
 import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
@@ -221,10 +225,15 @@ function jvmArgsFor(presetId: string, minMb: number, maxMb: number, javaMajor: n
 	return composeJvmArgs(presetFlags(preset, javaMajor), minMb, maxMb);
 }
 
-/** server.properties for a new server: built-in values, the stored defaults over them, then what MineShell assigns. */
+/**
+ * server.properties for a new server: built-in values, the stored defaults over them, then what
+ * MineShell assigns; in the format its version reads, without the keys it no longer reads.
+ */
 function newServerProperties(opts: Parameters<typeof defaultProperties>[0]): Record<string, string> {
-	const assigned = defaultProperties(opts);
-	return { ...assigned, ...getInstanceDefaults().properties };
+	const values = propertiesForVersion({ ...defaultProperties(opts), ...getInstanceDefaults().properties }, opts.minecraftVersion);
+	const read = new Set(fieldsForVersion(PROPERTY_SCHEMA, opts.minecraftVersion).map((f) => f.key));
+	for (const field of PROPERTY_SCHEMA) if (field.until && !read.has(field.key)) delete values[field.key];
+	return values;
 }
 
 /**
@@ -1247,6 +1256,8 @@ export async function start(
 	await applyMapModConfig(instance).catch(() => undefined);
 	// Chunky continuing its unfinished tasks after this start, as set on the World tab.
 	await applyChunkyConfig(instance).catch(() => undefined);
+	// Difficulty and game mode as numbers on a server before 1.14, which reads no names.
+	await matchPropertiesToVersion(instance.path, instance.minecraftVersion).catch(() => undefined);
 	// A public server's playit tunnels follow its ports, which change only on a (re)start;
 	// voice chat's gets its address written into the mod's voice_host.
 	await syncTunnels(instance).catch((err) => console.warn(`playit tunnels for ${instance.id} not updated:`, err));

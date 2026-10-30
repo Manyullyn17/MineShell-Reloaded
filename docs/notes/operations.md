@@ -63,3 +63,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Latin-1: a UTF-8 "Gemütlich" motd came back as `Gem\u00C3\u00BCtlich`. Letters past ASCII are
   written as `\uXXXX` (every version reads that); the raw editor shows them as letters.
   Tried by running both vanilla jars on a scratch file (`tests/tools/mc-probe.mjs` does that).
+- Keys that changed form (mc-probe.mjs, 2026-10-30): up to 1.13.2 `difficulty` and `gamemode`
+  are numbers only: a name falls back to Easy/Survival without a word and the server writes the
+  number back (vanilla 1.12.2; the Cleanroom MeatballCraft copy had `difficulty=1` too). 1.14
+  and newer read both and write the name. `choiceValueFor` converts; `start()` rewrites names
+  on an old server first. From 1.21.9 `pvp`, `allow-nether`, `spawn-monsters` and
+  `enable-command-block` are ignored, also for a world made on 1.21.8 (no migration): game
+  rules, renamed again in 1.21.11 (`movedGameRules`). Which keys each version writes, 1.2.5
+  to 26.3: ROADMAP (on `next`), "server.properties coverage".

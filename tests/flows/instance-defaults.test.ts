@@ -88,6 +88,21 @@ describe('defaults for new servers', () => {
 		expect(props.motd).toBe('Defaults');
 	});
 
+	it('writes the game settings as the server’s Minecraft version reads them', async () => {
+		defaults.setInstanceDefaults({
+			...defaults.getInstanceDefaults(),
+			properties: { ...defaults.BUILT_IN_DEFAULTS.properties, difficulty: 'hard', pvp: 'false' }
+		});
+		// Before 1.14 a name reads as the default (Easy, Survival): numbers.
+		addJava(8);
+		expect((await readProperties((await newServer({ minecraftVersion: '1.12.2' })).path)).values).toMatchObject({ difficulty: '3', gamemode: '0', pvp: 'false' });
+		// From 1.21.9 PvP and the rest are game rules, which ignore the keys.
+		const newer = (await readProperties((await newServer({ minecraftVersion: '1.21.11' })).path)).values;
+		expect(newer).toMatchObject({ difficulty: 'hard', gamemode: 'survival' });
+		for (const key of ['pvp', 'allow-nether', 'spawn-monsters', 'enable-command-block']) expect(newer).not.toHaveProperty(key);
+		expect((await readProperties((await newServer({ minecraftVersion: '1.21.8' })).path)).values).toMatchObject({ pvp: 'false', 'allow-nether': 'true' });
+	});
+
 	it('fits the default preset to the new server’s Java', async () => {
 		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), jvmPreset: 'zgc' });
 		// Java 21 takes -XX:+ZGenerational; Java 17 refuses to start with it.

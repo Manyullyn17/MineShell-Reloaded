@@ -655,7 +655,19 @@
 
 	<!-- =========================================================== Gameplay -->
 
-	<SettingsSection tab="gameplay" title="Rules" editable={may('settings.edit')} dirty={dirtyIds.has('rules')}>
+	{#snippet gameRulesNote()}
+		{@const [pvp, monsters, nether, commandBlocks] = data.properties.gameRules ?? []}
+		PvP, monsters, the Nether and command blocks are game rules from Minecraft 1.21.9: set them in the
+		<a href="/instances/{encodeURIComponent(data.instance.id)}/console">Console</a>, as
+		<code>gamerule {pvp} false</code>, <code>{monsters}</code>, <code>{nether}</code> or <code>{commandBlocks}</code>.
+	{/snippet}
+	<SettingsSection
+		tab="gameplay"
+		title="Rules"
+		editable={may('settings.edit')}
+		description={data.properties.gameRules ? gameRulesNote : undefined}
+		dirty={dirtyIds.has('rules')}
+	>
 		{@render propertyForm('rules')}
 	</SettingsSection>
 

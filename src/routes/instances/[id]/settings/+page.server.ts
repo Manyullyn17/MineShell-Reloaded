@@ -65,9 +65,11 @@ import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, public
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
 import {
 	PROPERTY_SCHEMA,
+	fieldForVersion,
 	fieldsForVersion,
-	levelTypeOptionsFor,
+	movedGameRules,
 	parseProperties,
+	propertiesForVersion,
 	propertiesFromForm,
 	readProperties,
 	serialiseProperties,
@@ -312,11 +314,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				? listScheduledCommands(instance.id)
 				: [],
 		properties: {
-			values: shownProperties,
+			values: propertiesForVersion(shownProperties, instance.minecraftVersion),
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k)).map((key) => ({ key, value: parsed.values[key] })),
-			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) =>
-				field.key === 'level-type' ? { ...field, options: levelTypeOptionsFor(instance.minecraftVersion) } : field
-			),
+			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) => fieldForVersion(field, instance.minecraftVersion)),
+			gameRules: movedGameRules(instance.minecraftVersion),
 			raw: serialiseProperties(shownProperties, { unicode: true })
 		},
 		bootNote: bootStartNote(),
@@ -921,7 +922,10 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const current = (await readProperties(instance.path)).values;
-		const next: Record<string, string> = { ...current, ...propertiesFromForm(form, editableProperties()) };
+		const next: Record<string, string> = propertiesForVersion(
+			{ ...current, ...propertiesFromForm(form, editableProperties()) },
+			instance.minecraftVersion
+		);
 		for (const [key, value] of form.entries()) {
 			const match = key.match(/^extra:(.+)$/);
 			if (match && !MANAGED_KEYS.has(match[1])) next[match[1]] = String(value);
