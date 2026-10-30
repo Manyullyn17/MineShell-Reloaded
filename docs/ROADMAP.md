@@ -131,6 +131,14 @@ until after 1.0, and asked to keep the rest listed here):
   26.3, and the Gameplay tab and new server defaults on a throwaway 1.12.2 and 1.21.11 server.
   On the real install (2026-10-30): MeatballCraft's first start left `difficulty=2`,
   `gamemode=0`.
+  **0.33.16 is the candidate** (2026-10-30), two small fixes the user saw starting
+  MeatballCraft on 0.33.15 (the three days go on): the Console no longer emptying and
+  reloading its last 300 lines every 3 s while a server starts (since 0.30.0), and keeping a
+  big start's errors and warnings beyond its line limit so their counts no longer drop. Its
+  checks: the tests each fix brought (each failing without it), and MeatballCraft's recorded
+  startup (46,000 lines) replayed on a throwaway server with the console logged every frame
+  in Chrome: never emptied, the error count only rose. Not yet seen: a real start on the
+  real install with 0.33.16.
 - **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
   built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
   through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
