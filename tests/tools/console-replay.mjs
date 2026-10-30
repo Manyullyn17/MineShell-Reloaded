@@ -56,4 +56,6 @@ do {
 	if (batch) await write(batch);
 	if (loop) await sleep(5000);
 } while (loop);
-await new Promise(() => {});
+// Up like a started server until stopped: a bare never-settling await ends Node with
+// exit code 13 once nothing else is pending, which the unit takes for a crash.
+setInterval(() => {}, 1 << 30);
