@@ -232,8 +232,9 @@ finished `feat:` commits are gathered into a minor every few days or more (DEPLO
 "Publishing a release"), not released one by one as in 0.x. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit). Small,
-   mostly reading what MineShell already has: a calm first step after the freeze.
+1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit), servers
+   that are really sandboxed. Small, mostly reading what MineShell already has: a calm first
+   step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
    files, zips and folders).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
@@ -329,6 +330,66 @@ panel.
   those.
 - Keep the warning for a version picked another way (a pack, an import, an old server's
   version in the move panel), and keep the fallback to a free field when the lookup fails.
+
+#### Servers that are really sandboxed
+
+Agreed 2026-10-31 (user's call, after weighing it: it leaves the servers better off than
+today on every count). The template's `PrivateTmp=yes` is not applied on Ubuntu 24.04: a user
+unit needs a user namespace for it, AppArmor's `apparmor_restrict_unprivileged_userns=1`
+takes the namespace's capabilities, and systemd runs the unit unsandboxed without a word
+(notes, runtime.md). Mount options (`ProtectHome=`, `ProtectSystem=strict`, `PrivateUsers=`,
+`ProtectProc=`) fail the same way, so a mod can read and write everything the account can:
+MineShell's database and `secret.key`, `~/.ssh`, `~/.bashrc`, `~/.config/systemd/user`,
+other servers' `units/<id>.env` (whose `MS_JAVA` is a command). `systemd-analyze --user
+security` gives 9.2. Only Ubuntu (23.10+) and derivatives that kept its default: Debian and
+SUSE have AppArmor without the restriction, Fedora's SELinux and Arch do not block it, so
+there the sandbox applies already.
+
+What lifting the restriction gives up: it guards against kernel bugs reached through user
+namespaces; the file access it now costs needs no bug at all. Scoped as below, with
+`RestrictNamespaces=yes`, the servers get the file sandbox and cannot make namespaces at all
+(today they can, without capabilities), so they are better off on both.
+
+- **The AppArmor exception, for one account.** A profile with no attachment,
+  `profile systemd-userns flags=(unconfined) { userns, }`, given only to that account's user
+  manager by a system drop-in `user@<uid>.service.d/` with `AppArmorProfile=-systemd-userns`
+  (the `-`: a profile that failed to load does not keep the user manager, and with it
+  MineShell, from starting at boot). Not the draft on branch `wip/server-sandbox`, which
+  attaches to `/usr/lib/systemd/systemd`: every account's user manager, PID 1 after a
+  `daemon-reexec` (Ubuntu's systemd upgrades do one) and, as an unconfined profile is kept
+  across exec, probably everything they start. Sudo once, documented in DEPLOYMENT next to
+  lingering and the dedicated account.
+- **`doctor` checks it** and points at that section: drafted on `wip/server-sandbox` (a
+  `systemd-run --user -p PrivateTmp=yes` probe comparing mount namespaces, shown as `warn`).
+- **`RestrictNamespaces=yes`** in the server template, the playit unit and `mineshell.service`
+  (seccomp, applied after systemd built the sandbox; applied in a transient unit). Helps on
+  every distro: elsewhere any program may make user namespaces.
+- **Options without a namespace**, which work today (seen in a transient unit, not yet under a
+  real JVM): `LockPersonality=`, `RestrictSUIDSGID=`, `RestrictRealtime=`,
+  `SystemCallArchitectures=native`, `SystemCallFilter=@system-service` with
+  `~@privileged @resources`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK`,
+  `UMask=0027`. Not `MemoryDenyWriteExecute=` (the JIT needs it).
+- **Then each server kept to its own folder** (`ProtectSystem=strict`, `ProtectHome=tmpfs`
+  with `BindPaths=` its folder and `BindReadOnlyPaths=` Java and tools,
+  `ProtectProc=invisible`). The start script deletes `units/<id>.once` itself, so `units/`
+  must stay writable: MineShell would delete it after the start instead.
+
+Tests, on Ubuntu with the exception in place:
+1. `doctor` says ok; a server's `/proc/<pid>/ns/mnt` differs from MineShell's.
+2. Servers on each loader boot, stop with a save (RCON and SIGTERM), restart, and answer a
+   Forge startup question (the `.once` file).
+3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
+   separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
+   diagnosis, the console and RCON.
+4. The JVM under `RestrictNamespaces=yes` and the syscall filter.
+5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
+   which inherits the profile too).
+6. A broken or missing profile: the user manager still starts, `doctor` warns. A server now
+   fails with `226/NAMESPACE` where it ran unsandboxed before.
+
+Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
+applies there straight away. MineShell's units are the only user units on this machine with
+sandbox options, so nothing else here changes.
 
 ### 2. Files
 
@@ -703,45 +764,6 @@ is open, and each needs a test setup.
 ## Undecided
 
 Suggested, not yet confirmed or rejected:
-
-- **Servers that are really sandboxed** (user, 2026-10-31: needs consideration, look into it
-  later). The template's `PrivateTmp=yes` is not applied on Ubuntu 24.04: a user unit needs a
-  user namespace for it, AppArmor's `apparmor_restrict_unprivileged_userns=1` takes the
-  namespace's capabilities, and systemd runs the unit unsandboxed without a word (notes,
-  runtime.md). Mount options (`ProtectHome=`, `ProtectSystem=strict`, `PrivateUsers=`,
-  `ProtectProc=`) fail the same way, so a mod can read and write everything the account can:
-  MineShell's database and `secret.key`, `~/.ssh`, `~/.config/systemd/user`, other servers'
-  `units/<id>.env` (whose `MS_JAVA` is a command). `systemd-analyze --user security` gives
-  9.2. Drafted on branch `wip/server-sandbox`: a `doctor` check (a `systemd-run --user -p
-  PrivateTmp=yes` probe comparing mount namespaces, shown as `warn`) and a DEPLOYMENT section
-  whose fix is too broad (below). Open points:
-  - The drafted fix, an AppArmor profile `flags=(unconfined) { userns, }` attached to
-    `/usr/lib/systemd/systemd`, covers every account's user manager, PID 1 after a
-    `daemon-reexec` (Ubuntu's systemd upgrades do one) and, as an unconfined profile is kept
-    across exec, probably everything they start, mods included (not checked: needs root):
-    nearly the sysctl turned off. Narrower: the profile with no attachment, given only to
-    this account's manager by a system drop-in `user@<uid>.service.d/` with
-    `AppArmorProfile=-systemd-userns` (the `-`: a profile that failed to load does not keep
-    the user manager, and with it MineShell, from starting at boot). Untried.
-  - Either way `RestrictNamespaces=yes` in the server template, the playit unit and
-    `mineshell.service`: seccomp, applied after systemd built the sandbox, so the JVM and its
-    mods cannot make namespaces even with the profile (applied in a transient unit).
-  - Options without a namespace, which work today (seen in a transient unit, not yet under a
-    real JVM): `LockPersonality=`, `RestrictSUIDSGID=`, `RestrictRealtime=`,
-    `SystemCallArchitectures=native`, `SystemCallFilter=@system-service` with
-    `~@privileged @resources`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK`,
-    `UMask=0027`. Not `MemoryDenyWriteExecute=` (the JIT needs it).
-  - Once namespaces work: each server kept to its own folder (`ProtectSystem=strict`,
-    `ProtectHome=tmpfs` with `BindPaths=` its folder and `BindReadOnlyPaths=` Java and tools,
-    `ProtectProc=invisible`). The start script deletes `units/<id>.once` itself, so `units/`
-    must stay writable: MineShell would delete it after the start instead.
-  - To check then: heap reads (`heap.ts` reads the JVM's socket through
-    `/proc/<pid>/root/tmp`, only then a separate `/tmp`), the JVM's attach peer check inside
-    the user namespace, a reboot (the user manager takes the profile when it starts),
-    `226/NAMESPACE` failures instead of silent fallback. MineShell's units are the only user
-    units on this machine with sandbox options, so nothing else changes.
-  - A dedicated account (DEPLOYMENT) or a user per server (system units, removed
-    2026-10-06) are the other ways to keep a mod away from the account's files.
 
 - **Versions of files changed outside MineShell** (user, 2026-10-29: maybe later): earlier
   versions of edited files keeps only what MineShell's own saves replace. A mod rewriting its
