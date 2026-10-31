@@ -28,6 +28,18 @@ describe('recorded crashes', () => {
 	});
 });
 
+describe('missing libraries', () => {
+	// Chunky 1.3.146 declares Fabric API by its pre-0.43 id `fabric`, and the diagnosis said
+	// "Install fabric", which reads as the loader (scenarios.sh missing-dep, recorded 2026-10-31).
+	it('names Fabric API, not its old id', async () => {
+		const log = await fs.readFile(path.join(here, 'fixtures', 'fabric-0.20-oldfabricid.log'), 'utf8');
+		const raw = JSON.parse(await fs.readFile(path.join(here, 'fixtures', 'fabric-0.20-oldfabricid.mods.json'), 'utf8'));
+		const [top] = diagnoseLog(log, raw.map((j: ModJar & { classes: string[] }) => ({ ...j, classes: new Set(j.classes) })));
+		expect(top.title).toBe('Chunky needs Fabric API, which is not installed');
+		expect(top.detail).toMatch(/^Install Fabric API /);
+	});
+});
+
 describe('memory kills', () => {
 	// systemd's own lines, as journalctl -o cat prints them for a unit past MemoryMax.
 	const log = [
