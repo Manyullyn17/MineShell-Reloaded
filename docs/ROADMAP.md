@@ -24,7 +24,7 @@ breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
 goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
 (both change how every server starts, so they share one template change and one pass on real
 loaders), and what finishes features already on `next`: the Minecraft versions a loader has
-builds for (the typeable version pickers), sorting the mods list by its column headers
+builds for (the typeable version pickers; built 2026-10-31, ROADMAP-ARCHIVE), sorting the mods list by its column headers
 (Leftovers, "Installed mods list") and a paused server's header showing a running
 pre-generation (Leftovers, "Pausing empty servers"). The other leftovers of `next`'s features (Cancel for version
 moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
@@ -325,23 +325,6 @@ declare (loaders.md, Cleanroom). Two gaps left:
 - The Java a build needs is a constant (`FUGUE_JAVA25_FROM`, 0.23.4 needs 25), measured from
   the jars' class-file versions by hand. Read it from the jar instead (the class file's major
   version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
-
-#### Minecraft versions the loader has builds for
-
-Asked for 2026-10-30, looking at the new version pickers. Add a server lists every Minecraft
-release whatever the loader; only Cleanroom narrows it (`onlyGameVersions`), and a version the
-loader has no build for shows up only after picking it ("No Fabric build for Minecraft …").
-List only the versions the picked loader has builds for, there and in Settings' version move
-panel.
-- Fabric and Quilt: `listGameVersions` already reads their meta's game list
-  (`/api/loaders/versions?kind=game`), but nothing on the form asks for it.
-- Forge and NeoForge: `listGameVersions` is the plain release list. Their maven metadata,
-  which `listLoaderVersions` already fetches, names the Minecraft version in each build
-  (Forge `1.20.1-47.3.0`; NeoForge `21.1.x` is 1.21.1 and `26.3.0.x` is 26.3, `neoforgePrefix`,
-  loaders.md), so the list can come from the same file. Betas count: some versions have only
-  those.
-- Keep the warning for a version picked another way (a pack, an import, an old server's
-  version in the move panel), and keep the fallback to a free field when the lookup fails.
 
 #### Servers that are really sandboxed
 

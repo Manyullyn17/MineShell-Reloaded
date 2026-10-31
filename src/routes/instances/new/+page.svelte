@@ -14,6 +14,7 @@
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import { CLEANMIX_WARNING, canUseCleanroom, usesCleanMix } from '#lib/shared/cleanroom.js';
 	import { peekPack, type PackTarget } from '#lib/shared/packpeek.js';
+	import { loaderGameVersions } from '#lib/shared/gameversions.js';
 
 	let { data, form } = $props();
 
@@ -154,13 +155,20 @@
 		if (!versionTouched && !minecraftVersion) minecraftVersion = first;
 	});
 	let modloader = $state('fabric');
-	// Loaders tied to specific Minecraft versions (Cleanroom is 1.12.2 only)
-	// narrow the picker, and selecting one snaps the version onto its list.
-	// Leaving it again puts back the version picked before: 1.12.2 stayed, and
-	// Fabric and Quilt have no builds for it.
-	let gameVersionChoices = $derived(
-		data.loaders.find((l) => l.id === modloader)?.onlyGameVersions ?? data.minecraftVersions
-	);
+	// The picker lists the versions the loader has builds for (Cleanroom only 1.12.2, NeoForge
+	// from 1.20.2), Mojang's whole list while that is loading or when it cannot be had, and
+	// picking a loader snaps the version onto its list. Leaving it again puts back the version
+	// picked before: 1.12.2 stayed, and Fabric and Quilt have no builds for it.
+	/** Per loader: its versions, null when its list could not be had; absent while loading. */
+	let loaderLists = $state<Record<string, string[] | null>>({});
+	const fixedVersions = $derived(data.loaders.find((l) => l.id === modloader)?.onlyGameVersions ?? null);
+	$effect(() => {
+		const loader = modloader;
+		if (loader === 'vanilla' || fixedVersions || untrack(() => loader in loaderLists)) return;
+		void loaderGameVersions(loader).then((versions) => (loaderLists[loader] = versions));
+	});
+	let loadingGameVersions = $derived(modloader !== 'vanilla' && !fixedVersions && !(modloader in loaderLists));
+	let gameVersionChoices = $derived(fixedVersions ?? loaderLists[modloader] ?? data.minecraftVersions);
 	let snappedFrom: { from: string; to: string } | null = null;
 	$effect(() => {
 		const choices = gameVersionChoices;
@@ -186,6 +194,11 @@
 		loaderVersionError = '';
 		loadingLoaderVersions = false;
 		if (!mc || loader === 'vanilla') return;
+		// The version may yet snap onto the loader's list: asked for then.
+		if (loadingGameVersions) {
+			loadingLoaderVersions = true;
+			return;
+		}
 
 		let cancelled = false;
 		loadingLoaderVersions = true;
@@ -734,6 +747,7 @@
 							id="minecraftVersion"
 							name="minecraftVersion"
 							bind:value={minecraftVersion}
+							busy={loadingGameVersions}
 							options={gameVersionChoices.map((version) => ({ value: version, label: version }))}
 							onchange={() => (versionTouched = true)}
 						/>

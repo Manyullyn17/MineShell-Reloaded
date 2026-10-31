@@ -1,16 +1,15 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getLoader, pickerLoaderVersions } from '#lib/server/modloaders.js';
+import { getLoader, pickerGameVersions, pickerLoaderVersions } from '#lib/server/modloaders.js';
 
-/** Powers the version pickers on the new-server form. */
+/** Powers the version pickers on the new-server form and the version move in Settings. */
 export const GET: RequestHandler = async ({ url }) => {
 	const loaderId = url.searchParams.get('loader') ?? 'vanilla';
 	const minecraft = url.searchParams.get('mc') ?? '';
 
 	try {
 		if (url.searchParams.get('kind') === 'game') {
-			const loader = getLoader(loaderId);
-			const versions = await loader.listGameVersions();
+			const versions = await pickerGameVersions(getLoader(loaderId).id);
 			return Response.json({ versions });
 		}
 		if (!minecraft) return Response.json({ versions: [] });

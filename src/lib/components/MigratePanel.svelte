@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
 	import JavaPrompt from './JavaPrompt.svelte';
 	import VersionPicker from './VersionPicker.svelte';
+	import { loaderGameVersions } from '#lib/shared/gameversions.js';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 
 	/**
@@ -63,11 +65,31 @@
 	let confirmMinecraft = $state(false);
 	let submitting = $state(false);
 
-	/** Only up: a world opened by a newer Minecraft does not load in an older one. */
+	/** Per loader: the versions it has builds for, null when that list could not be had; absent while loading. */
+	let loaderLists = $state<Record<string, string[] | null>>({});
+	$effect(() => {
+		const l = loader;
+		if (l === 'vanilla' || untrack(() => l in loaderLists)) return;
+		void loaderGameVersions(l).then((versions) => (loaderLists[l] = versions));
+	});
+
+	/**
+	 * Only up: a world opened by a newer Minecraft does not load in an older one. Of those, the
+	 * ones the picked loader has builds for (Mojang's whole list until it is known), and the
+	 * installed version whether it has one or not.
+	 */
 	const choices = $derived.by(() => {
 		if (!minecraftVersions) return [current.minecraft];
 		const at = minecraftVersions.indexOf(current.minecraft);
-		return at === -1 ? [current.minecraft, ...minecraftVersions] : minecraftVersions.slice(0, at + 1);
+		if (at === -1) return [current.minecraft, ...minecraftVersions];
+		const newer = minecraftVersions.slice(0, at);
+		const builds = loader === 'vanilla' ? null : loaderLists[loader];
+		return [...(builds ? newer.filter((v) => builds.includes(v)) : newer), current.minecraft];
+	});
+	// A loader with no build for the picked version puts the pick back on the installed version.
+	$effect(() => {
+		const list = choices;
+		if (!list.includes(untrack(() => minecraft))) minecraft = current.minecraft;
 	});
 	const labelOf = (id: string) => loaders.find((l) => l.id === id)?.label ?? id;
 

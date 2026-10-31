@@ -1,10 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { compareSemver, forgetMojangManifest, LOADERS, neoforgePrefix, pickerLoaderVersions } from './modloaders';
+import { compareSemver, forgetMojangManifest, LOADERS, neoforgePrefix, pickerGameVersions, pickerLoaderVersions } from './modloaders';
 import { compareVersions } from './java';
 import { fetchCalls, useRecordedHttp } from '../../../tests/helpers/http';
 
 // Mojang's manifest, cut down: releases with snapshots between them, down to 1.0.
-const RELEASES = ['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5', '1.2.4', '1.1', '1.0'];
+const RELEASES = ['26.3', '1.21.11', '1.20.2', '1.20.1', '1.12.2', '1.10', '1.3.1', '1.2.5', '1.2.4', '1.1', '1.0'];
 useRecordedHttp('loaders', {
 	extra: {
 		'https://launchermeta.mojang.com/mc/game/version_manifest_v2.json': () =>
@@ -95,8 +95,15 @@ describe('Minecraft versions', () => {
 	// Add a server offered the newest 60 only, which ended at 1.10 although Forge and vanilla
 	// go much further back.
 	it('lists every release down to 1.2.5, the oldest Mojang has a server jar for', async () => {
-		expect(await LOADERS.vanilla.listGameVersions()).toEqual(['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5']);
-		expect(await LOADERS.forge.listGameVersions()).toEqual(['26.3', '1.21.11', '1.10', '1.3.1', '1.2.5']);
+		expect(await LOADERS.vanilla.listGameVersions()).toEqual(['26.3', '1.21.11', '1.20.2', '1.20.1', '1.12.2', '1.10', '1.3.1', '1.2.5']);
+	});
+
+	// Add a server offered Forge and NeoForge every release, and said "No Forge build for
+	// Minecraft 1.3.1" only once it was picked: their metadata names the version in each build.
+	it('Forge and NeoForge: only the releases they have builds for', async () => {
+		expect(await LOADERS.forge.listGameVersions()).toEqual(['26.3', '1.21.11', '1.20.2', '1.20.1', '1.12.2', '1.10', '1.2.5']);
+		expect(await LOADERS.neoforge.listGameVersions()).toEqual(['26.3', '1.21.11', '1.20.2']);
+		expect(await pickerGameVersions('cleanroom')).toEqual(['1.12.2']);
 	});
 });
 

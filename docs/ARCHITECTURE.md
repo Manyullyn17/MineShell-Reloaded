@@ -1517,4 +1517,6 @@ screen). It is a combobox: typing filters (`lib/shared/versionpicker.ts`: versio
 with the text first), the list scrolls within a limited height, fixed to the window like
 RowMenu's so a box's overflow does not cut it, releases apart from betas and snapshots when
 a list has both (by the version, or by the platform's channel for a pack's or mod's version id), and a hidden input posts the value under the select's old name. It shows
-whole lists, where the selects had cut them at 40 or 60 builds.
+whole lists, where the selects had cut them at 40 or 60 builds. The Minecraft pickers on Add a
+server and in the version move list only the releases the picked loader has builds for
+(`listGameVersions`; Mojang's whole list when that lookup fails).

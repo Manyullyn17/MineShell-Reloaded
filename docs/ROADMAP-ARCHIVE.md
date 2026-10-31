@@ -9,6 +9,24 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Minecraft versions the loader has builds for
+
+Built 2026-10-31 on the `next` branch, for 1.1 (asked for 2026-10-30, looking at the new version
+pickers). Add a server listed every Minecraft release whatever the loader (only Cleanroom
+narrowed it), and a version without a build showed up only once picked ("No Fabric build for
+Minecraft …"). Each loader's `listGameVersions` is now the releases it has builds for: Fabric's
+and Quilt's meta game lists; for Forge and NeoForge the releases whose build prefix
+(`<mc>-`, `neoforgePrefix`) appears in the maven metadata the build lists already read, betas
+counting and NeoForge's snapshot alphas not; vanilla Mojang's list. Add a server and the version
+move in Settings fetch it per loader (`/api/loaders/versions?kind=game`, cached like the build
+lists; `lib/shared/gameversions.ts` in the browser) and fall back to Mojang's list when it cannot
+be had. Add a server snaps the version onto the loader's list and back, as it did for Cleanroom;
+the move panel keeps only versions above the installed one, the installed one always, and puts
+a pick the new loader has no build for back on the installed version. Tried against the live
+metadata (2026-10-31): Forge 69 releases down to 1.2.5 (no 1.3.1, 1.20.5 or 1.21.2), NeoForge 22
+from 1.20.2, Fabric from 1.14, Quilt from 1.14.4. The warning stays for a version picked another
+way (a pack, an import, the installed version in the move panel).
+
 ### Cancelling a pack install or change, with a rollback
 
 Built 2026-10-29 (ARCHITECTURE, "Cancelling"), on the `next` branch, from the leftovers (user's

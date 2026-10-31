@@ -47,6 +47,7 @@ export type Modloader = {
 	 * Cleanroom mods are ordinary 1.12.2 Forge mods there.
 	 */
 	catalogLoader?: ModloaderId;
+	/** The Minecraft releases the loader has builds for, newest first. */
 	listGameVersions: () => Promise<string[]>;
 	listLoaderVersions: (minecraftVersion: string) => Promise<string[]>;
 	install: (ctx: InstallContext) => Promise<InstallResult>;
@@ -115,6 +116,18 @@ export async function listReleaseVersions(): Promise<string[]> {
 	const releases = manifest.versions.filter((v) => v.type === 'release').map((v) => v.id);
 	const oldest = releases.indexOf(OLDEST_SERVER_RELEASE);
 	return oldest === -1 ? releases : releases.slice(0, oldest + 1);
+}
+
+/**
+ * The releases (listReleaseVersions) a loader has a build for, given its builds and the
+ * prefix a build for a release starts with. Its own metadata names no Minecraft versions.
+ */
+async function releasesWithBuilds(builds: string[], prefixOf: (minecraftVersion: string) => string): Promise<string[]> {
+	const releases = await listReleaseVersions();
+	return releases.filter((mc) => {
+		const prefix = prefixOf(mc);
+		return builds.some((b) => b.startsWith(prefix));
+	});
 }
 
 async function downloadVanillaServer(ctx: InstallContext, filename = 'server.jar'): Promise<string> {
@@ -421,19 +434,21 @@ async function runInstallerJar(ctx: InstallContext, url: string, name: string, a
 	await fs.rm(`${installer}.log`, { force: true });
 }
 
+/** Every Forge build, as `<minecraft>-<forge>[-<branch>]` (1.12.2-14.23.5.2864, 1.7.10-10.13.4.1614-1.7.10). */
+async function forgeBuilds(): Promise<string[]> {
+	const xml = await fetchText('https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml');
+	return [...xml.matchAll(/<version>([^<]+)<\/version>/g)].map((m) => m[1]);
+}
+
 const forge: Modloader = {
 	id: 'forge',
 	label: 'Forge',
 	blurb: 'The long-established loader. Most large kitchen-sink packs are Forge.',
 	supportsMods: true,
-	listGameVersions: listReleaseVersions,
+	listGameVersions: async () => releasesWithBuilds(await forgeBuilds(), (mc) => `${mc}-`),
 	listLoaderVersions: async (mc) => {
-		const xml = await fetchText(
-			'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'
-		);
 		// Not in order in the metadata (1.12.2: 2864-2861, then 14.23.0.2486 onwards): sorted here.
-		return [...xml.matchAll(/<version>([^<]+)<\/version>/g)]
-			.map((m) => m[1])
+		return (await forgeBuilds())
 			.filter((v) => v.startsWith(`${mc}-`))
 			.map((v) => v.slice(mc.length + 1))
 			.sort((a, b) => compareSemver(b, a));
@@ -465,20 +480,26 @@ export function neoforgePrefix(minecraftVersion: string): string {
 	return major === '1' ? `${minor}.${patch}.` : `${major}.${minor}.${patch}.`;
 }
 
+/**
+ * NeoForge's builds, oldest first, without the alphas built for snapshots
+ * (26.1.0.0-alpha.1+snapshot-1), which would otherwise count as builds of 26.1.
+ */
+async function neoforgeBuilds(): Promise<string[]> {
+	const data = await fetchJson<{ versions: string[] }>('https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge');
+	return data.versions.filter((v) => !v.includes('alpha'));
+}
+
 const neoforge: Modloader = {
 	id: 'neoforge',
 	label: 'NeoForge',
 	blurb: 'Community fork of Forge, standard for 1.20.2 and newer.',
 	supportsMods: true,
-	listGameVersions: listReleaseVersions,
+	listGameVersions: async () => releasesWithBuilds(await neoforgeBuilds(), neoforgePrefix),
 	listLoaderVersions: async (mc) => {
-		const data = await fetchJson<{ versions: string[] }>(
-			'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge'
-		);
 		const prefix = neoforgePrefix(mc);
 		// Releases; a Minecraft version with none yet (26.1, 26.1.1, a new one's first weeks) gets
-		// its betas. Never the alphas built for snapshots (26.1.0.0-alpha.1+snapshot-1).
-		const builds = data.versions.filter((v) => v.startsWith(prefix) && !v.includes('alpha')).reverse();
+		// its betas.
+		const builds = (await neoforgeBuilds()).filter((v) => v.startsWith(prefix)).reverse();
 		const releases = builds.filter((v) => !v.includes('-'));
 		return releases.length ? releases : builds;
 	},
@@ -610,6 +631,11 @@ async function pickerList(key: string, fetch: () => Promise<string[]>): Promise<
 /** Minecraft releases, newest first, for a picker. */
 export function pickerReleaseVersions(): Promise<string[]> {
 	return pickerList('minecraft', listReleaseVersions);
+}
+
+/** The Minecraft releases a loader has builds for, newest first, for a picker. */
+export function pickerGameVersions(loader: string): Promise<string[]> {
+	return pickerList(`${loader}:game`, () => getLoader(loader).listGameVersions());
 }
 
 /** A loader's versions for a Minecraft version, newest first, for a picker. */
