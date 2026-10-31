@@ -13,6 +13,7 @@ import {
 } from './systemd';
 import { TEMPLATE_UNIT, UNITS_DIR, systemdUnitDir, unitName } from './config';
 import { readJournal } from './journal';
+import { splitArgs } from './shellargs';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const SHOW_RUNNING = [
@@ -126,21 +127,42 @@ describe('unit files', () => {
 		await expect(fs.access(file)).rejects.toThrow();
 	});
 
+	/**
+	 * What the start line gets from a value in <id>.env: systemd takes the double quotes and
+	 * the backslash escapes in them, then the shell's eval splits what is left as splitArgs
+	 * does. Tried for real with a user unit (2026-10-31): spaces, quotes, $, a backslash, *, ;
+	 * and an empty argument all came through as written.
+	 */
+	const started = (value: string) => {
+		expect(value).toMatch(/^".*"$/);
+		return splitArgs(value.slice(1, -1).replace(/\\([\\"])/g, '$1'));
+	};
+	const envValue = (env: string, key: string) => env.match(new RegExp(`^${key}=(.*)$`, 'm'))![1];
+
 	it('writes the environment file the template unit reads', async () => {
 		await writeUnitEnv('zeta', { java: '/usr/bin/java', jvmArgs: '-Xmx2G', launchArgs: '-jar server.jar nogui' });
 		const env = await fs.readFile(path.join(UNITS_DIR, 'zeta.env'), 'utf8');
 		expect(env).toContain('MS_JAVA=/usr/bin/java');
-		expect(env).toContain('MS_JVM_ARGS=-Xmx2G');
-		expect(env).toContain('MS_LAUNCH_ARGS=-jar server.jar nogui');
+		expect(started(envValue(env, 'MS_JVM_ARGS'))).toEqual(['-Xmx2G']);
+		expect(started(envValue(env, 'MS_LAUNCH_ARGS'))).toEqual(['-jar', 'server.jar', 'nogui']);
 	});
 
-	it('writes values systemd reads back as they are, each on its own line', async () => {
-		await writeUnitEnv('zeta', { java: '/usr/bin/java', jvmArgs: '-Dpath=C:\\games', launchArgs: '-jar server.jar nogui\nMS_JAVA=/bin/false' });
+	// The start line split on spaces only, so a quote reached Java as part of the value:
+	// `-Dx="a b"` was two broken arguments, and saving had to refuse quotes.
+	it('keeps an argument holding a space, or quotes, $ and backslashes, whole', async () => {
+		const jvmArgs = `-Xmx4G "-Dmotd=Hello world" -Dq='it'"'"'s' -Dp=$HOME '-Dbs=C:\\games' -Dglob=* ''`;
+		await writeUnitEnv('zeta', { java: '/usr/bin/java', jvmArgs, launchArgs: '-jar server.jar nogui\nMS_JAVA=/bin/false' });
 		const env = await fs.readFile(path.join(UNITS_DIR, 'zeta.env'), 'utf8');
-		// systemd turns `\\` back into one backslash (tried with systemd-run).
-		expect(env).toContain('MS_JVM_ARGS=-Dpath=C:\\\\games\n');
-		expect(env).toContain('MS_LAUNCH_ARGS=-jar server.jar nogui MS_JAVA=/bin/false\n');
+		expect(started(envValue(env, 'MS_JVM_ARGS'))).toEqual(['-Xmx4G', '-Dmotd=Hello world', "-Dq=it's", '-Dp=$HOME', '-Dbs=C:\\games', '-Dglob=*', '']);
+		// A line break would start a line of its own, setting whatever it says.
+		expect(started(envValue(env, 'MS_LAUNCH_ARGS'))).toEqual(['-jar', 'server.jar', 'nogui', 'MS_JAVA=/bin/false']);
 		expect(env.match(/^MS_JAVA=/gm)).toHaveLength(1);
+	});
+
+	it('starts a value saved with a quote left open as it always did, split on spaces', async () => {
+		await writeUnitEnv('zeta', { java: '/usr/bin/java', jvmArgs: '-Xmx2G -Dx="open', launchArgs: '-jar server.jar nogui' });
+		const env = await fs.readFile(path.join(UNITS_DIR, 'zeta.env'), 'utf8');
+		expect(started(envValue(env, 'MS_JVM_ARGS'))).toEqual(['-Xmx2G', '-Dx="open']);
 	});
 
 	it('counts the exit code of a SIGTERM stop as a clean exit', () => {
@@ -183,7 +205,7 @@ describe('unit files', () => {
 		const exec = renderTemplateUnit().match(/^ExecStart=(.*)$/m)![1];
 		expect(exec).toContain(`f="${UNITS_DIR}/%i.once"`);
 		expect(exec).toContain('a=$(cat "$f"); rm -f "$f"');
-		expect(exec).toContain('exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS');
+		expect(exec).toContain('eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"');
 		// systemd substitutes ${VAR} even inside a quoted word, before the shell sees it.
 		expect(exec).not.toContain('${');
 	});

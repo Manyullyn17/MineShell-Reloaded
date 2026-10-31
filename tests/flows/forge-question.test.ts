@@ -6,6 +6,7 @@ const { start } = await import('#lib/server/instances.js');
 const { listSnapshots } = await import('#lib/server/snapshots.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { unitOnceArgsFile } = await import('#lib/server/config.js');
+const { splitArgs } = await import('#lib/server/shellargs.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 const { testPorts } = await import('../helpers/ports');
@@ -46,7 +47,8 @@ function fakeSystemd() {
 	fakeProcesses((cmd, args) => {
 		if (cmd === 'systemctl' && args.includes('start')) {
 			const file = unitOnceArgsFile(instanceId);
-			onceAtStart.push(fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : null);
+			// As the start line's eval reads it: quoted words.
+			onceAtStart.push(fs.existsSync(file) ? splitArgs(fs.readFileSync(file, 'utf8')).join(' ') : null);
 			active = true;
 			run++;
 			invalidateUnitState();

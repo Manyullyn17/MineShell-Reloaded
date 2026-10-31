@@ -91,17 +91,19 @@ describe('memory and launch settings', () => {
 		clearJava();
 	});
 
-	it('launch refuses quotes in changed arguments, and still saves the rest when old ones have them', async () => {
+	it('launch takes quoted arguments, refuses a quote left open in changed ones, and still saves the rest when old ones have one', async () => {
 		fakeProcesses(() => ({}));
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', memoryMinMb: 1024, memoryMaxMb: 2048, jvmArgs: '-Xms1024M -Xmx2048M', launchArgs: '-jar server.jar nogui' });
-		const refused = await post(actions.launch, instance.id, { jvmArgs: '-Dlog4j.configurationFile="log4j2.xml"', launchArgs: '-jar server.jar nogui' });
-		expect(refused).toMatchObject({ status: 400, data: { message: expect.stringContaining('Leave the quotes out') } });
-		expect(await post(actions.launch, instance.id, { jvmArgs: '', launchArgs: "-jar 'server.jar' nogui" })).toMatchObject({ status: 400 });
+		const refused = await post(actions.launch, instance.id, { jvmArgs: '-Dlog4j.configurationFile="log4j2.xml', launchArgs: '-jar server.jar nogui' });
+		expect(refused).toMatchObject({ status: 400, data: { message: expect.stringContaining('not closed') } });
+		expect(await post(actions.launch, instance.id, { jvmArgs: '', launchArgs: "-jar 'server.jar nogui" })).toMatchObject({ status: 400 });
 		expect(getInstance(instance.id)).toMatchObject({ jvmArgs: '-Xms1024M -Xmx2048M', launchArgs: '-jar server.jar nogui' });
+		expect(await post(actions.launch, instance.id, { jvmArgs: '"-Dmotd=Hello world"', launchArgs: "-jar 'server.jar' nogui" })).toMatchObject({ ok: true });
+		expect(getInstance(instance.id)).toMatchObject({ jvmArgs: '-Xms1024M -Xmx2048M "-Dmotd=Hello world"', launchArgs: "-jar 'server.jar' nogui" });
 
 		// Saved before the check: a new Java path still saves with them as they are.
-		const old = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', memoryMinMb: 1024, memoryMaxMb: 2048, jvmArgs: '-Xms1024M -Xmx2048M -Dx="y"', launchArgs: '-jar server.jar nogui' });
-		expect(await post(actions.launch, old.id, { jvmArgs: '-Dx="y"', launchArgs: '-jar server.jar nogui', javaPathManual: '/bin/sh' })).toMatchObject({ ok: true });
+		const old = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', memoryMinMb: 1024, memoryMaxMb: 2048, jvmArgs: '-Xms1024M -Xmx2048M -Dx="y', launchArgs: '-jar server.jar nogui' });
+		expect(await post(actions.launch, old.id, { jvmArgs: '-Dx="y', launchArgs: '-jar server.jar nogui', javaPathManual: '/bin/sh' })).toMatchObject({ ok: true });
 		expect(getInstance(old.id)!.javaPath).toBe('/bin/sh');
 	});
 

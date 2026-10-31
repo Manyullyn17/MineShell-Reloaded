@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings } from './db/schema';
+import { splitArgs } from './shellargs';
 
 /**
  * JVM flags were previously generated once at instance creation and then left
@@ -185,16 +186,17 @@ export function stripJava8OnlyFlags(flags: string): { flags: string; removed: st
 }
 
 /**
- * Why `args` cannot be passed on as typed, or null. The unit's shell splits them on
- * spaces only (ARCHITECTURE, "Quoting"): a quote reaches Java as part of the value,
- * so `-Dx="a b"` was two broken arguments and `-Dfile="log4j2.xml"` looked for a
- * file named with the quotes.
+ * Why `args` cannot be passed on, or null. Quotes group as in a shell (shellargs.ts):
+ * `-Dx="a b"` is one argument. Until 2026-10-31 the unit split on spaces only and quotes
+ * were refused; now only one left open is.
  */
 export function argsProblem(args: string): string | null {
-	if (/["']/.test(args)) {
-		return 'Leave the quotes out: each argument reaches Java as written, quotes and all. A value cannot hold a space.';
+	try {
+		splitArgs(args);
+		return null;
+	} catch (err) {
+		return `${(err as Error).message} Close it, or put a backslash before a quote that is part of a value.`;
 	}
-	return null;
 }
 
 /** The longest preset name and description: they show in every server's preset picker. */

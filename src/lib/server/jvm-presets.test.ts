@@ -59,10 +59,12 @@ describe('a saved preset', () => {
 		expect(updateCustomPreset(preset.id, { name: preset.name, description: 'd'.repeat(PRESET_DESCRIPTION_MAX), flags: '' }).description).toHaveLength(PRESET_DESCRIPTION_MAX);
 	});
 
-	it('refuses quotes in its flags, which would reach Java as part of the value', () => {
-		expect(() => saveCustomPreset('Quoted', '-Dx="a b"')).toThrow(/quotes/);
+	// Quotes were refused while the unit split on spaces only; now they group, and only one
+	// left open is refused.
+	it('takes quoted flags, and refuses a quote left open', () => {
+		expect(saveCustomPreset('Quoted', '-Dx="a b"').flags).toBe('-Dx="a b"');
 		const preset = saveCustomPreset('Plain', '-XX:+UseG1GC');
-		expect(() => updateCustomPreset(preset.id, { name: 'Plain', description: '', flags: "-Dx='a'" })).toThrow(/quotes/);
+		expect(() => updateCustomPreset(preset.id, { name: 'Plain', description: '', flags: "-Dx='a" })).toThrow(/not closed/);
 		for (const builtIn of BUILT_IN_PRESETS) expect(argsProblem(builtIn.flags)).toBeNull();
 	});
 

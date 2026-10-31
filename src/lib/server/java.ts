@@ -8,6 +8,7 @@ import { run } from './systemd';
 import { cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
 import { minecraftJavaMajor } from './modloaders';
 import { DATA_DIR } from './config';
+import { argsForUnit } from './shellargs';
 
 /**
  * Two jobs: work out which Java a given Minecraft version needs, and find the
@@ -214,7 +215,8 @@ export type FlagCheck = { ok: true; warnings: string[] } | { ok: false; error: s
  * all, which is the start's problem to report, not the flags'.
  */
 export async function checkJvmFlags(binary: string, jvmArgs: string): Promise<FlagCheck | null> {
-	const args = jvmArgs.split(/\s+/).filter((a) => a && !/^-Xms/.test(a) && a !== '-XX:+AlwaysPreTouch');
+	// Split as the unit's start line splits them, so the check is of what the server gets.
+	const args = argsForUnit(jvmArgs).filter((a) => a && !/^-Xms/.test(a) && a !== '-XX:+AlwaysPreTouch');
 	const res = await run([binary, ...args, '-version'], { timeoutMs: 15_000 });
 	if (res.code === 127 && /\b(ENOENT|EACCES)\b/.test(res.stderr)) return null;
 	const lines = `${res.stderr}\n${res.stdout}`.split('\n').map((l) => l.trim()).filter(Boolean);

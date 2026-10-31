@@ -46,7 +46,8 @@ EnvironmentFile=${unitsDir}/%i.env
 # exec so systemd tracks the JVM directly. A wrapper that forks would break
 # restart detection and resource accounting. <id>.once holds JVM arguments for
 # one start only (answering a Forge startup question); the start deletes it.
-ExecStart=/bin/sh -c 'f="${unitsDir}/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
+# The arguments are written quoted, so eval keeps one holding a space whole.
+ExecStart=/bin/sh -c 'f="${unitsDir}/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
 
 # Minecraft installs a shutdown hook, so SIGTERM saves and exits cleanly.
 # MineShell still prefers an RCON "stop" first and only falls back to this.

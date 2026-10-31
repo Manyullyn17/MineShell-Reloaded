@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { changeLoaderVersion } from '#lib/server/instances.js';
 import { LOADERS } from '#lib/server/modloaders.js';
 import { UNITS_DIR } from '#lib/server/config.js';
+import { unitEnvArgs } from '#lib/server/shellargs.js';
 import { invalidateUnitState } from '#lib/server/systemd.js';
 import { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } from '../helpers/instances';
 import { fakeProcesses } from '../helpers/process';
@@ -63,7 +64,7 @@ describe('changing the loader version', () => {
 
 		const after = reload(instance.id);
 		expect(after).toMatchObject({ modloaderVersion: '14.23.5.2860', launchArgs: '-jar forge-1.12.2-14.23.5.2860.jar nogui', status: 'ready', statusMessage: null });
-		expect(await fs.readFile(path.join(UNITS_DIR, `${instance.id}.env`), 'utf8')).toContain('MS_LAUNCH_ARGS=-jar forge-1.12.2-14.23.5.2860.jar nogui');
+		expect(await fs.readFile(path.join(UNITS_DIR, `${instance.id}.env`), 'utf8')).toContain(`MS_LAUNCH_ARGS=${unitEnvArgs('-jar forge-1.12.2-14.23.5.2860.jar nogui')}`);
 	});
 
 	it('puts the old install back exactly when the new one fails', async () => {

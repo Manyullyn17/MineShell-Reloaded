@@ -29,7 +29,7 @@ MS_LAUNCH_ARGS=@user_jvm_args.txt @libraries/net/neoforged/.../unix_args.txt nog
 and `ExecStart` is:
 
 ```
-ExecStart=/bin/sh -c 'f="<data>/units/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
+ExecStart=/bin/sh -c 'f="<data>/units/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
 ```
 
 Four things about that line matter.
@@ -43,13 +43,18 @@ reason the original design's tmux wrapper had to go.
 split variables, so `$MS_JVM_ARGS` would arrive as one enormous argument. A shell does the
 splitting, then removes itself with `exec`.
 
-**Quoting.** `"$MS_JAVA"` is quoted because a path may contain spaces; the argument
-variables are deliberately unquoted because they must split. The line never uses `${...}`:
-systemd substitutes that form itself, even inside a quoted word, before the shell runs.
-Splitting is on whitespace only: quotes in JVM arguments would be passed on as they are, not
-grouping (`-Dx="a b"` is two arguments), so saving refuses them (`argsProblem`, ROADMAP). In `<id>.env` itself systemd takes a backslash as an
-escape, so `writeUnitEnv` doubles it, and puts a line break in a value as a space: it would
-otherwise start a line setting a variable of its own.
+**Quoting.** `"$MS_JAVA"` is quoted because a path may contain spaces. The arguments are
+split by MineShell as a shell would (`shellargs.ts`: whitespace outside quotes, `'...'` kept
+as it is, `"..."` with `\"` and `\\`), so `"-Dmotd=Hello world"` is one argument; each is
+written single-quoted (`'it'\''s'`), and the line's `eval "set -- ..."` reads them back into
+`"$@"` with nothing in them interpreted (`$`, `*`, `;` stay as typed). systemd also reads
+quotes in an environment file, so the whole value is wrapped in double quotes with `\` and `"`
+escaped, which passes the single quotes on (tried with a user unit, 2026-10-31). `<id>.once`
+holds quoted words too. Until 2026-10-31 the line split on spaces only and saving refused
+quotes; now only a quote left open is refused (`argsProblem`), and a value saved with one
+before is split on spaces as it was. The line never uses `${...}`: systemd substitutes that
+form itself, even inside a quoted word, before the shell runs. `writeUnitEnv` writes a line
+break in a value as a space: it would otherwise start a line setting a variable of its own.
 
 **One start's arguments.** `<id>.once` holds JVM arguments for the next start only
 (`writeOnceArgs`); the start reads and deletes it, so a restart by systemd after a crash, or

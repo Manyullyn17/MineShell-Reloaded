@@ -14,6 +14,7 @@ import {
 	unitOnceArgsFile
 } from './config';
 import { installedTemplateUnit, renderTemplateUnit as renderTemplate, serverSliceName } from './unit-template.js';
+import { shellQuote, unitEnvArgs } from './shellargs';
 
 const TEMPLATE_PATHS = { prefix: UNIT_PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR };
 
@@ -172,8 +173,9 @@ export async function writeUnitEnv(
 	const lines = [
 		'# Managed by MineShell. Edits here are overwritten when you save instance settings.',
 		`MS_JAVA=${value(values.java)}`,
-		`MS_JVM_ARGS=${value(values.jvmArgs)}`,
-		`MS_LAUNCH_ARGS=${value(values.launchArgs)}`
+		// Quoted, read by the start line's eval: an argument may hold a space (shellargs.ts).
+		`MS_JVM_ARGS=${unitEnvArgs(values.jvmArgs)}`,
+		`MS_LAUNCH_ARGS=${unitEnvArgs(values.launchArgs)}`
 	];
 	for (const [k, v] of Object.entries(values.extra ?? {})) lines.push(`${k}=${value(v)}`);
 	await fs.writeFile(unitEnvFile(id), lines.join('\n') + '\n', { mode: 0o600 });
@@ -187,7 +189,8 @@ export async function writeUnitEnv(
  */
 export async function writeOnceArgs(id: string, args: string[] | null): Promise<void> {
 	ensureDirs();
-	if (args?.length) await fs.writeFile(unitOnceArgsFile(id), args.join(' ') + '\n', { mode: 0o600 });
+	// Read by the start line's eval, like MS_JVM_ARGS.
+	if (args?.length) await fs.writeFile(unitOnceArgsFile(id), args.map(shellQuote).join(' ') + '\n', { mode: 0o600 });
 	else await fs.rm(unitOnceArgsFile(id), { force: true });
 }
 
