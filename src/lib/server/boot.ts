@@ -49,6 +49,9 @@ export function boot(): void {
 	void refreshTemplateUnit()
 		.then((refreshed) => refreshed && console.log('[mineshell] updated the systemd template unit'))
 		.catch((err) => console.warn('[mineshell] refreshing the template unit failed:', err instanceof Error ? err.message : err))
+		// Every server's env file in the format of this version's start line, and its sandbox as
+		// this run's probe allows: a server systemd restarts after a crash reads them as they are.
+		.then(() => (restoredThisStart() ? undefined : resyncUnits()))
 		.then(() => applyServerCap())
 		.catch((err) => console.warn('[mineshell] setting the cap on all servers failed:', err instanceof Error ? err.message : err));
 

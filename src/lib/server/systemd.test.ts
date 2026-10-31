@@ -196,7 +196,8 @@ describe('unit files', () => {
 	// no namespaces to forbid (new privileges, namespaces of its own, privileged system calls).
 	it('sandboxes the server with options a user unit gets everywhere', () => {
 		const unit = renderTemplateUnit();
-		for (const line of ['NoNewPrivileges=yes', 'RestrictNamespaces=yes', 'SystemCallFilter=@system-service', 'SystemCallFilter=~@privileged', 'SystemCallErrorNumber=EPERM', 'PrivateTmp=yes']) {
+		// @chown after ~@privileged: without it the JVM's attach listener fails, and heap readings with it.
+		for (const line of ['NoNewPrivileges=yes', 'RestrictNamespaces=yes', 'SystemCallFilter=@system-service', 'SystemCallFilter=~@privileged', 'SystemCallFilter=@chown', 'SystemCallErrorNumber=EPERM', 'PrivateTmp=yes']) {
 			expect(unit).toMatch(new RegExp(`^${line.replace(/[+@~]/g, '\\$&')}$`, 'm'));
 		}
 		// The JIT writes code it then runs.
@@ -212,9 +213,10 @@ describe('unit files', () => {
 
 	// Forge 1.12's startup question is answered by -Dfml.queryResult=confirm for
 	// one start (forgequery.ts); a restart after a crash must not get it again.
-	it('takes one start’s JVM arguments from <id>.once and deletes it', () => {
+	it('takes one start’s JVM arguments from once/<id>/args and deletes it', () => {
 		const exec = renderTemplateUnit().match(/^ExecStart=(.*)$/m)![1];
-		expect(exec).toContain(`f="${UNITS_DIR}/%i.once"`);
+		// A folder per server: the only part of units/ its sandbox lets it see.
+		expect(exec).toContain(`f="${UNITS_DIR}/once/%i/args"`);
 		expect(exec).toContain('a=$(cat "$f"); rm -f "$f"');
 		expect(exec).toContain('eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"');
 		// systemd substitutes ${VAR} even inside a quoted word, before the shell sees it.

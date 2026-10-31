@@ -31,6 +31,7 @@ import {
 	unitState,
 	writeResourceLimits,
 	writeRestartPolicy,
+	writeSandbox,
 	writeUnitEnv,
 	removeUnitArtifacts,
 	resetFailed,
@@ -191,6 +192,7 @@ export async function syncUnit(instance: ServerInstance): Promise<{ warning: str
 		instance.crashRestartWindowSec
 	);
 	await writeResourceLimits(instance.id, { memoryMb: instance.limitMemoryMb, cpuPercent: instance.limitCpuPercent });
+	await writeSandbox(instance.id, { instanceDir: instance.path, javaPath: java.path });
 
 	return { warning: java.warning };
 }

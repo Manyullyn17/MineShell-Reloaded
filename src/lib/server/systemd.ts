@@ -11,7 +11,8 @@ import {
 	systemdUnitDir,
 	unitEnvFile,
 	unitName,
-	unitOnceArgsFile
+	unitOnceArgsFile,
+	unitOnceDir
 } from './config';
 import { installedTemplateUnit, renderTemplateUnit as renderTemplate, serverSliceName } from './unit-template.js';
 import { shellQuote, unitEnvArgs } from './shellargs';
@@ -190,8 +191,10 @@ export async function writeUnitEnv(
 export async function writeOnceArgs(id: string, args: string[] | null): Promise<void> {
 	ensureDirs();
 	// Read by the start line's eval, like MS_JVM_ARGS.
-	if (args?.length) await fs.writeFile(unitOnceArgsFile(id), args.map(shellQuote).join(' ') + '\n', { mode: 0o600 });
-	else await fs.rm(unitOnceArgsFile(id), { force: true });
+	if (args?.length) {
+		await fs.mkdir(unitOnceDir(id), { recursive: true });
+		await fs.writeFile(unitOnceArgsFile(id), args.map(shellQuote).join(' ') + '\n', { mode: 0o600 });
+	} else await fs.rm(unitOnceArgsFile(id), { force: true });
 }
 
 export async function writeRestartPolicy(
@@ -244,6 +247,81 @@ export async function writeResourceLimits(id: string, limits: { memoryMb: number
 	await systemctl('daemon-reload');
 }
 
+let sandboxProbe: Promise<boolean> | null = null;
+
+/**
+ * Whether systemd can give this account's units a mount namespace of their own, asked once
+ * per MineShell run with a transient unit (as `doctor` does): Ubuntu 23.10+ refuses it unless
+ * DEPLOYMENT's AppArmor exception is in place, and a unit then runs without it silently, or
+ * with some options (ProtectHome=, PrivateDevices=) fails to start at all (218/CAPABILITIES).
+ * So the confinement below is written only where this says yes.
+ */
+export function canSandbox(): Promise<boolean> {
+	sandboxProbe ??= (async () => {
+		const own = await fs.readlink('/proc/self/ns/mnt').catch(() => '');
+		const probe = await run(
+			['systemd-run', '--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateTmp=yes', '-p', 'ProtectHome=tmpfs', 'readlink', '/proc/self/ns/mnt'],
+			{ timeoutMs: 15_000 }
+		);
+		const theirs = probe.stdout.trim();
+		return probe.code === 0 && theirs !== '' && theirs !== own;
+	})();
+	return sandboxProbe;
+}
+
+/** For tests: ask again on the next call. */
+export function forgetSandboxProbe(): void {
+	sandboxProbe = null;
+}
+
+/**
+ * The server kept to its own folder: the system read-only, home folders (and with them
+ * MineShell's data, other servers, ~/.ssh) hidden but for the server's folder, its one-start
+ * arguments and its Java. Only where `canSandbox`; null otherwise. Not ProtectProc=: it hides
+ * other accounts' processes, and every process here is the same account's (whose files a
+ * process in the server's user namespace cannot open through /proc anyway).
+ */
+export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: string; javaHome: string | null }): string {
+	const lines = [
+		'# Managed by MineShell: the server sees only its own folder of this account\'s files',
+		'# (ARCHITECTURE, "The servers\' sandbox"). Written only where systemd can make the',
+		'# namespaces it needs; removed otherwise.',
+		'[Service]',
+		'ProtectSystem=strict',
+		'ProtectHome=tmpfs',
+		`BindPaths=${paths.instanceDir}`,
+		// "-": a path missing is skipped rather than failing the start.
+		`BindPaths=-${paths.onceDir}`,
+		...(paths.javaHome ? [`BindReadOnlyPaths=-${paths.javaHome}`] : []),
+		'ProtectKernelTunables=yes',
+		'ProtectKernelModules=yes',
+		'ProtectKernelLogs=yes',
+		'ProtectControlGroups=yes',
+		'ProtectHostname=yes'
+	];
+	return lines.join('\n') + '\n';
+}
+
+/** Writes sandbox.conf for a server where systemd can apply it, and removes it where not. */
+export async function writeSandbox(id: string, paths: { instanceDir: string; javaPath: string | null }): Promise<void> {
+	if (!(await templateUnitInstalled())) return;
+	const dropInDir = path.join(systemdUnitDir(), `${unitName(id)}.d`);
+	const file = path.join(dropInDir, 'sandbox.conf');
+	await fs.mkdir(unitOnceDir(id), { recursive: true });
+	// The folder Java runs from (bin/java's parent's parent), through any links (/usr/bin/java).
+	const javaHome = paths.javaPath ? await fs.realpath(paths.javaPath).then((p) => path.dirname(path.dirname(p)), () => null) : null;
+	const body = (await canSandbox()) ? renderSandboxDropIn({ instanceDir: paths.instanceDir, onceDir: unitOnceDir(id), javaHome }) : null;
+	const current = await fs.readFile(file, 'utf8').catch(() => null);
+	if (body === current) return;
+	if (body) {
+		await fs.mkdir(dropInDir, { recursive: true });
+		await fs.writeFile(file, body, 'utf8');
+	} else {
+		await fs.rm(file, { force: true });
+	}
+	await systemctl('daemon-reload');
+}
+
 export async function removeUnitArtifacts(id: string): Promise<void> {
 	await systemctl('disable', '--now', unitName(id)).catch(() => undefined);
 	await fs.rm(path.join(systemdUnitDir(), `${unitName(id)}.d`), {
@@ -251,7 +329,7 @@ export async function removeUnitArtifacts(id: string): Promise<void> {
 		force: true
 	});
 	await fs.rm(unitEnvFile(id), { force: true });
-	await fs.rm(unitOnceArgsFile(id), { force: true });
+	await fs.rm(unitOnceDir(id), { recursive: true, force: true });
 	await systemctl('reset-failed', unitName(id)).catch(() => undefined);
 	await systemctl('daemon-reload');
 	invalidateUnitState(id);

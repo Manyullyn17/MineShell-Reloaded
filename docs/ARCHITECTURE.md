@@ -29,7 +29,7 @@ MS_LAUNCH_ARGS=@user_jvm_args.txt @libraries/net/neoforged/.../unix_args.txt nog
 and `ExecStart` is:
 
 ```
-ExecStart=/bin/sh -c 'f="<data>/units/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
+ExecStart=/bin/sh -c 'f="<data>/units/once/%i/args"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
 ```
 
 Four things about that line matter.
@@ -49,14 +49,16 @@ as it is, `"..."` with `\"` and `\\`), so `"-Dmotd=Hello world"` is one argument
 written single-quoted (`'it'\''s'`), and the line's `eval "set -- ..."` reads them back into
 `"$@"` with nothing in them interpreted (`$`, `*`, `;` stay as typed). systemd also reads
 quotes in an environment file, so the whole value is wrapped in double quotes with `\` and `"`
-escaped, which passes the single quotes on (tried with a user unit, 2026-10-31). `<id>.once`
-holds quoted words too. Until 2026-10-31 the line split on spaces only and saving refused
+escaped, which passes the single quotes on (tried with a user unit, 2026-10-31). The
+one-start file holds quoted words too. Until 2026-10-31 the line split on spaces only and saving refused
 quotes; now only a quote left open is refused (`argsProblem`), and a value saved with one
 before is split on spaces as it was. The line never uses `${...}`: systemd substitutes that
 form itself, even inside a quoted word, before the shell runs. `writeUnitEnv` writes a line
 break in a value as a space: it would otherwise start a line setting a variable of its own.
 
-**One start's arguments.** `<id>.once` holds JVM arguments for the next start only
+**One start's arguments.** `units/once/<id>/args` (a folder per server, the only part of
+`units/` its sandbox shows it; `<id>.once` beside the env files until 2026-10-31) holds JVM
+arguments for the next start only
 (`writeOnceArgs`); the start reads and deletes it, so a restart by systemd after a crash, or
 any later start, runs without them. Every start and restart through MineShell writes or
 removes it, so a file left by a start that never ran is not picked up later. The template
@@ -185,8 +187,9 @@ A mod is code from the internet running as MineShell's account, so the template 
 from it what a Minecraft server never needs. What needs no namespaces applies in a user unit
 everywhere: `NoNewPrivileges`, `RestrictNamespaces` (the JVM makes none of its own),
 `LockPersonality`, `RestrictSUIDSGID`, `RestrictRealtime`, native system calls only, a system
-call filter (`@system-service` without `@privileged`; a refused call fails with `EPERM`
-rather than killing the server), the address families the JVM uses (`AF_INET`, `AF_INET6`,
+call filter (`@system-service` without `@privileged`, but with `@chown`: HotSpot's attach
+listener chowns its socket to the user it already is, and without it heap readings and `jcmd`
+fail; a refused call fails with `EPERM` rather than killing the server), the address families the JVM uses (`AF_INET`, `AF_INET6`,
 `AF_UNIX` for the attach socket, `AF_NETLINK` for network interfaces) and `UMask=0027`. Not
 `MemoryDenyWriteExecute`: the JIT writes code it then runs. `@resources` stays allowed: the
 JVM raises its file limit and sets NUMA policy at startup. Tried with Java 21 (G1, ZGC,
@@ -200,6 +203,24 @@ servers": scoped to one account's manager). `doctor` checks it with a transient
 `systemd-run --user -p PrivateTmp=yes` unit, comparing its mount namespace with its own
 (notes, runtime.md). playit's agent unit has `NoNewPrivileges` and `RestrictNamespaces`, and
 the installer's `mineshell.service` `RestrictNamespaces`: neither makes namespaces.
+
+Where the namespaces work, each server is kept to its own folder by a drop-in,
+`<prefix>@<id>.service.d/sandbox.conf` (`writeSandbox`, from `syncUnit`): `ProtectSystem=strict`,
+`ProtectHome=tmpfs` (home folders, and with them MineShell's data, other servers, `~/.ssh`,
+hidden), `BindPaths=` its own folder and its one-start folder, `BindReadOnlyPaths=` the Java it
+runs (realpath of `bin/java`, two up), and `ProtectKernelTunables/Modules/Logs`,
+`ProtectControlGroups`, `ProtectHostname`. Not in the template, because without the namespaces
+some of these fail the start (218/CAPABILITIES) rather than being skipped: MineShell asks once
+per run, as `doctor` does (`canSandbox`: a transient unit with `PrivateTmp` and
+`ProtectHome=tmpfs`, its mount namespace compared with MineShell's), and writes or removes the
+drop-in by the answer. At startup every server's unit files are rewritten after the template
+(`resyncUnits`), so a server systemd restarts after a crash starts with this version's env file
+and sandbox. Not `ProtectProc=invisible`: it hides other accounts' processes, and here every
+process is the same account's; a process in a server's user namespace cannot open another
+process's `/proc/<pid>/root`, `cwd` or `environ` anyway (tried: MineShell's and another
+server's are refused). It can still signal them (same account): a PID namespace
+(`PrivatePIDs=`) needs systemd 257. Tried on every loader with the downloaded Javas in the data
+folder (2026-10-31); heap reads, RCON stops and one-start arguments work inside it.
 
 ---
 

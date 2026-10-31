@@ -77,6 +77,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   /proc/self/ns/mnt`. `doctor` runs that probe; the fix is DEPLOYMENT, "Sandboxing the servers" (the rest:
   ROADMAP, "Servers that are really sandboxed").
 
+- The servers' sandbox (2026-10-31): HotSpot's attach listener (AttachListener::pd_init)
+  `chown`s its socket file to its own euid; with `SystemCallFilter=~@privileged` that fails
+  with EPERM, the JVM drops the socket silently (no thread dump either) and heap readings stop.
+  The template allows `@chown` again after `~@privileged`; a later `SystemCallFilter=` without
+  `~` adds back to the allow list. A server's empty home (`ProtectHome=tmpfs`) gets a `.cache`
+  from something in the server; it is gone at stop. `tests/tools/sandbox-check.sh` shows what a
+  running server sees.
+
 ## Java heap (memory advice)
 - `heap.ts` reads heap use over the JVM attach socket (what jcmd does): `.attach_pid<pid>` in
   the cwd + SIGQUIT, then `/proc/<pid>/root/tmp/.java_pid<pid>` (PrivateTmp; on this machine

@@ -44,10 +44,10 @@ WorkingDirectory=${instancesDir}/%i
 EnvironmentFile=${unitsDir}/%i.env
 
 # exec so systemd tracks the JVM directly. A wrapper that forks would break
-# restart detection and resource accounting. <id>.once holds JVM arguments for
+# restart detection and resource accounting. once/<id>/args holds JVM arguments for
 # one start only (answering a Forge startup question); the start deletes it.
 # The arguments are written quoted, so eval keeps one holding a space whole.
-ExecStart=/bin/sh -c 'f="${unitsDir}/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
+ExecStart=/bin/sh -c 'f="${unitsDir}/once/%i/args"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; eval "set -- $MS_JVM_ARGS $a $MS_LAUNCH_ARGS"; exec "$MS_JAVA" "$@"'
 
 # Minecraft installs a shutdown hook, so SIGTERM saves and exits cleanly.
 # MineShell still prefers an RCON "stop" first and only falls back to this.
@@ -81,6 +81,9 @@ RestrictRealtime=yes
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged
+# Back in: the JVM's attach listener (jcmd, MineShell's heap readings) chowns
+# its socket to the user it already is; anything else is the kernel's to refuse.
+SystemCallFilter=@chown
 SystemCallErrorNumber=EPERM
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 UMask=0027

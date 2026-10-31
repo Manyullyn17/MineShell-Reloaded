@@ -61,9 +61,10 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 - Moving a server to an older Minecraft (2026-10-31): the 26.3 test server down to an older
   version, once with the new world (the old one under World > Worlds) and once keeping it.
 
-- The servers' sandbox (2026-10-31): the AppArmor exception in DEPLOYMENT, "Sandboxing the
-  servers" (sudo, then a reboot); `doctor` should then say ok. The rest of the work (each server
-  kept to its own folder) and its tests follow on that.
+- The servers' sandbox (2026-10-31): the AppArmor exception is applied (doctor ok, Irithyll in
+  its own namespace, joins and heap readings fine). Left to try with 1.1 on the real install: a
+  server confined to its folder (`tests/tools/sandbox-check.sh mineshell@<id>`), a self-update
+  (its transient unit), Spark and a crash diagnosis inside the sandbox.
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").

@@ -51,8 +51,9 @@ sudo machinectl shell mineshell@     # a full session as that user; install and 
 ### Sandboxing the servers
 
 The servers run with systemd's sandboxing (the template unit): no new privileges, a system
-call filter, no namespaces of their own, a `/tmp` of their own. The last needs a mount
-namespace, and in a user unit systemd needs a user namespace for that; where it cannot make
+call filter, no namespaces of their own, a `/tmp` of their own, and each kept to its own
+folder (the rest of the account's files hidden, the system read-only). The last two need a
+mount namespace, and in a user unit systemd needs a user namespace for that; where it cannot make
 one, it starts the server without it and says nothing. Ubuntu 23.10 and later (24.04 included,
 and derivatives that kept its default) let AppArmor refuse those namespaces
 (`kernel.apparmor_restrict_unprivileged_userns = 1`), and it refuses them to systemd's user

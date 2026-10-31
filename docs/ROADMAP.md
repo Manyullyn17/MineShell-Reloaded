@@ -333,11 +333,14 @@ namespaces; the file access it now costs needs no bug at all. Scoped as below, w
 `RestrictNamespaces=yes`, the servers get the file sandbox and cannot make namespaces at all
 (today they can, without capabilities), so they are better off on both.
 
-Built 2026-10-31 (ROADMAP-ARCHIVE, "The servers' sandbox, first part"): the options without a
-namespace and `RestrictNamespaces=yes` in the template (one real-loader pass, every loader), the
-same for playit's unit and `mineshell.service`, the `doctor` check and the DEPLOYMENT section
-with the scoped exception. Left: the user applies the exception (sudo, a reboot), then each
-server kept to its own folder, and the tests below.
+Built 2026-10-31 (ROADMAP-ARCHIVE, "The servers' sandbox"): the options without a namespace
+and `RestrictNamespaces=yes` in the template, the same for playit's unit and
+`mineshell.service`, the `doctor` check, the DEPLOYMENT section with the scoped exception
+(applied by the user the same day: `doctor` ok, Irithyll in its own namespace with network and
+heap reads), and each server kept to its own folder where the namespaces work. Left: tests 2
+(a real Forge startup question), 5 and 6 below, and a non-Ubuntu system. Not possible yet:
+keeping a server from signalling MineShell or another server (same account), which needs a PID
+namespace (`PrivatePIDs=`, systemd 257; 24.04 has 255).
 
 - **The AppArmor exception, for one account.** A profile with no attachment,
   `profile systemd-userns flags=(unconfined) { userns, }`, given only to that account's user
@@ -356,18 +359,20 @@ server kept to its own folder, and the tests below.
 - **Options without a namespace**: built, as above. `@resources` stays allowed (the JVM calls
   `setrlimit` and NUMA policy at startup), and a refused call fails with `EPERM` instead of
   killing the server. Not `MemoryDenyWriteExecute=` (the JIT needs it).
-- **Then each server kept to its own folder** (`ProtectSystem=strict`, `ProtectHome=tmpfs`
-  with `BindPaths=` its folder and `BindReadOnlyPaths=` Java and tools,
-  `ProtectProc=invisible`). The start script deletes `units/<id>.once` itself, so `units/`
-  must stay writable: MineShell would delete it after the start instead.
+- **Then each server kept to its own folder**: built, as `sandbox.conf` per server, only where
+  MineShell's probe finds the namespaces (ARCHITECTURE). The one-start file moved into a folder
+  per server (`units/once/<id>/`), bound in alone, so the start line still deletes it and the
+  other servers' env files stay out of sight. No `ProtectProc=invisible`: same account.
 
 Tests, on Ubuntu with the exception in place:
-1. `doctor` says ok; a server's `/proc/<pid>/ns/mnt` differs from MineShell's.
+1. `doctor` says ok; a server's `/proc/<pid>/ns/mnt` differs from MineShell's: done
+   (`tests/tools/sandbox-check.sh`).
 2. Servers on each loader boot, stop with a save (RCON and SIGTERM), restart, and answer a
    Forge startup question (the `.once` file).
 3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
    separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
-   diagnosis, the console and RCON.
+   diagnosis, the console and RCON: heap reads, console and RCON done; Spark and crash
+   diagnosis left.
 4. The JVM under `RestrictNamespaces=yes` and the syscall filter: done (the 2026-10-31 pass).
 5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
    which inherits the profile too).
@@ -380,7 +385,8 @@ Tests, on Ubuntu with the exception in place:
    allows `userns`, so it should never be stacked: a server's `/proc/<pid>/attr/current`
    must read `systemd-userns`, not a stack with `unprivileged_userns` (today, unfixed, it
    reads `unprivileged_userns (enforce)` and has network). If it stacks anyway, `network,`
-   (or `allow all,`) in the profile is the bug's workaround.
+   (or `allow all,`) in the profile is the bug's workaround. Done: Irithyll reads
+   `systemd-userns (unconfined)` and players join.
 
 Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
 applies there straight away. MineShell's units are the only user units on this machine with

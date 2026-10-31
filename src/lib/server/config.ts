@@ -52,9 +52,17 @@ export function unitEnvFile(id: string): string {
 	return path.join(UNITS_DIR, `${id}.env`);
 }
 
-/** JVM arguments for the next start only; the unit's start command reads and deletes it. */
+/**
+ * JVM arguments for the next start only; the unit's start command reads and deletes it. In a
+ * folder of its own per server, the only part of units/ a sandboxed server sees: the others'
+ * env files beside it name the command each one starts (MS_JAVA).
+ */
+export function unitOnceDir(id: string): string {
+	return path.join(UNITS_DIR, 'once', id);
+}
+
 export function unitOnceArgsFile(id: string): string {
-	return path.join(UNITS_DIR, `${id}.once`);
+	return path.join(unitOnceDir(id), 'args');
 }
 
 export function unitName(id: string): string {

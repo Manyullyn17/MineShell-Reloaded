@@ -23,10 +23,10 @@ a real-loader pass on every loader. Writing a server's unit files now brings an 
 template up to date first: a running dev server, which refreshes it at boot only, would
 otherwise have passed the quotes to Java.
 
-### The servers' sandbox, first part
+### The servers' sandbox
 
 Built 2026-10-31 on the `next` branch, for 1.1 (ROADMAP, "Servers that are really
-sandboxed", for the rest). The template's `PrivateTmp=yes` was never applied on Ubuntu 24.04
+sandboxed", for what is left). The template's `PrivateTmp=yes` was never applied on Ubuntu 24.04
 (AppArmor's user namespace restriction, notes runtime.md). Now: the options a user unit gets
 without namespaces (`RestrictNamespaces`, a system call filter, `LockPersonality` and others;
 ARCHITECTURE, "The servers' sandbox"), tried on every loader; `RestrictNamespaces` and
@@ -34,6 +34,10 @@ ARCHITECTURE, "The servers' sandbox"), tried on every loader; `RestrictNamespace
 `mineshell.service` (from the next install or update); `doctor` warns when systemd cannot
 sandbox; DEPLOYMENT, "Sandboxing the servers", has the exception scoped to one account's
 user manager (a profile allowing user namespaces, given by a `user@<uid>.service.d` drop-in).
+The user applied it the same day. Then each server kept to its own folder where MineShell's
+probe finds the namespaces (`sandbox.conf`), the one-start file in a folder per server, and
+every server's unit files rewritten at startup; a second real-loader pass with it
+(`tests/tools/sandbox-check.sh`).
 
 ### Moving a server to an older Minecraft
 
