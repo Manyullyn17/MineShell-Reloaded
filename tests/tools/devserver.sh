@@ -9,7 +9,9 @@
 #
 # start returns once the server answers (log in <data dir>/devserver-<port>.log).
 # MINESHELL_UNIT_PREFIX in the environment replaces the default mstest, MINESHELL_AUTH
-# the default off (on: sign-in, for sweeping as an account).
+# the default off (on: sign-in, for sweeping as an account). DEVSERVER_HOST (0.0.0.0) makes it
+# answer other machines too, not only localhost: with MINESHELL_AUTH=on, since a server's Java
+# path can name any program, run as this account.
 # stop ends the process listening on the port, with its process group.
 # clean stops it, stops and removes the prefix's units (template, drop-ins, the
 # playit agent, the servers' slice) from ~/.config/systemd/user, and deletes the
@@ -37,7 +39,7 @@ start)
 	cd "$(dirname "$0")/../.." || exit 1
 	# Its own session, so stop can end vite and anything it started together.
 	MINESHELL_DATA="$data" MINESHELL_AUTH="${MINESHELL_AUTH:-off}" MINESHELL_UNIT_PREFIX="${MINESHELL_UNIT_PREFIX:-mstest}" \
-		setsid npx vite dev --port "$port" --strictPort >"$log" 2>&1 </dev/null &
+		setsid npx vite dev --port "$port" --strictPort ${DEVSERVER_HOST:+--host "$DEVSERVER_HOST"} >"$log" 2>&1 </dev/null &
 	for _ in $(seq 60); do
 		if curl -s -o /dev/null "http://localhost:$port/"; then
 			echo "running on http://localhost:$port (data $data, log $log)"
