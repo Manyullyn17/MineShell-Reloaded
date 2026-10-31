@@ -60,7 +60,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   template now names it); `-` in the prefix is `\x2d` there, kept literally in unit files.
 - Exit codes: RCON/in-game `stop` -> 0; systemd stop/restart (SIGTERM) -> 143, which the
   template's SuccessExitStatus=143 counts as success (only an asked-for stop sends SIGTERM);
-  startup crashes mostly 1, sometimes 0 (hence "never reached Done" = crash). The template is
+  startup crashes mostly 1, sometimes 0 (hence "never reached Done" = crash). A systemd stop
+  before Done can also exit 0: Forge 1.12 stopped while waiting at its startup question (seen
+  2026-10-31, listed as a crash), and systemd logs no exit line for 0. systemd's own
+  "Stopping <unit>" line (with the run's INVOCATION_ID) comes only for a stop asked for, never
+  for a crash or its restart ("Scheduled restart job"): history keeps it as `stop_asked_at`. The template is
   rewritten at boot when an older MineShell-written one is installed (`refreshTemplateUnit`).
 - An RCON stop waits up to 5 min for the JVM to exit (`awaitStop`) before systemctl stop; it
   used to fire after a fixed 20 s, mid-save on big packs, and could stop a run started again.

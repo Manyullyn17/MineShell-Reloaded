@@ -170,7 +170,12 @@ describe('crash history', () => {
 			ev(at(4) + MIN, 'Stopped x.service.', 3),
 			// 4: a startup crash the loader caught: exit 0, never Done.
 			ev(at(5), 'Started x.service', 4),
-			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4)
+			ev(at(5) + MIN, 'x.service: Deactivated successfully.', 4),
+			// 5: stopped through systemd while still starting, exiting 0 (Forge 1.12 waiting at its
+			// startup question, stopped to answer it): listed as a crash while only 143 counted.
+			ev(at(6), 'Started x.service', 5),
+			ev(at(6) + MIN, 'Stopping x.service - Minecraft server...', 5),
+			ev(at(6) + MIN, 'Stopped x.service - Minecraft server.', 5)
 		]);
 		expect(recentCrashes(s.id, 0).map((c) => c.invocation)).toEqual([inv(4), inv(2)]);
 	});

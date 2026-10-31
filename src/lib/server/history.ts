@@ -33,9 +33,11 @@ const POLL_MS = 30_000;
 const CRASH_LINES = '\\]: Encountered an unexpected exception|\\]: This crash report has been saved to: ';
 /** Minecraft 1.21.2+ with pause-when-empty-seconds; nothing is logged when a join ends the pause. */
 const PAUSE_LINE = '\\]: Server empty for \\d+ seconds, pausing$';
-const PATTERN = `joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed |${CRASH_LINES}|${PAUSE_LINE}`;
+const PATTERN = `joined the game$|left the game$|lost connection: |\\]: Done \\(|^Started |^Stopping |^Stopped |Main process exited|Deactivated successfully|Failed with result|service: Consumed |${CRASH_LINES}|${PAUSE_LINE}`;
 
 const isStart = (m: string) => /^Started /.test(m);
+/** systemd stopping a unit on request: `systemctl stop`, MineShell's or anyone's; never a crash's own end. */
+const isStopping = (m: string) => /^Stopping /.test(m);
 /**
  * systemd's lines at the end of a run. A clean exit (an RCON stop, a loader
  * exiting 0 after a startup crash) is only "Consumed ... CPU time" on some
@@ -91,7 +93,8 @@ function endRun(instanceId: string, invocation: string, at: number, message: str
 	const status = message.match(/Main process exited, code=\w+, status=(\d+)/);
 	const exitStatus = status ? Number(status[1]) : run.exitStatus;
 	const failed = run.failed || /Failed with result/.test(message);
-	const askedToStop = exitStatus === STOPPED_ON_REQUEST;
+	// 143 alone missed a stop before "Done (" that exits 0 (Forge 1.12 at its startup question).
+	const askedToStop = exitStatus === STOPPED_ON_REQUEST || run.stopAskedAt !== null;
 	const crashed =
 		run.crashLoggedAt !== null || (!askedToStop && (failed || (exitStatus !== null && exitStatus !== 0) || run.doneAt === null));
 	db.update(serverRuns).set({ endedAt: at, exitStatus, failed, crashed }).where(where).run();
@@ -117,6 +120,13 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): Happeni
 			db.insert(serverRuns)
 				.values({ instanceId, invocation: e.invocation, startedAt: e.at, bisect: duringBisect(instanceId, e.at) })
 				.onConflictDoNothing()
+				.run();
+			continue;
+		}
+		if (isStopping(e.message) && e.invocation) {
+			db.update(serverRuns)
+				.set({ stopAskedAt: e.at })
+				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.stopAskedAt)))
 				.run();
 			continue;
 		}

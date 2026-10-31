@@ -415,6 +415,8 @@ export const serverRuns = sqliteTable(
 		crashLoggedAt: integer('crash_logged_at'),
 		/** When the run logged "Server empty for N seconds, pausing"; cleared when a player joins. */
 		pausedAt: integer('paused_at'),
+		/** When systemd began stopping it on request ("Stopping <unit>"): not a crash, however it exits. */
+		stopAskedAt: integer('stop_asked_at'),
 		endedAt: integer('ended_at'),
 		/** The process's exit status ("Main process exited, ... status=N"); null for a clean exit or unknown. */
 		exitStatus: integer('exit_status'),
