@@ -24,6 +24,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Paused (empty), built 2026-10-18: 1.21.2+ logs only "Server empty for N seconds, pausing";
   nothing marks the wake-up, so a join clears `server_runs.paused_at` (history.ts). The game
   still reports 20 TPS while paused. Tried live on vanilla 1.21.11 (throwaway setup).
+  Chunky generates normally while paused, and the pause stays (the user, 2026-10-31, 26.3:
+  started after "pausing", nobody on, still Paused throughout). Paused is only the header's
+  phase (`instances.ts`); nothing else acts on it.
 - Update checks (`updatecheck.ts`, built 2026-10-15): pack servers get pack versions, servers
   without a pack get loader builds (user's call). Tried live against Modrinth and Fabric meta
   on a throwaway dev server (seeded rows): Cobblemon 1.8.1 -> 1.8.2 offered and previewed from

@@ -20,6 +20,15 @@ run of its own on the real install, under the same rule as 1.0 (a few days with 
 After that `next` is dropped and work goes back to `main`; a branch comes back only for 2.0's
 breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
 
+1.1's scope (user's call, 2026-10-31): what is on `next` now is nearly enough. Added before it
+goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
+(both change how every server starts, so they share one template change and one pass on real
+loaders), and what finishes features already on `next`: the Minecraft versions a loader has
+builds for (the typeable version pickers) and sorting the mods list by its column headers
+(Leftovers, "Installed mods list"). The other leftovers of `next`'s features (Cancel for version
+moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
+chosen files, Chunk Pregenerator) are extensions and wait.
+
 Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
 "sooner" ones are built: ROADMAP-ARCHIVE):
 
@@ -269,7 +278,9 @@ of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when
 one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
 `JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
 Held until 1.0 is released and `next` goes into main (user's call, 2026-10-28): the rest of
-step 1 is built, and step 2 goes ahead of it.
+step 1 is built, and step 2 goes ahead of it. Then part of 1.1 (user's call, 2026-10-31),
+built and tried together with "Servers that are really sandboxed", which changes the same
+template.
 
 #### TypeScript 7
 
@@ -743,7 +754,10 @@ is open, and each needs a test setup.
   (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
-  researched). Whether pre-generation (Chunky) keeps running while paused is unchecked.
+  researched). Chunky keeps generating on a paused server (the user, 2026-10-31, a 26.3
+  server, started after it said Paused, nobody on), but the header still says Paused all the
+  while, though the server is busy: whether a running pre-generation should show instead is
+  open.
 - **Player stats**: read only (no editing or resetting), no history over time; 1.12 mob
   names come from lang files (no pictures for mobs); pre-1.8 numeric ids and achievements are
   shown raw or left out (not checked on a real world). Stats on the status page, once that is
