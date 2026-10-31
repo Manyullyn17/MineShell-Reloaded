@@ -14,7 +14,7 @@ import { readJavaProperties } from './properties';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { pausedSince } from './history';
-import { notePregen } from './pregenstate';
+import { notePregen, notePregenStarted, notePregenStopped } from './pregenstate';
 import type { PregenShape } from '#lib/shared/pregen.js';
 
 /**
@@ -322,10 +322,19 @@ async function chunky(instance: ServerInstance, commands: string[]): Promise<str
 	return (await chunkyAnswers(instance, commands)).filter(Boolean).join('\n');
 }
 
+/**
+ * After a command that starts a task, what runs now, so the header says Pre-generating with
+ * the page's next load (pregenstate.ts). Not reading it is no reason to fail the command.
+ */
+async function refreshPregen(instance: ServerInstance, world: string | null): Promise<void> {
+	notePregenStarted(instance.id, world);
+	await chunkyStatus(instance).catch(() => {});
+}
+
 export async function chunkyStatus(instance: ServerInstance): Promise<ChunkyStatus> {
 	const text = await chunky(instance, ['chunky progress']);
 	const running = parseProgress(text);
-	notePregen(instance.id, running.length > 0);
+	notePregen(instance.id, running.map((task) => task.world));
 	return { running, text };
 }
 
@@ -371,12 +380,16 @@ export async function startPregen(instance: ServerInstance, opts: StartOptions):
 	const radii = twoRadii ? `${opts.radius} ${opts.radiusZ}` : `${opts.radius}`;
 	const text = await chunky(instance, [`chunky start ${opts.world} ${opts.shape} ${Math.round(opts.centerX)} ${Math.round(opts.centerZ)} ${radii}`]);
 	// The confirmation names the command itself, whatever the language.
-	return { text, needsConfirm: text.includes('chunky confirm') };
+	const needsConfirm = text.includes('chunky confirm');
+	if (!needsConfirm) await refreshPregen(instance, opts.world);
+	return { text, needsConfirm };
 }
 
 /** Starts over after startPregen asked; replaces the unfinished task. */
-export function confirmPregen(instance: ServerInstance): Promise<string> {
-	return chunky(instance, ['chunky confirm']);
+export async function confirmPregen(instance: ServerInstance): Promise<string> {
+	const text = await chunky(instance, ['chunky confirm']);
+	await refreshPregen(instance, null);
+	return text;
 }
 
 const worldArg = (world: string | null) => {
@@ -384,12 +397,16 @@ const worldArg = (world: string | null) => {
 	return world ? ` ${world}` : '';
 };
 
-export function pausePregen(instance: ServerInstance, world: string | null = null): Promise<string> {
-	return chunky(instance, [`chunky pause${worldArg(world)}`]);
+export async function pausePregen(instance: ServerInstance, world: string | null = null): Promise<string> {
+	const text = await chunky(instance, [`chunky pause${worldArg(world)}`]);
+	notePregenStopped(instance.id, world);
+	return text;
 }
 
-export function continuePregen(instance: ServerInstance, world: string | null = null): Promise<string> {
-	return chunky(instance, [`chunky continue${worldArg(world)}`]);
+export async function continuePregen(instance: ServerInstance, world: string | null = null): Promise<string> {
+	const text = await chunky(instance, [`chunky continue${worldArg(world)}`]);
+	await refreshPregen(instance, world);
+	return text;
 }
 
 /**
@@ -400,6 +417,7 @@ export function continuePregen(instance: ServerInstance, world: string | null = 
  */
 export async function cancelPregen(instance: ServerInstance, world: string | null = null): Promise<string> {
 	const [asked, confirmed] = await chunkyAnswers(instance, [`chunky cancel${worldArg(world)}`, 'chunky confirm']);
+	notePregenStopped(instance.id, world);
 	return asked.includes('chunky confirm') ? confirmed : asked;
 }
 

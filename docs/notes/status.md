@@ -53,8 +53,10 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 ## Left for the user
 
 - The paused server's "Pre-generating" header (2026-10-31): Chunky started on a 1.21.2+ server
-  after it says Paused (empty), as in the 26.3 test; the header should switch within 30 s and go
-  back to Paused once the task finishes or is paused.
+  after it says Paused (empty), as in the 26.3 test. Tried by the user the same day: it switched,
+  but stayed after a pause or cancel until another tab was opened (fixed: the commands update it
+  at once, the header reloads every 15 s while paused). Again: start, pause, continue and cancel
+  from the World tab should change it at once, and from the console within about 45 s.
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").

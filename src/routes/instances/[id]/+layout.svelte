@@ -4,7 +4,7 @@
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
-	import { invalidateAll, refreshAll } from '$app/navigation';
+	import { invalidate, invalidateAll, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
@@ -107,6 +107,14 @@
 	$effect(() => {
 		if (!settling) return;
 		const timer = setInterval(() => void refreshAll(), 3000);
+		return () => clearInterval(timer);
+	});
+	// Paused for being empty: Chunky may start or stop generating there (from the console, or
+	// the scheduler seeing a task end), which only the header shows. Its own data only, not the tab's.
+	const paused = $derived(data.phase === 'paused' || data.phase === 'pregenerating');
+	$effect(() => {
+		if (!paused) return;
+		const timer = setInterval(() => void invalidate('mineshell:server-status'), 15_000);
 		return () => clearInterval(timer);
 	});
 

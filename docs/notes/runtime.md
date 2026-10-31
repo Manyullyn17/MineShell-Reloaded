@@ -198,6 +198,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   confirm" in every language. MineShell sends cancel and confirm together, so cancel's answer
   is the prompt and the confirm's is what happened ("Task cancelled for ..."): only the latter
   is shown (source read 2026-10-31, 1.3.0 to 1.5.0 alike).
+- `chunky pause` only marks a task stopped; its thread ends after the current batch, saves it
+  and only then leaves the running tasks, which is all `chunky progress` lists ("No tasks
+  running." when none). So progress can name a task for a moment after pausing it;
+  `pregenstate.ts` ignores a paused dimension for 15 s. Cancel's confirm removes it at once.
 - Versions (jars of 1.2.54 to 1.5.3 compared, 2026-10-20): 1.2.x (Minecraft 1.16 to 1.19.2)
   keeps language, `continueOnRestart` and the tasks (keyed by world: cancelled, radius,
   radiusZ, centerX/Z, shape, count, time) in one `config/chunky.json`; 1.3 on has

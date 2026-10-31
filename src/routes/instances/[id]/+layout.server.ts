@@ -8,7 +8,9 @@ import { LOADERS } from '#lib/server/modloaders.js';
 import { playitStatus, publicAddress, serverTunnel } from '#lib/server/playit.js';
 import type { ModloaderId } from '#lib/server/modloaders.js';
 
-export const load: LayoutServerLoad = async ({ params, url }) => {
+export const load: LayoutServerLoad = async ({ params, url, depends }) => {
+	// The header's status alone, reloaded while a server is paused (+layout.svelte).
+	depends('mineshell:server-status');
 	const instance = getInstance(params.id);
 	if (!instance) {
 		// Its install was cancelled, which removed it: back to the list rather than "not found".

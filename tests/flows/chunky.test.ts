@@ -100,7 +100,8 @@ describe('Chunky', () => {
 	it('gives rectangles and ellipses both radii, east-west first', async () => {
 		const instance = await server();
 		await chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'ellipse', centerX: 5, centerZ: 6, radius: 3000, radiusZ: 1000 });
-		expect(rcon.commands).toEqual(['chunky start minecraft:overworld ellipse 5 6 3000 1000']);
+		// Then what runs, for the header (pregenstate.ts).
+		expect(rcon.commands).toEqual(['chunky start minecraft:overworld ellipse 5 6 3000 1000', 'chunky progress']);
 		await expect(chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'rectangle', centerX: 0, centerZ: 0, radius: 3000 })).rejects.toThrow(/radius/);
 		await expect(chunky.startPregen(instance, { world: 'minecraft:overworld', shape: 'star' as never, centerX: 0, centerZ: 0, radius: 3000 })).rejects.toThrow(/rectangle/);
 	});
@@ -216,6 +217,22 @@ describe('Chunky', () => {
 
 		rcon.answers['chunky progress'] = '§2[Chunky]§r No tasks running.';
 		await chunky.watchPausedPregen(instance);
+		expect((await summarise(instance)).phase).toBe('paused');
+
+		// Started from the World tab: at once, not at the next 30 s check. The header stayed
+		// Pre-generating for minutes after a pause or cancel, until another tab was opened.
+		rcon.answers['chunky continue minecraft:overworld'] = '§2[Chunky]§r Task continuing for minecraft:overworld.';
+		rcon.answers['chunky progress'] = RUNNING;
+		await chunky.continuePregen(instance, 'minecraft:overworld');
+		expect((await summarise(instance)).phase).toBe('pregenerating');
+		// A paused task ends after Chunky's current batch, and progress lists it until then.
+		await chunky.pausePregen(instance, 'minecraft:overworld');
+		expect((await summarise(instance)).phase).toBe('paused');
+		await chunky.watchPausedPregen(instance);
+		expect((await summarise(instance)).phase).toBe('paused');
+		await chunky.continuePregen(instance, 'minecraft:overworld');
+		expect((await summarise(instance)).phase).toBe('pregenerating');
+		await chunky.cancelPregen(instance);
 		expect((await summarise(instance)).phase).toBe('paused');
 	});
 
