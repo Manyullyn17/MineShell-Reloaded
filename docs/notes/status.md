@@ -52,8 +52,12 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-Nothing (2026-10-26): Discord notifications, the client export imports and a large server
-export and import are done (ROADMAP, "Road to 1.0").
+- The paused server's "Pre-generating" header (2026-10-31): Chunky started on a 1.21.2+ server
+  after it says Paused (empty), as in the 26.3 test; the header should switch within 30 s and go
+  back to Paused once the task finishes or is paused.
+
+Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
+server export and import are done (ROADMAP, "Road to 1.0").
 
 ## Real-loader passes
 

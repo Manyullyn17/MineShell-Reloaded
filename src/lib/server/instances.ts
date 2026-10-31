@@ -74,6 +74,8 @@ import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule, saveSnapshotSchedule } from './snapshotschedule';
 import { deleteServerBackup } from './backups';
 import { deleteCrashMarks, pausedSince } from './history';
+import { pregenRunning } from './pregenstate';
+import type { ServerPhase } from '#lib/shared/format.js';
 import { doneStartingAt } from './startphase';
 import { deleteDimensionNames } from './dimensionnames';
 import { installJava, type JavaVendor } from './javadownload';
@@ -1547,7 +1549,7 @@ async function removeServer(instance: ServerInstance, opts: { deleteFiles: boole
 
 // ------------------------------------------------------------------ summary ---
 
-export type ServerPhase = 'starting' | 'stopping' | 'paused' | null;
+export type { ServerPhase };
 
 export type InstanceSummary = {
 	instance: ServerInstance;
@@ -1696,15 +1698,17 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 	const doneAt = running ? await doneStartingAt(instance.id, instance.createdAt, state.activeEnterTimestamp) : null;
 	const stopping = running && pendingStops.has(instance.id);
 	const starting = running && doneAt === null;
-	// Paused for being empty (1.21.2+): still running, players can join and wake it.
+	// Paused for being empty (1.21.2+): still running, players can join and wake it. Chunky
+	// goes on generating meanwhile, and the header says that instead (pregenstate.ts).
 	const paused = running && !starting && !stopping && pausedSince(instance.id, state.activeEnterTimestamp) !== null;
+	const generating = paused && pregenRunning(instance.id);
 	return {
 		instance,
 		state,
 		running,
 		starting,
 		stopping,
-		phase: stopping ? 'stopping' : starting ? 'starting' : paused ? 'paused' : null,
+		phase: stopping ? 'stopping' : starting ? 'starting' : generating ? 'pregenerating' : paused ? 'paused' : null,
 		doneAt,
 		uptimeMs: doneAt !== null ? Date.now() - doneAt : 0,
 		javaWarning: java.warning,

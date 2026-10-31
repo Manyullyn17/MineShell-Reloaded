@@ -6,7 +6,7 @@ import { audit, listInstances, onlinePlayers, rconPassword, restart } from './in
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
 import { rollForwardMissed, runDueCommands } from './scheduledcommands';
-import { autoPauseForPlayers } from './chunky';
+import { autoPauseForPlayers, watchPausedPregen } from './chunky';
 import { clockSlot, dailySlot, evaluateSnapshotSchedule, rollForwardSnapshots } from './snapshotschedule';
 import { checkDiskSpace } from './diskspace';
 import { dailyDatabaseCopy } from './dbbackups';
@@ -163,6 +163,8 @@ async function checkAll(): Promise<void> {
 		await autoPauseForPlayers(instance).catch((err) =>
 			console.error(`[mineshell] Chunky auto-pause failed for ${instance.id}:`, err)
 		);
+		// Quiet: a paused server that does not answer over RCON is nothing to report.
+		await watchPausedPregen(instance).catch(() => {});
 		await evaluateSnapshotSchedule(instance).catch((err) =>
 			console.error(`[mineshell] scheduled snapshot failed for ${instance.id}:`, err)
 		);

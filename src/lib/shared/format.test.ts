@@ -75,4 +75,8 @@ describe('describeState', () => {
 	it('calls a server that paused itself for being empty paused, still in the running tone', () => {
 		expect(describeState('active', 'running', 'paused')).toEqual({ label: 'Paused (empty)', tone: 'running' });
 	});
+
+	it('calls a paused server that Chunky is still generating on pre-generating', () => {
+		expect(describeState('active', 'running', 'pregenerating')).toEqual({ label: 'Pre-generating', tone: 'running' });
+	});
 });

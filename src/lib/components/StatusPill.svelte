@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { describeState } from '#lib/shared/format.js';
+	import { describeState, type ServerPhase } from '#lib/shared/format.js';
 
 	let {
 		active,
 		sub,
 		phase = null,
 		compact = false
-	}: { active: string; sub: string; phase?: 'starting' | 'stopping' | 'paused' | null; compact?: boolean } = $props();
+	}: { active: string; sub: string; phase?: ServerPhase; compact?: boolean } = $props();
 
 	const state = $derived(describeState(active, sub, phase));
 </script>

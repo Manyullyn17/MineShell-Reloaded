@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### A paused server's header shows a running pre-generation
+
+Built 2026-10-31 on the `next` branch, for 1.1, from the leftovers of "Pausing empty servers".
+The user found that Chunky goes on generating on a server the game paused for being empty (a
+26.3 server, started after it said Paused, nobody on) while the header said "Paused (empty)"
+throughout. The header now says "Pre-generating" while `chunky progress` names a running task,
+and Paused again once none does (`pregenstate.ts`; ARCHITECTURE, beside "Paused (empty)"). Only in place of
+Paused: a running server with players on stays Running. Not seen live yet (needs a 1.21.2+
+server pausing with Chunky at work); Chunky in another language than English is not read, as
+for its other progress.
+
 ### Sorting the mods list by its column headers
 
 Built 2026-10-31 on the `next` branch, for 1.1, from the leftovers of the Mods tab's pictures

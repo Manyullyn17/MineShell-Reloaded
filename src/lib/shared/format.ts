@@ -64,15 +64,17 @@ export function gaveUpAfter(active: string, result: string, limit: number): numb
 	return active === 'failed' && result === 'start-limit-hit' ? limit : null;
 }
 
+/**
+ * What systemd cannot tell: running but not yet "Done (" (it calls the unit active as soon as
+ * Java runs), told to stop over RCON and still saving, paused for being empty (Minecraft
+ * 1.21.2+'s pause-when-empty-seconds), or paused and still pre-generating with Chunky.
+ */
+export type ServerPhase = 'starting' | 'stopping' | 'paused' | 'pregenerating' | null;
+
 export function describeState(
 	active: string,
 	sub: string,
-	/**
-	 * What systemd cannot tell: running but not yet "Done (" (it calls the unit active as
-	 * soon as Java runs), told to stop over RCON and still saving, or paused for being
-	 * empty (Minecraft 1.21.2+'s pause-when-empty-seconds).
-	 */
-	phase: 'starting' | 'stopping' | 'paused' | null = null
+	phase: ServerPhase = null
 ): {
 	label: string;
 	tone: 'running' | 'stopped' | 'busy' | 'failed';
@@ -81,6 +83,7 @@ export function describeState(
 		if (phase === 'stopping') return { label: 'Stopping', tone: 'busy' };
 		if (phase === 'starting') return { label: 'Starting', tone: 'busy' };
 		if (phase === 'paused') return { label: 'Paused (empty)', tone: 'running' };
+		if (phase === 'pregenerating') return { label: 'Pre-generating', tone: 'running' };
 		return { label: 'Running', tone: 'running' };
 	}
 	if (active === 'activating') return { label: 'Starting', tone: 'busy' };

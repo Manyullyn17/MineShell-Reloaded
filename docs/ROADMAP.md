@@ -26,7 +26,7 @@ goes into `main`: servers that are really sandboxed (security), quoted JVM argum
 loaders), and what finishes features already on `next`: the Minecraft versions a loader has
 builds for (the typeable version pickers; built 2026-10-31, ROADMAP-ARCHIVE), sorting the mods list by its column headers
 (built 2026-10-31, ROADMAP-ARCHIVE) and a paused server's header showing a running
-pre-generation (Leftovers, "Pausing empty servers"). The other leftovers of `next`'s features (Cancel for version
+pre-generation (built 2026-10-31, ROADMAP-ARCHIVE). The other leftovers of `next`'s features (Cancel for version
 moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
 chosen files, Chunk Pregenerator) are extensions and wait.
 
@@ -738,11 +738,7 @@ is open, and each needs a test setup.
   (user's call: server settings for now, maybe later); the BlueMap mod's live map was not checked
   after a switch (Dynmap names its worlds by folder).
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
-  researched). Chunky keeps generating on a paused server (the user, 2026-10-31, a 26.3
-  server, started after it said Paused, nobody on), but the header still says Paused all the
-  while, though the server is busy. For 1.1 (user's call, 2026-10-31): while a Chunky task
-  runs, the header shows the pre-generation instead of Paused (the World tab already reads
-  `chunky progress`), and Paused again once it ends.
+  researched).
 - **Player stats**: read only (no editing or resetting), no history over time; 1.12 mob
   names come from lang files (no pictures for mobs); pre-1.8 numeric ids and achievements are
   shown raw or left out (not checked on a real world). Stats on the status page, once that is

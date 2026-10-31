@@ -459,7 +459,11 @@ server that logged "Server empty for N seconds, pausing" (Minecraft 1.21.2+'s
 `pause-when-empty-seconds`, offered in Settings > Performance only from that version) is
 "Paused (empty)": history.ts keeps the time on the run (`server_runs.paused_at`) and a join
 clears it, since the game logs nothing when a player wakes it; `pausedSince` reads it for
-`summarise`, so it lags by up to a history read (30 s) both ways.
+`summarise`, so it lags by up to a history read (30 s) both ways. Chunky goes on generating on
+a paused server, which then shows "Pre-generating" instead: `pregenstate.ts` keeps whether
+`chunky progress` last named a running task, asked when the World tab reads the progress and,
+while a server is paused, by the scheduler every 30 s (`watchPausedPregen`; with Chunky in
+English only, as for its other progress reads), and an answer older than 90 s is not trusted.
 
 **Heap and memory advice.** The cgroup's memory says nothing about the Java heap: the JVM
 keeps heap it took, all of it at start with `-Xms` = `-Xmx`. `heap.ts` asks the JVM itself,

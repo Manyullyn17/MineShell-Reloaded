@@ -13,6 +13,8 @@ import { startTask } from './tasks';
 import { readJavaProperties } from './properties';
 import { rconExec } from './rcon';
 import { unitState } from './systemd';
+import { pausedSince } from './history';
+import { notePregen } from './pregenstate';
 import type { PregenShape } from '#lib/shared/pregen.js';
 
 /**
@@ -318,7 +320,21 @@ async function chunky(instance: ServerInstance, commands: string[]): Promise<str
 
 export async function chunkyStatus(instance: ServerInstance): Promise<ChunkyStatus> {
 	const text = await chunky(instance, ['chunky progress']);
-	return { running: parseProgress(text), text };
+	const running = parseProgress(text);
+	notePregen(instance.id, running.length > 0);
+	return { running, text };
+}
+
+/**
+ * Called by the scheduler every 30 s: asks a server the game paused for being empty whether
+ * Chunky is generating, which it goes on doing, so the header can say so (pregenstate.ts).
+ * Only with Chunky in English, where MineShell can read which tasks run.
+ */
+export async function watchPausedPregen(instance: ServerInstance): Promise<void> {
+	const state = await unitState(instance.id);
+	if (state.active !== 'active' || pausedSince(instance.id, state.activeEnterTimestamp) === null) return;
+	if (!(await hasChunky(instance.path)) || (await chunkyLanguage(instance.path)) !== 'en') return;
+	await chunkyStatus(instance);
 }
 
 // --------------------------------------------------------------- commands ---

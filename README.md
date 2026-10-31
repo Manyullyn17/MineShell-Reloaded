@@ -56,7 +56,7 @@ Control server lifecycles and monitor what is happening without leaving the brow
 - Perform graceful shutdowns using RCON to save the world before stopping Java, with signal-based fallbacks.
 - Configure crash recovery, restart attempt limits, scheduled restarts (daily, or every few hours on the clock: every 6 hours is 0:00, 6:00, 12:00, 18:00), and scheduled console commands (on the clock too, or daily at a time).
 - Delay scheduled operations while players are online.
-- Let Minecraft 1.21.2+ pause an empty server (its `pause-when-empty-seconds`, in settings and new-server defaults); the status shows it paused until someone joins.
+- Let Minecraft 1.21.2+ pause an empty server (its `pause-when-empty-seconds`, in settings and new-server defaults); the status shows it paused until someone joins, or pre-generating while Chunky goes on working.
 - See every server's ports (game, RCON, query, voice chat, map) and what listens on each, with clashes between servers and ports other programs hold, and move one to a free port. Where new ports start can be changed for setups that need it.
 - Set per-server CPU and memory limits, and a cap on all servers together (a soft memory cap that slows the servers down instead of killing one), and detect servers that never finish starting.
 - Get notified on Discord, on your phone (ntfy) or through a webhook when a server crashes, is killed for its memory, gets stuck starting, misses a scheduled snapshot or fails to copy one to the backup folder, runs low on disk space or has an update, and optionally on restarts, starts, stops and players joining or leaving. Quiet hours keep the optional ones back overnight while problems still come through. A server can send to its own channel instead or as well.

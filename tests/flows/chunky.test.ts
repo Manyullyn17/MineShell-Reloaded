@@ -167,6 +167,51 @@ describe('Chunky', () => {
 		});
 	});
 
+	// The game pauses an empty server and Chunky goes on generating, while the header said
+	// "Paused (empty)" throughout.
+	it('calls a paused server pre-generating while Chunky runs, and paused again once it stops', async () => {
+		const { writeJar } = await import('../helpers/fs');
+		const { applyEvents } = await import('#lib/server/history.js');
+		const { summarise } = await import('#lib/server/instances.js');
+		const { unitState } = await import('#lib/server/systemd.js');
+		const instance = await server();
+		await writeJar(path.join(instance.path, 'mods'), 'Chunky-Fabric-1.4.40.jar', {
+			'fabric.mod.json': JSON.stringify({ schemaVersion: 1, id: 'chunky', version: '1.4.40' })
+		});
+		const run = 'c'.repeat(32);
+		let doneAt = 0;
+		invalidateUnitState();
+		fakeProcesses((cmd, args) => {
+			if (cmd === 'systemctl' && args.includes('show'))
+				return { stdout: 'ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=1000000\nResult=success\n' };
+			if (cmd === 'journalctl' && args.includes('-g'))
+				return { stdout: JSON.stringify({ __REALTIME_TIMESTAMP: String(doneAt * 1000), _SYSTEMD_INVOCATION_ID: run, MESSAGE: '[10:00:00] [Server thread/INFO]: Done (9.1s)! For help, type "help"' }) + '\n' };
+			return {};
+		});
+		const startedAt = (await unitState(instance.id)).activeEnterTimestamp;
+		doneAt = startedAt + 10_000;
+		const line = (text: string) => `[10:00:00] [Server thread/INFO]: ${text}`;
+		applyEvents(instance.id, [
+			{ at: startedAt, message: `Started mstest@${instance.id}.service - Minecraft server`, invocation: run },
+			{ at: doneAt, message: line('Done (9.1s)! For help, type "help"'), invocation: run }
+		]);
+
+		// Running, not paused: nothing asked.
+		rcon.answers['chunky progress'] = RUNNING;
+		await chunky.watchPausedPregen(instance);
+		expect(rcon.commands).toEqual([]);
+
+		applyEvents(instance.id, [{ at: doneAt + 60_000, message: line('Server empty for 60 seconds, pausing'), invocation: run }]);
+		expect((await summarise(instance)).phase).toBe('paused');
+		await chunky.watchPausedPregen(instance);
+		expect(rcon.commands).toEqual(['chunky progress']);
+		expect((await summarise(instance)).phase).toBe('pregenerating');
+
+		rcon.answers['chunky progress'] = '§2[Chunky]§r No tasks running.';
+		await chunky.watchPausedPregen(instance);
+		expect((await summarise(instance)).phase).toBe('paused');
+	});
+
 	it('knows whether Chunky is installed', async () => {
 		const instance = await server();
 		const { writeJar } = await import('../helpers/fs');
