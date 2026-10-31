@@ -23,6 +23,7 @@ import {
 } from './properties';
 import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
 import {
+	refreshTemplateUnit,
 	restartUnit,
 	startUnit,
 	writeOnceArgs,
@@ -173,6 +174,10 @@ export async function syncUnit(instance: ServerInstance): Promise<{ warning: str
 		modloaderVersion: instance.modloaderVersion
 	});
 
+	// The env file's format and the template's start line go together (quoted arguments, read
+	// by eval): a template not yet brought up to date (refreshed at boot only, which a running
+	// dev server's reload skips) would pass the quotes to Java.
+	await refreshTemplateUnit().catch(() => false);
 	await writeUnitEnv(instance.id, {
 		java: java.path ?? '/usr/bin/java',
 		jvmArgs: instance.jvmArgs,
