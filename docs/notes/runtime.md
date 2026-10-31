@@ -193,8 +193,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   (`minecraft:overworld`), not by world folder: a world switch swaps them
   (`swapChunkyTasks`), or another world would continue the last one's task.
 - `chunky cancel` and starting over an unfinished task both wait for `chunky confirm`;
-  pending actions are keyed by sender name, so a later RCON connection can confirm. The
-  confirm prompt contains the literal "chunky confirm" in every language.
+  pending actions are keyed by sender name, so a later RCON connection can confirm, and expire
+  after a minute ("Nothing to confirm!" then). The confirm prompt contains the literal "chunky
+  confirm" in every language. MineShell sends cancel and confirm together, so cancel's answer
+  is the prompt and the confirm's is what happened ("Task cancelled for ..."): only the latter
+  is shown (source read 2026-10-31, 1.3.0 to 1.5.0 alike).
 - Versions (jars of 1.2.54 to 1.5.3 compared, 2026-10-20): 1.2.x (Minecraft 1.16 to 1.19.2)
   keeps language, `continueOnRestart` and the tasks (keyed by world: cancelled, radius,
   radiusZ, centerX/Z, shape, count, time) in one `config/chunky.json`; 1.3 on has
