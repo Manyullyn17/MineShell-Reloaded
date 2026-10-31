@@ -650,8 +650,9 @@ jar shows the picture it names itself (`logo` in `describeJar`: Fabric/Quilt `ic
 largest of several sizes; mods.toml or mcmod.info `logoFile`, often a wide banner, hence
 `object-fit: contain`). Only PNG, JPEG, GIF and WebP up to 1 MB are served, by their first
 bytes, with `nosniff`: an SVG would run script on MineShell's origin. The page adds the
-mod's version (or size) as `v`, so the answer can be kept a day. Sorting (name, size, added
-or updated: `instance_mods.installed_at`, else the file's time) and the client-only filter
+mod's version (or size) as `v`, so the answer can be kept a day. Sorting (by the Mod, Size and
+Added or updated headers, a second click turning the order round, `lib/shared/modsort.ts`;
+the date is `instance_mods.installed_at`, else the file's time) and the client-only filter
 are the page's own.
 
 **Server icons** must be 64x64 PNGs. Scaling happens in the browser (`lib/shared/servericon.ts`),

@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Sorting the mods list by its column headers
+
+Built 2026-10-31 on the `next` branch, for 1.1, from the leftovers of the Mods tab's pictures
+and sorting (user, 2026-10-30). Sorting was a "Sort by" select above the table, always one way
+(name A-Z, size and added or updated newest first), the date it sorted by was shown nowhere and
+the size only in the file name line. Now the Mod, Size and Added or updated headers sort, a
+second click turning the order round (`lib/shared/modsort.ts`): name starts A-Z, size and date
+largest and newest first, a mod without either (a record whose file is missing) last both ways;
+the header sorted by has an arrow and `aria-sort`. Size and the date (time in its title) are
+columns of their own. Default stays name, A-Z, and the order is not kept between visits, as
+before.
+
 ### Minecraft versions the loader has builds for
 
 Built 2026-10-31 on the `next` branch, for 1.1 (asked for 2026-10-30, looking at the new version

@@ -10,7 +10,8 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import Flash from '#lib/components/Flash.svelte';
 	import InfoTip from '#lib/components/InfoTip.svelte';
-	import { formatBytes } from '#lib/shared/format.js';
+	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
+	import { clickSort, DEFAULT_MOD_SORT, sortMods, type ModSortKey } from '#lib/shared/modsort.js';
 	import { webLink } from '#lib/shared/links.js';
 	import BisectPanel from './BisectPanel.svelte';
 	import DependencyList, { type DependencyPlan } from './DependencyList.svelte';
@@ -35,7 +36,7 @@
 	// svelte-ignore state_referenced_locally
 	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(page.url.searchParams.get('view') === 'updates' ? 'updates' : 'installed');
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention' | 'client'>('all');
-	let modSort = $state<'name' | 'size' | 'added'>('name');
+	let modSort = $state(DEFAULT_MOD_SORT);
 	let uploadForm = $state<HTMLFormElement | null>(null);
 	let jarInput = $state<HTMLInputElement | null>(null);
 	let pendingDelete = $state<string | null>(null);
@@ -149,10 +150,10 @@
 		attention: data.mods.filter(needsAttention).length,
 		client: data.mods.filter((m) => m.clientOnly).length
 	});
-	// The server lists them by name; the others put the largest or newest first.
+	// By the header clicked last (modsort.ts); the server lists them by name.
 	const visible = $derived(
-		data.mods
-			.filter(
+		sortMods(
+			data.mods.filter(
 				(m) =>
 					m.name.toLowerCase().includes(filter.trim().toLowerCase()) &&
 					(modFilter === 'all' ||
@@ -160,9 +161,12 @@
 						(modFilter === 'disabled' && !m.enabled && !m.missing) ||
 						(modFilter === 'attention' && needsAttention(m)) ||
 						(modFilter === 'client' && m.clientOnly))
-			)
-			.sort((a, b) => (modSort === 'size' ? b.sizeBytes - a.sizeBytes : modSort === 'added' ? (b.addedAt ?? 0) - (a.addedAt ?? 0) : 0))
+			),
+			modSort
+		)
 	);
+	const ariaSort = (key: ModSortKey) => (modSort.key === key ? (modSort.desc ? 'descending' : 'ascending') : undefined);
+	const addedDate = (at: number | null) => (at ? new Date(at).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '');
 	/** Mods whose picture would not load: they show the empty square instead. */
 	const noIcon = new SvelteSet<string>();
 	const iconSrc = (mod: { fileName: string; version: string | null; sizeBytes: number }) =>
@@ -342,14 +346,6 @@
 				{/if}
 			{/each}
 		</div>
-		<label class="sort">
-			Sort by
-			<select bind:value={modSort}>
-				<option value="name">Name</option>
-				<option value="size">Size</option>
-				<option value="added">Added or updated</option>
-			</select>
-		</label>
 		{#if data.packName}
 			<span class="pack-toggle">
 				<input id="pack-mods" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={data.running} />
@@ -380,9 +376,16 @@
 				<thead>
 					<tr>
 						<th class="switch-col"><span class="visually-hidden">Enabled</span></th>
-						<th>Mod</th>
+						{#snippet sortHead(key: ModSortKey, label: string, cls = '')}
+							<th class={cls} aria-sort={ariaSort(key)}>
+								<button type="button" class="sort-head" onclick={() => (modSort = clickSort(modSort, key))}>{label}</button>
+							</th>
+						{/snippet}
+						{@render sortHead('name', 'Mod')}
 						<th class="nowrap">Version</th>
 						<th class="nowrap">Source</th>
+						{@render sortHead('size', 'Size', 'num nowrap')}
+						{@render sortHead('added', 'Added or updated', 'nowrap')}
 						<th><span class="visually-hidden">Actions</span></th>
 					</tr>
 				</thead>
@@ -448,9 +451,7 @@
 										<span class="tag" title="Held at this version: update checks leave it out. Versions can still switch it.">held</span>
 									{/if}
 								</div>
-								<div class="faint small mono">
-									{mod.fileName}{mod.sizeBytes ? ` · ${formatBytes(mod.sizeBytes)}` : ''}
-								</div>
+								<div class="faint small mono">{mod.fileName}</div>
 								{#if neededBy[mod.fileName] && !mod.missing}
 									{@const names = neededBy[mod.fileName]}
 									<div class="small needed-by" class:warn-text={!mod.enabled} title={names.length > 3 ? names.join(', ') : undefined}>
@@ -462,6 +463,8 @@
 							</td>
 							<td class="mono small version">{mod.version ?? 'unknown'}</td>
 							<td class="small nowrap source">{sourceLabel(mod)}</td>
+							<td class="num small nowrap muted">{mod.sizeBytes ? formatBytes(mod.sizeBytes) : ''}</td>
+							<td class="small nowrap muted" title={mod.addedAt ? formatDateTime(mod.addedAt) : undefined}>{addedDate(mod.addedAt)}</td>
 							<td>
 								{#if pendingDelete === mod.fileName}
 									<div class="row-actions confirm">
@@ -518,7 +521,7 @@
 						</tr>
 						{#if versionFor === mod.fileName}
 							<tr class="version-row">
-								<td colspan="5">
+								<td colspan="7">
 									{#if versionsLoading}
 										<p class="muted small">Looking up versions of {mod.name}.</p>
 									{:else if versionError}
@@ -890,17 +893,33 @@
 		}
 	}
 
-	.sort {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: 0.85rem;
-		color: var(--text-muted);
-		margin: 0;
+	/* A header that sorts: the header's own look, an arrow on the column sorted by. */
+	.sort-head {
+		all: unset;
+		cursor: pointer;
+		color: inherit;
 	}
 
-	.sort select {
-		width: auto;
+	.sort-head:hover {
+		color: var(--text);
+	}
+
+	/* `all: unset` took the page-wide focus ring too. */
+	.sort-head:focus-visible {
+		outline: 2px solid var(--accent-hover);
+		outline-offset: 2px;
+	}
+
+	th[aria-sort] .sort-head {
+		color: var(--text);
+	}
+
+	th[aria-sort='ascending'] .sort-head::after {
+		content: ' ↑';
+	}
+
+	th[aria-sort='descending'] .sort-head::after {
+		content: ' ↓';
 	}
 
 	.mod-name {
