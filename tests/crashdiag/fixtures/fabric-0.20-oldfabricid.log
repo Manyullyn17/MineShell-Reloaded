@@ -1,0 +1,19 @@
+Starting net.fabricmc.loader.impl.game.minecraft.BundlerClassPathCapture
+[17:02:03] [main/INFO]: Loading Minecraft 1.20.1 with Fabric Loader 0.20.1
+[17:02:03] [main/WARN]: Mod resolution failed
+[17:02:03] [main/INFO]: Immediate reason: [HARD_DEP_NO_CANDIDATE chunky 1.3.146 {depends fabric @ [*]}, ROOT_FORCELOAD_SINGLE chunky 1.3.146]
+[17:02:03] [main/INFO]: Reason: [HARD_DEP chunky 1.3.146 {depends fabric @ [*]}]
+[17:02:03] [main/INFO]: Fix: add [add:fabric 1 ([(-∞,∞)])], remove [], replace []
+[17:02:03] [main/ERROR]: Incompatible mods found!
+net.fabricmc.loader.impl.FormattedException: Some of your mods are incompatible with the game or each other!
+A potential solution has been determined, this may resolve your problem:
+	 - Install fabric, any version.
+More details:
+	 - Mod 'Chunky' (chunky) 1.3.146 requires any version of fabric, which is missing!
+	at net.fabricmc.loader.impl.FormattedException.ofLocalized(FormattedException.java:51) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.loader.impl.FabricLoaderImpl.load(FabricLoaderImpl.java:207) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.init(Knot.java:142) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:66) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.loader.impl.launch.knot.KnotServer.main(KnotServer.java:23) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.loader.impl.launch.server.FabricServerLauncher.main(FabricServerLauncher.java:69) ~[fabric-loader-0.20.1.jar:?]
+	at net.fabricmc.installer.ServerLauncher.main(ServerLauncher.java:69) ~[server.jar:1.1.2]

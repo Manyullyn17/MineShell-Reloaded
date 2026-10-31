@@ -315,6 +315,22 @@ function ref(jar: ModJar | null | undefined): ModRef | null {
 }
 
 /** Dependency ids that name the loader or the game rather than a mod. */
+/**
+ * What a missing dependency is called where its mod id says little: libraries mods require
+ * by id. `fabric` is Fabric API's id before 0.43 (2021), which mods like Chunky still declare:
+ * "Install fabric" sent people looking for the loader.
+ */
+const LIBRARY_NAMES: Record<string, string> = {
+	fabric: 'Fabric API',
+	'fabric-api': 'Fabric API',
+	quilted_fabric_api: 'Quilted Fabric API',
+	qsl: 'Quilted Fabric API',
+	'fabric-language-kotlin': 'Fabric Language Kotlin',
+	architectury: 'Architectury API',
+	'cloth-config': 'Cloth Config API',
+	'cloth-config2': 'Cloth Config API'
+};
+
 const LOADER_IDS: Record<string, string> = {
 	minecraft: 'Minecraft',
 	forge: 'Forge',
@@ -558,11 +574,12 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 					`dep:${who}:${needs}`
 				);
 			} else {
+				const library = LIBRARY_NAMES[needs.toLowerCase()];
 				push(
 					{
 						kind: 'missing-dependency',
-						title: `${ref(jar)?.name ?? who} needs "${needs}", which is not installed`,
-						detail: `Install ${needs} (a version matching this Minecraft version and loader), or disable ${ref(jar)?.name ?? who}.`,
+						title: `${ref(jar)?.name ?? who} needs ${library ?? `"${needs}"`}, which is not installed`,
+						detail: `Install ${library ?? needs} (a version matching this Minecraft version and loader), or disable ${ref(jar)?.name ?? who}.`,
 						culprit: ref(jar),
 						related: null,
 						evidence: line.trim(),

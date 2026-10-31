@@ -52,6 +52,11 @@
 		"culprit": "NeedsDep"
 	},
 	{
+		"name": "fabric-0.20-oldfabricid",
+		"kind": "missing-dependency",
+		"culprit": "Chunky"
+	},
+	{
 		"name": "forge-1.12.2-clientcode",
 		"kind": "client-code",
 		"culprit": "ClientCode"
