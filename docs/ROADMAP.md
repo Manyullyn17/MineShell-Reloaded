@@ -24,8 +24,9 @@ breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
 goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
 (both change how every server starts, so they share one template change and one pass on real
 loaders), and what finishes features already on `next`: the Minecraft versions a loader has
-builds for (the typeable version pickers) and sorting the mods list by its column headers
-(Leftovers, "Installed mods list"). The other leftovers of `next`'s features (Cancel for version
+builds for (the typeable version pickers), sorting the mods list by its column headers
+(Leftovers, "Installed mods list") and a paused server's header showing a running
+pre-generation (Leftovers, "Pausing empty servers"). The other leftovers of `next`'s features (Cancel for version
 moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
 chosen files, Chunk Pregenerator) are extensions and wait.
 
@@ -756,8 +757,9 @@ is open, and each needs a test setup.
 - **Pausing empty servers**: nothing for versions before 1.21.2 (a mod per loader, not
   researched). Chunky keeps generating on a paused server (the user, 2026-10-31, a 26.3
   server, started after it said Paused, nobody on), but the header still says Paused all the
-  while, though the server is busy: whether a running pre-generation should show instead is
-  open.
+  while, though the server is busy. For 1.1 (user's call, 2026-10-31): while a Chunky task
+  runs, the header shows the pre-generation instead of Paused (the World tab already reads
+  `chunky progress`), and Paused again once it ends.
 - **Player stats**: read only (no editing or resetting), no history over time; 1.12 mob
   names come from lang files (no pictures for mobs); pre-1.8 numeric ids and achievements are
   shown raw or left out (not checked on a real world). Stats on the status page, once that is
