@@ -64,7 +64,9 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 - The servers' sandbox (2026-10-31): the AppArmor exception is applied (doctor ok, Irithyll in
   its own namespace, joins and heap readings fine). Left to try with 1.1 on the real install: a
   server confined to its folder (`tests/tools/sandbox-check.sh mineshell@<id>`), a self-update
-  (its transient unit), Spark and a crash diagnosis inside the sandbox.
+  (its transient unit; needs a release to update to). Spark works inside it (the user, on the
+  dev install). Forge's startup question and crash diagnosis: `tests/tools/scenarios.sh` on the
+  throwaway dev server. A non-Ubuntu system needs a VM.
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").

@@ -338,7 +338,8 @@ and `RestrictNamespaces=yes` in the template, the same for playit's unit and
 `mineshell.service`, the `doctor` check, the DEPLOYMENT section with the scoped exception
 (applied by the user the same day: `doctor` ok, Irithyll in its own namespace with network and
 heap reads), and each server kept to its own folder where the namespaces work. Left: tests 2
-(a real Forge startup question), 5 and 6 below, and a non-Ubuntu system. Not possible yet:
+(a real Forge startup question: `tests/tools/scenarios.sh forge-question`), 5 (a self-update,
+when there is one) and 6 below, and a non-Ubuntu system (a VM). Not possible yet:
 keeping a server from signalling MineShell or another server (same account), which needs a PID
 namespace (`PrivatePIDs=`, systemd 257; 24.04 has 255).
 
@@ -371,8 +372,8 @@ Tests, on Ubuntu with the exception in place:
    Forge startup question (the `.once` file).
 3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
    separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
-   diagnosis, the console and RCON: heap reads, console and RCON done; Spark and crash
-   diagnosis left.
+   diagnosis, the console and RCON: heap reads, console, RCON and Spark (the user,
+   2026-10-31) done; crash diagnosis with `tests/tools/scenarios.sh`.
 4. The JVM under `RestrictNamespaces=yes` and the syscall filter: done (the 2026-10-31 pass).
 5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
    which inherits the profile too).
