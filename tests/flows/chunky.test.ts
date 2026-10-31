@@ -114,11 +114,18 @@ describe('Chunky', () => {
 		expect(rcon.commands).toEqual([]);
 	});
 
-	it('confirms a cancel in the same go', async () => {
+	// Chunky's prompt to type "/chunky confirm" was shown with the result, as if the cancel still
+	// waited for it, though the confirm had gone with it.
+	it('confirms a cancel in the same go, and answers what the confirm did', async () => {
 		const instance = await server();
-		await chunky.cancelPregen(instance, 'minecraft:the_nether');
+		rcon.answers['chunky cancel minecraft:the_nether'] =
+			"§2[Chunky]§r Cancelled tasks cannot be continued. If you are sure you want to cancel, type '/chunky confirm'.";
+		rcon.answers['chunky confirm'] = '§2[Chunky]§r Task cancelled for minecraft:the_nether.';
+		expect(await chunky.cancelPregen(instance, 'minecraft:the_nether')).toBe('Task cancelled for minecraft:the_nether.');
 		await chunky.pausePregen(instance);
 		expect(rcon.commands).toEqual(['chunky cancel minecraft:the_nether', 'chunky confirm', 'chunky pause']);
+		rcon.answers['chunky cancel'] = '§2[Chunky]§r No tasks to cancel.';
+		expect(await chunky.cancelPregen(instance)).toBe('No tasks to cancel.');
 	});
 
 	describe('pausing while players are online', () => {

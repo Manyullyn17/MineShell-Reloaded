@@ -265,14 +265,18 @@ function rconTarget(instance: ServerInstance) {
 	return { port: instance.rconPort, password };
 }
 
-async function chunky(instance: ServerInstance, commands: string[]): Promise<string> {
+/** Chunky's answer to each command, colour codes and prefix removed. */
+async function chunkyAnswers(instance: ServerInstance, commands: string[]): Promise<string[]> {
 	try {
-		const answers = await rconExec(rconTarget(instance), commands);
-		return plainChunky(answers.join('\n'));
+		return (await rconExec(rconTarget(instance), commands)).map(plainChunky);
 	} catch (err) {
 		if (err instanceof ChunkyError) throw err;
 		throw new ChunkyError('The server did not answer over RCON. Is it running?');
 	}
+}
+
+async function chunky(instance: ServerInstance, commands: string[]): Promise<string> {
+	return (await chunkyAnswers(instance, commands)).filter(Boolean).join('\n');
 }
 
 export async function chunkyStatus(instance: ServerInstance): Promise<ChunkyStatus> {
@@ -331,9 +335,15 @@ export function continuePregen(instance: ServerInstance, world: string | null = 
 	return chunky(instance, [`chunky continue${worldArg(world)}`]);
 }
 
-/** Chunky asks to confirm a cancel (a cancelled task cannot be continued); the page already did. */
-export function cancelPregen(instance: ServerInstance, world: string | null = null): Promise<string> {
-	return chunky(instance, [`chunky cancel${worldArg(world)}`, 'chunky confirm']);
+/**
+ * Chunky asks to confirm a cancel (a cancelled task cannot be continued); the page already
+ * did, so the confirm goes with it. Its prompt to type "/chunky confirm" is left out of the
+ * answer, which showed it as if the cancel still waited: the confirm's own answer ("Task
+ * cancelled for ...") is what happened. A cancel that asked nothing (no tasks) answers itself.
+ */
+export async function cancelPregen(instance: ServerInstance, world: string | null = null): Promise<string> {
+	const [asked, confirmed] = await chunkyAnswers(instance, [`chunky cancel${worldArg(world)}`, 'chunky confirm']);
+	return asked.includes('chunky confirm') ? confirmed : asked;
 }
 
 // ------------------------------------------- pause while players are online ---
