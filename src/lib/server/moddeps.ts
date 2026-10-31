@@ -55,13 +55,27 @@ export async function installDependency(instance: ServerInstance, modId: string)
 	if (!project) throw new InstanceError(`Modrinth has no mod "${modId}": find it on the Mods tab, or disable the mod that needs it.`);
 	const best = bestVersion(await compatibleVersions('modrinth', project.id, filterFor(instance)));
 	if (!best) throw new InstanceError(`${project.name} has no build for ${instance.modloader} ${instance.minecraftVersion} on Modrinth.`);
+	const key = `${instance.id}:${modId}`;
+	installing.add(key);
 	return startTask({ label: `Install ${project.name} on ${instance.name}`, instanceId: instance.id }, async (task) => {
-		task.setProgress(null, `Installing ${project.name}`);
-		await installModVersion(instance, 'modrinth', project, best);
-		task.log(`Installed ${project.name} ${best.versionNumber}.`);
-		await installRequiredMods(instance, best, task);
-		// Other untracked jars are the user's own, not a pack's.
-		await syncMods(instance, { fromPack: false }).catch(() => undefined);
-		task.setProgress(100, `Installed; ${project.name} loads the next time the server starts`);
+		try {
+			task.setProgress(null, `Installing ${project.name}`);
+			await installModVersion(instance, 'modrinth', project, best);
+			task.log(`Installed ${project.name} ${best.versionNumber}.`);
+			await installRequiredMods(instance, best, task);
+			// Other untracked jars are the user's own, not a pack's.
+			await syncMods(instance, { fromPack: false }).catch(() => undefined);
+			task.setProgress(100, `Installed; ${project.name} loads the next time the server starts`);
+		} finally {
+			installing.delete(key);
+		}
 	});
+}
+
+/** `<instance id>:<mod id>` of the dependency installs whose task is still running. */
+const installing = new Set<string>();
+
+/** The diagnosis' "Install" for this mod was pressed and its task has not ended: the banner says so instead. */
+export function installingDependency(instanceId: string, modId: string): boolean {
+	return installing.has(`${instanceId}:${modId}`);
 }

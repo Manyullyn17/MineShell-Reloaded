@@ -495,7 +495,11 @@ disabling the mod that needs it: the diagnosis gives only the mod id the loader 
 offline), and `installDependency` (`moddeps.ts`) looks it up on Modrinth when pressed, through
 a short map for libraries whose project differs from their id (Fabric API's `fabric`, from
 before 2021, which Chunky still declares), installs the build for the server's loader and
-version with what that needs, and refuses with the reason when Modrinth has none. Each crash's
+version with what that needs, and refuses with the reason when Modrinth has none. While its
+task runs the banner says so in place of the buttons (`installingDependency`); once the
+dependency is in the mods folder (installed, or a disabled one enabled), the same run is
+diagnosed as fixed since, with nothing to press. The diagnosis is cached per run and mods
+folder time (`lastcrash.ts`), so it changes when the jar lands, not when the button is pressed. Each crash's
 diagnosis is recorded with its run (`server_runs.cause`), so the list keeps the wording of the
 time.
 

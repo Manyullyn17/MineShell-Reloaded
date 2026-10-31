@@ -28,7 +28,7 @@ import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { forgetDiagnosis, lastCrash } from '#lib/server/lastcrash.js';
 import { setModEnabled } from '#lib/server/mods/index.js';
-import { installDependency } from '#lib/server/moddeps.js';
+import { installDependency, installingDependency } from '#lib/server/moddeps.js';
 import { TICK_LIMIT_STEPS } from '#lib/server/crashdiag.js';
 import { patchProperties } from '#lib/server/properties.js';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
@@ -223,8 +223,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		// Indexing a big pack's mods takes a moment the first time.
 		// What went wrong, in MineShell's words, for everyone; the log line it came from is console output.
 		diagnosis: crash.then(async (c) => {
-			const found = c ? await c.diagnosis : null;
-			if (!found || can(locals.access, instance.id, 'console.read')) return found;
+			const found = (c ? await c.diagnosis : null)?.map((d) => ({
+				...d,
+				installing: d.install ? installingDependency(instance.id, d.install.modId) : false
+			}));
+			if (!found || can(locals.access, instance.id, 'console.read')) return found ?? null;
 			return found.map((d) => ({ ...d, evidence: '' }));
 		})
 	};

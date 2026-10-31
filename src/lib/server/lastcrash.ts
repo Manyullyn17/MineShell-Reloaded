@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import { desc, eq } from 'drizzle-orm';
 import { db } from './db';
 import { bisectSessions, serverRuns, type ServerInstance } from './db/schema';
@@ -14,10 +15,14 @@ import { modsDir } from './mods/index';
  */
 const diagnosisCache = new Map<string, { key: string; result: Promise<Diagnosis[]> }>();
 
-/** Read again on every poll: a limit raised in Settings changes the advice without a new run. */
+/**
+ * Read again on every poll: a limit raised in Settings changes the advice without a new run,
+ * and so does a change to the mods folder (its time): an "Install" lands after its task.
+ */
 export async function diagnoseLastRun(instance: ServerInstance, journal: string): Promise<Diagnosis[]> {
 	const context: RunContext = { memoryLimitMb: instance.limitMemoryMb, maxTickTimeMs: await tickLimitOf(instance.path) };
-	const key = `${context.memoryLimitMb}:${context.maxTickTimeMs}:${journal.length}:${journal.slice(-200)}`;
+	const modsChanged = await fs.stat(modsDir(instance.path)).then((s) => s.mtimeMs, () => 0);
+	const key = `${context.memoryLimitMb}:${context.maxTickTimeMs}:${modsChanged}:${journal.length}:${journal.slice(-200)}`;
 	const hit = diagnosisCache.get(instance.id);
 	if (hit && hit.key === key) return hit.result;
 	const result = diagnoseRun(journal, modsDir(instance.path), context).catch(() => [] as Diagnosis[]);

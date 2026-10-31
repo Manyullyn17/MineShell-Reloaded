@@ -363,6 +363,7 @@ export type DiagnosisKind =
 	| 'client-code'
 	| 'headless'
 	| 'disabled-dependency'
+	| 'dependency-fixed'
 	| 'version-mismatch'
 	| 'missing-class'
 	| 'missing-dependency'
@@ -389,6 +390,8 @@ export type Diagnosis = {
 	 * overview's "Install" looks it up (moddeps.ts, installDependency); this module stays offline.
 	 */
 	install?: { modId: string; name: string } | null;
+	/** What stopped this run is no longer the case (a dependency installed or enabled since): no fix to offer. */
+	resolved?: boolean;
 	/** For the watchdog: the tick limit to raise `max-tick-time` to, when there is a higher step. */
 	tickLimit?: { ms: number; label: string } | null;
 	/**
@@ -491,6 +494,8 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 	for (const jar of mods) for (const c of jar.classes) if (!byClass.has(c)) byClass.set(c, jar);
 	const byId = new Map<string, ModJar>();
 	for (const jar of mods) for (const id of jar.ids) byId.set(id, jar);
+	// Fabric API is `fabric-api` and provides `fabric`, the id older mods ask for.
+	for (const jar of mods) for (const id of jar.provides ?? []) if (!byId.has(id)) byId.set(id, jar);
 	const byName = new Map<string, ModJar>();
 	for (const jar of mods) for (const n of jar.names) byName.set(n.toLowerCase(), jar);
 
@@ -711,7 +716,23 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 				continue;
 			}
 			const provider = jarForMod(needs);
-			if (provider && !provider.enabled) {
+			if (provider?.enabled && provider !== jar) {
+				// There now (its "Install" or "Enable" was pressed): this run's crash, fixed since.
+				// Not the jar itself: older indexes took a mods.toml's dependency ids for its own.
+				push(
+					{
+						kind: 'dependency-fixed',
+						title: `${ref(jar)?.name ?? who} needed ${ref(provider)!.name}, which is there now`,
+						detail: `${ref(provider)!.name} is in the mods folder since this crash. Start the server to try again.`,
+						culprit: ref(jar),
+						related: ref(provider),
+						evidence: line.trim(),
+						fix: null,
+						resolved: true
+					},
+					`dep:${who}:${needs}`
+				);
+			} else if (provider && !provider.enabled) {
 				push(
 					{
 						kind: 'disabled-dependency',

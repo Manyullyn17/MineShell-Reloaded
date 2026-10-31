@@ -34,7 +34,7 @@ vi.mock('#lib/server/mods/index.js', async (importOriginal) => {
 	return { ...actual, getModProvider: (id: string) => (id === 'modrinth' ? (fakeModrinth as ModProvider) : actual.getModProvider(id)) };
 });
 
-const { installDependency } = await import('#lib/server/moddeps.js');
+const { installDependency, installingDependency } = await import('#lib/server/moddeps.js');
 const { createInstance, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 
@@ -50,8 +50,12 @@ describe('installing what a crashed mod needs', () => {
 	// cannot bring a dependency.
 	it('installs Fabric API for the id `fabric`, with what it needs in turn', async () => {
 		const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1' });
-		const task = await waitForTask(await installDependency(instance, 'fabric'));
+		const id = await installDependency(instance, 'fabric');
+		// The banner says it is being installed instead of offering the buttons again.
+		expect(installingDependency(instance.id, 'fabric')).toBe(true);
+		const task = await waitForTask(id);
 		expect(task.state).toBe('done');
+		expect(installingDependency(instance.id, 'fabric')).toBe(false);
 		expect((await fs.readdir(path.join(instance.path, 'mods'))).sort()).toEqual(['fabric-api-0.92.6.jar', 'fabric-lib-1.0.jar']);
 	});
 

@@ -40,6 +40,21 @@ describe('missing libraries', () => {
 		// Offered as a button beside "Disable Chunky": a restart cannot fix this, an install can.
 		expect(top.install).toEqual({ modId: 'fabric', name: 'Fabric API' });
 	});
+
+	// Once "Install Fabric API" had run, the banner still said it was not installed and
+	// offered both buttons again: Fabric API is `fabric-api` and only provides `fabric`.
+	it('says the dependency is there now once it was installed, with nothing to press', async () => {
+		const log = await fs.readFile(path.join(here, 'fixtures', 'fabric-0.20-oldfabricid.log'), 'utf8');
+		const raw = JSON.parse(await fs.readFile(path.join(here, 'fixtures', 'fabric-0.20-oldfabricid.mods.json'), 'utf8'));
+		const fabricApi = { fileName: 'fabric-api-0.92.6.jar', enabled: true, ids: ['fabric-api'], provides: ['fabric'], names: ['Fabric API'], clientOnly: false, mixinConfigs: [], requires: [], classes: [] };
+		const mods = [...raw, fabricApi].map((j: ModJar & { classes: string[] }) => ({ ...j, classes: new Set(j.classes) }));
+		const [top] = diagnoseLog(log, mods);
+		expect(top.kind).toBe('dependency-fixed');
+		expect(top.resolved).toBe(true);
+		expect(top.title).toBe('Chunky needed Fabric API, which is there now');
+		expect(top.fix).toBeNull();
+		expect(top.install).toBeUndefined();
+	});
 });
 
 describe('memory kills', () => {

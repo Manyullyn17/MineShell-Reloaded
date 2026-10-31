@@ -14,6 +14,10 @@
 		related?: { fileName: string } | null;
 		fix?: { fileName: string; enable: boolean; label: string } | null;
 		install?: { modId: string; name: string } | null;
+		/** Its "Install" was pressed and the task still runs. */
+		installing?: boolean;
+		/** Fixed since the crash (the dependency is there now): nothing to press. */
+		resolved?: boolean;
 		tickLimit?: { ms: number; label: string } | null;
 	};
 
@@ -38,7 +42,7 @@
 
 <!-- By position: without console access the evidence is empty, so title and evidence need not be unique. -->
 {#each fatal as d, i (i)}
-	<div class="diagnosis">
+	<div class="diagnosis" class:resolved={d.resolved}>
 		<strong>{d.title}</strong>
 		<p>{d.detail}</p>
 		{#if d.culprit}
@@ -48,7 +52,9 @@
 			</p>
 		{/if}
 		{#if d.evidence}<p class="small muted evidence"><code>{d.evidence}</code></p>{/if}
-		{#if (d.install && installAction) || (d.fix && fixAction)}
+		{#if d.install && d.installing}
+			<p class="small">Installing {d.install.name}; follow it in Activity. Start the server once it is done.</p>
+		{:else if (d.install && installAction) || (d.fix && fixAction)}
 			<div class="fixes">
 				{#if d.install && installAction}
 					<form method="POST" action={installAction} use:enhance>
@@ -92,6 +98,11 @@
 		padding: var(--space-2) var(--space-3);
 		margin-bottom: var(--space-3);
 		background: color-mix(in srgb, var(--error) 7%, transparent);
+	}
+
+	.diagnosis.resolved {
+		border-left-color: var(--success);
+		background: color-mix(in srgb, var(--success) 7%, transparent);
 	}
 
 	.diagnosis p {

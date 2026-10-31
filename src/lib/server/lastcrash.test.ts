@@ -14,7 +14,7 @@ vi.mock('./instances', async (importOriginal) => ({
 	...(await importOriginal<typeof import('./instances')>()),
 	wasStopIntentional: () => stopIntent.value
 }));
-const { likelyCause } = await import('./lastcrash');
+const { diagnoseLastRun, likelyCause } = await import('./lastcrash');
 const { applyEvents } = await import('./history');
 type Summary = import('./instances').InstanceSummary;
 type Instance = Awaited<ReturnType<typeof createInstance>>;
@@ -83,5 +83,24 @@ describe('likelyCause', () => {
 		} finally {
 			stopIntent.value = false;
 		}
+	});
+});
+
+describe('diagnoseLastRun', () => {
+	// The diagnosis is kept per run, and "Install" forgot it when its task began, before the
+	// jar was there: the banner kept saying it was missing and offering the install.
+	it('diagnoses the same run again once the mods folder changed', async () => {
+		const instance = await createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2' });
+		const mods = path.join(instance.path, 'mods');
+		await writeJar(mods, 'mstest-legacy-clientcode.jar', {
+			'mcmod.info': mcmodInfo('mstest_clientcode', 'MineShell Test ClientCode'),
+			'mstest/legacy/ClientCode.class': 'x'
+		});
+		const [before] = await diagnoseLastRun(instance, crashLog);
+		expect(before.fix?.label).toMatch(/^Disable /);
+		await fs.rename(path.join(mods, 'mstest-legacy-clientcode.jar'), path.join(mods, 'mstest-legacy-clientcode.jar.disabled'));
+		const [after] = await diagnoseLastRun(instance, crashLog);
+		expect(after.culprit?.enabled).toBe(false);
+		expect(after.fix).toBeNull();
 	});
 });
