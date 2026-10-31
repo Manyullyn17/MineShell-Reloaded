@@ -23,7 +23,7 @@ breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
 1.1's scope (user's call, 2026-10-31): what is on `next` now is nearly enough. Added before it
 goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
 (both change how every server starts, so they share one template change and one pass on real
-loaders), and what finishes features already on `next`: the Minecraft versions a loader has
+loaders; the arguments and the sandbox's first part built 2026-10-31, ROADMAP-ARCHIVE), and what finishes features already on `next`: the Minecraft versions a loader has
 builds for (the typeable version pickers; built 2026-10-31, ROADMAP-ARCHIVE), sorting the mods list by its column headers
 (built 2026-10-31, ROADMAP-ARCHIVE) and a paused server's header showing a running
 pre-generation (built 2026-10-31, ROADMAP-ARCHIVE). Added while testing those (user's call,
@@ -243,8 +243,8 @@ finished `feat:` commits are gathered into a minor every few days or more (DEPLO
 "Publishing a release"), not released one by one as in 0.x. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: quoted JVM arguments, TypeScript 7 (waits for Kit), servers
-   that are really sandboxed. Small, mostly reading what MineShell already has: a calm first
+1. **Upkeep and quick wins**: TypeScript 7 (waits for Kit), servers that are really
+   sandboxed (quoted JVM arguments built 2026-10-31). Small, mostly reading what MineShell already has: a calm first
    step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
    files, zips and folders).
@@ -270,19 +270,6 @@ agreed, join the step of their area (the management server step 5), the rest whe
 fit. Steps 1, 5 and 6 took in undecided entries the user agreed to on 2026-10-27.
 
 ### 1. Upkeep and quick wins
-
-#### Quoted JVM arguments
-
-The unit's shell splits JVM and launch arguments at spaces only, so a quote reached Java as part
-of the value (ARCHITECTURE, "Quoting"); since 2026-10-28 quotes are refused when saved
-(`argsProblem`), which also means no value can hold a space (a path with one, mostly). After 1.0
-(user's call, 2026-10-28): split the arguments in MineShell, honouring quotes, and write each
-one quoted so the shell keeps it whole. Works on every Java (`@argfile` and
-`JDK_JAVA_OPTIONS` need 9+), but changes how every server starts, so try it on real loaders.
-Held until 1.0 is released and `next` goes into main (user's call, 2026-10-28): the rest of
-step 1 is built, and step 2 goes ahead of it. Then part of 1.1 (user's call, 2026-10-31),
-built and tried together with "Servers that are really sandboxed", which changes the same
-template.
 
 #### TypeScript 7
 
@@ -346,6 +333,12 @@ namespaces; the file access it now costs needs no bug at all. Scoped as below, w
 `RestrictNamespaces=yes`, the servers get the file sandbox and cannot make namespaces at all
 (today they can, without capabilities), so they are better off on both.
 
+Built 2026-10-31 (ROADMAP-ARCHIVE, "The servers' sandbox, first part"): the options without a
+namespace and `RestrictNamespaces=yes` in the template (one real-loader pass, every loader), the
+same for playit's unit and `mineshell.service`, the `doctor` check and the DEPLOYMENT section
+with the scoped exception. Left: the user applies the exception (sudo, a reboot), then each
+server kept to its own folder, and the tests below.
+
 - **The AppArmor exception, for one account.** A profile with no attachment,
   `profile systemd-userns flags=(unconfined) { userns, }`, given only to that account's user
   manager by a system drop-in `user@<uid>.service.d/` with `AppArmorProfile=-systemd-userns`
@@ -360,11 +353,9 @@ namespaces; the file access it now costs needs no bug at all. Scoped as below, w
 - **`RestrictNamespaces=yes`** in the server template, the playit unit and `mineshell.service`
   (seccomp, applied after systemd built the sandbox; applied in a transient unit). Helps on
   every distro: elsewhere any program may make user namespaces.
-- **Options without a namespace**, which work today (seen in a transient unit, not yet under a
-  real JVM): `LockPersonality=`, `RestrictSUIDSGID=`, `RestrictRealtime=`,
-  `SystemCallArchitectures=native`, `SystemCallFilter=@system-service` with
-  `~@privileged @resources`, `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK`,
-  `UMask=0027`. Not `MemoryDenyWriteExecute=` (the JIT needs it).
+- **Options without a namespace**: built, as above. `@resources` stays allowed (the JVM calls
+  `setrlimit` and NUMA policy at startup), and a refused call fails with `EPERM` instead of
+  killing the server. Not `MemoryDenyWriteExecute=` (the JIT needs it).
 - **Then each server kept to its own folder** (`ProtectSystem=strict`, `ProtectHome=tmpfs`
   with `BindPaths=` its folder and `BindReadOnlyPaths=` Java and tools,
   `ProtectProc=invisible`). The start script deletes `units/<id>.once` itself, so `units/`
@@ -377,7 +368,7 @@ Tests, on Ubuntu with the exception in place:
 3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
    separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
    diagnosis, the console and RCON.
-4. The JVM under `RestrictNamespaces=yes` and the syscall filter.
+4. The JVM under `RestrictNamespaces=yes` and the syscall filter: done (the 2026-10-31 pass).
 5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
    which inherits the profile too).
 6. A broken or missing profile: the user manager still starts, `doctor` warns. A server now

@@ -70,8 +70,23 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${prefix}-%i
 
-# Modest hardening. Instances still need write access to their own directory.
+# Hardening for code from mods. These need no namespaces, so they apply in a
+# user unit everywhere. RestrictNamespaces= also keeps the JVM from making any
+# itself; a refused system call fails (EPERM) rather than ending the server.
 NoNewPrivileges=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+UMask=0027
+# Needs a mount namespace, which a user unit gets only where the system lets
+# systemd make user namespaces (Ubuntu's AppArmor does not by default):
+# DEPLOYMENT.md, "Sandboxing the servers"; \`npm run doctor\` tells.
 PrivateTmp=yes
 
 [Install]

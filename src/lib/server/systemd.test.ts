@@ -192,6 +192,17 @@ describe('unit files', () => {
 		expect(setup).not.toMatch(/ExecStart=|\[Service\]/);
 	});
 
+	// Mod code runs as the account MineShell runs as: the template keeps it from what needs
+	// no namespaces to forbid (new privileges, namespaces of its own, privileged system calls).
+	it('sandboxes the server with options a user unit gets everywhere', () => {
+		const unit = renderTemplateUnit();
+		for (const line of ['NoNewPrivileges=yes', 'RestrictNamespaces=yes', 'SystemCallFilter=@system-service', 'SystemCallFilter=~@privileged', 'SystemCallErrorNumber=EPERM', 'PrivateTmp=yes']) {
+			expect(unit).toMatch(new RegExp(`^${line.replace(/[+@~]/g, '\\$&')}$`, 'm'));
+		}
+		// The JIT writes code it then runs.
+		expect(unit).not.toContain('MemoryDenyWriteExecute');
+	});
+
 	it('launches through the env file from the instance folder', () => {
 		const unit = renderTemplateUnit();
 		expect(unit).toContain('EnvironmentFile=');

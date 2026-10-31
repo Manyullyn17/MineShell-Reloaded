@@ -5,8 +5,12 @@ the throwaway dev server (CLAUDE.md, "Trying things against real loaders"), neve
 and takes about 25 minutes, mostly downloads. Every step is a form action posted with
 `act.mjs`, so a pass can be pasted; the page does the same.
 
-Last pass: 2026-10-25 (before 1.0), all steps green on every loader. Found: a Quilt export
-carried Quilt's remapped game jars (fixed), and `wait-start.sh` missing a Done line (fixed).
+Last pass: 2026-10-31 (for 1.1: quoted JVM arguments and the servers' sandbox options), steps
+1 to 3 green on every loader; a quoted argument holding a space reached Java whole, and every
+JVM ran under the system call filter (`Seccomp: 2` in `/proc/<pid>/status`). Steps 4 and 5 were
+left out: they do not touch the start line. Before: 2026-10-25 (before 1.0), all steps green.
+Found then: a Quilt export carried Quilt's remapped game jars (fixed), and `wait-start.sh`
+missing a Done line (fixed).
 
 ## Setup
 

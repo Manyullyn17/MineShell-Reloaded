@@ -48,6 +48,53 @@ sudo machinectl shell mineshell@     # a full session as that user; install and 
 --user` cannot find the user manager until you `export XDG_RUNTIME_DIR=/run/user/$(id -u)`.
 (`machinectl` comes with the `systemd-container` package.)
 
+### Sandboxing the servers
+
+The servers run with systemd's sandboxing (the template unit): no new privileges, a system
+call filter, no namespaces of their own, a `/tmp` of their own. The last needs a mount
+namespace, and in a user unit systemd needs a user namespace for that; where it cannot make
+one, it starts the server without it and says nothing. Ubuntu 23.10 and later (24.04 included,
+and derivatives that kept its default) let AppArmor refuse those namespaces
+(`kernel.apparmor_restrict_unprivileged_userns = 1`), and it refuses them to systemd's user
+manager too. Other distributions (Debian, Fedora, Arch, openSUSE) do not restrict them, and
+there nothing needs doing. `doctor` says which: it warns "systemd can sandbox servers" when
+the sandbox does not apply (`npm run doctor`, or in the release folder
+`MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/doctor.mjs`).
+
+The fix needs root once. It is narrow: an AppArmor profile that lets a process make user
+namespaces and is unconfined otherwise, given only to this account's user manager (the
+process that runs its `systemctl --user` units), not to systemd as a whole or to other
+accounts. Ubuntu's restriction stays for every other program, and the servers themselves
+still make no namespaces (`RestrictNamespaces=yes` in the template). Run it as the account
+MineShell runs as (for a dedicated account, put its uid in place of `$(id -u)`):
+
+```sh
+sudo tee /etc/apparmor.d/systemd-userns >/dev/null <<'END'
+# Lets systemd's user manager make the user namespaces its units' sandboxing
+# needs (PrivateTmp= and the like). Given to one account's manager by
+# user@<uid>.service.d/apparmor.conf; attaches to nothing by itself.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile systemd-userns flags=(unconfined) {
+  userns,
+}
+END
+sudo apparmor_parser -r /etc/apparmor.d/systemd-userns
+sudo mkdir -p /etc/systemd/system/user@$(id -u).service.d
+printf '[Service]\nAppArmorProfile=-systemd-userns\n' | sudo tee /etc/systemd/system/user@$(id -u).service.d/apparmor.conf
+sudo systemctl daemon-reload
+```
+
+The `-` before the profile name means a profile that failed to load is skipped rather than
+keeping the user manager, and with it MineShell and the servers, from starting. The user
+manager takes the profile when it starts: reboot, or stop the servers and run
+`sudo systemctl restart user@$(id -u)` (which restarts MineShell too). `doctor` then shows
+`ok`. To undo it, remove both files and reboot.
+
+Turning the restriction off for every program (`kernel.apparmor_restrict_unprivileged_userns
+= 0` in `/etc/sysctl.d/`) works too, but gives up what Ubuntu meant it for.
+
 ---
 
 ## Installing
@@ -104,7 +151,7 @@ cd ~/mineshell-src
 npm ci
 cp .env.example .env      # MINESHELL_DATA, PORT, HOST, BODY_SIZE_LIMIT=Infinity
 npm run setup             # directories + template unit + daemon-reload
-npm run doctor            # verifies systemd, journal, lingering, Java, permissions
+npm run doctor            # verifies systemd, journal, lingering, Java, permissions, sandboxing
 npm run build
 npm start
 ```

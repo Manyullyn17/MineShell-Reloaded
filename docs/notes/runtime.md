@@ -74,7 +74,8 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   server equals MineShell's. Not affected: options without a namespace (seccomp
   `SystemCallFilter=`, `RestrictNamespaces=`, `LockPersonality=`, `UMask=` applied in a
   transient unit). Probe: `systemd-run --user --wait --pipe -p PrivateTmp=yes readlink
-  /proc/self/ns/mnt`. The fix: ROADMAP, "Servers that are really sandboxed" (step 1).
+  /proc/self/ns/mnt`. `doctor` runs that probe; the fix is DEPLOYMENT, "Sandboxing the servers" (the rest:
+  ROADMAP, "Servers that are really sandboxed").
 
 ## Java heap (memory advice)
 - `heap.ts` reads heap use over the JVM attach socket (what jcmd does): `.attach_pid<pid>` in

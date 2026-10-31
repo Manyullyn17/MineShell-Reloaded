@@ -9,6 +9,32 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Quoted JVM arguments
+
+Built 2026-10-31 on the `next` branch, for 1.1 (held until after 1.0, user's call 2026-10-28;
+then built with the servers' sandbox, which changes the same template). The unit's start line
+split arguments on spaces only, so a quote reached Java as part of the value, and saving
+refused quotes. MineShell now splits them as a shell would (`shellargs.ts`) and writes each
+one quoted into `<id>.env` and `<id>.once`, the whole value in double quotes for systemd; the
+start line reads them back with `eval "set -- ..."` (ARCHITECTURE, "Quoting"). Only a quote
+left open is refused; one saved before starts as it did, split on spaces. Tried with a user
+unit (spaces, quotes, `$`, a backslash, `*`, `;`, an empty argument, the one-start file) and in
+a real-loader pass on every loader. Writing a server's unit files now brings an outdated
+template up to date first: a running dev server, which refreshes it at boot only, would
+otherwise have passed the quotes to Java.
+
+### The servers' sandbox, first part
+
+Built 2026-10-31 on the `next` branch, for 1.1 (ROADMAP, "Servers that are really
+sandboxed", for the rest). The template's `PrivateTmp=yes` was never applied on Ubuntu 24.04
+(AppArmor's user namespace restriction, notes runtime.md). Now: the options a user unit gets
+without namespaces (`RestrictNamespaces`, a system call filter, `LockPersonality` and others;
+ARCHITECTURE, "The servers' sandbox"), tried on every loader; `RestrictNamespaces` and
+`NoNewPrivileges` for playit's unit (from its next setup) and `RestrictNamespaces` for
+`mineshell.service` (from the next install or update); `doctor` warns when systemd cannot
+sandbox; DEPLOYMENT, "Sandboxing the servers", has the exception scoped to one account's
+user manager (a profile allowing user namespaces, given by a `user@<uid>.service.d` drop-in).
+
 ### Moving a server to an older Minecraft
 
 Built 2026-10-31 on the `next` branch, for 1.1, asked for while trying the version pickers (the

@@ -165,6 +165,9 @@ Wants=network-online.target
 ExecStart="${binary}" --secret-path "${KEY_FILE}" --socket-path %t/${UNIT_PREFIX}-playit.sock
 Restart=always
 RestartSec=5
+# A downloaded binary: no namespaces or new privileges of its own (ARCHITECTURE, the servers' sandbox).
+NoNewPrivileges=yes
+RestrictNamespaces=yes
 
 [Install]
 WantedBy=default.target

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Checks the things that silently break a self-hosted setup: systemd reachability,
- * lingering, journal access, Java, and whether the data directory is writable.
+ * lingering, journal access, Java, whether the data directory is writable, and whether
+ * systemd can sandbox the servers.
  *
  *   npm run doctor
  */
@@ -65,8 +66,9 @@ const DATA_DIR = path.resolve(
 );
 
 const results = [];
-function record(ok, label, detail = '') {
-	results.push({ ok, label, detail });
+/** `warn`: worth fixing, but nothing breaks without it; not counted as a failure. */
+function record(ok, label, detail = '', warn = false) {
+	results.push({ ok, label, detail, warn });
 }
 
 async function tryRun(cmd, args) {
@@ -116,17 +118,32 @@ async function main() {
 	const javas = java.stdout.trim().split('\n').filter(Boolean);
 	record(true, 'Java', javas.join(', ') || 'none yet: a server that needs one offers to download it (MineShell settings > Java), or install a JRE, e.g. openjdk-21-jre-headless');
 
+	// systemd ignores PrivateTmp= and the like without a word when it cannot make the user
+	// namespace they need in a user unit (Ubuntu 23.10+ lets AppArmor refuse it); the server
+	// then shares this account's mount namespace. DEPLOYMENT.md, "Sandboxing the servers".
+	if (version.ok) {
+		const own = await fs.readlink('/proc/self/ns/mnt').catch(() => '');
+		const probe = await tryRun('systemd-run', ['--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateTmp=yes', 'readlink', '/proc/self/ns/mnt']);
+		const sandboxed = probe.ok && probe.stdout.trim() !== '' && probe.stdout.trim() !== own;
+		const restricted = (await fs.readFile('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').catch(() => '')).trim() === '1';
+		const fix = restricted
+			? 'AppArmor keeps systemd from making user namespaces. See DEPLOYMENT.md, "Sandboxing the servers", for the fix (needs sudo once).'
+			: 'systemd ignores PrivateTmp= in user units here (no user namespaces?). See DEPLOYMENT.md, "Sandboxing the servers".';
+		record(sandboxed, 'systemd can sandbox servers', sandboxed ? '' : fix, true);
+	}
+
 	console.log('');
 	for (const r of results) {
-		console.log(`${r.ok ? ' ok ' : 'FAIL'}  ${r.label}${r.detail ? `\n        ${r.detail}` : ''}`);
+		console.log(`${r.ok ? ' ok ' : r.warn ? 'warn' : 'FAIL'}  ${r.label}${r.detail ? `\n        ${r.detail}` : ''}`);
 	}
 	console.log('');
-	const failures = results.filter((r) => !r.ok).length;
+	const failures = results.filter((r) => !r.ok && !r.warn).length;
 	if (failures) {
 		console.log(`${failures} check${failures === 1 ? '' : 's'} need attention.`);
 		process.exitCode = 1;
 	} else {
-		console.log('Everything looks ready.');
+		const warnings = results.filter((r) => !r.ok).length;
+		console.log(warnings ? `Everything works; ${warnings === 1 ? 'one warning' : `${warnings} warnings`} above.` : 'Everything looks ready.');
 	}
 }
 

@@ -179,6 +179,28 @@ October 2026 and was removed: its servers ran as root, MineShell needed write ac
 `/etc/systemd/system`, and it was never used. A separate account with lingering gives the
 same isolation without root (`docs/DEPLOYMENT.md`).
 
+### The servers' sandbox
+
+A mod is code from the internet running as MineShell's account, so the template unit takes
+from it what a Minecraft server never needs. What needs no namespaces applies in a user unit
+everywhere: `NoNewPrivileges`, `RestrictNamespaces` (the JVM makes none of its own),
+`LockPersonality`, `RestrictSUIDSGID`, `RestrictRealtime`, native system calls only, a system
+call filter (`@system-service` without `@privileged`; a refused call fails with `EPERM`
+rather than killing the server), the address families the JVM uses (`AF_INET`, `AF_INET6`,
+`AF_UNIX` for the attach socket, `AF_NETLINK` for network interfaces) and `UMask=0027`. Not
+`MemoryDenyWriteExecute`: the JIT writes code it then runs. `@resources` stays allowed: the
+JVM raises its file limit and sets NUMA policy at startup. Tried with Java 21 (G1, ZGC,
+`-XX:+UseNUMA`) and on every loader (2026-10-31).
+
+`PrivateTmp` (and anything that changes what the server sees of the file system) needs a mount
+namespace, which a user unit gets through a user namespace. Where systemd cannot make one it
+runs the unit without and says nothing: on Ubuntu 23.10+, whose AppArmor refuses them to
+systemd's user manager unless given a profile allowing it (DEPLOYMENT, "Sandboxing the
+servers": scoped to one account's manager). `doctor` checks it with a transient
+`systemd-run --user -p PrivateTmp=yes` unit, comparing its mount namespace with its own
+(notes, runtime.md). playit's agent unit has `NoNewPrivileges` and `RestrictNamespaces`, and
+the installer's `mineshell.service` `RestrictNamespaces`: neither makes namespaces.
+
 ---
 
 ## Two deviations from the original design notes

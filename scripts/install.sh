@@ -154,6 +154,8 @@ main() {
 		ExecStart="$node" "$home_dir/current/build/index.js"
 		Restart=on-failure
 		RestartSec=10
+		# MineShell makes no namespaces; the servers' units are sandboxed on their own.
+		RestrictNamespaces=yes
 
 		[Install]
 		WantedBy=default.target
