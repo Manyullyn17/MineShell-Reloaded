@@ -386,6 +386,14 @@ Tests, on Ubuntu with the exception in place:
    which inherits the profile too).
 6. A broken or missing profile: the user manager still starts, `doctor` warns. A server now
    fails with `226/NAMESPACE` where it ran unsandboxed before.
+7. Network inside the sandbox: players join, RCON, downloads from the server (mods fetching
+   things, BlueMap). Launchpad #2168612 (New, 2026-09-26, noble): a `flags=(unconfined)`
+   profile without a `network,` rule loses all sockets (EACCES) once `unprivileged_userns`
+   is stacked onto it, which happens when its process makes a mount-namespace unit. Ours
+   allows `userns`, so it should never be stacked: a server's `/proc/<pid>/attr/current`
+   must read `systemd-userns`, not a stack with `unprivileged_userns` (today, unfixed, it
+   reads `unprivileged_userns (enforce)` and has network). If it stacks anyway, `network,`
+   (or `allow all,`) in the profile is the bug's workaround.
 
 Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
 applies there straight away. MineShell's units are the only user units on this machine with
