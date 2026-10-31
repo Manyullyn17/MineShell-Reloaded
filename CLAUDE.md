@@ -39,8 +39,12 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   `~/.config/systemd/user/`; `devserver.sh clean` removes them with the data dir when done
   (the units outlive the data dir otherwise). Booting a server directly with the
   unit's env file (`$DATA/units/<id>.env`) avoids systemd entirely. `tests/tools/` has a row
-  seeder, a screenshot taker that waits for the page (also the phone-width overflow check)
-  and an RCON client (tests/README, "Manual tools"); add reusable checking tools there.
+  seeder, a screenshot taker that waits for the page (also the phone-width overflow check),
+  an RCON client, `scenarios.sh` (a Forge startup question and real crashes, ready to try) and
+  `sandbox-check.sh` (tests/README, "Manual tools"); add reusable checking tools there.
+  A dev server keeps running the code its timers started with (`boot.ts`: history, scheduler,
+  heap sampling): pages pick up a change, what those record does not until it is restarted
+  (crashes kept being recorded with an old diagnosis' wording).
 - **README screenshots**: `npm run screenshots` redraws `docs/screenshots/` from invented
   data (`tests/tools/screenshots/README.md`: scenes, shots, a fake server under real
   `msshot@` units, cleaned up afterwards). Redraw the affected shots when a page they show

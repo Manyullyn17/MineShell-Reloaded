@@ -260,6 +260,7 @@
 			<CrashDiagnosis
 				diagnosis={diagnosis.value}
 				fixAction={data.running || !may('mods') ? null : '?/modFix'}
+				installAction={data.running || !may('mods') ? null : '?/installDependency'}
 				tickLimitAction={data.running || !may('settings.edit') ? null : '?/tickLimit'}
 			/>
 		{/if}

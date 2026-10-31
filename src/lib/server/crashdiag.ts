@@ -384,6 +384,11 @@ export type Diagnosis = {
 	/** The log line this came from, for the user to search for. */
 	evidence: string;
 	fix: { enable: boolean; fileName: string; label: string } | null;
+	/**
+	 * For a missing dependency: the mod id the loader asked for, and what to call it. The
+	 * overview's "Install" looks it up (moddeps.ts, installDependency); this module stays offline.
+	 */
+	install?: { modId: string; name: string } | null;
 	/** For the watchdog: the tick limit to raise `max-tick-time` to, when there is a higher step. */
 	tickLimit?: { ms: number; label: string } | null;
 	/**
@@ -729,7 +734,9 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 						culprit: ref(jar),
 						related: null,
 						evidence: line.trim(),
-						fix: disableFix(jar)
+						fix: disableFix(jar),
+						// An id, not a display name (NeoForge's lines give names): only that can be looked up.
+						install: /^[a-z0-9_.-]+$/.test(needs) ? { modId: needs, name: library ?? needs } : null
 					},
 					`dep:${who}:${needs}`
 				);

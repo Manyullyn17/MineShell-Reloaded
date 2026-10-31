@@ -13,17 +13,21 @@
 		culprit?: { fileName: string; enabled: boolean } | null;
 		related?: { fileName: string } | null;
 		fix?: { fileName: string; enable: boolean; label: string } | null;
+		install?: { modId: string; name: string } | null;
 		tickLimit?: { ms: number; label: string } | null;
 	};
 
 	let {
 		diagnosis,
 		fixAction = null,
+		installAction = null,
 		tickLimitAction = null
 	}: {
 		diagnosis: Diagnosis[] | null | undefined;
 		/** Where the fix buttons post (the overview's modFix); null hides them, e.g. while running. */
 		fixAction?: string | null;
+		/** Where a missing dependency's "Install" posts (the overview's installDependency); null hides it. */
+		installAction?: string | null;
 		/** Where the watchdog's "allow longer ticks" posts (the overview's tickLimit); null hides it. */
 		tickLimitAction?: string | null;
 	} = $props();
@@ -44,12 +48,22 @@
 			</p>
 		{/if}
 		{#if d.evidence}<p class="small muted evidence"><code>{d.evidence}</code></p>{/if}
-		{#if d.fix && fixAction}
-			<form method="POST" action={fixAction} use:enhance>
-				<input type="hidden" name="fileName" value={d.fix.fileName} />
-				<input type="hidden" name="enable" value={String(d.fix.enable)} />
-				<button type="submit">{d.fix.label}</button>
-			</form>
+		{#if (d.install && installAction) || (d.fix && fixAction)}
+			<div class="fixes">
+				{#if d.install && installAction}
+					<form method="POST" action={installAction} use:enhance>
+						<input type="hidden" name="modId" value={d.install.modId} />
+						<button type="submit" class="button-primary">Install {d.install.name}</button>
+					</form>
+				{/if}
+				{#if d.fix && fixAction}
+					<form method="POST" action={fixAction} use:enhance>
+						<input type="hidden" name="fileName" value={d.fix.fileName} />
+						<input type="hidden" name="enable" value={String(d.fix.enable)} />
+						<button type="submit">{d.fix.label}</button>
+					</form>
+				{/if}
+			</div>
 		{/if}
 		{#if d.tickLimit && tickLimitAction}
 			<form method="POST" action={tickLimitAction} use:enhance>
@@ -86,6 +100,14 @@
 
 	.diagnosis .evidence code {
 		overflow-wrap: anywhere;
+	}
+
+	/* Install and disable side by side, wrapping on a narrow screen. */
+	.fixes {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
 
 	/* Its label names the mod ("Disable ..."), which can be one long word. */

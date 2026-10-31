@@ -28,6 +28,7 @@ import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { forgetDiagnosis, lastCrash } from '#lib/server/lastcrash.js';
 import { setModEnabled } from '#lib/server/mods/index.js';
+import { installDependency } from '#lib/server/moddeps.js';
 import { TICK_LIMIT_STEPS } from '#lib/server/crashdiag.js';
 import { patchProperties } from '#lib/server/properties.js';
 import { cancelCountdown, getCountdown, startCountdown } from '#lib/server/countdown.js';
@@ -316,6 +317,21 @@ export const actions: Actions = {
 		noteCrashFix(instance.id);
 		const name = fileName.replace(/\.jar(\.disabled)?$/i, '');
 		return { ok: true, message: `${enable ? 'Enabled' : 'Disabled'} ${name}. Start the server to try again.` };
+	},
+
+	/** A missing-dependency diagnosis' "Install": the mod it names, found on Modrinth for this server. */
+	installDependency: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const modId = String((await request.formData()).get('modId') ?? '');
+		if ((await summarise(instance)).running) return fail(400, { ok: false, message: 'Stop the server first.' });
+		try {
+			await installDependency(instance, modId);
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not install it.' });
+		}
+		forgetDiagnosis(instance.id);
+		noteCrashFix(instance.id);
+		return { ok: true, message: 'Installing it; follow it in Activity. Start the server once it is done.' };
 	},
 
 	// The watchdog diagnosis' button: max-tick-time raised to one of its steps, nothing else.

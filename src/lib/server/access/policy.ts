@@ -149,6 +149,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			skipModUpdates: on('mods'),
 			skipDatapackUpdates: on('datapacks'),
 			modFix: on('mods'),
+			installDependency: on('mods'),
 			profile: on('console.command'),
 			profileStop: on('console.command'),
 			profileCancel: on('console.command'),

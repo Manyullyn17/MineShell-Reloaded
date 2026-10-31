@@ -37,6 +37,8 @@ describe('missing libraries', () => {
 		const [top] = diagnoseLog(log, raw.map((j: ModJar & { classes: string[] }) => ({ ...j, classes: new Set(j.classes) })));
 		expect(top.title).toBe('Chunky needs Fabric API, which is not installed');
 		expect(top.detail).toMatch(/^Install Fabric API /);
+		// Offered as a button beside "Disable Chunky": a restart cannot fix this, an install can.
+		expect(top.install).toEqual({ modId: 'fabric', name: 'Fabric API' });
 	});
 });
 

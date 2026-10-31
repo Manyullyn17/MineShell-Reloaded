@@ -761,6 +761,14 @@ is open, and each needs a test setup.
 
 Suggested, not yet confirmed or rejected:
 
+- **No crash restarts for a crash a restart cannot fix** (user, 2026-10-31: to look at in
+  detail later). A server restarts after a crash up to 3 times in 10 minutes (new server
+  defaults), also when the diagnosis is a missing dependency, a mod for another loader or
+  version, or anything else that fails the same way on every start: three more failed starts
+  and their journal lines before it gives up. Crash diagnosis knows these kinds; it could stop
+  the restarts for them (`systemctl reset-failed`/stop after the first), or only lower the
+  count. To decide: which diagnosis kinds count, what about the watchdog (a slow tick may pass
+  on a retry), and how the overview says why it did not restart.
 - **Versions of files changed outside MineShell** (user, 2026-10-29: maybe later): earlier
   versions of edited files keeps only what MineShell's own saves replace. A mod rewriting its
   config, or an edit over SFTP, leaves no version; noticing those would mean watching or

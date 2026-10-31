@@ -481,8 +481,15 @@ today's peak and time online (overview), playtime and last seen (Players), start
 (overview against the median of the five before, and per run in Logs). The overview's Recent
 crashes can be cleared once a start after the newest one got to `Done (` (a time per server in
 settings, `crashes.cleared:<id>`; the runs stay, Logs lists them all), and clear on their own
-when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix` and
-`tickLimit`).
+when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix`,
+`installDependency` and `tickLimit`). A missing dependency offers "Install <it>" beside
+disabling the mod that needs it: the diagnosis gives only the mod id the loader named (it stays
+offline), and `installDependency` (`moddeps.ts`) looks it up on Modrinth when pressed, through
+a short map for libraries whose project differs from their id (Fabric API's `fabric`, from
+before 2021, which Chunky still declares), installs the build for the server's loader and
+version with what that needs, and refuses with the reason when Modrinth has none. Each crash's
+diagnosis is recorded with its run (`server_runs.cause`), so the list keeps the wording of the
+time.
 
 **Watchdog stops** (`watchdog` in `crashdiag.ts`): Minecraft's watchdog ends a server whose
 tick ran past `max-tick-time` (60 s unless set) and logs one line, "A single server tick took
