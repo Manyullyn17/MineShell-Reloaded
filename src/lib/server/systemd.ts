@@ -36,6 +36,8 @@ export type UnitState = {
 	result: string;
 	/** The unit's cgroup path, '' when it has none (stopped). */
 	controlGroup: string;
+	/** systemd's id of the current run (the journal's _SYSTEMD_INVOCATION_ID); '' when unknown. */
+	invocation: string;
 };
 
 export const UNKNOWN_STATE: UnitState = {
@@ -47,7 +49,8 @@ export const UNKNOWN_STATE: UnitState = {
 	mainPid: 0,
 	nRestarts: 0,
 	result: 'unknown',
-	controlGroup: ''
+	controlGroup: '',
+	invocation: ''
 };
 
 /** System boot wall-clock time, needed to turn systemd's monotonic stamps into dates. */
@@ -344,7 +347,8 @@ const SHOW_PROPS = [
 	'ControlGroup',
 	'MainPID',
 	'NRestarts',
-	'Result'
+	'Result',
+	'InvocationID'
 ];
 
 function parseShow(stdout: string): Record<string, string> {
@@ -409,6 +413,7 @@ async function readUnitState(id: string): Promise<UnitState> {
 		mainPid: num(props.MainPID),
 		nRestarts: num(props.NRestarts),
 		result: props.Result || 'unknown',
+		invocation: props.InvocationID ?? '',
 		controlGroup: props.ControlGroup ?? ''
 	};
 }

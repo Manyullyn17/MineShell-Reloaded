@@ -176,6 +176,7 @@ const SETTINGS: Record<string, Rule> = {
 	autoRestartOnCrash: bool,
 	crashRestartLimit: int(1, 100),
 	crashRestartWindowSec: int(10, 86_400),
+	crashRestartSkipFixable: bool,
 	bootStart: oneOf('if-running', 'always', 'never'),
 	limitMemoryMb: intOrNull(256, 1_048_576),
 	limitCpuPercent: intOrNull(1, 100_000),

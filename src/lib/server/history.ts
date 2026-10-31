@@ -126,7 +126,8 @@ export function applyEvents(instanceId: string, events: JournalEvent[]): Happeni
 		if (isStopping(e.message) && e.invocation) {
 			db.update(serverRuns)
 				.set({ stopAskedAt: e.at })
-				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.stopAskedAt)))
+				// Only while its process is there: cancelling a crash's pending restart stops a unit whose run already ended.
+				.where(and(eq(serverRuns.instanceId, instanceId), eq(serverRuns.invocation, e.invocation), isNull(serverRuns.stopAskedAt), isNull(serverRuns.endedAt)))
 				.run();
 			continue;
 		}
@@ -354,6 +355,7 @@ export type CrashRecord = { invocation: string; at: number; cause: string | null
  */
 const CRASHES_CLEARED = (id: string) => `crashes.cleared:${id}`;
 const CRASH_FIX = (id: string) => `crashes.fix:${id}`;
+const RESTART_HELD = (id: string) => `crashes.restartHeld:${id}`;
 
 function readNumber(key: string): number {
 	return Number(db.select().from(settings).where(eq(settings.key, key)).get()?.value ?? 0) || 0;
@@ -410,9 +412,20 @@ export function crashFixPending(instanceId: string): boolean {
 	return readNumber(CRASH_FIX(instanceId)) > 0;
 }
 
+/** A crash's restart was not let happen (crashhold.ts), or (null) the server was started since. */
+export function noteRestartHeld(instanceId: string, at: number | null): void {
+	writeNumber(RESTART_HELD(instanceId), at);
+}
+
+/** When MineShell last cancelled this server's crash restart, if no start came after; else null. */
+export function restartHeldAt(instanceId: string): number | null {
+	return readNumber(RESTART_HELD(instanceId)) || null;
+}
+
 export function deleteCrashMarks(instanceId: string): void {
 	writeNumber(CRASHES_CLEARED(instanceId), null);
 	writeNumber(CRASH_FIX(instanceId), null);
+	writeNumber(RESTART_HELD(instanceId), null);
 }
 
 /** The crash analyzer's verdict per crashed run, by invocation id, for the Logs tab. */

@@ -13,6 +13,7 @@
 		autoRestartOnCrash: boolean;
 		crashRestartLimit: number;
 		crashRestartWindowSec: number;
+		crashRestartSkipFixable: boolean;
 		restartSchedule: string;
 		restartIntervalHours: number | null;
 		restartDailyTime: string | null;
@@ -81,6 +82,21 @@
 			<p class="hint">A crash loop trips the limit; occasional crashes reset it.</p>
 		</div>
 	</div>
+	<div class="check field">
+		<input
+			id="crashRestartSkipFixable"
+			name="crashRestartSkipFixable"
+			type="checkbox"
+			class="switch"
+			role="switch"
+			bind:checked={values.crashRestartSkipFixable}
+		/>
+		<label for="crashRestartSkipFixable">Not after a crash while starting that has a fix</label>
+	</div>
+	<p class="hint">
+		A missing dependency or a mod for another loader fails every start the same way: the crash shows with its fix at
+		once instead of after every attempt. Other crashes, and ones after the server was up, still restart.
+	</p>
 </fieldset>
 
 <fieldset>

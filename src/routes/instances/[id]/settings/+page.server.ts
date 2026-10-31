@@ -213,6 +213,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			autoRestartOnCrash: instance.autoRestartOnCrash,
 			crashRestartLimit: instance.crashRestartLimit,
 			crashRestartWindowSec: instance.crashRestartWindowSec,
+			crashRestartSkipFixable: instance.crashRestartSkipFixable,
 			bootStart: instance.bootStart,
 			consoleBacklogLines: instance.consoleBacklogLines,
 			consoleBufferLines: instance.consoleBufferLines,
@@ -361,6 +362,7 @@ function restartSettingsOf(instance: ServerInstance): RestartSettings {
 		autoRestartOnCrash: instance.autoRestartOnCrash,
 		crashRestartLimit: instance.crashRestartLimit,
 		crashRestartWindowSec: instance.crashRestartWindowSec,
+		crashRestartSkipFixable: instance.crashRestartSkipFixable,
 		bootStart: instance.bootStart
 	};
 }

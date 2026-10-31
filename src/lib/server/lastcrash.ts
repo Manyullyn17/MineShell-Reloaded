@@ -15,7 +15,7 @@ import { modsDir } from './mods/index';
 const diagnosisCache = new Map<string, { key: string; result: Promise<Diagnosis[]> }>();
 
 /** Read again on every poll: a limit raised in Settings changes the advice without a new run. */
-async function diagnoseLastRun(instance: ServerInstance, journal: string): Promise<Diagnosis[]> {
+export async function diagnoseLastRun(instance: ServerInstance, journal: string): Promise<Diagnosis[]> {
 	const context: RunContext = { memoryLimitMb: instance.limitMemoryMb, maxTickTimeMs: await tickLimitOf(instance.path) };
 	const key = `${context.memoryLimitMb}:${context.maxTickTimeMs}:${journal.length}:${journal.slice(-200)}`;
 	const hit = diagnosisCache.get(instance.id);

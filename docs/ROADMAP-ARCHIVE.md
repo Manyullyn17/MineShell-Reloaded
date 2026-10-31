@@ -9,6 +9,17 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### No crash restarts for a crash a restart cannot fix
+
+Built 2026-10-31 on the `next` branch, for 1.1 (the user, the same day: Missing Dep crashed,
+restarted three times the same way, and the crash and its fix could only be used once the loop
+ended). A setting beside the restart limits, "Not after a crash while starting that has a fix",
+on by default and in New server defaults: a crash before `Done (` whose diagnosis has a
+one-click fix (disable, enable, install) is not restarted; the overview says so (ARCHITECTURE,
+"Drop-ins"; `crashhold.ts`). Other crashes, and crashes after the server was up (the watchdog
+among them, where a slow tick may pass on a retry), restart as before. Tried on the throwaway
+with Missing Dep: one start, the restart cancelled within seconds, the run still a crash.
+
 ### Quoted JVM arguments
 
 Built 2026-10-31 on the `next` branch, for 1.1 (held until after 1.0, user's call 2026-10-28;

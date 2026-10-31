@@ -30,6 +30,8 @@ export type RestartSettings = {
 	autoRestartOnCrash: boolean;
 	crashRestartLimit: number;
 	crashRestartWindowSec: number;
+	/** No restart after a crash while starting that has a one-click fix (crashhold.ts). */
+	crashRestartSkipFixable: boolean;
 	/** After the computer starts: if-running | always | never (bootstart.ts). */
 	bootStart: string;
 };
@@ -117,6 +119,7 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 		autoRestartOnCrash: true,
 		crashRestartLimit: 3,
 		crashRestartWindowSec: 600,
+		crashRestartSkipFixable: true,
 		bootStart: 'if-running'
 	},
 	console: { consoleBacklogLines: 300, consoleBufferLines: 2000 },
@@ -162,6 +165,8 @@ export function cleanRestarts(input: Partial<Record<keyof RestartSettings, unkno
 		autoRestartOnCrash: typeof input.autoRestartOnCrash === 'boolean' ? input.autoRestartOnCrash : fallback.autoRestartOnCrash,
 		crashRestartLimit: clampInt(input.crashRestartLimit, 1, 50, fallback.crashRestartLimit),
 		crashRestartWindowSec: clampInt(input.crashRestartWindowSec, 60, 86400, fallback.crashRestartWindowSec),
+		crashRestartSkipFixable:
+			typeof input.crashRestartSkipFixable === 'boolean' ? input.crashRestartSkipFixable : fallback.crashRestartSkipFixable,
 		bootStart: BOOT_STARTS.includes(String(input.bootStart)) ? String(input.bootStart) : fallback.bootStart
 	};
 }
@@ -233,6 +238,7 @@ export function restartsFromForm(form: FormData, fallback: RestartSettings): Res
 			autoRestartOnCrash: form.get('autoRestartOnCrash') === 'on',
 			crashRestartLimit: form.get('crashRestartLimit'),
 			crashRestartWindowSec: form.get('crashRestartWindowSec'),
+			crashRestartSkipFixable: form.get('crashRestartSkipFixable') === 'on',
 			bootStart: form.get('bootStart')
 		},
 		fallback

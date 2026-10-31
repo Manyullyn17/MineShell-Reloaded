@@ -38,6 +38,15 @@ async function sampleOnce(): Promise<void> {
 
 		bus.publish('instance:state', { instanceId: id, active: state.active, sub: state.sub });
 
+		// Crashed, restart scheduled: not when the crash would only repeat (crashhold.ts).
+		if (state.sub === 'auto-restart' && state.invocation) {
+			const { holdFixableRestart } = await import('./crashhold');
+			await holdFixableRestart(id, state.invocation).catch((err) =>
+				console.warn(`[mineshell] holding ${id}'s crash restart failed:`, err instanceof Error ? err.message : err)
+			);
+			continue;
+		}
+
 		if (state.active !== 'active') {
 			previous.delete(id);
 			continue;

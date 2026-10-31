@@ -102,7 +102,14 @@ start, but its buffer outlives a run, so an answer could reach the next one.
 `Restart=` cannot come from an environment file — systemd reads unit directives before the
 environment file exists. So per-instance restart behaviour is written as a drop-in at
 `<unit>.d/restart.conf` next to the template instead, and `writeRestartPolicy()` owns that
-file. Memory and CPU caps are a second drop-in, `limits.conf` (`MemoryMax=`, `CPUQuota=`),
+file. One case it cannot express: a crash while starting that a restart would only repeat (a
+missing dependency, a mod for another loader). With "Not after a crash while starting that
+has a fix" on (`crash_restart_skip_fixable`, the default), the monitor (every 10 s, so within
+`RestartSec=15`) diagnoses a unit in `auto-restart` whose crashed run never reached `Done (`,
+and if the diagnosis that stopped it has a one-click fix, cancels the restart with a plain
+`systemctl stop` (`crashhold.ts`; not MineShell's stop, so the crash still shows and counts).
+The overview says it was not restarted (`crashes.restartHeld:<id>`, cleared by the next
+start). Not the watchdog: it ends a server after `Done (`. Memory and CPU caps are a second drop-in, `limits.conf` (`MemoryMax=`, `CPUQuota=`),
 from `writeResourceLimits()`. Unlike everything else in the unit, the caps reach a running
 server at once: `daemon-reload` re-applies cgroup settings to active units (checked for both,
 and for removing them). So the memory cap is checked against the bigger of the saved heap and

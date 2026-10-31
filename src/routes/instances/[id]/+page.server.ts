@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
 import { packIconPending } from '#lib/server/packicon.js';
-import { clearCrashes, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, peakPlayers, recentCrashes, startTimes } from '#lib/server/history.js';
+import { clearCrashes, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, peakPlayers, recentCrashes, restartHeldAt, startTimes } from '#lib/server/history.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -135,6 +135,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			runningMemoryMaxMb: summary.running ? await runningHeapMb(summary.state.mainPid) : null,
 			memoryMinMb: instance.memoryMinMb,
 			crashRestartWindowSec: instance.crashRestartWindowSec,
+			crashRestartSkipFixable: instance.crashRestartSkipFixable,
 			javaPath: instance.javaPath,
 			rconPort: instance.rconPort,
 			autoRestartOnCrash: instance.autoRestartOnCrash,
@@ -177,7 +178,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			/** A start after the newest crash got to "Done": the list can be cleared. */
 			crashesClearable: crashesClearable(instance.id),
 			/** A one-click fix was applied: the next clean start clears the list. */
-			crashFixPending: crashFixPending(instance.id)
+			crashFixPending: crashFixPending(instance.id),
+			/** MineShell cancelled the crash's restart, as it would only fail again (crashhold.ts). */
+			restartHeld: restartHeldAt(instance.id) !== null
 		},
 		/** A pack server without an icon yet: the page puts the pack's icon on it, once. */
 		packIconPending: await packIconPending(instance),

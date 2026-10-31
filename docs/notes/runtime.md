@@ -64,7 +64,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   before Done can also exit 0: Forge 1.12 stopped while waiting at its startup question (seen
   2026-10-31, listed as a crash), and systemd logs no exit line for 0. systemd's own
   "Stopping <unit>" line (with the run's INVOCATION_ID) comes only for a stop asked for, never
-  for a crash or its restart ("Scheduled restart job"): history keeps it as `stop_asked_at`. The template is
+  for a crash or its restart ("Scheduled restart job"): history keeps it as `stop_asked_at`,
+  and only while the run's process is there. `systemctl stop` on a unit in `auto-restart`
+  (crashhold.ts cancelling a crash's restart) logs no "Stopping", only "Stopped", and leaves
+  it inactive with Result=success: the overview still counts the run as a crash (no `Done (`). The template is
   rewritten at boot when an older MineShell-written one is installed (`refreshTemplateUnit`).
 - An RCON stop waits up to 5 min for the JVM to exit (`awaitStop`) before systemctl stop; it
   used to fire after a fixed 20 s, mid-save on big packs, and could stop a run started again.

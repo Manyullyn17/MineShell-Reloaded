@@ -63,6 +63,8 @@ export const serverInstances = sqliteTable('server_instances', {
 		.default(true),
 	crashRestartLimit: integer('crash_restart_limit').notNull().default(5),
 	crashRestartWindowSec: integer('crash_restart_window_sec').notNull().default(600),
+	/** No restart after a crash while starting that has a one-click fix (crashhold.ts): it would fail the same way. */
+	crashRestartSkipFixable: integer('crash_restart_skip_fixable', { mode: 'boolean' }).notNull().default(true),
 	/** After the computer starts (bootstart.ts): if-running | always | never. */
 	bootStart: text('boot_start').notNull().default('if-running'),
 	/** The last thing asked of the server was a start, not a stop; a crash leaves it. */

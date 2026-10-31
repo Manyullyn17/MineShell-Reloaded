@@ -75,7 +75,7 @@ import { copyServerSnapshotOverrides, deleteServerSnapshotOverrides, deleteSnaps
 import { deleteMemorySettings } from './memoryadvice';
 import { copySnapshotSchedule, deleteSnapshotSchedule, saveSnapshotSchedule } from './snapshotschedule';
 import { deleteServerBackup } from './backups';
-import { deleteCrashMarks, pausedSince } from './history';
+import { deleteCrashMarks, noteRestartHeld, pausedSince } from './history';
 import { pregenRunning } from './pregenstate';
 import type { ServerPhase } from '#lib/shared/format.js';
 import { doneStartingAt } from './startphase';
@@ -1292,6 +1292,7 @@ export async function start(
 	const voice = await voicePortProblem(instance, listInstances(), async (id) => (await unitState(id)).active === 'active').catch(() => null);
 	if (voice) return { ok: false, message: voice };
 	clearStopIntent(instance.id);
+	noteRestartHeld(instance.id, null);
 	// A map mod's web server on its own port, localhost only (MineShell passes it through).
 	await applyMapModConfig(instance).catch(() => undefined);
 	// Chunky continuing its unfinished tasks after this start, as set on the World tab.

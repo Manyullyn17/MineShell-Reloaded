@@ -250,6 +250,12 @@
 				{:else}
 					<h2>Last output before it stopped</h2>
 					<p>The server exited unexpectedly.{crash.value.tail !== null ? ' These are the final journal lines.' : ''}</p>
+					{#if data.history.restartHeld}
+						<p class="small muted">
+							Not restarted: it crashed while starting in a way every start would repeat. Use the fix below, then start it.
+							(Settings, Restarts: "Not after a crash while starting that has a fix".)
+						</p>
+					{/if}
 				{/if}
 			</div>
 			{#if may('console.read')}<a class="button button-quiet" href="/instances/{data.instance.id}/logs">Earlier runs and logs</a>{/if}
@@ -658,7 +664,7 @@
 					<dt>Restart on crash</dt>
 					<dd>
 						{data.detail.autoRestartOnCrash
-							? `Yes, up to ${data.detail.crashRestartLimit} times in ${Math.round(data.detail.crashRestartWindowSec / 60)} min`
+							? `Yes, up to ${data.detail.crashRestartLimit} times in ${Math.round(data.detail.crashRestartWindowSec / 60)} min${data.detail.crashRestartSkipFixable ? ', not for a startup crash with a fix' : ''}`
 							: 'No'}
 					</dd>
 				</div>

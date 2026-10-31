@@ -152,7 +152,8 @@ const SECTIONS: Section[] = [
 			'restartSchedule',
 			'restartDailyTime',
 			'restartWarnMinutes',
-			'restartSkipIfPlayers'
+			'restartSkipIfPlayers',
+			'crashRestartSkipFixable'
 		],
 		follows: ['restartNextAt']
 	},
