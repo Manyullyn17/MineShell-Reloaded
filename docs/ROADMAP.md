@@ -26,7 +26,8 @@ goes into `main`: servers that are really sandboxed (security), quoted JVM argum
 loaders), and what finishes features already on `next`: the Minecraft versions a loader has
 builds for (the typeable version pickers; built 2026-10-31, ROADMAP-ARCHIVE), sorting the mods list by its column headers
 (built 2026-10-31, ROADMAP-ARCHIVE) and a paused server's header showing a running
-pre-generation (built 2026-10-31, ROADMAP-ARCHIVE). The other leftovers of `next`'s features (Cancel for version
+pre-generation (built 2026-10-31, ROADMAP-ARCHIVE). Added while testing those (user's call,
+2026-10-31): moving a server to an older Minecraft (built, ROADMAP-ARCHIVE). The other leftovers of `next`'s features (Cancel for version
 moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
 chosen files, Chunk Pregenerator) are extensions and wait.
 

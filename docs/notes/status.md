@@ -58,6 +58,9 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
   at once, the header reloads every 15 s while paused). Again: start, pause, continue and cancel
   from the World tab should change it at once, and from the console within about 45 s.
 
+- Moving a server to an older Minecraft (2026-10-31): the 26.3 test server down to an older
+  version, once with the new world (the old one under World > Worlds) and once keeping it.
+
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").
 

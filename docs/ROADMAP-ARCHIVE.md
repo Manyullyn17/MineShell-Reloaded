@@ -9,6 +9,18 @@ When something on the roadmap is built, its entry moves here with its notes.
 
 ## Built
 
+### Moving a server to an older Minecraft
+
+Built 2026-10-31 on the `next` branch, for 1.1, asked for while trying the version pickers (the
+user's 26.3 test server could only "move" to 26.3). The version move refused anything older
+("only moves servers up"). Minecraft does not support going back, but MineShell leaves it
+possible (user's call: guard rails where reasonable, easy to get past): the move panel lists
+older versions too, and picking one shows a warning, needs the confirm box, and offers "Start a
+new world" ticked by default. The new world (same seed, no data packs copied) becomes the active
+one before the move; the old world stays under World > Worlds, recorded as last run on the newer
+version, so switching back asks first. Unticked, the world is kept and the usual snapshot choice
+applies. A failed move switches back to the old world (loaders.md, migration).
+
 ### A paused server's header shows a running pre-generation
 
 Built 2026-10-31 on the `next` branch, for 1.1, from the leftovers of "Pausing empty servers".

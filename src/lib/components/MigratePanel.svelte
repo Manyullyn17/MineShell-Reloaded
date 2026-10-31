@@ -45,6 +45,7 @@
 		current: { minecraft: string; loader: string; loaderVersion: string | null };
 		target: { minecraft: string; loader: string; loaderVersion: string | null };
 		minecraftChange: boolean;
+		downgrade: boolean;
 		mods: ModPlan[];
 		dependencies: {
 			install: { name: string; versionNumber: string; neededBy: string[] }[];
@@ -63,6 +64,8 @@
 	let planning = $state(false);
 	let planError = $state('');
 	let confirmMinecraft = $state(false);
+	/** Going down: a new world for the older version, the current one kept beside it. On unless unticked. */
+	let newWorld = $state(true);
 	let submitting = $state(false);
 
 	/** Per loader: the versions it has builds for, null when that list could not be had; absent while loading. */
@@ -74,17 +77,15 @@
 	});
 
 	/**
-	 * Only up: a world opened by a newer Minecraft does not load in an older one. Of those, the
-	 * ones the picked loader has builds for (Mojang's whole list until it is known), and the
-	 * installed version whether it has one or not.
+	 * The versions the picked loader has builds for (Mojang's whole list until it is known), and
+	 * the installed one whether it has one or not. Older ones too: not supported by Minecraft,
+	 * so the preview warns and offers a new world (MineShell's guard rails, not a wall).
 	 */
 	const choices = $derived.by(() => {
 		if (!minecraftVersions) return [current.minecraft];
-		const at = minecraftVersions.indexOf(current.minecraft);
-		if (at === -1) return [current.minecraft, ...minecraftVersions];
-		const newer = minecraftVersions.slice(0, at);
 		const builds = loader === 'vanilla' ? null : loaderLists[loader];
-		return [...(builds ? newer.filter((v) => builds.includes(v)) : newer), current.minecraft];
+		const listed = builds ? minecraftVersions.filter((v) => v === current.minecraft || builds.includes(v)) : minecraftVersions;
+		return listed.includes(current.minecraft) ? listed : [current.minecraft, ...listed];
 	});
 	// A loader with no build for the picked version puts the pick back on the installed version.
 	$effect(() => {
@@ -120,6 +121,7 @@
 		plan = null;
 		planError = '';
 		confirmMinecraft = false;
+		newWorld = true;
 	});
 
 	const unchanged = $derived(
@@ -207,7 +209,28 @@
 		<input type="hidden" name="loader" value={plan.target.loader} />
 		<input type="hidden" name="loaderVersion" value={plan.target.loaderVersion ?? ''} />
 
-		{#if plan.minecraftChange}
+		{#if plan.downgrade}
+			<div class="danger">
+				<strong>Minecraft {plan.current.minecraft} → {plan.target.minecraft}: an older version</strong>
+				<p>
+					Minecraft does not support going back. A world a newer version has opened can lose chunks, blocks and items in
+					an older one, or not load at all, and configs written by newer mod versions may not fit the older ones.
+				</p>
+				<div class="check">
+					<input id="migrate-new-world" name="newWorld" type="checkbox" bind:checked={newWorld} />
+					<label for="migrate-new-world">
+						Start a new world for {plan.target.minecraft}. The current world stays on the server under World &gt; Worlds,
+						unchanged; switching back to it asks first.
+					</label>
+				</div>
+				<div class="check">
+					<input id="confirm-migrate" name="confirmMinecraft" type="checkbox" bind:checked={confirmMinecraft} />
+					<label for="confirm-migrate">
+						{newWorld ? 'I understand this is not supported and the server may not start' : 'I understand the world may be damaged'}
+					</label>
+				</div>
+			</div>
+		{:else if plan.minecraftChange}
 			<div class="danger">
 				<strong>Minecraft {plan.current.minecraft} → {plan.target.minecraft}</strong>
 				<p>
@@ -232,7 +255,11 @@
 				Mods: <strong>{of('update').length}</strong> moved to a build for it, <strong>{of('disable').length}</strong> disabled,
 				{of('keep').length} unchanged{plan.dependencies.install.length ? `, ${plan.dependencies.install.length} dependencies added` : ''}
 			</li>
-			<li>Configs, the world and <code>server.properties</code> are left as they are.</li>
+			{#if plan.downgrade && newWorld}
+				<li>A new world is started for {plan.target.minecraft}, with the same seed. Configs are left as they are.</li>
+			{:else}
+				<li>Configs, the world and <code>server.properties</code> are left as they are.</li>
+			{/if}
 		</ul>
 
 		{#if of('disable').length}
@@ -280,7 +307,10 @@
 			</details>
 		{/if}
 
-		<SnapshotChoice prompt={snapshotPrompt} idPrefix="migrate" />
+		<!-- A new world leaves the old one as it is: nothing to snapshot. -->
+		{#if !(plan.downgrade && newWorld)}
+			<SnapshotChoice prompt={snapshotPrompt} idPrefix="migrate" />
+		{/if}
 		<JavaPrompt {form} action="migrate" />
 		{#if running}
 			<p class="hint">Stop the server to move it.</p>

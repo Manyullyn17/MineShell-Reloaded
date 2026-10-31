@@ -96,8 +96,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 
 ## Minecraft version / loader migration
 - `migrate.ts`, Settings > "Minecraft version and loader" (not for pack servers, which move
-  with the pack, nor Cleanroom). Only upward Minecraft moves (a newer world does not load in
-  an older version). Mods that MineShell can look up move to the target's best build (release
+  with the pack, nor Cleanroom). Going down was refused until 2026-10-31; now possible, not
+  supported (user's call: guard rails, not walls): a warning and a confirm, and by default a
+  new world for the older version, made by `createWorld` before the move (its own operation,
+  so not inside `migrate`'s journal; it records the old world as last run on the newer version,
+  so switching back asks). No snapshot then, as the old world is untouched; unticked, the
+  usual snapshot choice. A failed move switches back to the old world and deletes the new one,
+  best effort after the status is ready again (`requireStopped` refuses while provisioning); a
+  MineShell stopped mid-move leaves the new world active, the old one under Worlds. Mods that MineShell can look up move to the target's best build (release
   first) plus required dependencies (`resolveDependencies` with the target's filter); ones
   without a build, and untracked jars, are disabled (user's call, 2026-10-08). Disabling
   stages the original and copies it back as `.disabled`, because the shared restore deletes

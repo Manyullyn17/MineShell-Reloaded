@@ -27,6 +27,8 @@ import {
 import { getLoader, type ModloaderId } from './modloaders';
 import { compareVersions, resolveJava } from './java';
 import { snapshotStep } from './snapshots';
+import { createWorld, deleteWorld, switchWorld, worldSeed } from './world';
+import { serverWorldName } from './packworld';
 import { startTask } from './tasks';
 import {
 	beginOperation,
@@ -65,8 +67,10 @@ import { plural } from '#lib/shared/format.js';
  *   build for the target, with required dependencies the new builds bring.
  *   Mods with no build for the target, and jars it cannot look up, are
  *   disabled (the user's call: listed in the preview, re-enabled by hand).
- * - Configs, the world and server.properties are left alone. Only upgrades:
- *   a world opened by a newer Minecraft does not load in an older one.
+ * - Configs, the world and server.properties are left alone. Going down is
+ *   possible, not supported (a world a newer Minecraft opened can lose chunks or
+ *   not load): the panel warns and by default starts a new world for the older
+ *   version (`newWorld`), the old one kept beside it under Worlds.
  * - Journalled (`migrate`): a failure or a crash puts mods, records and the
  *   loader back as they were.
  */
@@ -92,6 +96,8 @@ export type MigrationPlan = {
 	current: { minecraft: string; loader: string; loaderVersion: string | null };
 	target: MigrationTarget;
 	minecraftChange: boolean;
+	/** To an older Minecraft than the server's. */
+	downgrade: boolean;
 	mods: MigrationModPlan[];
 	dependencies: DependencyPlan;
 	requiredJava: number;
@@ -122,11 +128,6 @@ function validate(instance: ServerInstance, target: MigrationTarget): void {
 	}
 	if (loader.onlyGameVersions && !loader.onlyGameVersions.includes(target.minecraft)) {
 		throw new InstanceError(`${loader.label} exists only for Minecraft ${loader.onlyGameVersions.join(', ')}.`);
-	}
-	if (compareVersions(target.minecraft, instance.minecraftVersion) < 0) {
-		throw new InstanceError(
-			`Minecraft ${target.minecraft} is older than ${instance.minecraftVersion}. A world opened by a newer version does not load in an older one, so MineShell only moves servers up.`
-		);
 	}
 	if (
 		target.minecraft === instance.minecraftVersion &&
@@ -189,6 +190,7 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 			current: { minecraft: instance.minecraftVersion, loader: instance.modloader, loaderVersion: instance.modloaderVersion },
 			target,
 			minecraftChange: target.minecraft !== instance.minecraftVersion,
+			downgrade: compareVersions(target.minecraft, instance.minecraftVersion) < 0,
 			mods,
 			dependencies: deps.plan,
 			requiredJava: resolveJava({ minecraftVersion: target.minecraft, modloader: target.loader, modloaderVersion: target.loaderVersion }).requiredMajor
@@ -226,7 +228,8 @@ export async function restoreMigration(instanceId: string, root: string, journal
 export async function applyMigration(
 	instance: ServerInstance,
 	target: MigrationTarget,
-	opts: { confirmMinecraftChange: boolean; snapshot?: boolean; downloadJava?: JavaVendor }
+	/** `newWorld`: going down, start a new world for the older version first (the old one stays under Worlds). */
+	opts: { confirmMinecraftChange: boolean; snapshot?: boolean; newWorld?: boolean; downloadJava?: JavaVendor }
 ): Promise<string> {
 	await requireStopped(instance);
 	const { plan, updates, disable, dependencies } = await prepare(instance, target);
@@ -241,6 +244,12 @@ export async function applyMigration(
 	if (pinnedWarning) throw new InstanceError(`${pinnedWarning} Set Java back to "Match automatically" first.`);
 
 	const root = instance.path;
+	// Before the move, so the old world is recorded as last run on the newer version and
+	// switching back to it asks first. Its own operation, so not inside the move's.
+	const leftWorld = plan.downgrade && opts.newWorld ? await serverWorldName(root) : null;
+	const newWorld = leftWorld
+		? await createWorld(instance, { name: `New world for ${target.minecraft}`, seed: await worldSeed(root), copyDatapacks: false, keepMap: true })
+		: null;
 	const mods = modsDir(root);
 	const journal: MigrationJournal = {
 		kind: 'migrate',
@@ -249,9 +258,20 @@ export async function applyMigration(
 		rowsBefore: db.select().from(instanceMods).where(eq(instanceMods.instanceId, instance.id)).all(),
 		loaderBefore: null
 	};
+	/** A failed move puts the old world back as the active one, best effort. */
+	const backToOldWorld = async (log: (line: string) => void) => {
+		if (!leftWorld || !newWorld) return;
+		try {
+			await switchWorld(requireInstance(instance.id), leftWorld, { keepMap: true, force: true });
+			await deleteWorld(requireInstance(instance.id), newWorld, { snapshots: false });
+		} catch (err) {
+			log(`The new world stays active: ${err instanceof Error ? err.message : 'switching back failed'}. Switch back under World > Worlds.`);
+		}
+	};
 	try {
 		beginOperation(instance.id, journal);
 	} catch (err) {
+		await backToOldWorld(() => undefined);
 		if (err instanceof OperationInProgressError) throw new InstanceError(err.message);
 		throw err;
 	}
@@ -318,6 +338,7 @@ export async function applyMigration(
 			await restoreMigration(instance.id, root, journal);
 			endOperation(instance.id);
 			setStatus(instance.id, 'ready', `Moving to ${label} failed and the server was put back: ${err instanceof Error ? err.message : 'unknown error'}`);
+			await backToOldWorld((line) => task.log(line));
 			throw err;
 		}
 
@@ -326,6 +347,7 @@ export async function applyMigration(
 		await dropLoaderCaches(root);
 		prepared.delete(instance.id);
 		for (const line of done) task.log(line);
+		if (newWorld) task.log(`Started a new world for Minecraft ${target.minecraft}; ${leftWorld} is kept under World > Worlds.`);
 		const problems: string[] = [];
 		if (disable.length) problems.push(`Disabled ${plural(disable.length, 'mod')} with no build for it: ${disable.join(', ')}.`);
 		for (const u of plan.dependencies.unresolved) {

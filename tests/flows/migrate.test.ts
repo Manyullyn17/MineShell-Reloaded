@@ -160,12 +160,61 @@ describe('moving a server to another Minecraft version and loader', () => {
 		expect(reload(instance.id).statusMessage).toMatch(/put back/);
 	});
 
-	it('only moves up, and leaves pack servers to their pack', async () => {
+	it('leaves pack servers to their pack, and refuses a move to what runs already', async () => {
 		const instance = await forgeServer();
-		await expect(planMigration(instance, { minecraft: '1.19.2', loader: 'forge', loaderVersion: null })).rejects.toThrow(/only moves servers up/);
 		await expect(planMigration(instance, { minecraft: '1.20.1', loader: 'forge', loaderVersion: '47.2.0' })).rejects.toThrow(/runs already/);
 		const pack = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1', packSource: 'modrinth', packProjectId: 'p' });
 		await expect(planMigration(pack, { minecraft: '1.21.1', loader: 'fabric', loaderVersion: null })).rejects.toThrow(/Modpack version/);
+	});
+
+	// Going down was refused outright ("only moves servers up"). Minecraft does not support it,
+	// but MineShell leaves it possible: a warning, and by default a new world for the older version.
+	describe('to an older Minecraft', () => {
+		const OLDER = { minecraft: '1.19.2', loader: 'forge' as const, loaderVersion: '43.3.0' };
+		const levelName = async (root: string) => (await fs.readFile(path.join(root, 'server.properties'), 'utf8')).match(/^level-name=(.*)$/m)?.[1] ?? 'world';
+		beforeEach(() => {
+			vi.spyOn(LOADERS.forge, 'install').mockImplementation(async (ctx) => {
+				await fs.mkdir(path.join(ctx.dir, 'libraries/net/minecraftforge/forge', ctx.loaderVersion!), { recursive: true });
+				await fs.writeFile(path.join(ctx.dir, 'libraries/net/minecraftforge/forge', ctx.loaderVersion!, 'unix_args.txt'), `forge ${ctx.loaderVersion}`);
+				return { launchArgs: `@libraries/net/minecraftforge/forge/${ctx.loaderVersion}/unix_args.txt nogui`, loaderVersion: ctx.loaderVersion! };
+			});
+		});
+
+		it('starts a new world for it, the old one kept beside it as last run on the newer version', async () => {
+			const { listWorlds } = await import('#lib/server/worlds.js');
+			const instance = await forgeServer();
+			const plan = await planMigration(instance, OLDER);
+			expect(plan).toMatchObject({ minecraftChange: true, downgrade: true });
+			const task = await waitForTask(await applyMigration(instance, OLDER, { confirmMinecraftChange: true, newWorld: true }));
+			expect(task.state).toBe('done');
+			expect(reload(instance.id)).toMatchObject({ minecraftVersion: '1.19.2', modloaderVersion: '43.3.0', status: 'ready' });
+			const active = await levelName(instance.path);
+			expect(active).not.toBe('world');
+			expect(await fs.readFile(path.join(instance.path, 'world/level.dat'), 'utf8')).toBe('my world');
+			const worlds = await listWorlds(reload(instance.id));
+			expect(worlds.find((w) => w.folder === active)).toMatchObject({ active: true, name: 'New world for 1.19.2' });
+			// Switching back to it asks first, as for any world a newer Minecraft opened.
+			expect(worlds.find((w) => w.folder === 'world')).toMatchObject({ active: false, lastRun: { minecraftVersion: '1.20.1' } });
+		});
+
+		it('keeps the world when asked to, opened by the older version as it is', async () => {
+			const instance = await forgeServer();
+			const task = await waitForTask(await applyMigration(instance, OLDER, { confirmMinecraftChange: true, newWorld: false }));
+			expect(task.state).toBe('done');
+			expect(await levelName(instance.path)).toBe('world');
+			expect(reload(instance.id).minecraftVersion).toBe('1.19.2');
+		});
+
+		it('puts the old world back as the active one when the move fails', async () => {
+			const instance = await forgeServer();
+			vi.spyOn(LOADERS.forge, 'install').mockRejectedValue(new Error('Download failed (404)'));
+			const task = await waitForTask(await applyMigration(instance, OLDER, { confirmMinecraftChange: true, newWorld: true }));
+			expect(task.state).toBe('failed');
+			expect(reload(instance.id).minecraftVersion).toBe('1.20.1');
+			expect(await levelName(instance.path)).toBe('world');
+			const { listWorlds } = await import('#lib/server/worlds.js');
+			expect((await listWorlds(reload(instance.id))).map((w) => w.folder)).toEqual(['world']);
+		});
 	});
 
 	it('moves to another loader on the same Minecraft version without asking about the world', async () => {

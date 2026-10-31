@@ -59,7 +59,7 @@ import {
 	setScheduledCommandEnabled
 } from '#lib/server/scheduledcommands.js';
 import { canUseCleanroom } from '#lib/shared/cleanroom.js';
-import { checkJvmFlags, listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
+import { checkJvmFlags, compareVersions, listJavaRuntimes, resolveJava, requiredJavaMajor, scanJavaRuntimes } from '#lib/server/java.js';
 import { portUser } from '#lib/server/ports.js';
 import { linkedAgent, makePrivate, makePublic, playitStatus, PlayitError, publicAddress, REGIONS, serverTunnel, syncVoiceTunnel } from '#lib/server/playit.js';
 import { forgetDiskBreakdown } from '#lib/server/diskusage.js';
@@ -399,13 +399,16 @@ export const actions: Actions = {
 		const minecraft = String(form.get('minecraft') ?? '').trim();
 		const loader = String(form.get('loader') ?? '');
 		if (!minecraft || !findLoader(loader)) return fail(400, { ok: false, message: 'Pick a Minecraft version and a loader.' });
+		const newWorld = form.get('newWorld') === 'on' && compareVersions(minecraft, instance.minecraftVersion) < 0;
 		try {
 			await applyMigration(
 				instance,
 				{ minecraft, loader: loader as ModloaderId, loaderVersion: String(form.get('loaderVersion') ?? '').trim() || null },
 				{
 					confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
-					snapshot: await decideSnapshot(instance, form.get('snapshot')),
+					// Going down with a new world leaves the old one as it is: nothing to snapshot.
+					snapshot: newWorld ? false : await decideSnapshot(instance, form.get('snapshot')),
+					newWorld,
 					downloadJava: downloadJavaFrom(form)
 				}
 			);
