@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { attachment, saveUpload, uploadPath, writeTextFile } from './files';
+import { attachment, PathEscapeError, safeJoin, saveUpload, uploadPath, writeTextFile } from './files';
 import { tempDir } from '../../../tests/helpers/fs';
 
 describe('a download\'s name', () => {
@@ -53,5 +53,38 @@ describe('saving a file', () => {
 		await writeTextFile(root, 'link.txt', 'new');
 		expect((await fs.lstat(path.join(root, 'link.txt'))).isSymbolicLink()).toBe(true);
 		expect(await fs.readFile(path.join(root, 'real.txt'), 'utf8')).toBe('new');
+	});
+});
+
+describe('symbolic links in a server folder', () => {
+	it('are followed while they stay inside it, and refused once they lead out', async () => {
+		const root = await tempDir('files-');
+		const outside = await tempDir('outside-');
+		await fs.writeFile(path.join(outside, 'secret.key'), 'secret');
+		await fs.mkdir(path.join(root, 'logs'));
+		await fs.writeFile(path.join(root, 'real.txt'), 'mine');
+		await fs.symlink('../real.txt', path.join(root, 'logs', 'inside.txt'));
+		// What a mod could leave behind for MineShell to read, share or overwrite.
+		await fs.symlink(path.join(outside, 'secret.key'), path.join(root, 'logs', 'latest.log'));
+		await fs.symlink(outside, path.join(root, 'elsewhere'));
+		await fs.symlink(path.join(outside, 'not-yet.service'), path.join(root, 'dangling.txt'));
+
+		expect(safeJoin(root, 'logs/inside.txt')).toBe(path.join(root, 'logs', 'inside.txt'));
+		expect(safeJoin(root, 'logs/new.txt')).toBe(path.join(root, 'logs', 'new.txt'));
+		expect(() => safeJoin(root, 'logs/latest.log')).toThrow(PathEscapeError);
+		expect(() => safeJoin(root, 'elsewhere/secret.key')).toThrow(PathEscapeError);
+		expect(() => safeJoin(root, 'elsewhere/new-file')).toThrow(PathEscapeError);
+		// Writing through it would create the file it names.
+		await expect(writeTextFile(root, 'dangling.txt', 'x')).rejects.toThrow(PathEscapeError);
+		await expect(fs.access(path.join(outside, 'not-yet.service'))).rejects.toThrow();
+		expect(await fs.readFile(path.join(outside, 'secret.key'), 'utf8')).toBe('secret');
+	});
+
+	it('still work when the server folder itself is reached through a link', async () => {
+		const real = await tempDir('files-');
+		const parent = await tempDir('link-');
+		await fs.writeFile(path.join(real, 'a.txt'), 'a');
+		await fs.symlink(real, path.join(parent, 'server'));
+		expect(safeJoin(path.join(parent, 'server'), 'a.txt')).toBe(path.join(parent, 'server', 'a.txt'));
 	});
 });

@@ -478,4 +478,5 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The login throttle counted each IPv6 address apart, so a guesser with a /64 took a new address every ten tries | `server/auth.test.ts` ("the login throttle") |
 | A visitor without a session could post gigabytes to /login (BODY_SIZE_LIMIT=Infinity), read whole into memory | `server/guard.test.ts` ("a big body") |
 | With MINESHELL_AUTH=off, a site whose name was pointed at the LAN address (DNS rebinding) could drive MineShell | `server/guard.test.ts` ("without sign-in") |
+| A symbolic link a mod left in a server folder (`logs/latest.log -> ~/.ssh/...`) had MineShell read, share or write through to the file it named | `server/files.test.ts` ("symbolic links"), `server/logfiles.test.ts` ("a link out") |
 | A pack icon was passed on with whatever type its host sent, so text/html would be a page on MineShell's origin | `routes/api/instances/[id]/icon/icon.test.ts` |

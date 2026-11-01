@@ -41,4 +41,14 @@ describe('server log files', () => {
 		expect(isLogPath('world/level.dat')).toBe(false);
 		expect(await readLogFile('/tmp', '../etc/passwd')).toBeNull();
 	});
+
+	it('does not read a log that is a link out of the server folder', async () => {
+		const root = await tempDir('logs-');
+		const outside = await tempDir('outside-');
+		await fs.writeFile(path.join(outside, 'secret.key'), 'secret');
+		await fs.mkdir(path.join(root, 'logs'));
+		// A mod could leave this for "Share" to upload.
+		await fs.symlink(path.join(outside, 'secret.key'), path.join(root, 'logs', 'latest.log'));
+		expect(await readLogFile(root, 'logs/latest.log')).toBeNull();
+	});
 });
