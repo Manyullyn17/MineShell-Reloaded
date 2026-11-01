@@ -406,8 +406,13 @@ try {
 // The template unit, then the "running" servers.
 await act('/settings', 'installUnit');
 const bootMs = Date.now() - Number(fs.readFileSync('/proc/uptime', 'utf8').split(' ')[0]) * 1000;
+const machineUp = (Date.now() - bootMs) / 1000;
 for (const { id, uptimeMinutes, startSeconds } of toStart) {
-	const offset = uptimeMinutes * 60;
+	// Never before the machine started: systemd's start times count from boot, and one moved
+	// past it is negative, which MineShell (rightly) takes for no start time: "Starting" for
+	// good. A scene's 2-day uptime shows as the machine's own after a recent reboot.
+	const offset = Math.min(uptimeMinutes * 60, Math.max(0, Math.floor(machineUp) - 600));
+	if (offset < uptimeMinutes * 60) console.log(`${id}: uptime cut to ${Math.round(offset / 3600)} h, this machine's own (it rebooted since)`);
 	if (offset) fs.writeFileSync(path.join(DATA, 'uptime', id), String(offset));
 	await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
 	if (!offset) continue;
