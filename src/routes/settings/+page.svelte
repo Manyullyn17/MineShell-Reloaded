@@ -116,6 +116,17 @@
 	};
 	const downgrade = $derived((form as { downgrade?: DowngradePlan } | null)?.downgrade ?? null);
 
+	// ---- the Updates tab's long lists: a few newest releases and no copies until asked for
+	const RELEASES_SHOWN = 5;
+	let allReleases = $state(false);
+	/** The newest few, and always the running one and one being gone back to. */
+	const shownReleases = $derived(
+		allReleases
+			? data.update.releases
+			: data.update.releases.filter((r, i) => i < RELEASES_SHOWN || r.version === data.update.current || downgrade?.release.version === r.version)
+	);
+	let showCopies = $state(false);
+
 	// ---- database copies: the one opened to put back, and what that changes
 	let restoring = $state<string | null>(null);
 	const COPY_KINDS = { daily: 'Daily copy', update: 'Before an update', 'before-restore': 'Before a restore' } as const;
@@ -1132,7 +1143,15 @@
 		{/if}
 		{#if d.copies.length === 0}
 			<p class="muted">No copies yet: the first daily one is made within a minute of MineShell running.</p>
+		{:else if !showCopies}
+			<div class="list-toggle">
+				<span class="small muted">{plural(d.copies.length, 'copy', 'copies')}, the newest from {formatDateTime(d.copies[0].madeAt)}.</span>
+				<button class="button" type="button" onclick={() => (showCopies = true)}>Show copies</button>
+			</div>
 		{:else}
+			<div class="list-toggle">
+				<button class="button-quiet" type="button" onclick={() => ((showCopies = false), (restoring = null))}>Hide copies</button>
+			</div>
 			<ul class="copy-list">
 				{#each d.copies as c (c.file)}
 					{@const changes = restoreChanges(c)}
@@ -1197,7 +1216,7 @@
 			{/if}
 		</p>
 		<ul class="release-list">
-			{#each u.releases as r (r.tag)}
+			{#each shownReleases as r (r.tag)}
 				<li>
 					<details open={r.version === u.current || downgrade?.release.version === r.version}>
 						<summary>
@@ -1220,6 +1239,13 @@
 				</li>
 			{/each}
 		</ul>
+		{#if u.releases.length > shownReleases.length || allReleases}
+			<div class="list-toggle">
+				<button class="button-quiet" type="button" onclick={() => (allReleases = !allReleases)}>
+					{allReleases ? 'Show only the newest' : `Show all ${u.releases.length} releases`}
+				</button>
+			</div>
+		{/if}
 	{/if}
 </section>
 {:else if tab === 'log'}
@@ -1844,6 +1870,14 @@
 
 	.default-form {
 		display: inline;
+	}
+
+	.list-toggle {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+		margin-top: var(--space-3);
 	}
 
 	.java-download,
