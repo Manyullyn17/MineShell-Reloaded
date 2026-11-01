@@ -52,6 +52,19 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
+- The security pass and Remote access (2026-11-01, on `next`, for the 1.1 candidate run):
+  - Settings > System, "Remote access" on the real install: it should say it is served at
+    https://mc-server.tailf233cf.ts.net (the forward set up by hand). Stop serving and serve
+    again needs `sudo tailscale set --operator=$USER` once (not set yet). Only read on the
+    throwaway dev server so far, whose port 443 does not serve.
+  - `scripts/caddy.sh` has only run against fakes (`tests/tools/caddy-check.sh`); never with a
+    real Caddy and domain (a VM or a spare domain).
+  - The sign-in page's plain-http warning: open it at http://192.168.0.200:3000 (warns) and
+    over the ts.net address (does not).
+  - The script policy: swept every page of the long world in dev with `page-sweep --errors`
+    (one finding, fixed); not yet the built app, nor the map frames on a server with BlueMap.
+  - The setup code on a fresh install (`tests/tools/clean-install.sh`): the installer's last
+    line, the log and the file.
 - The paused server's "Pre-generating" header (2026-10-31): Chunky started on a 1.21.2+ server
   after it says Paused (empty), as in the 26.3 test. Tried by the user the same day: it switched,
   but stayed after a pause or cancel until another tab was opened (fixed: the commands update it
