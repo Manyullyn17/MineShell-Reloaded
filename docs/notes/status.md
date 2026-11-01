@@ -59,27 +59,36 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - Start, stop (RCON), restart and a crash restart of each real server; the console, heap
      readings and player list while it runs. Done for Irithyll on 2026-10-31 (its own
      namespace, joins, heap readings); Spark works inside it (the user, on the dev install).
-   - `tests/tools/sandbox-check.sh mineshell@<id>`: **done for Irithyll** (the user, 2026-11-01,
-     after a restart: seccomp 2, `~` only `.local` and its own `.cache/JNA`, `units/` only
-     `once`). Before the restart it still ran with 1.0's settings, started at 04:00: the reason
-     for the "restart to apply" note (6204c7b). MeatballCraft when it next runs.
-   - Forge 1.12's startup question and the crash diagnoses (`tests/tools/scenarios.sh` on the
-     throwaway dev server): the one-start arguments now come from `units/once/<id>/`.
-   - A server with JVM arguments holding a quoted space, if any (they were split before).
+   - `tests/tools/sandbox-check.sh mineshell@<id>`: **done for both** (the user, 2026-11-01:
+     seccomp 2, own mount namespace, `~` only `.local` (Irithyll also its own `.cache/JNA`),
+     `units/` only `once`). Irithyll before its restart still ran with 1.0's settings, started
+     at 04:00: the reason for the "restart to apply" note (6204c7b).
+   - Forge 1.12's startup question and the crash diagnoses: **done** (2026-11-01,
+     `scenarios.sh` on the throwaway dev server): the answer reached Java as
+     `-Dfml.queryResult=confirm` from `units/once/<id>/` after a snapshot, and was gone at the
+     next start; the watchdog diagnosed, restarted 3 times (by design: after "Done (") and up
+     after "Allow 3 minutes"; the missing dependency not restarted, Install added Fabric API
+     and it booted. Found: `wait-start.sh` reporting an earlier boot (fixed).
+   - JVM arguments holding a quoted space: none on prod (its unit env files, 2026-11-01); the
+     2026-10-31 real-loader pass covered it.
 2. **Updating itself**: beta.1 -> beta.2 with the Update button, betas on: **done** (the user,
-   2026-11-01). Left: beta.2 -> 1.1.0 (offered with betas on or off).
-3. **The script policy (CSP) on the built app**: click through the pages prod uses most; a
-   refused script shows as a button doing nothing or a page not updating. In dev every page
-   was swept with `page-sweep --errors` (one finding, fixed). Also the Map tab with BlueMap.
+   2026-11-01). Left: beta.2 -> 1.1.0 (offered with betas on or off), once it is out.
+3. **The script policy (CSP) on the built app**: **done** (2026-11-01): a production build on
+   throwaway data swept with `page-sweep --errors` (123 views, nothing refused), and the user
+   found nothing on prod, the Map tab with BlueMap and with Dynmap included.
 4. **Security pass and Remote access**:
    - Settings > System, "Remote access": **done** (the user, 2026-11-01): the operator command,
      then Stop serving and Serve over Tailscale both work on prod.
-   - The sign-in page: warns at http://192.168.0.200:3000, not over the ts.net address; the
-     switch turns it off.
-   - Files: a symlink leading out of a server folder cannot be opened, but can be deleted.
-   - The setup code on a fresh install (`tests/tools/clean-install.sh`): installer's last line,
-     log, file. `scripts/caddy.sh` only against fakes (`caddy-check.sh`); a real Caddy needs a
-     VM or a spare domain.
+   - The sign-in page: **done** (the user, 2026-11-01): warns over the LAN address, not over
+     the ts.net one. The switch's note sat beside its label, making it wrap (fixed: the
+     settings rows' layout).
+   - Files: **done** (2026-11-01, throwaway): links to a file and a folder outside the server
+     folder are refused by the editor, listing and download, can be deleted, and emptying the
+     trash removes only the links.
+   - The setup code on a fresh install: **done** (2026-11-01): the installer's last lines, the
+     log and `setup-code`, on a throwaway local install and in `clean-install.sh` (whose own
+     setup step sent no code; fixed). `scripts/caddy.sh` only against fakes (`caddy-check.sh`);
+     a real Caddy needs a VM or a spare domain.
 5. **Features from `next`**, a click each (all have tests; none had a real-install pass):
    - Mods tab: pictures, "Required by" and the ask before disabling, holding a mod at its
      version, sorting by the headers, the client-only filter.
@@ -93,14 +102,12 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - Pruning: analysis kept after a MineShell restart, saved areas skipped.
    - Settings > Updates, "Database copies": put one back (on a throwaway install, not prod).
    - Notifications' quiet hours; TPS per dimension on a Forge/NeoForge server.
-   - Crash banners: a missing dependency's Install (shows it running, then the crash fixed), a
-     startup crash with a fix not restarted over and over, a watchdog stop.
    - Pre-generation: Chunky installed from World > Pre-generate; the paused server's header
      following start, pause, continue and cancel at once (from the console within ~45 s).
    - New servers: 8 GB, a daily snapshot, 3 crash restarts in 10 minutes; old logs deleted
      after the chosen days; data packs in the update check.
-6. **The Updates tab and Remote access layout** from beta.2: lists collapsed, spacing, commands
-   kept whole.
+6. **The Updates tab and Remote access layout** from beta.2: **done** (the user, 2026-11-01),
+   apart from the plain-http switch's note (fixed in 66410e8).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").
