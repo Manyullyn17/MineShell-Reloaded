@@ -75,6 +75,9 @@ export class UpdateRefused extends Error {}
 
 let pretended: string | null = null;
 
+/** When this process started: a page waiting out a restart knows the one answering is another. */
+export const startedAt = Math.round(performance.timeOrigin);
+
 export function currentVersion(): string {
 	return pretended ?? __MINESHELL_VERSION__;
 }

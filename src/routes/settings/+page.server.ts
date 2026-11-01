@@ -88,6 +88,7 @@ import {
 	setAutoCheck,
 	setBeta,
 	startDowngrade,
+	startedAt,
 	startUpdate,
 	UpdateRefused,
 	updateBlocker,
@@ -272,7 +273,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					pending: await pendingRestore(),
 					last: await lastRestore(),
 					blocker: restoreBlocker(),
-					installed: installInfo() !== null
+					installed: installInfo() !== null,
+					service: installInfo()?.service ?? null
 				}
 			: null
 	};
@@ -731,8 +733,11 @@ export const actions: Actions = {
 		if (form.get('understood') !== 'on') return fail(400, { ok: false, message: 'Tick that you understand what it replaces first.' });
 		try {
 			const { restarting, kept } = await requestRestore(String(form.get('file') ?? ''), locals.user?.username ?? null);
+			// startedAt: the page waits for a MineShell that started later (api/update), then reloads.
 			return {
 				ok: true,
+				restarting,
+				startedAt,
 				message: restarting
 					? `MineShell restarts with the copy in a moment; reload this page then. The database as it was is kept as ${kept}.`
 					: `Restart MineShell to put the copy in; it goes in before the database opens. The database as it is now is kept as ${kept}.`

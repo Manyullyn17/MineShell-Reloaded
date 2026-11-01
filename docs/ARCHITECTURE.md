@@ -423,7 +423,9 @@ unit from the restored rows (`boot.ts`). The database as it was is copied first
 (`before-restore-<time>.db`, newest three), so a restore is undone the same way; an installed
 MineShell restarts itself (`systemd-run --user` around `systemctl --user restart`, which
 outlives this process), and the outcome is in the restored database (`database.restored`) or,
-when it failed, in `$DATA/restore-failed.json`. Refused while a task or operation runs, and for
+when it failed, in `$DATA/restore-failed.json`. The page says it is restarting and asks
+`/api/update` until a process started later answers (`started`, against the `startedAt` the action
+returned) or refuses the session, which the copy may not hold, then loads afresh. Refused while a task or operation runs, and for
 a copy with migrations this version does not know (a newer MineShell's). Reading a copy's
 servers and accounts switches an old WAL copy out of WAL mode and puts its modification time
 back, which is when it was made.

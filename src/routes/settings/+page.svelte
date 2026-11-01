@@ -140,6 +140,30 @@
 			returning: copy.servers.filter((c) => !now.some((s) => s.id === c.id))
 		};
 	}
+	// A copy being put back: until the action answers (started null), then until a MineShell
+	// started later answers - or refuses the session, which the copy may not hold - before the
+	// page loads afresh, showing how it went.
+	let putting = $state<{ file: string; started: number | null } | null>(null);
+	let puttingSlow = $state(false);
+	$effect(() => {
+		const started = putting?.started;
+		if (!started) return;
+		const since = Date.now();
+		puttingSlow = false;
+		const timer = setInterval(async () => {
+			if (Date.now() - since > 2 * 60_000) puttingSlow = true;
+			try {
+				const res = await fetch('/api/update');
+				if (res.status === 401 || (res.ok && ((await res.json()) as { started: number }).started !== started)) {
+					clearInterval(timer);
+					location.assign('/settings?tab=updates');
+				}
+			} catch {
+				/* restarting */
+			}
+		}, 1500);
+		return () => clearInterval(timer);
+	});
 	let understood = $state(false);
 	$effect(() => {
 		void downgrade;
@@ -1172,7 +1196,23 @@
 							{/if}
 						</div>
 						{#if restoring === c.file && !c.refusal}
-							<form method="POST" action="?/restoreDatabase" use:enhance class="restore-panel">
+							<form
+								method="POST"
+								action="?/restoreDatabase"
+								class="restore-panel"
+								use:enhance={() => {
+									putting = { file: c.file, started: null };
+									return async ({ result, update }) => {
+										const answer = result.type === 'success' ? (result.data as { restarting?: boolean; startedAt?: number }) : null;
+										if (answer?.restarting && answer.startedAt) {
+											putting = { file: c.file, started: answer.startedAt };
+											return;
+										}
+										putting = null;
+										await update();
+									};
+								}}
+							>
 								<input type="hidden" name="file" value={c.file} />
 								<ul class="small">
 									<li>Every account, password, setting and server setting goes back to how it was on {formatDateTime(c.madeAt)}; anyone signed in since may need to sign in again.</li>
@@ -1193,10 +1233,23 @@
 								</ul>
 								{#if d.blocker}<p class="small warn-text">{d.blocker}</p>{/if}
 								<label class="check small"><input type="checkbox" name="understood" /> I understand this replaces MineShell's accounts and settings</label>
-								<div class="release-actions">
-									<button class="button-primary" type="submit" disabled={!!d.blocker}>{d.installed ? 'Put it back and restart MineShell' : 'Put it back at the next start'}</button>
-									<button class="button-quiet" type="button" onclick={() => (restoring = null)}>Cancel</button>
-								</div>
+								{#if putting?.file === c.file}
+									<div class="notice info" role="status">
+										<p>
+											{putting.started === null
+												? 'Copying the database as it is now, then putting this copy back...'
+												: 'MineShell is restarting with the copy; this page loads again when it is back. Your servers keep running.'}
+										</p>
+										{#if puttingSlow}
+											<p>This is taking long. MineShell's log: <code>journalctl --user -u {d.service ?? 'mineshell'}</code></p>
+										{/if}
+									</div>
+								{:else}
+									<div class="release-actions">
+										<button class="button-primary" type="submit" disabled={!!d.blocker}>{d.installed ? 'Put it back and restart MineShell' : 'Put it back at the next start'}</button>
+										<button class="button-quiet" type="button" onclick={() => (restoring = null)}>Cancel</button>
+									</div>
+								{/if}
 							</form>
 						{/if}
 					</li>
