@@ -5,10 +5,10 @@ of CLAUDE.md (2026-10-20). Open work itself is `docs/ROADMAP.md`.
 
 ## Where it stands (2026-10-21, 0.30.2)
 
-Heading for 1.0 (ROADMAP, "Current direction" and "Road to 1.0"). Agreed 2026-10-21:
+Heading for 1.0 (ROADMAP-ARCHIVE, "Road to 1.0"). Agreed 2026-10-21:
 - World backups to another place (a folder on this machine first, no cloud, extensible) are
   the last feature before 1.0 (built 2026-10-22: backup folders); then a feature freeze and a
-  release candidate. Then (2026-10-25) one more: the mod list export (ROADMAP, "Road to 1.0"),
+  release candidate. Then (2026-10-25) one more: the mod list export (ROADMAP-ARCHIVE, "Road to 1.0"),
   and the rest of the small builds on that list were done the same day. Feature freeze from
   0.33.0 (user's call, 2026-10-25): only fixes, then 1.0 once it is stable without big issues.
   Log retention moved to after 1.0. 0.33.16 is the release candidate (2026-10-30: the console's flicker during a start and its error counts; difficulty and game mode as numbers before 1.14, the four settings 1.21.9 made game rules; 2026-10-29: 0.33.11 to 0.33.14 the same evening, from the user's clicking around: Cleanroom suggestions and fixes, the copied server's sidebar, disk usage leftovers, "Last changed", the mod update list (Fugue matched to Cleanroom, disabled reasons, progress, a table), the Mods tab bar, Fugue picked by binary search and from CurseForge on CurseForge servers; before it 0.33.10: Minecraft 26 worlds' moved formats; 0.33.9 the same day: the leftover sweep's fixes, the snapshot note, the Chunky choices, Delete clicked twice; ROADMAP, "Feature freeze"; 0.33.8 on 2026-10-28: the fixes of a test review: crash safety, RCON, chat-proof console events, world upload limits, delete and server ids, outside links; before it 0.33.7: Add a server's layout, NeoForge builds for 26.x, Fabric and Quilt after Cleanroom, Minecraft versions down to 1.2.5; 0.33.6 the same day: settings pages, one save bar for MineShell settings; 0.33.5 and 0.33.4 too: the phone mods list, long names, clock changes, server.properties and JVM argument escapes), running on
@@ -118,7 +118,7 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    newer is needed (the download fix).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
-server export and import are done (ROADMAP, "Road to 1.0").
+server export and import are done (ROADMAP-ARCHIVE, "Road to 1.0").
 
 ## Real-loader passes
 

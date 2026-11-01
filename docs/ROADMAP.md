@@ -7,209 +7,39 @@ whatever it leaves out stays here.
 
 ## Current direction
 
-Versions (user's call, 2026-10-16): MineShell is in beta (0.x). 1.0 comes when all basic
-functionality is there and stable. After it, maybe a few minor additions, then plugin
-servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
+Versions (user's calls, 2026-10-16 and 2026-10-30): 1.0 came out 2026-11-01 (its checklist,
+"Road to 1.0", is in ROADMAP-ARCHIVE). 1.1 is in beta. After it maybe a few minor additions,
+then plugin servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
-Releasing after 1.0 (user's calls, 2026-10-30): the same as before (DEPLOYMENT, "Publishing a
-release"), but bound by "What 1.x keeps" there. `feat:` work for after 1.0 is on the `next`
-branch (from 2026-10-28; `fix:` commits go on `main` and are merged into it). Once 1.0 is out,
-`next` merges into `main` and becomes 1.1: weeks of features at once, so 1.1 gets a candidate
-run of its own on the real install, under the same rule as 1.0 (a few days with nothing big).
-After that `next` is dropped and work goes back to `main`; a branch comes back only for 2.0's
-breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
+Releasing (user's calls, 2026-10-30 and 2026-11-01; DEPLOYMENT, "Publishing a release", bound
+by "What 1.x keeps" there): `next` held the features for after 1.0 and is merged into `main`;
+work stays on `main`, and a branch comes back only for 2.0's breaking work. A candidate is a
+beta (`1.1.0-beta.N`, a GitHub pre-release that installs only with "Offer betas too" on);
+fixes go out as the next beta, and the release follows after about three days on the real
+install with nothing big. A fix for the release before meanwhile goes on a `release/1.0`
+branch from its tag. Fixes are batched, at most one release a day.
 
-Betas (user's call, 2026-11-01; built the same day, DEPLOYMENT "Publishing a release"): from
-1.1 on a candidate is a beta, `1.1.0-beta.1` and on, a GitHub pre-release that only installs
-with "Offer betas too" on see. 1.1's run: merge `next` into `main`, `npm run release -- beta`,
-the real install gets it with the installer's `MINESHELL_VERSION=v1.1.0-beta.1` (1.0 has no
-beta switch) and turns betas on; fixes go out as the next beta; 1.1.0 after about three days
-with nothing big. A 1.0.x fix meanwhile goes on a `release/1.0` branch from `v1.0.0`.
+1.1's scope (user's call, 2026-10-31): what was on `next`, plus servers that are really
+sandboxed and quoted JVM arguments (one template change for both), the Minecraft versions a
+loader has builds for, sorting the mods list by its headers, a paused server's header showing
+a running pre-generation and moving a server to an older Minecraft (all built, ROADMAP-ARCHIVE).
+The other leftovers of those features (Cancel for version moves and loader changes, database
+copies to a backup folder, CurseForge data packs, zipping chosen files, Chunk Pregenerator)
+are extensions and wait.
 
-1.1's scope (user's call, 2026-10-31): what is on `next` now is nearly enough. Added before it
-goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
-(both change how every server starts, so they share one template change and one pass on real
-loaders; the arguments and the sandbox's first part built 2026-10-31, ROADMAP-ARCHIVE), and what finishes features already on `next`: the Minecraft versions a loader has
-builds for (the typeable version pickers; built 2026-10-31, ROADMAP-ARCHIVE), sorting the mods list by its column headers
-(built 2026-10-31, ROADMAP-ARCHIVE) and a paused server's header showing a running
-pre-generation (built 2026-10-31, ROADMAP-ARCHIVE). Added while testing those (user's call,
-2026-10-31): moving a server to an older Minecraft (built, ROADMAP-ARCHIVE). The other leftovers of `next`'s features (Cancel for version
-moves and loader changes, database copies to a backup folder, CurseForge data packs, zipping
-chosen files, Chunk Pregenerator) are extensions and wait.
+After 1.1 (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
+suggested order of its steps: upkeep and quick wins, files, mod configs, world, players,
+schedules, diagnosis and copies, GT New Horizons, item icons, the status page. Then plugin
+servers as 2.0. Accounts and permissions are covered well enough that nothing more is planned
+for them (user's call, 2026-11-01); item icons get what is still fairly easy, since the user
+likes the feature, though most of what it could do is done.
 
-Beta order (user's calls, 2026-10-16 and 2026-10-21), for the entries under "Later" (the
-"sooner" ones are built: ROADMAP-ARCHIVE):
-
-- **Before 1.0**: the rest of "Road to 1.0" below. Smaller snapshots and backup copies (user's
-  call, 2026-10-22) are built (ROADMAP-ARCHIVE). World backups to a folder (built
-  2026-10-22), restoring chunks, pausing empty servers, player stats and instance export and
-  import are built (ROADMAP-ARCHIVE).
-- **After 1.0** (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
-  suggested order of steps there (2026-10-27): upkeep and quick wins, files, mod configs,
-  world, players, schedules, diagnosis and copies, GT New Horizons, item icons, the status
-  page. Then plugin servers as 2.0.
-
-Portability notes: arm64 and musl (Alpine) are not tested and will not be before 1.0
-(user's calls, 2026-10-18 and 2026-10-21: no such hardware here, and a home server is
-nearly always x64). What depends on them is only what MineShell downloads for a machine:
-Java builds (`javadownload.ts` picks x64/aarch64 and glibc/musl) and playit.gg's agent.
-A Java added by path works on any of them, and better-sqlite3 in the release archive
-carries prebuilt binaries for all four. (Quilt loader switching was tried on a real server
-2026-10-15.)
-
-### Road to 1.0
-
-Checks and small additions before 1.0 (suggested 2026-10-21; the user agreed to the
-backups, the status page's move, the minor dependency updates and leaving TypeScript 7
-until after 1.0, and asked to keep the rest listed here):
-
-- **Feature freeze and a release candidate**: every planned feature is in (built 2026-10-25:
-  the mod list, snapshot and disk notifications, the daily database copy, the update marker,
-  limits on going back); frozen from 0.33.0 on (user's call, 2026-10-25): only `fix:` commits,
-  and 1.0 once it runs stable without big issues;
-  cut a release candidate, run it on the real install for a week or two, then 1.0. From
-  2026-10-30 (user's call): 1.0 once the candidate has run about three days on the real
-  install with nothing big (lost data, a server that will not start, MineShell ending, a
-  failed install or update, a permission leak). Small things (a layout issue and the like)
-  delay it only by their fix and checking that it works; they do not restart the three days. The
-  candidate is a last 0.x (checked 2026-10-25): a `-rc` tag would need four changes (the
-  workflow publishes it as a full release, `release.sh` cannot bump from it, the release
-  notes for 1.0 would start at it, and the self-updater's `compareVersions` reads
-  `1.0.0-rc.1` as equal to `1.0.0`, so the candidate would never be offered 1.0), while a
-  0.x needs none, and going back from 1.x then lands on the tested release.
-  **The candidate is 0.33.3** (user's call, 2026-10-27), replacing 0.33.2 (on the real install
-  from 2026-10-26, which had replaced 0.33.1 with the two fixes the server export test found).
-  0.33.3 brings the UI fixes the README screenshots and the page sweep found (spacing, words
-  run together, phone layouts, tab bars) and the pack update preview counting renamed mod
-  builds as updated; the checks those touch are the pages themselves (swept at 390 and
-  1280 px) and the pack change preview (its flow test, and Cobblemon 1.8.1 -> 1.8.4 in the
-  screenshot world). A `fix:` release in the meantime becomes the new candidate, and only the
-  checks its fix touches are repeated. Since then (2026-10-28): 0.33.4 to 0.33.6 (long names,
-  clock changes, server.properties and JVM argument escapes, the phone mods list, settings
-  pages), and **0.33.7 is the candidate** (user's call, 2026-10-28): Add a server's layout,
-  NeoForge builds for Minecraft 26.x, Fabric and Quilt after picking Cleanroom, Minecraft
-  versions down to 1.2.5. Its checks: the loader flow clicked through on a throwaway dev
-  server (every loader, 26.3 kept, lists filled) and the new loader list tests.
-  **0.33.8 is the candidate** (2026-10-28), with the fixes a test review in a cloud session
-  found: background errors and a full disk no longer end MineShell, a bad RCON packet no
-  longer freezes it, chat can no longer fake joins, crashes or a crash diagnosis, uploaded
-  worlds are refused before they exhaust memory or fill the disk, deleting waits for running
-  work, new servers no longer take over a deleted server's kept folder, and outside links
-  open only as web pages. Its checks: the tests each fix brought, and the console line
-  formats in the real journal (vanilla/Fabric, NeoForge, Forge 1.12) checked against the
-  new chat-proof matching; nothing of it was tried live on a server.
-  On the real install from the evening of 2026-10-28, it was tried there the next day: shared
-  snapshot files (made and deleted through the World tab, checked with
-  `tests/tools/snapshot-check.mjs`), Delete during a running snapshot (found the one deletion
-  per click below) and a new Fabric 26.3 server (found the format changes below).
-  **0.33.10 is the candidate** (2026-10-29), after 0.33.9 the same day. 0.33.9: the leftover
-  sweep's four fixes (loader caches kept after a version change, Chunky tasks following a world
-  switch, a chunk restore's undo leaving its new files, the low-disk warning reaching only the
-  first destination), the World tab's snapshot note no longer saying a running server cannot
-  be snapshotted, pre-generation's two settings as choices instead of buttons naming the
-  opposite, and Delete clicked again while the server stops no longer deleting once per click.
-  0.33.10: Minecraft 26 worlds, whose chunk palettes, overworld folder, seed, players and
-  border files moved (the chunk map drew nothing, "Keep it" on a reset lost the seed, the
-  player editor listed nobody). Its checks: the tests each fix brought; the Chunky choices
-  clicked, reloaded and swept at 390 px on the screenshot world; the 26.x readers on the
-  user's own 26.3 world with all three dimensions and a player file (items, enchantments,
-  stats), and on a 1.21 world, which reads as before. The Delete button's "Stopping the
-  server" seen in a browser by the user (2026-10-30).
-  **0.33.14 is the candidate** (2026-10-29), after 0.33.11 to 0.33.13 the same evening, each
-  from what the user found clicking around (0.33.13 ran on the real install, where its
-  MeatballCraft showed the two Fugues 0.33.14 fixes). 0.33.11: Cleanroom's replacement
-  suggestions no longer naming the maintained forks themselves (they keep the old modids),
-  "Apply required fixes" answering next to its button, a copied server no longer lighting
-  up its original in the sidebar. 0.33.12: disk usage no longer offering the pack's config
-  base (`pack-base.zip`) and other kept files as leftovers; "Last changed" no longer moved
-  by the nightly restart, snapshots or an operation's status. 0.33.13: the mod update list
-  offering a Cleanroom server only a Fugue its Cleanroom runs (it offered MeatballCraft on
-  0.5.17 Fugue 0.25.5, which needs 0.7.3, ticked), saying why a disabled mod is off, no raw
-  commit lines as notes, progress while checking, a table; DynmapBlockScan shown as from
-  dynmap.us and unknown jars as "Other". 0.33.14: the Mods tab bar staying in view and its
-  filter only on Installed, a disabled old copy recognised across Modrinth and CurseForge,
-  Fugue from CurseForge on a server whose mods come from there, and picking Fugue by binary
-  search over the ranges the jars declare (the build for 0.5.x was eleventh of twelve
-  checked), each build read once ever, a build that does not say what it needs never picked.
-  Its checks: the tests each fix brought (each failing without it); on throwaway servers
-  against real Modrinth and the CurseForge mirror: the update list's progress and table (and
-  at 390 px), the Dynmap install's sources, Fugue 0.23.7 for Cleanroom 0.5.17 in 6 jar reads
-  of 46 builds and 0.25.5 for 0.7.3, from CurseForge on a CurseForge server; the Mods tab
-  bar scrolled at desktop and phone width. On the real install with 0.33.14 (2026-10-30): the
-  update list on MeatballCraft offers nothing for Fugue 0.23.7 (the newest for its Cleanroom
-  0.5.17) and leaves the disabled 0.21.0 unchecked as an old copy; Irithyll's "Last changed"
-  stayed on the 29th through the nightly restart.
-  **0.33.15 is the candidate** (2026-10-30), a small fix under the three-day rule (it does not
-  restart the days): difficulty and game mode written as numbers for Minecraft up to 1.13.2,
-  which read a name as Easy and Survival (a name already in the file is rewritten before a
-  start), and PvP, the Nether, monsters and command blocks no longer offered on 1.21.9+, where
-  they are game rules (the Rules section names them). Its checks: the tests the fix brought
-  (each failing without it), mc-probe.mjs on 1.12.2, 1.13.2, 1.14.4, 1.21.8 to 1.21.11 and
-  26.3, and the Gameplay tab and new server defaults on a throwaway 1.12.2 and 1.21.11 server.
-  On the real install (2026-10-30): MeatballCraft's first start left `difficulty=2`,
-  `gamemode=0`.
-  **0.33.16 is the candidate** (2026-10-30), two small fixes the user saw starting
-  MeatballCraft on 0.33.15 (the three days go on): the Console no longer emptying and
-  reloading its last 300 lines every 3 s while a server starts (since 0.30.0), and keeping a
-  big start's errors and warnings beyond its line limit so their counts no longer drop. Its
-  checks: the tests each fix brought (each failing without it), and MeatballCraft's recorded
-  startup (46,000 lines) replayed on a throwaway server with the console logged every frame
-  in Chrome: never emptied, the error count only rose. Not yet seen: a real start on the
-  real install with 0.33.16.
-- **Updating to 1.0 from older versions**: tried 2026-10-25 on throwaway installs with HEAD
-  built as 1.0.0 (`tests/tools/update-source.mjs`): 0.2.0 -> 1.0.0 through `install.sh` and
-  through the button (13 migrations), 0.33.0 -> 1.0.0 both ways, 1.0.0 -> 0.33.0 back
-  (0.32.1 refused), each with a server running through it and its world, snapshot and
-  backup folder kept. What 1.x keeps and what 2.0 may break is decided (user's call,
-  2026-10-25: DEPLOYMENT, "What 1.x keeps"); going back past the last 0.x (and so past
-  migration 0019) is neither offered nor supported.
-- **A clean-machine install**: done 2026-10-25 (`tests/tools/clean-install.sh`) on Debian 12,
-  Ubuntu 24.04 (both refuse their packaged Node 18, then NodeSource 22), Fedora 44 (Node 22)
-  and Arch (Node 26), each with the dedicated account, lingering and `machinectl shell`: install,
-  setup, a server with Java downloaded, a container restart. Found and fixed: servers did not
-  come back after a container restart, the too-old Node message did not say how to get one,
-  doctor failed on a Java MineShell had downloaded. Covers 0.33.1 (user's call, 2026-10-26):
-  it ran on its code with the fixes in, from a local archive built by the same
-  `scripts/package.sh` the Release workflow uses (which smoke-tests the published one).
-- **A real-loader checklist**: written and gone through 2026-10-25
-  (`tests/tools/real-loader-checklist.md`; found the Quilt export carrying Quilt's cache,
-  fixed). Covers 0.33.1: it ran on its code.
-- **Left for the user**: all done 2026-10-26: notifications to a Discord channel, the
-  `.mrpack` and CurseForge client export imports, and a server export and import of
-  MeatballCraft (CurseForge, Cleanroom, a 7.1 GB world; found and fixed: a backup mod's 21 GB
-  of backups went into every export, and the import screen showed no icon).
-- **A restore drill**: done 2026-10-25 on Forge 1.21.1 (throwaway): a scoreboard marker
-  written over RCON, a snapshot copied to a compressed backup folder, the server deleted with
-  its files, made again under the same name, the backup folder picked in its settings (copy
-  back needs that first), the copy brought back and restored: same seed, marker there.
-- **README and screenshots for the release**: done 2026-10-27 (user's call: with 1.0, so the
-  project page looks finished; it changes nothing in MineShell itself, so the freeze and the
-  candidate's testing are untouched). README: highlights at the top, MineShell's own updates,
-  themes and phones in one section, tested systems, reaching it from outside, updating;
-  development, layout and theming moved to CONTRIBUTING.md. Screenshots all redrawn
-  (`npm run screenshots`): the overview (ending above the throwaway data path), the server
-  list, the console, a pack update preview and the phone view at the top, and one per
-  feature section: the pack browser, crash diagnosis, the mod browser, the Chunky planner on
-  a real generated world, and a player's inventory with item pictures. Left out: settings,
-  files and accounts (generic, stale with every UI change) and a BlueMap render. The
-  redraw found eight UI bugs, fixed: words run together at block edges, "file(s)",
-  bullets in the pack preview's lists, and mod updates counted as removed and added. A sweep
-  of every page and sub-tab at 390 and 1280 px followed (`tests/tools/page-sweep.mjs`, on the
-  screenshot world) and found nine more, fixed: Files and the All data tree on narrow
-  screens, a phone's tab bars not showing the current tab, sub-tabs hidden past the edge on
-  desktop, doubled space in two-column fields, the planner's two hints, and spacing and
-  overflow in the client export, the version and loader pickers and the player editor.
-  Then (2026-10-28) the longest text everywhere: the long world (`npm run screenshots --
-  --long`: every field at its limit, names from mods, packs and players as long as they come,
-  an owner and a restricted account) swept at 390 and 1280 px with the new check for text out
-  of its box. Found and fixed: server names and JVM presets had no length limit, and long
-  unbroken names ran out of the server header, cards, crash notes, Activity, the logs list,
-  saved commands, Settings' tables and preset list, the mods table (whose box hid its
-  version and source columns) and the player page.
-
-Long running is covered: the user's installed MineShell has run a server with scheduled
-restarts and snapshots since it was installed.
+Portability notes: arm64 and musl (Alpine) are not tested (user's calls, 2026-10-18 and
+2026-10-21: no such hardware here, and a home server is nearly always x64). What depends on
+them is only what MineShell downloads for a machine: Java builds (`javadownload.ts` picks
+x64/aarch64 and glibc/musl) and playit.gg's agent. A Java added by path works on any of them,
+and better-sqlite3 in the release archive carries prebuilt binaries for all four.
 
 ---
 
