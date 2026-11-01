@@ -86,7 +86,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 ## Forge's startup questions
 - `forgequery.ts`: Forge < 1.13 and Cleanroom ask on the console (missing registry entries,
   missing registries, backup level.dat) and read only stdin; units have none, RCON is not up
-  yet. Answered by starting once with `-Dfml.queryResult=confirm` via `<id>.once`, which the
+  yet. Answered by starting once with `-Dfml.queryResult=confirm` via `.mineshell/once-args`, which the
   template's start command reads and deletes (Type=simple: a one-off in `.env` would race).
   Tried end to end on a throwaway dev server with a fake java printing MeatballCraft's
   question: detected from the real journal, snapshot + start with the flag, Stop, and a restart

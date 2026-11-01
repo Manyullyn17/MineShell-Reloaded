@@ -12,6 +12,7 @@ export const variables = defineEnvVars({
 	MINESHELL_DATA: optional,
 	MINESHELL_UNIT_PREFIX: optional,
 	MINESHELL_AUTH: optional,
+	MINESHELL_SANDBOX: optional,
 	MINESHELL_HOSTS: optional,
 	CURSEFORGE_API_KEY: optional,
 	XDG_DATA_HOME: optional,

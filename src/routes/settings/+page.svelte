@@ -1172,6 +1172,18 @@
 		</div>
 	{/if}
 
+	{#if data.systemd.sandbox}
+		<div class="notice {data.systemd.sandbox.on ? 'success' : 'warning'}">
+			<p>
+				{#if data.systemd.sandbox.on}
+					Servers run sandboxed: {data.systemd.sandbox.reason} A mod cannot read MineShell's data or the other servers.
+				{:else}
+					Servers run without a sandbox, so a mod can do anything this account can: {data.systemd.sandbox.reason}
+				{/if}
+			</p>
+		</div>
+	{/if}
+
 	<p class="muted small">
 		Run <code>loginctl enable-linger $USER</code> once so servers keep running after you log out.
 	</p>

@@ -52,8 +52,18 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-Nothing (2026-10-26): Discord notifications, the client export imports and a large server
-export and import are done (ROADMAP, "Road to 1.0").
+- **The server sandbox on the real machine** (security pass, 2026-11-01): it was written and
+  tested in a container without systemd, so the probe and the drop-ins have only run against
+  faked `systemd-run`. On this machine: start a throwaway dev server (`devserver.sh start`),
+  install its template, look at MineShell settings > systemd (sandboxed, or the reason not),
+  start a Fabric and a Forge/NeoForge server and check they boot, save the world and answer
+  the console; then from inside one (a `/bin/sh` started with the unit's settings:
+  `systemd-run --user --pty -p ProtectHome=tmpfs ...`, or `cat` from a test mod) that
+  `~/.local/share/mineshell/secret.key` and the other servers are not there. Also a server
+  whose Java is under the home folder (a downloaded one), and Forge 1.12's startup question
+  (`.mineshell/once-args`).
+- Discord notifications, the client export imports and a large server export and import are
+  done (2026-10-26; ROADMAP, "Road to 1.0").
 
 ## Real-loader passes
 

@@ -348,6 +348,9 @@ Before putting MineShell on a public address:
   date (MineShell settings, Updates, with automatic checks on).
 - Set the owner's password before opening the port: until then /setup is waiting, guarded only
   by the setup code.
+- Check MineShell settings > systemd says the servers run sandboxed (Troubleshooting below,
+  if not): a mod that is malicious, or a server taken over through one, then reaches only its
+  own folder, not MineShell's database or your other servers.
 
 Restart MineShell after changing the settings file. Caddy is the shortest setup: it gets
 the certificate by itself, passes the headers MineShell needs and sends the console's event
@@ -421,6 +424,22 @@ release folder (`~/mineshell/current` by default)
 prints a new random password for `admin` and signs it out everywhere; signing in with it asks
 for your own. It needs nothing but access to MineShell's database, which
 already allows anything.
+
+**MineShell settings > systemd says servers run without a sandbox.**
+MineShell shuts each server in its own folder with systemd's sandboxing, which in user units
+needs unprivileged user namespaces; it tries a test unit first and leaves the sandbox out
+when that fails, with the reason. On Ubuntu 23.10 and newer, AppArmor restricts those
+namespaces for programs without a profile: `sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0`
+(and the same line in `/etc/sysctl.d/60-userns.conf` to keep it) allows them. On other
+distributions check `kernel.unprivileged_userns_clone`. Restart MineShell afterwards. Without
+the sandbox a mod can do anything the account can, so run only mods you trust, or MineShell as
+a dedicated account (above) that holds nothing else.
+
+**A sandboxed server cannot find a file outside its folder.**
+Inside the sandbox a server sees its own folder, its Java and the system's files (read-only),
+nothing else in the home folders. A link in the server folder to another disk (a world moved
+elsewhere) leads nowhere there; the start says so. Mount the other disk inside the server
+folder instead (a bind mount in `/etc/fstab`), or set `MINESHELL_SANDBOX=off`.
 
 **`npm run doctor` says systemctl is unreachable.**
 The process cannot reach the account's user manager. This happens when MineShell is started

@@ -480,3 +480,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | With MINESHELL_AUTH=off, a site whose name was pointed at the LAN address (DNS rebinding) could drive MineShell | `server/guard.test.ts` ("without sign-in") |
 | A symbolic link a mod left in a server folder (`logs/latest.log -> ~/.ssh/...`) had MineShell read, share or write through to the file it named | `server/files.test.ts` ("symbolic links"), `server/logfiles.test.ts` ("a link out") |
 | A pack icon was passed on with whatever type its host sent, so text/html would be a page on MineShell's origin | `routes/api/instances/[id]/icon/icon.test.ts` |
+| Servers ran with all of MineShell's account's rights, so any mod could read its database and key | `server/sandbox.test.ts` |

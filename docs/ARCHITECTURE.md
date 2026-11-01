@@ -29,7 +29,7 @@ MS_LAUNCH_ARGS=@user_jvm_args.txt @libraries/net/neoforged/.../unix_args.txt nog
 and `ExecStart` is:
 
 ```
-ExecStart=/bin/sh -c 'f="<data>/units/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
+ExecStart=/bin/sh -c 'f=.mineshell/once-args; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
 ```
 
 Four things about that line matter.
@@ -51,13 +51,38 @@ grouping (`-Dx="a b"` is two arguments), so saving refuses them (`argsProblem`, 
 escape, so `writeUnitEnv` doubles it, and puts a line break in a value as a space: it would
 otherwise start a line setting a variable of its own.
 
-**One start's arguments.** `<id>.once` holds JVM arguments for the next start only
-(`writeOnceArgs`); the start reads and deletes it, so a restart by systemd after a crash, or
+**One start's arguments.** `.mineshell/once-args` in the server's folder (the working
+directory) holds JVM arguments for the next start only (`writeOnceArgs`); it was
+`<data>/units/<id>.once` until the sandbox below hid that folder from the server; the start reads and deletes it, so a restart by systemd after a crash, or
 any later start, runs without them. Every start and restart through MineShell writes or
 removes it, so a file left by a start that never ran is not picked up later. The template
 is `Type=simple`, so `systemctl start` returns once systemd forks, possibly before the
 environment file is read: putting a one-off argument into `<id>.env` and taking it out again
 after the start would race.
+
+**The sandbox.** Every server runs as the account MineShell runs as, so a mod (code from the
+internet, hundreds per pack) could otherwise read MineShell's database and key and sign in
+as anyone, change the other servers, MineShell itself or `~/.ssh`, or ask the systemd user
+manager to start anything outside every limit. `sandbox.ts` writes each server a
+`<unit>.d/sandbox.conf` drop-in at every `syncUnit` (so every start): `ProtectSystem=strict`,
+`ProtectHome=tmpfs` (which also empties `/run/user`, where the user manager's and D-Bus's
+sockets are), `TemporaryFileSystem=<data>:ro` when the data folder is outside the home
+folders, then `BindPaths=` its own folder and `BindReadOnlyPaths=` its Java (the managed
+Java folder and the configured binary's home, through links), plus the usual
+`PrivateDevices`/`ProtectKernel*`/`RestrictSUIDSGID`. systemd builds that in a user namespace,
+which some kernels refuse to user units (Ubuntu 24.04's AppArmor restriction on unprivileged
+user namespaces, `kernel.unprivileged_userns_clone=0`), and a server with the drop-in there
+would not start at all. So before writing any, MineShell starts a throwaway unit with the
+same properties (`systemd-run --user --wait`, one list for both) on `<data>/tmp/sandbox-probe`
+and requires it to write there and to see neither `secret.key`, the database, the runtime
+folder nor `~/.ssh`; otherwise the drop-ins are removed, the reason is logged and shown under
+MineShell settings > systemd, and the probe is tried again after 10 minutes. A success is
+kept for the process. `MINESHELL_SANDBOX=off` leaves the sandbox out. Paths a unit file would
+need escaped (spaces, `%`, `:`) are not sandboxed. A top-level link in the server folder to
+somewhere else (a world on another disk) is not visible inside, which the start's message
+says. Still possible from inside: the network (MineShell's port, the other servers' RCON and
+management ports), reading the system's files, and what MineShell itself does with the
+server folder, which is why `safeJoin` refuses links that lead out of it (Safety).
 
 **MineShell's own process.** The game servers are units of their own, so MineShell ending
 does not stop them, but it does end every running task (installs, exports, countdowns).

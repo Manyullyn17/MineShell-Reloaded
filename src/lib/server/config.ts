@@ -28,6 +28,9 @@ export const EXTRA_HOSTS = (env.MINESHELL_HOSTS ?? '')
 	.map((h) => h.trim().toLowerCase())
 	.filter(Boolean);
 
+/** Whether servers get a sandbox where systemd can build one (sandbox.ts). */
+export const SANDBOX_ENABLED = (env.MINESHELL_SANDBOX ?? 'on').toLowerCase() !== 'off';
+
 export const CURSEFORGE_API_KEY = env.CURSEFORGE_API_KEY || '';
 
 /**
@@ -67,9 +70,12 @@ export function unitEnvFile(id: string): string {
 	return path.join(UNITS_DIR, `${id}.env`);
 }
 
-/** JVM arguments for the next start only; the unit's start command reads and deletes it. */
+/**
+ * JVM arguments for the next start only; the unit's start command reads and
+ * deletes it. In the server's own folder, the only one its sandbox shows it.
+ */
 export function unitOnceArgsFile(id: string): string {
-	return path.join(UNITS_DIR, `${id}.once`);
+	return path.join(INSTANCES_DIR, id, '.mineshell', 'once-args');
 }
 
 export function unitName(id: string): string {

@@ -34,6 +34,7 @@ import {
 	resetFailed,
 	type UnitState
 } from './systemd';
+import { writeSandbox } from './sandbox';
 import { rconExec, parsePlayerList } from './rcon';
 import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
 import { getLoader, type ModloaderId } from './modloaders';
@@ -182,8 +183,9 @@ export async function syncUnit(instance: ServerInstance): Promise<{ warning: str
 		instance.crashRestartWindowSec
 	);
 	await writeResourceLimits(instance.id, { memoryMb: instance.limitMemoryMb, cpuPercent: instance.limitCpuPercent });
+	const sandbox = await writeSandbox(instance.id, java.path ?? '/usr/bin/java');
 
-	return { warning: java.warning };
+	return { warning: java.warning ?? sandbox.warning };
 }
 
 // ----------------------------------------------------------------- creation ---

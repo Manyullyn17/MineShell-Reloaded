@@ -244,6 +244,7 @@ See [`.env.example`](.env.example) for the complete list.
 | `MINESHELL_DATA` | `~/.local/share/mineshell` | Data directory for server instances and application data. |
 | `MINESHELL_AUTH` | `on` | Authentication toggle. Disable only on a network you fully trust. |
 | `MINESHELL_HOSTS` | Unset | With `MINESHELL_AUTH=off` only: host names besides addresses and local names to answer to, comma-separated (an authenticating reverse proxy's). |
+| `MINESHELL_SANDBOX` | `on` | Each server sees only its own folder and its Java, where systemd can sandbox user units (shown under MineShell settings > systemd). `off` runs servers with all of this account's rights. |
 | `MINESHELL_UNIT_PREFIX` | `minecraft` in development; `mineshell` in the installer | Prefix for systemd instance units. |
 | `CURSEFORGE_API_KEY` | Unset | Optional CurseForge API key for improved metadata access. Can also be configured in MineShell. |
 | `PORT`, `HOST` | `3000`, `0.0.0.0` | Where the web interface listens. `HOST=127.0.0.1` answers only on this machine (behind a reverse proxy or Tailscale serve). |

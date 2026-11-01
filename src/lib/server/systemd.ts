@@ -181,14 +181,20 @@ export async function writeUnitEnv(
 
 /**
  * JVM arguments for the next start only, or none (null): the template's start
- * command reads <id>.once and deletes it, so a restart by systemd after a
+ * command reads .mineshell/once-args and deletes it, so a restart by systemd after a
  * crash, or any later start, runs without them. Every start through MineShell
  * sets this, so a file left by a start that never ran is not picked up later.
  */
 export async function writeOnceArgs(id: string, args: string[] | null): Promise<void> {
 	ensureDirs();
-	if (args?.length) await fs.writeFile(unitOnceArgsFile(id), args.join(' ') + '\n', { mode: 0o600 });
-	else await fs.rm(unitOnceArgsFile(id), { force: true });
+	if (args?.length) {
+		await fs.mkdir(path.dirname(unitOnceArgsFile(id)), { recursive: true });
+		await fs.writeFile(unitOnceArgsFile(id), args.join(' ') + '\n', { mode: 0o600 });
+	} else {
+		await fs.rm(unitOnceArgsFile(id), { force: true });
+	}
+	// Where an older MineShell kept it, read by its template until that is refreshed.
+	await fs.rm(path.join(UNITS_DIR, `${id}.once`), { force: true });
 }
 
 export async function writeRestartPolicy(

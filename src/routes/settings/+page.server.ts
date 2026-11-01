@@ -33,6 +33,7 @@ import {
 	templateUnitInstalled,
 	unitState
 } from '#lib/server/systemd.js';
+import { sandboxState } from '#lib/server/sandbox.js';
 import { applyServerCap, capProblem, getServerCap, inServerSlice, maxCpuPercent, MIN_CAP_MEMORY_MB, saveServerCap, totalMemoryMb } from '#lib/server/servercap.js';
 import { runningCeilings } from '#lib/server/memoryguard.js';
 import { freePortFor, MOVABLE, portOverview, setServerPort, type PortKind } from '#lib/server/portmap.js';
@@ -185,7 +186,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			unitDir: systemdUnitDir(),
 			templateUnit: TEMPLATE_UNIT
 		},
-		systemd: { ...systemd, unitInstalled: await templateUnitInstalled() },
+		systemd: { ...systemd, unitInstalled: await templateUnitInstalled(), sandbox: systemd.available ? await sandboxState() : null },
 		serverCap: await serverCapView(),
 		// Streamed, and only on its tab: it reads every process's sockets.
 		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,

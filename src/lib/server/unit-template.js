@@ -44,9 +44,10 @@ WorkingDirectory=${instancesDir}/%i
 EnvironmentFile=${unitsDir}/%i.env
 
 # exec so systemd tracks the JVM directly. A wrapper that forks would break
-# restart detection and resource accounting. <id>.once holds JVM arguments for
-# one start only (answering a Forge startup question); the start deletes it.
-ExecStart=/bin/sh -c 'f="${unitsDir}/%i.once"; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
+# restart detection and resource accounting. .mineshell/once-args holds JVM
+# arguments for one start only (answering a Forge startup question); the start
+# deletes it. It is in the server's folder, the one place its sandbox shows it.
+ExecStart=/bin/sh -c 'f=.mineshell/once-args; a=; if [ -f "$f" ]; then a=$(cat "$f"); rm -f "$f"; fi; exec "$MS_JAVA" $MS_JVM_ARGS $a $MS_LAUNCH_ARGS'
 
 # Minecraft installs a shutdown hook, so SIGTERM saves and exits cleanly.
 # MineShell still prefers an RCON "stop" first and only falls back to this.
@@ -70,6 +71,7 @@ StandardError=journal
 SyslogIdentifier=${prefix}-%i
 
 # Modest hardening. Instances still need write access to their own directory.
+# Where systemd can, each server's sandbox.conf drop-in shuts it in that folder (sandbox.ts).
 NoNewPrivileges=yes
 PrivateTmp=yes
 
