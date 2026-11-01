@@ -18,6 +18,10 @@ import { afterAll, beforeAll } from 'vitest';
  * replaying nothing), which is how tests/tools/check-apis.sh tries every file
  * against the live APIs without touching the fixtures.
  *
+ * useRecordedHttp('none', { extra }) answers only from `extra`, recording or not:
+ * a request nothing stands in for fails, which those tests rely on (a download
+ * that cannot be had went live under RECORD_HTTP=1 and succeeded).
+ *
  * Without useRecordedHttp, any fetch throws (see tests/setup.ts).
  */
 
@@ -40,7 +44,7 @@ export function useRecordedHttp(
 	opts: { extra?: Record<string, (init?: RequestInit) => Response | Promise<Response>> } = {}
 ): void {
 	const file = path.join(FIXTURES, `${name}.json`);
-	const recording = process.env.RECORD_HTTP === '1';
+	const recording = process.env.RECORD_HTTP === '1' && name !== 'none';
 	const store: Record<string, Recorded> = recording
 		? {}
 		: fs.existsSync(file)

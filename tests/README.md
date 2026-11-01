@@ -112,13 +112,17 @@ needed, keeping the rest as recorded makes a smaller diff: copy just the new ent
 old fixture, written as the recorder writes it (keys sorted, `JSON.stringify(…, null, 1)`). Write assertions that survive
 that: "contains 0.4.4-alpha", not "exactly these 37 versions". Large downloads (a `.mrpack`,
 a mod jar) are not recorded; pass a small stand-in through the `extra` option instead.
+`useRecordedHttp('none', { extra })` answers only from stand-ins, even under `RECORD_HTTP=1`:
+flow tests rely on a request nothing stands in for failing (a download that cannot be had),
+and four of them failed when those went live.
 
 `tests/tools/check-apis.sh` runs every such file against the live APIs, recording into a
 temporary folder (`RECORD_HTTP_DIR`), so the fixtures stay as they are: run it before a release
 or when a provider seems to have changed. A failure is an API that changed shape, or a test
 pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `updatedAt`, a JEI
 file past the mirror's newest 50; both tests since made to hold) - re-record that file with
-`RECORD_HTTP=1` and adjust.
+`RECORD_HTTP=1` and adjust (2026-11-01: NeoForge 26.3's first release and a Quilt beta; the
+two loader tests since made to hold). Filters narrow it: `check-apis.sh curseforge`.
 
 CurseForge's official API (`curseforge-official-api.test.ts`) needs a key to record. The user's
 is saved in Settings of the dev MineShell (and the installed one), encrypted, not in `.env`;
@@ -167,7 +171,7 @@ value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispa
 | `lib.mjs '<code>' [--data dir]` (or `--file probe.ts`) | A few lines against MineShell's own code, their result printed: `await import('#lib/server/x.js')`, call it, `return` what to see; console.log prints (Vitest keeps it to itself, so a throwaway test had to throw to say anything). Loads through Vite like `tests/itemicons/check.mjs`, on a temporary data folder (removed after) or `--data`, never a real one; units are `mstest@`. About a second |
 | `mc-probe.mjs <version> [--file path=text]... [--from dir] [--command cmd]... [--java path] [--keep dir] [--all]` | How Minecraft itself treats a file: runs that vanilla server (jar from Mojang, cached in `~/.cache/mineshell-mc-probe`; its own Java major from `/usr/lib/jvm` or MineShell's downloads) on a scratch folder with the files given, until "Done (", runs the commands, stops it and shows a diff of each file it rewrote and the small files it added (`op Steve` -> ops.json). Found how 1.12 reads server.properties (Latin-1) and that every version escapes `:` `!` `\` in it. No unit, nothing of MineShell's touched |
 | `analyse-bench.mjs <folder holding region/> [runs]` (`npx tsx`) | Times a prune analysis of one dimension (read only), and the longest the event loop was held meanwhile: what other requests wait. Point it at a copy of a real world; MeatballCraft's overworld (499 regions) took 10.8 s warm |
-| `check-apis.sh [vitest args]` | Every recorded-API test file against the live APIs, recorded into a temporary folder (see "No network") |
+| `check-apis.sh [file filter...] [--vitest-option...]` | Every recorded-API test file (or those whose path contains a filter) against the live APIs, recorded into a temporary folder (see "No network") |
 | `curseforge-key.mjs <data dir>` | The CurseForge key saved in that MineShell's Settings, for recording the official API (see "No network") |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |

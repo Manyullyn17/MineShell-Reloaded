@@ -57,10 +57,13 @@ describe('loader version lists', () => {
 		expect(releases.length).toBeGreaterThan(10);
 		expect(releases.every((v) => /^26\.1\.2\.\d+$/.test(v))).toBe(true);
 		expect(compareVersions(releases[0], releases[releases.length - 1])).toBeGreaterThan(0);
-		// With no release yet (26.3 when recorded), its betas, still without the alphas.
-		const betas = await LOADERS.neoforge.listLoaderVersions('26.3');
-		expect(betas[0]).toBe('26.3.0.43-beta');
-		expect(betas.every((v) => /^26\.3\.0\.\d+-beta$/.test(v))).toBe(true);
+		// With no release yet (26.3 when recorded), its betas, still without the alphas; once it
+		// has releases (live, 2026-11-01: 26.3.0.101), only those.
+		const v263 = await LOADERS.neoforge.listLoaderVersions('26.3');
+		expect(v263.length).toBeGreaterThan(0);
+		const betas = v263.every((v) => /^26\.3\.0\.\d+-beta$/.test(v));
+		expect(betas || v263.every((v) => /^26\.3\.0\.\d+$/.test(v))).toBe(true);
+		if (betas) expect(compareVersions(v263[0], '26.3.0.43-beta')).toBeGreaterThanOrEqual(0);
 		expect(await LOADERS.neoforge.listLoaderVersions('26.1')).toHaveLength(18);
 	});
 
@@ -80,7 +83,9 @@ describe('loader version lists', () => {
 	// update checks (newest first) offered betas below the installed build.
 	it('Quilt: newest first, though its meta lists them in no order', async () => {
 		const versions = await LOADERS.quilt.listLoaderVersions('1.20.1');
-		expect(versions.slice(0, 3)).toEqual(['0.31.0-beta.4', '0.31.0-beta.3', '0.31.0-beta.2']);
+		// 0.31.0-beta.4 was the newest when recorded.
+		expect(compareSemver(versions[0], '0.31.0-beta.4')).toBeGreaterThanOrEqual(0);
+		expect(versions.indexOf('0.31.0-beta.3')).toBeLessThan(versions.indexOf('0.31.0-beta.2'));
 		expect(versions.indexOf('0.24.0')).toBeLessThan(versions.indexOf('0.20.0-beta.9'));
 		for (let i = 1; i < versions.length; i++) expect(compareSemver(versions[i - 1], versions[i])).toBeGreaterThanOrEqual(0);
 	});
