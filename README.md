@@ -232,7 +232,7 @@ For installation options, directory layout, and uninstall instructions, see [Dep
 
 ### Reaching it from outside your network
 
-MineShell is designed for your local network. To use it from elsewhere, connect through [Tailscale](https://tailscale.com) or another VPN, or put it behind a reverse proxy with TLS. Never forward port 3000 itself through your router: it is plain http, passwords included. See [Remote access](docs/DEPLOYMENT.md#remote-access).
+MineShell is designed for your local network. To use it from elsewhere, connect through [Tailscale](https://tailscale.com): MineShell settings > System serves it at an https address only your own devices reach, in one click. A public address is possible but not recommended; `scripts/caddy.sh <domain>` puts it behind Caddy with an automatic certificate. Never forward port 3000 itself through your router: it is plain http, passwords included. See [Remote access](docs/DEPLOYMENT.md#remote-access).
 
 ## Development
 

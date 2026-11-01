@@ -103,6 +103,7 @@ import { BUILT_IN_DEFAULTS, getInstanceDefaults, setInstanceDefaults } from '#li
 import { globalTarget, quietHoursFrom, removeGlobalTarget, saveGlobalTarget, sendTest, targetView } from '#lib/server/notifications.js';
 import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, setDestinationCompress, storeFor } from '#lib/server/backups.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
+import { serveOverTailscale, stopServingOverTailscale, tailscaleState } from '#lib/server/tailscale.js';
 
 /**
  * The agent, and each server's tunnel next to the ones made on playit's
@@ -177,6 +178,9 @@ function kindsFrom(form: FormData): NotificationKind[] {
 	return form.getAll('kinds').map(String).filter((k): k is NotificationKind => known.has(k as NotificationKind));
 }
 
+/** The tabs other than System, which shows for any other name too. */
+const OTHER_TABS = ['java', 'snapshots', 'ports', 'integrations', 'notifications', 'updates', 'log', 'activity'];
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const systemd = await probeSystemd();
 	return {
@@ -191,6 +195,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		serverCap: await serverCapView(),
 		// Streamed, and only on its tab: it reads every process's sockets.
 		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,
+		// Streamed, and only on the System tab (any tab name not another's): it runs `tailscale` twice.
+		tailscale: OTHER_TABS.includes(url.searchParams.get('tab') ?? '') ? null : tailscaleState(),
+		/** For a public address: the script that sets up Caddy, and the settings file it changes. */
+		caddy: {
+			script: installInfo() ? `${installInfo()!.home}/current/scripts/caddy.sh` : 'scripts/caddy.sh',
+			config: installInfo()?.config ?? '.env'
+		},
 		portRanges: { current: portRanges(), defaults: DEFAULT_PORT_RANGES, ephemeral: EPHEMERAL },
 		unitPreview: renderTemplateUnit().replace('${MS_RESTART_POLICY}', 'on-failure'),
 		javaRuntimes: javaRuntimeRows(),
@@ -490,6 +501,20 @@ export const actions: Actions = {
 		if (!apiKey) return fail(400, { ok: false, message: 'Enter a key, or use "Remove" to clear it.' });
 		const result = await setCurseforgeApiKey(apiKey);
 		return { ok: result.ok, message: result.message };
+	},
+
+	tailscaleServe: async () => {
+		const result = await serveOverTailscale();
+		if (!result.ok) return fail(400, { ok: false, message: result.message });
+		audit('settings.tailscale', { detail: `serving at ${result.url}` });
+		return { ok: true, message: `MineShell is at ${result.url} on your tailnet's devices.` };
+	},
+
+	tailscaleStop: async () => {
+		const result = await stopServingOverTailscale();
+		if (!result.ok) return fail(400, { ok: false, message: result.message });
+		audit('settings.tailscale', { detail: 'stopped serving' });
+		return { ok: true, message: 'No longer served over Tailscale.' };
 	},
 
 	playitLink: async () => {

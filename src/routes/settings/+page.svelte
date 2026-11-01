@@ -14,6 +14,7 @@
 	import { PORT_KIND_LABELS } from '#lib/shared/ports.js';
 	import { formatBytes, formatDateTime, plural } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
+	import { connectionKind, type Connection } from '#lib/shared/connection.js';
 	import { beforeNavigate, invalidateAll } from '$app/navigation';
 	import SaveBar from '#lib/components/SaveBar.svelte';
 	import { SaveTracker } from '#lib/shared/savebar.svelte.js';
@@ -55,6 +56,14 @@
 	let notifyValues = $state(notificationValues());
 	$effect(() => {
 		notifyValues = notificationValues();
+	});
+
+	const tailscaleInfo = streamed(() => data.tailscale);
+	const tailscale = $derived(tailscaleInfo.ready ? tailscaleInfo.value : null);
+	/** How this page came, read in the browser (behind Tailscale, MineShell sees only http). */
+	let connection = $state<Connection | null>(null);
+	$effect(() => {
+		connection = connectionKind(location);
 	});
 
 	const playitInfo = streamed(() => data.playit.status);
@@ -1228,6 +1237,95 @@
 	</div>
 {/if}
 <section class="panel">
+	<h2>Remote access</h2>
+	<p>
+		On plain http, your password and session cross the network unencrypted: anyone else on it can read them. From
+		other devices, reach MineShell through Tailscale, which gives it an https address only your own devices can
+		reach.
+	</p>
+	{#if connection === 'https'}
+		<div class="notice success"><p>This page came over https.</p></div>
+	{:else if connection === 'plain'}
+		<div class="notice warning"><p>This page came over plain http across the network.</p></div>
+	{/if}
+
+	<h3 class="remote-heading">Tailscale (recommended)</h3>
+	{#if !tailscale}
+		<p class="muted small">{tailscaleInfo.loading ? 'Asking Tailscale...' : 'Could not ask Tailscale.'}</p>
+	{:else if tailscale.kind === 'missing'}
+		<p class="small">
+			Tailscale is not installed on this machine. Install it here and on the devices you use MineShell from
+			(<a href="https://tailscale.com/download" target="_blank" rel="noreferrer">tailscale.com/download</a>; phones have
+			an app), sign this machine in with <code>sudo tailscale up</code>, then come back here.
+		</p>
+	{:else if tailscale.kind === 'down'}
+		<div class="notice warning"><p>{tailscale.message}</p></div>
+	{:else}
+		{#if tailscale.serve.kind === 'ours'}
+			<div class="notice {tailscale.serve.funnel ? 'warning' : 'success'}">
+				<p>
+					Served at <a href={tailscale.serve.url}>{tailscale.serve.url}</a> to your tailnet's devices.
+					{#if tailscale.serve.funnel}
+						Funnel is on for it, so it is on the public internet too: turn that off with
+						<code>tailscale funnel --https=443 off</code> unless you mean it.
+					{/if}
+				</p>
+			</div>
+			{#if data.owner}
+				<form method="POST" action="?/tailscaleStop" use:enhance class="inline-form">
+					<button class="button-quiet" type="submit">Stop serving</button>
+				</form>
+			{/if}
+		{:else if tailscale.serve.kind === 'other'}
+			<div class="notice">
+				<p>
+					This machine is <span class="mono">{tailscale.name}</span> on the tailnet, but its https port already serves
+					<span class="mono">{tailscale.serve.target}</span>, so MineShell leaves it alone.
+				</p>
+			</div>
+		{:else}
+			{#if !tailscale.https}
+				<div class="notice warning">
+					<p>
+						HTTPS certificates are off for this tailnet: turn on MagicDNS and "HTTPS Certificates" in the
+						<a href="https://login.tailscale.com/admin/dns" target="_blank" rel="noreferrer">admin console's DNS page</a>.
+					</p>
+				</div>
+			{/if}
+			{#if data.owner}
+				<form method="POST" action="?/tailscaleServe" use:enhance class="inline-form">
+					<button class="button-primary" type="submit" disabled={!tailscale.https}>Serve at https://{tailscale.name}</button>
+				</form>
+			{/if}
+			<p class="muted small">
+				Runs <code>tailscale serve --bg --https=443 http://127.0.0.1:{tailscale.port}</code>, kept across reboots. Tailscale
+				lets only root or its operator do that: if it refuses, run <code>sudo tailscale set --operator=$USER</code> on the
+				machine once.
+			</p>
+		{/if}
+		{#if !data.owner}
+			<p class="muted small">Serving MineShell over Tailscale is managed by the owner account.</p>
+		{/if}
+	{/if}
+	<p class="muted small">
+		To stop answering on the local network's address too, so Tailscale is the only way in, set
+		<code>HOST=127.0.0.1</code> in <PathText path={data.caddy.config} /> and restart MineShell. Not while devices without
+		Tailscale still need it.
+	</p>
+
+	<h3 class="remote-heading">A public address</h3>
+	<p class="small">
+		Not recommended: a public address is found by scanners within hours, and only the sign-in stands between them and
+		your servers. If MineShell has to be reachable without Tailscale, point a domain name at this machine, forward ports
+		80 and 443 to it (never MineShell's own port), and run on the machine:
+	</p>
+	<p><code>{data.caddy.script} panel.example.com</code></p>
+	<p class="muted small">
+		It sets up Caddy (installed from your distribution, <code>sudo apt install caddy</code>) with a certificate it renews
+		itself, and binds MineShell to this machine so Caddy is the only way in (DEPLOYMENT, "A public address with Caddy").
+	</p>
+</section>
+<section class="panel">
 	<div class="panel-head">
 		<div>
 			<h2>systemd</h2>
@@ -1708,7 +1806,8 @@
 		display: inline;
 	}
 
-	.java-download {
+	.java-download,
+	.remote-heading {
 		margin-top: var(--space-5);
 	}
 

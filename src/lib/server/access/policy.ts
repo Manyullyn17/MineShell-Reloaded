@@ -80,6 +80,9 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			notifications: 'globalAdmin',
 			notificationsTest: 'globalAdmin',
 			notificationsRemove: 'globalAdmin',
+			// How MineShell itself is reached.
+			tailscaleServe: 'owner',
+			tailscaleStop: 'owner',
 			// Integrations: using them is up to each feature's permission; managing them is the owner's.
 			curseforgeKey: 'owner',
 			removeCurseforgeKey: 'owner',

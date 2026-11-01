@@ -1378,6 +1378,24 @@ this application can delete a world.
 name carries a hash of the data folder: browsers keep cookies per host, not per port, so
 two MineShells on one machine (production and `npm run dev`) otherwise signed each other out.
 
+**Reaching it.** MineShell itself speaks only http; https comes from in front of it (DEPLOYMENT,
+"Remote access"). The sign-in and setup pages, and Settings > System, say when a page came over
+plain http across the network (`lib/shared/connection.ts`): read from `location` in the browser,
+since behind Tailscale or a proxy that ends TLS MineShell sees http either way; `localhost` and
+127.x count as this machine, a LAN address does not (anyone else on the LAN can read it).
+`tailscale.ts` drives Tailscale for the "Remote access" section: it reads `tailscale status
+--json` and `tailscale serve status --json`, and turns on or off one forward, its https port to
+MineShell's own (`PORT`, or the TCP port this process listens on, a dev server's). It is
+MineShell's only when that is all the port does, so a forward for anything else is neither
+replaced nor stopped; Funnel is never touched, only warned about. Changing serve settings
+needs root or Tailscale's operator, which the refusal turns into the one command to run.
+`scripts/caddy.sh` is the public-address path: it runs on the machine, with sudo only for
+Caddy, writes the Caddyfile only where it is the package's default or its own, and appends a
+marked block to the settings file (`HOST=127.0.0.1`, `ADDRESS_HEADER`, `XFF_DEPTH`) that
+`--remove` takes out again; `tests/tools/caddy-check.sh` runs it against fakes. With
+`ADDRESS_HEADER` set, adapter-node's `getClientAddress()` throws for a request without that
+header (one sent to the port from the machine itself), so the sign-in counts it as 127.0.0.1.
+
 **Access.** Who may do what is checked before anything runs, in one place. `lib/shared/access.ts`
 holds the model: per-server permissions (`view`, `power`, `console.read`, `console.command`,
 `players.manage`, `players.data.view`/`edit` with a player scope of none, all or chosen UUIDs,

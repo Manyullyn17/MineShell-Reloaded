@@ -25,8 +25,8 @@ export type RouteEvent = {
 	cookies?: CookieJar;
 	/** Request headers (user-agent, origin, x-forwarded-proto). */
 	headers?: Record<string, string>;
-	/** What `getClientAddress()` answers. */
-	ip?: string;
+	/** What `getClientAddress()` answers; an Error is thrown, as adapter-node does when ADDRESS_HEADER is missing. */
+	ip?: string | Error;
 	url?: string;
 };
 
@@ -92,7 +92,10 @@ function base(event: RouteEvent, url: string) {
 		url: new URL(url),
 		locals: { authenticated: true, access: event.access ?? FULL_ACCESS, user: event.user ?? null },
 		cookies: event.cookies ?? { get: () => event.cookie },
-		getClientAddress: () => event.ip ?? '127.0.0.1'
+		getClientAddress: () => {
+			if (event.ip instanceof Error) throw event.ip;
+			return event.ip ?? '127.0.0.1';
+		}
 	};
 }
 

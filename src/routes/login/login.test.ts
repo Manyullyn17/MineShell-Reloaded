@@ -13,7 +13,7 @@ import { cookieJar, post } from '../../../tests/helpers/routes';
 // The throttle is kept in memory for the whole run: each test signs in from an address of its own.
 const address = () => `10.${crypto.randomInt(256)}.${crypto.randomInt(256)}.${crypto.randomInt(1, 255)}`;
 
-const signIn = (fields: Record<string, string>, ip: string, cookies = cookieJar()) =>
+const signIn = (fields: Record<string, string>, ip: string | Error, cookies = cookieJar()) =>
 	post(actions.login, { fields, ip, cookies, url: 'http://localhost/login' });
 
 describe('signing in', () => {
@@ -31,6 +31,17 @@ describe('signing in', () => {
 			const result = (await signIn({ username: 'admin', password: OWNER_PASSWORD, next }, address())) as { redirect: string };
 			expect(new URL(result.redirect, 'http://localhost').origin).toBe('http://localhost');
 		}
+	});
+
+	// Behind Caddy (ADDRESS_HEADER), a sign-in from the machine's own browser has no
+	// X-Forwarded-For, and adapter-node's getClientAddress() throws for it.
+	it('signs in a request without the address header, as this machine', async () => {
+		const me = owner();
+		const cookies = cookieJar();
+		const missing = new Error('Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request');
+		const result = await signIn({ username: 'admin', password: OWNER_PASSWORD, next: '/' }, missing, cookies);
+		expect(result).toEqual({ redirect: '/' });
+		expect(sessionUser(cookies.values.get(SESSION_COOKIE))).toMatchObject({ id: me.id });
 	});
 
 	it('starts no session for a wrong password', async () => {

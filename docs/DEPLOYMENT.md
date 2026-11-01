@@ -362,15 +362,21 @@ tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `c
 
 ## Remote access
 
-MineShell is designed for a LAN. It has no rate limiting beyond the login throttle, its
-accounts are separated only by its own permissions (every server runs as the same system
-account), and anyone with Files on a server can read every file in its directory. So the
-way to reach it from elsewhere is, in order of preference:
+At home, `http://<machine>:3000` on your own network works, but it is plain http: your
+password and session cross the network unencrypted, readable by anything else on it. The sign-in
+and setup pages say so when they are opened that way. To use MineShell from elsewhere, in order
+of preference:
 
-1. **Tailscale** (or another mesh VPN): nothing is exposed to the internet, only your own
-   devices (and people you invite) can connect, and you get https with a real certificate.
-2. **A reverse proxy with TLS** on a public address, if it really has to be reachable
-   without a VPN. Follow the checklist below.
+1. **Tailscale** (recommended): nothing is exposed to the internet, only your own devices (and
+   people you invite) can connect, and MineShell gets https with a real certificate. One button
+   under MineShell settings > System, "Remote access".
+2. **Only this machine**: `HOST=127.0.0.1` in the settings file, and MineShell answers nowhere
+   else (with Tailscale, it is then reachable only through it).
+3. **A public address with https**, if it really has to be reachable without Tailscale. Not
+   recommended: scanners find a public address within hours, and then only the sign-in stands
+   between them and your servers. MineShell is hardened for it (sign-in throttle, a setup code,
+   each server sandboxed, a script policy on every page), but a mistake anywhere is then
+   reachable from the whole internet. `scripts/caddy.sh` sets it up, below.
 
 Never forward port 3000 itself through your router: that is plain http, passwords included.
 
@@ -380,10 +386,16 @@ Never forward port 3000 itself through your router: that is plain http, password
    (<https://tailscale.com/download>; phones have an app), and sign them in to the same
    tailnet: `sudo tailscale up` on the machine.
 2. In the tailnet's admin console, under DNS, turn on MagicDNS and HTTPS certificates.
-3. On the machine: `tailscale serve --bg 3000`. MineShell is now at
-   `https://<machine>.<tailnet>.ts.net` on your devices. `--bg` keeps it across reboots;
-   `tailscale serve status` shows it, `tailscale serve reset` stops it. Not `tailscale
-   funnel`: that puts it on the public internet.
+3. Let MineShell's account change what Tailscale serves, once: `sudo tailscale set
+   --operator=$USER` (as the account MineShell runs as).
+4. MineShell settings > System, "Remote access": **Serve at https://<machine>.<tailnet>.ts.net**.
+   That runs `tailscale serve --bg --https=443 http://127.0.0.1:3000`, kept across reboots;
+   **Stop serving** undoes it. MineShell never replaces a https port that already serves
+   something else, and never turns on `tailscale funnel` (which would put it on the public
+   internet; the section warns if it is on).
+
+Without the button (or for another port): `tailscale serve --bg 3000` on the machine does the
+same; `tailscale serve status` shows it, `tailscale serve --https=443 off` stops it.
 
 Optional: with `HOST=127.0.0.1` in MineShell's settings file (then
 `systemctl --user restart mineshell`), it no longer answers on the LAN address at all, only
@@ -394,26 +406,58 @@ them from the admin console (Share), and give each a MineShell account (MineShel
 Accounts) with only the servers they should see. Tailscale decides who can connect,
 MineShell's accounts what they can do.
 
-### A reverse proxy with TLS
+### A public address with Caddy
 
-Before putting MineShell on a public address:
+You need a domain name whose address is this machine's public one, and ports 80 and 443
+forwarded to the machine (and open in its firewall: `sudo ufw allow 80,443/tcp`). Then, as the
+account MineShell runs as:
 
-- Bind it to the machine only: `HOST=127.0.0.1` in the settings file, so the proxy is the
-  only way in. Open only 80 and 443 in the firewall, never 3000 (`sudo ufw allow 443/tcp`).
+```sh
+sudo apt install caddy                                  # Fedora: sudo dnf install caddy
+~/mineshell/current/scripts/caddy.sh panel.example.com  # in a git checkout: scripts/caddy.sh
+```
+
+It checks first (sign-in on, Caddy installed, the name resolving), then:
+
+- writes `/etc/caddy/Caddyfile` with sudo: a site for the name that forwards to MineShell.
+  Only when that file is the one Caddy's package ships (kept as `Caddyfile.before-mineshell`)
+  or one the script wrote; a Caddyfile of your own is left alone and the lines to add to it
+  are printed (run the script again once they are in). Caddy gets the certificate from Let's
+  Encrypt and renews it by itself.
+- adds a block to the end of MineShell's settings file: `HOST=127.0.0.1`, so Caddy is the only
+  way in from outside, and `ADDRESS_HEADER=X-Forwarded-For` with `XFF_DEPTH=1`, so the sign-in
+  throttle counts each client rather than everyone as 127.0.0.1. Then it restarts MineShell
+  and waits for `https://<name>` to answer.
+
+`caddy.sh --remove` undoes both. Run it again with another name to move.
+
+Before the address is public:
+
+- Set the owner's password first: until then /setup waits, guarded only by the setup code.
+- Give every account a long password, keep `MINESHELL_AUTH=on`, and keep MineShell up to date
+  (MineShell settings, Updates, with automatic checks on).
+- Check MineShell settings > systemd (or `npm run doctor`) says the servers run sandboxed
+  (Sandboxing the servers, above): a malicious mod, or a server taken over through one, then
+  reaches only its own folder, not MineShell's database or your other servers.
+
+### A reverse proxy of your own
+
+The same by hand, with another proxy or a Caddy you configure yourself:
+
+- Bind MineShell to the machine only: `HOST=127.0.0.1` in the settings file, so the proxy is
+  the only way in. Open only 80 and 443 in the firewall, never 3000.
 - Let the login throttle see who is signing in: behind a proxy every request comes from
   127.0.0.1, so ten wrong passwords from anyone lock everyone out for 15 minutes, and a
   guesser is throttled only per account. Set `ADDRESS_HEADER=X-Forwarded-For` (and
   `XFF_DEPTH=1` for one proxy in front; one more per extra proxy, such as a CDN) in the
   settings file. Only with a proxy that sets that header: without one, a client could
-  write any address into it.
-- Keep `MINESHELL_AUTH=on`, give every account a long password, and keep MineShell up to
-  date (MineShell settings, Updates, with automatic checks on).
-- Set the owner's password before opening the port: until then /setup is waiting, guarded only
-  by the setup code.
+  write any address into it. A sign-in sent to MineShell's port directly (from the machine
+  itself) has no such header and counts as 127.0.0.1.
+- The rest of the list above.
 
-Restart MineShell after changing the settings file. Caddy is the shortest setup: it gets
+Restart MineShell after changing the settings file. For Caddy this is all it takes (it gets
 the certificate by itself, passes the headers MineShell needs and sends the console's event
-stream through as it comes.
+stream through as it comes):
 
 ```caddy
 mineshell.example.com {
