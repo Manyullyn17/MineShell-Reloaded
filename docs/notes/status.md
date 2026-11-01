@@ -100,7 +100,9 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - Moving a server to an older Minecraft: the 26.3 test server, once with a new world (the old
      one under World > Worlds) and once keeping it.
    - Pruning: analysis kept after a MineShell restart, saved areas skipped.
-   - Settings > Updates, "Database copies": put one back (on a throwaway install, not prod).
+   - Settings > Updates, "Database copies": **done** (the user, 2026-11-01, on a throwaway
+     install): put back with and without the session in the copy; the button said nothing
+     while MineShell restarted (fixed in c802a1e: it says so and the page comes back).
    - Notifications' quiet hours; TPS per dimension on a Forge/NeoForge server.
    - Pre-generation: Chunky installed from World > Pre-generate; the paused server's header
      following start, pause, continue and cancel at once (from the console within ~45 s).
