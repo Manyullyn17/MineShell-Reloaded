@@ -90,11 +90,9 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
      setup step sent no code; fixed). `scripts/caddy.sh` only against fakes (`caddy-check.sh`);
      a real Caddy needs a VM or a spare domain.
 5. **Features from `next`**, a click each (all have tests; none had a real-install pass):
-   - Mods tab: pictures, "Required by" and the ask before disabling, holding a mod at its
-     version, sorting by the headers, the client-only filter.
-   - Version pickers you can type into, listing only versions the loader has builds for.
-   - Files: editor (line numbers, colours, the broken JSON/TOML/YAML question, earlier
-     versions), search in files, unpacking an uploaded zip, a folder as a zip.
+   - Mods tab, version pickers, Files: **done** (the user, 2026-11-01, first pass). Found: `.jsonc`
+     files did not open in the editor (fixed in 33d2703), the snapshot box in a mod's version
+     switcher sat on its buttons (fixed in 9113828).
    - Pack changes: Cancel during a pack change (the server back as it was) and a pack install
      (nothing left); the data pack loader warning.
    - Moving a server to an older Minecraft: the 26.3 test server, once with a new world (the old
