@@ -106,6 +106,8 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
      following start, pause, continue and cancel at once (from the console within ~45 s).
    - New servers: 8 GB, a daily snapshot, 3 crash restarts in 10 minutes; old logs deleted
      after the chosen days; data packs in the update check.
+6. **The Updates tab and Remote access layout** from beta.2: **done** (the user, 2026-11-01),
+   apart from the plain-http switch's note (fixed in 66410e8).
 7. **Release notes for 1.1.0** (the user, 2026-11-01: by hand, without fixes of what 1.1 itself
    added): `scripts/release-notes.sh --draft > notes.md`, which leaves out six on its own. Also
    take out (fixes of 1.1's own features that touched older lines too): the template for quoted
@@ -114,8 +116,6 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    a link out of a server folder still deletable (97f99c1) and the start naming a link the
    sandbox hides (ccaabc9). The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
    newer is needed (the download fix).
-6. **The Updates tab and Remote access layout** from beta.2: **done** (the user, 2026-11-01),
-   apart from the plain-http switch's note (fixed in 66410e8).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
 server export and import are done (ROADMAP, "Road to 1.0").
