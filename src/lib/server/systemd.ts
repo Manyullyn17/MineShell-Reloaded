@@ -312,9 +312,14 @@ export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: strin
 	return lines.join('\n') + '\n';
 }
 
-/** Writes sandbox.conf for a server where systemd can apply it, and removes it where not. */
-export async function writeSandbox(id: string, paths: { instanceDir: string; javaPath: string | null }): Promise<void> {
-	if (!(await templateUnitInstalled())) return;
+/**
+ * Writes sandbox.conf for a server where systemd can apply it, and removes it where not.
+ * Returns a warning for the start when a link at the top of the server folder leads out of
+ * it (a world moved to another disk): inside the sandbox it leads nowhere. Its target is not
+ * bound in for it, since a mod can make such a link too (`world -> ~/.ssh`).
+ */
+export async function writeSandbox(id: string, paths: { instanceDir: string; javaPath: string | null }): Promise<{ warning: string | null }> {
+	if (!(await templateUnitInstalled())) return { warning: null };
 	const dropInDir = path.join(systemdUnitDir(), `${unitName(id)}.d`);
 	const file = path.join(dropInDir, 'sandbox.conf');
 	await fs.mkdir(unitOnceDir(id), { recursive: true });
@@ -322,14 +327,33 @@ export async function writeSandbox(id: string, paths: { instanceDir: string; jav
 	const javaHome = paths.javaPath ? await fs.realpath(paths.javaPath).then((p) => path.dirname(path.dirname(p)), () => null) : null;
 	const body = (await canSandbox()) ? renderSandboxDropIn({ instanceDir: paths.instanceDir, onceDir: unitOnceDir(id), javaHome }) : null;
 	const current = await fs.readFile(file, 'utf8').catch(() => null);
-	if (body === current) return;
-	if (body) {
-		await fs.mkdir(dropInDir, { recursive: true });
-		await fs.writeFile(file, body, 'utf8');
-	} else {
-		await fs.rm(file, { force: true });
+	if (body !== current) {
+		if (body) {
+			await fs.mkdir(dropInDir, { recursive: true });
+			await fs.writeFile(file, body, 'utf8');
+		} else {
+			await fs.rm(file, { force: true });
+		}
+		await systemctl('daemon-reload');
 	}
-	await systemctl('daemon-reload');
+	const leaving = body ? await linksOut(paths.instanceDir) : [];
+	if (!leaving.length) return { warning: null };
+	const one = leaving.length === 1;
+	return {
+		warning: `${leaving.join(', ')} ${one ? 'is a link' : 'are links'} out of the server folder, which the sandbox does not let the server follow: move ${one ? 'it' : 'them'} into the folder, or mount the other disk there (DEPLOYMENT, "Sandboxing the servers").`
+	};
+}
+
+/** Entries at the top of a server folder that are links to somewhere outside it. */
+async function linksOut(dir: string): Promise<string[]> {
+	const real = await fs.realpath(dir).catch(() => dir);
+	const out: string[] = [];
+	for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+		if (!entry.isSymbolicLink()) continue;
+		const target = await fs.realpath(path.join(dir, entry.name)).catch(() => null);
+		if (target && target !== real && !target.startsWith(real + path.sep)) out.push(entry.name);
+	}
+	return out;
 }
 
 export async function removeUnitArtifacts(id: string): Promise<void> {

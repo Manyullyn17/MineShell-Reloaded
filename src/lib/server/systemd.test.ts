@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+	forgetSandboxProbe,
 	invalidateUnitState,
 	refreshTemplateUnit,
 	renderSandboxDropIn,
@@ -10,9 +11,10 @@ import {
 	unitState,
 	writeResourceLimits,
 	writeRestartPolicy,
+	writeSandbox,
 	writeUnitEnv
 } from './systemd';
-import { TEMPLATE_UNIT, UNITS_DIR, systemdUnitDir, unitName } from './config';
+import { DATA_DIR, TEMPLATE_UNIT, UNITS_DIR, instanceDir, systemdUnitDir, unitName } from './config';
 import { readJournal } from './journal';
 import { splitArgs } from './shellargs';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
@@ -247,5 +249,22 @@ describe('a server’s sandbox drop-in', () => {
 		expect(outside).toContain('BindPaths=/srv/ms/instances/a\n');
 		expect(outside).toContain('BindPaths=-/srv/ms/units/once/a\n');
 		expect(renderSandboxDropIn({ ...paths, dataDir: '/home/u/.local/share/mineshell' })).not.toContain('TemporaryFileSystem');
+	});
+
+	it('warns about a link out of the server folder, which leads nowhere inside', async () => {
+		await fs.mkdir(systemdUnitDir(), { recursive: true });
+		await fs.writeFile(path.join(systemdUnitDir(), TEMPLATE_UNIT), renderTemplateUnit());
+		forgetSandboxProbe();
+		// A transient unit in a mount namespace of its own: the sandbox works here.
+		fakeProcesses((cmd) => (cmd === 'systemd-run' ? { stdout: 'mnt:[1]\n' } : {}));
+		const dir = instanceDir('sbx-link');
+		await fs.mkdir(path.join(dir, 'mods'), { recursive: true });
+		await fs.symlink(DATA_DIR, path.join(dir, 'world'));
+		await fs.symlink('mods', path.join(dir, 'inside'));
+		const { warning } = await writeSandbox('sbx-link', { instanceDir: dir, javaPath: null });
+		expect(warning).toMatch(/^world is a link out of the server folder/);
+		await fs.rm(path.join(dir, 'world'));
+		expect((await writeSandbox('sbx-link', { instanceDir: dir, javaPath: null })).warning).toBeNull();
+		forgetSandboxProbe();
 	});
 });

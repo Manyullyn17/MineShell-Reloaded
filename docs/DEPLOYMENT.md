@@ -96,6 +96,11 @@ manager takes the profile when it starts: reboot, or stop the servers and run
 Turning the restriction off for every program (`kernel.apparmor_restrict_unprivileged_userns
 = 0` in `/etc/sysctl.d/`) works too, but gives up what Ubuntu meant it for.
 
+Inside the sandbox a server sees its own folder, its Java and the system's files (read-only),
+nothing else of the account's. A link in the server folder to another disk (a world moved
+elsewhere) leads nowhere there, and the start says so: mount the other disk inside the server
+folder instead (a bind mount in `/etc/fstab`).
+
 ---
 
 ## Installing
