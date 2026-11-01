@@ -175,9 +175,21 @@ function encrypt(text) {
 	return [iv, cipher.getAuthTag(), enc].map((b) => b.toString('base64')).join(':');
 }
 
-// "Java" for the running servers: fakeserver.mjs on this Node.
-const fakeJava = path.join(DATA, 'fake-java');
-fs.writeFileSync(fakeJava, `#!/bin/sh\nexec "${process.execPath}" "${path.join(HERE, 'fakeserver.mjs')}"\n`, { mode: 0o755 });
+// "Java" for the running servers: fakeserver.mjs on this Node, laid out as a Java home
+// (fake-jdk/bin/java). Servers run sandboxed, seeing only their folder and their Java's
+// home (two up from bin/java): this Node and the repository are under /home, hidden there,
+// so both come along into it. A hard link where /tmp is on the same disk, else a copy.
+const fakeJdk = path.join(DATA, 'fake-jdk');
+fs.mkdirSync(path.join(fakeJdk, 'bin'), { recursive: true });
+try {
+	fs.linkSync(process.execPath, path.join(fakeJdk, 'bin/node'));
+} catch {
+	fs.copyFileSync(process.execPath, path.join(fakeJdk, 'bin/node'));
+	fs.chmodSync(path.join(fakeJdk, 'bin/node'), 0o755);
+}
+fs.copyFileSync(path.join(HERE, 'fakeserver.mjs'), path.join(fakeJdk, 'fakeserver.mjs'));
+const fakeJava = path.join(fakeJdk, 'bin/java');
+fs.writeFileSync(fakeJava, `#!/bin/sh\nexec "${path.join(fakeJdk, 'bin/node')}" "${path.join(fakeJdk, 'fakeserver.mjs')}"\n`, { mode: 0o755 });
 
 const now = Date.now();
 /** @type {{ id: string; uptimeMinutes: number; startSeconds: number }[]} */
@@ -309,7 +321,13 @@ const ctx = {
 		fs.writeFileSync(path.join(dir, 'server.properties'), Object.entries(properties).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
 		if (o.running) {
 			const players = o.running.players.map((name) => ({ name, uuid: offlineUuid(name) }));
-			fs.writeFileSync(path.join(dir, 'fake-server.json'), JSON.stringify({ version: o.minecraft, loader: o.loader, loaderVersion: o.loaderVersion, ...o.running, players }, null, 1));
+			// A crash log from the repository is copied in: the sandbox shows the server only its folder.
+			const running = { ...o.running };
+			if (running.crashLog) {
+				fs.copyFileSync(running.crashLog, path.join(dir, 'fake-crash.log'));
+				running.crashLog = 'fake-crash.log';
+			}
+			fs.writeFileSync(path.join(dir, 'fake-server.json'), JSON.stringify({ version: o.minecraft, loader: o.loader, loaderVersion: o.loaderVersion, ...running, players }, null, 1));
 			fs.writeFileSync(
 				path.join(dir, 'usercache.json'),
 				JSON.stringify(players.map((p) => ({ ...p, expiresOn: '2099-01-01 00:00:00 +0000' })))
