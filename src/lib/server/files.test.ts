@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { attachment, PathEscapeError, safeJoin, saveUpload, uploadPath, writeTextFile } from './files';
+import { attachment, PathEscapeError, renameEntry, safeEntry, safeJoin, saveUpload, uploadPath, writeTextFile } from './files';
+import { deleteToTrash } from './trash';
 import { tempDir } from '../../../tests/helpers/fs';
 
 describe('a download\'s name', () => {
@@ -86,5 +87,26 @@ describe('symbolic links in a server folder', () => {
 		await fs.writeFile(path.join(real, 'a.txt'), 'a');
 		await fs.symlink(real, path.join(parent, 'server'));
 		expect(safeJoin(path.join(parent, 'server'), 'a.txt')).toBe(path.join(parent, 'server', 'a.txt'));
+	});
+
+	it('that lead out can still be renamed and deleted, without touching what they name', async () => {
+		const root = await tempDir('files-');
+		const outside = await tempDir('outside-');
+		await fs.writeFile(path.join(outside, 'secret.key'), 'secret');
+		await fs.mkdir(path.join(root, 'logs'));
+		await fs.symlink(path.join(outside, 'secret.key'), path.join(root, 'logs', 'latest.log'));
+		await fs.symlink(outside, path.join(root, 'elsewhere'));
+
+		await renameEntry(root, 'logs/latest.log', 'logs/odd.log');
+		expect((await fs.lstat(path.join(root, 'logs', 'odd.log'))).isSymbolicLink()).toBe(true);
+		await deleteToTrash(root, 'logs/odd.log');
+		await deleteToTrash(root, 'elsewhere');
+		await expect(fs.lstat(path.join(root, 'logs', 'odd.log'))).rejects.toThrow();
+		await expect(fs.lstat(path.join(root, 'elsewhere'))).rejects.toThrow();
+		expect(await fs.readFile(path.join(outside, 'secret.key'), 'utf8')).toBe('secret');
+		// Only the name itself is not followed: a folder on the way still is.
+		await fs.symlink(outside, path.join(root, 'again'));
+		expect(() => safeEntry(root, 'again/secret.key')).toThrow(PathEscapeError);
+		expect(() => safeEntry(root, '../x')).toThrow(PathEscapeError);
 	});
 });

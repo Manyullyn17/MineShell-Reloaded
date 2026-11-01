@@ -1282,7 +1282,9 @@ symbolic link on the way followed (`realpath` of the nearest existing part): a m
 links, and `logs/latest.log -> ~/.ssh/id_ed25519` would otherwise have MineShell read it,
 share it to mclo.gs, or write through it with MineShell's rights. A dangling link on the way is
 refused too, since writing through it creates what it names. Links that stay inside the folder
-work as before. The check is not atomic with the use: a folder swapped for a link in between
+work as before. What acts on the name itself (delete, rename, the trash, a mod's toggle and
+delete) goes through `safeEntry`, which checks only the folders on the way and never follows
+the last part: a link leading out can still be removed without touching what it names. The check is not atomic with the use: a folder swapped for a link in between
 gets past it, which only opening every step with `openat2(RESOLVE_BENEATH)` would close.
 
 **Downloads.** `downloadFile` takes only http(s) and refuses a host that is, or resolves to,

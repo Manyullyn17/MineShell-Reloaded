@@ -8,7 +8,7 @@ import { modrinthProvider, projectsByIds, versionsFromHashes } from './modrinth'
 import { ftbProvider } from './modpacksch';
 import { curseforgeModProvider, curseforgeProvider } from './curseforge';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
-import { safeJoin } from '../files';
+import { safeEntry, safeJoin } from '../files';
 import { indexMods } from '../crashdiag';
 
 export * from './types';
@@ -414,11 +414,11 @@ export async function setModEnabled(
 	enabled: boolean
 ): Promise<void> {
 	const dir = modsDir(instance.path);
-	const current = safeJoin(dir, fileName);
+	const current = safeEntry(dir, fileName);
 	const base = fileName.endsWith(DISABLED_SUFFIX)
 		? fileName.slice(0, -DISABLED_SUFFIX.length)
 		: fileName;
-	const target = safeJoin(dir, enabled ? base : `${base}${DISABLED_SUFFIX}`);
+	const target = safeEntry(dir, enabled ? base : `${base}${DISABLED_SUFFIX}`);
 	if (current !== target) await fs.rename(current, target);
 
 	db.update(instanceMods)
@@ -433,7 +433,7 @@ export async function setModEnabled(
 }
 
 export async function deleteMod(instance: ServerInstance, fileName: string): Promise<void> {
-	const target = safeJoin(modsDir(instance.path), fileName);
+	const target = safeEntry(modsDir(instance.path), fileName);
 	await fs.rm(target, { force: true });
 	db.delete(instanceMods)
 		.where(

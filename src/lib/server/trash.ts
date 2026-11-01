@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { settings } from './db/schema';
-import { directorySize, safeJoin } from './files';
+import { directorySize, safeEntry, safeJoin } from './files';
 
 /**
  * Files deleted in the Files tab go to `.mineshell/trash/` first: each as
@@ -67,7 +67,7 @@ async function move(from: string, to: string): Promise<void> {
  * null when it was deleted for good.
  */
 export async function deleteToTrash(root: string, relative: string): Promise<TrashItem | null> {
-	const target = safeJoin(root, relative);
+	const target = safeEntry(root, relative);
 	if (target === path.resolve(root)) throw new Error('The instance root cannot be deleted here.');
 	const rel = path.relative(path.resolve(root), target);
 	if (trashDays() === 0 || holdsTrash(rel)) {
@@ -128,7 +128,7 @@ function validId(id: string): boolean {
 
 /** A free name next to `rel`: "name (restored)", "name (restored 2)", ... */
 async function freeName(root: string, rel: string): Promise<string> {
-	if (!(await exists(safeJoin(root, rel)))) return rel;
+	if (!(await exists(safeEntry(root, rel)))) return rel;
 	const dir = path.posix.dirname(rel);
 	const base = path.posix.basename(rel);
 	const ext = path.posix.extname(base);
@@ -137,7 +137,7 @@ async function freeName(root: string, rel: string): Promise<string> {
 	for (let n = 1; ; n++) {
 		const name = `${stem} (restored${n === 1 ? '' : ` ${n}`})${suffix}`;
 		const candidate = dir === '.' ? name : path.posix.join(dir, name);
-		if (!(await exists(safeJoin(root, candidate)))) return candidate;
+		if (!(await exists(safeEntry(root, candidate)))) return candidate;
 	}
 }
 

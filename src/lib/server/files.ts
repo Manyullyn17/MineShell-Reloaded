@@ -63,6 +63,21 @@ export function safeJoin(root: string, relative: string): string {
 	return target;
 }
 
+/**
+ * `relative` inside `root` as a name in its folder, for what acts on the name
+ * itself (delete, rename, into the trash and back): only the folders on the way
+ * are checked, and a link there is never followed. So a link leading out of the
+ * folder can still be removed or renamed, which safeJoin would refuse.
+ */
+export function safeEntry(root: string, relative: string): string {
+	const normalisedRoot = path.resolve(root);
+	const target = path.resolve(normalisedRoot, relative.replace(/^[/\\]+/, ''));
+	if (!inside(normalisedRoot, target)) throw new PathEscapeError();
+	if (target === normalisedRoot) return target;
+	safeJoin(normalisedRoot, path.relative(normalisedRoot, path.dirname(target)));
+	return target;
+}
+
 export type DirEntry = {
 	name: string;
 	relPath: string;
@@ -197,8 +212,8 @@ export async function createDirectory(root: string, relative: string): Promise<v
 }
 
 export async function renameEntry(root: string, from: string, to: string): Promise<void> {
-	const source = safeJoin(root, from);
-	const target = safeJoin(root, to);
+	const source = safeEntry(root, from);
+	const target = safeEntry(root, to);
 	await fs.mkdir(path.dirname(target), { recursive: true });
 	await fs.rename(source, target);
 }
