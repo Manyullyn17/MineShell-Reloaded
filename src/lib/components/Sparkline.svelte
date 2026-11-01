@@ -95,7 +95,8 @@
 		<span class="muted">{label}</span>
 		<span class="numbers">
 			{#if visible.length >= 2}
-				<span class="faint">avg {format(average)}{unit} · peak {format(peak)}{unit}</span>
+				<!-- Each its own piece: a narrow column puts peak under average, never "GB" alone. -->
+				<span class="faint stats"><span>avg {format(average)}{unit}</span><span>peak {format(peak)}{unit}</span></span>
 			{/if}
 			<span class="mono value">{format(latest)}{unit}</span>
 		</span>
@@ -168,6 +169,17 @@
 
 	.numbers .faint {
 		font-size: 0.8rem;
+	}
+
+	.stats {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		column-gap: 0.6rem;
+	}
+
+	.stats > span {
+		white-space: nowrap;
 	}
 
 	.value {
