@@ -1,9 +1,10 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const { summarise } = await import('#lib/server/instances.js');
 const { invalidateUnitState, writeUnitEnv } = await import('#lib/server/systemd.js');
-const { unitEnvFile } = await import('#lib/server/config.js');
+const { systemdUnitDir, TEMPLATE_UNIT, unitEnvFile, unitName } = await import('#lib/server/config.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 
@@ -38,8 +39,11 @@ describe('a server running since before its start settings changed', () => {
 		expect((await summarise(s)).restartToApply).toBe(false);
 
 		// The same settings written again (every MineShell start rewrites them) keep the file's time.
+		// Every file the check reads made old: an earlier test file in this worker (they share its
+		// unit folder) may have written the template unit just now.
 		const old = new Date(bootAt + 500);
-		await fs.utimes(unitEnvFile(s.id), old, old);
+		const files = [unitEnvFile(s.id), path.join(systemdUnitDir(), TEMPLATE_UNIT), path.join(systemdUnitDir(), `${unitName(s.id)}.d`, 'sandbox.conf')];
+		for (const file of files) await fs.utimes(file, old, old).catch(() => {});
 		await writeUnitEnv(s.id, env);
 		runningSince(1_000_000);
 		expect((await summarise(s)).restartToApply).toBe(false);
