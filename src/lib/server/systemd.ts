@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
+	DATA_DIR,
 	INSTANCES_DIR,
 	TEMPLATE_UNIT,
 	UNITS_DIR,
@@ -283,8 +284,13 @@ export function forgetSandboxProbe(): void {
  * arguments and its Java. Only where `canSandbox`; null otherwise. Not ProtectProc=: it hides
  * other accounts' processes, and every process here is the same account's (whose files a
  * process in the server's user namespace cannot open through /proc anyway).
+ * A data folder outside the home folders (MINESHELL_DATA=/srv/mineshell) is not covered by
+ * ProtectHome=, and ProtectSystem=strict only makes it read-only: the database and secret.key
+ * stay readable, so it is emptied the same way, the server's own parts put back over it.
  */
-export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: string; javaHome: string | null }): string {
+export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: string; javaHome: string | null; dataDir?: string }): string {
+	const dataDir = paths.dataDir ?? DATA_DIR;
+	const hidden = ['/home', '/root', '/run/user'].some((root) => dataDir === root || dataDir.startsWith(root + '/'));
 	const lines = [
 		'# Managed by MineShell: the server sees only its own folder of this account\'s files',
 		'# (ARCHITECTURE, "The servers\' sandbox"). Written only where systemd can make the',
@@ -292,6 +298,7 @@ export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: strin
 		'[Service]',
 		'ProtectSystem=strict',
 		'ProtectHome=tmpfs',
+		...(hidden ? [] : [`TemporaryFileSystem=${dataDir}:ro`]),
 		`BindPaths=${paths.instanceDir}`,
 		// "-": a path missing is skipped rather than failing the start.
 		`BindPaths=-${paths.onceDir}`,

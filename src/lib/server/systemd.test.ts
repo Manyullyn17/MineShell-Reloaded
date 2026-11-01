@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	invalidateUnitState,
 	refreshTemplateUnit,
+	renderSandboxDropIn,
 	renderTemplateUnit,
 	startUnit,
 	unitState,
@@ -232,5 +233,19 @@ describe('a unit’s memory', () => {
 		expect(workingSet(23_000_000_000, stat)).toBe(19_000_000_000);
 		expect(workingSet(5_000_000_000, null)).toBe(5_000_000_000);
 		expect(workingSet(1000, 'inactive_file 5000\n')).toBe(0);
+	});
+});
+
+describe('a server’s sandbox drop-in', () => {
+	const paths = { instanceDir: '/srv/ms/instances/a', onceDir: '/srv/ms/units/once/a', javaHome: '/usr/lib/jvm/java-21' };
+
+	// ProtectHome= hides a data folder in the home folders; one elsewhere stayed readable
+	// (ProtectSystem=strict only makes it read-only), database and secret.key included.
+	it('empties a data folder outside the home folders, giving back the server’s own parts', () => {
+		const outside = renderSandboxDropIn({ ...paths, dataDir: '/srv/ms' });
+		expect(outside).toContain('TemporaryFileSystem=/srv/ms:ro\n');
+		expect(outside).toContain('BindPaths=/srv/ms/instances/a\n');
+		expect(outside).toContain('BindPaths=-/srv/ms/units/once/a\n');
+		expect(renderSandboxDropIn({ ...paths, dataDir: '/home/u/.local/share/mineshell' })).not.toContain('TemporaryFileSystem');
 	});
 });

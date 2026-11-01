@@ -491,3 +491,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Servers ran with all of MineShell's account's rights, so any mod could read its database and key | `server/sandbox.test.ts` |
 | The dev server (listening on the network) served SvelteKit's env module with every private variable's value, the CurseForge key included, to anyone | `security-config.test.ts` |
 | MineShell's pages had no script policy, so text from outside that got past escaping would run as the signed-in account | `security-config.test.ts` |
+| A server's sandbox left a data folder outside the home folders (`MINESHELL_DATA=/srv/...`) readable, database and secret.key included: ProtectHome= covers only /home, /root and /run/user | `server/systemd.test.ts` ("empties a data folder") |

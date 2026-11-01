@@ -214,7 +214,8 @@ the installer's `mineshell.service` `RestrictNamespaces`: neither makes namespac
 Where the namespaces work, each server is kept to its own folder by a drop-in,
 `<prefix>@<id>.service.d/sandbox.conf` (`writeSandbox`, from `syncUnit`): `ProtectSystem=strict`,
 `ProtectHome=tmpfs` (home folders, and with them MineShell's data, other servers, `~/.ssh`,
-hidden), `BindPaths=` its own folder and its one-start folder, `BindReadOnlyPaths=` the Java it
+hidden; a data folder outside them, `MINESHELL_DATA=/srv/...`, which `ProtectSystem=strict`
+leaves readable, gets `TemporaryFileSystem=<data>:ro`; tried with a transient unit 2026-11-01), `BindPaths=` its own folder and its one-start folder, `BindReadOnlyPaths=` the Java it
 runs (realpath of `bin/java`, two up), and `ProtectKernelTunables/Modules/Logs`,
 `ProtectControlGroups`, `ProtectHostname`. Not in the template, because without the namespaces
 some of these fail the start (218/CAPABILITIES) rather than being skipped: MineShell asks once
