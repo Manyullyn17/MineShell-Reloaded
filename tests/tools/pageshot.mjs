@@ -31,6 +31,9 @@
  *                        its text is printed
  *     --element <selector>  capture only the first element matching this (plus a small
  *                        margin), at full size: one part of a long phone-width page
+ *     --errors           also list what the browser reported as an error while the page
+ *                        ran: scripts the Content-Security-Policy refused, uncaught
+ *                        exceptions, failed loads
  *
  * The whole page is captured (up to 4000 px tall). Chromium: $CHROME, else
  * Playwright's under ~/.cache/ms-playwright, else chromium/google-chrome on
@@ -62,6 +65,7 @@ const waitFor = option('--wait-for', null);
 const timeout = Number(option('--timeout', '30000'));
 const overflow = flag('--overflow');
 const spill = flag('--spill');
+const errors = flag('--errors');
 const cookie = option('--cookie', null);
 /** Every --click and --eval, in order: a sub-tab, then a button inside it. */
 const steps = [];
@@ -73,7 +77,7 @@ const click = steps.length > 0;
 const dialog = option('--dialog', 'accept');
 const [url, out] = args;
 if (!url || !out) {
-	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--drag x1,y1,x2,y2] [--dialog accept|dismiss] [--spill] [--cookie name=value]');
+	console.error('Usage: node tests/tools/pageshot.mjs <url> <out.png> [--width px] [--wait-for text] [--timeout ms] [--overflow] [--click selector] [--eval js] [--drag x1,y1,x2,y2] [--dialog accept|dismiss] [--spill] [--errors] [--cookie name=value]');
 	process.exit(1);
 }
 
@@ -149,6 +153,19 @@ try {
 		console.log(`Dialog (${dialog}ed): ${message.params.message}`);
 		void send('Page.handleJavaScriptDialog', { accept: dialog === 'accept' });
 	});
+
+	/** What the browser reported as an error (--errors): a refused script is a Log entry, not an exception. */
+	/** @type {string[]} */
+	const reported = [];
+	if (errors) {
+		ws.addEventListener('message', (event) => {
+			const message = JSON.parse(event.data);
+			if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') reported.push(`${message.params.entry.source}: ${message.params.entry.text}`);
+			if (message.method === 'Runtime.exceptionThrown') reported.push(`exception: ${message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text}`);
+		});
+		await send('Log.enable');
+		await send('Runtime.enable');
+	}
 
 	await send('Page.enable');
 	if (cookie) {
@@ -261,6 +278,7 @@ try {
 	const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip });
 	if (!shot.result) throw new Error(`Chrome took no picture: ${shot.error?.message ?? JSON.stringify(shot)}`);
 	await fs.writeFile(out, Buffer.from(shot.result.data, 'base64'));
+	if (errors) console.log(reported.length ? `Errors in the page:\n  ${reported.join('\n  ')}` : 'No errors in the page.');
 	console.log(`${out}${found ? '' : ` (gave up waiting for "${waitFor}")`}`);
 	ws.close();
 } finally {

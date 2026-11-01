@@ -5,7 +5,7 @@
  * For looking over the whole interface after a change, on a throwaway server
  * (the screenshot world: `npm run screenshots -- --serve`, port 5198).
  *
- *   node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill]
+ *   node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill] [--errors]
  *        [--cookie name=value] [--server id]... [--player id/uuid]... [--only text] [--jobs 4] [--resume]
  *
  * --server adds that server's pages (overview, console, logs, mods, world and
@@ -13,7 +13,8 @@
  * --player a player page (server id/uuid). --only keeps pages whose path has
  * that text. Prints one line per page and sub-tab; with --overflow, the
  * elements past the edge under it, with --spill, text running out of its box
- * or cut off (pageshot.mjs). --cookie signs the sweep in as that session's
+ * or cut off, with --errors, what the browser reported as an error (a script
+ * the Content-Security-Policy refused; pageshot.mjs). --cookie signs the sweep in as that session's
  * account (the long world, `npm run screenshots -- --long`, prints the owner's
  * and a restricted account's); the sign-in pages, the refusal page and a
  * missing page are swept too (signed in, the first two may redirect).
@@ -32,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 const args = process.argv.slice(2);
 const [base, out] = args;
 if (!base || !out) {
-	console.error('Usage: node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill] [--cookie name=value] [--server id]... [--player id/uuid]... [--only text] [--jobs 4] [--resume]');
+	console.error('Usage: node tests/tools/page-sweep.mjs <base url> <out dir> [--width 390] [--overflow] [--spill] [--errors] [--cookie name=value] [--server id]... [--player id/uuid]... [--only text] [--jobs 4] [--resume]');
 	process.exit(1);
 }
 /** @param {string} name */
@@ -40,6 +41,7 @@ const all = (name) => args.flatMap((a, i) => (a === name ? [args[i + 1]] : []));
 const width = all('--width')[0] ?? '390';
 const overflow = args.includes('--overflow');
 const spill = args.includes('--spill');
+const errors = args.includes('--errors');
 const cookie = all('--cookie')[0];
 const only = all('--only');
 const jobs = Math.max(1, Number(all('--jobs')[0] ?? 4));
@@ -86,7 +88,7 @@ const COUNT_SUBTABS = `document.querySelectorAll('.subtabs > button, .subtabs > 
 
 /** One pageshot run; its printed lines. @param {string} page @param {string} file @param {string[]} extra @returns {Promise<string[]>} */
 function shoot(page, file, extra) {
-	const run = [pageshot, `${base}${page}`, path.join(out, file), '--width', width, '--eval', SETTLE, ...extra, ...(overflow ? ['--overflow'] : []), ...(spill ? ['--spill'] : []), ...(cookie ? ['--cookie', cookie] : [])];
+	const run = [pageshot, `${base}${page}`, path.join(out, file), '--width', width, '--eval', SETTLE, ...extra, ...(overflow ? ['--overflow'] : []), ...(spill ? ['--spill'] : []), ...(errors ? ['--errors'] : []), ...(cookie ? ['--cookie', cookie] : [])];
 	return new Promise((resolve) => {
 		execFile(process.execPath, run, { encoding: 'utf8', timeout: 120_000 }, (err, stdout, stderr) => {
 			const why = err && (err.killed ? 'no picture within 2 minutes' : stderr.trim().split('\n').filter((l) => /Error|error/.test(l)).pop() ?? err.message.split('\n')[0]);
@@ -96,7 +98,7 @@ function shoot(page, file, extra) {
 }
 
 /** The lines worth showing: overflow findings and failures, not the picture's path. @param {string[]} lines */
-const findings = (lines) => lines.filter((l) => !l.startsWith(out) && !/^(Nothing past the right edge|No text out of its box)/.test(l) && l !== 'true' && l !== 'undefined');
+const findings = (lines) => lines.filter((l) => !l.startsWith(out) && !/^(Nothing past the right edge|No text out of its box|No errors in the page)/.test(l) && l !== 'true' && l !== 'undefined');
 
 /**
  * A shot's report: its heading and findings, kept in `<name>.txt` (with the page's
