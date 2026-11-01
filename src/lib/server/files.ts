@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { createReadStream } from 'node:fs';
+import { createReadStream, lstatSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -15,12 +15,51 @@ export class PathEscapeError extends Error {
 	}
 }
 
+const inside = (root: string, target: string) => target === root || target.startsWith(root + path.sep);
+
+/**
+ * Where `file` really is, following every symbolic link on the way; for a path
+ * that does not exist yet, its nearest existing folder's real place with the
+ * rest added. Null when a link on the way leads nowhere (or loops): writing
+ * through a dangling link creates whatever it names.
+ */
+function realPlace(file: string): string | null {
+	const rest: string[] = [];
+	let at = file;
+	for (;;) {
+		try {
+			return path.join(realpathSync(at), ...rest);
+		} catch {
+			// Something is there, yet it cannot be followed: a dangling or looping link.
+			try {
+				lstatSync(at);
+				return null;
+			} catch {
+				// Not there at all: look one folder up.
+			}
+			const parent = path.dirname(at);
+			if (parent === at) return file;
+			rest.unshift(path.basename(at));
+			at = parent;
+		}
+	}
+}
+
+/**
+ * `relative` inside `root`, refused if it leads out: by `../`, and by symbolic
+ * links, which whatever runs in the folder (a server's mods) can make. Without
+ * the second check a link such as `logs/latest.log -> ~/.ssh/id_ed25519` would
+ * have MineShell read, share, overwrite or delete the file it names, with
+ * MineShell's own rights. Links that stay inside the folder still work.
+ */
 export function safeJoin(root: string, relative: string): string {
 	const normalisedRoot = path.resolve(root);
 	const target = path.resolve(normalisedRoot, relative.replace(/^[/\\]+/, ''));
-	if (target !== normalisedRoot && !target.startsWith(normalisedRoot + path.sep)) {
-		throw new PathEscapeError();
-	}
+	if (!inside(normalisedRoot, target)) throw new PathEscapeError();
+	if (target === normalisedRoot) return target;
+	const realRoot = realPlace(normalisedRoot) ?? normalisedRoot;
+	const real = realPlace(target);
+	if (real === null || !inside(realRoot, real)) throw new PathEscapeError();
 	return target;
 }
 

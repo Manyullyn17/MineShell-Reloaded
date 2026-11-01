@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { promisify } from 'node:util';
+import { safeJoin } from './files';
 
 /**
  * The server's own log files - crash-reports/*.txt and logs/* (latest.log,
@@ -39,7 +40,13 @@ export function isLogPath(relative: string): boolean {
 
 export async function readLogFile(root: string, relative: string): Promise<{ text: string; truncated: boolean } | null> {
 	if (!isLogPath(relative)) return null;
-	const file = path.join(root, relative);
+	// A link out of the server folder (a mod can make one) is not read, nor shared from here.
+	let file: string;
+	try {
+		file = safeJoin(root, relative);
+	} catch {
+		return null;
+	}
 	const stat = await fs.stat(file).catch(() => null);
 	if (!stat?.isFile()) return null;
 

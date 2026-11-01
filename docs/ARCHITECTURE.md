@@ -1277,6 +1277,14 @@ Pack files are the uploader's: a `.mrpack` or file list naming a path that leave
 server folder is refused when parsed (`packPath`), and `downloadPackFiles` writes through
 `safeJoin` as well, since targets also come from CurseForge file names and the world mapping.
 
+Paths are checked twice by `safeJoin`: lexically (`../`), and where they really lead, every
+symbolic link on the way followed (`realpath` of the nearest existing part): a mod can make
+links, and `logs/latest.log -> ~/.ssh/id_ed25519` would otherwise have MineShell read it,
+share it to mclo.gs, or write through it with MineShell's rights. A dangling link on the way is
+refused too, since writing through it creates what it names. Links that stay inside the folder
+work as before. The check is not atomic with the use: a folder swapped for a link in between
+gets past it, which only opening every step with `openat2(RESOLVE_BENEATH)` would close.
+
 **Downloads.** `downloadFile` takes only http(s) and refuses a host that is, or resolves to,
 a loopback, private, link-local, CGNAT (Tailscale), reserved or multicast address, checking
 every redirect hop itself (`redirect: 'manual'`): a pack's URLs would otherwise let anyone
