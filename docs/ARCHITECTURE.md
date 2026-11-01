@@ -1327,6 +1327,13 @@ passed through from its platform's host keeps that host's type only when it is a
 `application/octet-stream`, with a sandbox policy): text/html from there would otherwise be a
 page on MineShell's origin.
 
+The dev server listens on every address (`server.host`), and Vite serves the project's files
+without asking MineShell's guard. SvelteKit writes the env a dev server started with, every
+private variable's value included (the CurseForge key), into
+`<outDir>/generated/dev/env/config.js`, and Vite served that to anyone on the network:
+`server.fs.deny` refuses it (outside Vitest, whose runes tests fetch it through Vite). The
+source code it also serves is public anyway.
+
 **Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
 failing on purpose does not easily lock the owner out). IPv6 addresses count per /64

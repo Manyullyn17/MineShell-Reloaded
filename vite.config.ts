@@ -120,7 +120,16 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173
+    port: 5173,
+    fs: {
+      // Vite's own defaults, plus the env module SvelteKit writes for the dev
+      // server: it holds every private variable's value (the CurseForge key,
+      // the data folder), and with the dev server listening on the network,
+      // anyone on it could fetch it without signing in. The server side loads
+      // it from disk, not over HTTP, so nothing that needs it is refused. Not
+      // under Vitest, whose browser-condition (runes) tests fetch it through Vite.
+      deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', ...(testing ? [] : ['**/generated/dev/env/**'])]
+    }
   },
   // better-sqlite3 is a native module; keep it out of Vite's dep optimiser.
   optimizeDeps: { exclude: ['better-sqlite3'] },
