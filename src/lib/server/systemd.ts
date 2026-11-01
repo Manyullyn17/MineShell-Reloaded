@@ -15,7 +15,7 @@ import {
 	unitOnceArgsFile,
 	unitOnceDir
 } from './config';
-import { installedTemplateUnit, renderTemplateUnit as renderTemplate, serverSliceName } from './unit-template.js';
+import { installedTemplateUnit, renderTemplateUnit as renderTemplate, serverSliceName, writeUnitIfChanged } from './unit-template.js';
 import { shellQuote, unitEnvArgs } from './shellargs';
 
 const TEMPLATE_PATHS = { prefix: UNIT_PREFIX, instancesDir: INSTANCES_DIR, unitsDir: UNITS_DIR };
@@ -143,10 +143,7 @@ export async function installTemplateUnit(): Promise<{ ok: boolean; message: str
 	const dir = systemdUnitDir();
 	try {
 		await fs.mkdir(dir, { recursive: true });
-		const contents = installedTemplateContents();
-		// Unchanged, it stays untouched: its time says when servers' starts last changed (startSettingsChangedAt).
-		const current = await fs.readFile(path.join(dir, TEMPLATE_UNIT), 'utf8').catch(() => null);
-		if (current !== contents) await fs.writeFile(path.join(dir, TEMPLATE_UNIT), contents, 'utf8');
+		await writeUnitIfChanged(fs, path.join(dir, TEMPLATE_UNIT), installedTemplateContents());
 		const reload = await systemctl('daemon-reload');
 		if (reload.code !== 0) {
 			return { ok: false, message: reload.stderr.trim() || 'daemon-reload failed' };

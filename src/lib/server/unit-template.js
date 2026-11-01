@@ -105,3 +105,21 @@ WantedBy=default.target
 export function installedTemplateUnit(paths) {
 	return renderTemplateUnit(paths).replace(RESTART_PLACEHOLDER, 'on-failure');
 }
+
+/**
+ * Writes the template unit only when its content differs, and says whether it
+ * did. Its modification time says when servers' starts last changed (systemd.ts,
+ * startSettingsChangedAt): setup.mjs, which every install and update runs,
+ * rewrote it unchanged, and every server running since before an update was
+ * told to restart to apply a change there was not. `fs` is passed in to keep
+ * this module free of imports.
+ * @param {{ readFile(file: string, encoding: 'utf8'): Promise<string>; writeFile(file: string, data: string, encoding: 'utf8'): Promise<unknown> }} fs
+ * @param {string} file
+ * @param {string} contents
+ */
+export async function writeUnitIfChanged(fs, file, contents) {
+	const current = await fs.readFile(file, 'utf8').catch(() => null);
+	if (current === contents) return false;
+	await fs.writeFile(file, contents, 'utf8');
+	return true;
+}

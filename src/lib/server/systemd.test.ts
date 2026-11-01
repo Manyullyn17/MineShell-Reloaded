@@ -18,6 +18,7 @@ import {
 import { DATA_DIR, TEMPLATE_UNIT, UNITS_DIR, instanceDir, systemdUnitDir, unitName } from './config';
 import { readJournal } from './journal';
 import { splitArgs } from './shellargs';
+import { writeUnitIfChanged } from './unit-template.js';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 const SHOW_RUNNING = [
@@ -194,6 +195,23 @@ describe('unit files', () => {
 		const setup = await fs.readFile(path.join(process.cwd(), 'scripts', 'setup.mjs'), 'utf8');
 		expect(setup).toContain("from '../src/lib/server/unit-template.js'");
 		expect(setup).not.toMatch(/ExecStart=|\[Service\]/);
+		// Through writeUnitIfChanged: written unchanged by every update, the template's time told every
+		// server running since then to restart for nothing (startSettingsChangedAt).
+		expect(setup).toContain('writeUnitIfChanged(fs, target, unit)');
+		expect(setup).not.toMatch(/fs\.writeFile\(target/);
+	});
+
+	it('leaves the template untouched when what would be written is what is there', async () => {
+		const file = path.join(systemdUnitDir(), 'unchanged-check@.service');
+		await fs.mkdir(systemdUnitDir(), { recursive: true });
+		expect(await writeUnitIfChanged(fs, file, 'a')).toBe(true);
+		const old = new Date(Date.now() - 3_600_000);
+		await fs.utimes(file, old, old);
+		expect(await writeUnitIfChanged(fs, file, 'a')).toBe(false);
+		expect((await fs.stat(file)).mtimeMs).toBe(old.getTime());
+		expect(await writeUnitIfChanged(fs, file, 'b')).toBe(true);
+		expect(await fs.readFile(file, 'utf8')).toBe('b');
+		await fs.rm(file);
 	});
 
 	// Mod code runs as the account MineShell runs as: the template keeps it from what needs

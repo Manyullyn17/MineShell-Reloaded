@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * One-shot environment preparation: creates the data directories and installs
- * the systemd template unit. Safe to re-run; it overwrites the unit file and
- * reloads the daemon.
+ * the systemd template unit. Safe to re-run; it writes the unit file when it
+ * changed and reloads the daemon.
  *
  *   npm run setup
  */
@@ -12,7 +12,7 @@ import { homedir } from 'node:os';
 import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { installedTemplateUnit } from '../src/lib/server/unit-template.js';
+import { installedTemplateUnit, writeUnitIfChanged } from '../src/lib/server/unit-template.js';
 
 const run = promisify(execFile);
 
@@ -83,8 +83,8 @@ async function main() {
 	const target = path.join(unitDir, `${PREFIX}@.service`);
 	try {
 		await fs.mkdir(unitDir, { recursive: true });
-		await fs.writeFile(target, unit, 'utf8');
-		console.log(`Unit file written:         ${target}`);
+		const wrote = await writeUnitIfChanged(fs, target, unit);
+		console.log(`${wrote ? 'Unit file written:   ' : 'Unit file unchanged: '}      ${target}`);
 	} catch (err) {
 		console.error(`Could not write ${target}: ${err.message}`);
 		process.exitCode = 1;

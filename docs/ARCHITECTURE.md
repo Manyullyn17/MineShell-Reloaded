@@ -235,7 +235,8 @@ modification time of what a start reads (the template, `sandbox.conf`, the env f
 `restart.conf` or `limits.conf`, which systemd takes on reload), and a server whose process
 (`ExecMainStartTimestampMonotonic`, not the activation the screenshot tool moves back) started
 before it is `restartToApply`: the overview and its card say to restart it. Those three are
-written only when their content changes, or every MineShell start would flag every server.
+written only when their content changes, or every MineShell start would flag every server; the
+template by `scripts/setup.mjs` too (`writeUnitIfChanged`), which every install and update runs.
 A link at the top of a server folder that leads out of it (a world moved to another disk)
 leads nowhere inside: the start warns, naming it. Its target is not bound in automatically,
 since a mod can make the same link to `~/.ssh`.
