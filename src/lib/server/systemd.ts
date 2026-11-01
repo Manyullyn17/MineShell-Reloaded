@@ -313,6 +313,17 @@ export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: strin
 }
 
 /**
+ * What a server's sandbox shows of its Java: the home a `.../bin/java` belongs to (it needs its
+ * lib/ too), else the folder the binary is in. Never `/`: binding that back undid the whole
+ * sandbox, as a Java outside a bin/ folder (two up from /tmp/x/java) did until 1.1.
+ */
+export function javaHomeOf(binary: string): string | null {
+	const dir = path.dirname(binary);
+	const home = path.basename(dir) === 'bin' ? path.dirname(dir) : dir;
+	return home === path.parse(home).root ? null : home;
+}
+
+/**
  * Writes sandbox.conf for a server where systemd can apply it, and removes it where not.
  * Returns a warning for the start when a link at the top of the server folder leads out of
  * it (a world moved to another disk): inside the sandbox it leads nowhere. Its target is not
@@ -323,8 +334,8 @@ export async function writeSandbox(id: string, paths: { instanceDir: string; jav
 	const dropInDir = path.join(systemdUnitDir(), `${unitName(id)}.d`);
 	const file = path.join(dropInDir, 'sandbox.conf');
 	await fs.mkdir(unitOnceDir(id), { recursive: true });
-	// The folder Java runs from (bin/java's parent's parent), through any links (/usr/bin/java).
-	const javaHome = paths.javaPath ? await fs.realpath(paths.javaPath).then((p) => path.dirname(path.dirname(p)), () => null) : null;
+	// The folder Java runs from, through any links (/usr/bin/java).
+	const javaHome = paths.javaPath ? await fs.realpath(paths.javaPath).then(javaHomeOf, () => null) : null;
 	const body = (await canSandbox()) ? renderSandboxDropIn({ instanceDir: paths.instanceDir, onceDir: unitOnceDir(id), javaHome }) : null;
 	const current = await fs.readFile(file, 'utf8').catch(() => null);
 	if (body !== current) {

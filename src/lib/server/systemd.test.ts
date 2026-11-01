@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	forgetSandboxProbe,
 	invalidateUnitState,
+	javaHomeOf,
 	refreshTemplateUnit,
 	renderSandboxDropIn,
 	renderTemplateUnit,
@@ -239,6 +240,15 @@ describe('a unit’s memory', () => {
 });
 
 describe('a server’s sandbox drop-in', () => {
+	// Bound back read-only: two up from /tmp/x/java was /, which showed the server everything.
+	it('shows the server its Java home, never the whole file system', () => {
+		expect(javaHomeOf('/usr/lib/jvm/java-21/bin/java')).toBe('/usr/lib/jvm/java-21');
+		expect(javaHomeOf('/home/u/.local/share/mineshell/java/temurin-25/bin/java')).toBe('/home/u/.local/share/mineshell/java/temurin-25');
+		expect(javaHomeOf('/tmp/ms-shots/fake-java')).toBe('/tmp/ms-shots');
+		expect(javaHomeOf('/bin/java')).toBeNull();
+		expect(javaHomeOf('/java')).toBeNull();
+	});
+
 	const paths = { instanceDir: '/srv/ms/instances/a', onceDir: '/srv/ms/units/once/a', javaHome: '/usr/lib/jvm/java-21' };
 
 	// ProtectHome= hides a data folder in the home folders; one elsewhere stayed readable

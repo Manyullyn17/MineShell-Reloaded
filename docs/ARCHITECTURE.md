@@ -216,7 +216,8 @@ Where the namespaces work, each server is kept to its own folder by a drop-in,
 `ProtectHome=tmpfs` (home folders, and with them MineShell's data, other servers, `~/.ssh`,
 hidden; a data folder outside them, `MINESHELL_DATA=/srv/...`, which `ProtectSystem=strict`
 leaves readable, gets `TemporaryFileSystem=<data>:ro`; tried with a transient unit 2026-11-01), `BindPaths=` its own folder and its one-start folder, `BindReadOnlyPaths=` the Java it
-runs (realpath of `bin/java`, two up), and `ProtectKernelTunables/Modules/Logs`,
+runs (realpath of `bin/java`, two up; a binary outside a `bin/` folder, its own folder, never
+`/`, which would show it everything: `javaHomeOf`), and `ProtectKernelTunables/Modules/Logs`,
 `ProtectControlGroups`, `ProtectHostname`. Not in the template, because without the namespaces
 some of these fail the start (218/CAPABILITIES) rather than being skipped: MineShell asks once
 per run, as `doctor` does (`canSandbox`: a transient unit with `PrivateTmp` and
