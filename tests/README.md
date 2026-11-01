@@ -482,3 +482,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A pack icon was passed on with whatever type its host sent, so text/html would be a page on MineShell's origin | `routes/api/instances/[id]/icon/icon.test.ts` |
 | Servers ran with all of MineShell's account's rights, so any mod could read its database and key | `server/sandbox.test.ts` |
 | The dev server (listening on the network) served SvelteKit's env module with every private variable's value, the CurseForge key included, to anyone | `security-config.test.ts` |
+| MineShell's pages had no script policy, so text from outside that got past escaping would run as the signed-in account | `security-config.test.ts` |

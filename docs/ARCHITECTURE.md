@@ -1165,7 +1165,13 @@ response has no policy of its own; `withSecurityHeaders`), since a page on anoth
 same machine would share its cookies. Every response is also `nosniff`, and the pack icon
 passed through from its platform's host keeps that host's type only when it is an image (else
 `application/octet-stream`, with a sandbox policy): text/html from there would otherwise be a
-page on MineShell's origin.
+page on MineShell's origin. MineShell's own pages carry a Content-Security-Policy from Kit's
+`csp` option (`vite.config.ts`): `script-src 'self'` with a nonce per response, which the theme
+script in `app.html` carries too, `object-src 'none'`, `base-uri 'self'` and `frame-ancestors
+'self'`. Pages show text from outside (mod descriptions, player names, chat, log lines), and
+anything of it that got past escaping and DOMPurify would otherwise run as the signed-in
+account; inline handlers and `javascript:` links do not run under it. Images, styles, frames
+and fetches are left open, since they cannot act as the account.
 
 The dev server listens on every address (`server.host`), and Vite serves the project's files
 without asking MineShell's guard. SvelteKit writes the env a dev server started with, every
