@@ -70,8 +70,15 @@ export type Install = { home: string; config: string; service: string };
 
 export class UpdateRefused extends Error {}
 
+let pretended: string | null = null;
+
 export function currentVersion(): string {
-	return __MINESHELL_VERSION__;
+	return pretended ?? __MINESHELL_VERSION__;
+}
+
+/** For tests: the version this MineShell says it is, which decides where it may go back to; null undoes it. */
+export function pretendVersion(version: string | null): void {
+	pretended = version;
 }
 
 /** Where the installer put this MineShell; null when it runs from a source checkout. */

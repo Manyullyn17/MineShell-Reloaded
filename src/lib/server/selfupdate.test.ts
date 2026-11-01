@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 
 // Installed or not is what the installer writes into the service's environment.
@@ -33,6 +33,7 @@ const {
 	leftBehind,
 	mayGoBackTo,
 	planDowngrade,
+	pretendVersion,
 	releaseHistory,
 	startDowngrade,
 	startUpdate,
@@ -259,6 +260,12 @@ describe('the result, after the restart', () => {
 });
 
 describe('going back to an older release', () => {
+	// These go back to 0.20.0 and 0.12.0, which a 0.x may (any release, in beta); from 1.0 on only
+	// the last 0.x may be gone back to ("from 1.0 on within the major", below). Without this they
+	// failed once package.json said 1.0.0.
+	beforeEach(() => pretendVersion('0.33.16'));
+	afterEach(() => pretendVersion(null));
+
 	// The release list with 0.20.0 (migrations up to 0022) and 0.12.0 (before the accounts migration).
 	async function listed() {
 		latest = release(currentVersion());
