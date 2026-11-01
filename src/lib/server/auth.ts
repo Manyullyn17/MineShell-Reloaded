@@ -257,7 +257,29 @@ const WINDOW_MS = 15 * 60_000;
 const MAX_PER_IP = 10;
 const MAX_PER_ACCOUNT = 50;
 
-const ipKey = (ip: string) => `ip:${ip}`;
+/**
+ * The address a failure counts against. An IPv6 client is usually given a
+ * whole /64 (often more), so counting each address let one guesser take a new
+ * one for every ten tries: IPv6 counts per /64. IPv4-mapped addresses
+ * (::ffff:1.2.3.4, as Node reports IPv4 on a dual-stack socket) count as the
+ * IPv4 address.
+ */
+export function throttleAddress(ip: string): string {
+	const address = ip.trim().toLowerCase().replace(/%.*$/, '');
+	const mapped = address.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+	if (mapped) return mapped[1];
+	if (!address.includes(':')) return address;
+	const [head, tail = ''] = address.split('::');
+	const left = head ? head.split(':') : [];
+	const right = tail ? tail.split(':') : [];
+	const groups = address.includes('::') ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right] : left;
+	return `${groups
+		.slice(0, 4)
+		.map((g) => (g || '0').replace(/^0+(?=.)/, ''))
+		.join(':')}::/64`;
+}
+
+const ipKey = (ip: string) => `ip:${throttleAddress(ip)}`;
 const accountKey = (username: string) => `user:${username.trim().toLowerCase()}`;
 
 function failures(key: string): number {

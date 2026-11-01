@@ -1125,7 +1125,9 @@ same machine would share its cookies.
 
 **Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
-failing on purpose does not easily lock the owner out). The guard reads the session's account
+failing on purpose does not easily lock the owner out). IPv6 addresses count per /64
+(`throttleAddress`), since one client is usually given a whole one, and IPv4-mapped ones as the
+IPv4 address. The guard reads the session's account
 on every request, so a deleted session or a disabled account stops at once. The owner, named
 `admin`, is created by /setup (which asks for the one-time setup code in `<data>/setup-code`,
 logged at start and printed by install.sh, so that whoever finds a fresh install's address
