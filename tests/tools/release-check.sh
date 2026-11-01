@@ -48,6 +48,18 @@ commit 'fix: after the release'
 release
 check 'a fix: after it: 1.1.1' '[ "$(version)" = 1.1.1 ]'
 
+# A fix of what the same release added: the draft leaves it out (all its changed lines are newer
+# than 1.1.1), a fix of older lines stays; the notes from -N are printed as written.
+mkdir -p src && printf 'old\n' > src/a.txt && git add src && git commit -qm 'fix: before 1.2' && release
+printf 'old\nnew\n' > src/a.txt && git commit -qam 'feat: something new'
+printf 'old\nnew, fixed\n' > src/a.txt && git commit -qam 'fix: the new thing'
+printf 'old, fixed\nnew, fixed\n' > src/a.txt && git commit -qam 'fix: the old thing'
+scripts/release-notes.sh --draft > "$work/draft.md"
+check 'the draft: a fix of what it added left out, named in a comment' 'grep -q "^- The old thing$" "$work/draft.md" && ! grep -q "^- The new thing$" "$work/draft.md" && grep -q "^- The new thing ([0-9a-f]*)$" "$work/draft.md" && grep -q "^<!-- Left out" "$work/draft.md"'
+printf '# 1.2\n\nWritten by hand.\n\n## Fixed\n\n- The old thing\n' >> "$work/draft.md"
+release -N "$work/draft.md"
+check "-N: the notes as written, without comments or lists of their own" 'n=$(notes v1.2.0); grep -q "^Written by hand.$" <<<"$n" && grep -q "^# 1.2$" <<<"$n" && ! grep -q "Left out\|<!--" <<<"$n" && [ "$(grep -c "^- The old thing$" <<<"$n")" = 2 ] && grep -q "compare/v1.1.2...v1.2.0" <<<"$n"'
+
 commit 'feat!: a breaking change'
 release beta
 check 'a breaking change, beta: 2.0.0-beta.1' '[ "$(version)" = 2.0.0-beta.1 ]'

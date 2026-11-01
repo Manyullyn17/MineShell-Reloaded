@@ -337,6 +337,14 @@ npm run release                          # the release; or: npm run release -- -
 git push origin main v<version>          # the command it prints
 ```
 
+A release after betas gets notes written by hand: `scripts/release-notes.sh --draft > notes.md`
+writes its lists from the commits since the last release, leaving out a fix whose changed
+lines all came in after that release (it fixed something the same release added, so no
+release ever had the problem) and naming those in a comment at the end. That only catches
+fixes that changed nothing older: read the Fixed list for the rest, merge New lines that
+belong together, add an intro, then `npm run release -- -N notes.md` tags with the file as the
+whole notes (its comments dropped, the "All changes" link added).
+
 `scripts/release.sh` picks the version from the commits since the last release (betas not
 counted, so every beta of 1.1 and 1.1 itself are 1.1.0), bumps
 `package.json`, commits `chore: version <version>`, tags it and shows the release notes; it

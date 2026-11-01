@@ -6,6 +6,8 @@
 #   npm run release                      # version from the commits
 #   npm run release -- -m "Intro text"   # with an intro for the release notes
 #   npm run release -- -F intro.md       # the intro from a file (Markdown, headings kept)
+#   npm run release -- -N notes.md       # the whole notes from a file, no lists of their own:
+#                                        # start from `scripts/release-notes.sh --draft > notes.md`
 #   npm run release -- patch|minor|major|1.2.3
 #   npm run release -- beta              # the next version's next beta: 1.1.0-beta.1, -beta.2, ...
 #
@@ -26,6 +28,8 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 		-m) intro="${2:-}"; shift 2 ;;
 		-F) [ -f "${2:-}" ] || fail "no file ${2:-} for -F."; intro=$(cat "$2"); shift 2 ;;
+		# Marked so release-notes.sh prints them as written (its NOTES_MARK).
+		-N) [ -f "${2:-}" ] || fail "no file ${2:-} for -N."; intro="$(cat "$2")"$'\n\n<!-- release notes: as written -->'; shift 2 ;;
 		*) bump="$1"; shift ;;
 	esac
 done
