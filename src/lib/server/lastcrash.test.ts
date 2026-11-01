@@ -31,6 +31,7 @@ const summary = (instance: Instance, active: string, running = false, activeEnte
 	javaWarning: null,
 	eulaAccepted: true,
 	iconVersion: null,
+	restartToApply: false,
 	state: { active, sub: active === 'failed' ? 'failed' : 'running', result: 'exit-code', activeEnterTimestamp, cpuUsageNsec: 0, memoryBytes: 0, mainPid: 0, nRestarts: 0 } as Summary['state']
 });
 

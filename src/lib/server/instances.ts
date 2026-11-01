@@ -25,6 +25,7 @@ import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes }
 import {
 	refreshTemplateUnit,
 	restartUnit,
+	startSettingsChangedAt,
 	startUnit,
 	writeOnceArgs,
 	stopUnit,
@@ -1577,6 +1578,11 @@ export type InstanceSummary = {
 	eulaAccepted: boolean;
 	/** server-icon.png's modification time (for the icon's address), null without one. */
 	iconVersion: number | null;
+	/**
+	 * Running since before what its start reads changed (a MineShell update's sandbox, Java or
+	 * arguments saved while it ran): the change applies at its next start.
+	 */
+	restartToApply: boolean;
 };
 
 // -------------------------------------------------------------------- clone ---
@@ -1721,7 +1727,9 @@ export async function summarise(instance: ServerInstance): Promise<InstanceSumma
 		uptimeMs: doneAt !== null ? Date.now() - doneAt : 0,
 		javaWarning: java.warning,
 		eulaAccepted: await eulaIsAccepted(instance),
-		iconVersion: await iconVersion(instance)
+		iconVersion: await iconVersion(instance),
+		// A second's slack: the files are written just before the start they are for.
+		restartToApply: running && state.mainStartedAt > 0 && (await startSettingsChangedAt(instance.id)) > state.mainStartedAt + 1000
 	};
 }
 

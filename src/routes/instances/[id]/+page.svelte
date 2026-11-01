@@ -170,6 +170,15 @@
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}
 
+{#if data.summary.restartToApply}
+	<div class="notice info">
+		<p>
+			Running with the settings it started with: how it starts changed since (an update of MineShell, such as the servers'
+			sandbox, or its Java or arguments saved while it ran). Restart it to apply that.
+		</p>
+	</div>
+{/if}
+
 {#if data.update}
 	{@const update = data.update}
 	{@const settings = `/instances/${data.instance.id}/settings?tab=general`}

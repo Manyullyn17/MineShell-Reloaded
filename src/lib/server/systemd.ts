@@ -30,6 +30,8 @@ export type UnitState = {
 	sub: string;
 	/** UNIX ms of the current activation, 0 when not running. */
 	activeEnterTimestamp: number;
+	/** UNIX ms the running process started, so read its unit's settings; 0 when not running. */
+	mainStartedAt: number;
 	cpuUsageNsec: number;
 	memoryBytes: number;
 	mainPid: number;
@@ -45,6 +47,7 @@ export const UNKNOWN_STATE: UnitState = {
 	active: 'unknown',
 	sub: 'unknown',
 	activeEnterTimestamp: 0,
+	mainStartedAt: 0,
 	cpuUsageNsec: 0,
 	memoryBytes: 0,
 	mainPid: 0,
@@ -141,7 +144,9 @@ export async function installTemplateUnit(): Promise<{ ok: boolean; message: str
 	try {
 		await fs.mkdir(dir, { recursive: true });
 		const contents = installedTemplateContents();
-		await fs.writeFile(path.join(dir, TEMPLATE_UNIT), contents, 'utf8');
+		// Unchanged, it stays untouched: its time says when servers' starts last changed (startSettingsChangedAt).
+		const current = await fs.readFile(path.join(dir, TEMPLATE_UNIT), 'utf8').catch(() => null);
+		if (current !== contents) await fs.writeFile(path.join(dir, TEMPLATE_UNIT), contents, 'utf8');
 		const reload = await systemctl('daemon-reload');
 		if (reload.code !== 0) {
 			return { ok: false, message: reload.stderr.trim() || 'daemon-reload failed' };
@@ -183,7 +188,24 @@ export async function writeUnitEnv(
 		`MS_LAUNCH_ARGS=${unitEnvArgs(values.launchArgs)}`
 	];
 	for (const [k, v] of Object.entries(values.extra ?? {})) lines.push(`${k}=${value(v)}`);
-	await fs.writeFile(unitEnvFile(id), lines.join('\n') + '\n', { mode: 0o600 });
+	// Written only when it changes: its time says when the server's start last changed (startSettingsChangedAt).
+	const body = lines.join('\n') + '\n';
+	if ((await fs.readFile(unitEnvFile(id), 'utf8').catch(() => null)) === body) return;
+	await fs.writeFile(unitEnvFile(id), body, { mode: 0o600 });
+}
+
+/**
+ * When what a server's start reads last changed: the template unit (a MineShell update's new
+ * sandbox options, its start line), its sandbox drop-in and its env file (Java, JVM and launch
+ * arguments). A server running since before then runs without the change until it restarts.
+ * Not restart.conf or limits.conf: systemd takes those on daemon-reload, running or not. Each
+ * of the three is written only when its content changes, so a MineShell restart (which
+ * rewrites every server's unit files) changes none of their times.
+ */
+export async function startSettingsChangedAt(id: string): Promise<number> {
+	const files = [path.join(systemdUnitDir(), TEMPLATE_UNIT), path.join(systemdUnitDir(), `${unitName(id)}.d`, 'sandbox.conf'), unitEnvFile(id)];
+	const times = await Promise.all(files.map((file) => fs.stat(file).then((s) => s.mtimeMs, () => 0)));
+	return Math.max(...times);
 }
 
 /**
@@ -384,6 +406,7 @@ const SHOW_PROPS = [
 	'ActiveState',
 	'SubState',
 	'ActiveEnterTimestampMonotonic',
+	'ExecMainStartTimestampMonotonic',
 	'CPUUsageNSec',
 	'MemoryCurrent',
 	'ControlGroup',
@@ -441,10 +464,12 @@ async function readUnitState(id: string): Promise<UnitState> {
 	const props = parseShow(res.stdout);
 	// Monotonic timestamps are relative to boot; convert to wall clock.
 	const monotonic = num(props.ActiveEnterTimestampMonotonic);
+	const mainStart = num(props.ExecMainStartTimestampMonotonic);
 	return {
 		active: props.ActiveState || 'unknown',
 		sub: props.SubState || 'unknown',
 		activeEnterTimestamp: monotonic > 0 ? systemBootTimeMs() + monotonic / 1000 : 0,
+		mainStartedAt: mainStart > 0 ? systemBootTimeMs() + mainStart / 1000 : 0,
 		cpuUsageNsec: num(props.CPUUsageNSec),
 		memoryBytes: workingSet(
 			num(props.MemoryCurrent),

@@ -230,6 +230,12 @@ process's `/proc/<pid>/root`, `cwd` or `environ` anyway (tried: MineShell's and 
 server's are refused). It can still signal them (same account): a PID namespace
 (`PrivatePIDs=`) needs systemd 257. Tried on every loader with the downloaded Javas in the data
 folder (2026-10-31); heap reads, RCON stops and one-start arguments work inside it.
+A running server keeps the settings it started with. `startSettingsChangedAt` is the newest
+modification time of what a start reads (the template, `sandbox.conf`, the env file; not
+`restart.conf` or `limits.conf`, which systemd takes on reload), and a server whose process
+(`ExecMainStartTimestampMonotonic`, not the activation the screenshot tool moves back) started
+before it is `restartToApply`: the overview and its card say to restart it. Those three are
+written only when their content changes, or every MineShell start would flag every server.
 A link at the top of a server folder that leads out of it (a world moved to another disk)
 leads nowhere inside: the start warns, naming it. Its target is not bound in automatically,
 since a mod can make the same link to `~/.ssh`.

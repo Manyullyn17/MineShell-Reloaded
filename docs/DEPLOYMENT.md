@@ -229,7 +229,9 @@ beta lands on a release; betas are not in that list. A MineShell from before bet
 Running the installer again: it installs the newest release next to the running one, switches
 `current` over, rewrites `mineshell.service` and restarts it; the settings file and the data
 are left alone, and the two previous releases stay in `releases/`. Restarting MineShell does
-not touch running servers.
+not touch running servers, so they keep what they started with: an update that changes how
+servers start (1.1's sandbox) reaches each one at its next start. Until then its overview, and
+its card on the server list, say to restart it.
 
 Going back: Settings > Updates lists every release with its notes, and "Go back to this
 version" on an older one installs it the same way (or run the installer with

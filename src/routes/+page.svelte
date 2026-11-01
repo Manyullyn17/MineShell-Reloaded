@@ -350,6 +350,10 @@
 					<p class="alert warning">{instance.javaWarning}</p>
 				{/if}
 
+				{#if instance.restartToApply}
+					<p class="alert info">Restart it to apply what changed in how it starts (the overview says what).</p>
+				{/if}
+
 				<dl class="stats">
 					<div>
 						<dt>Uptime</dt>

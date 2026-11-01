@@ -63,6 +63,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				eulaAccepted: summary.eulaAccepted,
 				iconVersion: summary.iconVersion,
 				javaWarning: summary.javaWarning,
+				restartToApply: summary.restartToApply,
 				schedule: describeSchedule(summary.instance),
 				nextRestartAt: summary.instance.restartNextAt,
 				cpuPercent: sample?.cpuPercent ?? null,

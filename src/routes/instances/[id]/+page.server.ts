@@ -124,6 +124,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			/** When the process started, while it has not finished starting. */
 			startingSince: summary.starting ? summary.state.activeEnterTimestamp : null,
 			javaWarning: summary.javaWarning,
+			restartToApply: summary.restartToApply,
 			restarts: summary.state.nRestarts,
 			mainPid: summary.state.mainPid,
 			result: summary.state.result
