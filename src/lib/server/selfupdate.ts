@@ -41,6 +41,7 @@ const TICK_MS = 60 * 60_000;
 const CHECK_KEY = 'update.check';
 const RUN_KEY = 'update.run';
 const AUTO_KEY = 'update.autoCheck';
+const BETA_KEY = 'update.beta';
 /** The first release with the release list and going back; an older one only updates to the latest. */
 export const HISTORY_SINCE = '0.24.0';
 const DB_BACKUPS_KEPT = 5;
@@ -54,6 +55,8 @@ export type Release = {
 	publishedAt: string;
 	archiveUrl: string;
 	checksumUrl: string;
+	/** A beta (a GitHub pre-release, tagged v1.1.0-beta.1): offered only with betas on. Absent in checks stored before 1.1. */
+	prerelease?: boolean;
 };
 /** `releases`: every published release, newest first (absent in checks stored before 0.24). */
 export type UpdateCheck = { checkedAt: number; latest: Release | null; releases?: Release[]; error: string | null };
@@ -89,12 +92,30 @@ export function installInfo(): Install | null {
 	return home && config && service ? { home, config, service } : null;
 }
 
-/** 1 when a is newer than b, -1 when older, 0 when equal ("1.2.3"; a leading v is ignored). */
+/**
+ * 1 when a is newer than b, -1 when older, 0 when equal ("1.2.3"; a leading v is ignored).
+ * A pre-release comes before its release, as semver has it: 1.1.0-beta.1 < 1.1.0-beta.2 <
+ * 1.1.0. Read as equal, a beta was never offered its own release.
+ */
 export function compareVersions(a: string, b: string): number {
-	const parts = (v: string) => v.replace(/^v/, '').split(/[.-]/).slice(0, 3).map((n) => Number.parseInt(n, 10) || 0);
-	const [x, y] = [parts(a), parts(b)];
+	const split = (v: string) => {
+		const [core, ...pre] = v.replace(/^v/, '').split('-');
+		return { parts: core.split('.').slice(0, 3).map((n) => Number.parseInt(n, 10) || 0), pre: pre.length ? pre.join('-').split('.') : null };
+	};
+	const [x, y] = [split(a), split(b)];
 	for (let i = 0; i < 3; i++) {
-		if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0) ? 1 : -1;
+		if ((x.parts[i] ?? 0) !== (y.parts[i] ?? 0)) return (x.parts[i] ?? 0) > (y.parts[i] ?? 0) ? 1 : -1;
+	}
+	if (!x.pre || !y.pre) return x.pre === y.pre ? 0 : x.pre ? -1 : 1;
+	for (let i = 0; i < Math.max(x.pre.length, y.pre.length); i++) {
+		const [p, q] = [x.pre[i], y.pre[i]];
+		if (p === undefined || q === undefined) return p === undefined ? -1 : 1;
+		if (p === q) continue;
+		const [m, n] = [Number(p), Number(q)];
+		if (/^\d+$/.test(p) && /^\d+$/.test(q)) return m > n ? 1 : -1;
+		// Numbers before words (semver); words by their letters.
+		if (/^\d+$/.test(p) !== /^\d+$/.test(q)) return /^\d+$/.test(p) ? -1 : 1;
+		return p > q ? 1 : -1;
 	}
 	return 0;
 }
@@ -120,6 +141,15 @@ export function autoCheckEnabled(): boolean {
 
 export function setAutoCheck(on: boolean): void {
 	writeJson(AUTO_KEY, on);
+}
+
+/** Whether betas (GitHub pre-releases) are offered as updates too; off unless the owner turns it on. */
+export function betaEnabled(): boolean {
+	return readJson<boolean>(BETA_KEY) ?? false;
+}
+
+export function setBeta(on: boolean): void {
+	writeJson(BETA_KEY, on);
 }
 
 export function lastCheck(): UpdateCheck | null {
@@ -151,7 +181,8 @@ function toRelease(raw: GithubRelease): Release {
 		url: raw.html_url,
 		publishedAt: raw.published_at,
 		archiveUrl,
-		checksumUrl
+		checksumUrl,
+		prerelease: raw.prerelease
 	};
 }
 
@@ -169,16 +200,17 @@ async function fetchReleases(): Promise<GithubRelease[]> {
 
 /**
  * Asks GitHub for every release and keeps the answer: the newest is the latest
- * (drafts and pre-releases never count), the rest is the release list.
+ * (drafts never count, betas only with betas on), the other releases are the
+ * release list. Betas are never in that list: going back from one lands on a release.
  */
 export async function checkForUpdate(): Promise<UpdateCheck> {
 	let result: UpdateCheck;
 	try {
-		const published = (await fetchReleases())
-			.filter((r) => !r.draft && !r.prerelease)
-			.sort((a, b) => compareVersions(b.tag_name, a.tag_name));
-		if (!published.length) throw new Error(`${UPDATE_REPO} has no releases.`);
-		const latest = toRelease(published[0]);
+		const all = (await fetchReleases()).filter((r) => !r.draft).sort((a, b) => compareVersions(b.tag_name, a.tag_name));
+		const published = all.filter((r) => !r.prerelease);
+		const offered = betaEnabled() ? all : published;
+		if (!offered.length) throw new Error(`${UPDATE_REPO} has no releases.`);
+		const latest = toRelease(offered[0]);
 		// An older release without its archive cannot be installed, so it is not listed.
 		const releases = published.flatMap((r) => {
 			try {

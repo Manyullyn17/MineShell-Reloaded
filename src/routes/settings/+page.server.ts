@@ -74,6 +74,7 @@ import {
 import {
 	availableUpdate,
 	autoCheckEnabled,
+	betaEnabled,
 	checkForUpdate,
 	compareVersions,
 	currentVersion,
@@ -85,6 +86,7 @@ import {
 	planDowngrade,
 	releaseHistory,
 	setAutoCheck,
+	setBeta,
 	startDowngrade,
 	startUpdate,
 	UpdateRefused,
@@ -252,6 +254,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			installed: installInfo() !== null,
 			repo: UPDATE_REPO,
 			autoCheck: autoCheckEnabled(),
+			beta: betaEnabled(),
 			check: lastCheck(),
 			available: availableUpdate(),
 			releases: releaseHistory().map((r) => ({ ...r, olderThanCurrent: compareVersions(r.version, currentVersion()) < 0, mayGoBack: mayGoBackTo(r.version) })),
@@ -696,6 +699,13 @@ export const actions: Actions = {
 	updateAuto: async ({ request }) => {
 		const form = await request.formData();
 		setAutoCheck(form.get('autoCheck') === 'on');
+		const beta = form.get('beta') === 'on';
+		if (beta !== betaEnabled()) {
+			setBeta(beta);
+			audit('settings.updates', { detail: beta ? 'betas offered' : 'releases only' });
+			// What is offered changes with it: ask again rather than wait for the next check.
+			await checkForUpdate();
+		}
 		return { ok: true, message: 'Saved.' };
 	},
 

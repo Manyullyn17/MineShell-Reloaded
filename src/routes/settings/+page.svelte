@@ -91,8 +91,11 @@
 	// Updates. Re-synced after a save, like the snapshot fields.
 	// svelte-ignore state_referenced_locally
 	let autoCheck = $state(data.update.autoCheck);
+	// svelte-ignore state_referenced_locally
+	let beta = $state(data.update.beta);
 	$effect(() => {
 		autoCheck = data.update.autoCheck;
+		beta = data.update.beta;
 	});
 	const updateTask = $derived((form as { updateTask?: string } | null)?.updateTask ?? null);
 	const updateRun = $derived(data.update.run);
@@ -964,6 +967,7 @@
 		<div class="release">
 			<h3>
 				{u.available.name}
+				{#if u.available.prerelease}<span class="badge">Beta</span>{/if}
 				<span class="small muted">published {formatDateTime(Date.parse(u.available.publishedAt))}</span>
 			</h3>
 			{#if releaseNotes}
@@ -1075,6 +1079,23 @@
 				<p class="hint">
 					It asks GitHub for the latest release of {u.repo}. A new version shows in the top bar and here; nothing is
 					installed until you press Update.
+				</p>
+			</div>
+			<div class="check field">
+				<input
+					id="beta"
+					name="beta"
+					type="checkbox"
+					class="switch"
+					role="switch"
+					bind:checked={beta}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<label for="beta">Offer betas too</label>
+				<p class="hint">
+					A beta is the next version before its release, for trying it out first: it may still have problems the release
+					fixes. With this on, a newer beta is offered like a release; the release that follows it is offered either way,
+					and going back lands on a release, never a beta.
 				</p>
 			</div>
 		</div>

@@ -386,9 +386,13 @@ rename and the running process keeps its open files; DEPLOYMENT.md has the rest.
 Updating itself (`selfupdate.ts`, Settings > Updates): the installer writes
 `MINESHELL_INSTALL_HOME/CONFIG/SERVICE` into the service's environment, and only with those
 does MineShell offer to update (a source checkout updates with git). The check reads
-GitHub's release list (drafts and pre-releases left out; the highest version is the latest)
-every 12 hours, keeping the answer in `settings` (`update.check`): the latest, and every
-release that has its archive, which Settings > Updates lists with their notes. The update downloads the archive, checks it against the
+GitHub's release list (drafts left out; the highest version is the latest) every 12 hours,
+keeping the answer in `settings` (`update.check`): the latest, and every release that has its
+archive, which Settings > Updates lists with their notes. Betas are GitHub pre-releases
+(`v1.1.0-beta.1`): they count for the latest only with `update.beta` on ("Offer betas too",
+the owner's), and are never in the list to go back to. `compareVersions` orders them as semver
+does (`1.1.0-beta.1 < 1.1.0-beta.2 < 1.1.0`), so a beta is offered its release either way;
+read as equal, as it was until 1.1, a beta would never have been. The update downloads the archive, checks it against the
 published SHA-256, takes `install.sh` out of that archive and runs it with `systemd-run
 --user` as a transient unit (`<service>-update-<ms>`): the installer restarts MineShell,
 which kills its own children. `update.run` records it before it starts; the restarted

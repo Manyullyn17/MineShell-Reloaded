@@ -34,6 +34,7 @@ const {
 	mayGoBackTo,
 	planDowngrade,
 	pretendVersion,
+	setBeta,
 	releaseHistory,
 	startDowngrade,
 	startUpdate,
@@ -117,8 +118,20 @@ describe('versions', () => {
 		expect(compareVersions('1.2', '1.2.1')).toBe(-1);
 	});
 
+	// Read as equal to its release, a beta was never offered the release itself.
+	it('puts a beta before its release, and betas in their order', () => {
+		const order = ['1.0.0', '1.1.0-beta.1', '1.1.0-beta.2', '1.1.0-beta.10', '1.1.0-rc.1', '1.1.0', '1.1.1-beta.1', '1.1.1'];
+		for (let i = 1; i < order.length; i++) {
+			expect(compareVersions(order[i], order[i - 1]), `${order[i]} > ${order[i - 1]}`).toBe(1);
+			expect(compareVersions(order[i - 1], order[i]), `${order[i - 1]} < ${order[i]}`).toBe(-1);
+		}
+		expect(compareVersions('v1.1.0-beta.2', '1.1.0-beta.2')).toBe(0);
+		expect(compareVersions('1.1.0-beta', '1.1.0-beta.1')).toBe(-1);
+	});
+
+	// A beta's package.json says 1.1.0-beta.1: the check failed the release workflow's tests then.
 	it("knows its own version from package.json", () => {
-		expect(currentVersion()).toMatch(/^\d+\.\d+\.\d+$/);
+		expect(currentVersion()).toMatch(/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/);
 	});
 });
 
@@ -157,6 +170,34 @@ describe('checking for updates', () => {
 		await checkForUpdate();
 		expect(releaseHistory().map((r) => r.version)).toEqual(['9.0.0', '0.23.0', '0.20.0']);
 		expect(availableUpdate()?.version).toBe('9.0.0');
+	});
+
+	it('offers betas only to who turned them on, and never lists them to go back to', async () => {
+		latest = { ...release('9.1.0-beta.2'), prerelease: true };
+		older = [release('9.0.0'), { ...release('9.1.0-beta.1'), prerelease: true }];
+		await checkForUpdate();
+		expect(availableUpdate()?.version).toBe('9.0.0');
+		setBeta(true);
+		await checkForUpdate();
+		expect(availableUpdate()).toMatchObject({ version: '9.1.0-beta.2', prerelease: true });
+		expect(releaseHistory().map((r) => r.version)).toEqual(['9.0.0']);
+	});
+
+	// The release that follows its betas wins over them, betas on or off.
+	it('offers a beta its own release', async () => {
+		pretendVersion('9.1.0-beta.2');
+		try {
+			latest = release('9.1.0');
+			older = [{ ...release('9.1.0-beta.2'), prerelease: true }, release('9.0.0')];
+			await checkForUpdate();
+			expect(availableUpdate()?.version).toBe('9.1.0');
+			setBeta(true);
+			await checkForUpdate();
+			expect(availableUpdate()?.version).toBe('9.1.0');
+			expect(mayGoBackTo('9.0.0')).toBe(true);
+		} finally {
+			pretendVersion(null);
+		}
 	});
 
 	it('refuses a release without its archive and checksum', async () => {
