@@ -261,6 +261,7 @@ On `main`, with everything committed and CI green:
 
 ```sh
 npm run release                          # or: npm run release -- -m "Intro for the notes"
+                                         # or, longer, with ## headings: -F intro.md
 git push origin main v<version>          # the command it prints
 ```
 
