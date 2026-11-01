@@ -12,7 +12,7 @@
 	<h1>MineShell</h1>
 	<p class="muted">Sign in to manage your servers.</p>
 
-	<PlainHttpNotice />
+	{#if data.plainHttpWarning}<PlainHttpNotice canTurnOff />{/if}
 
 	{#if form?.message}
 		<Flash message={form.message} type="error" />

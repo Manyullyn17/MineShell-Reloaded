@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { and, eq, lt, ne, sql } from 'drizzle-orm';
 import { db } from './db';
-import { sessions, users } from './db/schema';
+import { sessions, settings, users } from './db/schema';
 import { hashPassword, verifyPassword } from './crypto';
 import { AUTH_ENABLED, DATA_DIR } from './config';
 import { bus } from './events';
@@ -86,6 +86,21 @@ const toSessionUser = (row: { id: string; username: string; isOwner: boolean; mu
 	isOwner: row.isOwner,
 	mustChangePassword: row.mustChangePassword
 });
+
+const PLAIN_HTTP_KEY = 'login.plainHttpWarning';
+
+/**
+ * Whether the sign-in page warns that it came over plain http across the network. On by
+ * default; off for whoever only ever signs in on a home network they trust. Setup always warns.
+ */
+export function plainHttpWarning(): boolean {
+	return db.select().from(settings).where(eq(settings.key, PLAIN_HTTP_KEY)).get()?.value !== 'off';
+}
+
+export function setPlainHttpWarning(on: boolean): void {
+	const value = on ? 'on' : 'off';
+	db.insert(settings).values({ key: PLAIN_HTTP_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
 
 /**
  * Before setup, whoever reaches /setup first picks the owner's password, and

@@ -93,9 +93,12 @@
 	let autoCheck = $state(data.update.autoCheck);
 	// svelte-ignore state_referenced_locally
 	let beta = $state(data.update.beta);
+	// svelte-ignore state_referenced_locally
+	let plainHttpWarning = $state(data.plainHttpWarning);
 	$effect(() => {
 		autoCheck = data.update.autoCheck;
 		beta = data.update.beta;
+		plainHttpWarning = data.plainHttpWarning;
 	});
 	const updateTask = $derived((form as { updateTask?: string } | null)?.updateTask ?? null);
 	const updateRun = $derived(data.update.run);
@@ -1295,6 +1298,25 @@
 	{:else if connection === 'plain'}
 		<div class="notice warning"><p>This page came over plain http across the network.</p></div>
 	{/if}
+	<!-- One switch: it saves when flipped, no save bar. -->
+	<form method="POST" action="?/plainHttpWarning" use:enhance={() => async ({ update }) => update({ reset: false })}>
+		<div class="check field">
+			<input
+				id="plainHttpWarning"
+				name="plainHttpWarning"
+				type="checkbox"
+				class="switch"
+				role="switch"
+				bind:checked={plainHttpWarning}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			/>
+			<label for="plainHttpWarning">Warn on the sign-in page when it came over plain http</label>
+			<p class="hint">
+				Off for a home network you trust, where MineShell is only ever opened from your own devices. The first setup
+				always warns.
+			</p>
+		</div>
+	</form>
 
 	<h3 class="remote-heading">Tailscale (recommended)</h3>
 	{#if !tailscale}

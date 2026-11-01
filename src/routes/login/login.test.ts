@@ -1,9 +1,10 @@
 import crypto from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import * as page from './+page.server';
 import { actions } from './+page.server';
-import { SESSION_COOKIE, createSession, sessionUser } from '#lib/server/auth.js';
+import { SESSION_COOKIE, createSession, sessionUser, setPlainHttpWarning } from '#lib/server/auth.js';
 import { OWNER_PASSWORD, owner } from '../../../tests/helpers/auth';
-import { cookieJar, post } from '../../../tests/helpers/routes';
+import { cookieJar, load, post } from '../../../tests/helpers/routes';
 
 /**
  * Signing in: the pieces (verifyLogin, the throttle, sameOriginPath) are
@@ -75,5 +76,19 @@ describe('signing out', () => {
 		expect(await post(actions.logout, { cookies })).toEqual({ redirect: '/login' });
 		expect(sessionUser(session)).toBeNull();
 		expect(cookies.values.has(SESSION_COOKIE)).toBe(false);
+	});
+});
+
+// For a home network the owner trusts, the plain-http warning can be turned off (Settings > System).
+describe('the sign-in page', () => {
+	it('warns about plain http unless that was turned off', async () => {
+		owner();
+		expect(await load(page, { url: 'http://localhost/login' })).toMatchObject({ plainHttpWarning: true });
+		setPlainHttpWarning(false);
+		try {
+			expect(await load(page, { url: 'http://localhost/login' })).toMatchObject({ plainHttpWarning: false });
+		} finally {
+			setPlainHttpWarning(true);
+		}
 	});
 });

@@ -7,6 +7,7 @@ import {
 	destroySession,
 	loginThrottled,
 	ownerExists,
+	plainHttpWarning,
 	recordFailedLogin,
 	sessionCookieOptions,
 	soleUsername,
@@ -16,7 +17,7 @@ import { sameOriginPath } from '#lib/shared/links.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	if (!ownerExists()) redirect(303, '/setup');
-	return { next: sameOriginPath(url.searchParams.get('next'), url.origin), username: soleUsername() };
+	return { next: sameOriginPath(url.searchParams.get('next'), url.origin), username: soleUsername(), plainHttpWarning: plainHttpWarning() };
 };
 
 export const actions: Actions = {

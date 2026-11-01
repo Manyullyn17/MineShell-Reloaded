@@ -58,7 +58,7 @@ import {
 	removeManagedJava,
 	startJavaDownload
 } from '#lib/server/javadownload.js';
-import { authEnabled } from '#lib/server/auth.js';
+import { authEnabled, plainHttpWarning, setPlainHttpWarning } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
 import { auditLog, serverInstances } from '#lib/server/db/schema.js';
 import { desc } from 'drizzle-orm';
@@ -199,6 +199,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,
 		// Streamed, and only on the System tab (any tab name not another's): it runs `tailscale` twice.
 		tailscale: OTHER_TABS.includes(url.searchParams.get('tab') ?? '') ? null : tailscaleState(),
+		plainHttpWarning: plainHttpWarning(),
 		/** For a public address: the script that sets up Caddy, and the settings file it changes. */
 		caddy: {
 			script: installInfo() ? `${installInfo()!.home}/current/scripts/caddy.sh` : 'scripts/caddy.sh',
@@ -504,6 +505,13 @@ export const actions: Actions = {
 		if (!apiKey) return fail(400, { ok: false, message: 'Enter a key, or use "Remove" to clear it.' });
 		const result = await setCurseforgeApiKey(apiKey);
 		return { ok: result.ok, message: result.message };
+	},
+
+	plainHttpWarning: async ({ request }) => {
+		const on = (await request.formData()).get('plainHttpWarning') === 'on';
+		setPlainHttpWarning(on);
+		audit('settings.plainHttpWarning', { detail: on ? 'on' : 'off' });
+		return { ok: true, message: 'Saved.' };
 	},
 
 	tailscaleServe: async () => {

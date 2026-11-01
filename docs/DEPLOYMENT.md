@@ -386,7 +386,8 @@ a tag with a `-` (a beta) as a GitHub pre-release.
 
 At home, `http://<machine>:3000` on your own network works, but it is plain http: your
 password and session cross the network unencrypted, readable by anything else on it. The sign-in
-and setup pages say so when they are opened that way. To use MineShell from elsewhere, in order
+and setup pages say so when they are opened that way (on a home network you trust, turn the
+sign-in page's warning off under MineShell settings > System, "Remote access"). To use MineShell from elsewhere, in order
 of preference:
 
 1. **Tailscale** (recommended): nothing is exposed to the internet, only your own devices (and
