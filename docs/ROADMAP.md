@@ -761,6 +761,16 @@ is open, and each needs a test setup.
 
 Suggested, not yet confirmed or rejected:
 
+- **Remote access follow-ups** (suggested 2026-11-01, after the security pass; the first is
+  the one worth doing): (1) a warning in Remote access and `doctor` when the machine has a
+  global IPv6 address while MineShell listens on every address: IPv6 often needs no port
+  forwarding, so port 3000 can be reachable from the internet with nothing forwarded;
+  (2) check on the real install that the session cookie is `Secure` behind `tailscale serve`
+  (it depends on Tailscale passing `X-Forwarded-Proto`); (3) behind `tailscale serve` every
+  sign-in comes from 127.0.0.1, so ten wrong passwords lock everyone out for 15 minutes
+  (`ADDRESS_HEADER`, if Tailscale sets `X-Forwarded-For`). For public setups only: a
+  notification on a sign-in from an unknown address, two-factor sign-in.
+
 - **Versions of files changed outside MineShell** (user, 2026-10-29: maybe later): earlier
   versions of edited files keeps only what MineShell's own saves replace. A mod rewriting its
   config, or an edit over SFTP, leaves no version; noticing those would mean watching or
