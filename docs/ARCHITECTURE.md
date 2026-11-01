@@ -1336,8 +1336,13 @@ page on MineShell's origin. MineShell's own pages carry a Content-Security-Polic
 script in `app.html` carries too, `object-src 'none'`, `base-uri 'self'` and `frame-ancestors
 'self'`. Pages show text from outside (mod descriptions, player names, chat, log lines), and
 anything of it that got past escaping and DOMPurify would otherwise run as the signed-in
-account; inline handlers and `javascript:` links do not run under it. Images, styles, frames
-and fetches are left open, since they cannot act as the account.
+account; inline handlers and `javascript:` links do not run under it. One inline handler is
+allowed by its hash (`'unsafe-hashes'`): the `onerror="this.__e=event"` Svelte renders on an
+`<img>` with an error handler, so hydration can replay an error from before it (a mod icon that
+failed early). It only stores the event on its element; `security-config.test.ts` takes the
+text from Svelte's compiler, so a Svelte that changes it fails the test. Images, styles, frames
+and fetches are left open, since they cannot act as the account. `page-sweep.mjs --errors`
+lists what a policy refuses, page by page.
 
 The dev server listens on every address (`server.host`), and Vite serves the project's files
 without asking MineShell's guard. SvelteKit writes the env a dev server started with, every

@@ -493,3 +493,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | MineShell's pages had no script policy, so text from outside that got past escaping would run as the signed-in account | `security-config.test.ts` |
 | A server's sandbox left a data folder outside the home folders (`MINESHELL_DATA=/srv/...`) readable, database and secret.key included: ProtectHome= covers only /home, /root and /run/user | `server/systemd.test.ts` ("empties a data folder") |
 | A link at the top of a server folder to another disk (a moved world) led nowhere inside the sandbox, and the server started without a word about it | `server/systemd.test.ts` ("warns about a link out") |
+| The script policy refused the `onerror` Svelte renders on an `<img>` for hydration to replay, so a mod icon that failed to load before hydration showed a broken image instead of its stand-in | `security-config.test.ts` ("the one inline handler") |

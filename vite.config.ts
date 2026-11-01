@@ -77,11 +77,15 @@ export default defineConfig({
       // would run as the signed-in account. Only MineShell's own scripts may run
       // (Kit adds a nonce for its inline ones, app.html's theme script carries
       // one), never inline handlers or other sites' scripts. Images, styles and
-      // frames are left open: they cannot act as the account.
+      // frames are left open: they cannot act as the account. The one inline
+      // handler allowed, by its hash, is the one Svelte renders on an <img> with
+      // onerror/onload (`this.__e=event`, kept for hydration to replay): without
+      // it an icon that failed before hydration showed a broken image instead of
+      // its stand-in. It only stores the event on its element.
       csp: {
         mode: 'auto',
         directives: {
-          'script-src': ['self'],
+          'script-src': ['self', 'unsafe-hashes', 'sha256-7dQwUgLau1NFCCGjfn9FsYptB6ZtWxJin6VohGIu20I='],
           'object-src': ['none'],
           'base-uri': ['self'],
           'frame-ancestors': ['self']
