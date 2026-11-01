@@ -1127,7 +1127,9 @@ same machine would share its cookies.
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
 failing on purpose does not easily lock the owner out). The guard reads the session's account
 on every request, so a deleted session or a disabled account stops at once. The owner, named
-`admin`, is created by /setup, or by migration 0019 from the old single admin password (whose
+`admin`, is created by /setup (which asks for the one-time setup code in `<data>/setup-code`,
+logged at start and printed by install.sh, so that whoever finds a fresh install's address
+first cannot claim it; deleted once used), or by migration 0019 from the old single admin password (whose
 sessions it kept); other accounts are added under MineShell settings > Accounts (`accounts.ts`).
 A new account or a reset one gets a random one-time password, shown once and kept only as a
 hash, and `must_change_password`: until it picks its own on `/account` (which asks for the

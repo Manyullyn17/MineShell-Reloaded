@@ -13,6 +13,7 @@ import { applyServerCap } from './servercap';
 import { startUpdateChecks } from './selfupdate';
 import { startBackups } from './backups';
 import { keepRunningOnRejections } from './crashguard';
+import { authEnabled, ownerExists, setupCode, SETUP_CODE_FILE } from './auth';
 
 /**
  * SvelteKit has no lifecycle hook for "the server started", so hooks.server.ts
@@ -26,6 +27,11 @@ export function boot(): void {
 	if (globals.__mineshellBooted) return;
 	globals.__mineshellBooted = true;
 	keepRunningOnRejections();
+
+	// /setup asks for this code (auth.ts, setupCode): the log is one place the owner finds it.
+	if (authEnabled() && !ownerExists()) {
+		console.log(`[mineshell] Not set up yet. Open MineShell in a browser and enter the setup code ${setupCode()} (also in ${SETUP_CODE_FILE}).`);
+	}
 
 	// Before anything else: servers a previous MineShell left mid-operation
 	// are put back (and stay marked busy, so unstartable, until then).

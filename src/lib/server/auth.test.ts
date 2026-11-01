@@ -10,6 +10,8 @@ import {
 	sessionCookieOptions,
 	sessionUser,
 	setPassword,
+	setupCode,
+	setupCodeMatches,
 	verifyLogin
 } from './auth';
 import { db } from './db';
@@ -102,5 +104,17 @@ describe('login throttle', () => {
 		expect(loginThrottled('10.0.0.2', 'throttle-a')).toBe(false);
 		for (let i = 0; i < 50; i++) recordFailedLogin(`10.1.0.${i}`, 'Throttle-B');
 		expect(loginThrottled('10.2.0.1', 'throttle-b')).toBe(true);
+	});
+});
+
+describe('the setup code', () => {
+	it('is the same until used, and matched whatever its case and dashes', () => {
+		const code = setupCode();
+		expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+		expect(setupCode()).toBe(code);
+		expect(setupCodeMatches(code)).toBe(true);
+		expect(setupCodeMatches(code.toLowerCase().replace(/-/g, ' '))).toBe(true);
+		expect(setupCodeMatches('')).toBe(false);
+		expect(setupCodeMatches('AAAA-AAAA-AAAA')).toBe(code === 'AAAA-AAAA-AAAA');
 	});
 });

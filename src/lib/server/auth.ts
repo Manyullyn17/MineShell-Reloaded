@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { and, eq, lt, ne, sql } from 'drizzle-orm';
 import { db } from './db';
 import { sessions, users } from './db/schema';
@@ -85,11 +87,44 @@ const toSessionUser = (row: { id: string; username: string; isOwner: boolean; mu
 	mustChangePassword: row.mustChangePassword
 });
 
+/**
+ * Before setup, whoever reaches /setup first picks the owner's password, and
+ * install.sh listens on every address: a fresh install on a public address was
+ * anyone's to take. /setup asks for this code too, which only someone on the
+ * machine can read (this file, MineShell's log, install.sh's last lines).
+ */
+export const SETUP_CODE_FILE = path.join(DATA_DIR, 'setup-code');
+const SETUP_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/** The setup code, made (and written, readable only by this account) the first time it is asked for. */
+export function setupCode(): string {
+	try {
+		const kept = fs.readFileSync(SETUP_CODE_FILE, 'utf8').trim();
+		if (kept) return kept;
+	} catch {
+		// Not made yet.
+	}
+	const bytes = crypto.randomBytes(12);
+	const chars = [...bytes].map((b) => SETUP_ALPHABET[b % SETUP_ALPHABET.length]).join('');
+	const code = `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8, 12)}`;
+	fs.mkdirSync(DATA_DIR, { recursive: true });
+	fs.writeFileSync(SETUP_CODE_FILE, code + '\n', { mode: 0o600 });
+	return code;
+}
+
+/** Whether `given` is the setup code: case, spaces and dashes do not matter. */
+export function setupCodeMatches(given: string): boolean {
+	const plain = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+	const want = Buffer.from(plain(setupCode()));
+	const got = Buffer.from(plain(given));
+	return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+
 /** /setup: the first account, the owner. Refused once there is one. */
 export function createOwner(password: string): SessionUser {
 	checkNewPassword(password);
 	const passwordHash = hashPassword(password);
-	return db.transaction((tx) => {
+	const owner = db.transaction((tx) => {
 		if (tx.select({ id: users.id }).from(users).where(eq(users.isOwner, true)).get()) {
 			throw new Error('MineShell is already set up.');
 		}
@@ -98,6 +133,8 @@ export function createOwner(password: string): SessionUser {
 		tx.insert(users).values(row).run();
 		return toSessionUser(row);
 	});
+	fs.rmSync(SETUP_CODE_FILE, { force: true });
+	return owner;
 }
 
 /** An account picking its own password (which ends a forced change). */
