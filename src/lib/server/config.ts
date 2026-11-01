@@ -47,6 +47,15 @@ export function ensureDirs(): void {
 	for (const dir of [DATA_DIR, INSTANCES_DIR, UNITS_DIR, CACHE_DIR, TMP_DIR]) {
 		fs.mkdirSync(dir, { recursive: true });
 	}
+	// The database holds session ids (each one a signed-in browser) and password
+	// hashes, and the folder every server's world: no other account on the
+	// machine may look in. A folder this account does not own is left as it is.
+	try {
+		const stat = fs.statSync(DATA_DIR);
+		if (stat.uid === process.getuid?.() && (stat.mode & 0o077) !== 0) fs.chmodSync(DATA_DIR, stat.mode & 0o700);
+	} catch {
+		// Not ours to change.
+	}
 	ensured = true;
 }
 

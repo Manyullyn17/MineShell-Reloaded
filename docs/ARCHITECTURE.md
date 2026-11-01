@@ -1109,7 +1109,9 @@ before fetch resolves it again, so DNS rebinding is not covered; pinning the add
 undici's Agent. Spark's upload URL (`bytebinUrl` in the server's Spark config) is not checked.
 
 **Secrets.** RCON passwords (and a CurseForge key set in Settings) are AES-256-GCM
-encrypted with a key in a `0600` file (`secret.key`) beside the database. Losing the key
+encrypted with a key in a `0600` file (`secret.key`) beside the database. The data folder
+itself is made `0700` at every start (`ensureDirs`, only when this account owns it): the
+database holds session ids, each a signed-in browser, and password hashes. Losing the key
 means regenerating RCON passwords, which a server's Settings can do (Network, "Generate a
 new password on save"). Settings sends a server's RCON password only when its Show button
 asks for it (`?/revealRcon`): not with the page, and not in the property values or the raw
