@@ -100,6 +100,8 @@ export function hostAllowedWithoutAuth(host: string | null): boolean {
  */
 export function withSecurityHeaders(response: Response): Response {
 	response.headers.set('x-frame-options', 'SAMEORIGIN');
+	// A file served as an image or a download is never read as a page (or a script) on MineShell's origin.
+	response.headers.set('x-content-type-options', 'nosniff');
 	if (!response.headers.has('content-security-policy')) response.headers.set('content-security-policy', "frame-ancestors 'self'");
 	return response;
 }

@@ -1314,7 +1314,10 @@ name (`.local`, `.lan`, `.home.arpa`, `.internal`, `.ts.net` ...), the machine's
 session cookie to send. Every response also says only
 MineShell may frame it (`X-Frame-Options: SAMEORIGIN`, and `frame-ancestors 'self'` where the
 response has no policy of its own; `withSecurityHeaders`), since a page on another port of the
-same machine would share its cookies.
+same machine would share its cookies. Every response is also `nosniff`, and the pack icon
+passed through from its platform's host keeps that host's type only when it is an image (else
+`application/octet-stream`, with a sandbox policy): text/html from there would otherwise be a
+page on MineShell's origin.
 
 **Auth.** Accounts (`users`) with scrypt-hashed passwords, session cookies, and a login
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that

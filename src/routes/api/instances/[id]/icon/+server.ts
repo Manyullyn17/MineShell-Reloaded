@@ -25,8 +25,12 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 		const from = await packIconUrl(instance);
 		const res = from ? await outboundFetch(from).catch(() => null) : null;
 		if (!res?.ok) return Response.json({ message: 'The pack has no icon to use.' }, { status: 404 });
+		// Only an image type is passed on: anything else (text/html, an SVG with a
+		// script) would be a page on MineShell's own origin, written by whoever hosts the icon.
+		const type = res.headers.get('content-type') ?? '';
+		const image = /^image\/(png|jpeg|gif|webp|avif|bmp)\b/i.test(type) ? type : 'application/octet-stream';
 		return new Response(new Uint8Array(await res.arrayBuffer()), {
-			headers: { 'Content-Type': res.headers.get('content-type') ?? 'application/octet-stream', 'Cache-Control': 'no-store' }
+			headers: { 'Content-Type': image, 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'; sandbox" }
 		});
 	}
 	const bytes = await fs.readFile(path.join(instance.path, ICON)).catch(() => null);
