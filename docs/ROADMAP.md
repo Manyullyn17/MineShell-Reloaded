@@ -477,7 +477,78 @@ Work it needs:
 ### 9. Item icons and names
 
 The "Item icons and names" leftovers (Leftovers of built features), picked up in any
-step when convenient; this slot is where they are done at the latest.
+step when convenient; this slot is where they are done at the latest. Nothing is built before
+1.1's testing is done (user's call, 2026-11-01). Analysed 2026-11-01, from the code, the client
+jars (1.12.2-26.3) and `npm run check:icons` on MeatballCraft (with `--world`: 414k stacks,
+7% without a picture) and ATM10:
+
+- **First, one change everything below except the code-only variants needs**: icons are
+  asked for and kept by id and damage only (`iconKey`, `iconsFor`'s memo, the browser's
+  `drawn` map). Heads, banners, shields and filled-in names depend on the stack's own NBT or
+  components. `describeItem` (playeritems.ts, which knows all three formats) would add a small
+  `look` to ItemView (skin, patterns, base colour, the strings a name template needs); the
+  page passes it with the icon request, the endpoint checks it (lengths, a pattern list of at
+  most 16, ids by regex), and it becomes part of the key. The picker has no stacks and stays
+  as it is. The same channel would also carry what is not on the leftovers list but common in
+  a world: potion colours and names (3020 potions and 208 tipped arrows in MeatballCraft's
+  world; needs the effect colour table from the game's code), 1.12's one spawn egg with its
+  `EntityTag` (501), dyed leather (214, `display.color` / `dyed_color`). Each is small once the
+  channel is there.
+- **Player heads' own skins (easy, after the channel)**: 1.12 `skull` damage 3 with
+  `SkullOwner` (a compound, or only a name), 1.13-1.20.4 `SkullOwner`, 1.20.5+ the
+  `minecraft:profile` component; 26.x's `ResolvableProfile` also has a partial/dynamic form and
+  a skin `patch` that names a resource texture instead. The texture id comes out of the base64
+  `textures` property the way `profiles.ts` `skinTexture` reads it, and `/api/skins/<id>`
+  already fetches and caches the PNG: the browser's `textureUrl` sends a `skin:<id>` ref there.
+  `headIcon('player')` takes the skin in place of Steve. Missing pieces: the old 64x32 skins'
+  opaque hat (the hack `PlayerFace.svelte` already does, needed in the renderer too); a head
+  with an id but no textures gets the default skin the game picks by uuid hash (26.3: 9 names x
+  wide/slim in `entity/player/`; before 1.19.3 Steve or Alex); a name alone needs a name lookup
+  MineShell does not make yet (Steve until then). Its name, "Notch's Head", is the lang
+  template `block.minecraft.player_head.named` / `item.skull.player.name` filled with the
+  profile's name. MeatballCraft's world has 3 player heads: rare there, common on servers
+  with head drops or decorative head packs, which carry their own textures and work the same.
+- **Banner patterns on banners and shields (medium)**: `bannerIcon` already draws the cloth with
+  the base colour as a tinted layer; patterns are more layers of the same box, textures
+  `entity/banner/<name>` and `entity/shield/<name>`. Stored as `BlockEntityTag.Patterns`
+  `[{Pattern: "bri", Color: n}]` up to 1.20.4 (short codes: a table of about 40 from the
+  game's code; check whether 1.12's `Color` counts from black like its dye damage or from
+  white like 1.13+), then the `minecraft:banner_patterns` component (`{pattern, color}`, the
+  pattern an id or, 1.21+, an inline `{asset_id}` from a data pack: draw what has a texture,
+  skip the rest). Shields add a base colour (`BlockEntityTag.Base`, later
+  `minecraft:base_color`) over `entity/shield_base`. The textures changed format in 1.15: up to
+  1.14 they are opaque grey, brightness = coverage; from 1.15 white with alpha = coverage. The
+  renderer's `mask` only works on flat icons, so 1.12-1.14 need a "brightness as alpha" step
+  for a quad's texture (in the browser, when the image loads). MeatballCraft's world: 76
+  banners and 183 shields, most plain; the ominous banner is the common patterned one.
+- **Lang templates' filled-in text (small, per mod)**: names with gaps ("… Vis Crystal").
+  MeatballCraft has 26 such items, ATM10 372, but only a few matter in a world: Thaumcraft's
+  vis crystal (3910 stacks in MeatballCraft's world; the aspect from NBT, `tc.aspect.<key>` in
+  its lang), botany's pigments, Electroblob's Wizardry scrolls (the spell by damage),
+  Tinkers' casts and patterns, Forge's filled bucket (`FluidName`), Thaumcraft phials. In ATM10
+  one rule names 314 of the 372: Theurgy's `<key>.source` sibling holds the text for its one
+  gap. Sophisticated Storage's wood type is NBT (`wood_name.sophisticatedstorage.<wood>`). So:
+  the vanilla player head, the Theurgy sibling rule, and a short table of per-mod fillers that
+  read the stack's NBT, each checked against its mod's jar; the picker keeps the "…".
+- **1.12 variants only the mod's code names (hard in general, a heuristic covers much)**: the
+  damage -> variant name map is in the mod's classes. Immersive Engineering's `ItemMaterial`
+  lists `stick_treated, stick_iron, ...` in damage order in its constant pool, exactly the files
+  in `models/item/material/`; Botania keeps `manaPearl, manaDiamond, ...` in `LibItemNames`
+  (camelCase of its snake_case textures). So: find, in the mod's classes, the longest run of
+  string constants that name its model or texture files (case and `_` ignored), and take its
+  order as the damages, flagged as a guess like the other variant guesses. AE2 (ae2-uel)
+  gives its damages in the enum's constructor, with gaps: needs reading `<clinit>`'s bytecode,
+  or a table. Damage values cannot change without breaking worlds, so a table, once right,
+  stays right through a mod's updates. Worth it by MeatballCraft's world: Actually Additions
+  6771 stacks (jam, crystals, misc), Botania 12413 (but 9961 are mushrooms whose guess is
+  right), IE 2494, AE2 1415. Mekanism is not in MeatballCraft; Advanced Rocketry 11 stacks.
+- **Not on the list, for scale**: the most stacks without any picture in MeatballCraft are
+  models drawn in code by mods (Blockcraftery 5237, Forestry 2966, the Betweenlands 2358,
+  Extra Utilities 2 2118). Those are beyond what reading jars can do; leave them.
+
+Order when built: the channel with player heads (the smallest whole piece), then banners and
+shields, then the name fillers and potions/eggs/leather as wanted, the class-reading
+heuristic last.
 
 ### 10. The status page
 
@@ -535,7 +606,7 @@ is open, and each needs a test setup.
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),
   variants that exist only in code (Actually Additions crystals, Mekanism basic blocks),
   lang templates' filled-in text, banner patterns on banners and shields, player heads' own
-  skins.
+  skins (analysed: Later, step 9).
 - **Files**: packing chosen files into a zip in place; unpacking other archives (`.tar.gz`,
   `.7z`); a diff between earlier versions of a file, and versions following a rename.
 - **World map**: a map for pre-1.13 versions other than 1.12.2 (GTNH's: Later, step 8).
