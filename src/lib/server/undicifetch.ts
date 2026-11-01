@@ -8,6 +8,9 @@ import { fetch as undiciFetch, FormData as UndiciFormData } from 'undici';
  * undici 8.12 does not, and Node 26 ships it. Only `fetch` is replaced, not Request or
  * Response, which SvelteKit builds its own requests and answers from.
  *
+ * Once Node 26 is the minimum (package.json's engines, the installer's check, CI), this module,
+ * its call in hooks.server.ts and the undici dependency go: check with fetch-close.mjs first.
+ *
  * undici knows its own FormData only: Node's (a separate copy of undici's) went out as the
  * text "[object FormData]", so one is copied over. Node's Headers, Response bodies,
  * URLSearchParams and AbortSignal work as they are (checked on Node 22 and 24).
