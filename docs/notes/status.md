@@ -52,7 +52,7 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.2). 1.1.0 once a beta has run about
+**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.3, meant as the last beta). 1.1.0 once a beta has run about
 three days with nothing big (ROADMAP, "Betas"). Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -71,8 +71,8 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
      and it booted. Found: `wait-start.sh` reporting an earlier boot (fixed).
    - JVM arguments holding a quoted space: none on prod (its unit env files, 2026-11-01); the
      2026-10-31 real-loader pass covered it.
-2. **Updating itself**: beta.1 -> beta.2 with the Update button, betas on: **done** (the user,
-   2026-11-01). Left: beta.2 -> 1.1.0 (offered with betas on or off), once it is out.
+2. **Updating itself**: beta.1 -> beta.2 -> beta.3 with the Update button, betas on: **done**
+   (the user, 2026-11-01). Left: beta.3 -> 1.1.0 (offered with betas on or off), once it is out.
 3. **The script policy (CSP) on the built app**: **done** (2026-11-01): a production build on
    throwaway data swept with `page-sweep --errors` (123 views, nothing refused), and the user
    found nothing on prod, the Map tab with BlueMap and with Dynmap included.
