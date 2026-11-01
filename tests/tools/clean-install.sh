@@ -139,7 +139,8 @@ run)
 	in_box bash -c '
 		U=http://127.0.0.1:3000; J=/tmp/cj; H=(-H "origin: $U" -H "x-sveltekit-action: true")
 		echo "first visit: $(curl -s -o /dev/null -w "%{http_code} %{redirect_url}" $U/)"
-		echo "setup: $(curl -s -c $J -b $J "${H[@]}" -F password=clean-Install-1 -F confirm=clean-Install-1 $U/setup)"
+		code=$(cat /home/mineshell/.local/share/mineshell/setup-code)
+		echo "setup: $(curl -s -c $J -b $J "${H[@]}" -F code=$code -F password=clean-Install-1 -F confirm=clean-Install-1 $U/setup)"
 		echo "sign in: $(curl -s -c $J -b $J "${H[@]}" -F username=admin -F password=clean-Install-1 "$U/login?/login")"
 		echo "add a server: $(curl -s -b $J "${H[@]}" -F name=Clean -F minecraftVersion=1.21.1 -F modloader=vanilla -F acceptEula=on -F start=on "$U/instances/new?/loader" | head -c 160)"
 		echo "with Java downloaded: $(curl -s -b $J "${H[@]}" -F name=Clean -F minecraftVersion=1.21.1 -F modloader=vanilla -F acceptEula=on -F start=on -F downloadJava=temurin "$U/instances/new?/loader")"'
