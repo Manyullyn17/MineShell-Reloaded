@@ -552,7 +552,7 @@
 											{:else if versionDeps}
 												<DependencyList plan={versionDeps} />
 											{/if}
-											<div class="check">
+											<div class="check field">
 												<input id="ver-snap-{mod.fileName}" type="checkbox" name="snapshot" />
 												<label for="ver-snap-{mod.fileName}">
 													Snapshot the world first ({formatBytes(data.snapshotPrompt.worldBytes)})
