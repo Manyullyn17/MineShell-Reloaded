@@ -6,6 +6,10 @@
 	 * `windowMs`, so ten minutes of data and a full day do not look identical:
 	 * a short run occupies a correspondingly short slice. Hovering reads out
 	 * the sample under the pointer.
+	 *
+	 * A point standing for several samples (a long window, averaged) can carry
+	 * the highest of them as `peak`: a faint band reaches up to it, and the
+	 * peak figure reads it, so a short spike is not averaged away.
 	 */
 	let {
 		points = [],
@@ -17,7 +21,7 @@
 		tone = 'accent',
 		format = (v: number) => v.toFixed(0)
 	}: {
-		points?: { timestamp: number; value: number }[];
+		points?: { timestamp: number; value: number; peak?: number }[];
 		max?: number | null;
 		label?: string;
 		unit?: string;
@@ -43,7 +47,8 @@
 	const span = $derived(Math.max(MIN_SPAN_MS, endsAt - startsAt));
 	const visible = $derived(points.filter((p) => p.timestamp >= startsAt));
 
-	const ceiling = $derived(max ?? Math.max(1, ...visible.map((p) => p.value)) * 1.15);
+	const highest = (p: { value: number; peak?: number }) => Math.max(p.value, p.peak ?? p.value);
+	const ceiling = $derived(max ?? Math.max(1, ...visible.map(highest)) * 1.15);
 
 	const xFor = (timestamp: number) => ((timestamp - startsAt) / span) * W;
 	const yFor = (value: number) => H - Math.min(1, value / ceiling) * H;
@@ -57,6 +62,18 @@
 		path
 			? `${path} L${xFor(visible[visible.length - 1].timestamp).toFixed(1)},${H} L${xFor(visible[0].timestamp).toFixed(1)},${H} Z`
 			: ''
+	);
+	// From the peaks along the top and back along the averages: empty where they are the same.
+	const band = $derived(
+		visible.length < 2 || !visible.some((p) => highest(p) > p.value)
+			? ''
+			: visible.map((p, i) => `${i === 0 ? 'M' : 'L'}${xFor(p.timestamp).toFixed(1)},${yFor(highest(p)).toFixed(1)}`).join(' ') +
+					' ' +
+					[...visible]
+						.reverse()
+						.map((p) => `L${xFor(p.timestamp).toFixed(1)},${yFor(p.value).toFixed(1)}`)
+						.join(' ') +
+					' Z'
 	);
 	const grid = $derived(
 		[0.25, 0.5, 0.75].map((f) => `M0,${H - f * H} H${W}`).join(' ') +
@@ -74,9 +91,9 @@
 
 	const latest = $derived(visible.length ? visible[visible.length - 1].value : 0);
 	const average = $derived(visible.length ? visible.reduce((a, p) => a + p.value, 0) / visible.length : 0);
-	const peak = $derived(Math.max(0, ...visible.map((p) => p.value)));
+	const peak = $derived(Math.max(0, ...visible.map(highest)));
 
-	let hover = $state<{ timestamp: number; value: number } | null>(null);
+	let hover = $state<{ timestamp: number; value: number; peak?: number } | null>(null);
 
 	function onMove(event: PointerEvent) {
 		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -114,6 +131,7 @@
 				<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" role="img" aria-label={label}>
 					<path d={grid} class="grid" />
 					<path d={area} class="fill" />
+					{#if band}<path d={band} class="band" />{/if}
 					<path d={path} class="line" />
 				</svg>
 				{#if hover}
@@ -122,6 +140,9 @@
 					<div class="tip" style="left: {hoverX}%; transform: translateX({hoverX > 70 ? '-105%' : '8px'})">
 						<div class="faint">{clock(hover.timestamp)}</div>
 						<div class="mono">{format(hover.value)}{unit}</div>
+						{#if hover.peak !== undefined && hover.peak > hover.value}
+							<div class="faint">peak {format(hover.peak)}{unit}</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -256,6 +277,12 @@
 
 	.fill {
 		fill: color-mix(in srgb, var(--line-colour) 14%, transparent);
+		stroke: none;
+	}
+
+	/* Above the average line, up to each point's highest sample. */
+	.band {
+		fill: color-mix(in srgb, var(--line-colour) 30%, transparent);
 		stroke: none;
 	}
 

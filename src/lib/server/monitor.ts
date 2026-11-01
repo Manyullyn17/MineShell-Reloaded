@@ -136,20 +136,26 @@ export function latestSample(instanceId: string): Sample | undefined {
 		.get();
 }
 
+/** A point of the graph: the average of the samples it stands for, and the highest of them. */
+export type BucketedSample = Sample & { cpuPeak: number; memoryPeak: number };
+
 /**
  * Downsample for the graph. 24h at 10s is 8640 points; the chart needs a few
- * hundred, and averaging keeps spikes visible where picking every Nth would not.
+ * hundred. The average alone hid short spikes: 30 s at 32% CPU in a 6-minute
+ * bucket of 24h read as 14%, while 6h's 90 s buckets showed it. Each point also
+ * keeps its highest sample, which the chart's peak and band read.
  */
-export function bucketSamples(samples: Sample[], buckets = 240): Sample[] {
-	if (samples.length <= buckets) return samples;
-	const size = Math.ceil(samples.length / buckets);
-	const out: Sample[] = [];
+export function bucketSamples(samples: Sample[], buckets = 240): BucketedSample[] {
+	const size = Math.max(1, Math.ceil(samples.length / buckets));
+	const out: BucketedSample[] = [];
 	for (let i = 0; i < samples.length; i += size) {
 		const slice = samples.slice(i, i + size);
 		out.push({
 			timestamp: slice[slice.length - 1].timestamp,
 			cpuPercent: slice.reduce((a, s) => a + s.cpuPercent, 0) / slice.length,
-			memoryBytes: Math.round(slice.reduce((a, s) => a + s.memoryBytes, 0) / slice.length)
+			memoryBytes: Math.round(slice.reduce((a, s) => a + s.memoryBytes, 0) / slice.length),
+			cpuPeak: Math.max(...slice.map((s) => s.cpuPercent)),
+			memoryPeak: Math.max(...slice.map((s) => s.memoryBytes))
 		});
 	}
 	return out;

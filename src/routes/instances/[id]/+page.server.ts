@@ -210,8 +210,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		cpuCores: cpus().length || 1,
 		range,
 		rangeMs: RANGES[range],
-		cpu: samples.map((s) => ({ timestamp: s.timestamp, value: s.cpuPercent })),
-		memory: samples.map((s) => ({ timestamp: s.timestamp, value: s.memoryBytes })),
+		cpu: samples.map((s) => ({ timestamp: s.timestamp, value: s.cpuPercent, peak: s.cpuPeak })),
+		memory: samples.map((s) => ({ timestamp: s.timestamp, value: s.memoryBytes, peak: s.memoryPeak })),
 		/** Java heap in use, once a minute (heap.ts); empty until the server has run a minute. */
 		heap: heap.map((s) => ({ timestamp: s.timestamp, value: s.usedBytes })),
 		heapMaxBytes: heap.at(-1)?.maxBytes ?? null,

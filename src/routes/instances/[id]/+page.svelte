@@ -74,7 +74,7 @@
 	const durationLabel = (seconds: number) => (seconds < 60 ? `${seconds} s` : `${seconds / 60} min`);
 
 	const cpuCeiling = $derived.by(() => {
-		const peak = Math.max(0, ...data.cpu.map((p) => p.value));
+		const peak = Math.max(0, ...data.cpu.map((p) => Math.max(p.value, p.peak)));
 		const rounded = Math.ceil(peak / 100) * 100;
 		return Math.min(data.cpuCores * 100, Math.max(100, rounded));
 	});
@@ -94,7 +94,7 @@
 		data.detail.runningMemoryMaxMb !== null && data.detail.memoryMaxMb !== null && data.detail.runningMemoryMaxMb !== data.detail.memoryMaxMb
 	);
 	const heapBytes = $derived(heapMb * 1024 * 1024);
-	const memoryCeiling = $derived(Math.max(heapBytes, ...data.memory.map((p) => p.value * 1.1)));
+	const memoryCeiling = $derived(Math.max(heapBytes, ...data.memory.map((p) => Math.max(p.value, p.peak) * 1.1)));
 
 
 	let copied = $state(false);
