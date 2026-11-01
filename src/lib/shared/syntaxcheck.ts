@@ -13,6 +13,8 @@ const BY_EXTENSION: Record<string, EditorLanguage> = {
 	json: 'json',
 	mcmeta: 'json',
 	json5: 'json5',
+	// JSON with comments (and trailing commas): JSON5 reads all of it.
+	jsonc: 'json5',
 	toml: 'toml',
 	yaml: 'yaml',
 	yml: 'yaml',

@@ -89,7 +89,7 @@ export type DirEntry = {
 };
 
 const TEXT_EXTENSIONS = new Set([
-	'.txt', '.json', '.json5', '.properties', '.yml', '.yaml', '.toml', '.cfg', '.conf',
+	'.txt', '.json', '.json5', '.jsonc', '.properties', '.yml', '.yaml', '.toml', '.cfg', '.conf',
 	'.ini', '.log', '.md', '.sh', '.env', '.lock', '.snbt', '.mcmeta', '.xml', '.csv', '.js', '.lua',
 	// CraftTweaker's scripts (1.12 packs keep much of their recipes and balance there).
 	'.zs'

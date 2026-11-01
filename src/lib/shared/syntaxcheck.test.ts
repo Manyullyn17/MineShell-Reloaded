@@ -3,8 +3,8 @@ import { languageOf, syntaxProblem } from './syntaxcheck';
 
 describe('syntax check', () => {
 	it('knows the kinds by extension', () => {
-		expect(['a.json', 'pack.mcmeta', 'b.json5', 'c.toml', 'd.yml', 'server.properties', 'forge.cfg', 'kubejs/x.js', 'run.sh', 'readme.txt', 'noext'].map(languageOf)).toEqual([
-			'json', 'json', 'json5', 'toml', 'yaml', 'properties', 'forgecfg', 'javascript', 'shell', null, null
+		expect(['a.json', 'pack.mcmeta', 'b.json5', 'b.jsonc', 'c.toml', 'd.yml', 'server.properties', 'forge.cfg', 'kubejs/x.js', 'run.sh', 'readme.txt', 'noext'].map(languageOf)).toEqual([
+			'json', 'json', 'json5', 'json5', 'toml', 'yaml', 'properties', 'forgecfg', 'javascript', 'shell', null, null
 		]);
 	});
 
@@ -33,6 +33,8 @@ describe('syntax check', () => {
 
 	it('reads JSON5 with comments, and names its errors', async () => {
 		expect(await syntaxProblem('json5', '// options\n{ a: 1, }')).toBeNull();
+		// A .jsonc file: JSON with comments and a trailing comma.
+		expect(await syntaxProblem('json5', '{\n  // why\n  "a": 1, /* note */\n  "b": [1, 2,],\n}')).toBeNull();
 		expect(await syntaxProblem('json5', '{\n  a: 1\n  b: 2\n}')).toMatchObject({ line: 3 });
 	});
 

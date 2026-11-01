@@ -1505,9 +1505,9 @@ search and preview endpoints the browse-and-install forms call as you type.
 only there. A textarea under it is what the save form posts (kept in step with every change,
 hidden once CodeMirror is up, the editor itself if it never loads), so saving, its line
 endings (`writeTextFile`) and the action are as before. The language comes from the extension
-(`languageOf` in `lib/shared/syntaxcheck.ts`): JSON and `.mcmeta`, JSON5, TOML, YAML,
-properties, Forge 1.12's `.cfg` (a small stream mode of its own: categories, `B:`/`I:`/`D:`/`S:`
-keys), JS/TS and shell. Colours are the theme's own variables. JSON, JSON5, TOML and YAML are
+(`languageOf` in `lib/shared/syntaxcheck.ts`): JSON and `.mcmeta`, JSON5 (also `.jsonc`, JSON
+with comments), TOML, YAML, properties, Forge 1.12's `.cfg` (a small stream mode of its own:
+categories, `B:`/`I:`/`D:`/`S:` keys), JS/TS and shell. Colours are the theme's own variables. JSON, JSON5, TOML and YAML are
 checked (`syntaxProblem`: `JSON.parse`, json5, smol-toml, yaml, imported on first use) as you
 type, marked on the line, and again before a save, which stops with the line, the error,
 "Go to line" and "Save anyway". Only a file that parsed when it was opened is checked: many

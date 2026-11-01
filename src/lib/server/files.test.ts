@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { attachment, PathEscapeError, renameEntry, safeEntry, safeJoin, saveUpload, uploadPath, writeTextFile } from './files';
+import { attachment, isSearchable, looksEditable, PathEscapeError, renameEntry, safeEntry, safeJoin, saveUpload, uploadPath, writeTextFile } from './files';
 import { deleteToTrash } from './trash';
 import { tempDir } from '../../../tests/helpers/fs';
 
@@ -10,6 +10,17 @@ describe('a download\'s name', () => {
 		expect(attachment('My Server-world.zip')).toBe(`attachment; filename="My Server-world.zip"; filename*=UTF-8''My%20Server-world.zip`);
 		expect(attachment('Größe "1" 100%.txt')).toBe(`attachment; filename="Gr__e _1_ 100_.txt"; filename*=UTF-8''Gr%C3%B6%C3%9Fe%20%221%22%20100%25.txt`);
 		expect(attachment("it's (1).txt")).toContain(`filename*=UTF-8''it%27s%20%281%29.txt`);
+	});
+});
+
+describe('what the editor opens', () => {
+	it('opens config files by extension, JSON with comments (.jsonc) too, and not binaries or big files', () => {
+		for (const name of ['config/a.json', 'config/b.jsonc', 'config/c.json5', 'config/d.toml', 'server.properties', 'eula']) {
+			expect(looksEditable(name, 100), name).toBe(true);
+		}
+		expect(isSearchable('config/b.jsonc', 100)).toBe(true);
+		expect(looksEditable('mods/a.jar', 100)).toBe(false);
+		expect(looksEditable('config/b.jsonc', 3 * 1024 * 1024)).toBe(false);
 	});
 });
 
