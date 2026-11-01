@@ -1303,7 +1303,13 @@ server.properties editor, which leaves the line out (a save puts it back from th
 **Cross-site requests.** A state-changing request whose browser `Origin` names another host
 is refused (`guard.ts`). Only the host is compared, against `Host` and `X-Forwarded-Host`,
 because MineShell is reached by raw IP, other hostnames and through TLS-terminating proxies;
-SvelteKit's own full-origin check is turned off for that reason. Every response also says only
+SvelteKit's own full-origin check is turned off for that reason. With
+`MINESHELL_AUTH=off` that check cannot stop DNS rebinding (a site points its own name at the
+LAN address, and its page is then same-origin with MineShell, which then lets every request do
+everything), so without sign-in only a `Host` that is an address, a one-word or local network
+name (`.local`, `.lan`, `.home.arpa`, `.internal`, `.ts.net` ...), the machine's own name or one in
+`MINESHELL_HOSTS` is answered (`hostAllowedWithoutAuth`). With sign-in a rebound page has no
+session cookie to send. Every response also says only
 MineShell may frame it (`X-Frame-Options: SAMEORIGIN`, and `frame-ancestors 'self'` where the
 response has no policy of its own; `withSecurityHeaders`), since a page on another port of the
 same machine would share its cookies.

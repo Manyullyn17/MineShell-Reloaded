@@ -485,3 +485,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A fresh install was anyone's: whoever reached /setup first (on a public address, any scanner) picked the owner's password | `routes/setup/setup.test.ts` ("asks for the setup code") |
 | The login throttle counted each IPv6 address apart, so a guesser with a /64 took a new address every ten tries | `server/auth.test.ts` ("the login throttle") |
 | A visitor without a session could post gigabytes to /login (BODY_SIZE_LIMIT=Infinity), read whole into memory | `server/guard.test.ts` ("a big body") |
+| With MINESHELL_AUTH=off, a site whose name was pointed at the LAN address (DNS rebinding) could drive MineShell | `server/guard.test.ts` ("without sign-in") |
