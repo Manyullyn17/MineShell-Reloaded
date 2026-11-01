@@ -1261,6 +1261,14 @@
 	{:else if tailscale.kind === 'down'}
 		<div class="notice warning"><p>{tailscale.message}</p></div>
 	{:else}
+		{#if tailscale.operator === false && tailscale.serve.kind !== 'other'}
+			<div class="notice warning">
+				<p>
+					One step first: Tailscale lets only root or its operator change what it serves. Run this once on the machine,
+					then reload this page: <code>sudo tailscale set --operator={tailscale.account}</code>
+				</p>
+			</div>
+		{/if}
 		{#if tailscale.serve.kind === 'ours'}
 			<div class="notice {tailscale.serve.funnel ? 'warning' : 'success'}">
 				<p>
@@ -1273,7 +1281,7 @@
 			</div>
 			{#if data.owner}
 				<form method="POST" action="?/tailscaleStop" use:enhance class="inline-form">
-					<button class="button-quiet" type="submit">Stop serving</button>
+					<button class="button-quiet" type="submit" disabled={tailscale.operator === false}>Stop serving</button>
 				</form>
 			{/if}
 		{:else if tailscale.serve.kind === 'other'}
@@ -1294,15 +1302,26 @@
 			{/if}
 			{#if data.owner}
 				<form method="POST" action="?/tailscaleServe" use:enhance class="inline-form">
-					<button class="button-primary" type="submit" disabled={!tailscale.https}>Serve at https://{tailscale.name}</button>
+					<button class="button-primary" type="submit" disabled={!tailscale.https || tailscale.operator === false}>
+						Serve at https://{tailscale.name}
+					</button>
 				</form>
 			{/if}
 			<p class="muted small">
-				Runs <code>tailscale serve --bg --https=443 http://127.0.0.1:{tailscale.port}</code>, kept across reboots. Tailscale
-				lets only root or its operator do that: if it refuses, run <code>sudo tailscale set --operator=$USER</code> on the
-				machine once.
+				Runs <code>tailscale serve --bg --https=443 http://127.0.0.1:{tailscale.port}</code>, kept across reboots.
+				{#if tailscale.operator === null}
+					Tailscale lets only root or its operator do that: if it refuses, run
+					<code>sudo tailscale set --operator={tailscale.account}</code> on the machine once.
+				{/if}
 			</p>
 		{/if}
+		<p class="muted small">
+			{#if tailscale.admin.machine}
+				<a href={tailscale.admin.machine} target="_blank" rel="noreferrer">This machine in Tailscale's admin console</a> ·
+			{/if}
+			<a href={tailscale.admin.machines} target="_blank" rel="noreferrer">All machines</a> ·
+			<a href="https://login.tailscale.com/admin/dns" target="_blank" rel="noreferrer">DNS and HTTPS certificates</a>
+		</p>
 		{#if !data.owner}
 			<p class="muted small">Serving MineShell over Tailscale is managed by the owner account.</p>
 		{/if}

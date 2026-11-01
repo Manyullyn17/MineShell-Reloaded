@@ -387,8 +387,10 @@ Never forward port 3000 itself through your router: that is plain http, password
    tailnet: `sudo tailscale up` on the machine.
 2. In the tailnet's admin console, under DNS, turn on MagicDNS and HTTPS certificates.
 3. Let MineShell's account change what Tailscale serves, once: `sudo tailscale set
-   --operator=$USER` (as the account MineShell runs as).
+   --operator=$USER` (as the account MineShell runs as). The section below checks for it
+   (`tailscale debug prefs`) and shows the command, with the account's name, until it is done.
 4. MineShell settings > System, "Remote access": **Serve at https://<machine>.<tailnet>.ts.net**.
+   The section also links to this machine and to the DNS page in Tailscale's admin console.
    That runs `tailscale serve --bg --https=443 http://127.0.0.1:3000`, kept across reboots;
    **Stop serving** undoes it. MineShell never replaces a https port that already serves
    something else, and never turns on `tailscale funnel` (which would put it on the public

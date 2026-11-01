@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import { parseNetTable } from './portmap';
 import { run } from './systemd';
 
@@ -11,7 +12,9 @@ import { run } from './systemd';
  * MineShell only reads Tailscale's state and turns that one forward on or off. It never
  * replaces a 443 that serves something else, and never touches Funnel (which would put
  * MineShell on the public internet). Changing serve settings needs root, or this account
- * made Tailscale's operator once (`sudo tailscale set --operator=$USER`).
+ * made Tailscale's operator once (`sudo tailscale set --operator=<account>`), which it reads
+ * from `tailscale debug prefs` (a debug command: when that fails, it is not known, and
+ * Tailscale's own refusal says so instead).
  */
 
 export type ServeState =
@@ -34,10 +37,34 @@ export type TailscaleState =
 			serve: ServeState;
 			/** MineShell's own port, which 443 forwards to. */
 			port: number;
+			/** Whether this account may change what Tailscale serves (root, or its operator); null when not known. */
+			operator: boolean | null;
+			/** The account to make operator, as `sudo tailscale set --operator=` takes it. */
+			account: string;
+			/** This machine's page in the admin console (by its tailnet address), and the list of machines. */
+			admin: { machine: string | null; machines: string };
 	  };
 
-export const OPERATOR_COMMAND = 'sudo tailscale set --operator=$USER';
 export const ADMIN_DNS = 'https://login.tailscale.com/admin/dns';
+const ADMIN_MACHINES = 'https://login.tailscale.com/admin/machines';
+
+/** The account MineShell runs as. */
+const account = () => os.userInfo().username;
+
+/** What makes this account Tailscale's operator: run once, as anyone who may sudo. */
+export const operatorCommand = () => `sudo tailscale set --operator=${account()}`;
+
+/** Whether this account may change Tailscale's settings, from its prefs; null when they cannot be read. */
+async function isOperator(): Promise<boolean | null> {
+	if (process.getuid?.() === 0) return true;
+	const res = await run(['tailscale', 'debug', 'prefs'], { timeoutMs: 10_000 });
+	try {
+		const prefs = JSON.parse(res.stdout) as { OperatorUser?: string | null };
+		return (prefs.OperatorUser ?? '') === account();
+	} catch {
+		return null;
+	}
+}
 
 /**
  * The plain-http port this MineShell listens on: PORT when set (the installed service),
@@ -83,7 +110,7 @@ export function serveState(json: unknown, name: string, port: number): ServeStat
 export async function tailscaleState(): Promise<TailscaleState> {
 	const status = await run(['tailscale', 'status', '--json'], { timeoutMs: 10_000 });
 	if (status.code === 127) return { kind: 'missing' };
-	let parsed: { BackendState?: string; Self?: { DNSName?: string }; CertDomains?: string[] | null };
+	let parsed: { BackendState?: string; Self?: { DNSName?: string; TailscaleIPs?: string[] }; CertDomains?: string[] | null };
 	try {
 		parsed = JSON.parse(status.stdout);
 	} catch {
@@ -101,14 +128,26 @@ export async function tailscaleState(): Promise<TailscaleState> {
 	} catch {
 		// Older versions print text when nothing is served.
 	}
-	return { kind: 'up', name, https: (parsed.CertDomains ?? []).includes(name), serve: serveState(config, name, port), port };
+	const ipv4 = parsed.Self?.TailscaleIPs?.find((ip) => !ip.includes(':'));
+	return {
+		kind: 'up',
+		name,
+		https: (parsed.CertDomains ?? []).includes(name),
+		serve: serveState(config, name, port),
+		port,
+		operator: await isOperator(),
+		account: account(),
+		admin: { machine: ipv4 ? `${ADMIN_MACHINES}/${ipv4}` : null, machines: ADMIN_MACHINES }
+	};
 }
+
+const NOT_OPERATOR = () => `Tailscale only lets root or its operator change what it serves. Run this once on the machine, then try again: ${operatorCommand()}`;
 
 /** Tailscale's answer to a refused change, as something to do about it. */
 function refusal(res: { code: number; stdout: string; stderr: string }): string {
 	const said = (res.stderr || res.stdout).trim();
 	if (/access denied|permission denied|operator/i.test(said)) {
-		return `Tailscale only lets root or its operator change what it serves. Run this once on the machine, then try again: ${OPERATOR_COMMAND}`;
+		return NOT_OPERATOR();
 	}
 	if (/https.*(not enabled|disabled)|certificates?.*(not enabled|disabled)|enable https/i.test(said)) {
 		return `HTTPS certificates are off for this tailnet: turn them on in the admin console (${ADMIN_DNS}, "HTTPS Certificates"), then try again.`;
@@ -123,6 +162,7 @@ export async function serveOverTailscale(): Promise<{ ok: true; url: string } | 
 	if (state.kind === 'down') return { ok: false, message: state.message };
 	if (state.serve.kind === 'ours') return { ok: true, url: state.serve.url };
 	if (state.serve.kind === 'other') return { ok: false, message: `Tailscale's port 443 already serves ${state.serve.target}. MineShell leaves it alone: free it with \`tailscale serve --https=443 off\` first if it is no longer needed.` };
+	if (state.operator === false) return { ok: false, message: NOT_OPERATOR() };
 	if (!state.https) return { ok: false, message: `HTTPS certificates are off for this tailnet: turn them on in the admin console (${ADMIN_DNS}, "HTTPS Certificates"), then try again.` };
 	const res = await run(['tailscale', 'serve', '--bg', '--https=443', `http://127.0.0.1:${state.port}`], { timeoutMs: 30_000 });
 	if (res.code !== 0) return { ok: false, message: refusal(res) };

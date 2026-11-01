@@ -1,17 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { OPERATOR_COMMAND, serveOverTailscale, serveState, stopServingOverTailscale, tailscaleState } from './tailscale';
+import os from 'node:os';
+import { operatorCommand, serveOverTailscale, serveState, stopServingOverTailscale, tailscaleState } from './tailscale';
 import { fakeProcesses, spawnCalls, type FakeResult } from '../../../tests/helpers/process';
 
 const NAME = 'box.tail1234.ts.net';
-const status = (state = 'Running', certs: string[] = [NAME]) => JSON.stringify({ BackendState: state, Self: { DNSName: `${NAME}.` }, CertDomains: certs });
+const status = (state = 'Running', certs: string[] = [NAME]) =>
+	JSON.stringify({ BackendState: state, Self: { DNSName: `${NAME}.`, TailscaleIPs: ['100.64.0.7', 'fd7a:115c:a1e0::7'] }, CertDomains: certs });
+const ME = os.userInfo().username;
 const served = (proxy: string, funnel = false) =>
 	JSON.stringify({ TCP: { '443': { HTTPS: true } }, Web: { [`${NAME}:443`]: { Handlers: { '/': { Proxy: proxy } } } }, ...(funnel ? { AllowFunnel: { [`${NAME}:443`]: true } } : {}) });
 
 /** `tailscale` answering as given; `serve` for every change it is asked to make. */
-function tailscale(answers: { status?: FakeResult; serveStatus?: string; serve?: FakeResult }) {
+function tailscale(answers: { status?: FakeResult; serveStatus?: string; serve?: FakeResult; prefs?: FakeResult }) {
 	fakeProcesses((cmd, args) => {
 		if (cmd !== 'tailscale') return {};
 		if (args[0] === 'status') return answers.status ?? { stdout: status() };
+		if (args[0] === 'debug' && args[1] === 'prefs') return answers.prefs ?? { stdout: JSON.stringify({ WantRunning: true, OperatorUser: ME }) };
 		if (args[0] === 'serve' && args[1] === 'status') return { stdout: answers.serveStatus ?? '{}' };
 		return answers.serve ?? {};
 	});
@@ -50,7 +54,26 @@ describe('Tailscale on this machine', () => {
 		tailscale({ status: { stdout: status('NeedsLogin'), code: 1 } });
 		expect(await tailscaleState()).toMatchObject({ kind: 'down', message: expect.stringContaining('tailscale up') });
 		tailscale({ status: { stdout: status('Running', []) } });
-		expect(await tailscaleState()).toEqual({ kind: 'up', name: NAME, https: false, serve: { kind: 'free' }, port: 3000 });
+		expect(await tailscaleState()).toEqual({
+			kind: 'up',
+			name: NAME,
+			https: false,
+			serve: { kind: 'free' },
+			port: 3000,
+			operator: true,
+			account: ME,
+			admin: { machine: 'https://login.tailscale.com/admin/machines/100.64.0.7', machines: 'https://login.tailscale.com/admin/machines' }
+		});
+	});
+
+	// Changing what Tailscale serves needs root or its operator: known before anyone tries.
+	it('knows whether this account is Tailscale\'s operator, or that it cannot tell', async () => {
+		tailscale({ prefs: { stdout: JSON.stringify({ WantRunning: true }) } });
+		expect(await tailscaleState()).toMatchObject({ operator: false });
+		tailscale({ prefs: { stdout: JSON.stringify({ OperatorUser: 'someone-else' }) } });
+		expect(await tailscaleState()).toMatchObject({ operator: false });
+		tailscale({ prefs: { code: 1, stderr: 'unknown subcommand' } });
+		expect(await tailscaleState()).toMatchObject({ operator: null });
 	});
 });
 
@@ -71,7 +94,13 @@ describe('serving MineShell over Tailscale', () => {
 
 	it('says what to run once when Tailscale refuses a non-operator', async () => {
 		tailscale({ serve: { code: 1, stderr: 'Access denied: serve config denied\n\nUse \'sudo tailscale serve ...\'' } });
-		expect(await serveOverTailscale()).toMatchObject({ ok: false, message: expect.stringContaining(OPERATOR_COMMAND) });
+		expect(await serveOverTailscale()).toMatchObject({ ok: false, message: expect.stringContaining(operatorCommand()) });
+	});
+
+	it('does not try before this account is the operator, and says what to run', async () => {
+		tailscale({ prefs: { stdout: JSON.stringify({ OperatorUser: '' }) } });
+		expect(await serveOverTailscale()).toMatchObject({ ok: false, message: expect.stringContaining(`--operator=${ME}`) });
+		expect(changes()).toEqual([]);
 	});
 
 	it('needs the tailnet to hand out certificates first', async () => {

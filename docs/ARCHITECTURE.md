@@ -1388,7 +1388,9 @@ since behind Tailscale or a proxy that ends TLS MineShell sees http either way; 
 MineShell's own (`PORT`, or the TCP port this process listens on, a dev server's). It is
 MineShell's only when that is all the port does, so a forward for anything else is neither
 replaced nor stopped; Funnel is never touched, only warned about. Changing serve settings
-needs root or Tailscale's operator, which the refusal turns into the one command to run.
+needs root or Tailscale's operator: read beforehand from `tailscale debug prefs` (`OperatorUser`
+against MineShell's account), so the section shows the one command to run and keeps the button
+off until it is done; when that debug command fails, Tailscale's own refusal says the same.
 `scripts/caddy.sh` is the public-address path: it runs on the machine, with sudo only for
 Caddy, writes the Caddyfile only where it is the package's default or its own, and appends a
 marked block to the settings file (`HOST=127.0.0.1`, `ADDRESS_HEADER`, `XFF_DEPTH`) that
