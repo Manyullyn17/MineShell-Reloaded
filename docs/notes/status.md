@@ -59,8 +59,10 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - Start, stop (RCON), restart and a crash restart of each real server; the console, heap
      readings and player list while it runs. Done for Irithyll on 2026-10-31 (its own
      namespace, joins, heap readings); Spark works inside it (the user, on the dev install).
-   - `tests/tools/sandbox-check.sh mineshell@<id>`: the server sees its own folder, not `~` or
-     the other servers' env files.
+   - `tests/tools/sandbox-check.sh mineshell@<id>`: **done for Irithyll** (the user, 2026-11-01,
+     after a restart: seccomp 2, `~` only `.local` and its own `.cache/JNA`, `units/` only
+     `once`). Before the restart it still ran with 1.0's settings, started at 04:00: the reason
+     for the "restart to apply" note (6204c7b). MeatballCraft when it next runs.
    - Forge 1.12's startup question and the crash diagnoses (`tests/tools/scenarios.sh` on the
      throwaway dev server): the one-start arguments now come from `units/once/<id>/`.
    - A server with JVM arguments holding a quoted space, if any (they were split before).
