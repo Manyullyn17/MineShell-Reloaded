@@ -47,6 +47,22 @@ export function isCrossSiteRequest(request: Request): boolean {
 }
 
 /**
+ * What a visitor who is not signed in may send: the sign-in and setup forms
+ * are a few hundred bytes. The installer sets BODY_SIZE_LIMIT=Infinity for
+ * world uploads, so without this anyone reaching the port could post
+ * gigabytes to /login, which reads the whole form into memory.
+ */
+const ANONYMOUS_BODY_LIMIT = 64 * 1024;
+
+export function anonymousBodyTooBig(request: Request): boolean {
+	if (!STATE_CHANGING.has(request.method)) return false;
+	const length = request.headers.get('content-length');
+	// No length: sent in chunks, of any size.
+	if (length === null) return request.body !== null;
+	return !(Number(length) <= ANONYMOUS_BODY_LIMIT);
+}
+
+/**
  * Headers every response gets: no other site (or another port on this
  * machine, which shares the cookies) may show MineShell in a frame, so a
  * page cannot overlay its buttons with its own. Its own pages may: the Map
@@ -136,6 +152,9 @@ export function guard(event: GuardEvent): Response | null {
 	const pathname = event.url.pathname;
 	const isPublic = mapFrame || PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
+	if (!event.locals.authenticated && !mapFrame && anonymousBodyTooBig(event.request)) {
+		return new Response('Sign in first.', { status: 413, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+	}
 	// A fresh install has no account yet, so send the first visitor to setup.
 	// (In SvelteKit 2, redirect() throws by itself.)
 	if (!ownerExists() && pathname !== '/setup') redirect(303, '/setup');

@@ -476,3 +476,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The Console's error and warning counts went down as often as up during a big start, and its early errors could no longer be filtered for: one buffer limit for every line pushed them out | `shared/consolelines.test.ts` ("the console buffer") |
 | A fresh install was anyone's: whoever reached /setup first (on a public address, any scanner) picked the owner's password | `routes/setup/setup.test.ts` ("asks for the setup code") |
 | The login throttle counted each IPv6 address apart, so a guesser with a /64 took a new address every ten tries | `server/auth.test.ts` ("the login throttle") |
+| A visitor without a session could post gigabytes to /login (BODY_SIZE_LIMIT=Infinity), read whole into memory | `server/guard.test.ts` ("a big body") |

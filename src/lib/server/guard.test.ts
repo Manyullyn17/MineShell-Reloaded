@@ -118,6 +118,17 @@ describe('auth guard', () => {
 		expect(outcome(event('/mapsx/y'))).toEqual({ redirect: '/login?next=%2Fmapsx%2Fy' });
 	});
 
+	it('refuses a big body from a visitor without a session, before /login reads it into memory', () => {
+		const post = (headers: Record<string, string>) => outcome(event('/login?/login', { route: '/login', method: 'POST', headers }));
+		expect(post({ 'content-length': String(10 * 1024 ** 3) })).toEqual({ status: 413 });
+		expect(post({ 'content-length': 'lots' })).toEqual({ status: 413 });
+		expect(post({ 'content-length': '300' })).toBeNull();
+		// Signed in, uploads are as big as BODY_SIZE_LIMIT lets them be.
+		const session = createSession(owner().id, 'test').id;
+		const upload = event('/instances/a/files?/upload', { session, method: 'POST', headers: { 'content-length': String(10 * 1024 ** 3) } });
+		expect(outcome(upload)?.status).not.toBe(413);
+	});
+
 	it('sends visitors without a session to login, remembering where they were going', () => {
 		expect(outcome(event('/settings?tab=x'))).toEqual({ redirect: '/login?next=%2Fsettings%3Ftab%3Dx' });
 		expect(outcome(event('/login'))).toBeNull();
