@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Flash from '#lib/components/Flash.svelte';
+	import PlainHttpNotice from '#lib/components/PlainHttpNotice.svelte';
 	let { data, form } = $props();
 </script>
 
@@ -11,6 +12,8 @@
 		Pick a password for this control panel's owner account. It is what stands between your servers
 		and anything else on the network.
 	</p>
+
+	<PlainHttpNotice />
 
 	{#if form?.message}
 		<Flash message={form.message} type="error" />

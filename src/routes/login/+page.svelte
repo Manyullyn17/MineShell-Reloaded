@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Flash from '#lib/components/Flash.svelte';
+	import PlainHttpNotice from '#lib/components/PlainHttpNotice.svelte';
 	let { data, form } = $props();
 	// While there is one account its name is filled in: an install from before accounts never typed one.
 	const username = $derived(form?.username ?? data.username ?? '');
@@ -10,6 +11,8 @@
 <div class="card panel">
 	<h1>MineShell</h1>
 	<p class="muted">Sign in to manage your servers.</p>
+
+	<PlainHttpNotice />
 
 	{#if form?.message}
 		<Flash message={form.message} type="error" />
