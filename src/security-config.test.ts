@@ -8,6 +8,18 @@ const viteConfig = fs.readFileSync('vite.config.ts', 'utf8');
  * notice them going missing.
  */
 describe('security settings in the configuration', () => {
+	// Text from outside (mod descriptions, player names, log lines) that got past
+	// escaping would otherwise run as the signed-in account.
+	it("lets only MineShell's own scripts run in its pages", () => {
+		expect(viteConfig).toMatch(/csp:\s*\{[\s\S]*?'script-src':\s*\['self'\]/);
+		expect(viteConfig).toMatch(/'object-src':\s*\['none'\]/);
+		// An inline script without Kit's nonce would be refused, and the theme would flash.
+		const html = fs.readFileSync('src/app.html', 'utf8');
+		const scripts = html.match(/<script\b[^>]*>/g) ?? [];
+		expect(scripts.length).toBeGreaterThan(0);
+		for (const tag of scripts) expect(tag).toContain('nonce="%sveltekit.nonce%"');
+	});
+
 	// The dev server listens on the network, and SvelteKit's generated env module
 	// holds every private variable's value (the CurseForge key): it was served to anyone.
 	it("keeps the dev server from serving SvelteKit's env module", () => {

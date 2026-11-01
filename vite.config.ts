@@ -72,6 +72,21 @@ export default defineConfig({
       // Vitest it reads tests/env (no .env there), so tests never see the real
       // MINESHELL_DATA. tests/setup.ts double-checks and aborts otherwise.
       env: { dir: testing ? 'tests/env' : '.' },
+      // MineShell shows text from outside (mod descriptions, player names, chat,
+      // log lines): if any of it ever got past escaping and DOMPurify, a script
+      // would run as the signed-in account. Only MineShell's own scripts may run
+      // (Kit adds a nonce for its inline ones, app.html's theme script carries
+      // one), never inline handlers or other sites' scripts. Images, styles and
+      // frames are left open: they cannot act as the account.
+      csp: {
+        mode: 'auto',
+        directives: {
+          'script-src': ['self'],
+          'object-src': ['none'],
+          'base-uri': ['self'],
+          'frame-ancestors': ['self']
+        }
+      },
       csrf: {
         // SvelteKit's own check compares the full origin, which breaks behind
         // TLS-terminating proxies (the app sees http, the browser https).
