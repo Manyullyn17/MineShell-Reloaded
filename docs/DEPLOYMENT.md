@@ -218,6 +218,14 @@ short), and if the installer fails, the page shows its log and the old version k
 A MineShell installed with 0.1.0's installer needs one update by hand (the command below):
 that is what lets it update itself.
 
+Betas: the next version can be tried before its release. A beta (`1.1.0-beta.1`, then
+`-beta.2`, ...) is published on GitHub as a pre-release, and nothing offers it unless asked:
+the installer's latest release and the update check pass it by. Settings > Updates, "Offer
+betas too" (the owner) makes the check offer a newer beta like a release; the release that
+follows the betas is offered either way, so a beta install moves on to it. Going back from a
+beta lands on a release; betas are not in that list. A MineShell from before betas existed
+(1.0.x) gets its first one with the installer: `MINESHELL_VERSION=v1.1.0-beta.1`.
+
 Running the installer again: it installs the newest release next to the running one, switches
 `current` over, rewrites `mineshell.service` and restarts it; the settings file and the data
 are left alone, and the two previous releases stay in `releases/`. Restarting MineShell does
@@ -321,12 +329,14 @@ all servers set, also `app-mineshell.slice` there).
 On `main`, with everything committed and CI green:
 
 ```sh
-npm run release                          # or: npm run release -- -m "Intro for the notes"
+npm run release -- beta                  # a beta of the next version: 1.1.0-beta.1, then -beta.2, ...
+npm run release                          # the release; or: npm run release -- -m "Intro for the notes"
                                          # or, longer, with ## headings: -F intro.md
 git push origin main v<version>          # the command it prints
 ```
 
-`scripts/release.sh` picks the version from the commits since the last tag, bumps
+`scripts/release.sh` picks the version from the commits since the last release (betas not
+counted, so every beta of 1.1 and 1.1 itself are 1.1.0), bumps
 `package.json`, commits `chore: version <version>`, tags it and shows the release notes; it
 pushes nothing. The rules:
 
@@ -338,7 +348,9 @@ pushes nothing. The rules:
 | nothing but `docs:`, `test:`, `ci:`, `chore:` | no release | no release |
 
 `npm run release -- patch|minor|major|<x.y.z>` overrides it. 1.0 is a decision, not a rule:
-the first version to recommend to other people as stable.
+the first version to recommend to other people as stable. `npm run release -- beta` makes the
+picked version's next beta instead, and `npm run release` after betas makes their version
+(`tests/tools/release-check.sh` walks through it in a throwaway repository).
 
 From 1.0 on, a change that breaks "What 1.x keeps" (above) waits for 2.0: before a `feat:`
 or `fix:` goes in, its migrations are `-- downgrade: safe` and no setting is renamed or
@@ -347,8 +359,15 @@ removed.
 The pace from 1.0 on (user's call, 2026-10-30): at most one release a day, unless a hotfix
 for something that release broke follows it. Finished features are gathered into a minor
 every few days or more instead of released one by one, and fixes found close together go
-out as one patch. A release that brings many features at once (1.1, from the `next` branch)
-runs on the real install for a few days before it is published.
+out as one patch. A release that brings many features at once goes out as betas first: the
+real install runs them (betas on) for a few days, fixes go out as the next beta, and the
+release follows once a beta has run about three days with nothing big (lost data, a server
+that will not start, MineShell ending, a failed install or update, a permission leak).
+
+Fixes for the release while betas of the next are on main: branch from its tag
+(`git switch -c release/1.0 v1.0.0`), fix there, and release from that branch (`release.sh`
+allows only `main` so far: let it take `release/*` the first time this is needed), then merge
+the fix into main.
 
 The pushed tag starts the Release workflow: the CI checks, the archive
 (`scripts/package.sh`), one start of it on a throwaway data directory (`scripts/smoke.sh`),
@@ -357,7 +376,9 @@ then the release with its checksum and `install.sh`. CI packs and smoke-tests on
 The release notes (`scripts/release-notes.sh`, also shown on Settings > Updates before
 updating) are the tag message after its first line, then the commits since the previous
 tag: `feat:` under "New", `fix:` under "Fixed", by subject; `docs:`, `test:`, `ci:` and
-`chore:` are left out.
+`chore:` are left out. A beta's are since the beta before it; a release's since the previous
+release, so 1.1.0's notes hold all of 1.1, its betas' changes included. The workflow publishes
+a tag with a `-` (a beta) as a GitHub pre-release.
 
 ---
 

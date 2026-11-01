@@ -20,6 +20,13 @@ run of its own on the real install, under the same rule as 1.0 (a few days with 
 After that `next` is dropped and work goes back to `main`; a branch comes back only for 2.0's
 breaking work. Fixes are batched more than 0.33.x's four releases in an evening.
 
+Betas (user's call, 2026-11-01; built the same day, DEPLOYMENT "Publishing a release"): from
+1.1 on a candidate is a beta, `1.1.0-beta.1` and on, a GitHub pre-release that only installs
+with "Offer betas too" on see. 1.1's run: merge `next` into `main`, `npm run release -- beta`,
+the real install gets it with the installer's `MINESHELL_VERSION=v1.1.0-beta.1` (1.0 has no
+beta switch) and turns betas on; fixes go out as the next beta; 1.1.0 after about three days
+with nothing big. A 1.0.x fix meanwhile goes on a `release/1.0` branch from `v1.0.0`.
+
 1.1's scope (user's call, 2026-10-31): what is on `next` now is nearly enough. Added before it
 goes into `main`: servers that are really sandboxed (security), quoted JVM arguments with it
 (both change how every server starts, so they share one template change and one pass on real

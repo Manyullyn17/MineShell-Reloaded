@@ -7,12 +7,14 @@
 #   npm run release -- -m "Intro text"   # with an intro for the release notes
 #   npm run release -- -F intro.md       # the intro from a file (Markdown, headings kept)
 #   npm run release -- patch|minor|major|1.2.3
+#   npm run release -- beta              # the next version's next beta: 1.1.0-beta.1, -beta.2, ...
 #
-# The rules (DEPLOYMENT.md, "Publishing a release"):
+# The rules (DEPLOYMENT.md, "Publishing a release"), counted from the last release (not beta):
 #   fix: only                    -> patch
 #   any feat:                    -> minor
 #   feat!: / fix!: (breaking)    -> minor before 1.0, major from 1.0 on
 #   nothing but docs/test/ci/... -> no release (name a bump to release anyway)
+# After betas, `npm run release` without a bump releases the version they were betas of.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -34,10 +36,18 @@ done
 current=$(node -p "require('./package.json').version")
 last=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
 [ -z "$last" ] || [ "$last" = "v$current" ] || fail "package.json says $current but the last tag is $last."
-subjects=$(git log --no-merges --format=%s "${last:+$last..}HEAD")
-[ -n "$subjects" ] || fail "nothing since $last."
+[ -n "$(git log --no-merges --format=%s "${last:+$last..}HEAD")" ] || fail "nothing since $last."
+# The version is picked from everything since the last release, betas included: 1.1's betas
+# and its release are all 1.1.0, whatever each beta brought.
+stable=$(git describe --tags --abbrev=0 --match 'v*' --exclude 'v*-*' 2>/dev/null || true)
+subjects=$(git log --no-merges --format=%s "${stable:+$stable..}HEAD")
 
-IFS=. read -r major minor patch <<<"$current"
+IFS=. read -r major minor patch <<<"${stable#v}"
+[ -n "$stable" ] || IFS=. read -r major minor patch <<<"${current%%-*}"
+beta=no
+[ "$bump" = beta ] && { beta=yes; bump=""; }
+picked=no
+[ -n "$bump" ] || picked=yes
 if [ -z "$bump" ]; then
 	if grep -qE '^[a-z]+(\([^)]*\))?!:' <<<"$subjects"; then
 		bump=$([ "$major" -eq 0 ] && echo minor || echo major)
@@ -46,7 +56,7 @@ if [ -z "$bump" ]; then
 	elif grep -qE '^fix(\([^)]*\))?:' <<<"$subjects"; then
 		bump=patch
 	else
-		fail "no feat: or fix: since $last, so nothing for users. Name a bump (patch) to release anyway."
+		fail "no feat: or fix: since ${stable:-the start}, so nothing for users. Name a bump (patch) to release anyway."
 	fi
 fi
 case "$bump" in
@@ -54,8 +64,19 @@ case "$bump" in
 	minor) next="$major.$((minor + 1)).0" ;;
 	patch) next="$major.$minor.$((patch + 1))" ;;
 	[0-9]*.[0-9]*.[0-9]*) next="$bump" ;;
-	*) fail "unknown bump: $bump (patch, minor, major or a version)." ;;
+	*) fail "unknown bump: $bump (patch, minor, major, beta or a version)." ;;
 esac
+# Running a beta of a version past the picked one (a minor's beta, then only fixes): that version.
+if [ "$picked" = yes ] && [[ "$current" == *-* ]] && [ "$(printf '%s\n' "${current%%-*}" "$next" | sort -V | tail -n 1)" = "${current%%-*}" ]; then
+	next="${current%%-*}"
+fi
+if [ "$beta" = yes ]; then
+	if [[ "$current" == "$next"-beta.* ]]; then
+		next="$next-beta.$((${current##*-beta.} + 1))"
+	else
+		next="$next-beta.1"
+	fi
+fi
 git rev-parse -q --verify "refs/tags/v$next" >/dev/null && fail "v$next exists already."
 
 npm version "$next" --no-git-tag-version >/dev/null

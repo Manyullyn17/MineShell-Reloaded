@@ -59,5 +59,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+          # A beta (v1.1.0-beta.1) is a pre-release: the installer's releases/latest and
+          # MineShell's update check pass it by, unless its owner turned betas on.
+          prerelease=()
+          [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease=(--prerelease)
           gh release create "$GITHUB_REF_NAME" dist/mineshell-*.tar.gz dist/mineshell-*.tar.gz.sha256 scripts/install.sh \
-            --title "MineShell $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
+            --title "MineShell $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"

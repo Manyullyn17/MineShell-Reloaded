@@ -5,13 +5,19 @@
 #   scripts/release-notes.sh v0.2.1
 #
 # The tag's own message (beyond its first line) comes first, then the commits
-# since the previous tag: feat: under "New", fix: under "Fixed", one line each
+# since the previous tag (for a release, the previous release: its betas are left out): feat: under "New", fix: under "Fixed", one line each
 # from the subject. docs:, test:, ci: and chore: commits are left out.
 set -euo pipefail
 
 tag="$1"
 repo="${GITHUB_REPOSITORY:-Manyullyn17/MineShell-Reloaded}"
-previous=$(git describe --tags --abbrev=0 --match 'v*' "$tag^" 2>/dev/null || true)
+# A beta's notes are what changed since the tag before it (the last beta); a release's,
+# everything since the last release, its betas' changes included.
+if [[ "$tag" == *-* ]]; then
+	previous=$(git describe --tags --abbrev=0 --match 'v*' "$tag^" 2>/dev/null || true)
+else
+	previous=$(git describe --tags --abbrev=0 --match 'v*' --exclude 'v*-*' "$tag^" 2>/dev/null || true)
+fi
 range="${previous:+$previous..}$tag"
 
 intro=$(git tag -l --format='%(contents:body)' "$tag" | sed -e '/^-----BEGIN PGP/,$d')
