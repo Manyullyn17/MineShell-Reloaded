@@ -5,6 +5,7 @@
 #
 #   npm run release                      # version from the commits
 #   npm run release -- -m "Intro text"   # with an intro for the release notes
+#   npm run release -- -F intro.md       # the intro from a file (Markdown, headings kept)
 #   npm run release -- patch|minor|major|1.2.3
 #
 # The rules (DEPLOYMENT.md, "Publishing a release"):
@@ -22,6 +23,7 @@ intro=""
 while [ $# -gt 0 ]; do
 	case "$1" in
 		-m) intro="${2:-}"; shift 2 ;;
+		-F) [ -f "${2:-}" ] || fail "no file ${2:-} for -F."; intro=$(cat "$2"); shift 2 ;;
 		*) bump="$1"; shift ;;
 	esac
 done
@@ -59,7 +61,8 @@ git rev-parse -q --verify "refs/tags/v$next" >/dev/null && fail "v$next exists a
 npm version "$next" --no-git-tag-version >/dev/null
 git commit -q -m "chore: version $next" package.json package-lock.json
 if [ -n "$intro" ]; then
-	git tag -a "v$next" -m "MineShell $next" -m "$intro"
+	# whitespace, not git's default strip: that drops every line starting with #, Markdown's headings.
+	git tag -a --cleanup=whitespace "v$next" -m "MineShell $next" -m "$intro"
 else
 	git tag -a "v$next" -m "MineShell $next"
 fi
