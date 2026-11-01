@@ -1286,7 +1286,7 @@
 		</p>
 	</div>
 {/if}
-<section class="panel">
+<section class="panel settings-section">
 	<h2>Remote access</h2>
 	<p>
 		On plain http, your password and session cross the network unencrypted: anyone else on it can read them. From
@@ -1300,21 +1300,23 @@
 	{/if}
 	<!-- One switch: it saves when flipped, no save bar. -->
 	<form method="POST" action="?/plainHttpWarning" use:enhance={() => async ({ update }) => update({ reset: false })}>
-		<div class="check field">
-			<input
-				id="plainHttpWarning"
-				name="plainHttpWarning"
-				type="checkbox"
-				class="switch"
-				role="switch"
-				bind:checked={plainHttpWarning}
-				onchange={(e) => e.currentTarget.form?.requestSubmit()}
-			/>
-			<label for="plainHttpWarning">Warn on the sign-in page when it came over plain http</label>
-			<p class="hint">
-				Off for a home network you trust, where MineShell is only ever opened from your own devices. The first setup
-				always warns.
-			</p>
+		<div class="rows">
+			<div class="check field">
+				<input
+					id="plainHttpWarning"
+					name="plainHttpWarning"
+					type="checkbox"
+					class="switch"
+					role="switch"
+					bind:checked={plainHttpWarning}
+					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				/>
+				<label for="plainHttpWarning">Warn on the sign-in page when it came over plain http</label>
+				<p class="hint">
+					Off for a home network you trust, where MineShell is only ever opened from your own devices. The first setup
+					always warns.
+				</p>
+			</div>
 		</div>
 	</form>
 
