@@ -17,13 +17,10 @@ import { outboundFetch } from '../outbound';
  * individually. Installing from a pack's server pack instead was looked at and
  * rejected (docs/ROADMAP.md, "Considered and rejected").
  *
- * Endpoint shapes below are per CurseForge's published API docs
- * (https://docs.curseforge.com/), not live-verified against a real key in
- * this environment (none was available) - only the auth-failure path
- * (missing/invalid key -> 401/403) has actually been exercised here. Treat
- * the success-path field mapping as "implemented per spec," and recheck
- * against a real response if search results or version metadata look wrong
- * once a working key is in place.
+ * Written from CurseForge's published API docs (https://docs.curseforge.com/),
+ * then checked against its real answers: curseforge-official-api.test.ts
+ * replays them (recorded with a real key), curseforge-official.test.ts covers
+ * paging and a key that stops being accepted.
  */
 
 const API = 'https://api.curseforge.com/v1';

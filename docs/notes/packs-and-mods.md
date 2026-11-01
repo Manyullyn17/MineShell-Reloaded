@@ -84,6 +84,16 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `config/paxi/datapacks` and Global Packs' `global_packs/required_data`/`optional_data` are
   from their documentation, not checked in a jar.
 
+## CurseForge's official API
+- The user has a key: saved in Settings of both the dev and the installed MineShell (encrypted
+  in the database), not in `.env` or `mineshell.env`, whose `CURSEFORGE_API_KEY=` is empty.
+  `tests/tools/curseforge-key.mjs` reads it out for recording (tests/README, "No network").
+  Keys start with `$2a$10$`: sourcing a file that holds one through a shell mangles it.
+- Checked against real answers 2026-11-01 (`curseforge-official-api.test.ts`): the mapping
+  written from the docs held. Pack file lists hold no separate server-pack entries; file tags
+  mix versions and the loader (`"1.12", "Forge", "1.12.2"`). Many 1.12 mods' files carry
+  `modLoader: null`, so their search hits list no loader, yet a Forge search finds them.
+
 ## Pack install form
 - Picking a provider pack version fetches `/api/packs/preview` (`packs/preview.ts`): the pack's
   mods, client-only ones flagged by Modrinth hash (sha512 for .mrpack, sha1 for the mirror's

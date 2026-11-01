@@ -120,6 +120,11 @@ pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `u
 file past the mirror's newest 50; both tests since made to hold) - re-record that file with
 `RECORD_HTTP=1` and adjust.
 
+CurseForge's official API (`curseforge-official-api.test.ts`) needs a key to record. The user's
+is saved in Settings of the dev MineShell (and the installed one), encrypted, not in `.env`;
+`tests/tools/curseforge-key.mjs <data dir>` prints it for the recording command, and
+`check-apis.sh` fetches it by itself. The fixtures hold URLs and bodies, never the key.
+
 Code with side effects beyond that is tested through its pure parts (planning, parsing,
 matching), which is why some modules export small helpers such as `targetModNames` in
 `packchange.ts` and `pickVersionForJava` in `cleanroom.ts`.
@@ -163,6 +168,7 @@ value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispa
 | `mc-probe.mjs <version> [--file path=text]... [--from dir] [--command cmd]... [--java path] [--keep dir] [--all]` | How Minecraft itself treats a file: runs that vanilla server (jar from Mojang, cached in `~/.cache/mineshell-mc-probe`; its own Java major from `/usr/lib/jvm` or MineShell's downloads) on a scratch folder with the files given, until "Done (", runs the commands, stops it and shows a diff of each file it rewrote and the small files it added (`op Steve` -> ops.json). Found how 1.12 reads server.properties (Latin-1) and that every version escapes `:` `!` `\` in it. No unit, nothing of MineShell's touched |
 | `analyse-bench.mjs <folder holding region/> [runs]` (`npx tsx`) | Times a prune analysis of one dimension (read only), and the longest the event loop was held meanwhile: what other requests wait. Point it at a copy of a real world; MeatballCraft's overworld (499 regions) took 10.8 s warm |
 | `check-apis.sh [vitest args]` | Every recorded-API test file against the live APIs, recorded into a temporary folder (see "No network") |
+| `curseforge-key.mjs <data dir>` | The CurseForge key saved in that MineShell's Settings, for recording the official API (see "No network") |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 | `snapshot-check.mjs <server folder>` | A server's snapshots checked on disk, reading only: each file its `hashes.json` records there with that size and SHA-256, the live world sharing no file with a snapshot, linked files per snapshot and the space all take (each file once). Safe on a real install (about 8 s for three snapshots of a 6 GB world); for checking shared snapshot files after one is deleted |

@@ -12,5 +12,13 @@ set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 out="$(mktemp -d "${TMPDIR:-/tmp}/mineshell-apis-XXXXXX")"
 trap 'rm -rf -- "$out"' EXIT
+# CurseForge's official API needs a key: the one saved in the dev MineShell's Settings, unless
+# one is given. Without it that file is skipped.
+if [[ -z "${CURSEFORGE_API_KEY:-}" ]]; then
+	data="$(sed -n 's/^MINESHELL_DATA=//p' .env 2>/dev/null)"
+	CURSEFORGE_API_KEY="$(node tests/tools/curseforge-key.mjs "${data:-$HOME/mineshell-data}" 2>/dev/null)" || CURSEFORGE_API_KEY=''
+	export CURSEFORGE_API_KEY
+	[[ -n "$CURSEFORGE_API_KEY" ]] || echo "No CurseForge key found: the official API's tests are skipped." >&2
+fi
 mapfile -t files < <(grep -rl 'useRecordedHttp(' src tests --include='*.test.ts' | sort)
 RECORD_HTTP=1 RECORD_HTTP_DIR="$out" npx vitest run "${files[@]}" "$@"
