@@ -7,7 +7,10 @@ import {
 	createOwner,
 	createSession,
 	ownerExists,
-	sessionCookieOptions
+	SETUP_CODE_FILE,
+	sessionCookieOptions,
+	setupCode,
+	setupCodeMatches
 } from '#lib/server/auth.js';
 import { DATA_DIR } from '#lib/server/config.js';
 import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
@@ -15,7 +18,9 @@ import { probeSystemd, templateUnitInstalled } from '#lib/server/systemd.js';
 export const load: PageServerLoad = async () => {
 	if (ownerExists() || !authEnabled()) redirect(303, '/');
 	const systemd = await probeSystemd();
+	setupCode();
 	return {
+		codeFile: SETUP_CODE_FILE,
 		dataDir: DATA_DIR,
 		username: OWNER_USERNAME,
 		systemd,
@@ -31,6 +36,10 @@ export const actions: Actions = {
 		const password = String(form.get('password') ?? '');
 		const confirm = String(form.get('confirm') ?? '');
 
+		// Whoever reaches a fresh install first would otherwise own it (auth.ts, setupCode).
+		if (!setupCodeMatches(String(form.get('code') ?? ''))) {
+			return fail(400, { message: `That is not the setup code. It is in ${SETUP_CODE_FILE} and in MineShell's log.` });
+		}
 		if (password !== confirm) return fail(400, { message: 'The two passwords do not match.' });
 
 		let owner;

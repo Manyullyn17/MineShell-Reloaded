@@ -18,14 +18,22 @@
 
 	<form method="POST">
 		<div class="field">
+			<label for="code">Setup code</label>
+			<!-- svelte-ignore a11y_autofocus -->
+			<input id="code" name="code" autocomplete="off" spellcheck="false" autofocus required />
+			<p class="hint">
+				So that nobody else who reaches this page first can take MineShell over. It is on the last lines the installer
+				printed, in MineShell's log, and in <span class="mono">{data.codeFile}</span>.
+			</p>
+		</div>
+		<div class="field">
 			<label for="username">Username</label>
 			<!-- Shown (and sent) so a password manager saves the name with the password; the account is always this name. -->
 			<input id="username" name="username" autocomplete="username" value={data.username} readonly />
 		</div>
 		<div class="field">
 			<label for="password">Password</label>
-			<!-- svelte-ignore a11y_autofocus -->
-			<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" autofocus required />
+			<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required />
 			<p class="hint">At least 8 characters.</p>
 		</div>
 		<div class="field">

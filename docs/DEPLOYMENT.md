@@ -120,7 +120,10 @@ Run it as the account MineShell should run as (not root). It needs Node.js 22.19
 - turns on lingering if it can (otherwise it says to run `sudo loginctl enable-linger $USER`);
 - starts MineShell and waits until it answers.
 
-Open `http://<server-ip>:3000`, set the password of the owner account (`admin`), add a server.
+Open `http://<server-ip>:3000`, enter the setup code the installer printed last (also in
+`~/.local/share/mineshell/setup-code` and in `journalctl --user -u mineshell`), set the
+password of the owner account (`admin`), add a server. The code is there so that nobody who
+finds the address before you can claim MineShell; it is deleted once used.
 
 It refuses, before changing anything, when `~/mineshell` or `mineshell.service` exist and
 were not made by it. Options are environment variables on the `bash` side of the pipe, e.g.
@@ -400,6 +403,8 @@ Before putting MineShell on a public address:
   write any address into it.
 - Keep `MINESHELL_AUTH=on`, give every account a long password, and keep MineShell up to
   date (MineShell settings, Updates, with automatic checks on).
+- Set the owner's password before opening the port: until then /setup is waiting, guarded only
+  by the setup code.
 
 Restart MineShell after changing the settings file. Caddy is the shortest setup: it gets
 the certificate by itself, passes the headers MineShell needs and sends the console's event

@@ -195,6 +195,11 @@ main() {
 	fi
 	say "MineShell $version is running: http://$(hostname 2>/dev/null || echo localhost):$port"
 	[ "$first_config" = yes ] && say "First visit: set the admin password there. Settings: $config"
+	# /setup asks for this code, so whoever finds the address first cannot take MineShell over.
+	local data setup_code
+	data=$(sed -n 's/^MINESHELL_DATA=//p' "$config" | tail -n 1)
+	setup_code="${data:-$HOME/.local/share/mineshell}/setup-code"
+	[ -f "$setup_code" ] && say "Setup code (asked for on the first visit): $(cat "$setup_code")"
 	case "$node" in
 		*/.nvm/*) say "Node comes from nvm ($node): run this installer again after removing that Node version." ;;
 	esac
