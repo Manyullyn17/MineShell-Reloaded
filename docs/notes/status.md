@@ -52,7 +52,7 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.1). 1.1.0 once a beta has run about
+**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.2). 1.1.0 once a beta has run about
 three days with nothing big (ROADMAP, "Betas"). Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -64,15 +64,14 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - Forge 1.12's startup question and the crash diagnoses (`tests/tools/scenarios.sh` on the
      throwaway dev server): the one-start arguments now come from `units/once/<id>/`.
    - A server with JVM arguments holding a quoted space, if any (they were split before).
-2. **Updating itself: beta.1 -> beta.2 with the Update button** with "Offer betas too" on:
-   the first self-update since the installer runs inside `mineshell.service`'s new
-   `RestrictNamespaces` and the transient unit. Then beta.2 -> 1.1.0 (offered with betas on or off).
+2. **Updating itself**: beta.1 -> beta.2 with the Update button, betas on: **done** (the user,
+   2026-11-01). Left: beta.2 -> 1.1.0 (offered with betas on or off).
 3. **The script policy (CSP) on the built app**: click through the pages prod uses most; a
    refused script shows as a button doing nothing or a page not updating. In dev every page
    was swept with `page-sweep --errors` (one finding, fixed). Also the Map tab with BlueMap.
 4. **Security pass and Remote access**:
-   - Settings > System, "Remote access": served at https://mc-server.tailf233cf.ts.net, the
-     operator step until `sudo tailscale set --operator=manyullyn`, then Stop and Serve once.
+   - Settings > System, "Remote access": **done** (the user, 2026-11-01): the operator command,
+     then Stop serving and Serve over Tailscale both work on prod.
    - The sign-in page: warns at http://192.168.0.200:3000, not over the ts.net address; the
      switch turns it off.
    - Files: a symlink leading out of a server folder cannot be opened, but can be deleted.
