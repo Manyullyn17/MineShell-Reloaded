@@ -1327,7 +1327,7 @@
 				</p>
 			</div>
 			{#if data.owner}
-				<form method="POST" action="?/tailscaleStop" use:enhance class="inline-form">
+				<form method="POST" action="?/tailscaleStop" use:enhance class="inline-form remote-form">
 					<button class="button-quiet" type="submit" disabled={tailscale.operator === false}>Stop serving</button>
 				</form>
 			{/if}
@@ -1348,7 +1348,7 @@
 				</div>
 			{/if}
 			{#if data.owner}
-				<form method="POST" action="?/tailscaleServe" use:enhance class="inline-form">
+				<form method="POST" action="?/tailscaleServe" use:enhance class="inline-form remote-form">
 					<button class="button-primary" type="submit" disabled={!tailscale.https || tailscale.operator === false}>
 						Serve at https://{tailscale.name}
 					</button>
@@ -1883,6 +1883,15 @@
 	.java-download,
 	.remote-heading {
 		margin-top: var(--space-5);
+	}
+
+	/* Remote access: a notice under a heading, text under a button, each with room. */
+	.remote-heading {
+		margin-bottom: var(--space-3);
+	}
+
+	.remote-form {
+		margin-bottom: var(--space-4);
 	}
 
 	/* Sections rather than boxes, as on a server's Settings. */
