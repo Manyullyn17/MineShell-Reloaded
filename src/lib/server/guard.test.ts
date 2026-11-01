@@ -306,3 +306,30 @@ describe('an account that must pick its own password', () => {
 		expect(outcome(event('/login?/logout', { session, method: 'POST', headers: ORIGIN }))).toBeNull();
 	});
 });
+
+/**
+ * With MINESHELL_AUTH=off any request may do everything, and a site whose own
+ * name was pointed at the LAN address (DNS rebinding) sends same-origin
+ * requests the cross-site check lets through: only this machine's names count.
+ */
+describe('without sign-in', () => {
+	beforeEach(() => {
+		authControl.enabled = false;
+	});
+
+	it('answers to addresses and local names only', async () => {
+		const { hostAllowedWithoutAuth } = await import('./guard');
+		for (const host of ['192.168.0.200:3000', '[::1]:3000', 'localhost:5173', 'minecraft-box:3000', 'box.local', 'box.lan', 'box.tail1234.ts.net', 'box.home.arpa']) {
+			expect(hostAllowedWithoutAuth(host), host).toBe(true);
+		}
+		for (const host of ['evil.example', 'evil.example:3000', '192.168.0.200.nip.io', 'rebind.attacker.com.']) {
+			expect(hostAllowedWithoutAuth(host), host).toBe(false);
+		}
+	});
+
+	it('refuses a request sent to a public name', () => {
+		const rebound = event('/instances/a?/power', { method: 'POST', headers: { host: 'rebind.attacker.example:3000', origin: 'http://rebind.attacker.example:3000' } });
+		expect(outcome(rebound)).toEqual({ status: 403 });
+		expect(outcome(event('/'))).toBeNull();
+	});
+});

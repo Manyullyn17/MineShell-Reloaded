@@ -1,5 +1,8 @@
+import net from 'node:net';
+import os from 'node:os';
 import { redirect } from '@sveltejs/kit';
 import { dev } from '$app/env';
+import { EXTRA_HOSTS } from './config';
 import { authEnabled, ownerExists, sessionUser, SESSION_COOKIE } from './auth';
 import { loadAccess, NO_ACCESS_REASON } from './access';
 import { FULL_ACCESS, NO_ACCESS } from '#lib/shared/access.js';
@@ -60,6 +63,33 @@ export function anonymousBodyTooBig(request: Request): boolean {
 	// No length: sent in chunks, of any size.
 	if (length === null) return request.body !== null;
 	return !(Number(length) <= ANONYMOUS_BODY_LIMIT);
+}
+
+/** Names only a local network gives out; nobody on the internet can point them at this machine. */
+const LOCAL_SUFFIXES = ['.local', '.lan', '.home', '.home.arpa', '.internal', '.localdomain', '.localhost', '.ts.net'];
+
+/**
+ * With MINESHELL_AUTH=off, whether a request's Host is a name this machine is
+ * reached by. A site's own name can be made to point at a LAN address (DNS
+ * rebinding): its page then talks to MineShell as same-origin, which the
+ * cross-site check cannot tell apart, and without sign-in every request may
+ * do everything. So only an address, a one-word or local network name, this
+ * machine's name, or one listed in MINESHELL_HOSTS (a reverse proxy's) is
+ * answered. With sign-in, a rebound page has no session cookie to send.
+ */
+export function hostAllowedWithoutAuth(host: string | null): boolean {
+	if (!host) return true;
+	let name: string;
+	try {
+		name = new URL(`http://${host}`).hostname.toLowerCase().replace(/\.$/, '');
+	} catch {
+		return false;
+	}
+	if (name.startsWith('[') || net.isIP(name)) return true;
+	if (!name.includes('.')) return true;
+	if (LOCAL_SUFFIXES.some((suffix) => name.endsWith(suffix))) return true;
+	if (name === os.hostname().toLowerCase()) return true;
+	return EXTRA_HOSTS.includes(name);
 }
 
 /**
@@ -143,6 +173,12 @@ export function guard(event: GuardEvent): Response | null {
 	if (!required) {
 		event.locals.authenticated = true;
 		event.locals.access = FULL_ACCESS;
+		if (!hostAllowedWithoutAuth(event.request.headers.get('host'))) {
+			return new Response(
+				`MineShell runs without sign-in (MINESHELL_AUTH=off), so it answers only to this machine's addresses and local names. To reach it as ${event.url.hostname}, add that name to MINESHELL_HOSTS.`,
+				{ status: 403, headers: { 'content-type': 'text/plain; charset=utf-8' } }
+			);
+		}
 		return checkPolicy(event);
 	}
 

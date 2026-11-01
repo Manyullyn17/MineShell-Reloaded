@@ -22,6 +22,12 @@ export const TEMPLATE_UNIT = `${UNIT_PREFIX}@.service`;
 
 export const AUTH_ENABLED = (env.MINESHELL_AUTH ?? 'on').toLowerCase() !== 'off';
 
+/** Host names (a reverse proxy's) answered with MINESHELL_AUTH=off besides addresses and local names (guard.ts). */
+export const EXTRA_HOSTS = (env.MINESHELL_HOSTS ?? '')
+	.split(',')
+	.map((h) => h.trim().toLowerCase())
+	.filter(Boolean);
+
 export const CURSEFORGE_API_KEY = env.CURSEFORGE_API_KEY || '';
 
 /**
