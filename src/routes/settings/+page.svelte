@@ -1303,7 +1303,7 @@
 		<p class="small">
 			Tailscale is not installed on this machine. Install it here and on the devices you use MineShell from
 			(<a href="https://tailscale.com/download" target="_blank" rel="noreferrer">tailscale.com/download</a>; phones have
-			an app), sign this machine in with <code>sudo tailscale up</code>, then come back here.
+			an app), sign this machine in with <code class="command">sudo tailscale up</code>, then come back here.
 		</p>
 	{:else if tailscale.kind === 'down'}
 		<div class="notice warning"><p>{tailscale.message}</p></div>
@@ -1312,7 +1312,7 @@
 			<div class="notice warning">
 				<p>
 					One step first: Tailscale lets only root or its operator change what it serves. Run this once on the machine,
-					then reload this page: <code>sudo tailscale set --operator={tailscale.account}</code>
+					then reload this page: <code class="command">sudo tailscale set --operator={tailscale.account}</code>
 				</p>
 			</div>
 		{/if}
@@ -1322,7 +1322,7 @@
 					Served at <a href={tailscale.serve.url}>{tailscale.serve.url}</a> to your tailnet's devices.
 					{#if tailscale.serve.funnel}
 						Funnel is on for it, so it is on the public internet too: turn that off with
-						<code>tailscale funnel --https=443 off</code> unless you mean it.
+						<code class="command">tailscale funnel --https=443 off</code> unless you mean it.
 					{/if}
 				</p>
 			</div>
@@ -1355,10 +1355,10 @@
 				</form>
 			{/if}
 			<p class="muted small">
-				Runs <code>tailscale serve --bg --https=443 http://127.0.0.1:{tailscale.port}</code>, kept across reboots.
+				Runs <code class="command">tailscale serve --bg --https=443 http://127.0.0.1:{tailscale.port}</code>, kept across reboots.
 				{#if tailscale.operator === null}
 					Tailscale lets only root or its operator do that: if it refuses, run
-					<code>sudo tailscale set --operator={tailscale.account}</code> on the machine once.
+					<code class="command">sudo tailscale set --operator={tailscale.account}</code> on the machine once.
 				{/if}
 			</p>
 		{/if}
@@ -1385,9 +1385,9 @@
 		your servers. If MineShell has to be reachable without Tailscale, point a domain name at this machine, forward ports
 		80 and 443 to it (never MineShell's own port), and run on the machine:
 	</p>
-	<p><code>{data.caddy.script} panel.example.com</code></p>
+	<p><code class="command">{data.caddy.script} panel.example.com</code></p>
 	<p class="muted small">
-		It sets up Caddy (installed from your distribution, <code>sudo apt install caddy</code>) with a certificate it renews
+		It sets up Caddy (installed from your distribution, <code class="command">sudo apt install caddy</code>) with a certificate it renews
 		itself, and binds MineShell to this machine so Caddy is the only way in (DEPLOYMENT, "A public address with Caddy").
 	</p>
 </section>
@@ -1892,6 +1892,16 @@
 
 	.remote-form {
 		margin-bottom: var(--space-4);
+	}
+
+	/* A command to copy stays one piece: it moves to the next line whole rather than breaking
+	   after "sudo", and scrolls sideways only where even a line of its own is too narrow. */
+	.command {
+		display: inline-block;
+		max-width: 100%;
+		overflow-x: auto;
+		vertical-align: bottom;
+		white-space: nowrap;
 	}
 
 	/* Sections rather than boxes, as on a server's Settings. */
