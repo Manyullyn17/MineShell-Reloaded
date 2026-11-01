@@ -12,6 +12,7 @@ import {
 	setPassword,
 	setupCode,
 	setupCodeMatches,
+	throttleAddress,
 	verifyLogin
 } from './auth';
 import { db } from './db';
@@ -104,6 +105,25 @@ describe('login throttle', () => {
 		expect(loginThrottled('10.0.0.2', 'throttle-a')).toBe(false);
 		for (let i = 0; i < 50; i++) recordFailedLogin(`10.1.0.${i}`, 'Throttle-B');
 		expect(loginThrottled('10.2.0.1', 'throttle-b')).toBe(true);
+	});
+});
+
+describe('the login throttle', () => {
+	it('counts IPv6 per /64, which one client usually holds whole', () => {
+		expect(throttleAddress('2001:db8:1:2:aaaa::1')).toBe('2001:db8:1:2::/64');
+		expect(throttleAddress('2001:0db8:0001:0002:ffff:1:2:3')).toBe('2001:db8:1:2::/64');
+		expect(throttleAddress('2001:db8::5')).toBe('2001:db8:0:0::/64');
+		expect(throttleAddress('fe80::1%eth0')).toBe('fe80:0:0:0::/64');
+		expect(throttleAddress('::1')).toBe('0:0:0:0::/64');
+		expect(throttleAddress('::ffff:192.168.1.5')).toBe('192.168.1.5');
+		expect(throttleAddress('203.0.113.9')).toBe('203.0.113.9');
+	});
+
+	it('stops a guesser who moves to another address of the same /64', () => {
+		const name = `nobody-${Date.now()}`;
+		for (let i = 0; i < 10; i++) recordFailedLogin(`2001:db8:9:9::${i + 1}`, `${name}-${i}`);
+		expect(loginThrottled('2001:db8:9:9:ffff::77', `${name}-other`)).toBe(true);
+		expect(loginThrottled('2001:db8:9:a::1', `${name}-other`)).toBe(false);
 	});
 });
 
