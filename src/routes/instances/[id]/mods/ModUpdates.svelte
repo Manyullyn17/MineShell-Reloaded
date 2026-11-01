@@ -134,17 +134,16 @@
 			<div class="button-row">
 				{#if packName}
 					<span class="pack-toggle">
-						<input id="pack-mods-u" type="checkbox" class="switch" role="switch" bind:checked={packMods} disabled={running} />
+						<input id="pack-mods-u" type="checkbox" class="switch" role="switch" bind:checked={packMods} />
 						<label for="pack-mods-u">Allow changing single mods</label>
-						{#if running}<span class="faint">· stop the server first</span>{/if}
 					</span>
 				{/if}
 				<button
 					class="button-primary"
 					type="button"
 					onclick={checkUpdates}
-					disabled={changesLocked || checking || running || busy}
-					title={running ? 'Stop the server to update its mods' : changesLocked ? 'Allow changing single mods first' : undefined}
+					disabled={changesLocked || checking || busy}
+					title={changesLocked ? 'Allow changing single mods first' : undefined}
 				>
 					{checking ? 'Checking for updates' : 'Check for updates'}
 				</button>
@@ -152,7 +151,7 @@
 		</div>
 		{@render checkProgress()}
 		{#if running}
-			<p class="faint small">Stop the server to update its mods.</p>
+			<p class="faint small">Checking works while it runs; installing updates waits until the server is stopped.</p>
 		{/if}
 	{:else}
 		{#if updateCheck.synced}
@@ -184,11 +183,19 @@
 					</div>
 					<div class="button-row">
 						<button type="button" onclick={checkUpdates} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-						<button class="button-primary" type="submit" disabled={!chosenCount || running || checking}>
+						<button
+							class="button-primary"
+							type="submit"
+							disabled={!chosenCount || running || checking}
+							title={running ? 'Stop the server to install the updates' : undefined}
+						>
 							Update {chosenCount} mod{chosenCount === 1 ? '' : 's'}
 						</button>
 					</div>
 				</div>
+				{#if running}
+					<p class="faint small">Stop the server to install these updates: a running server has its mods open.</p>
+				{/if}
 				{@render checkProgress()}
 				<div class="table-box updates-box">
 					<table class="updates">
