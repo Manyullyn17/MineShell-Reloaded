@@ -664,6 +664,15 @@ is open, and each needs a test setup.
   process at once (nothing of the server is kept); a pack change could too, since its old
   loader files are in the journal and the change is put back from it either way - to check
   first that a half-written `libraries/` is among what the rollback restores or removes.
+- **Data pack loaders changing** (user, 2026-11-02; next to data packs on a version move). The
+  pack change's warning (`datapackloaders.ts`) covers a loader dropped. Two cases it does not
+  say enough about: another known loader coming in its place (Open Loader -> Paxi) still only
+  says the packs stop loading - it could name the new one and its folder, and offer to move
+  the user's packs there with the change; and the same loader moving its folder between
+  builds (Open Loader read `config/openloader/data` before its 1.21 line, `packs` after),
+  which counts as the loader staying and says nothing, though the old folder is no longer
+  read - to go by the new jar's version in its name, as the jar is not downloaded at preview.
+  `tests/tools/datapack-loader-packs.mjs` makes packs to try both on.
 - **Undoing a version move**: a Minecraft or loader move has no undo once it is done (its
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
