@@ -230,7 +230,7 @@
 		{planning ? 'Looking up the version' : 'Preview changes'}
 	</button>
 	{#if planning}
-		<p class="hint">CurseForge packs download their configs archive for this, which can take a minute.</p>
+		<p class="hint planning-note">CurseForge packs download their configs archive for this, which can take a minute.</p>
 	{/if}
 	{/if}
 
@@ -459,6 +459,10 @@
 
 	.upload {
 		margin-top: var(--space-3);
+	}
+
+	.planning-note {
+		margin-top: var(--space-2);
 	}
 
 	.upload label[aria-disabled='true'] {
