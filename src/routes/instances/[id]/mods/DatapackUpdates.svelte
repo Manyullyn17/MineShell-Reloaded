@@ -12,12 +12,17 @@
 		instanceId,
 		running,
 		busy,
-		snapshotPrompt
+		snapshotPrompt,
+		checkOnOpen = false,
+		onopencheck
 	}: {
 		instanceId: string;
 		running: boolean;
 		busy: boolean;
 		snapshotPrompt: PageData['snapshotPrompt'];
+		/** Arrived from the overview's notice: check at once, as the mods' Updates does. */
+		checkOnOpen?: boolean;
+		onopencheck?: () => void;
 	} = $props();
 
 	type Check = {
@@ -31,6 +36,12 @@
 	let chosen = $state<Record<string, boolean>>({});
 	const chosenCount = $derived(Object.values(chosen).filter(Boolean).length);
 	const riskyChosen = $derived(check?.updates.filter((u) => u.worldgenInUse && chosen[u.fileName]) ?? []);
+
+	$effect(() => {
+		if (!checkOnOpen) return;
+		onopencheck?.();
+		void run();
+	});
 
 	async function run() {
 		checking = true;

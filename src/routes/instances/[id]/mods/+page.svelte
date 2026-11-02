@@ -32,9 +32,11 @@
 
 	let filter = $state('');
 	/** Which sub-tab is open. */
-	// The overview's mod update notice links to ?view=updates.
-	// svelte-ignore state_referenced_locally
-	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(page.url.searchParams.get('view') === 'updates' ? 'updates' : 'installed');
+	// The overview's update notices link to ?view=updates and ?view=datapacks, which check on arrival.
+	const arrivedFor = page.url.searchParams.get('view');
+	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(arrivedFor === 'updates' || arrivedFor === 'datapacks' ? arrivedFor : 'installed');
+	// Once: the data packs view mounts again each time its tab opens.
+	let checkDatapacksOnOpen = $state(arrivedFor === 'datapacks');
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention' | 'client'>('all');
 	let modSort = $state(DEFAULT_MOD_SORT);
 	let uploadForm = $state<HTMLFormElement | null>(null);
@@ -595,7 +597,14 @@
 		</div>
 	</div>
 	{#if may('datapacks') && data.datapacks.packs.some((p) => p.tracked)}
-		<DatapackUpdates instanceId={data.instance.id} running={data.running} busy={data.busy} snapshotPrompt={data.snapshotPrompt} />
+		<DatapackUpdates
+			instanceId={data.instance.id}
+			running={data.running}
+			busy={data.busy}
+			snapshotPrompt={data.snapshotPrompt}
+			checkOnOpen={checkDatapacksOnOpen}
+			onopencheck={() => (checkDatapacksOnOpen = false)}
+		/>
 	{/if}
 	{#if data.datapacks.packs.length === 0}
 		<div class="empty"><p>No data packs. Data pack releases from Add mods land here.</p></div>
@@ -661,7 +670,7 @@
 	snapshotPrompt={data.snapshotPrompt}
 	bind:packMods
 	bind:available={updatesFound}
-	checkOnOpen={page.url.searchParams.get('view') === 'updates'}
+	checkOnOpen={arrivedFor === 'updates'}
 />
 
 <ModBrowser
