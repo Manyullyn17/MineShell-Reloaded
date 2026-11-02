@@ -1,6 +1,6 @@
 {
   "name": "mineshell",
-  "version": "1.1.0-beta.4",
+  "version": "1.1.0-beta.5",
   "private": true,
   "type": "module",
   "description": "Self-hosted web control panel for modded Minecraft servers, backed by systemd.",
