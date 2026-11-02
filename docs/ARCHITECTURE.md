@@ -1230,6 +1230,12 @@ a pack install gets a free port written into the config (from 24454 up, none ano
 or bound; before the mod's first start the file holds just that key, which the mod fills in).
 The overview's firewall hint and the server's Network settings show the port.
 
+The overview's Connect box gives the address to type: the LAN one (`primaryLanAddress`, the
+first private IPv4 of an interface that is not a VPN, container or VM bridge - tailscale0,
+docker0 and the like can be listed before the network card) with the firewall hint, and
+for a server public through playit.gg a second row with that address, which needs no
+firewall rule: the agent reaches the server over loopback.
+
 All the servers' ports in one place (`portmap.ts`, MineShell settings > Ports, global
 admins): game, RCON, query (the game port's number over UDP, when `enable-query` is on),
 voice chat and the map mod's port, next to what listens on each now. Listening sockets come

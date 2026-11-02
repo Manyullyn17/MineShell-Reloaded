@@ -30,6 +30,9 @@
 	const crash = streamed(() => data.crash, key);
 	const diagnosis = streamed(() => data.diagnosis, key);
 	const facesInfo = streamed(() => data.faces);
+	// The layout's, for the Connect box: players elsewhere type this, the host's own network the LAN address.
+	const publicInfo = streamed(() => data.publicAddress, key);
+	const publicAddress = $derived(publicInfo.ready ? (publicInfo.value?.address ?? null) : null);
 	const faces = $derived((facesInfo.ready ? facesInfo.value : {}) as Record<string, { id: string; skin: string | null }>);
 	const disk = streamed(() => data.disk, key);
 	const sparkInfo = streamed(() => data.spark, key);
@@ -98,18 +101,25 @@
 	const memoryCeiling = $derived(Math.max(heapBytes, ...data.memory.map((p) => Math.max(p.value, p.peak) * 1.1)));
 
 
-	let copied = $state(false);
+	let copied = $state<string | null>(null);
 	let showDimensions = $state(false);
 	let allDimensions = $state(false);
 	// Slowest first: the one lagging is what the list is for.
 	const dimensionTicks = $derived([...(data.tick?.dimensions ?? [])].sort((a, b) => b.mspt - a.mspt));
 	const dimensionTable = $derived(dimensionRows(dimensionTicks, allDimensions));
-	async function copyAddress() {
-		if (!(await copyText(`${data.detail.host}:${data.detail.serverPort}`))) return;
-		copied = true;
-		setTimeout(() => (copied = false), 2000);
+	async function copyAddress(address: string) {
+		if (!(await copyText(address))) return;
+		copied = address;
+		setTimeout(() => (copied = null), 2000);
 	}
 </script>
+
+{#snippet address(text: string)}
+	<div class="address">
+		<code class="mono">{text}</code>
+		<button type="button" onclick={() => copyAddress(text)}>{copied === text ? 'Copied' : 'Copy'}</button>
+	</div>
+{/snippet}
 
 <Flash {form} />
 
@@ -643,13 +653,16 @@
 	<div class="column">
 		<section class="panel">
 			<h2>Connect</h2>
-			<div class="address">
-				<code class="mono">{data.detail.host}:{data.detail.serverPort}</code>
-				<button type="button" onclick={copyAddress}>{copied ? 'Copied' : 'Copy'}</button>
-			</div>
+			{#if publicAddress}<p class="address-label">On your network</p>{/if}
+			{@render address(`${data.detail.host}:${data.detail.serverPort}`)}
 			<p class="faint small">
-				Can't connect? Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>{#if data.detail.voicePort}, and voice chat's port: <code class="mono">sudo ufw allow {data.detail.voicePort}/udp</code>{/if}
+				{publicAddress ? "Can't connect from your network?" : "Can't connect?"} Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>{#if data.detail.voicePort}, and voice chat's port: <code class="mono">sudo ufw allow {data.detail.voicePort}/udp</code>{/if}
 			</p>
+			{#if publicAddress}
+				<p class="address-label">From anywhere, through playit.gg</p>
+				{@render address(publicAddress)}
+				<p class="faint small">No firewall rule needed: playit.gg's agent reaches the server on this machine.</p>
+			{/if}
 		</section>
 
 		<section class="panel">
@@ -1019,6 +1032,20 @@
 
 	.address + p {
 		margin: 0;
+	}
+
+	.address-label {
+		margin: var(--space-3) 0 0;
+		font-size: 0.85rem;
+		color: var(--text-faint);
+	}
+
+	.address-label + .address {
+		margin-top: var(--space-1);
+	}
+
+	.address + p + .address-label {
+		margin-top: var(--space-4);
 	}
 
 	.address + p code {
