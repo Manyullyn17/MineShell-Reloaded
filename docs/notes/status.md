@@ -65,7 +65,8 @@ d80ded1 (the Connect box's playit.gg row), 4635d65 (the data packs' check button
 option saying the data packs stay), 1d33f98 (section tabs in view on every server tab),
 cc00559 (World > Worlds' panels over the whole row), e1fa5ff (Upload a world's button gap),
 5aea6e2 (a task's Cancel says "Cancelling…"), 9bccb0b (the pack preview note's gap) and
-e589eff (confirmations near the window's bottom scroll into view) go out as beta.5 once prod's own log cleanup has been seen to work
+e589eff (confirmations near the window's bottom scroll into view) and cd70d06 (the drop
+outline going after a cancelled drag) go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**

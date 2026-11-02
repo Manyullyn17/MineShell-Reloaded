@@ -28,8 +28,9 @@ The other leftovers of those features (Cancel for version moves and loader chang
 copies to a backup folder, CurseForge data packs, zipping chosen files, Chunk Pregenerator)
 are extensions and wait.
 
-1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5) and data packs
-on a version move (Leftovers), both pushed out of a full 1.1.
+1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5), data packs
+on a version move, dropping into a folder in Files and the Data packs tab showing what loader
+mods read, with an upload (Leftovers), all pushed out of a full 1.1.
 
 After 1.1 (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
 suggested order of its steps: upkeep and quick wins, files, mod configs, world, players,
@@ -673,6 +674,16 @@ is open, and each needs a test setup.
   which counts as the loader staying and says nothing, though the old folder is no longer
   read - to go by the new jar's version in its name, as the jar is not downloaded at preview.
   `tests/tools/datapack-loader-packs.mjs` makes packs to try both on.
+- **Dropping into a folder in Files** (user's call, 2026-11-02: for 1.2). The whole file list
+  is one drop zone uploading into the folder shown; with folders opened as a tree, a drop on
+  one of them should go there (the folder row outlined under the pointer, as a file manager
+  does), the list's own outline for the rest.
+- **Data packs a loader mod reads, on the Data packs tab** (user, 2026-11-02, for 1.2 with the
+  one above). The tab lists the active world's `datapacks/` only: one put in Open Loader's
+  `config/openloader/packs` (or Paxi's, Global Packs', KubeJS's; `DATAPACK_LOADERS` has the
+  folders) is not shown, though it loads for every world. List those too, by folder and the
+  mod that reads it, and give the tab an upload with a drop zone as Mods has: into the world's
+  `datapacks/`, or a loader's folder when the server has one (picked beside the upload).
 - **Undoing a version move**: a Minecraft or loader move has no undo once it is done (its
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
