@@ -40,14 +40,14 @@ const PACKS = [
 	{ version: '3.0.0', mods: ['fabric-api', 'cloth-config', 'yungs-api', 'paxi'] }
 ];
 
-/** The newest Fabric build of a project for the Minecraft version, as an index entry. */
+/** The newest Fabric build of a project for the Minecraft version, as an index entry. @param {string} slug */
 async function entry(slug) {
 	const query = new URLSearchParams({ loaders: JSON.stringify(['fabric']), game_versions: JSON.stringify([MINECRAFT]) });
 	const res = await fetch(`${API}/project/${slug}/version?${query}`, { headers: HEADERS });
 	if (!res.ok) throw new Error(`${slug}: Modrinth answered ${res.status}`);
 	const [version] = await res.json();
 	if (!version) throw new Error(`${slug}: no Fabric build for ${MINECRAFT}`);
-	const file = version.files.find((f) => f.primary) ?? version.files[0];
+	const file = version.files.find((/** @type {{ primary: boolean }} */ f) => f.primary) ?? version.files[0];
 	return {
 		path: `mods/${file.filename}`,
 		hashes: { sha1: file.hashes.sha1, sha512: file.hashes.sha512 },
@@ -58,7 +58,7 @@ async function entry(slug) {
 }
 
 const loaders = await (await fetch('https://meta.fabricmc.net/v2/versions/loader', { headers: HEADERS })).json();
-const FABRIC_LOADER = loaders.find((l) => l.stable)?.version;
+const FABRIC_LOADER = loaders.find((/** @type {{ stable: boolean }} */ l) => l.stable)?.version;
 if (!FABRIC_LOADER) throw new Error('Fabric meta lists no stable loader');
 
 fs.mkdirSync(out, { recursive: true });
