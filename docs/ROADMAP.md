@@ -523,8 +523,11 @@ jars (1.12.2-26.3) and `npm run check:icons` on MeatballCraft (with `--world`: 4
   banners and 183 shields, most plain; the ominous banner is the common patterned one.
 - **Lang templates' filled-in text (small, per mod)**: names with gaps ("… Vis Crystal").
   MeatballCraft has 26 such items, ATM10 372, but only a few matter in a world: Thaumcraft's
-  vis crystal (3910 stacks in MeatballCraft's world; the aspect from NBT, `tc.aspect.<key>` in
-  its lang), botany's pigments, Electroblob's Wizardry scrolls (the spell by damage),
+  vis crystal (3910 stacks in MeatballCraft's world; the gap is the aspect key from NBT,
+  capitalised: `Aspect.getName()` is `capitalizeFully(tag)`, so "Aer Vis Crystal", while
+  `tc.aspect.aer=Air` is only the tooltip's description; add-on aspects work the same way,
+  MeatballCraft has seven Thaumcraft add-ons, Thaumic Additions with 9 aspects of its own, the
+  test case), botany's pigments, Electroblob's Wizardry scrolls (the spell by damage),
   Tinkers' casts and patterns, Forge's filled bucket (`FluidName`), Thaumcraft phials. In ATM10
   one rule names 314 of the 372: Theurgy's `<key>.source` sibling holds the text for its one
   gap. Sophisticated Storage's wood type is NBT (`wood_name.sophisticatedstorage.<wood>`). So:
