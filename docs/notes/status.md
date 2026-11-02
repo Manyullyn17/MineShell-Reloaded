@@ -60,7 +60,8 @@ not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") an
 (no update notification for a version the user just installed past; migration 0032) and
 13b4a56 (quiet hours hold updates until they end) and e5b0d52 (the per-dimension table
 starts with the busy ones), 382d478 (the LAN address skips VPN and container interfaces) and
-d80ded1 (the Connect box's playit.gg row) go out as beta.5 once prod's own log cleanup has been seen to work
+d80ded1 (the Connect box's playit.gg row), 4635d65 (the data packs' check button's gap) and
+3f89223 (the overview's data pack notice opening Data packs) go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -119,7 +120,10 @@ d80ded1 (the Connect box's playit.gg row) go out as beta.5 once prod's own log c
      2's quarry dimension, Random Things' Spectre, Storage Cell, likely AE2's spatial storage).
    - Pre-generation: **done** (the user, 2026-11-02).
    - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
-     (the user, 2026-11-02). Data packs in the update check: left.
+     (the user, 2026-11-02). Data packs in the update check: **done** (the user, 2026-11-02:
+     More Breeze Rods, two versions both named "26.3", updated and then up to date); found the
+     check button against the table (4635d65) and the overview's "Review data pack updates"
+     opening Installed (3f89223).
    - Old logs deleted after the chosen days: **done** on prod (2026-11-02 12:23:51, 15 days:
      Irithyll's 21 archived logs of 9 to 18 October, 86 KB, and the journal line; the oldest
      left is from 19 October). The hourly read held back the changed number for up to an
@@ -135,7 +139,8 @@ d80ded1 (the Connect box's playit.gg row) go out as beta.5 once prod's own log c
    sandbox hides (ccaabc9), old logs' changed days applied at once (5eec358) and the overview's "Restart on crash"
    note (f3c0bd2: the startup crash exception is new); 13b4a56 (updates held by quiet hours)
    belongs in the quiet hours line, not a line of its own, and e5b0d52 (busy dimensions
-   first) in TPS per dimension's. The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
+   first) in TPS per dimension's; 3f89223 (the data pack notice's link) is new with 1.1's data
+   pack update check. The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
    newer is needed (the download fix).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
