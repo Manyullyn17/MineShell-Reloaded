@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { reveal } from '#lib/shared/reveal.js';
 	import { actionMessage, postAction } from '#lib/shared/forms.js';
 	import SettingsSection from '#lib/components/SettingsSection.svelte';
 
@@ -29,7 +30,7 @@
 <SettingsSection tab="java" title="Saved presets" description="Flags you saved for reuse on any server.">
 	<div class="block">
 		{#if showSavePreset}
-			<form class="inline-row" onsubmit={savePreset}>
+			<form class="inline-row" onsubmit={savePreset} use:reveal>
 				<input name="presetName" bind:value={presetName} placeholder="Preset name, e.g. My tuning" aria-label="Preset name" maxlength="60" />
 				<button class="button-primary" type="submit">Save preset</button>
 				<button type="button" class="button-quiet" onclick={() => (showSavePreset = false)}>Cancel</button>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { reveal } from '#lib/shared/reveal.js';
 	import SettingsSection from '#lib/components/SettingsSection.svelte';
 
 	let {
@@ -42,7 +43,7 @@
 			{#if !showClone}<button type="button" onclick={() => (showClone = true)}>Copy server</button>{/if}
 		</div>
 		{#if showClone}
-			<form method="POST" action="?/clone" use:enhance class="danger-form">
+			<form method="POST" action="?/clone" use:enhance use:reveal class="danger-form">
 				<div class="field">
 					<label for="clone-name">Name of the copy</label>
 					<input id="clone-name" name="name" value="{name.slice(0, 73).trim()} (copy)" maxlength="80" required />
@@ -87,6 +88,7 @@
 						deleting = false;
 					};
 				}}
+				use:reveal
 				class="danger-form bad"
 			>
 				<div class="field">

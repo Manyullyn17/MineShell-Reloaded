@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { reveal } from '#lib/shared/reveal.js';
 	import PathText from '#lib/components/PathText.svelte';
 	import { page } from '$app/state';
 	import Flash from '#lib/components/Flash.svelte';
@@ -400,6 +401,7 @@
 				<li>
 					{#if editingPreset === preset.id}
 						<form
+							use:reveal
 							method="POST"
 							action="?/updatePreset"
 							class="preset-edit"
@@ -1197,6 +1199,7 @@
 						</div>
 						{#if restoring === c.file && !c.refusal}
 							<form
+								use:reveal
 								method="POST"
 								action="?/restoreDatabase"
 								class="restore-panel"

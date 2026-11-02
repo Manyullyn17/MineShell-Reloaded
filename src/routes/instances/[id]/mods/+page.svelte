@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { reveal } from '#lib/shared/reveal.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import DatapackUpdates from './DatapackUpdates.svelte';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
@@ -469,7 +470,7 @@
 							<td class="small nowrap muted" title={mod.addedAt ? formatDateTime(mod.addedAt) : undefined}>{addedDate(mod.addedAt)}</td>
 							<td>
 								{#if pendingDelete === mod.fileName}
-									<div class="row-actions confirm">
+									<div class="row-actions confirm" use:reveal>
 										<span class="small" class:long={neededBy[mod.fileName] && mod.enabled}>
 											{neededBy[mod.fileName] && mod.enabled ? needQuestion(mod, 'Delete') : 'Delete this mod?'}
 										</span>
@@ -522,7 +523,7 @@
 							</td>
 						</tr>
 						{#if versionFor === mod.fileName}
-							<tr class="version-row">
+							<tr class="version-row" use:reveal>
 								<td colspan="7">
 									{#if versionsLoading}
 										<p class="muted small">Looking up versions of {mod.name}.</p>

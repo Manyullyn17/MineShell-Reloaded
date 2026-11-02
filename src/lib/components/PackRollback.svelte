@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { reveal } from '#lib/shared/reveal.js';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import type { SnapshotPromptView } from '#lib/shared/snapshots.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
@@ -61,6 +62,7 @@
 		<p class="hint">{info.blocked}</p>
 	{:else if open}
 		<form
+			use:reveal
 			method="POST"
 			action="?/rollbackPack"
 			use:enhance={() => {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { can, mayCancelTask, type InstancePermission } from '#lib/shared/access.js';
+	import { reveal } from '#lib/shared/reveal.js';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
@@ -423,7 +424,7 @@
 						</td>
 					</tr>
 					{#if pendingRestore === s.id}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="2">
 								<form
 									method="POST"
@@ -475,7 +476,7 @@
 							</td>
 						</tr>
 					{:else if pendingNewWorld === s.id}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="2">
 								<form
 									method="POST"
@@ -505,7 +506,7 @@
 							</td>
 						</tr>
 					{:else if pendingEdit === s.id}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="2">
 								<form
 									method="POST"
@@ -539,7 +540,7 @@
 							</td>
 						</tr>
 					{:else if pendingDelete === s.id}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="2">
 								<form
 									method="POST"
@@ -710,7 +711,7 @@
 						</td>
 					</tr>
 					{#if pendingWorld?.folder === w.folder && pendingWorld.kind === 'switch'}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="5">
 								<form method="POST" action="?/switchWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />
@@ -744,7 +745,7 @@
 							</td>
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'rename'}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="5">
 								<form
 									method="POST"
@@ -769,7 +770,7 @@
 							</td>
 						</tr>
 					{:else if pendingWorld?.folder === w.folder && pendingWorld.kind === 'delete'}
-						<tr class="confirm-row">
+						<tr class="confirm-row" use:reveal>
 							<td colspan="5">
 								<form method="POST" action="?/deleteWorld" use:enhance={closeWorldRow}>
 									<input type="hidden" name="world" value={w.folder} />

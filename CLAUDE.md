@@ -170,6 +170,9 @@ Cross-cutting UI facts stay here, since most UI work touches them:
   and outranks the children's own rules (RestartFields' amber boot note went grey).
 - List heights use the `fitToViewport` action (`src/lib/shared/fitToViewport.ts`), not
   `calc(100vh - ...)`.
+- A panel that opens in place under its button (a confirmation, a rename, Delete server)
+  gets `use:reveal` (`lib/shared/reveal.ts`): opened near the bottom of the window, it was
+  out of sight until scrolled to. It scrolls only as far as needed, never under the sticky bars.
 - Long names (servers 80, mods, files, versions, players, paths) are often one unbroken word.
   `body` has `overflow-wrap: break-word`, which only breaks text inside a box of fixed width:
   a flex item holding a name also needs `min-width: 0`, a grid track `minmax(0, 1fr)` (plain
