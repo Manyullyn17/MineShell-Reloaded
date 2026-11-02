@@ -62,7 +62,9 @@ not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") an
 starts with the busy ones), 382d478 (the LAN address skips VPN and container interfaces) and
 d80ded1 (the Connect box's playit.gg row), 4635d65 (the data packs' check button's gap) and
 3f89223 (the overview's data pack notice opening Data packs) and b27b356 (the new world's
-option saying the data packs stay) go out as beta.5 once prod's own log cleanup has been seen to work
+option saying the data packs stay), 1d33f98 (section tabs in view on every server tab),
+cc00559 (World > Worlds' panels over the whole row) and e1fa5ff (Upload a world's button gap)
+go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -108,7 +110,8 @@ option saying the data packs stay) go out as beta.5 once prod's own log cleanup 
      (nothing left); the data pack loader warning.
    - Moving a server to an older Minecraft: with a new world **done** (the user, 2026-11-02:
      NeoForge 26.3 -> 1.21.11; its data pack stayed in the old world, which the option did not
-     say: fixed in b27b356, carrying them over is for 1.2). Left: once keeping the world.
+     say: fixed in b27b356, carrying them over is for 1.2) and keeping the world **done** (the
+     user, 2026-11-02).
    - Pruning: **done** (the user, 2026-11-02, a test server on prod): Chunky's area analysed, the
      analysis still there after `systemctl --user restart mineshell`, and a prune left the
      saved areas standing (they spelled HELLO).
