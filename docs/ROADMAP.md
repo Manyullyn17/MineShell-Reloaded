@@ -28,6 +28,9 @@ The other leftovers of those features (Cancel for version moves and loader chang
 copies to a backup folder, CurseForge data packs, zipping chosen files, Chunk Pregenerator)
 are extensions and wait.
 
+1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5) and data packs
+on a version move (Leftovers), both pushed out of a full 1.1.
+
 After 1.1 (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
 suggested order of its steps: upkeep and quick wins, files, mod configs, world, players,
 schedules, diagnosis and copies, GT New Horizons, item icons, the status page. Then plugin
@@ -655,6 +658,20 @@ is open, and each needs a test setup.
 - **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; a pack
   change waits for a loader installer under way (the installer is not stopped), and Minecraft
   moves and loader changes outside a pack change have no Cancel.
+- **Undoing a version move**: a Minecraft or loader move has no undo once it is done (its
+  rollback only runs when the move fails); going back is moving again and, for a kept world,
+  its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
+  a future feature, no version yet).
+- **Data packs on a version move** (user's call 2026-11-02: for 1.2, on the edge between
+  closing a gap in 1.1's moving down and a feature of its own). A move does nothing with data
+  packs: a new world (moving down) starts without them, the old world keeps them (since
+  2026-11-02 the option says so), and a kept world keeps packs made for the old version, which
+  may not load. The move's preview lists the data packs from Add mods with the target's build
+  for each (as `checkDatapackUpdates` finds one), installs those into the world moved to (the
+  new one, or the kept one in place of the old build) and names the ones without a build,
+  which stay where they were; hand-added ones are listed, not looked up. The tracking rows
+  are per server, not per world: a pack left in the old world is skipped by the update check
+  while another world is active.
 - **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask).
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was
