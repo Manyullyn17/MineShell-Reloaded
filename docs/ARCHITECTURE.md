@@ -1659,7 +1659,8 @@ and anything but an error closes itself after 8 s. The Activity page keeps the l
 
 **Cancelling** is cooperative: work checks `task.isCancelled()` and stops. A task offers
 Cancel only when it was started with `cancel` (what cancelling does, said back to whoever
-cancels): a pack change (`PACK_CHANGE_CANCEL`) stops at its next step - downloads after the
+cancels); once asked, the task says `cancelling` until it stops (the button reads
+"Cancelling…" everywhere, as a loader install under way can take a while to get there): a pack change (`PACK_CHANGE_CANCEL`) stops at its next step - downloads after the
 files under way, a loader install once it has finished - and is put back from its journal as a
 failure is, ending as cancelled, not failed; just before its commit it closes cancelling
 (`closeCancel`: Cancel goes, one asked for in between is dropped, so a change in place never

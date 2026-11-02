@@ -77,7 +77,7 @@
 						{#if task.state === 'running' && task.cancel && mayCancelTask(data.access, task)}
 							<form method="POST" action="?/cancel" use:enhance>
 								<input type="hidden" name="id" value={task.id} />
-								<button class="button-quiet button-danger">Cancel</button>
+								<button class="button-quiet button-danger" disabled={task.cancelling}>{task.cancelling ? 'Cancelling…' : 'Cancel'}</button>
 							</form>
 						{/if}
 						<button class="button-quiet" onclick={() => (expanded = expanded === task.id ? null : task.id)}>

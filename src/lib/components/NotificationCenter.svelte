@@ -6,6 +6,7 @@
 	import { formatRelative } from '#lib/shared/format.js';
 	import { finishWatcher } from '#lib/shared/taskwatch.js';
 	import { untrack } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { dismissToast, holdToast, resumeToast, toast, toasts } from '#lib/shared/toasts.svelte.js';
 
 	/**
@@ -38,6 +39,8 @@
 		finishedAt: number | null;
 		/** What cancelling does; null: the task cannot be cancelled. */
 		cancel: string | null;
+		/** Cancel was asked for; the work stops at its next step. */
+		cancelling: boolean;
 	};
 
 	const READ_KEY = 'mineshell.notifications.read';
@@ -115,15 +118,21 @@
 		return () => source.close();
 	});
 
+	// Clicked here, until the task's own update says it is cancelling: a second click asks nothing.
+	const asked = new SvelteSet<string>();
 	async function cancel(task: Task) {
+		if (asked.has(task.id)) return;
+		asked.add(task.id);
 		const body = new FormData();
 		body.set('id', task.id);
 		try {
 			const res = await fetch('/tasks?/cancel', { method: 'POST', body, headers: { 'x-sveltekit-action': 'true' } });
 			const outcome = deserialize(await res.text());
 			const message = outcome.type === 'success' ? (outcome.data as { message?: string } | undefined)?.message : null;
+			if (!message) asked.delete(task.id);
 			toast({ tone: message ? 'info' : 'error', title: task.label, message: message ?? 'Could not cancel it.' });
 		} catch {
+			asked.delete(task.id);
 			toast({ tone: 'error', title: task.label, message: 'Could not reach MineShell.' });
 		}
 	}
@@ -215,7 +224,9 @@
 								{/if}
 							</div>
 							{#if task.state === 'running' && task.cancel && mayCancelTask(access, task)}
-								<button type="button" class="button-quiet button-danger cancel" onclick={() => cancel(task)}>Cancel</button>
+								<button type="button" class="button-quiet button-danger cancel" disabled={task.cancelling || asked.has(task.id)} onclick={() => cancel(task)}>
+									{task.cancelling || asked.has(task.id) ? 'Cancelling…' : 'Cancel'}
+								</button>
 							{/if}
 						</li>
 					{/each}

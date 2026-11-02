@@ -41,11 +41,28 @@ describe('cancelling', () => {
 			while (!task.isCancelled()) await settle();
 			checked = true;
 		});
+		expect(getTask(stoppable)?.cancelling).toBe(false);
 		expect(cancelTask(stoppable)).toBe('Stops the analysis.');
+		// Says so until the work stops, so the button does not ask again.
+		expect(getTask(stoppable)?.cancelling).toBe(true);
 		while (getTask(stoppable)?.state === 'running') await settle();
 		expect(checked).toBe(true);
 		expect(getTask(stoppable)).toMatchObject({ state: 'cancelled', step: 'Cancelled' });
 		// Finished: nothing left to cancel.
 		expect(cancelTask(stoppable)).toBeNull();
+	});
+
+	it('drops a cancel that comes too late, and stops saying it is cancelling', async () => {
+		let tooLate: boolean | null = null;
+		let commit = () => {};
+		const change = startTask({ label: 'Change the pack', cancel: 'Puts the server back.' }, async (task) => {
+			await new Promise<void>((resolve) => (commit = resolve));
+			tooLate = task.closeCancel();
+		});
+		cancelTask(change);
+		commit();
+		while (getTask(change)?.state === 'running') await settle();
+		expect(tooLate).toBe(true);
+		expect(getTask(change)).toMatchObject({ state: 'done', cancel: null, cancelling: false });
 	});
 });

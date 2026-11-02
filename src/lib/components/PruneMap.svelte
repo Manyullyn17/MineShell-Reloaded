@@ -20,7 +20,7 @@
 	} from '#lib/shared/chunkprune.js';
 	import { formatBytes, formatRelative } from '#lib/shared/format.js';
 
-	type TaskState = { id: string; state: string; progress: number | null; step: string; error: string | null };
+	type TaskState = { id: string; state: string; progress: number | null; step: string; error: string | null; cancelling?: boolean };
 
 	/**
 	 * World > Prune chunks: analyse a dimension, see the time players spent in
@@ -273,7 +273,7 @@
 				</div>
 			</div>
 			{#if mayCancel && followed && task?.state === 'running'}
-				<button type="button" class="button-quiet" onclick={cancelAnalysis}>Cancel</button>
+				<button type="button" class="button-quiet" disabled={task.cancelling} onclick={cancelAnalysis}>{task.cancelling ? 'Cancelling…' : 'Cancel'}</button>
 			{/if}
 			{#if cancelError}<p class="error-text small analysed">{cancelError}</p>{/if}
 		{:else if followed && task?.state === 'failed'}

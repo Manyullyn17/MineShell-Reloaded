@@ -28,6 +28,8 @@ export type Task = {
 	finishedAt: number | null;
 	/** What cancelling does, for the ones whose work stops when asked; null: no Cancel. */
 	cancel: string | null;
+	/** Cancel was asked for and the work has not stopped yet: the button says so instead of asking again. */
+	cancelling: boolean;
 };
 
 /**
@@ -80,6 +82,10 @@ export function cancelTask(id: string): string | null {
 	const task = tasks.get(id);
 	if (task?.state !== 'running' || !task.cancel) return null;
 	cancelled.add(id);
+	if (!task.cancelling) {
+		task.cancelling = true;
+		touch(task);
+	}
 	return task.cancel;
 }
 
@@ -128,7 +134,8 @@ export function startTask(
 		blocked: [],
 		startedAt: Date.now(),
 		finishedAt: null,
-		cancel: opts.cancel ?? null
+		cancel: opts.cancel ?? null,
+		cancelling: false
 	};
 	touch(task);
 
@@ -147,8 +154,9 @@ export function startTask(
 		isCancelled: () => cancelled.has(id),
 		closeCancel() {
 			const asked = cancelled.delete(id);
-			if (task.cancel) {
+			if (task.cancel || task.cancelling) {
 				task.cancel = null;
+				task.cancelling = false;
 				touch(task);
 			}
 			return asked;
