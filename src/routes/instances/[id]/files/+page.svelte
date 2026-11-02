@@ -657,8 +657,8 @@
 					<code>{sftp.user}</code>.
 				</p>
 				<p class="faint small">
-					To make the button work: Firefox asks which app to use once <code>network.protocol-handler.expose.sftp</code> is
-					added as false in <code>about:config</code>. Chrome and Edge pass the link to the system, which needs a program
+					To make the button work in Firefox: add <code>network.protocol-handler.external.sftp</code> as true in
+					<code>about:config</code> (a new setting, so searching finds nothing until it is added). Chrome and Edge pass the link to the system, which needs a program
 					registered for <code>sftp://</code> (WinSCP can register itself in its preferences).
 				</p>
 			</div>
