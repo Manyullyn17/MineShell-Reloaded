@@ -69,8 +69,8 @@
 	</div>
 {/if}
 <p class="hint">
-	During quiet hours (on this machine's clock) these are not sent, then or afterwards: {quietLabels}. Problems and
-	updates still are.
+	During quiet hours (on this machine's clock) these are not sent, then or afterwards: {quietLabels}. Updates are sent
+	when they end; problems at once.
 </p>
 
 <style>

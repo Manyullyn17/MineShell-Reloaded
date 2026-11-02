@@ -14,7 +14,7 @@ import { evaluateMapSchedule, rollForwardMaps } from './worldmap';
 import { expireTrash } from './trash';
 import { expireOldLogs } from './logretention';
 import { runDueUpdateChecks } from './updatecheck';
-import { destinations, notify } from './notifications';
+import { destinations, notify, sendHeldNotifications } from './notifications';
 import { notifyIfStuck } from './stuck';
 
 /**
@@ -186,6 +186,7 @@ async function checkAll(): Promise<void> {
 	await checkDiskSpace(listInstances()).catch((err) => console.error('[mineshell] disk space check failed:', err));
 	await dailyDatabaseCopy().catch((err) => console.error("[mineshell] the daily copy of MineShell's database failed:", err));
 	await runDueCommands().catch((err) => console.error('[mineshell] scheduled commands failed:', err));
+	await sendHeldNotifications().catch((err) => console.error('[mineshell] sending notifications held by quiet hours failed:', err));
 	// Not awaited: lookups on a slow provider must not hold up restarts.
 	void runDueUpdateChecks().catch((err) => console.error('[mineshell] update checks failed:', err));
 }

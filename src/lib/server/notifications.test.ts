@@ -7,6 +7,7 @@ import {
 	globalTarget,
 	notify,
 	quietHoursFrom,
+	sendHeldNotifications,
 	removeGlobalTarget,
 	resetFolds,
 	saveGlobalTarget,
@@ -142,13 +143,42 @@ describe('quiet hours', () => {
 	const kindsAt = (id: string, time: number) =>
 		(['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave'] as const).filter((k) => destinations(id, k, time).length);
 
-	it('holds back starts, joins and the like overnight, but never problems or updates', async () => {
+	it('drops starts, joins and the like overnight, never problems, and keeps updates for later (below)', async () => {
 		const s = await server();
 		saveGlobalTarget({ type: 'discord', url: DISCORD, kinds: ['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave'], quiet: { from: '22:00', to: '07:30' } });
 		expect(kindsAt(s.id, at(21, 59))).toEqual(['crash', 'memory', 'disk', 'update', 'start', 'join', 'leave']);
 		expect(kindsAt(s.id, at(22, 0))).toEqual(['crash', 'memory', 'disk', 'update']);
 		expect(kindsAt(s.id, at(3))).toEqual(['crash', 'memory', 'disk', 'update']);
 		expect(kindsAt(s.id, at(7, 30))).toHaveLength(7);
+	});
+
+	it('hold updates until they end, the newest of each, then send them saying so', async () => {
+		const s = await server();
+		saveGlobalTarget({ type: 'discord', url: DISCORD, kinds: ['crash', 'update'], quiet: { from: '22:00', to: '07:30' } });
+		const update = (version: string, time: number): Notification => ({ ...event(s, 'update', time), title: 'Update available', message: `The pack ${version} is out` });
+		await notify(update('1.2', at(22, 30)), at(22, 30));
+		await notify(update('1.3', at(23)), at(23));
+		await notify(event(s, 'crash', at(23)), at(23));
+		await settle();
+		// The crash goes at once.
+		expect(received).toHaveLength(1);
+		expect(await sendHeldNotifications(at(3))).toBe(0);
+		expect(received).toHaveLength(1);
+
+		expect(await sendHeldNotifications(at(7, 30))).toBe(1);
+		const sent = (received[1].body.embeds as { description: string; timestamp: string }[])[0];
+		expect(sent.description).toBe('The pack 1.3 is out\n\n(Found at 23:00, held back by quiet hours.)');
+		expect(sent.timestamp).toBe(new Date(at(23)).toISOString());
+		expect(await sendHeldNotifications(at(8))).toBe(0);
+	});
+
+	it('drop what they held when the destination no longer takes it or the server is gone', async () => {
+		const s = await server();
+		saveGlobalTarget({ type: 'discord', url: DISCORD, kinds: ['update'], quiet: { from: '22:00', to: '07:30' } });
+		await notify({ ...event(s, 'update', at(23)), title: 'Update available' }, at(23));
+		saveGlobalTarget({ type: 'discord', url: null, kinds: ['crash'], quiet: { from: '22:00', to: '07:30' } });
+		expect(await sendHeldNotifications(at(8))).toBe(0);
+		expect(received).toEqual([]);
 	});
 
 	it("belong to each destination: a server's own, and MineShell's beside it", async () => {

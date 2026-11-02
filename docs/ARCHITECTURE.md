@@ -151,7 +151,11 @@ address. Discord messages set `allowed_mentions: { parse: [] }`.
 Each destination can have quiet hours (`quiet`: `{ from, to }`, HH:MM on the machine's clock,
 past midnight when `from` is later): while they last, `destinations` leaves it out for
 `QUIET_KINDS` (scheduled restart, start, stop, join, leave), which are dropped, not sent
-afterwards: a join at 3:00 is no news at 8:00. Problems and updates are never held back. A
+afterwards: a join at 3:00 is no news at 8:00. Updates (`HELD_KINDS`) are held instead:
+`notify` keeps them per destination in a settings row (`notifications.held`, the newest per
+server, kind and title, at most 50 per destination) and the scheduler's tick sends them once
+the window is over, with the time they were found; a destination that no longer takes the
+kind, or a deleted server, drops them. Problems are never held back. A
 server's own destination keeps its own quiet hours; MineShell's apply to what goes there.
 
 Every request to the outside goes through `outboundFetch` (`outbound.ts`), which keeps per

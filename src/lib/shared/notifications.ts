@@ -17,8 +17,10 @@ export const NOTIFICATION_KINDS: { kind: NotificationKind; label: string; defaul
 
 export const DEFAULT_NOTIFICATION_KINDS: NotificationKind[] = NOTIFICATION_KINDS.filter((k) => k.defaultOn).map((k) => k.kind);
 
-/** What quiet hours hold back: news, not problems. Updates still go out (each set is sent once). */
+/** What quiet hours drop: news of the moment, not problems. */
 export const QUIET_KINDS: NotificationKind[] = ['restart', 'start', 'stop', 'join', 'leave'];
+/** What quiet hours hold until they end: not urgent, and each one is sent only once. */
+export const HELD_KINDS: NotificationKind[] = ['update'];
 
 /** HH:MM to HH:MM on the machine's clock; `from` after `to` runs past midnight. */
 export type QuietHours = { from: string; to: string };

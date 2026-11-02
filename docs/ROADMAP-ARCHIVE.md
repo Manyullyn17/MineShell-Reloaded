@@ -375,7 +375,9 @@ when first switched on, the machine's clock) in which scheduled restarts, starts
 joins and leaves are not sent; crashes, memory kills, stuck starts, snapshot and backup
 failures, low disk and updates still are. Held back means dropped: news of a join hours late
 is noise. Per destination, since a server's own channel and the owner's phone may want
-different nights (migration 0029 for a server's own). Tried on a throwaway dev server: saved
+different nights (migration 0029 for a server's own). Since 2026-11-02 updates are held until
+the window ends and sent then (the user found an update going through at noon; not urgent,
+and each is sent only once, so dropping it would lose it). Tried on a throwaway dev server: saved
 and read back on both pages, and the MineShell page at 390 px. Not built: days of the week, a
 summary of what was held back when the window ends.
 

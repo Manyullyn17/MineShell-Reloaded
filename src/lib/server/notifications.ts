@@ -1,11 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { instanceNotifications, settings } from './db/schema';
+import { instanceNotifications, serverInstances, settings } from './db/schema';
 import { decryptSecret, encryptSecret } from './crypto';
 import { assertPublicUrl, USER_AGENT } from './download';
 import { BlockedDownloadError } from './downloadaccess';
 import {
 	DEFAULT_NOTIFICATION_KINDS,
+	HELD_KINDS,
 	inQuietHours,
 	NOTIFICATION_KINDS,
 	QUIET_KINDS,
@@ -29,7 +30,8 @@ import { outboundFetch } from './outbound';
  * history catching up after MineShell was down does not post a backlog.
  * Repeats of a problem (a crash loop) within FOLD_MS are counted into the
  * next message instead of each sent. A destination's quiet hours drop the
- * QUIET_KINDS (news, not problems) while they last; they are not sent later.
+ * QUIET_KINDS (news, not problems) while they last, and hold the HELD_KINDS
+ * (updates) until they end: a settings row each scheduler tick looks at.
  */
 
 export type Notification = {
@@ -324,7 +326,9 @@ export function destinations(instanceId: string, kind: NotificationKind, now = D
  */
 export function notify(n: Notification, now = Date.now(), only?: string[]): Promise<void> {
 	if (now - n.at > FRESH_MS) return Promise.resolve();
-	const targets = destinations(n.instance.id, n.kind, now).filter(({ key }) => !only || only.includes(key));
+	const targets = destinations(n.instance.id, n.kind, now)
+		.filter(({ key }) => !only || only.includes(key))
+		.filter(({ key, target }) => !(HELD_KINDS.includes(n.kind) && inQuietHours(target.quiet, new Date(now)) && hold(key, n)));
 	if (!targets.length) return Promise.resolve();
 	let message = n.message;
 	if (FOLDED.has(n.kind)) {
@@ -338,6 +342,78 @@ export function notify(n: Notification, now = Date.now(), only?: string[]): Prom
 		folds.set(key, { sentAt: now, skipped: 0 });
 	}
 	return Promise.all(targets.map(({ key, target }) => send(key, target, { ...n, message }))).then(() => undefined);
+}
+
+// ------------------------------------------------------------- held back ---
+
+const HELD_KEY = 'notifications.held';
+/** Per destination: a long quiet window over many servers must not grow without end. */
+const HELD_MAX = 50;
+type Held = { key: string; n: Notification };
+
+function readHeld(): Held[] {
+	const raw = db.select().from(settings).where(eq(settings.key, HELD_KEY)).get()?.value;
+	try {
+		const list = JSON.parse(raw ?? '[]') as unknown;
+		return Array.isArray(list) ? (list as Held[]).filter((h) => typeof h?.key === 'string' && typeof h.n?.message === 'string') : [];
+	} catch {
+		return [];
+	}
+}
+
+function writeHeld(list: Held[]): void {
+	if (!list.length) {
+		db.delete(settings).where(eq(settings.key, HELD_KEY)).run();
+		return;
+	}
+	const value = JSON.stringify(list);
+	db.insert(settings).values({ key: HELD_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
+
+/**
+ * Keeps a notification for a destination in its quiet hours; always true (held). A newer one
+ * of the same kind and title for the same server replaces the one held: the pack's 1.3 makes
+ * 1.2 old news.
+ */
+function hold(key: string, n: Notification): true {
+	const same = (h: Held) => h.key === key && h.n.instance.id === n.instance.id && h.n.kind === n.kind && h.n.title === n.title;
+	const list = [...readHeld().filter((h) => !same(h)), { key, n }];
+	const mine = list.filter((h) => h.key === key);
+	writeHeld(mine.length > HELD_MAX ? list.filter((h) => h !== mine[0]) : list);
+	return true;
+}
+
+const clock = (at: number) => new Date(at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+let sendingHeld = false;
+
+/**
+ * From the scheduler's tick: what quiet hours held, sent to each destination once they are
+ * over. Dropped when the destination, its kind or the server is gone since.
+ */
+export async function sendHeldNotifications(now = Date.now()): Promise<number> {
+	if (sendingHeld) return 0;
+	const list = readHeld();
+	if (!list.length) return 0;
+	sendingHeld = true;
+	try {
+		const due: { key: string; target: Target; n: Notification }[] = [];
+		const kept: Held[] = [];
+		for (const held of list) {
+			const target = held.key === 'global' ? globalTarget() : serverTarget(held.key);
+			const exists = db.select({ id: serverInstances.id }).from(serverInstances).where(eq(serverInstances.id, held.n.instance.id)).get();
+			if (!target || !exists || !target.kinds.includes(held.n.kind)) continue;
+			if (inQuietHours(target.quiet, new Date(now))) kept.push(held);
+			else due.push({ ...held, target });
+		}
+		writeHeld(kept);
+		for (const { key, target, n } of due) {
+			await send(key, target, { ...n, message: `${n.message}\n\n(Found at ${clock(n.at)}, held back by quiet hours.)` });
+		}
+		return due.length;
+	} finally {
+		sendingHeld = false;
+	}
 }
 
 /** A test message to one destination, for the settings pages. */
