@@ -52,8 +52,12 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.3, meant as the last beta). 1.1.0 once a beta has run about
-three days with nothing big (ROADMAP, "Betas"). Most important first.
+**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.4 since 2026-11-01 evening). 1.1.0 once a beta has run about
+three days with nothing big (ROADMAP, "Betas"); beta.4's small fixes (`.jsonc`, a gap, the 24h
+chart's peaks) did not restart the clock (the user, 2026-11-02). 830a14f (no needless "restart
+to apply" after an update) and 5eec358 (a changed number of log days applied at the next tick,
+not up to an hour later) go out as beta.5 once prod's own log cleanup has been seen to work
+(the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
    - Start, stop (RCON), restart and a crash restart of each real server; the console, heap
@@ -72,7 +76,7 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    - JVM arguments holding a quoted space: none on prod (its unit env files, 2026-11-01); the
      2026-10-31 real-loader pass covered it.
 2. **Updating itself**: beta.1 -> beta.2 -> beta.3 with the Update button, betas on: **done**
-   (the user, 2026-11-01). Left: beta.3 -> 1.1.0 (offered with betas on or off), once it is out.
+   (the user, 2026-11-01; beta.4 the same evening). Left: beta.4 -> 1.1.0 (offered with betas on or off), once it is out.
 3. **The script policy (CSP) on the built app**: **done** (2026-11-01): a production build on
    throwaway data swept with `page-sweep --errors` (123 views, nothing refused), and the user
    found nothing on prod, the Map tab with BlueMap and with Dynmap included.
@@ -92,7 +96,8 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
 5. **Features from `next`**, a click each (all have tests; none had a real-install pass):
    - Mods tab, version pickers, Files: **done** (the user, 2026-11-01, first pass). Found: `.jsonc`
      files did not open in the editor (fixed in 33d2703), the snapshot box in a mod's version
-     switcher sat on its buttons (fixed in 9113828).
+     switcher sat on its buttons (fixed in 9113828). Both checked on beta.4, and the 24h
+     chart's peaks (f32cd10), by the user (2026-11-02).
    - Pack changes: Cancel during a pack change (the server back as it was) and a pack install
      (nothing left); the data pack loader warning.
    - Moving a server to an older Minecraft: the 26.3 test server, once with a new world (the old
@@ -102,10 +107,13 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
      install): put back with and without the session in the copy; the button said nothing
      while MineShell restarted (fixed in c802a1e: it says so and the page comes back).
    - Notifications' quiet hours; TPS per dimension on a Forge/NeoForge server.
-   - Pre-generation: Chunky installed from World > Pre-generate; the paused server's header
-     following start, pause, continue and cancel at once (from the console within ~45 s).
-   - New servers: 8 GB, a daily snapshot, 3 crash restarts in 10 minutes; old logs deleted
-     after the chosen days; data packs in the update check.
+   - Pre-generation: **done** (the user, 2026-11-02).
+   - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
+     (the user, 2026-11-02). Data packs in the update check: left.
+   - Old logs deleted after the chosen days: on prod since 2026-11-01 19:56 at 30 days (nothing
+     that old), 15 since 2026-11-02 11:37. Each server's folders are read hourly (xx:23:50 on
+     prod), which also held back the changed number (fixed in 5eec358, not on prod): the check
+     at about 12:24 should take Irithyll's logs of 9 to 17 October and say so in the journal.
 6. **The Updates tab and Remote access layout** from beta.2: **done** (the user, 2026-11-01),
    apart from the plain-http switch's note (fixed in 66410e8).
 7. **Release notes for 1.1.0** (the user, 2026-11-01: by hand, without fixes of what 1.1 itself
@@ -114,7 +122,7 @@ three days with nothing big (ROADMAP, "Betas"). Most important first.
    arguments (bf1646f), the crash banner's Install (dependency installs are new), the restart
    after putting a database copy back (c802a1e), "restart to apply" after an update (830a14f),
    a link out of a server folder still deletable (97f99c1) and the start naming a link the
-   sandbox hides (ccaabc9). The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
+   sandbox hides (ccaabc9), and old logs' changed days applied at once (5eec358). The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
    newer is needed (the download fix).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
