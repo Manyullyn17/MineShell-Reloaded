@@ -55,8 +55,9 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 **1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.4 since 2026-11-01 evening). 1.1.0 once a beta has run about
 three days with nothing big (ROADMAP, "Betas"); beta.4's small fixes (`.jsonc`, a gap, the 24h
 chart's peaks) did not restart the clock (the user, 2026-11-02). 830a14f (no needless "restart
-to apply" after an update) and 5eec358 (a changed number of log days applied at the next tick,
-not up to an hour later) go out as beta.5 once prod's own log cleanup has been seen to work
+to apply" after an update), 5eec358 (a changed number of log days applied at the next tick,
+not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") and 2aca031
+(no update notification for a version the user just installed past; migration 0032) go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -106,7 +107,9 @@ not up to an hour later) go out as beta.5 once prod's own log cleanup has been s
    - Settings > Updates, "Database copies": **done** (the user, 2026-11-01, on a throwaway
      install): put back with and without the session in the copy; the button said nothing
      while MineShell restarted (fixed in c802a1e: it says so and the page comes back).
-   - Notifications' quiet hours; TPS per dimension on a Forge/NeoForge server.
+   - Notifications' quiet hours: the user, 2026-11-02, saw an update notice go through them,
+     which is as built (updates are not held back, ROADMAP-ARCHIVE) - open question whether
+     they should be held until the end instead. TPS per dimension on a Forge/NeoForge server.
    - Pre-generation: **done** (the user, 2026-11-02).
    - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
      (the user, 2026-11-02). Data packs in the update check: left.
@@ -122,7 +125,8 @@ not up to an hour later) go out as beta.5 once prod's own log cleanup has been s
    arguments (bf1646f), the crash banner's Install (dependency installs are new), the restart
    after putting a database copy back (c802a1e), "restart to apply" after an update (830a14f),
    a link out of a server folder still deletable (97f99c1) and the start naming a link the
-   sandbox hides (ccaabc9), and old logs' changed days applied at once (5eec358). The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
+   sandbox hides (ccaabc9), old logs' changed days applied at once (5eec358) and the overview's "Restart on crash"
+   note (f3c0bd2: the startup crash exception is new). The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
    newer is needed (the download fix).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
