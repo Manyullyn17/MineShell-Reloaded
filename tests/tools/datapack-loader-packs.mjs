@@ -2,8 +2,9 @@
 /**
  * Three small Modrinth packs (.mrpack) for trying the pack change's data pack
  * loader warning (datapackloaders.ts) by hand: no real pack ships a data pack
- * loader and then drops it. Fabric 1.21.1, each mod's newest build for it from
- * Modrinth (the files are downloaded at install, as for any pack):
+ * loader and then drops it. Fabric 1.21.1 on the newest stable Fabric Loader
+ * (newest mod builds can need it: Bookshelf 21.1.81 wants 0.17.2), each mod's
+ * newest build for it from Modrinth (downloaded at install, as for any pack):
  *
  *   1.0.0  Open Loader (with Bookshelf, Prickle and Fabric API)
  *   2.0.0  Fabric API alone: Open Loader dropped, nothing takes over
@@ -30,7 +31,6 @@ if (!out) {
 }
 
 const MINECRAFT = '1.21.1';
-const FABRIC_LOADER = '0.16.10';
 const API = 'https://api.modrinth.com/v2';
 const HEADERS = { 'User-Agent': 'MineShell test tooling (tests/tools/datapack-loader-packs.mjs)' };
 
@@ -57,6 +57,10 @@ async function entry(slug) {
 	};
 }
 
+const loaders = await (await fetch('https://meta.fabricmc.net/v2/versions/loader', { headers: HEADERS })).json();
+const FABRIC_LOADER = loaders.find((l) => l.stable)?.version;
+if (!FABRIC_LOADER) throw new Error('Fabric meta lists no stable loader');
+
 fs.mkdirSync(out, { recursive: true });
 const entries = new Map();
 for (const slug of new Set(PACKS.flatMap((p) => p.mods))) entries.set(slug, await entry(slug));
@@ -76,5 +80,5 @@ for (const pack of PACKS) {
 	zip.addBuffer(Buffer.from(JSON.stringify(index, null, 1)), 'modrinth.index.json');
 	zip.end();
 	await new Promise((resolve, reject) => zip.outputStream.pipe(fs.createWriteStream(file)).on('close', resolve).on('error', reject));
-	console.log(`${file}: ${index.files.map((f) => path.basename(f.path)).join(', ')}`);
+	console.log(`${file} (Fabric Loader ${FABRIC_LOADER}): ${index.files.map((f) => path.basename(f.path)).join(', ')}`);
 }
