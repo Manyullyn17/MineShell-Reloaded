@@ -112,7 +112,9 @@ outline going after a cancelled drag) go out as beta.5 once prod's own log clean
      back as it was): **done** (the user, 2026-11-02, ATM10 on prod; the install cancelled
      during NeoForge's installer, which a cancel waits for: 39 s in all). Found: Cancel could be
      pressed again, each press another message (5aea6e2: "Cancelling…"), and the preview's
-     configs archive note against its button (9bccb0b). Left: the data pack loader warning.
+     configs archive note against its button (9bccb0b). The data pack loader warning: **done**
+     (the user, 2026-11-02, with `tests/tools/datapack-loader-packs.mjs`: Open Loader's data pack
+     named in the preview when 2.0.0 dropped it).
    - Moving a server to an older Minecraft: with a new world **done** (the user, 2026-11-02:
      NeoForge 26.3 -> 1.21.11; its data pack stayed in the old world, which the option did not
      say: fixed in b27b356, carrying them over is for 1.2) and keeping the world **done** (the
