@@ -27,6 +27,14 @@ export type DropzoneOptions = {
 
 const isFileDrag = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false;
 
+/**
+ * A drag that ends elsewhere (cancelled with Esc, let go over another window, taken back to
+ * the file manager) does not always send the zone its last dragleave, and the outline stayed.
+ * Browsers send dragover at least every 350 ms while a drag is over the zone, still or not:
+ * when none came for this long, the drag is gone.
+ */
+export const DRAG_GONE_MS = 1000;
+
 /** Whether `file` passes an input's accept list (".zip", "image/*", "application/zip"). */
 export function accepts(accept: string, file: File): boolean {
 	const rules = accept
@@ -53,6 +61,7 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 	let options: DropzoneOptions = initial ?? {};
 	let depth = 0;
 	let refusedTimer: ReturnType<typeof setTimeout> | undefined;
+	let goneTimer: ReturnType<typeof setTimeout> | undefined;
 	node.classList.add('dropzone');
 
 	const label = () => {
@@ -65,6 +74,14 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 	const set = (dropping: boolean) => {
 		node.classList.toggle('dropping', dropping);
 		if (dropping) node.dataset.dropLabel = label();
+		else clearTimeout(goneTimer);
+	};
+	const stillHere = () => {
+		clearTimeout(goneTimer);
+		goneTimer = setTimeout(() => {
+			depth = 0;
+			set(false);
+		}, DRAG_GONE_MS);
 	};
 	const refuse = (message: string) => {
 		node.classList.add('drop-refused');
@@ -77,11 +94,13 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 		if (!isFileDrag(event) || options.disabled) return;
 		event.preventDefault();
 		if (depth++ === 0) set(true);
+		stillHere();
 	};
 	const over = (event: DragEvent) => {
 		if (!isFileDrag(event) || options.disabled) return;
 		event.preventDefault();
 		if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+		stillHere();
 	};
 	const leave = (event: DragEvent) => {
 		if (!isFileDrag(event) || options.disabled) return;
@@ -128,6 +147,7 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 		},
 		destroy() {
 			clearTimeout(refusedTimer);
+			clearTimeout(goneTimer);
 			node.removeEventListener('dragenter', enter);
 			node.removeEventListener('dragover', over);
 			node.removeEventListener('dragleave', leave);
