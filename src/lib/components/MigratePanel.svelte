@@ -220,7 +220,7 @@
 					<input id="migrate-new-world" name="newWorld" type="checkbox" bind:checked={newWorld} />
 					<label for="migrate-new-world">
 						Start a new world for {plan.target.minecraft}. The current world stays on the server under World &gt; Worlds,
-						unchanged; switching back to it asks first.
+						unchanged; switching back to it asks first. Its data packs stay with it: the new world starts without them.
 					</label>
 				</div>
 				<div class="check">

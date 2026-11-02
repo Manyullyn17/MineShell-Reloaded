@@ -215,7 +215,8 @@ possible (user's call: guard rails where reasonable, easy to get past): the move
 older versions too, and picking one shows a warning, needs the confirm box, and offers "Start a
 new world" ticked by default. The new world (same seed, no data packs copied) becomes the active
 one before the move; the old world stays under World > Worlds, recorded as last run on the newer
-version, so switching back asks first. Unticked, the world is kept and the usual snapshot choice
+version, so switching back asks first. Its data packs stay with it, which the option says since
+2026-11-02 (the user missed a data pack after a move; carrying them over is a leftover). Unticked, the world is kept and the usual snapshot choice
 applies. A failed move switches back to the old world (loaders.md, migration).
 
 ### A paused server's header shows a running pre-generation
