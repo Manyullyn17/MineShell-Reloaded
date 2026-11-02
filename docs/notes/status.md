@@ -58,7 +58,8 @@ chart's peaks) did not restart the clock (the user, 2026-11-02). 830a14f (no nee
 to apply" after an update), 5eec358 (a changed number of log days applied at the next tick,
 not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") and 2aca031
 (no update notification for a version the user just installed past; migration 0032) and
-13b4a56 (quiet hours hold updates until they end) go out as beta.5 once prod's own log cleanup has been seen to work
+13b4a56 (quiet hours hold updates until they end) and e5b0d52 (the per-dimension table
+starts with the busy ones) go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -111,7 +112,9 @@ not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") an
    - Notifications' quiet hours: the user, 2026-11-02, saw an update notice go through them,
      as built then; since 13b4a56 updates are held until the window ends (on beta.5: try an
      update during a short window, it should arrive when it ends, with "held back by quiet
-     hours"). TPS per dimension on a Forge/NeoForge server.
+     hours"). TPS per dimension: **done** on NeoForge 26.3 (the user, 2026-11-02, the three
+     vanilla dimensions); left: MeatballCraft (Cleanroom, many mod dimensions; compare with
+     `forge tps` in its console, a type name with brackets would drop its line).
    - Pre-generation: **done** (the user, 2026-11-02).
    - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
      (the user, 2026-11-02). Data packs in the update check: left.
@@ -129,7 +132,8 @@ not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") an
    a link out of a server folder still deletable (97f99c1) and the start naming a link the
    sandbox hides (ccaabc9), old logs' changed days applied at once (5eec358) and the overview's "Restart on crash"
    note (f3c0bd2: the startup crash exception is new); 13b4a56 (updates held by quiet hours)
-   belongs in the quiet hours line, not a line of its own. The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
+   belongs in the quiet hours line, not a line of its own, and e5b0d52 (busy dimensions
+   first) in TPS per dimension's. The rest of Fixed were 1.0's. Worth an intro line: Node.js 22.19 or
    newer is needed (the download fix).
 
 Before it, nothing (2026-10-26): Discord notifications, the client export imports and a large
