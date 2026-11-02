@@ -223,7 +223,8 @@ function sparseFile(file, bytes, zip = false) {
  * @typedef {{ id: string; name: string; minecraft: string; loader: string; loaderVersion?: string; memoryMb?: number;
  *   pinned?: boolean; notes?: string; properties?: Record<string, string>; worldMb?: number;
  *   pack?: { source: string; project: string; version: string; versionName: string; name: string };
- *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number; startSeconds?: number; crashLog?: string } }} ServerOptions
+ *   running?: { players: string[]; mspt?: number; memoryMb?: number; cpuPercent?: number; chat?: [string, string, number?][]; uptimeMinutes?: number; startSeconds?: number; crashLog?: string;
+ *     dimensions?: [number, string, number][] } }} ServerOptions
  * @typedef {{ source: string; slug: string; name: string; summary?: string; projectUrl?: string; iconUrl?: string;
  *   version: string; versionId?: string; fileName: string; size?: number; hash?: string; hashAlgo?: string; fromPack?: boolean; enabled?: boolean; data?: Buffer }} ModOptions
  * `data`: the jar's real bytes, where a page hashes the file (a pack change's preview); otherwise a sparse file of `size`.

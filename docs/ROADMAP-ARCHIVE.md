@@ -444,7 +444,10 @@ with more than one shows "per dimension" under its tick rate, opening a table sl
 (amber below 18 TPS, as is the link when the slowest is). Named as the World tab names them:
 vanilla's by name, 1.12's numbered ones by their dimension type (`Twilight Forest (DIM7)`),
 1.13+ Forge ones by id; NeoForge names them itself. Tried on throwaway NeoForge 21.1.265 and
-Forge 1.12.2 servers (both answers are tests). Not built: vanilla's `tick query`, so Fabric and
+Forge 1.12.2 servers (both answers are tests). 2026-11-02, for packs with many dimensions (1.16+
+lists every registered one): the table starts with the busy ones, at most 8 and at least 3,
+stopping at the first under 0.1 ms/tick, and "Show N more, M idle" opens the rest
+(`dimensionticks.ts`; the user's pick over a plain cap or hiding idle ones outright). Not built: vanilla's `tick query`, so Fabric and
 Quilt, has no per-dimension figures; no history per dimension (only the current answer).
 
 ### "Required by" for mods

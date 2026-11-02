@@ -231,7 +231,27 @@ export const scenes = [
 					name: 'MeatballCraft, Dimensional Ascension'
 				},
 				worldMb: 9800,
-				running: { players: PLAYERS.slice(5, 7), mspt: 31.4, memoryMb: 5000, cpuPercent: 70, uptimeMinutes: 2 * 24 * 60 + 310, startSeconds: 241.7 }
+				running: {
+					players: PLAYERS.slice(5, 7),
+					mspt: 31.4,
+					memoryMb: 5000,
+					cpuPercent: 70,
+					uptimeMinutes: 2 * 24 * 60 + 310,
+					startSeconds: 241.7,
+					// A 1.12 pack lists the dimensions loaded: a few busy, the rest kept loaded and empty.
+					dimensions: [
+						[7, 'TwilightForest', 0.04],
+						[-28, 'moon', 0.02],
+						[144, 'compact_machines', 0.01],
+						[-6, 'deep_dark', 0],
+						[20, 'rftools_dimension', 0],
+						[-343800852, 'Spectre', 0],
+						[2, 'the_bedrock', 0],
+						[-11325, 'Erebus', 0],
+						[3, 'lost_cities', 0],
+						[-29, 'mars', 0]
+					]
+				}
 			});
 			ctx.server({ id: 'snapshot-test', name: 'Snapshot testing', minecraft: '1.21.5', loader: 'vanilla', memoryMb: 2048, worldMb: 80 });
 

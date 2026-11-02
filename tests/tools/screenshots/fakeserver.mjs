@@ -80,7 +80,11 @@ setInterval(() => {
 function forgeTps() {
 	const mspt = (config.mspt ?? 8) * (0.9 + Math.random() * 0.2);
 	const line = (/** @type {string} */ name, /** @type {number} */ ms) => `${name} : Mean tick time: ${ms.toFixed(3)} ms. Mean TPS: ${Math.min(20, 1000 / ms).toFixed(3)}`;
-	return [line('Dim  0 (overworld)', mspt * 0.7), line('Dim -1 (the_nether)', mspt * 0.1), line('Dim  1 (the_end)', mspt * 0.05), line('Overall', mspt)].join('\n');
+	// A pack's own dimensions: [id, type name, share of the tick]; 0 is one with nothing loaded.
+	const own = (config.dimensions ?? []).map((/** @type {[number, string, number]} */ [id, type, share]) =>
+		line(`Dim ${String(id).padStart(2)} (${type})`, share ? mspt * share : 0.004 + Math.random() * 0.01)
+	);
+	return [line('Dim  0 (overworld)', mspt * 0.7), line('Dim -1 (the_nether)', mspt * 0.1), line('Dim  1 (the_end)', mspt * 0.05), ...own, line('Overall', mspt)].join('\n');
 }
 
 function tickQuery() {

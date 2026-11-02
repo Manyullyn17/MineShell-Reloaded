@@ -15,6 +15,7 @@
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
+	import { dimensionRows } from '#lib/shared/dimensionticks.js';
 
 	let { data, form } = $props();
 	/** What this account may do here; the server checks every action again. */
@@ -99,8 +100,10 @@
 
 	let copied = $state(false);
 	let showDimensions = $state(false);
+	let allDimensions = $state(false);
 	// Slowest first: the one lagging is what the list is for.
 	const dimensionTicks = $derived([...(data.tick?.dimensions ?? [])].sort((a, b) => b.mspt - a.mspt));
+	const dimensionTable = $derived(dimensionRows(dimensionTicks, allDimensions));
 	async function copyAddress() {
 		if (!(await copyText(`${data.detail.host}:${data.detail.serverPort}`))) return;
 		copied = true;
@@ -403,7 +406,7 @@
 				<tr><th>Dimension</th><th class="num">TPS</th><th class="num">ms/tick</th></tr>
 			</thead>
 			<tbody>
-				{#each dimensionTicks as dimension (dimension.id)}
+				{#each dimensionTable.rows as dimension (dimension.id)}
 					<tr>
 						<td>{dimension.label}</td>
 						<td class="num mono" class:warn-text={dimension.tps < 18}>{dimension.tps.toFixed(1)}</td>
@@ -412,6 +415,15 @@
 				{/each}
 			</tbody>
 		</table>
+		{#if dimensionTable.hidden || allDimensions}
+			<div class="dimension-more">
+				<button type="button" class="button-quiet" onclick={() => (allDimensions = !allDimensions)}>
+					{allDimensions
+						? 'Show only the busy ones'
+						: `Show ${dimensionTable.hidden} more${dimensionTable.idle ? `, ${dimensionTable.idle === dimensionTable.hidden ? 'all' : dimensionTable.idle} idle` : ''}`}
+				</button>
+			</div>
+		{/if}
 	</div>
 {/if}
 
@@ -909,6 +921,11 @@
 	.dimension-ticks .num {
 		text-align: right;
 		white-space: nowrap;
+	}
+
+	.dimension-more {
+		padding: var(--space-2) var(--space-3);
+		border-top: 1px solid var(--line);
 	}
 
 	.columns {

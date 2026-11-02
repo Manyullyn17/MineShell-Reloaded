@@ -24,7 +24,7 @@ Modrinth and CurseForge, and pages load mod icons and search live.
 
 - **`scenes.mjs`**: the world, as an ordered list of scenes, all run every time. `servers`
   (five servers, tags; running: vanilla 26.3 and MeatballCraft on Cleanroom 1.12.2, both
-  with the nightly restart; the Cobblemon pack on Fabric 1.21.1 stopped three hours ago, three
+  with the nightly restart, MeatballCraft with 13 dimensions in `forge tps` (most idle); the Cobblemon pack on Fabric 1.21.1 stopped three hours ago, three
   releases behind the newest; Creative build on Fabric 1.21.11 crashed at its last start, with
   restart on crash off so it stays crashed), `history` (a day of CPU/memory samples, a week of
   runs and player sessions), `mods` (Cobblemon's mods: its installed pack version's own file
