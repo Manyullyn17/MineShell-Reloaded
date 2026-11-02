@@ -50,78 +50,80 @@
 	}
 </script>
 
-{#if checkError}
-	<p class="notice warning">{checkError}</p>
-{/if}
-{#if !check}
-	<button type="button" onclick={run} disabled={checking || busy}>{checking ? 'Checking for updates' : 'Check for updates'}</button>
-{:else if check.updates.length === 0}
-	<p class="small muted">
-		The data packs installed from Add mods are up to date ({check.upToDate}).
-		<button type="button" class="button-quiet" onclick={run} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-	</p>
-{:else}
-	<form
-		method="POST"
-		action="?/updateDatapacks"
-		class="datapack-updates"
-		use:enhance={() => async ({ result, update }) => {
-			await update({ reset: false });
-			if (result.type === 'success') check = null;
-		}}
-	>
-		<div class="section-head">
-			<div>
-				<h3>{check.updates.length} data pack update{check.updates.length === 1 ? '' : 's'}</h3>
+<!-- One block, so each state (the bare button too) keeps its gap above the table. -->
+<div class="datapack-check">
+	{#if checkError}
+		<p class="notice warning">{checkError}</p>
+	{/if}
+	{#if !check}
+		<button type="button" onclick={run} disabled={checking || busy}>{checking ? 'Checking for updates' : 'Check for updates'}</button>
+	{:else if check.updates.length === 0}
+		<p class="small muted">
+			The data packs installed from Add mods are up to date ({check.upToDate}).
+			<button type="button" class="button-quiet" onclick={run} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
+		</p>
+	{:else}
+		<form
+			method="POST"
+			action="?/updateDatapacks"
+			use:enhance={() => async ({ result, update }) => {
+				await update({ reset: false });
+				if (result.type === 'success') check = null;
+			}}
+		>
+			<div class="section-head">
+				<div>
+					<h3>{check.updates.length} data pack update{check.updates.length === 1 ? '' : 's'}</h3>
+				</div>
+				<div class="button-row">
+					<button type="button" onclick={run} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
+					<button class="button-primary" type="submit" disabled={!chosenCount || (riskyChosen.length > 0 && running)}>
+						Update {chosenCount} data pack{chosenCount === 1 ? '' : 's'}
+					</button>
+				</div>
 			</div>
-			<div class="button-row">
-				<button type="button" onclick={run} disabled={checking}>{checking ? 'Checking' : 'Check again'}</button>
-				<button class="button-primary" type="submit" disabled={!chosenCount || (riskyChosen.length > 0 && running)}>
-					Update {chosenCount} data pack{chosenCount === 1 ? '' : 's'}
-				</button>
-			</div>
-		</div>
-		<ul class="update-list">
-			{#each check.updates as u (u.fileName)}
-				<li>
-					<label class="update">
-						<input type="checkbox" name="change" value={`${u.fileName}\n${u.targetVersionId}`} bind:checked={chosen[u.fileName]} />
-						<span class="update-name">
-							<span>
-								{u.name}
-								{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
-								{#if u.worldgenInUse}<span class="tag warn">world generation, in use</span>{/if}
+			<ul class="update-list">
+				{#each check.updates as u (u.fileName)}
+					<li>
+						<label class="update">
+							<input type="checkbox" name="change" value={`${u.fileName}\n${u.targetVersionId}`} bind:checked={chosen[u.fileName]} />
+							<span class="update-name">
+								<span>
+									{u.name}
+									{#if u.channel !== 'release'}<span class="tag warn">{u.channel}</span>{/if}
+									{#if u.worldgenInUse}<span class="tag warn">world generation, in use</span>{/if}
+								</span>
+								{#if u.worldgenInUse}
+									<span class="faint small">This world has loaded it: a version that renames or drops a biome can keep the world from loading.</span>
+								{/if}
 							</span>
-							{#if u.worldgenInUse}
-								<span class="faint small">This world has loaded it: a version that renames or drops a biome can keep the world from loading.</span>
-							{/if}
-						</span>
-						<span class="mono small versions">{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span></span>
-					</label>
-				</li>
-			{/each}
-		</ul>
-		{#if riskyChosen.length}
-			{#if running}
-				<p class="notice warning small">Stop the server to update {riskyChosen.map((u) => u.name).join(', ')}.</p>
+							<span class="mono small versions">{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span></span>
+						</label>
+					</li>
+				{/each}
+			</ul>
+			{#if riskyChosen.length}
+				{#if running}
+					<p class="notice warning small">Stop the server to update {riskyChosen.map((u) => u.name).join(', ')}.</p>
+				{/if}
+				<SnapshotChoice prompt={snapshotPrompt} idPrefix="update-datapacks" />
 			{/if}
-			<SnapshotChoice prompt={snapshotPrompt} idPrefix="update-datapacks" />
-		{/if}
-	</form>
-{/if}
-{#if check?.skipped.length}
-	<details class="skipped">
-		<summary class="small">{check.skipped.length} not checked</summary>
-		<ul class="small">
-			{#each check.skipped as s (s.fileName)}
-				<li>{s.name} <span class="muted">- {s.reason}</span></li>
-			{/each}
-		</ul>
-	</details>
-{/if}
+		</form>
+	{/if}
+	{#if check?.skipped.length}
+		<details class="skipped">
+			<summary class="small">{check.skipped.length} not checked</summary>
+			<ul class="small">
+				{#each check.skipped as s (s.fileName)}
+					<li>{s.name} <span class="muted">- {s.reason}</span></li>
+				{/each}
+			</ul>
+		</details>
+	{/if}
+</div>
 
 <style>
-	.datapack-updates {
+	.datapack-check {
 		margin-bottom: var(--space-4);
 	}
 
