@@ -1150,14 +1150,9 @@
 		color: var(--error);
 	}
 
-	/* The tabs and search stay under the server's sticky header while the sections scroll;
-	   --instance-head is that header's height (instances/[id]/+layout.svelte). */
+	/* The tabs and search share one row (app.css keeps it in view while the sections scroll). */
 	.subhead {
 		flex-wrap: nowrap;
-		position: sticky;
-		top: calc(3.25rem + var(--instance-head, 0px));
-		z-index: 14;
-		background: var(--bg);
 	}
 
 	.subhead .subtabs {
@@ -1175,10 +1170,8 @@
 
 	/* On a phone the tabs get the whole row and the search goes under them. */
 	@media (max-width: 60rem) {
-		/* The header scrolls away on a phone (instances/[id]/+layout.svelte); so do these. */
 		.subhead {
 			flex-wrap: wrap;
-			position: static;
 		}
 
 		.subhead .subtabs {

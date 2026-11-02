@@ -710,7 +710,9 @@ tbody tr:last-child td {
 /* ------------------------------------------------------------- sub-tabs --- */
 
 /* A second row of tabs inside a server tab (Mods, World, Settings), flush
-   under the instance tabs, with room on the right for the page's tools. */
+   under the instance tabs, with room on the right for the page's tools. It stays
+   under the server's sticky header while the page scrolls; --instance-head is that
+   header's height (instances/[id]/+layout.svelte). */
 .subhead {
 	display: flex;
 	align-items: center;
@@ -720,6 +722,10 @@ tbody tr:last-child td {
 	margin: calc(var(--space-5) * -1) -2.5rem 1.25rem;
 	padding: 0.5rem 2.5rem 0;
 	border-bottom: 1px solid var(--line);
+	position: sticky;
+	top: calc(3.25rem + var(--instance-head, 0px));
+	z-index: 14;
+	background: var(--bg);
 }
 
 .subtabs {
@@ -812,9 +818,11 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 60rem) {
+	/* The header scrolls away on a phone; so does this. */
 	.subhead {
 		margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 1.25rem;
 		padding: 0.5rem var(--space-4) 0;
+		position: static;
 	}
 
 	/* The tabs get the whole row; tools beside them (search, buttons) go below. */
