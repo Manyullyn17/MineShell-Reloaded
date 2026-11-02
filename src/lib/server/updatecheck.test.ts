@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	checkDue,
 	checkForUpdates,
@@ -19,8 +19,14 @@ import {
 import { createInstance, reload } from '../../../tests/helpers/instances';
 import { currentDatapackNotice, currentModNotice, skipDatapackNotice, skipModNotice } from './modnotice';
 import { db } from './db';
-import { instanceDatapacks } from './db/schema';
+import { instanceDatapacks, serverInstances } from './db/schema';
+import { eq } from 'drizzle-orm';
 import { channelLabel, channelNote, channelsFor } from '#lib/shared/updatecheck.js';
+import { notify } from './notifications';
+
+vi.mock('./notifications', async (original) => ({ ...(await original<typeof import('./notifications')>()), notify: vi.fn(async () => {}) }));
+const sent = () => vi.mocked(notify).mock.calls.map(([n]) => n.title);
+beforeEach(() => vi.mocked(notify).mockClear());
 
 const v = (id: string, channel: string, date: string | null) => ({ id, name: id, versionNumber: id, channel, datePublished: date });
 
@@ -134,6 +140,25 @@ describe('update notices', () => {
 		expect(currentNotice(reload(instance.id))).toBeNull();
 	});
 
+	it('notifies only what came out after the installed version was first checked, not an update the user installed past', async () => {
+		const instance = await packServer();
+		// Installed with 1.1 already out: shown, not sent.
+		await checkForUpdates(instance, async () => found('1.1'));
+		expect(currentNotice(reload(instance.id))?.versionId).toBe('1.1');
+		expect(sent()).toEqual([]);
+		// 1.2 comes out later: sent.
+		await checkForUpdates(reload(instance.id), async () => found('1.2'));
+		expect(sent()).toEqual(['Update available']);
+
+		// Changed to an older version (a pack change or rollback): its first check is quiet again.
+		db.update(serverInstances).set({ packVersionId: '0.9' }).where(eq(serverInstances.id, instance.id)).run();
+		await checkForUpdates(reload(instance.id), async () => found('1.3', '0.9'));
+		expect(sent()).toEqual(['Update available']);
+		expect(currentNotice(reload(instance.id))?.versionId).toBe('1.3');
+		await checkForUpdates(reload(instance.id), async () => found('1.4', '0.9'));
+		expect(sent()).toEqual(['Update available', 'Update available']);
+	});
+
 	it('hides a notice once the server moved on from the version it was found from', async () => {
 		const instance = await packServer();
 		await checkForUpdates(instance, async () => found('1.1'));
@@ -192,6 +217,20 @@ describe('mod update notices', () => {
 		expect(currentModNotice(instance.id)).toBeNull();
 		expect(await checkModsForUpdates(instance, async () => Promise.reject(new Error('offline')))).toEqual({ ok: false, error: 'offline' });
 	});
+
+	it('notifies updates of mods the last check saw, not of ones installed or changed since', async () => {
+		const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.21.1' });
+		await checkModsForUpdates(instance, found());
+		const seenAt = reload(instance.id).updateSeenAt!;
+		const at = (u: ReturnType<typeof update>, addedAt: number) => ({ ...u, addedAt });
+		// Installed after that check at an older version: shown, not sent.
+		await checkModsForUpdates(reload(instance.id), found(at(update('sodium-1.jar', '2'), seenAt + 1)));
+		expect(currentModNotice(instance.id)?.updates).toHaveLength(1);
+		expect(sent()).toEqual([]);
+		// A mod that was there before gets a newer build: sent.
+		await checkModsForUpdates(reload(instance.id), found(at(update('sodium-1.jar', '2'), seenAt + 1), at(update('lithium-1.jar', '2'), seenAt - 1)));
+		expect(sent()).toEqual(['Mod updates available']);
+	});
 });
 
 describe('data pack update notices', () => {
@@ -226,5 +265,17 @@ describe('data pack update notices', () => {
 		await checkDatapacksForUpdates(instance, found());
 		expect(currentDatapackNotice(instance.id)).toBeNull();
 		expect(await checkDatapacksForUpdates(instance, async () => Promise.reject(new Error('offline')))).toEqual({ ok: false, error: 'offline' });
+	});
+
+	it('notifies a new build of a data pack the last check saw, not of one installed since', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		// The first check of a server: nothing it saw before, so nothing is news.
+		await checkDatapacksForUpdates(instance, found({ ...update('terralith.zip', '2'), addedAt: 1 } as ReturnType<typeof update>));
+		expect(sent()).toEqual([]);
+		const seenAt = reload(instance.id).updateSeenAt!;
+		await checkDatapacksForUpdates(reload(instance.id), found({ ...update('terralith.zip', '3'), addedAt: seenAt + 1 } as ReturnType<typeof update>));
+		expect(sent()).toEqual([]);
+		await checkDatapacksForUpdates(reload(instance.id), found({ ...update('terralith.zip', '4'), addedAt: seenAt - 1 } as ReturnType<typeof update>));
+		expect(sent()).toEqual(['Data pack updates available']);
 	});
 });

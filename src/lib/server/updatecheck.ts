@@ -17,6 +17,11 @@ import { channelNote, UPDATE_CHANNELS, type UpdateChannel, type UpdateKind } fro
  * browser (a vanilla server is checked for those alone). The
  * scheduler runs them (`runDueUpdateChecks`); the result is one row in
  * update_notices, shown on the overview until it is installed or skipped.
+ *
+ * Only what came out since the user last looked is notified: an update found at the first
+ * check after they installed or changed the pack version, loader build, a mod or a data pack
+ * is shown but not sent, since they picked that version with the newer one in the list
+ * (updateSeenVersion, updateSeenAt).
  */
 
 const RANK: Record<UpdateChannel, number> = { release: 0, beta: 1, alpha: 2 };
@@ -119,7 +124,8 @@ const RETRY_AFTER_FAILURE_MS = 60 * 60_000;
 
 /**
  * Checks one server and keeps the result. The same version found again keeps
- * its skipped flag; a newer one replaces it, shown again.
+ * its skipped flag; a newer one replaces it, shown again, and notified when the
+ * last check saw the same installed version.
  */
 export async function checkForUpdates(instance: ServerInstance, find = findUpdate): Promise<{ ok: true; found: FoundUpdate | null } | { ok: false; error: string }> {
 	let found: FoundUpdate | null;
@@ -133,6 +139,10 @@ export async function checkForUpdates(instance: ServerInstance, find = findUpdat
 			.run();
 		return { ok: false, error: err instanceof Error ? err.message : 'The lookup failed.' };
 	}
+	const kind = updateKind(instance);
+	const installed = kind ? installedVersion(instance, kind) : null;
+	// A different version from the notice kept, found by a check after one at this same version.
+	let notified = false;
 	db.transaction((tx) => {
 		const existing = tx.select().from(updateNotices).where(eq(updateNotices.instanceId, instance.id)).get();
 		if (!found) {
@@ -142,18 +152,21 @@ export async function checkForUpdates(instance: ServerInstance, find = findUpdat
 		} else {
 			const row = { ...found, instanceId: instance.id, foundAt: Date.now(), skipped: false };
 			tx.insert(updateNotices).values(row).onConflictDoUpdate({ target: updateNotices.instanceId, set: row }).run();
-			const what = found.kind === 'pack' ? (instance.packName ?? 'The pack') : (LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader);
-			const runs = found.kind === 'pack' ? (instance.packVersionName ?? 'an older version') : found.fromVersion;
-			void notify({
-				kind: 'update',
-				instance: { id: instance.id, name: instance.name },
-				title: 'Update available',
-				message: `${what} ${found.label}${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null) ? ` (${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null)})` : ''} is out; the server runs ${runs}. Its overview in MineShell has the button to review and install it.`,
-				at: Date.now()
-			});
+			notified = installed !== null && instance.updateSeenVersion === installed;
 		}
-		tx.update(serverInstances).set({ updateCheckedAt: Date.now() }).where(eq(serverInstances.id, instance.id)).run();
+		tx.update(serverInstances).set({ updateCheckedAt: Date.now(), updateSeenVersion: installed }).where(eq(serverInstances.id, instance.id)).run();
 	});
+	if (found && notified) {
+		const what = found.kind === 'pack' ? (instance.packName ?? 'The pack') : (LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader);
+		const runs = found.kind === 'pack' ? (instance.packVersionName ?? 'an older version') : found.fromVersion;
+		void notify({
+			kind: 'update',
+			instance: { id: instance.id, name: instance.name },
+			title: 'Update available',
+			message: `${what} ${found.label}${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null) ? ` (${channelNote(found.channel, found.kind === 'loader' ? instance.modloader : null)})` : ''} is out; the server runs ${runs}. Its overview in MineShell has the button to review and install it.`,
+			at: Date.now()
+		});
+	}
 	return { ok: true, found };
 }
 
@@ -205,23 +218,36 @@ export function modsChecked(instance: Pick<ServerInstance, 'packSource' | 'packP
 }
 
 /**
+ * Whether a set of mod or data pack updates is news: one of them is for a file
+ * the last check already saw, not one installed or changed since (the user
+ * picked that version with the newer one in the list). A file of unknown age
+ * counts as seen. Marks this check as seen.
+ */
+function newsSinceLastCheck(instance: ServerInstance, updates: { addedAt?: number | null }[]): boolean {
+	const seenAt = instance.updateSeenAt;
+	db.update(serverInstances).set({ updateSeenAt: Date.now() }).where(eq(serverInstances.id, instance.id)).run();
+	return seenAt !== null && updates.some((u) => u.addedAt == null || u.addedAt < seenAt);
+}
+
+type FoundFileUpdate = { fileName: string; name: string; currentVersion: string | null; targetVersion: string; addedAt?: number | null };
+
+/**
  * Looks for mod updates and keeps what it found (modnotice.ts); a set not
- * seen before is notified once. Enabled mods only.
+ * seen before is notified once, when it is news (newsSinceLastCheck). Enabled mods only.
  */
 export async function checkModsForUpdates(
 	instance: ServerInstance,
-	check: (instance: ServerInstance) => Promise<{ updates: { fileName: string; name: string; currentVersion: string | null; targetVersion: string; enabled: boolean }[] }> = (i) =>
-		checkModUpdates(i, { dependencies: false })
+	check: (instance: ServerInstance) => Promise<{ updates: (FoundFileUpdate & { enabled: boolean })[] }> = (i) => checkModUpdates(i, { dependencies: false })
 ): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
-	let updates: ModNoticeEntry[];
+	let found: FoundFileUpdate[];
 	try {
-		updates = (await check(instance)).updates
-			.filter((u) => u.enabled)
-			.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+		found = (await check(instance)).updates.filter((u) => u.enabled);
 	} catch (err) {
 		return { ok: false, error: err instanceof Error ? err.message : 'The lookup failed.' };
 	}
-	if (saveModNotice(instance.id, updates)) {
+	const updates: ModNoticeEntry[] = found.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+	const news = newsSinceLastCheck(instance, found);
+	if (saveModNotice(instance.id, updates) && news) {
 		const names = updates.slice(0, 5).map((u) => u.name).join(', ') + (updates.length > 5 ? ` and ${updates.length - 5} more` : '');
 		void notify({
 			kind: 'update',
@@ -241,15 +267,17 @@ export async function checkModsForUpdates(
  */
 export async function checkDatapacksForUpdates(
 	instance: ServerInstance,
-	check: (instance: ServerInstance) => Promise<{ updates: { fileName: string; name: string; currentVersion: string | null; targetVersion: string }[] }> = checkDatapackUpdates
+	check: (instance: ServerInstance) => Promise<{ updates: FoundFileUpdate[] }> = checkDatapackUpdates
 ): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
-	let updates: ModNoticeEntry[];
+	let found: FoundFileUpdate[];
 	try {
-		updates = (await check(instance)).updates.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+		found = (await check(instance)).updates;
 	} catch (err) {
 		return { ok: false, error: err instanceof Error ? err.message : 'The lookup failed.' };
 	}
-	if (saveDatapackNotice(instance.id, updates)) {
+	const updates: ModNoticeEntry[] = found.map((u) => ({ fileName: u.fileName, name: u.name, from: u.currentVersion, to: u.targetVersion }));
+	const news = newsSinceLastCheck(instance, found);
+	if (saveDatapackNotice(instance.id, updates) && news) {
 		const names = updates.slice(0, 5).map((u) => u.name).join(', ') + (updates.length > 5 ? ` and ${updates.length - 5} more` : '');
 		void notify({
 			kind: 'update',

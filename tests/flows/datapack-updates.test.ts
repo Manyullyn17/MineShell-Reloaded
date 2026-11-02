@@ -70,7 +70,7 @@ describe('data pack updates', () => {
 		const check = await checkDatapackUpdates(instance);
 		// Releases stay on releases; the hand-added pack has nothing to look up.
 		expect(check.updates).toEqual([
-			{ fileName: 'Terralith_v2.5.8.zip', name: 'Terralith', currentVersion: '2.5.8', targetVersionId: 'v-2.6.0', targetVersion: '2.6.0', channel: 'release', worldgenInUse: false }
+			{ fileName: 'Terralith_v2.5.8.zip', name: 'Terralith', currentVersion: '2.5.8', targetVersionId: 'v-2.6.0', targetVersion: '2.6.0', channel: 'release', worldgenInUse: false, addedAt: expect.any(Number) }
 		]);
 		expect((await waitForTask(await applyDatapackUpdates(instance, [{ fileName: 'Terralith_v2.5.8.zip', versionId: 'v-2.6.0' }], { snapshot: false }))).state).toBe('done');
 		const { packs } = await listDatapacks(instance);

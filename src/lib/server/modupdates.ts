@@ -142,6 +142,8 @@ export type ModUpdate = {
 	disabledReason: string | null;
 	/** The first line of the new version's changelog, where the source has one. */
 	note: string | null;
+	/** When MineShell installed or last updated it (ModRow's addedAt). */
+	addedAt: number | null;
 };
 
 export type UpdateCheck = {
@@ -268,7 +270,8 @@ export async function checkModUpdates(
 				enabled: row.enabled,
 				fromPack: row.fromPack,
 				disabledReason: disabledReason(row),
-				note: changelogNote(target.changelog)
+				note: changelogNote(target.changelog),
+				addedAt: row.addedAt
 			});
 		} catch (err) {
 			result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });
@@ -300,6 +303,8 @@ export type DatapackUpdate = {
 	channel: string;
 	/** Adds or changes world generation, and this world has loaded it: a newer version can break loading. */
 	worldgenInUse: boolean;
+	/** When it was installed or last updated from the mod browser. */
+	addedAt: number;
 };
 
 /** A tracked data pack's data pack builds for this Minecraft version, newest first. */
@@ -337,7 +342,8 @@ export async function checkDatapackUpdates(
 					targetVersionId: target.id,
 					targetVersion: target.versionNumber,
 					channel: target.channel,
-					worldgenInUse: pack.worldgen && pack.loadedByWorld
+					worldgenInUse: pack.worldgen && pack.loadedByWorld,
+					addedAt: row.installedAt
 				});
 			} catch (err) {
 				result.skipped.push({ fileName: row.fileName, name: row.name, reason: `Lookup failed: ${err instanceof Error ? err.message : 'unknown error'}` });

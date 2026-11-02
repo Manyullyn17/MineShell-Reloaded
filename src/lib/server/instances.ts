@@ -1646,6 +1646,8 @@ export async function cloneInstance(
 			historyCursor: null,
 			restartNextAt: null,
 			updateCheckedAt: null,
+			updateSeenVersion: null,
+			updateSeenAt: null,
 			status: 'provisioning',
 			statusMessage: `Copying ${source.name}`,
 			createdAt: now,

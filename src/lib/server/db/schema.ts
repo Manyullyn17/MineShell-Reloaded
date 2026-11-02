@@ -86,6 +86,12 @@ export const serverInstances = sqliteTable('server_instances', {
 	/** The least stable versions to offer: release | beta | alpha. */
 	updateChannel: text('update_channel').notNull().default('release'),
 	updateCheckedAt: integer('update_checked_at'),
+	/**
+	 * What the last successful check saw: the pack version or loader build then installed, and
+	 * when it ran. Kept apart from updateCheckedAt, which a settings save clears to check again.
+	 */
+	updateSeenVersion: text('update_seen_version'),
+	updateSeenAt: integer('update_seen_at'),
 	/** The same check also looks for mod updates (servers without a pack only). */
 	modUpdateCheck: integer('mod_update_check', { mode: 'boolean' }).notNull().default(true),
 

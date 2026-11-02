@@ -807,6 +807,16 @@ Settings with the version picked (`?packVersion=` / `?loaderVersion=`), where th
 change previews at once: installing still goes through the normal review, snapshot choice
 and Java prompt. A failed lookup is retried after an hour.
 
+Only news is notified (kind `update`): what came out since the user last had the list in
+front of them. An update found by the first check after the pack version or loader build
+changed - a new server installed at an older version, a pack change, a rollback - is shown
+but not sent, since they picked that version with the newer one listed. The server row keeps
+what the last successful check saw (`updateSeenVersion`; `updateCheckedAt` cannot say, a
+settings save clears it to check again). The same for mods and data packs, by file: a set is
+sent only when one of its files is older than the last check (`updateSeenAt`, against
+`installedAt`, which an install or version change of that file renews). A server's first
+check after upgrading to this sends nothing, its notices still show.
+
 On a server without a pack the same check also looks for mod updates (`modUpdateCheck`,
 "Include mods", on by default and in the new-server defaults): `checkModUpdates` without
 the dependency resolution, which only matters when updating. A pack's mods change with the
