@@ -39,7 +39,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   the loaders' lang files. Spark answers async, after RCON returns, so it is not used.
   Per dimension (2026-10-28): Forge 1.12 sends "Dim  0 (overworld) : ..." and runs the lines
   together over RCON ("...Mean TPS: 20.000Overall : ..."); only loaded dimensions are listed,
-  so a fresh 1.12 server shows the overworld alone until someone visits the others. Forge
+  so a fresh 1.12 server shows the overworld alone until someone visits the others. Some mods
+  keep their own dimension loaded with nobody there (MeatballCraft, 2026-11-02: Extra
+  Utilities 2's quarry DIM-9999, Random Things' Spectre, "Storage Cell" DIM-26, ~0.04 ms each). Forge
   1.16+ sends "Dim <level> (<dimension type>): ...". NeoForge 21.1 sends each level's
   description, translated on the server ("The Nether: 20.000 TPS (...)"), not its id.
 - Stuck starting: >10 min without `Done (`; checked with `journalctl -g` on the run's

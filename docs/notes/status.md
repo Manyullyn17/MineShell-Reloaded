@@ -114,8 +114,9 @@ d80ded1 (the Connect box's playit.gg row) go out as beta.5 once prod's own log c
      as built then; since 13b4a56 updates are held until the window ends (on beta.5: try an
      update during a short window, it should arrive when it ends, with "held back by quiet
      hours"). TPS per dimension: **done** on NeoForge 26.3 (the user, 2026-11-02, the three
-     vanilla dimensions); left: MeatballCraft (Cleanroom, many mod dimensions; compare with
-     `forge tps` in its console, a type name with brackets would drop its line).
+     vanilla dimensions) and on MeatballCraft (Cleanroom 0.5.17): four loaded, the table matching
+     `forge tps` line for line - the overworld and three a mod keeps loaded (Extra Utilities
+     2's quarry dimension, Random Things' Spectre, Storage Cell, likely AE2's spatial storage).
    - Pre-generation: **done** (the user, 2026-11-02).
    - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
      (the user, 2026-11-02). Data packs in the update check: left.
