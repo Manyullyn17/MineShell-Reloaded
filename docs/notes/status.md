@@ -63,8 +63,9 @@ starts with the busy ones), 382d478 (the LAN address skips VPN and container int
 d80ded1 (the Connect box's playit.gg row), 4635d65 (the data packs' check button's gap) and
 3f89223 (the overview's data pack notice opening Data packs) and b27b356 (the new world's
 option saying the data packs stay), 1d33f98 (section tabs in view on every server tab),
-cc00559 (World > Worlds' panels over the whole row) and e1fa5ff (Upload a world's button gap)
-go out as beta.5 once prod's own log cleanup has been seen to work
+cc00559 (World > Worlds' panels over the whole row), e1fa5ff (Upload a world's button gap),
+5aea6e2 (a task's Cancel says "Cancelling…") and 9bccb0b (the pack preview note's gap) go out
+as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -106,8 +107,11 @@ go out as beta.5 once prod's own log cleanup has been seen to work
      files did not open in the editor (fixed in 33d2703), the snapshot box in a mod's version
      switcher sat on its buttons (fixed in 9113828). Both checked on beta.4, and the 24h
      chart's peaks (f32cd10), by the user (2026-11-02).
-   - Pack changes: Cancel during a pack change (the server back as it was) and a pack install
-     (nothing left); the data pack loader warning.
+   - Pack changes: Cancel during a pack install (nothing left) and a pack change (the server
+     back as it was): **done** (the user, 2026-11-02, ATM10 on prod; the install cancelled
+     during NeoForge's installer, which a cancel waits for: 39 s in all). Found: Cancel could be
+     pressed again, each press another message (5aea6e2: "Cancelling…"), and the preview's
+     configs archive note against its button (9bccb0b). Left: the data pack loader warning.
    - Moving a server to an older Minecraft: with a new world **done** (the user, 2026-11-02:
      NeoForge 26.3 -> 1.21.11; its data pack stayed in the old world, which the option did not
      say: fixed in b27b356, carrying them over is for 1.2) and keeping the world **done** (the
