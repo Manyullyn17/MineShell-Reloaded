@@ -530,6 +530,9 @@ jars (1.12.2-26.3) and `npm run check:icons` on MeatballCraft (with `--world`: 4
   gap. Sophisticated Storage's wood type is NBT (`wood_name.sophisticatedstorage.<wood>`). So:
   the vanilla player head, the Theurgy sibling rule, and a short table of per-mod fillers that
   read the stack's NBT, each checked against its mod's jar; the picker keeps the "…".
+  Names only, not colours: the crystals share one texture the mod tints per aspect in code
+  (`Aspect`'s colour per aspect), and add-ons bring their own aspects, so a colour table would
+  never end. The tooltip's name tells them apart; the picture stays the untinted crystal.
 - **1.12 variants only the mod's code names (hard in general, a heuristic covers much)**: the
   damage -> variant name map is in the mod's classes. Immersive Engineering's `ItemMaterial`
   lists `stick_treated, stick_iron, ...` in damage order in its constant pool, exactly the files
