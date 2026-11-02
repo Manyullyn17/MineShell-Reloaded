@@ -12,6 +12,7 @@
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { sftpLink } from '#lib/shared/sftp.js';
+	import { copyText } from '#lib/shared/clipboard.js';
 	import { page } from '$app/state';
 
 	let { data, form } = $props();
@@ -115,10 +116,29 @@
 		data.sftp
 			? {
 					...data.sftp,
+					host: data.sftp.host ?? page.url.hostname,
 					href: sftpLink({ user: data.sftp.user, host: data.sftp.host ?? page.url.hostname, port: data.sftp.port, path: data.folder })
 				}
 			: null
 	);
+	let showSftpAddress = $state(false);
+	let sftpCopied = $state(false);
+	// A browser with no app for sftp:// links does nothing at all on the click. A file
+	// manager opening takes the focus from the browser: when nothing has after a moment,
+	// the address and what to do with it come up.
+	function watchSftpOpen() {
+		const opened = () => clearTimeout(timer);
+		const timer = setTimeout(() => {
+			window.removeEventListener('blur', opened);
+			showSftpAddress = true;
+		}, 2000);
+		window.addEventListener('blur', opened, { once: true });
+	}
+	async function copySftp(text: string) {
+		if (!(await copyText(text))) return;
+		sftpCopied = true;
+		setTimeout(() => (sftpCopied = false), 2000);
+	}
 
 	function href(dir: string) {
 		return dir ? `${base}?path=${encodeURIComponent(dir)}` : base;
@@ -574,10 +594,18 @@
 				<a
 					class="button button-quiet"
 					href={sftp.href}
+					onclick={watchSftpOpen}
 					title={sftp.reachable
 						? `Opens ${sftp.href} in your file manager (Nautilus, Dolphin, WinSCP, FileZilla...), logging in as ${sftp.user} over SSH`
 						: `Nothing answers on SSH port ${sftp.port} on this machine, so ${sftp.href} will not open until an SSH server runs there (or set the port in MineShell's settings)`}
 					>Open in file manager</a
+				>
+				<button
+					type="button"
+					class="button-quiet"
+					aria-expanded={showSftpAddress}
+					title="The sftp:// address, to paste into a file manager, and what to do when the button opens nothing"
+					onclick={() => (showSftpAddress = !showSftpAddress)}>Address</button
 				>
 				{#if !sftp.reachable}<span class="faint small">no SSH on port {sftp.port} here?</span>{/if}
 			{/if}
@@ -614,6 +642,26 @@
 				<input name="name" bind:value={newFolder} placeholder="Folder name" aria-label="Folder name" />
 				<button class="button-primary" type="submit">Create</button>
 			</form>
+		{/if}
+
+		{#if sftp && showSftpAddress}
+			<div class="notice sftp-address">
+				<div class="sftp-link">
+					<code class="mono">{sftp.href}</code>
+					<button type="button" onclick={() => copySftp(sftp.href)}>{sftpCopied ? 'Copied' : 'Copy'}</button>
+				</div>
+				<p>
+					If "Open in file manager" opens nothing, this browser found no app for <code>sftp://</code> links. Paste the
+					address into the file manager instead: Nautilus and Dolphin take it in the location bar (Ctrl+L); in WinSCP or
+					FileZilla it is an SFTP site with host <code>{sftp.host}</code>, port <code>{sftp.port}</code> and user
+					<code>{sftp.user}</code>.
+				</p>
+				<p class="faint small">
+					To make the button work: Firefox asks which app to use once <code>network.protocol-handler.expose.sftp</code> is
+					added as false in <code>about:config</code>. Chrome and Edge pass the link to the system, which needs a program
+					registered for <code>sftp://</code> (WinSCP can register itself in its preferences).
+				</p>
+			</div>
 		{/if}
 
 		{#if data.search}
@@ -826,6 +874,19 @@
 		align-items: center;
 		flex-wrap: wrap;
 		margin-bottom: var(--space-3);
+	}
+
+	.sftp-link {
+		display: flex;
+		gap: var(--space-2);
+		align-items: center;
+		margin-bottom: var(--space-2);
+	}
+
+	.sftp-link code {
+		min-width: 0;
+		overflow-wrap: anywhere;
+		user-select: all;
 	}
 
 	.file-search {

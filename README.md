@@ -174,7 +174,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Upload files and folders by dragging them into the file browser.
 - Unpack an uploaded zip where it lies or into a folder named after it (asking before replacing anything, which goes to the trash), and download any folder as a zip; a running server's world folder pauses saving while it downloads.
 - Recover deleted files from a per-server trash, with configurable automatic cleanup.
-- Open server directories in a file manager through SFTP links.
+- Open server directories in a file manager through SFTP links, with the address to copy and what to change when the browser opens nothing.
 - Inspect disk usage, including world-map data stored outside the server directory, and delete archived logs and crash reports after a chosen number of days.
 - Spot a pack's own backup mod (AromaBackup, Simple Backups, FTB Backups, Textile Backup) copying the world beside MineShell's snapshots, with the folder it fills.
 - Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds.
