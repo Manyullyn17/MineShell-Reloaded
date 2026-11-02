@@ -208,7 +208,8 @@ describe('unit files', () => {
 		const old = new Date(Date.now() - 3_600_000);
 		await fs.utimes(file, old, old);
 		expect(await writeUnitIfChanged(fs, file, 'a')).toBe(false);
-		expect((await fs.stat(file)).mtimeMs).toBe(old.getTime());
+		// Untouched: still the hour-old time (mtimeMs is converted from nanoseconds, .999 on some runners).
+		expect(Math.round((await fs.stat(file)).mtimeMs)).toBe(old.getTime());
 		expect(await writeUnitIfChanged(fs, file, 'b')).toBe(true);
 		expect(await fs.readFile(file, 'utf8')).toBe('b');
 		await fs.rm(file);
