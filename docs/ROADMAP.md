@@ -658,6 +658,12 @@ is open, and each needs a test setup.
 - **Cancelling tasks**: only the ones listed in ARCHITECTURE ("Cancelling") can be; a pack
   change waits for a loader installer under way (the installer is not stopped), and Minecraft
   moves and loader changes outside a pack change have no Cancel.
+- **Cancel stops a loader installer** (user's call, 2026-11-02; no version yet). Cancel waits
+  for the installer to finish: on a fresh install of ATM10 that was most of 39 s, NeoForge's
+  installer pulling a few hundred MB of libraries. A pack install could kill the installer's
+  process at once (nothing of the server is kept); a pack change could too, since its old
+  loader files are in the journal and the change is put back from it either way - to check
+  first that a half-written `libraries/` is among what the rollback restores or removes.
 - **Undoing a version move**: a Minecraft or loader move has no undo once it is done (its
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
