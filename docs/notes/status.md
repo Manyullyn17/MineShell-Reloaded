@@ -107,7 +107,9 @@ d80ded1 (the Connect box's playit.gg row), 4635d65 (the data packs' check button
      (nothing left); the data pack loader warning.
    - Moving a server to an older Minecraft: the 26.3 test server, once with a new world (the old
      one under World > Worlds) and once keeping it.
-   - Pruning: analysis kept after a MineShell restart, saved areas skipped.
+   - Pruning: **done** (the user, 2026-11-02, a test server on prod): Chunky's area analysed, the
+     analysis still there after `systemctl --user restart mineshell`, and a prune left the
+     saved areas standing (they spelled HELLO).
    - Settings > Updates, "Database copies": **done** (the user, 2026-11-01, on a throwaway
      install): put back with and without the session in the copy; the button said nothing
      while MineShell restarted (fixed in c802a1e: it says so and the page comes back).
