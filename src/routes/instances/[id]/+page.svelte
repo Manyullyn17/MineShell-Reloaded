@@ -674,9 +674,12 @@
 					<dt>Restart on crash</dt>
 					<dd>
 						{data.detail.autoRestartOnCrash
-							? `Yes, up to ${data.detail.crashRestartLimit} times in ${Math.round(data.detail.crashRestartWindowSec / 60)} min${data.detail.crashRestartSkipFixable ? ', not for a startup crash with a fix' : ''}`
+							? `Yes, up to ${data.detail.crashRestartLimit} times in ${Math.round(data.detail.crashRestartWindowSec / 60)} min`
 							: 'No'}
 					</dd>
+					{#if data.detail.autoRestartOnCrash && data.detail.crashRestartSkipFixable}
+						<dd class="faint small">not when a startup crash has a fix</dd>
+					{/if}
 				</div>
 				<div>
 					<dt>Scheduled restart</dt>
@@ -1013,7 +1016,7 @@
 	.facts div {
 		display: grid;
 		grid-template-columns: 8.5rem minmax(0, 1fr);
-		gap: var(--space-3);
+		gap: 0.15rem var(--space-3);
 		padding: 0.55rem 0;
 		border-top: 1px solid var(--panel-raised);
 	}
@@ -1025,6 +1028,11 @@
 	.facts dd {
 		margin: 0;
 		min-width: 0;
+	}
+
+	/* A note under a value (memory waiting for a restart), not under its label. */
+	.facts dd + dd {
+		grid-column: 2;
 	}
 
 	.wrap {
