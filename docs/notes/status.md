@@ -52,7 +52,8 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; prod runs 1.1.0-beta.4 since 2026-11-01 evening). 1.1.0 once a beta has run about
+**1.1 beta checklist** (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; for a beta.6:
+d845c6a, a confirmation scrolled into view clears the save bar - found by the user on beta.5). 1.1.0 once a beta has run about
 three days with nothing big (ROADMAP, "Betas"); beta.4's small fixes (`.jsonc`, a gap, the 24h
 chart's peaks) did not restart the clock (the user, 2026-11-02). 830a14f (no needless "restart
 to apply" after an update), 5eec358 (a changed number of log days applied at the next tick,
