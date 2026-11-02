@@ -1288,7 +1288,8 @@ trash out, and disk usage shows it as its own group.
 **Old logs** (`logretention.ts`). Minecraft archives latest.log into a new `logs/*.log.gz` each
 start and removes none. With kept days set (`logs.keepDays`, MineShell settings, default 0 =
 keep all), the scheduler deletes every server's archived logs and crash reports older than that,
-reading each server's two folders at most once an hour; the current logs (latest.log,
+reading each server's two folders at most once an hour, and at the next tick (30 s) after the
+number of days changes; the current logs (latest.log,
 debug.log) and anything else in `logs/` stay. The same deletion (`deleteOldLogs`) backs disk
 usage's "Delete them", at 30 days.
 Pack files are the uploader's: a `.mrpack` or file list naming a path that leaves the

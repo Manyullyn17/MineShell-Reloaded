@@ -61,9 +61,20 @@ describe('log retention', () => {
 		const instance = await server();
 		setLogKeepDays(100);
 		expect(await expireOldLogs(instance.id, instance.path, NOW)).toBe(1);
-		setLogKeepDays(30);
+		const log = path.join(instance.path, 'logs/2026-08-01-1.log.gz');
+		await fs.writeFile(log, 'old');
+		await fs.utimes(log, new Date(NOW - 200 * DAY), new Date(NOW - 200 * DAY));
 		expect(await expireOldLogs(instance.id, instance.path, NOW + 30 * 60_000)).toBe(0);
 		expect(await expireOldLogs(instance.id, instance.path, NOW + 61 * 60_000)).toBe(1);
+	});
+
+	it('looks again at once when the number of days changes', async () => {
+		const instance = await server();
+		setLogKeepDays(100);
+		expect(await expireOldLogs(instance.id, instance.path, NOW)).toBe(1);
+		setLogKeepDays(30);
+		expect(await expireOldLogs(instance.id, instance.path, NOW + 30_000)).toBe(1);
+		expect(await ls(path.join(instance.path, 'crash-reports'))).toEqual(['crash-2026-10-20_10.00.00-server.txt']);
 	});
 
 	it('refuses days outside 0 to 3650', () => {

@@ -30,14 +30,19 @@ export function setLogKeepDays(days: number): void {
 	db.insert(settings).values({ key: DAYS_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 }
 
-const globals = globalThis as { __mineshellLogsCheckedAt?: Map<string, number> };
-const checkedAt = (globals.__mineshellLogsCheckedAt ??= new Map());
+const globals = globalThis as { __mineshellLogsChecked?: Map<string, { at: number; days: number }> };
+const checked = (globals.__mineshellLogsChecked ??= new Map());
 
-/** The scheduler's part: a server's archived logs and crash reports past the kept days go. */
+/**
+ * The scheduler's part: a server's archived logs and crash reports past the kept days go.
+ * A changed number of days is looked at on the next tick, not after the hour: lowering it
+ * and seeing nothing go for up to an hour looked like it did not work.
+ */
 export async function expireOldLogs(instanceId: string, root: string, now = Date.now()): Promise<number> {
 	const days = logKeepDays();
-	if (!days || now - (checkedAt.get(instanceId) ?? 0) < EVERY_MS) return 0;
-	checkedAt.set(instanceId, now);
+	const last = checked.get(instanceId);
+	if (!days || (last && last.days === days && now - last.at < EVERY_MS)) return 0;
+	checked.set(instanceId, { at: now, days });
 	const { files, bytes } = await deleteOldLogs(root, days, now);
 	if (files) console.log(`[mineshell] deleted ${files} log${files === 1 ? '' : 's'} and crash reports older than ${days} days for ${instanceId} (${formatBytes(bytes)})`);
 	return files;
@@ -45,5 +50,5 @@ export async function expireOldLogs(instanceId: string, root: string, now = Date
 
 /** For tests: forget when each server was last looked at. */
 export function resetLogChecks(): void {
-	checkedAt.clear();
+	checked.clear();
 }
