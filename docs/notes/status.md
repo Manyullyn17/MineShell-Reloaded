@@ -59,7 +59,8 @@ to apply" after an update), 5eec358 (a changed number of log days applied at the
 not up to an hour later), f3c0bd2 (the overview's shorter "Restart on crash") and 2aca031
 (no update notification for a version the user just installed past; migration 0032) and
 13b4a56 (quiet hours hold updates until they end) and e5b0d52 (the per-dimension table
-starts with the busy ones) go out as beta.5 once prod's own log cleanup has been seen to work
+starts with the busy ones), 382d478 (the LAN address skips VPN and container interfaces) and
+d80ded1 (the Connect box's playit.gg row) go out as beta.5 once prod's own log cleanup has been seen to work
 (the user, 2026-11-02), or in 1.1.0 if nothing else comes up. Most important first.
 
 1. **Every server start (the sandbox and quoted arguments change how each one starts).**
@@ -118,10 +119,10 @@ starts with the busy ones) go out as beta.5 once prod's own log cleanup has been
    - Pre-generation: **done** (the user, 2026-11-02).
    - New servers' defaults (8 GB, a daily snapshot, 3 crash restarts in 10 minutes): **done**
      (the user, 2026-11-02). Data packs in the update check: left.
-   - Old logs deleted after the chosen days: on prod since 2026-11-01 19:56 at 30 days (nothing
-     that old), 15 since 2026-11-02 11:37. Each server's folders are read hourly (xx:23:50 on
-     prod), which also held back the changed number (fixed in 5eec358, not on prod): the check
-     at about 12:24 should take Irithyll's logs of 9 to 17 October and say so in the journal.
+   - Old logs deleted after the chosen days: **done** on prod (2026-11-02 12:23:51, 15 days:
+     Irithyll's 21 archived logs of 9 to 18 October, 86 KB, and the journal line; the oldest
+     left is from 19 October). The hourly read held back the changed number for up to an
+     hour (fixed in 5eec358).
 6. **The Updates tab and Remote access layout** from beta.2: **done** (the user, 2026-11-01),
    apart from the plain-http switch's note (fixed in 66410e8).
 7. **Release notes for 1.1.0** (the user, 2026-11-01: by hand, without fixes of what 1.1 itself
