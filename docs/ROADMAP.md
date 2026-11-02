@@ -90,7 +90,8 @@ in the order to build them where one needs another.
    "Several worlds" (Leftovers); single files from a snapshot.
 5. **Players and how the server shows itself**: game mode and teleport for online players,
    shared player lists, the server list preview, the server resource pack, maintenance mode
-   (which changes the description the preview shows).
+   (which changes the description the preview shows); joining over Tailscale, wanted for 1.2
+   (user's call, 2026-11-02), so built first whatever step is under way.
 6. **Schedules**: hours a server runs, on the scheduler that restarts today, and one view of
    everything scheduled, which then includes them.
 7. **Diagnosis and copies**: where a stuck server hangs, the change history per server, then
@@ -388,6 +389,19 @@ Minecraft settings, and ones a mod or the pack adds".
 Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks whoever is
 not on it with a message, and changes the description to say so; off puts all three back.
 For pack updates and other work players should stay out of.
+
+#### Joining over Tailscale
+
+Agreed 2026-11-02, for 1.2 (user's call: 1.1 is full). MineShell itself can be served over
+Tailscale (Settings > System, Remote access; `tailscale.ts`), its servers not: a friend on
+the same tailnet, or the owner away from home, has to know to type the machine's 100.x address.
+With Tailscale up, the overview's Connect box gets a third row beside "On your network" and
+playit.gg's: "From your Tailscale devices", the machine's MagicDNS name (or 100.x address) and
+the port, from the `tailscale status --json` MineShell already reads. Nothing to forward: the
+tailnet reaches the port directly. To check first: whether ufw on the machine lets tailscale0
+in by default (Tailscale adds no ufw rule; if it does not, the row gets its own firewall line,
+`sudo ufw allow in on tailscale0 to any port <port>`), and voice chat's UDP port the same way.
+`primaryLanAddress` skips tailscale0 since 2026-11-02, so the LAN row stays the home network's.
 
 ### 6. Schedules
 
