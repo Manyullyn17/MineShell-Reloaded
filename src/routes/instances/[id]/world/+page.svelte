@@ -1170,6 +1170,11 @@
 		margin-top: var(--space-4);
 	}
 
+	/* A last option right above the button (a hint after one has its own gap). */
+	.new-world form > .check:has(+ button) {
+		margin-bottom: var(--space-3);
+	}
+
 	.after {
 		margin: var(--space-3) 0 0;
 	}
