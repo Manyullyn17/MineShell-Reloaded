@@ -1334,6 +1334,17 @@ into a new world), or left where they are with why (no build; added by hand). Th
 after the move is committed, into the world moved to; a failed download keeps the old build
 and is named in the status (loaders.md). The tracking rows stay per server.
 
+### Game rules, world spawn and border (1.2, 2026-11-03)
+
+Asked for 2026-10-26 (no easy way to edit game rules; spawn and border agreed the same day).
+Built: World > Game rules, per world: every rule the world keeps (mods' too) as a switch or a
+number field, named and described from the vanilla lang text, with the spawn and the border
+beside them; only what changed is applied, over RCON to the running server's active world,
+else into the world's files in the format its version keeps (worlds.md, "Game rules, spawn
+and border": checked on 1.12.2, 1.21.10, 1.21.11 and 26.3, by booting the written files).
+Left on the roadmap: the four 1.21.9 settings that are game rules now, as controls in
+Settings; picking the spawn on the chunk map.
+
 ### Game mode and teleport for online players (1.2, 2026-11-03)
 
 Asked for 2026-10-26. Online players could be kicked, opped and banned, nothing else. Built

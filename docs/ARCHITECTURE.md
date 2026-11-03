@@ -902,6 +902,14 @@ written into the export's server.properties, then settings and records.
 
 ## Worlds
 
+A world's game rules, spawn and border (`worldrules.ts`, World > Game rules) are read from
+whichever file the version that last saved the world keeps them in (notes, worlds.md) and
+changed in the same place: over RCON for the running server's active world (a file written
+under it would be saved over), else in the files, each written to a temporary file and
+renamed over the old one, the tag types kept. Only what differs from what was read is
+applied. Names and descriptions come from a table of the vanilla rules made from the server
+jars' lang files (`lib/shared/gamerules.ts`); a mod's rule is named after its key.
+
 Snapshots live inside the server folder, `.mineshell/snapshots/<id>/`, with the world
 folders at their relative paths and a `manifest.json`; one is assembled as `<id>.partial`
 and only counts once renamed. A copied snapshot also has `hashes.json` (each file's size,

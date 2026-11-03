@@ -144,6 +144,25 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Removing a world-generation data pack from a world that loaded it stops the world loading
   (level.dat's generation settings name its biomes); MineShell refuses unless confirmed.
 
+## Game rules, spawn and border
+- Where a world keeps them (vanilla 1.12.2, 1.21.10, 1.21.11 and 26.3 booted on scratch folders
+  with `tests/tools/mc-probe.mjs --keep`, read with `tests/tools/gamerules-dump.mjs`,
+  2026-11-03). Rules: level.dat `Data.GameRules`, every rule stored (not only changed ones,
+  1.12.2 had all 24), mods' too, each value a string, camelCase, up to 1.21.10; 1.21.11
+  `Data.game_rules`, typed (byte for true/false, int), names `minecraft:snake_case`; 26
+  `data/minecraft/game_rules.dat`, the same under `data`. Spawn: SpawnX/Y/Z, later `spawn.pos`
+  (int array) with its dimension. Border: level.dat `Border*` up to 1.21.10 (60,000,000 in
+  1.12 means none), 1.21.11 `data/world_border.dat` per dimension, 26 under
+  `dimensions/minecraft/overworld/data/minecraft/`.
+- 1.21.11's renames are not one to one: some turned around (`disableRaids` -> `raids`, the
+  elytra and player movement checks), `allowFireTicksAwayFromPlayer` became the number
+  `fire_spread_radius_around_player`. Commands from 1.21.11 take `keep_inventory` or
+  `minecraft:keep_inventory`, not the camelCase name. The lang files kept the old keys
+  (`gamerule.doDaylightCycle`), with `gamerule.minecraft.*` only for the four that changed.
+  The server jars hold en_us.json from 1.13 (1.12's .lang has no rule names).
+- Files written by MineShell were checked by booting them: each version reported the changed
+  rules, the border width and kept the spawn through its own save.
+
 ## Chunk map and chunk restore
 - Built 2026-10-17 (World > Restore chunks; ARCHITECTURE, "Worlds"). RoughlyEnoughIDs/JEID
   1.12 sections (MeatballCraft) carry a `Palette` int array of `id << 4 | meta`; Blocks/Add/

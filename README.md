@@ -113,6 +113,7 @@ Manage worlds, recover from mistakes, and automate routine maintenance.
 - Configure retention by snapshot count and storage usage. Pin, name, tag, and filter snapshots. Snapshots share the files that did not change between them, so ten of a big world take little more than one.
 - Restore a snapshot, reset a world, replace it with an uploaded world, or download a world as a ZIP archive.
 - Keep several worlds per server: start a new one without deleting the old, upload one, switch between them, and turn any snapshot into a world of its own. Each world keeps its seed, data packs and map.
+- Edit a world's game rules (mods' too), spawn point and world border, at once on the running server or in the files of any world.
 - Reset or restore individual dimensions.
 - Restore chosen chunks from a snapshot, picked on a map of the dimension drawn from the world's own files (top blocks with their textures' colours, modded blocks too).
 - Prune chunks that have not actually been visited, previewed on a heatmap of where players spent time, with chunks to keep picked on the map, or saved as named areas (a base, a town) that every prune skips.

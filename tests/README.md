@@ -174,6 +174,7 @@ value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispa
 | `check-apis.sh [file filter...] [--vitest-option...]` | Every recorded-API test file (or those whose path contains a filter) against the live APIs, recorded into a temporary folder (see "No network") |
 | `curseforge-key.mjs <data dir>` | The CurseForge key saved in that MineShell's Settings, for recording the official API (see "No network") |
 | `jar-metadata-survey.mjs <data dir> [--list]` | What every jar of that MineShell's servers declares, the name and version `mainDeclaredMod` picks, and its catalog name beside it; read only (packs-and-mods.md) |
+| `gamerules-dump.mjs <world folder>` | Where a world keeps its game rules, spawn and border, and their values (with `mc-probe.mjs --keep`; worlds.md) |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 | `snapshot-check.mjs <server folder>` | A server's snapshots checked on disk, reading only: each file its `hashes.json` records there with that size and SHA-256, the live world sharing no file with a snapshot, linked files per snapshot and the space all take (each file once). Safe on a real install (about 8 s for three snapshots of a 6 GB world); for checking shared snapshot files after one is deleted |
@@ -527,3 +528,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A pack change replacing a data pack loader (Paxi by Open Loader), or moving to an Open Loader build that reads another folder, did not say where the user's packs would be read from, or said nothing | `flows/pack-change.test.ts` ("names the loader that takes over", "reads another folder") |
 | The Data packs tab showed only the world's own packs, not the ones a loader mod reads for every world, and had no upload | `routes/instances/[id]/mods/datapacks.test.ts` |
 | Online players could only be kicked, opped and banned: no game mode or teleport | `flows/player-commands.test.ts` |
+| Game rules, the spawn and the border were only changeable by console command | `flows/world-rules.test.ts` |

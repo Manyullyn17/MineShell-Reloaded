@@ -228,6 +228,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			deletePruneArea: on('world'),
 			resetDimension: on('world'),
 			reset: on('world'),
+			worldRules: on('world'),
 			switchWorld: on('world'),
 			createWorld: on('world'),
 			renameWorld: on('world'),
@@ -235,6 +236,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			worldFromSnapshot: on('world')
 		}
 	},
+	'/api/instances/[id]/world-rules': { methods: { GET: on('world') } },
 	// A world zip holds every player's data: file access.
 	'/api/instances/[id]/world': { methods: { GET: on('files'), PUT: on('world') } },
 	'/instances/[id]/world/chunks': { load: on('backups.restore'), actions: { restore: on('backups.restore'), iconEula: on('backups.restore') } },

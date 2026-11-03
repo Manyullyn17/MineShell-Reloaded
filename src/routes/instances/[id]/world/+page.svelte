@@ -11,6 +11,7 @@
 	import RowMenu from '#lib/components/RowMenu.svelte';
 	import PruneMap from '#lib/components/PruneMap.svelte';
 	import PregenPlanner from '#lib/components/PregenPlanner.svelte';
+	import WorldRules from './WorldRules.svelte';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 
@@ -23,7 +24,7 @@
 	const backupMods = $derived((backupModsInfo.ready ? backupModsInfo.value : null) ?? []);
 	const busy = $derived(data.instance.status === 'provisioning');
 
-	const VIEWS = ['snapshots', 'worlds', 'pregen', 'prune', 'reset'] as const;
+	const VIEWS = ['snapshots', 'worlds', 'rules', 'pregen', 'prune', 'reset'] as const;
 	// ?view= opens a tab: Restore chunks is a page of its own and links back to the others.
 	const asked = page.url.searchParams.get('view');
 	let view = $state<(typeof VIEWS)[number]>(VIEWS.find((v) => v === asked) ?? 'snapshots');
@@ -244,7 +245,7 @@
 
 <div class="subhead">
 	<nav class="subtabs" aria-label="World sections">
-		{#each ([['snapshots', 'Snapshots'], ['worlds', 'Worlds'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || id === 'worlds' || may('world')) as [id, label] (id)}
+		{#each ([['snapshots', 'Snapshots'], ['worlds', 'Worlds'], ['rules', 'Game rules'], ['pregen', 'Pre-generate'], ['prune', 'Prune chunks'], ['reset', 'Replace or reset']] as const).filter(([id]) => id === 'snapshots' || id === 'worlds' || may('world')) as [id, label] (id)}
 			<button type="button" aria-current={view === id ? 'page' : undefined} onclick={() => (view = id)}>{label}</button>
 		{/each}
 		{#if may('backups.restore')}
@@ -881,6 +882,8 @@
 		</form>
 	</section>
 {/if}
+{:else if view === 'rules'}
+	<WorldRules instanceId={data.instance.id} worlds={data.serverWorlds} />
 {:else if view === 'pregen'}
 {#if data.chunky}
 	<section class="view">

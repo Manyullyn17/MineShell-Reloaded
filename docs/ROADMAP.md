@@ -34,7 +34,8 @@ size, not a fixed list; entries move and get added along the way):
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
   upload), looking again when a CurseForge key is set, game mode and teleport for online
-  players. To build - game rules, world spawn and border; server.properties coverage
+  players, game rules, world spawn and border. To build - the four 1.21.9 settings as game
+  rules; server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
   gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
   the Remote access follow-ups 1-3 (Undecided).
@@ -182,35 +183,16 @@ Files.
 
 ### 4. World
 
-#### Game rules, world spawn and border
+#### The four 1.21.9 settings as game rules
 
-Asked for 2026-10-26 (user: no easy way to edit game rules yet; spawn and border agreed the
-same day). A list of a world's game rules with their values, edited in place: a checkbox for
-true/false, a number field for numbers. Game rules belong to the world (`level.dat`,
-`Data.GameRules`, every rule stored as a string, mod-added ones included), so they go on the
-World tab, per world, which is also a first piece of the per-world game settings in
-"Several worlds" (Leftovers). Beside them the world spawn (`SpawnX/Y/Z`) and the world
-border (`Border*`: centre, size), both already read for the Chunky planner
-(`worldSpawn`/`worldBorder` in `world.ts`) but only changeable by console command today;
-the spawn could be picked on the chunk map. Running: `setworldspawn` and `worldborder`
-over RCON; stopped: written to `level.dat` like the rules.
-
-- Reading: `level.dat` through `nbt.ts`, which gives every rule the world has, mods' too,
-  with no running server. Names and descriptions from the lang files where they have them
-  (`gamerule.<name>`), the raw name otherwise.
-- Changing a running server's active world: `gamerule <name> <value>` over RCON (a write to
-  `level.dat` would be overwritten at the next save). A stopped server or an inactive world:
-  written to `level.dat`, after a snapshot or with the same care other `level.dat` writes take.
-- To check first: 1.21.11 reworked game rules (names and how `level.dat` stores them), and
-  whether pre-1.13 worlds store every rule or only changed ones. On 1.21.9+ the management
-  server (Undecided) can list and set them with types, which would cover the running case
-  without RCON.
-- From 1.21.9 PvP, the Nether, monsters and command blocks are game rules only (`pvp`,
-  `spawnMonsters`, `allowEnteringNetherUsingPortals`, `commandBlocksEnabled`; from 1.21.11
-  `spawn_monsters`, `allow_entering_nether_using_portals`, `command_blocks_work`): Settings
-  hides their server.properties controls there and names the rules (0.33.15). Once rules can
-  be edited, those four come back on 1.21.9+ as controls in the same places, set as game
-  rules, and the Rules section's console note goes (user's call, 2026-10-30).
+Left from "Game rules, world spawn and border" (built 2026-11-03, ROADMAP-ARCHIVE): from 1.21.9
+PvP, the Nether, monsters and command blocks are game rules only (`pvp`, `spawnMonsters`,
+`allowEnteringNetherUsingPortals`, `commandBlocksEnabled`; from 1.21.11 `spawn_monsters`,
+`allow_entering_nether_using_portals`, `command_blocks_work`): Settings hides their
+server.properties controls there and names the rules (0.33.15). They come back on 1.21.9+ as
+controls in the same places, set as game rules, and the Rules section's console note goes
+(user's call, 2026-10-30). Also open: the spawn picked on the chunk map; on 1.21.9+ the
+management server (Undecided) could list and set rules with types.
 
 #### Pre-generation before 1.16 (Chunk Pregenerator)
 

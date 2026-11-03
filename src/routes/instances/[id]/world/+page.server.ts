@@ -46,6 +46,7 @@ import {
 	type SeedChoice
 } from '#lib/server/world.js';
 import { listWorlds, newerWorldWarning, otherLoaderWarning, snapshotWorldFolder, withSizes } from '#lib/server/worlds.js';
+import { changeWorldRules, type WorldRuleChanges } from '#lib/server/worldrules.js';
 import { webRoot } from '#lib/server/worldmap.js';
 import { snapshotWhileRunning } from '#lib/server/snapshotschedule.js';
 import { listDimensions, MODERN_OVERWORLD, type Dimension } from '#lib/server/dimensions.js';
@@ -456,6 +457,23 @@ export const actions: Actions = {
 				snapshot: await decideSnapshot(instance, form.get('snapshot'), { moves: true })
 			});
 			return { ok: true, message: `Resetting the dimension. ${STARTED}` };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	/** Game rules, spawn and border of one world: `changes` is what the page changed, as JSON. */
+	worldRules: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		let changes: WorldRuleChanges;
+		try {
+			changes = JSON.parse(String(form.get('changes') ?? '{}'));
+		} catch {
+			return fail(400, { ok: false, message: 'The changes did not arrive whole; reload and try again.' });
+		}
+		try {
+			return { ok: true, message: await changeWorldRules(instance, String(form.get('world') ?? ''), changes) };
 		} catch (err) {
 			return refused(err);
 		}
