@@ -108,6 +108,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   without a build, and untracked jars, are disabled (user's call, 2026-10-08). Disabling
   stages the original and copies it back as `.disabled`, because the shared restore deletes
   every mods/ file that was not there before. Journal `migrate` (mods + rows + loader).
+- Data packs (2026-11-03): the browser's are looked up for the target (`datapackBuilds`, as
+  the update check) and installed after the commit, into the world moved to: a new world
+  gets those with a build (and ones whose build is the same, copied); a kept world has them
+  replaced in place. Not journalled, like data pack updates: `installDatapackVersion`
+  downloads before it removes the old file, so a failure keeps the old build and is named
+  in the status. Hand-added and build-less ones stay where they were. The tracking rows are
+  per server, so a pack left in the old world is skipped by the update check meanwhile.
 - The free-text Minecraft version field is gone: it only relabelled the server.
 - Tried for real on the throwaway setup: vanilla 1.21.1 -> Fabric 1.21.4 through the UI;
   and 2026-10-15 Fabric 1.20.1 with four Modrinth mods -> 1.21.1 (Starlight disabled, three

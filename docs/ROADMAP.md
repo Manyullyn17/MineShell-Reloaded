@@ -31,11 +31,13 @@ are extensions and wait.
 Release guide from 1.2 on (user's call, 2026-11-03: a guideline to keep releases a reasonable
 size, not a fixed list; entries move and get added along the way):
 - **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
-  jar, joining over Tailscale. To build - data packs on a version move, dropping into a folder
+  jar, joining over Tailscale, data packs on a version move. To build - dropping into a folder
   in Files, the Data packs tab showing what loader mods read (with an upload), data pack
   loaders changing (Leftovers); looking again when a CurseForge key is set; game mode and
   teleport for online players; game rules, world spawn and border; server.properties coverage
-  (LZ4 chunks included); the Remote access follow-ups 1-3 (Undecided).
+  (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
+  gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
+  the Remote access follow-ups 1-3 (Undecided).
 - **1.3**: the mod config editor; the rest of step 5 (server list preview, server resource
   pack, maintenance mode).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
@@ -607,16 +609,6 @@ is open, and each needs a test setup.
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
   a future feature, no version yet).
-- **Data packs on a version move** (user's call 2026-11-02: for 1.2, on the edge between
-  closing a gap in 1.1's moving down and a feature of its own). A move does nothing with data
-  packs: a new world (moving down) starts without them, the old world keeps them (since
-  2026-11-02 the option says so), and a kept world keeps packs made for the old version, which
-  may not load. The move's preview lists the data packs from Add mods with the target's build
-  for each (as `checkDatapackUpdates` finds one), installs those into the world moved to (the
-  new one, or the kept one in place of the old build) and names the ones without a build,
-  which stay where they were; hand-added ones are listed, not looked up. The tracking rows
-  are per server, not per world: a pack left in the old world is skipped by the update check
-  while another world is active.
 - **The servers' sandbox** (ROADMAP-ARCHIVE, "The servers' sandbox", with its test list): a
   broken or missing AppArmor profile not tried (the user manager should still start, `doctor`
   warn, a server fail with `226/NAMESPACE`), nor a non-Ubuntu system (a Debian or Fedora VM).

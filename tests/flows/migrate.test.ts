@@ -14,9 +14,16 @@ import type { ModProvider, ProjectVersion } from '#lib/server/mods/index.js';
 const BUILDS: Record<string, Record<string, { version: string; requires?: string[] }>> = {
 	chunky: { 'forge 1.20.1': { version: '1.0' }, 'neoforge 1.21.1': { version: '1.2', requires: ['lib'] } },
 	corgilib: { 'forge 1.20.1': { version: '2.0' } },
-	lib: { 'neoforge 1.21.1': { version: '3.0' } }
+	lib: { 'neoforge 1.21.1': { version: '3.0' } },
+	// Data packs (Modrinth's loader "datapack"): one with a build for every version, one with
+	// the same build for 1.20.1 and 1.19.2, one only for 1.20.1, one whose new build fails to download.
+	breeze: { 'datapack 1.20.1': { version: '1.0' }, 'datapack 1.21.1': { version: '1.1' }, 'datapack 1.19.2': { version: '0.9' } },
+	towers: { 'datapack 1.20.1': { version: '2.0' }, 'datapack 1.19.2': { version: '2.0' } },
+	oldonly: { 'datapack 1.20.1': { version: '1.0' } },
+	broken: { 'datapack 1.20.1': { version: '1.0' }, 'datapack 1.21.1': { version: '1.1' } }
 };
-const NAMES: Record<string, string> = { chunky: 'Chunky', corgilib: 'CorgiLib', lib: 'Lib' };
+const NAMES: Record<string, string> = { chunky: 'Chunky', corgilib: 'CorgiLib', lib: 'Lib', breeze: 'More Breeze', towers: 'Towers', oldonly: 'Old Only', broken: 'Broken' };
+const fileOf = (slug: string, version: string, loader?: string) => `${slug}-${version}${loader === 'datapack' ? '.zip' : '.jar'}`;
 const fakeModrinth: Partial<ModProvider> = {
 	getProject: async (slug: string) => ({
 		source: 'modrinth', id: slug, slug, name: NAMES[slug], author: null, summary: null,
@@ -28,7 +35,7 @@ const fakeModrinth: Partial<ModProvider> = {
 		return [{
 			id: `${slug}-${build.version}`, projectId: slug, name: build.version, versionNumber: build.version, channel: 'release',
 			datePublished: '2026-01-01T00:00:00Z', gameVersions: [filter!.minecraftVersion!], loaders: [filter!.loader!], changelog: null,
-			files: [{ filename: `${slug}-${build.version}.jar`, url: `https://mods.test/${slug}-${build.version}.jar`, primary: true, hash: null, size: null }],
+			files: [{ filename: fileOf(slug, build.version, filter?.loader), url: `https://mods.test/${slug}-${build.version}.jar`, primary: true, hash: null, size: null }],
 			dependencies: (build.requires ?? []).map((projectId) => ({ projectId, versionId: null, name: NAMES[projectId], type: 'required' as const }))
 		}];
 	}
@@ -52,6 +59,7 @@ const served: Record<string, () => Response> = {};
 for (const [slug, builds] of Object.entries(BUILDS)) {
 	for (const b of Object.values(builds)) served[`https://mods.test/${slug}-${b.version}.jar`] = () => new Response(`${slug} ${b.version}`);
 }
+served['https://mods.test/broken-1.1.jar'] = () => new Response('gone', { status: 404 });
 useRecordedHttp('none', { extra: served });
 
 const TARGET = { minecraft: '1.21.1', loader: 'neoforge' as const, loaderVersion: '21.1.72' };
@@ -78,6 +86,24 @@ async function forgeServer() {
 	}
 	return reload(instance.id);
 }
+
+/** Data packs in its world: three from the mod browser at their 1.20.1 build, one put there by hand. */
+async function withDatapacks(instance: Awaited<ReturnType<typeof forgeServer>>, slugs = ['breeze', 'towers', 'oldonly']) {
+	const { instanceDatapacks } = await import('#lib/server/db/schema.js');
+	const dir = path.join(instance.path, 'world/datapacks');
+	await fs.mkdir(dir, { recursive: true });
+	await fs.writeFile(path.join(dir, 'handmade.zip'), 'handmade');
+	for (const slug of slugs) {
+		const version = BUILDS[slug]['datapack 1.20.1'].version;
+		const fileName = fileOf(slug, version, 'datapack');
+		await fs.writeFile(path.join(dir, fileName), `${slug} ${version}`);
+		db.insert(instanceDatapacks)
+			.values({ instanceId: instance.id, source: 'modrinth', projectId: slug, slug, name: NAMES[slug], projectUrl: null, iconUrl: null, version, versionId: `${slug}-${version}`, fileName, hash: 'x', installedAt: 1 })
+			.run();
+	}
+	return instance;
+}
+const packsIn = async (root: string, world: string) => (await fs.readdir(path.join(root, world, 'datapacks')).catch(() => [] as string[])).sort();
 
 const rowsOf = (id: string) =>
 	db.select().from(instanceMods).where(eq(instanceMods.instanceId, id)).all().map((r) => ({ filePath: r.filePath, enabled: r.enabled, version: r.version })).sort((a, b) => a.filePath.localeCompare(b.filePath));
@@ -144,6 +170,30 @@ describe('moving a server to another Minecraft version and loader', () => {
 		expect(await fs.readdir(path.join(instance.path, '.mineshell')).catch(() => [])).toEqual([]);
 	});
 
+	it("moves the world's data packs to their builds for the target, leaving the rest as they are", async () => {
+		const instance = await withDatapacks(await forgeServer());
+		const plan = await planMigration(instance, TARGET);
+		expect(plan.datapacks.map((d) => [d.name, d.action, d.to])).toEqual([
+			['More Breeze', 'update', '1.1'],
+			['handmade', 'stay', null],
+			['Old Only', 'stay', null],
+			['Towers', 'stay', null]
+		]);
+		expect(plan.datapacks.find((d) => d.name === 'handmade')?.reason).toMatch(/mod browser/);
+		const task = await waitForTask(await applyMigration(instance, TARGET, { confirmMinecraftChange: true }));
+		expect(task.state).toBe('done');
+		expect(await packsIn(instance.path, 'world')).toEqual(['breeze-1.1.zip', 'handmade.zip', 'oldonly-1.0.zip', 'towers-2.0.zip']);
+		expect(await fs.readFile(path.join(instance.path, 'world/datapacks/breeze-1.1.zip'), 'utf8')).toBe('breeze 1.1');
+	});
+
+	it('keeps the old build of a data pack whose new one fails to download, and says so', async () => {
+		const instance = await withDatapacks(await forgeServer(), ['broken']);
+		const task = await waitForTask(await applyMigration(instance, TARGET, { confirmMinecraftChange: true }));
+		expect(task.state).toBe('done');
+		expect(reload(instance.id)).toMatchObject({ minecraftVersion: '1.21.1', status: 'ready', statusMessage: expect.stringMatching(/Data pack Broken was not moved/) });
+		expect(await packsIn(instance.path, 'world')).toEqual(['broken-1.0.zip', 'handmade.zip']);
+	});
+
 	it('puts everything back, records included, when the loader install fails', async () => {
 		const instance = await forgeServer();
 		const before = { files: await tree(instance.path), rows: rowsOf(instance.id) };
@@ -195,6 +245,15 @@ describe('moving a server to another Minecraft version and loader', () => {
 			expect(worlds.find((w) => w.folder === active)).toMatchObject({ active: true, name: 'New world for 1.19.2' });
 			// Switching back to it asks first, as for any world a newer Minecraft opened.
 			expect(worlds.find((w) => w.folder === 'world')).toMatchObject({ active: false, lastRun: { minecraftVersion: '1.20.1' } });
+		});
+
+		it("gives the new world the data packs with a build for it, and leaves the old world's as they were", async () => {
+			const instance = await withDatapacks(await forgeServer());
+			const task = await waitForTask(await applyMigration(instance, OLDER, { confirmMinecraftChange: true, newWorld: true }));
+			expect(task.state).toBe('done');
+			const active = await levelName(instance.path);
+			expect(await packsIn(instance.path, active)).toEqual(['breeze-0.9.zip', 'towers-2.0.zip']);
+			expect(await packsIn(instance.path, 'world')).toEqual(['breeze-1.0.zip', 'handmade.zip', 'oldonly-1.0.zip', 'towers-2.0.zip']);
 		});
 
 		it('keeps the world when asked to, opened by the older version as it is', async () => {

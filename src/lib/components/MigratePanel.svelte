@@ -41,12 +41,14 @@
 		reason: string | null;
 		disabled: boolean;
 	};
+	type DatapackPlan = { fileName: string; name: string; from: string | null; action: 'update' | 'keep' | 'stay'; to: string | null; reason: string | null };
 	type Plan = {
 		current: { minecraft: string; loader: string; loaderVersion: string | null };
 		target: { minecraft: string; loader: string; loaderVersion: string | null };
 		minecraftChange: boolean;
 		downgrade: boolean;
 		mods: ModPlan[];
+		datapacks: DatapackPlan[];
 		dependencies: {
 			install: { name: string; versionNumber: string; neededBy: string[] }[];
 			unresolved: { name: string; neededBy: string[]; reason: string }[];
@@ -145,6 +147,7 @@
 	}
 
 	const of = (action: ModPlan['action']) => plan?.mods.filter((m) => m.action === action) ?? [];
+	const packs = (action: DatapackPlan['action']) => plan?.datapacks.filter((d) => d.action === action) ?? [];
 	const canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
 
@@ -220,7 +223,8 @@
 					<input id="migrate-new-world" name="newWorld" type="checkbox" bind:checked={newWorld} />
 					<label for="migrate-new-world">
 						Start a new world for {plan.target.minecraft}. The current world stays on the server under World &gt; Worlds,
-						unchanged; switching back to it asks first. Its data packs stay with it: the new world starts without them.
+						unchanged; switching back to it asks first. Data packs from Add mods with a build for {plan.target.minecraft} go
+						into the new world; the rest stay with the current one.
 					</label>
 				</div>
 				<div class="check">
@@ -255,6 +259,12 @@
 				Mods: <strong>{of('update').length}</strong> moved to a build for it, <strong>{of('disable').length}</strong> disabled,
 				{of('keep').length} unchanged{plan.dependencies.install.length ? `, ${plan.dependencies.install.length} dependencies added` : ''}
 			</li>
+			{#if plan.datapacks.length}
+				<li>
+					Data packs: <strong>{packs('update').length}</strong> moved to a build for it,
+					{#if plan.downgrade && newWorld}{packs('keep').length} copied as they are, {packs('stay').length} left with the current world{:else}{packs('keep').length + packs('stay').length} left as they are{/if}
+				</li>
+			{/if}
 			{#if plan.downgrade && newWorld}
 				<li>A new world is started for {plan.target.minecraft}, with the same seed. Configs are left as they are.</li>
 			{:else}
@@ -302,6 +312,22 @@
 				<ul class="mods">
 					{#each of('keep') as m (m.fileName)}
 						<li><strong>{m.name}</strong> <span class="muted small">{m.reason ?? 'this build runs there too'}{m.disabled ? ' · disabled' : ''}</span></li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
+
+		{#if plan.datapacks.length}
+			<details open={packs('stay').length > 0}>
+				<summary>Data packs ({plan.datapacks.length})</summary>
+				<ul class="mods">
+					{#each plan.datapacks as d (d.fileName)}
+						<li class:off={d.action === 'stay'}>
+							<strong>{d.name}</strong>
+							{#if d.action === 'update'}{d.from ?? '?'} → {d.to}
+							{:else if d.action === 'keep'}<span class="muted small">this build runs there too</span>
+							{:else}<span class="muted small">{d.reason} {plan.downgrade && newWorld ? 'Stays with the current world.' : 'Left as it is; it may not load on ' + plan.target.minecraft + '.'}</span>{/if}
+						</li>
 					{/each}
 				</ul>
 			</details>

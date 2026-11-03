@@ -309,8 +309,13 @@ export type DatapackUpdate = {
 
 /** A tracked data pack's data pack builds for this Minecraft version, newest first. */
 async function datapackVersions(instance: ServerInstance, source: string, projectId: string): Promise<ProjectVersion[]> {
-	const versions = await compatibleVersions(source, projectId, { minecraftVersion: instance.minecraftVersion, loaders: ['datapack'] });
-	return versions.filter((v) => isDatapackVersion(v, instance.modloader));
+	return datapackBuilds(source, projectId, instance);
+}
+
+/** A data pack's builds for a Minecraft version and loader (a version move's target), newest first. */
+export async function datapackBuilds(source: string, projectId: string, on: Pick<ServerInstance, 'minecraftVersion' | 'modloader'>): Promise<ProjectVersion[]> {
+	const versions = await compatibleVersions(source, projectId, { minecraftVersion: on.minecraftVersion, loaders: ['datapack'] });
+	return versions.filter((v) => isDatapackVersion(v, on.modloader));
 }
 
 /**

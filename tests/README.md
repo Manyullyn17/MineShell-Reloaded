@@ -522,3 +522,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Mod updates found by the update check or Check now were on the overview but not under Mods > Updates until checked again there, and Check now's answer sat at the top of Settings, out of view | `routes/instances/[id]/mods/updates-tab.test.ts` |
 | An uploaded jar stayed "Other" with no version: Upload recorded it as manual without a lookup, and Sync only identified jars with no record; a CurseForge-only jar was never identified | `flows/mod-identify.test.ts`, `server/mods/curseforge-fingerprint.test.ts` |
 | A jar no catalog knew was named after its file with no version, though it declares both | `flows/mod-names.test.ts` ("jars no catalog knows") |
+| A version move left data packs at their old build, and a new world (moving down) without them | `flows/migrate.test.ts` (the three data pack cases) |

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from './db';
-import { instanceMods, type ServerInstance } from './db/schema';
+import { instanceDatapacks, instanceMods, type ServerInstance } from './db/schema';
 import {
 	bestVersion,
 	installModVersion,
@@ -15,6 +15,7 @@ import {
 } from './mods';
 import {
 	compatibleVersions,
+	datapackBuilds,
 	disableStaged,
 	eachLimited,
 	filterFor,
@@ -25,6 +26,7 @@ import {
 	type ResolvedDependency
 } from './modupdates';
 import { getLoader, type ModloaderId } from './modloaders';
+import { datapacksDir, installDatapackVersion, listDatapacks } from './mods/datapacks';
 import { compareVersions, resolveJava } from './java';
 import { snapshotStep } from './snapshots';
 import { createWorld, deleteWorld, switchWorld, worldSeed } from './world';
@@ -67,6 +69,10 @@ import { plural } from '#lib/shared/format.js';
  *   build for the target, with required dependencies the new builds bring.
  *   Mods with no build for the target, and jars it cannot look up, are
  *   disabled (the user's call: listed in the preview, re-enabled by hand).
+ * - Data packs from the mod browser move to their build for the target, into the world
+ *   moved to (the new one when going down with a new world, else in place of the old
+ *   build), after the move is committed: a failed download leaves the old build and is
+ *   logged. Ones without a build, and ones added by hand, stay where they are.
  * - Configs, the world and server.properties are left alone. Going down is
  *   possible, not supported (a world a newer Minecraft opened can lose chunks or
  *   not load): the panel warns and by default starts a new world for the older
@@ -92,6 +98,21 @@ export type MigrationModPlan = {
 	disabled: boolean;
 };
 
+export type MigrationDatapackPlan = {
+	fileName: string;
+	name: string;
+	from: string | null;
+	/**
+	 * `update`: its build for the target goes in. `keep`: this build is listed for the target
+	 * too (copied into a new world). `stay`: no build for the target, or added by hand, so not
+	 * looked up: left where it is (in a new world's case, with the old world).
+	 */
+	action: 'update' | 'keep' | 'stay';
+	to: string | null;
+	/** Why it stays. */
+	reason: string | null;
+};
+
 export type MigrationPlan = {
 	current: { minecraft: string; loader: string; loaderVersion: string | null };
 	target: MigrationTarget;
@@ -99,12 +120,16 @@ export type MigrationPlan = {
 	/** To an older Minecraft than the server's. */
 	downgrade: boolean;
 	mods: MigrationModPlan[];
+	/** The active world's data packs. */
+	datapacks: MigrationDatapackPlan[];
 	dependencies: DependencyPlan;
 	requiredJava: number;
 };
 
 type Prepared = {
 	plan: MigrationPlan;
+	/** Data packs to install, by file name in the current world. */
+	datapackUpdates: Map<string, ProjectVersion>;
 	updates: Map<string, { row: ModRow; version: ProjectVersion }>;
 	disable: string[];
 	dependencies: ResolvedDependency[];
@@ -185,6 +210,30 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 
 	const order = { disable: 0, update: 1, keep: 2 };
 	mods.sort((a, b) => order[a.action] - order[b.action] || a.name.localeCompare(b.name));
+
+	// The active world's data packs: the browser's are looked up for the target, as the
+	// data pack update check does; ones put there by hand or by a pack are not.
+	const datapacks: MigrationDatapackPlan[] = [];
+	const datapackUpdates = new Map<string, ProjectVersion>();
+	const tracked = new Map(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all().map((r) => [r.fileName, r]));
+	const onTarget = { minecraftVersion: target.minecraft, modloader: target.loader };
+	await eachLimited((await listDatapacks(instance)).packs, async (pack) => {
+		const base = { fileName: pack.fileName, name: pack.name, from: pack.version };
+		const row = tracked.get(pack.fileName);
+		if (!row) return void datapacks.push({ ...base, action: 'stay', to: null, reason: 'Not added from the mod browser, so MineShell cannot look it up.' });
+		try {
+			const builds = await datapackBuilds(row.source, row.projectId, onTarget);
+			const best = bestVersion(builds.filter((v) => v.channel === 'release')) ?? bestVersion(builds);
+			if (!best) return void datapacks.push({ ...base, action: 'stay', to: null, reason: `No build for Minecraft ${target.minecraft}.` });
+			if (best.id === row.versionId) return void datapacks.push({ ...base, action: 'keep', to: null, reason: null });
+			datapackUpdates.set(pack.fileName, best);
+			datapacks.push({ ...base, action: 'update', to: best.versionNumber, reason: null });
+		} catch (err) {
+			datapacks.push({ ...base, action: 'stay', to: null, reason: `Could not be looked up: ${err instanceof Error ? err.message : 'lookup failed'}.` });
+		}
+	});
+	const packOrder = { update: 0, keep: 1, stay: 2 };
+	datapacks.sort((a, b) => packOrder[a.action] - packOrder[b.action] || a.name.localeCompare(b.name));
 	const result: Prepared = {
 		plan: {
 			current: { minecraft: instance.minecraftVersion, loader: instance.modloader, loaderVersion: instance.modloaderVersion },
@@ -192,9 +241,11 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 			minecraftChange: target.minecraft !== instance.minecraftVersion,
 			downgrade: compareVersions(target.minecraft, instance.minecraftVersion) < 0,
 			mods,
+			datapacks,
 			dependencies: deps.plan,
 			requiredJava: resolveJava({ minecraftVersion: target.minecraft, modloader: target.loader, modloaderVersion: target.loaderVersion }).requiredMajor
 		},
+		datapackUpdates,
 		updates,
 		disable,
 		dependencies: deps.resolved
@@ -232,7 +283,7 @@ export async function applyMigration(
 	opts: { confirmMinecraftChange: boolean; snapshot?: boolean; newWorld?: boolean; downloadJava?: JavaVendor }
 ): Promise<string> {
 	await requireStopped(instance);
-	const { plan, updates, disable, dependencies } = await prepare(instance, target);
+	const { plan, updates, disable, dependencies, datapackUpdates } = await prepare(instance, target);
 	if (plan.minecraftChange && !opts.confirmMinecraftChange) {
 		throw new InstanceError(`This moves Minecraft from ${plan.current.minecraft} to ${target.minecraft}. Confirm the warning to continue.`);
 	}
@@ -247,6 +298,8 @@ export async function applyMigration(
 	// Before the move, so the old world is recorded as last run on the newer version and
 	// switching back to it asks first. Its own operation, so not inside the move's.
 	const leftWorld = plan.downgrade && opts.newWorld ? await serverWorldName(root) : null;
+	// Where the data packs are now; a new world's own folder is found after it is made.
+	const packsFrom = (await datapacksDir(root)).dir;
 	const newWorld = leftWorld
 		? await createWorld(instance, { name: `New world for ${target.minecraft}`, seed: await worldSeed(root), copyDatapacks: false, keepMap: true })
 		: null;
@@ -346,9 +399,33 @@ export async function applyMigration(
 		await fs.rm(staging, { recursive: true, force: true });
 		await dropLoaderCaches(root);
 		prepared.delete(instance.id);
+		const problems: string[] = [];
+
+		// 4. Data packs into the world moved to. After the commit: installDatapackVersion
+		// downloads before it replaces anything, so one that fails keeps its old build.
+		const packsTo = (await datapacksDir(root)).dir;
+		const rows = new Map(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all().map((r) => [r.fileName, r]));
+		for (const pack of plan.datapacks) {
+			const row = rows.get(pack.fileName);
+			const version = datapackUpdates.get(pack.fileName);
+			try {
+				if (pack.action === 'update' && row && version) {
+					task.setProgress(null, `Data pack ${pack.name} ${version.versionNumber}`);
+					const project = { id: row.projectId, slug: row.slug, name: row.name, projectUrl: row.projectUrl, iconUrl: row.iconUrl };
+					await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version);
+					done.push(`Data pack ${pack.name} ${pack.from ?? '?'} -> ${version.versionNumber}`);
+				} else if (pack.action === 'keep' && packsTo !== packsFrom) {
+					await fs.mkdir(packsTo, { recursive: true });
+					await fs.cp(path.join(packsFrom, pack.fileName), path.join(packsTo, pack.fileName), { recursive: true, preserveTimestamps: true });
+					done.push(`Data pack ${pack.name} copied into the new world`);
+				}
+			} catch (err) {
+				problems.push(`Data pack ${pack.name} was not moved to its build for ${target.minecraft}: ${err instanceof Error ? err.message : 'unknown error'}.`);
+			}
+		}
+
 		for (const line of done) task.log(line);
 		if (newWorld) task.log(`Started a new world for Minecraft ${target.minecraft}; ${leftWorld} is kept under World > Worlds.`);
-		const problems: string[] = [];
 		if (disable.length) problems.push(`Disabled ${plural(disable.length, 'mod')} with no build for it: ${disable.join(', ')}.`);
 		for (const u of plan.dependencies.unresolved) {
 			problems.push(`${u.name} (needed by ${u.neededBy.join(', ')}) could not be installed: ${u.reason}.`);

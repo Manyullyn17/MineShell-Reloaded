@@ -1323,6 +1323,16 @@ under the name and version it declares (`mainDeclaredMod`; surveyed on 1031 jars
 packs-and-mods.md), also for jars recorded before as their file name. Not built: looking
 again the moment a key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
 
+### Data packs on a version move (1.2, 2026-11-03)
+
+User's call 2026-11-02, for 1.2. A move did nothing with data packs: a new world (moving down)
+started without them and a kept world kept builds for the old version. Built: the move's
+preview lists the active world's data packs, the browser's looked up for the target (the
+update check's lookup): moved to the target's build, kept when the build is the same (copied
+into a new world), or left where they are with why (no build; added by hand). They go in
+after the move is committed, into the world moved to; a failed download keeps the old build
+and is named in the status (loaders.md). The tracking rows stay per server.
+
 ### Joining over Tailscale (1.2, 2026-11-03)
 
 Agreed 2026-11-02. MineShell itself could be served over Tailscale, its servers had no
