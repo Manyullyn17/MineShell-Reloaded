@@ -6,7 +6,8 @@ import { instanceMods, mods as modsTable, type ServerInstance } from '../db/sche
 import { downloadFile, hashFile } from '../download';
 import { modrinthProvider, projectsByIds, versionsFromHashes } from './modrinth';
 import { ftbProvider } from './modpacksch';
-import { curseforgeModProvider, curseforgeProvider } from './curseforge';
+import { curseforgeModProvider, curseforgeProvider, identifyByFingerprint } from './curseforge';
+import { fingerprintFile } from './fingerprint';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeEntry, safeJoin } from '../files';
 import { describeModJar, indexMods } from '../crashdiag';
@@ -258,11 +259,12 @@ const TRACKING_CONCURRENCY = 8;
  * A CurseForge pack says which project and file each of its jars is
  * (`curseforge`, from the pack's file list or manifest); those are tracked
  * as CurseForge mods, and re-tracked when an earlier sync recorded them as
- * something else. Everything else is identified by hash against Modrinth,
- * batched so a 150-mod pack costs a couple of requests rather than 150. A
- * jar neither can identify is tracked as a plain manual entry, the same
- * treatment as a hand-uploaded jar, so it stops showing as untracked even
- * though MineShell doesn't know its real name.
+ * something else. Everything else, and jars recorded as manual before (an
+ * upload, or a jar no lookup knew then), is identified by hash against
+ * Modrinth, then by fingerprint against CurseForge when a key is set, batched
+ * so a 150-mod pack costs a couple of requests rather than 150. A jar none of
+ * them identifies is tracked as a plain manual entry, so it stops showing as
+ * untracked even though MineShell doesn't know its real name.
  *
  * Called automatically at the end of a pack install and available as a manual
  * action on the mods page.
@@ -301,8 +303,9 @@ export async function syncMods(
 		if (r.missing || !origin) return false;
 		return r.untracked || r.source !== 'curseforge' || r.slug !== origin.projectId || r.versionId !== origin.fileId;
 	});
-	const untracked = rows.filter((r) => r.untracked && !originOf(r));
-	const total = fromCurseforge.length + untracked.length;
+	// Jars with no record, and ones recorded as manual: an upload, or a jar no lookup knew then.
+	const unknown = rows.filter((r) => !r.missing && !originOf(r) && (r.untracked || r.source === 'manual'));
+	const total = fromCurseforge.length + unknown.length;
 	let done = 0;
 
 	const queue = [...fromCurseforge];
@@ -314,20 +317,21 @@ export async function syncMods(
 	}
 	await Promise.all(Array.from({ length: Math.min(TRACKING_CONCURRENCY, queue.length) }, trackNext));
 
-	if (untracked.length === 0) {
+	if (unknown.length === 0) {
 		return { removedStale, resolved: 0, curseforge: fromCurseforge.length, trackedAsManual: 0 };
 	}
 
-	// Hash everything first, then identify in bulk.
-	const hashed: { fileName: string; hash: string | null }[] = [];
-	for (const row of untracked) {
+	// Hash everything first, then identify in bulk: Modrinth by sha512, then CurseForge by
+	// fingerprint (with a key) for what Modrinth does not have.
+	const hashed: { row: ModRow; hash: string | null }[] = [];
+	for (const row of unknown) {
 		let hash: string | null = null;
 		try {
 			hash = await hashFile(safeJoin(modsDir(instance.path), row.fileName), 'sha512');
 		} catch {
 			/* unreadable or vanished mid-scan */
 		}
-		hashed.push({ fileName: row.fileName, hash });
+		hashed.push({ row, hash });
 		opts.onProgress?.(++done, total);
 	}
 
@@ -337,15 +341,34 @@ export async function syncMods(
 	const projects = await projectsByIds(
 		[...byHash.values()].map((v) => v.projectId).filter(Boolean)
 	);
+	const onModrinth = (hash: string | null) => {
+		const version = hash ? byHash.get(hash) : undefined;
+		const project = version ? projects.get(version.projectId) : undefined;
+		return version && project ? { version, project } : null;
+	};
+
+	const fingerprints = new Map<string, number>();
+	for (const { row, hash } of hashed) {
+		if (onModrinth(hash)) continue;
+		const fingerprint = await fingerprintFile(safeJoin(modsDir(instance.path), row.fileName));
+		if (fingerprint !== null) fingerprints.set(row.fileName, fingerprint);
+	}
+	const onCurseforge = await identifyByFingerprint([...fingerprints.values()]);
 
 	let resolved = 0;
 	let trackedAsManual = 0;
 
-	for (const { fileName, hash } of hashed) {
-		const version = hash ? byHash.get(hash) : undefined;
-		const project = version ? projects.get(version.projectId) : undefined;
+	for (const { row, hash } of hashed) {
+		const { fileName } = row;
+		const filePath = path.join('mods', fileName);
+		// A manual record keeps the date it was added: being named now is not a new install.
+		const installedAt = row.untracked ? undefined : (row.addedAt ?? undefined);
+		const modrinth = onModrinth(hash);
+		const fingerprint = fingerprints.get(fileName);
+		const curseforge = modrinth || fingerprint === undefined ? undefined : onCurseforge.get(fingerprint);
 
-		if (version && project) {
+		if (modrinth) {
+			const { version, project } = modrinth;
 			const modId = upsertMod({
 				source: 'modrinth',
 				slug: project.slug,
@@ -360,14 +383,38 @@ export async function syncMods(
 				modId,
 				version: version.versionNumber,
 				versionId: version.id,
-				filePath: path.join('mods', fileName),
+				filePath,
 				hash,
 				hashAlgo: 'sha512',
 				fromPack: isPackMod(fileName),
-				clientOnly: project.clientOnly
+				clientOnly: project.clientOnly,
+				installedAt
 			});
 			resolved += 1;
-		} else {
+		} else if (curseforge) {
+			const { project } = curseforge;
+			const modId = upsertMod({
+				source: 'curseforge',
+				slug: curseforge.projectId,
+				name: project.name,
+				author: project.author,
+				summary: project.summary,
+				projectUrl: project.projectUrl,
+				iconUrl: project.iconUrl
+			});
+			recordInstanceMod({
+				instanceId: instance.id,
+				modId,
+				version: curseforge.version,
+				versionId: curseforge.fileId,
+				filePath,
+				hash: null,
+				hashAlgo: null,
+				fromPack: isPackMod(fileName),
+				installedAt
+			});
+			resolved += 1;
+		} else if (row.untracked) {
 			await trackManualJar(instance, fileName, { fromPack: isPackMod(fileName), hash });
 			trackedAsManual += 1;
 		}
@@ -519,9 +566,12 @@ export function recordInstanceMod(input: {
 	fromPack: boolean;
 	/** Left as recorded when undefined: not every lookup knows. */
 	clientOnly?: boolean;
+	/** Now when undefined. */
+	installedAt?: number;
 }): void {
+	const installedAt = input.installedAt ?? Date.now();
 	db.insert(instanceMods)
-		.values({ ...input, clientOnly: input.clientOnly ?? false, enabled: true, locked: false, installedAt: Date.now() })
+		.values({ ...input, clientOnly: input.clientOnly ?? false, enabled: true, locked: false, installedAt })
 		.onConflictDoUpdate({
 			target: [instanceMods.instanceId, instanceMods.filePath],
 			set: {
@@ -530,7 +580,7 @@ export function recordInstanceMod(input: {
 				versionId: input.versionId,
 				hash: input.hash,
 				hashAlgo: input.hashAlgo,
-				installedAt: Date.now(),
+				installedAt,
 				...(input.clientOnly !== undefined ? { clientOnly: input.clientOnly } : {})
 			}
 		})

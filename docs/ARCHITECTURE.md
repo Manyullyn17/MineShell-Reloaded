@@ -595,8 +595,11 @@ different mirror endpoints than its packs.
 
 Pack mods are tracked by where they came from. A CurseForge pack names the project and
 file behind every jar (the mirror's file list and `manifest.json` both do), so those are
-recorded as CurseForge mods; everything else is identified by hash against Modrinth, and
-whatever neither recognises is tracked as manual.
+recorded as CurseForge mods; everything else is identified by hash against Modrinth, then,
+with a CurseForge key, by CurseForge's fingerprint (`mods/fingerprint.ts`: MurmurHash2 of the
+jar without whitespace bytes; the mirror has no such lookup), and whatever none of them
+recognises is tracked as manual. Upload goes through the same identification, and Sync tries
+jars recorded as manual again, keeping when they were added.
 
 Pack import detects the format from what is inside the archive: `modrinth.index.json`
 means an mrpack, `manifest.json` means CurseForge. Both resolve to the same internal

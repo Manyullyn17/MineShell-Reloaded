@@ -1,0 +1,1541 @@
+{
+ "POST https://api.curseforge.com/v1/fingerprints/432 #34925e206248": {
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "json": {
+   "data": {
+    "isCacheBuilt": true,
+    "exactMatches": [
+     {
+      "id": 357178,
+      "file": {
+       "id": 3437402,
+       "gameId": 432,
+       "modId": 357178,
+       "isAvailable": true,
+       "displayName": "MixinBootstrap-1.1.0.jar",
+       "fileName": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "f9173708d3d2850ab8df778b9594b81cb94b1df8",
+         "algo": 1
+        },
+        {
+         "value": "9df0dc628ebcd787270f487fbbf8157a",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-08-24T09:03:54.38Z",
+       "fileLength": 1119478,
+       "downloadCount": 18150999,
+       "downloadUrl": "https://edge.forgecdn.net/files/3437/402/_MixinBootstrap-1.1.0.jar",
+       "gameVersions": [
+        "1.17.1",
+        "1.14.4",
+        "1.16.5",
+        "1.15.2",
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.17.1",
+         "gameVersionPadded": "0000000001.0000000017.0000000001",
+         "gameVersion": "1.17.1",
+         "gameVersionReleaseDate": "2021-07-06T14:16:03.97Z",
+         "gameVersionTypeId": 73242
+        },
+        {
+         "gameVersionName": "1.14.4",
+         "gameVersionPadded": "0000000001.0000000014.0000000004",
+         "gameVersion": "1.14.4",
+         "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+         "gameVersionTypeId": 64806
+        },
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "1.15.2",
+         "gameVersionPadded": "0000000001.0000000015.0000000002",
+         "gameVersion": "1.15.2",
+         "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+         "gameVersionTypeId": 68722
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2764134718,
+       "modules": [
+        {
+         "name": "META-INF",
+         "fingerprint": 1044993365
+        },
+        {
+         "name": "io",
+         "fingerprint": 404041292
+        },
+        {
+         "name": "module-info.class",
+         "fingerprint": 1888335441
+        },
+        {
+         "name": "LICENSE-MixinBootstrap",
+         "fingerprint": 3584814497
+        },
+        {
+         "name": "LICENSE-classloaderutils",
+         "fingerprint": 1065284868
+        },
+        {
+         "name": "LICENSE.txt",
+         "fingerprint": 3933732671
+        },
+        {
+         "name": "org",
+         "fingerprint": 521368167
+        }
+       ]
+      },
+      "latestFiles": [
+       {
+        "id": 2887104,
+        "gameId": 432,
+        "modId": 357178,
+        "isAvailable": true,
+        "displayName": "MixinBootstrap-1.0.2.jar",
+        "fileName": "MixinBootstrap-1.0.2.jar",
+        "releaseType": 1,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "d5d2f4f4f049b181583e66b5516e85cf22558f7f",
+          "algo": 1
+         },
+         {
+          "value": "6ae95b09c8f52cfc8698f8659ea34ec9",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2020-02-23T01:34:11.157Z",
+        "fileLength": 1060409,
+        "downloadCount": 931197,
+        "downloadUrl": "https://edge.forgecdn.net/files/2887/104/MixinBootstrap-1.0.2.jar",
+        "gameVersions": [
+         "1.14.4",
+         "1.15.2",
+         "1.12.2"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "1.14.4",
+          "gameVersionPadded": "0000000001.0000000014.0000000004",
+          "gameVersion": "1.14.4",
+          "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+          "gameVersionTypeId": 64806
+         },
+         {
+          "gameVersionName": "1.15.2",
+          "gameVersionPadded": "0000000001.0000000015.0000000002",
+          "gameVersion": "1.15.2",
+          "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+          "gameVersionTypeId": 68722
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2892952339,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 2651745079
+         },
+         {
+          "name": "io",
+          "fingerprint": 3999054965
+         },
+         {
+          "name": "LICENSE-MixinBootstrap",
+          "fingerprint": 3584814497
+         },
+         {
+          "name": "LICENSE-classloaderutils",
+          "fingerprint": 1065284868
+         },
+         {
+          "name": "org",
+          "fingerprint": 1667467214
+         },
+         {
+          "name": "LICENSE.txt",
+          "fingerprint": 3933732671
+         }
+        ]
+       },
+       {
+        "id": 3437402,
+        "gameId": 432,
+        "modId": 357178,
+        "isAvailable": true,
+        "displayName": "MixinBootstrap-1.1.0.jar",
+        "fileName": "_MixinBootstrap-1.1.0.jar",
+        "releaseType": 1,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "f9173708d3d2850ab8df778b9594b81cb94b1df8",
+          "algo": 1
+         },
+         {
+          "value": "9df0dc628ebcd787270f487fbbf8157a",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2021-08-24T09:03:54.38Z",
+        "fileLength": 1119478,
+        "downloadCount": 18150999,
+        "downloadUrl": "https://edge.forgecdn.net/files/3437/402/_MixinBootstrap-1.1.0.jar",
+        "gameVersions": [
+         "1.17.1",
+         "1.14.4",
+         "1.16.5",
+         "1.15.2",
+         "Forge",
+         "1.12.2"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "1.17.1",
+          "gameVersionPadded": "0000000001.0000000017.0000000001",
+          "gameVersion": "1.17.1",
+          "gameVersionReleaseDate": "2021-07-06T14:16:03.97Z",
+          "gameVersionTypeId": 73242
+         },
+         {
+          "gameVersionName": "1.14.4",
+          "gameVersionPadded": "0000000001.0000000014.0000000004",
+          "gameVersion": "1.14.4",
+          "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+          "gameVersionTypeId": 64806
+         },
+         {
+          "gameVersionName": "1.16.5",
+          "gameVersionPadded": "0000000001.0000000016.0000000005",
+          "gameVersion": "1.16.5",
+          "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+          "gameVersionTypeId": 70886
+         },
+         {
+          "gameVersionName": "1.15.2",
+          "gameVersionPadded": "0000000001.0000000015.0000000002",
+          "gameVersion": "1.15.2",
+          "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+          "gameVersionTypeId": 68722
+         },
+         {
+          "gameVersionName": "Forge",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+          "gameVersionTypeId": 68441
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2764134718,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 1044993365
+         },
+         {
+          "name": "io",
+          "fingerprint": 404041292
+         },
+         {
+          "name": "module-info.class",
+          "fingerprint": 1888335441
+         },
+         {
+          "name": "LICENSE-MixinBootstrap",
+          "fingerprint": 3584814497
+         },
+         {
+          "name": "LICENSE-classloaderutils",
+          "fingerprint": 1065284868
+         },
+         {
+          "name": "LICENSE.txt",
+          "fingerprint": 3933732671
+         },
+         {
+          "name": "org",
+          "fingerprint": 521368167
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "exactFingerprints": [
+     2764134718
+    ],
+    "partialMatches": [],
+    "partialMatchFingerprints": {},
+    "installedFingerprints": [
+     2764134718,
+     12345
+    ],
+    "unmatchedFingerprints": null
+   }
+  }
+ },
+ "POST https://api.curseforge.com/v1/fingerprints/432 #c7e0aa0dec54": {
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "json": {
+   "data": {
+    "isCacheBuilt": true,
+    "exactMatches": [
+     {
+      "id": 357178,
+      "file": {
+       "id": 3437402,
+       "gameId": 432,
+       "modId": 357178,
+       "isAvailable": true,
+       "displayName": "MixinBootstrap-1.1.0.jar",
+       "fileName": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "f9173708d3d2850ab8df778b9594b81cb94b1df8",
+         "algo": 1
+        },
+        {
+         "value": "9df0dc628ebcd787270f487fbbf8157a",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-08-24T09:03:54.38Z",
+       "fileLength": 1119478,
+       "downloadCount": 18150999,
+       "downloadUrl": "https://edge.forgecdn.net/files/3437/402/_MixinBootstrap-1.1.0.jar",
+       "gameVersions": [
+        "1.17.1",
+        "1.14.4",
+        "1.16.5",
+        "1.15.2",
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.17.1",
+         "gameVersionPadded": "0000000001.0000000017.0000000001",
+         "gameVersion": "1.17.1",
+         "gameVersionReleaseDate": "2021-07-06T14:16:03.97Z",
+         "gameVersionTypeId": 73242
+        },
+        {
+         "gameVersionName": "1.14.4",
+         "gameVersionPadded": "0000000001.0000000014.0000000004",
+         "gameVersion": "1.14.4",
+         "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+         "gameVersionTypeId": 64806
+        },
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "1.15.2",
+         "gameVersionPadded": "0000000001.0000000015.0000000002",
+         "gameVersion": "1.15.2",
+         "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+         "gameVersionTypeId": 68722
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2764134718,
+       "modules": [
+        {
+         "name": "META-INF",
+         "fingerprint": 1044993365
+        },
+        {
+         "name": "io",
+         "fingerprint": 404041292
+        },
+        {
+         "name": "module-info.class",
+         "fingerprint": 1888335441
+        },
+        {
+         "name": "LICENSE-MixinBootstrap",
+         "fingerprint": 3584814497
+        },
+        {
+         "name": "LICENSE-classloaderutils",
+         "fingerprint": 1065284868
+        },
+        {
+         "name": "LICENSE.txt",
+         "fingerprint": 3933732671
+        },
+        {
+         "name": "org",
+         "fingerprint": 521368167
+        }
+       ]
+      },
+      "latestFiles": [
+       {
+        "id": 2887104,
+        "gameId": 432,
+        "modId": 357178,
+        "isAvailable": true,
+        "displayName": "MixinBootstrap-1.0.2.jar",
+        "fileName": "MixinBootstrap-1.0.2.jar",
+        "releaseType": 1,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "d5d2f4f4f049b181583e66b5516e85cf22558f7f",
+          "algo": 1
+         },
+         {
+          "value": "6ae95b09c8f52cfc8698f8659ea34ec9",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2020-02-23T01:34:11.157Z",
+        "fileLength": 1060409,
+        "downloadCount": 931197,
+        "downloadUrl": "https://edge.forgecdn.net/files/2887/104/MixinBootstrap-1.0.2.jar",
+        "gameVersions": [
+         "1.14.4",
+         "1.15.2",
+         "1.12.2"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "1.14.4",
+          "gameVersionPadded": "0000000001.0000000014.0000000004",
+          "gameVersion": "1.14.4",
+          "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+          "gameVersionTypeId": 64806
+         },
+         {
+          "gameVersionName": "1.15.2",
+          "gameVersionPadded": "0000000001.0000000015.0000000002",
+          "gameVersion": "1.15.2",
+          "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+          "gameVersionTypeId": 68722
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2892952339,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 2651745079
+         },
+         {
+          "name": "io",
+          "fingerprint": 3999054965
+         },
+         {
+          "name": "LICENSE-MixinBootstrap",
+          "fingerprint": 3584814497
+         },
+         {
+          "name": "LICENSE-classloaderutils",
+          "fingerprint": 1065284868
+         },
+         {
+          "name": "org",
+          "fingerprint": 1667467214
+         },
+         {
+          "name": "LICENSE.txt",
+          "fingerprint": 3933732671
+         }
+        ]
+       },
+       {
+        "id": 3437402,
+        "gameId": 432,
+        "modId": 357178,
+        "isAvailable": true,
+        "displayName": "MixinBootstrap-1.1.0.jar",
+        "fileName": "_MixinBootstrap-1.1.0.jar",
+        "releaseType": 1,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "f9173708d3d2850ab8df778b9594b81cb94b1df8",
+          "algo": 1
+         },
+         {
+          "value": "9df0dc628ebcd787270f487fbbf8157a",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2021-08-24T09:03:54.38Z",
+        "fileLength": 1119478,
+        "downloadCount": 18150999,
+        "downloadUrl": "https://edge.forgecdn.net/files/3437/402/_MixinBootstrap-1.1.0.jar",
+        "gameVersions": [
+         "1.17.1",
+         "1.14.4",
+         "1.16.5",
+         "1.15.2",
+         "Forge",
+         "1.12.2"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "1.17.1",
+          "gameVersionPadded": "0000000001.0000000017.0000000001",
+          "gameVersion": "1.17.1",
+          "gameVersionReleaseDate": "2021-07-06T14:16:03.97Z",
+          "gameVersionTypeId": 73242
+         },
+         {
+          "gameVersionName": "1.14.4",
+          "gameVersionPadded": "0000000001.0000000014.0000000004",
+          "gameVersion": "1.14.4",
+          "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+          "gameVersionTypeId": 64806
+         },
+         {
+          "gameVersionName": "1.16.5",
+          "gameVersionPadded": "0000000001.0000000016.0000000005",
+          "gameVersion": "1.16.5",
+          "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+          "gameVersionTypeId": 70886
+         },
+         {
+          "gameVersionName": "1.15.2",
+          "gameVersionPadded": "0000000001.0000000015.0000000002",
+          "gameVersion": "1.15.2",
+          "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+          "gameVersionTypeId": 68722
+         },
+         {
+          "gameVersionName": "Forge",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+          "gameVersionTypeId": 68441
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2764134718,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 1044993365
+         },
+         {
+          "name": "io",
+          "fingerprint": 404041292
+         },
+         {
+          "name": "module-info.class",
+          "fingerprint": 1888335441
+         },
+         {
+          "name": "LICENSE-MixinBootstrap",
+          "fingerprint": 3584814497
+         },
+         {
+          "name": "LICENSE-classloaderutils",
+          "fingerprint": 1065284868
+         },
+         {
+          "name": "LICENSE.txt",
+          "fingerprint": 3933732671
+         },
+         {
+          "name": "org",
+          "fingerprint": 521368167
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": 873867,
+      "file": {
+       "id": 7394157,
+       "gameId": 432,
+       "modId": 873867,
+       "isAvailable": true,
+       "displayName": "Red Core 1.8-1.12 0.7",
+       "fileName": "!Red-Core-MC-1.8-1.12-0.7.jar",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "ff2fde42c10fae1e127f024463dd965004627ce4",
+         "algo": 1
+        },
+        {
+         "value": "500e57d94590e3bf7e497550c0fae4d1",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-12-29T21:29:55.723Z",
+       "fileLength": 149366,
+       "downloadCount": 419,
+       "fileSizeOnDisk": 316456,
+       "downloadUrl": "https://edge.forgecdn.net/files/7394/157/!Red-Core-MC-1.8-1.12-0.7.jar",
+       "gameVersions": [
+        "Client",
+        "1.10.2",
+        "1.8.8",
+        "1.9.4",
+        "1.12",
+        "1.11",
+        "Forge",
+        "1.10",
+        "1.8",
+        "Server",
+        "1.11.2",
+        "1.8.9",
+        "1.12.2",
+        "1.9"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Client",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+         "gameVersionTypeId": 75208
+        },
+        {
+         "gameVersionName": "1.10.2",
+         "gameVersionPadded": "0000000001.0000000010.0000000002",
+         "gameVersion": "1.10.2",
+         "gameVersionReleaseDate": "2016-06-23T05:00:00Z",
+         "gameVersionTypeId": 572
+        },
+        {
+         "gameVersionName": "1.8.8",
+         "gameVersionPadded": "0000000001.0000000008.0000000008",
+         "gameVersion": "1.8.8",
+         "gameVersionReleaseDate": "2015-07-28T05:00:00Z",
+         "gameVersionTypeId": 4
+        },
+        {
+         "gameVersionName": "1.9.4",
+         "gameVersionPadded": "0000000001.0000000009.0000000004",
+         "gameVersion": "1.9.4",
+         "gameVersionReleaseDate": "2016-05-10T05:00:00Z",
+         "gameVersionTypeId": 552
+        },
+        {
+         "gameVersionName": "1.12",
+         "gameVersionPadded": "0000000001.0000000012",
+         "gameVersion": "1.12",
+         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
+         "gameVersionTypeId": 628
+        },
+        {
+         "gameVersionName": "1.11",
+         "gameVersionPadded": "0000000001.0000000011",
+         "gameVersion": "1.11",
+         "gameVersionReleaseDate": "2016-11-14T06:00:00Z",
+         "gameVersionTypeId": 599
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.10",
+         "gameVersionPadded": "0000000001.0000000010",
+         "gameVersion": "1.10",
+         "gameVersionReleaseDate": "2016-06-08T05:00:00Z",
+         "gameVersionTypeId": 572
+        },
+        {
+         "gameVersionName": "1.8",
+         "gameVersionPadded": "0000000001.0000000008",
+         "gameVersion": "1.8",
+         "gameVersionReleaseDate": "2014-09-02T00:00:00Z",
+         "gameVersionTypeId": 4
+        },
+        {
+         "gameVersionName": "Server",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+         "gameVersionTypeId": 75208
+        },
+        {
+         "gameVersionName": "1.11.2",
+         "gameVersionPadded": "0000000001.0000000011.0000000002",
+         "gameVersion": "1.11.2",
+         "gameVersionReleaseDate": "2016-12-21T06:00:00Z",
+         "gameVersionTypeId": 599
+        },
+        {
+         "gameVersionName": "1.8.9",
+         "gameVersionPadded": "0000000001.0000000008.0000000009",
+         "gameVersion": "1.8.9",
+         "gameVersionReleaseDate": "2015-12-09T06:00:00Z",
+         "gameVersionTypeId": 4
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        },
+        {
+         "gameVersionName": "1.9",
+         "gameVersionPadded": "0000000001.0000000009",
+         "gameVersion": "1.9",
+         "gameVersionReleaseDate": "2016-02-29T06:00:00Z",
+         "gameVersionTypeId": 552
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 7394165,
+       "isServerPack": false,
+       "fileFingerprint": 3937023730,
+       "modules": [
+        {
+         "name": "META-INF",
+         "fingerprint": 3194883825
+        },
+        {
+         "name": "dev",
+         "fingerprint": 3553180111
+        },
+        {
+         "name": "io",
+         "fingerprint": 1177723658
+        },
+        {
+         "name": "mcmod.info",
+         "fingerprint": 2647039445
+        },
+        {
+         "name": "net",
+         "fingerprint": 872839937
+        },
+        {
+         "name": "logo.png",
+         "fingerprint": 1201929004
+        }
+       ]
+      },
+      "latestFiles": [
+       {
+        "id": 6230904,
+        "gameId": 432,
+        "modId": 873867,
+        "isAvailable": true,
+        "displayName": "Red Core 1.8-1.12 0.7 Dev 1",
+        "fileName": "!Red-Core-MC-1.8-1.12-0.7-Dev-1.jar",
+        "releaseType": 3,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "acd8a82862086b81e441a914af207881cb62955f",
+          "algo": 1
+         },
+         {
+          "value": "ce10af82016ae8cd9c0938cbd5738d7b",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2025-02-24T19:12:46.857Z",
+        "fileLength": 151801,
+        "downloadCount": 48084,
+        "fileSizeOnDisk": 319786,
+        "downloadUrl": "https://edge.forgecdn.net/files/6230/904/!Red-Core-MC-1.8-1.12-0.7-Dev-1.jar",
+        "gameVersions": [
+         "1.9.4",
+         "1.12",
+         "1.8.8",
+         "Client",
+         "1.10.2",
+         "1.11",
+         "Forge",
+         "1.10",
+         "1.8",
+         "Server",
+         "1.11.2",
+         "1.9",
+         "1.12.2",
+         "1.8.9"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "1.9.4",
+          "gameVersionPadded": "0000000001.0000000009.0000000004",
+          "gameVersion": "1.9.4",
+          "gameVersionReleaseDate": "2016-05-10T05:00:00Z",
+          "gameVersionTypeId": 552
+         },
+         {
+          "gameVersionName": "1.12",
+          "gameVersionPadded": "0000000001.0000000012",
+          "gameVersion": "1.12",
+          "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
+          "gameVersionTypeId": 628
+         },
+         {
+          "gameVersionName": "1.8.8",
+          "gameVersionPadded": "0000000001.0000000008.0000000008",
+          "gameVersion": "1.8.8",
+          "gameVersionReleaseDate": "2015-07-28T05:00:00Z",
+          "gameVersionTypeId": 4
+         },
+         {
+          "gameVersionName": "Client",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+          "gameVersionTypeId": 75208
+         },
+         {
+          "gameVersionName": "1.10.2",
+          "gameVersionPadded": "0000000001.0000000010.0000000002",
+          "gameVersion": "1.10.2",
+          "gameVersionReleaseDate": "2016-06-23T05:00:00Z",
+          "gameVersionTypeId": 572
+         },
+         {
+          "gameVersionName": "1.11",
+          "gameVersionPadded": "0000000001.0000000011",
+          "gameVersion": "1.11",
+          "gameVersionReleaseDate": "2016-11-14T06:00:00Z",
+          "gameVersionTypeId": 599
+         },
+         {
+          "gameVersionName": "Forge",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+          "gameVersionTypeId": 68441
+         },
+         {
+          "gameVersionName": "1.10",
+          "gameVersionPadded": "0000000001.0000000010",
+          "gameVersion": "1.10",
+          "gameVersionReleaseDate": "2016-06-08T05:00:00Z",
+          "gameVersionTypeId": 572
+         },
+         {
+          "gameVersionName": "1.8",
+          "gameVersionPadded": "0000000001.0000000008",
+          "gameVersion": "1.8",
+          "gameVersionReleaseDate": "2014-09-02T00:00:00Z",
+          "gameVersionTypeId": 4
+         },
+         {
+          "gameVersionName": "Server",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+          "gameVersionTypeId": 75208
+         },
+         {
+          "gameVersionName": "1.11.2",
+          "gameVersionPadded": "0000000001.0000000011.0000000002",
+          "gameVersion": "1.11.2",
+          "gameVersionReleaseDate": "2016-12-21T06:00:00Z",
+          "gameVersionTypeId": 599
+         },
+         {
+          "gameVersionName": "1.9",
+          "gameVersionPadded": "0000000001.0000000009",
+          "gameVersion": "1.9",
+          "gameVersionReleaseDate": "2016-02-29T06:00:00Z",
+          "gameVersionTypeId": 552
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         },
+         {
+          "gameVersionName": "1.8.9",
+          "gameVersionPadded": "0000000001.0000000008.0000000009",
+          "gameVersion": "1.8.9",
+          "gameVersionReleaseDate": "2015-12-09T06:00:00Z",
+          "gameVersionTypeId": 4
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2239901469,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 3194883825
+         },
+         {
+          "name": "dev",
+          "fingerprint": 1882293687
+         },
+         {
+          "name": "io",
+          "fingerprint": 1177723658
+         },
+         {
+          "name": "mcmod.info",
+          "fingerprint": 3735326555
+         },
+         {
+          "name": "net",
+          "fingerprint": 872839937
+         },
+         {
+          "name": "logo.png",
+          "fingerprint": 2599897429
+         }
+        ]
+       },
+       {
+        "id": 7455761,
+        "gameId": 432,
+        "modId": 873867,
+        "isAvailable": true,
+        "displayName": "Red Core 1.8-1.12 0.7.1",
+        "fileName": "!Red-Core-MC-1.8-1.12-0.7.1.jar",
+        "releaseType": 2,
+        "fileStatus": 4,
+        "hashes": [
+         {
+          "value": "d272efd0c807908138edbac8e6cb2d90127ac01a",
+          "algo": 1
+         },
+         {
+          "value": "ffbd41381a9340ca31d14fbb40f6ced9",
+          "algo": 2
+         }
+        ],
+        "fileDate": "2026-01-13T20:24:33.187Z",
+        "fileLength": 149374,
+        "downloadCount": 463,
+        "fileSizeOnDisk": 316466,
+        "downloadUrl": "https://edge.forgecdn.net/files/7455/761/!Red-Core-MC-1.8-1.12-0.7.1.jar",
+        "gameVersions": [
+         "Client",
+         "1.10.2",
+         "1.8.8",
+         "1.9.4",
+         "1.12",
+         "1.11",
+         "Forge",
+         "1.10",
+         "1.8",
+         "Server",
+         "1.11.2",
+         "1.8.9",
+         "1.12.2",
+         "1.9"
+        ],
+        "sortableGameVersions": [
+         {
+          "gameVersionName": "Client",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+          "gameVersionTypeId": 75208
+         },
+         {
+          "gameVersionName": "1.10.2",
+          "gameVersionPadded": "0000000001.0000000010.0000000002",
+          "gameVersion": "1.10.2",
+          "gameVersionReleaseDate": "2016-06-23T05:00:00Z",
+          "gameVersionTypeId": 572
+         },
+         {
+          "gameVersionName": "1.8.8",
+          "gameVersionPadded": "0000000001.0000000008.0000000008",
+          "gameVersion": "1.8.8",
+          "gameVersionReleaseDate": "2015-07-28T05:00:00Z",
+          "gameVersionTypeId": 4
+         },
+         {
+          "gameVersionName": "1.9.4",
+          "gameVersionPadded": "0000000001.0000000009.0000000004",
+          "gameVersion": "1.9.4",
+          "gameVersionReleaseDate": "2016-05-10T05:00:00Z",
+          "gameVersionTypeId": 552
+         },
+         {
+          "gameVersionName": "1.12",
+          "gameVersionPadded": "0000000001.0000000012",
+          "gameVersion": "1.12",
+          "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
+          "gameVersionTypeId": 628
+         },
+         {
+          "gameVersionName": "1.11",
+          "gameVersionPadded": "0000000001.0000000011",
+          "gameVersion": "1.11",
+          "gameVersionReleaseDate": "2016-11-14T06:00:00Z",
+          "gameVersionTypeId": 599
+         },
+         {
+          "gameVersionName": "Forge",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+          "gameVersionTypeId": 68441
+         },
+         {
+          "gameVersionName": "1.10",
+          "gameVersionPadded": "0000000001.0000000010",
+          "gameVersion": "1.10",
+          "gameVersionReleaseDate": "2016-06-08T05:00:00Z",
+          "gameVersionTypeId": 572
+         },
+         {
+          "gameVersionName": "1.8",
+          "gameVersionPadded": "0000000001.0000000008",
+          "gameVersion": "1.8",
+          "gameVersionReleaseDate": "2014-09-02T00:00:00Z",
+          "gameVersionTypeId": 4
+         },
+         {
+          "gameVersionName": "Server",
+          "gameVersionPadded": "0",
+          "gameVersion": "",
+          "gameVersionReleaseDate": "2022-12-08T00:00:00Z",
+          "gameVersionTypeId": 75208
+         },
+         {
+          "gameVersionName": "1.11.2",
+          "gameVersionPadded": "0000000001.0000000011.0000000002",
+          "gameVersion": "1.11.2",
+          "gameVersionReleaseDate": "2016-12-21T06:00:00Z",
+          "gameVersionTypeId": 599
+         },
+         {
+          "gameVersionName": "1.8.9",
+          "gameVersionPadded": "0000000001.0000000008.0000000009",
+          "gameVersion": "1.8.9",
+          "gameVersionReleaseDate": "2015-12-09T06:00:00Z",
+          "gameVersionTypeId": 4
+         },
+         {
+          "gameVersionName": "1.12.2",
+          "gameVersionPadded": "0000000001.0000000012.0000000002",
+          "gameVersion": "1.12.2",
+          "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+          "gameVersionTypeId": 628
+         },
+         {
+          "gameVersionName": "1.9",
+          "gameVersionPadded": "0000000001.0000000009",
+          "gameVersion": "1.9",
+          "gameVersionReleaseDate": "2016-02-29T06:00:00Z",
+          "gameVersionTypeId": 552
+         }
+        ],
+        "dependencies": [],
+        "alternateFileId": 0,
+        "isServerPack": false,
+        "fileFingerprint": 2660540505,
+        "modules": [
+         {
+          "name": "META-INF",
+          "fingerprint": 3874467244
+         },
+         {
+          "name": "dev",
+          "fingerprint": 2050866635
+         },
+         {
+          "name": "io",
+          "fingerprint": 1177723658
+         },
+         {
+          "name": "mcmod.info",
+          "fingerprint": 445604272
+         },
+         {
+          "name": "net",
+          "fingerprint": 872839937
+         },
+         {
+          "name": "logo.png",
+          "fingerprint": 1201929004
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "exactFingerprints": [
+     2764134718,
+     3937023730
+    ],
+    "partialMatches": [],
+    "partialMatchFingerprints": {},
+    "installedFingerprints": [
+     2764134718,
+     3937023730,
+     12345
+    ],
+    "unmatchedFingerprints": null
+   }
+  }
+ },
+ "POST https://api.curseforge.com/v1/mods #2b79f09566e7": {
+  "status": 200,
+  "contentType": "application/json; charset=utf-8",
+  "json": {
+   "data": [
+    {
+     "screenshots": [],
+     "id": 357178,
+     "gameId": 432,
+     "name": "MixinBootstrap",
+     "slug": "mixinbootstrap",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/mc-mods/mixinbootstrap",
+      "wikiUrl": "",
+      "issuesUrl": "https://github.com/LXGaming/MixinBootstrap/issues",
+      "sourceUrl": "https://github.com/LXGaming/MixinBootstrap"
+     },
+     "summary": "MixinBootstrap is a temporary way of booting Mixin in a MinecraftForge production environment.",
+     "status": 4,
+     "downloadCount": 38537249,
+     "favoriteCount": 75,
+     "isFeatured": false,
+     "primaryCategoryId": 421,
+     "categories": [
+      {
+       "id": 421,
+       "gameId": 432,
+       "name": "API and Library",
+       "slug": "library-api",
+       "url": "https://www.curseforge.com/minecraft/mc-mods/library-api",
+       "iconUrl": "https://media.forgecdn.net/avatars/6/36/635351496947765531.png",
+       "dateModified": "2014-05-23T03:21:44.06Z",
+       "isClass": false,
+       "classId": 6,
+       "parentCategoryId": 6
+      }
+     ],
+     "classId": 6,
+     "authors": [
+      {
+       "id": 19008952,
+       "name": "LX_Gaming",
+       "url": "https://www.curseforge.com/members/lx_gaming",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/a0ef2cb5-71e3-405f-acc6-1bddcc0b82f5-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 4,
+        "downloadsThreshold": 10000000
+       }
+      }
+     ],
+     "logo": {
+      "id": 242972,
+      "modId": 357178,
+      "title": "637137035110158270.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/242/972/256/256/637137035110158270.png",
+      "url": "https://media.forgecdn.net/avatars/242/972/637137035110158270.png"
+     },
+     "mainFileId": 3437402,
+     "latestFiles": [
+      {
+       "id": 2887104,
+       "gameId": 432,
+       "modId": 357178,
+       "isAvailable": true,
+       "displayName": "MixinBootstrap-1.0.2.jar",
+       "fileName": "MixinBootstrap-1.0.2.jar",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "d5d2f4f4f049b181583e66b5516e85cf22558f7f",
+         "algo": 1
+        },
+        {
+         "value": "6ae95b09c8f52cfc8698f8659ea34ec9",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2020-02-23T01:34:11.157Z",
+       "fileLength": 1060409,
+       "downloadCount": 931197,
+       "downloadUrl": "https://edge.forgecdn.net/files/2887/104/MixinBootstrap-1.0.2.jar",
+       "gameVersions": [
+        "1.14.4",
+        "1.15.2",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.14.4",
+         "gameVersionPadded": "0000000001.0000000014.0000000004",
+         "gameVersion": "1.14.4",
+         "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+         "gameVersionTypeId": 64806
+        },
+        {
+         "gameVersionName": "1.15.2",
+         "gameVersionPadded": "0000000001.0000000015.0000000002",
+         "gameVersion": "1.15.2",
+         "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+         "gameVersionTypeId": 68722
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2892952339,
+       "modules": [
+        {
+         "name": "META-INF",
+         "fingerprint": 2651745079
+        },
+        {
+         "name": "io",
+         "fingerprint": 3999054965
+        },
+        {
+         "name": "LICENSE-MixinBootstrap",
+         "fingerprint": 3584814497
+        },
+        {
+         "name": "LICENSE-classloaderutils",
+         "fingerprint": 1065284868
+        },
+        {
+         "name": "org",
+         "fingerprint": 1667467214
+        },
+        {
+         "name": "LICENSE.txt",
+         "fingerprint": 3933732671
+        }
+       ]
+      },
+      {
+       "id": 3437402,
+       "gameId": 432,
+       "modId": 357178,
+       "isAvailable": true,
+       "displayName": "MixinBootstrap-1.1.0.jar",
+       "fileName": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "f9173708d3d2850ab8df778b9594b81cb94b1df8",
+         "algo": 1
+        },
+        {
+         "value": "9df0dc628ebcd787270f487fbbf8157a",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-08-24T09:03:54.38Z",
+       "fileLength": 1119478,
+       "downloadCount": 18150999,
+       "downloadUrl": "https://edge.forgecdn.net/files/3437/402/_MixinBootstrap-1.1.0.jar",
+       "gameVersions": [
+        "1.17.1",
+        "1.14.4",
+        "1.16.5",
+        "1.15.2",
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.17.1",
+         "gameVersionPadded": "0000000001.0000000017.0000000001",
+         "gameVersion": "1.17.1",
+         "gameVersionReleaseDate": "2021-07-06T14:16:03.97Z",
+         "gameVersionTypeId": 73242
+        },
+        {
+         "gameVersionName": "1.14.4",
+         "gameVersionPadded": "0000000001.0000000014.0000000004",
+         "gameVersion": "1.14.4",
+         "gameVersionReleaseDate": "2019-07-19T00:00:00Z",
+         "gameVersionTypeId": 64806
+        },
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "1.15.2",
+         "gameVersionPadded": "0000000001.0000000015.0000000002",
+         "gameVersion": "1.15.2",
+         "gameVersionReleaseDate": "2020-01-22T00:00:00Z",
+         "gameVersionTypeId": 68722
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2764134718,
+       "modules": [
+        {
+         "name": "META-INF",
+         "fingerprint": 1044993365
+        },
+        {
+         "name": "io",
+         "fingerprint": 404041292
+        },
+        {
+         "name": "module-info.class",
+         "fingerprint": 1888335441
+        },
+        {
+         "name": "LICENSE-MixinBootstrap",
+         "fingerprint": 3584814497
+        },
+        {
+         "name": "LICENSE-classloaderutils",
+         "fingerprint": 1065284868
+        },
+        {
+         "name": "LICENSE.txt",
+         "fingerprint": 3933732671
+        },
+        {
+         "name": "org",
+         "fingerprint": 521368167
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.14.4",
+       "fileId": 3437402,
+       "filename": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 64806,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.15.2",
+       "fileId": 3437402,
+       "filename": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 68722,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 3437402,
+       "filename": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 628,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.5",
+       "fileId": 3437402,
+       "filename": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.17.1",
+       "fileId": 3437402,
+       "filename": "_MixinBootstrap-1.1.0.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 73242,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3076610,
+       "filename": "MixinBootstrap-1.0.5.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.3",
+       "fileId": 3063565,
+       "filename": "MixinBootstrap-1.0.4.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.1",
+       "fileId": 2939224,
+       "filename": "MixinBootstrap-1.0.3.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.2",
+       "fileId": 2939224,
+       "filename": "MixinBootstrap-1.0.3.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.14.4",
+       "fileId": 2887104,
+       "filename": "MixinBootstrap-1.0.2.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 64806
+      },
+      {
+       "gameVersion": "1.15.2",
+       "fileId": 2887104,
+       "filename": "MixinBootstrap-1.0.2.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 68722
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 2887104,
+       "filename": "MixinBootstrap-1.0.2.jar",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2020-02-24T19:46:43.157Z",
+     "dateModified": "2022-08-03T01:43:06.423Z",
+     "dateReleased": "2021-08-24T09:03:54.38Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 1578,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "Apache License version 2.0",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    }
+   ]
+  }
+ }
+}

@@ -1227,6 +1227,18 @@ Not built from the original design:
   enabled jar requires (its own metadata), is offered to be disabled, ticked, in the same
   journalled change. Pack mods and locked ones are never offered.
 
+### Identifying uploaded and CurseForge-only jars (1.2, 2026-11-03)
+
+Found 2026-11-03: Upload recorded a jar as manual at once, with no hash and no lookup, and
+Sync identified only jars with no record, so an uploaded Lithium stayed "Other" with no
+version; a CurseForge-only jar stayed "Other" for good (Dynmap's Forge 3.7-beta-6 on the
+user's MeatballCraft copy). Built: Upload runs Sync's identification; Sync tries jars
+recorded as manual again (keeping their "Added" date, so a jar named late is not news to the
+update notifications); after Modrinth's hash lookup, with a working key, CurseForge's
+fingerprint lookup (`mods/fingerprint.ts`, checked against CurseForge's own fingerprints;
+packs-and-mods.md) and one `/mods` call for the names. Not built: looking again the moment a
+key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
+
 ---
 
 ## Near term

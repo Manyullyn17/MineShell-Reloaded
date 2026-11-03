@@ -126,3 +126,24 @@ export const curseforgeModProvider: ModProvider = {
 		return { ...version, changelog: await official.fetchChangelog(projectId, versionId) };
 	}
 };
+
+/**
+ * Jars CurseForge knows by their fingerprint, with their projects (slug = the numeric id, as
+ * every CurseForge mod is stored). Needs a working key: without one, or when the lookup
+ * fails, nothing is found and the jars stay as they were.
+ */
+export async function identifyByFingerprint(fingerprints: number[]): Promise<Map<number, official.FingerprintMatch & { project: SearchHit }>> {
+	const out = new Map<number, official.FingerprintMatch & { project: SearchHit }>();
+	if (!fingerprints.length || !curseforgeKeyValid()) return out;
+	try {
+		const files = await official.filesByFingerprints(fingerprints);
+		const projects = await official.projectsByIds([...files.values()].map((f) => f.projectId));
+		for (const [fingerprint, file] of files) {
+			const project = projects.get(file.projectId);
+			if (project) out.set(fingerprint, { ...file, project: { ...project, slug: project.id } });
+		}
+	} catch (err) {
+		if (err instanceof CurseforgeAuthError) markCurseforgeKeyInvalid();
+	}
+	return out;
+}

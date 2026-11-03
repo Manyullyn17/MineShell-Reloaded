@@ -17,8 +17,7 @@ import {
 	listInstanceMods,
 	modsDir,
 	setModEnabled,
-	setModLocked,
-	trackManualJar
+	setModLocked
 } from '#lib/server/mods/index.js';
 import { currentModNotice, dropFromModNotice } from '#lib/server/modnotice.js';
 import { modsChecked } from '#lib/server/updatecheck.js';
@@ -239,12 +238,13 @@ export const actions: Actions = {
 		for (const file of files) {
 			if (!/\.jar$/i.test(file.name)) continue;
 			await saveUpload(modsDir(instance.path), path.basename(file.name), file);
-			await trackManualJar(instance, path.basename(file.name));
 			added.push(file.name);
 		}
 		if (!added.length) return fail(400, { ok: false, message: 'None of those were .jar files.' });
+		// Identified as Sync does (Modrinth, then CurseForge with a key), or recorded as manual.
+		const synced = await syncInstanceMods(instance).catch(() => null);
 		touchInstance(instance.id);
-		return { ok: true, message: `Added ${added.length} mod${added.length === 1 ? '' : 's'}. Restart to load them.` };
+		return { ok: true, message: `Added ${added.length} mod${added.length === 1 ? '' : 's'}${synced ? ` (${synced})` : ''}. Restart to load them.` };
 	},
 
 	install: async ({ request, params, locals }) => {

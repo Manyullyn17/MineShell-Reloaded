@@ -98,6 +98,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   mix versions and the loader (`"1.12", "Forge", "1.12.2"`). Many 1.12 mods' files carry
   `modLoader: null`, so their search hits list no loader, yet a Forge search finds them.
 
+- Fingerprints (`mods/fingerprint.ts`): MurmurHash2, 32 bit, seed 1, over the file with bytes
+  9, 10, 13 and 32 left out; matched CurseForge's `fileFingerprint` for four MeatballCraft jars
+  (2026-11-03). `POST /v1/fingerprints/432` with `{ fingerprints }` answers `exactMatches[].file`
+  (`modId`, `id`, `displayName`, `fileFingerprint`); names and icons then come from
+  `POST /v1/mods` with `{ modIds }`. Recording either: put the file path before any `-u`
+  (vitest 5's `-u` takes a value, so `run -u <file>` ran and re-recorded every file).
+
 ## Pack install form
 - Picking a provider pack version fetches `/api/packs/preview` (`packs/preview.ts`): the pack's
   mods, client-only ones flagged by Modrinth hash (sha512 for .mrpack, sha1 for the mirror's

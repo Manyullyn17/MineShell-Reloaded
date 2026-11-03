@@ -39,7 +39,8 @@ const ENUM_TO_LOADER = new Map(Object.entries(LOADER_TO_ENUM).map(([name, id]) =
 /** Thrown so callers can tell an auth rejection apart from a network hiccup. */
 export class CurseforgeAuthError extends Error {}
 
-async function cfFetch<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
+/** A GET, or with `body` a POST of it as JSON. */
+async function cfFetch<T>(path: string, params: Record<string, string | number | undefined> = {}, body?: unknown): Promise<T> {
 	const key = getCurseforgeApiKey();
 	const query = new URLSearchParams();
 	for (const [k, v] of Object.entries(params)) {
@@ -47,7 +48,12 @@ async function cfFetch<T>(path: string, params: Record<string, string | number |
 	}
 	const suffix = query.toString() ? `?${query}` : '';
 	const url = `${API}${path}${suffix}`;
-	const res = await outboundFetch(url, { headers: { 'x-api-key': key, Accept: 'application/json' } });
+	const res = await outboundFetch(
+		url,
+		body === undefined
+			? { headers: { 'x-api-key': key, Accept: 'application/json' } }
+			: { method: 'POST', headers: { 'x-api-key': key, Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+	);
 	if (res.status === 401 || res.status === 403) {
 		throw new CurseforgeAuthError(`CurseForge rejected the key (${res.status} ${res.statusText}) for ${path}.`);
 	}
@@ -190,6 +196,44 @@ export async function getProject(id: string): Promise<SearchHit> {
 	const data = await cfFetch<{ data: CfMod }>(`/mods/${id}`);
 	return modToHit(data.data);
 }
+
+/** Several projects in one call, by id; ids CurseForge does not know are left out. */
+export async function projectsByIds(ids: string[]): Promise<Map<string, SearchHit>> {
+	const out = new Map<string, SearchHit>();
+	const unique = [...new Set(ids)];
+	for (let i = 0; i < unique.length; i += LOOKUP_CHUNK) {
+		const data = await cfFetch<{ data: CfMod[] }>('/mods', {}, { modIds: unique.slice(i, i + LOOKUP_CHUNK).map(Number) });
+		for (const mod of data.data ?? []) out.set(String(mod.id), modToHit(mod));
+	}
+	return out;
+}
+
+/** What a fingerprint lookup matched: the project, the file and its label. */
+export type FingerprintMatch = { projectId: string; fileId: string; version: string };
+
+/**
+ * Files by their fingerprint (fingerprint.ts), exact matches only. The modpacks.ch mirror has
+ * no such lookup, so this needs the key. A jar CurseForge does not have is left out.
+ */
+export async function filesByFingerprints(fingerprints: number[]): Promise<Map<number, FingerprintMatch>> {
+	const out = new Map<number, FingerprintMatch>();
+	const unique = [...new Set(fingerprints)];
+	for (let i = 0; i < unique.length; i += LOOKUP_CHUNK) {
+		const data = await cfFetch<{ data: { exactMatches?: { id: number; file: CfFile & { modId: number; fileFingerprint: number } }[] } }>(
+			`/fingerprints/${MINECRAFT_GAME_ID}`,
+			{},
+			{ fingerprints: unique.slice(i, i + LOOKUP_CHUNK) }
+		);
+		for (const match of data.data?.exactMatches ?? []) {
+			const file = match.file;
+			out.set(file.fileFingerprint, { projectId: String(file.modId), fileId: String(file.id), version: file.displayName || file.fileName });
+		}
+	}
+	return out;
+}
+
+/** Ids or fingerprints per request, like Modrinth's hash lookup. */
+const LOOKUP_CHUNK = 100;
 
 export async function description(id: string): Promise<string | null> {
 	const data = await cfFetch<{ data: string }>(`/mods/${id}/description`);
