@@ -32,8 +32,8 @@ Release guide from 1.2 on (user's call, 2026-11-03: a guideline to keep releases
 size, not a fixed list; entries move and get added along the way):
 - **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
-  dropping into a folder in Files. To build - the Data packs tab showing what loader mods read
-  (with an upload) (Leftovers); looking again when a CurseForge key is set; game mode and
+  dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
+  upload). To build - looking again when a CurseForge key is set; game mode and
   teleport for online players; game rules, world spawn and border; server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
   gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
@@ -586,12 +586,6 @@ is open, and each needs a test setup.
   process at once (nothing of the server is kept); a pack change could too, since its old
   loader files are in the journal and the change is put back from it either way - to check
   first that a half-written `libraries/` is among what the rollback restores or removes.
-- **Data packs a loader mod reads, on the Data packs tab** (user, 2026-11-02, for 1.2 with the
-  one above). The tab lists the active world's `datapacks/` only: one put in Open Loader's
-  `config/openloader/packs` (or Paxi's, Global Packs', KubeJS's; `DATAPACK_LOADERS` has the
-  folders) is not shown, though it loads for every world. List those too, by folder and the
-  mod that reads it, and give the tab an upload with a drop zone as Mods has: into the world's
-  `datapacks/`, or a loader's folder when the server has one (picked beside the upload).
 - **Undoing a version move**: a Minecraft or loader move has no undo once it is done (its
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:

@@ -524,3 +524,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A jar no catalog knew was named after its file with no version, though it declares both | `flows/mod-names.test.ts` ("jars no catalog knows") |
 | A version move left data packs at their old build, and a new world (moving down) without them | `flows/migrate.test.ts` (the three data pack cases) |
 | A pack change replacing a data pack loader (Paxi by Open Loader), or moving to an Open Loader build that reads another folder, did not say where the user's packs would be read from, or said nothing | `flows/pack-change.test.ts` ("names the loader that takes over", "reads another folder") |
+| The Data packs tab showed only the world's own packs, not the ones a loader mod reads for every world, and had no upload | `routes/instances/[id]/mods/datapacks.test.ts` |

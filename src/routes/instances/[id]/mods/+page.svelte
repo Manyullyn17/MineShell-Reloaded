@@ -42,6 +42,12 @@
 	let modSort = $state(DEFAULT_MOD_SORT);
 	let uploadForm = $state<HTMLFormElement | null>(null);
 	let jarInput = $state<HTMLInputElement | null>(null);
+	// Data packs: into the world's datapacks/ (''), or a folder a data pack loader reads.
+	let packForm = $state<HTMLFormElement | null>(null);
+	let packInput = $state<HTMLInputElement | null>(null);
+	let packFolder = $state('');
+	const packTarget = $derived(packFolder || `${data.datapacks.world}/datapacks`);
+	const loaderPackCount = $derived(data.loaderDatapacks.reduce((n, f) => n + f.packs.length, 0));
 	let pendingDelete = $state<string | null>(null);
 	// A pack's first sync looks up every jar on CurseForge, which takes half a
 	// minute on a big pack; without this the button looked like it did nothing.
@@ -207,7 +213,7 @@
 			</button>
 		{/if}
 		<button type="button" aria-current={view === 'datapacks' ? 'page' : undefined} onclick={() => (view = 'datapacks')}>
-			Data packs<span class="count">{data.datapacks.packs.length}</span>
+			Data packs<span class="count">{data.datapacks.packs.length + loaderPackCount}</span>
 		</button>
 	</nav>
 	<div class="tools">
@@ -592,11 +598,36 @@
 		<div>
 			<h2>Data packs</h2>
 			<p>
-				In <code>{data.datapacks.world}/datapacks</code>. Minecraft loads new ones when the world loads; on a running
-				server, <code>/reload</code> loads them now. Ones that change world generation only affect new chunks.
+				In <code>{data.datapacks.world}/datapacks</code>{#if data.loaderDatapacks.length}, and the folders
+				{[...new Set(data.loaderDatapacks.map((f) => f.mod))].join(' and ')} loads for every world{/if}. Minecraft loads new ones
+				when the world loads; on a running server, <code>/reload</code> loads them now. Ones that change world generation
+				only affect new chunks.
 			</p>
 		</div>
+		{#if may('datapacks')}
+			<form method="POST" action="?/uploadDatapacks" enctype="multipart/form-data" use:enhance bind:this={packForm} class="pack-upload">
+				{#if data.loaderDatapacks.length}
+					<select name="folder" bind:value={packFolder} aria-label="Upload into">
+						<option value="">{data.datapacks.world}/datapacks</option>
+						{#each data.loaderDatapacks as f (f.folder)}<option value={f.folder}>{f.folder} ({f.mod})</option>{/each}
+					</select>
+				{/if}
+				<label class="button upload">
+					Upload data packs
+					<input
+						bind:this={packInput}
+						type="file"
+						name="datapacks"
+						accept=".zip"
+						multiple
+						class="visually-hidden"
+						onchange={() => packForm?.requestSubmit()}
+					/>
+				</label>
+			</form>
+		{/if}
 	</div>
+	<div use:dropzone={{ input: packInput, label: `Drop data pack .zip files to add them to ${packTarget}`, disabled: !may('datapacks') }}>
 	{#if may('datapacks') && data.datapacks.packs.some((p) => p.tracked)}
 		<DatapackUpdates
 			instanceId={data.instance.id}
@@ -608,7 +639,7 @@
 		/>
 	{/if}
 	{#if data.datapacks.packs.length === 0}
-		<div class="empty"><p>No data packs. Data pack releases from Add mods land here.</p></div>
+		<div class="empty"><p>No data packs in this world. Data pack releases from Add mods land here, or upload a .zip.</p></div>
 	{:else}
 		<div class="table-box">
 			<table>
@@ -660,6 +691,50 @@
 			</table>
 		</div>
 	{/if}
+	{#each data.loaderDatapacks.filter((f) => f.packs.length) as f (f.folder)}
+		<h3 class="loader-packs">Loaded by {f.mod} for every world, from <code>{f.folder}</code></h3>
+		<div class="table-box">
+			<table>
+				<thead>
+					<tr>
+						<th>Data pack</th>
+						<th class="num">Size</th>
+						<th><span class="visually-hidden">Actions</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each f.packs as pack (pack.fileName)}
+						<tr>
+							<td>
+								<span class="mono small">{pack.fileName.replace(/\.zip$/i, '')}</span>
+								{#if pack.worldgen}<span class="tag warn" title="Adds or changes world generation">world generation</span>{/if}
+							</td>
+							<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
+							<td class="right">
+								{#if may('datapacks')}
+									<form
+										method="POST"
+										action="?/removeDatapack"
+										use:enhance={({ cancel }) => {
+											const question = pack.worldgen
+												? `${pack.fileName} changes world generation. A world that has loaded it may not load without it. Take a snapshot on the World tab first. Remove it anyway?`
+												: `Remove ${pack.fileName}?`;
+											if (!confirm(question)) cancel();
+										}}
+									>
+										<input type="hidden" name="fileName" value={pack.fileName} />
+										<input type="hidden" name="folder" value={f.folder} />
+										<button class="button-quiet">Remove</button>
+									</form>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/each}
+	</div>
 {/if}
 
 <ModUpdates
@@ -767,6 +842,24 @@
 		margin: 0;
 		color: var(--text);
 		font-size: 0.9rem;
+	}
+
+	.pack-upload {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.pack-upload select {
+		width: auto;
+		max-width: 100%;
+	}
+
+	h3.loader-packs {
+		margin: var(--space-5) 0 var(--space-2);
+		font-size: 0.95rem;
+		overflow-wrap: anywhere;
 	}
 
 	.notice.spread {

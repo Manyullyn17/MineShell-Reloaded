@@ -22,11 +22,13 @@ import {
 import { currentModNotice, dropFromModNotice } from '#lib/server/modnotice.js';
 import { modsChecked } from '#lib/server/updatecheck.js';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '#lib/server/modloaders.js';
-import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
+import { datapacksDir, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
+import { loaderDatapackFolders } from '#lib/server/datapackloaders.js';
 import { saveUpload } from '#lib/server/files.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 /**
@@ -58,6 +60,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */
 		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
+		/** Folders a data pack loader mod reads for every world (Open Loader, Paxi, Global Packs), with their packs. */
+		loaderDatapacks: await loaderDatapackFolders(instance.path),
 		/** The update check found mod updates: the Updates tab checks when opened, to list them. */
 		modUpdatesKnown: instance.updateCheck && modsChecked(instance) && !!currentModNotice(instance.id)?.updates.length,
 		running: summary.running,
@@ -340,14 +344,51 @@ export const actions: Actions = {
 		}
 	},
 
+	/**
+	 * Data pack zips into the world's datapacks/ or a folder a data pack loader on the server
+	 * reads (`folder`: only one loaderDatapackFolders lists).
+	 */
+	uploadDatapacks: async ({ request, params }) => {
+		const busy = bisectBusy(params.id);
+		if (busy) return busy;
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const files = form.getAll('datapacks').filter((f): f is File => f instanceof File && f.size > 0);
+		if (!files.length) return fail(400, { ok: false, message: 'Choose one or more data pack .zip files.' });
+		const zips = files.filter((f) => /\.zip$/i.test(f.name));
+		if (!zips.length) return fail(400, { ok: false, message: 'Data packs are uploaded as .zip files.' });
+		const folder = String(form.get('folder') ?? '');
+		const into = folder ? (await loaderDatapackFolders(instance.path)).find((f) => f.folder === folder)?.folder : path.relative(instance.path, (await datapacksDir(instance.path)).dir);
+		if (!into) return fail(400, { ok: false, message: 'No data pack loader on this server reads that folder.' });
+		try {
+			for (const file of zips) await saveUpload(instance.path, path.posix.join(into, path.basename(file.name)), file);
+		} catch (err) {
+			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Upload failed.' });
+		}
+		touchInstance(instance.id);
+		const skipped = files.length - zips.length;
+		return {
+			ok: true,
+			message: `Added ${zips.length} data pack${zips.length === 1 ? '' : 's'} to ${into}/${skipped ? ` (${skipped} not a .zip, skipped)` : ''}. Restart the server or run /reload to load ${zips.length === 1 ? 'it' : 'them'}.`
+		};
+	},
+
 	removeDatapack: async ({ request, params }) => {
 		const busy = bisectBusy(params.id);
 		if (busy) return busy;
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const fileName = String(form.get('fileName') ?? '');
+		const folder = String(form.get('folder') ?? '');
 		try {
-			await removeDatapack(instance, fileName, { force: form.get('force') === 'on' });
+			if (folder) {
+				// One of a loader's folders: only a name in one it lists, nothing tracked to drop.
+				const listed = (await loaderDatapackFolders(instance.path)).find((f) => f.folder === folder);
+				if (!listed?.packs.some((p) => p.fileName === fileName)) throw new Error(`${fileName} is not a data pack in a folder a loader on this server reads.`);
+				await fs.rm(path.join(instance.path, folder, fileName), { recursive: true, force: true });
+			} else {
+				await removeDatapack(instance, fileName, { force: form.get('force') === 'on' });
+			}
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Could not remove it.' });
 		}

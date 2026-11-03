@@ -639,7 +639,10 @@ Details worth keeping:
   after downloading the new one. A world-generation pack the world has loaded can stop it
   loading when a biome it named goes away: it starts unticked, needs the server stopped,
   and takes the snapshot first. Not journalled: one file per pack, old one kept until the
-  new one is in.
+  new one is in. The tab also lists the folders a data pack loader on the server reads for
+  every world (`loaderDatapackFolders`: the enabled loader's build's folders, KubeJS left
+  out), and uploads zips into the world's `datapacks/` or one of those; an upload or removal
+  naming any other folder is refused.
 
 Operations that rework an instance's files - pack version change, loader version change,
 moving to another Minecraft version or loader (`migrate.ts`), Cleanroom migration and

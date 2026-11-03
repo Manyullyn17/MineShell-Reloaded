@@ -193,6 +193,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			sync: on('mods'),
 			install: handler({ any: [on('mods'), on('datapacks')] }, 'mods for a mod, datapacks for a data pack'),
 			removeDatapack: on('datapacks'),
+			uploadDatapacks: on('datapacks'),
 			updateDatapacks: on('datapacks')
 		}
 	},

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { describeModJar } from './crashdiag';
+import { describeModJar, indexMods } from './crashdiag';
 import { changesWorldgen } from './mods/datapacks';
 
 /**
@@ -150,6 +150,48 @@ export async function copyLostDatapacks(root: string, lost: LostDatapackLoader[]
 	}
 	return { copied, skipped };
 }
+export type LoaderDatapack = {
+	fileName: string;
+	/** Relative to the server folder. */
+	path: string;
+	sizeBytes: number;
+	worldgen: boolean;
+};
+
+/** A folder a data pack loader on the server reads, for every world. */
+export type LoaderDatapackFolder = { mod: string; folder: string; packs: LoaderDatapack[] };
+
+/**
+ * The folders the server's enabled data pack loaders read (their build's, foldersRead), with
+ * the data packs in them: the Data packs tab lists these beside the world's own and uploads
+ * into them. KubeJS is left out: its folder holds data files, not data packs.
+ */
+export async function loaderDatapackFolders(root: string): Promise<LoaderDatapackFolder[]> {
+	const jars = (await indexMods(path.join(root, 'mods'))).filter((j) => j.enabled);
+	const out: LoaderDatapackFolder[] = [];
+	for (const loader of DATAPACK_LOADERS.filter((l) => l.copyInto)) {
+		const jar = jars.find((j) => (j.ids.length ? loader.ids.some((id) => j.ids.includes(id)) : loader.file.test(j.fileName)));
+		if (!jar) continue;
+		for (const folder of foldersRead(loader, jar.fileName)) {
+			const packs: LoaderDatapack[] = [];
+			for (const entry of await fs.readdir(path.join(root, folder), { withFileTypes: true }).catch(() => [])) {
+				if (!entry.isDirectory() && !/\.zip$/i.test(entry.name)) continue;
+				const full = path.join(root, folder, entry.name);
+				const stat = await fs.stat(full).catch(() => null);
+				packs.push({
+					fileName: entry.name,
+					path: `${folder}/${entry.name}`,
+					sizeBytes: stat?.isFile() ? stat.size : 0,
+					worldgen: await changesWorldgen(full, entry.isDirectory())
+				});
+			}
+			packs.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true }));
+			out.push({ mod: loader.name, folder, packs });
+		}
+	}
+	return out;
+}
+
 /** Every file of it came with the installed version: the pack's, not the user's. */
 async function shippedWhole(root: string, rel: string, isDirectory: boolean, shipped: (rel: string) => boolean): Promise<boolean> {
 	if (!isDirectory) return shipped(rel);

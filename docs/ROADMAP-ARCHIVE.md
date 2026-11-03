@@ -1333,6 +1333,16 @@ into a new world), or left where they are with why (no build; added by hand). Th
 after the move is committed, into the world moved to; a failed download keeps the old build
 and is named in the status (loaders.md). The tracking rows stay per server.
 
+### Data packs a loader mod reads, on the Data packs tab (1.2, 2026-11-03)
+
+User, 2026-11-02, for 1.2. The tab listed the active world's `datapacks/` only, so a pack in
+Open Loader's, Paxi's or Global Packs' folder was not shown though it loads for every world,
+and there was no upload. Built: a section per folder the server's enabled loader build reads
+(Open Loader 21's `config/openloader/packs` and `datapacks/`, older builds' `data/`), its packs
+removable; an upload with a drop zone over the tab, into the world's `datapacks/` or a
+loader's folder picked beside it (only those; a folder named otherwise is refused). KubeJS
+is left out: `kubejs/data` holds data files, not packs.
+
 ### Dropping into a folder in Files (1.2, 2026-11-03)
 
 User's call 2026-11-02. The whole file list was one drop zone uploading into the folder
