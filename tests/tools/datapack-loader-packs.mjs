@@ -14,8 +14,10 @@
  *
  * Install 1.0.0 from Add a server's pack upload, start it once, put a data pack
  * (a zip or folder) into config/openloader/packs, then upload 2.0.0 or 3.0.0 in
- * Settings > Modpack: the preview should say Open Loader goes and its data packs
- * are not loaded any more.
+ * Settings > Modpack. 2.0.0: the preview should say Open Loader goes and its data
+ * packs are not loaded any more. 3.0.0: that Paxi takes over, from
+ * config/paxi/datapacks, with "Copy it ..." ticked; after the change the pack is
+ * in both folders.
  */
 import fs from 'node:fs';
 import path from 'node:path';
