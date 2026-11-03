@@ -131,6 +131,15 @@ again when Kit and svelte-check list 7 in their peer ranges.
 Asked for 2026-10-29. Sync recognises a jar it has no record of by its Modrinth hash only,
 and only once: a CurseForge-only jar stays "Other" for good (Dynmap's Forge 3.7-beta-6 on
 the user's MeatballCraft copy: Modrinth's Forge 1.12.2 Dynmap builds stop at 3.7-beta-4).
+- Uploaded jars (found 2026-11-03, for 1.2, with the fingerprints): Upload records a jar as
+  manual at once, with no hash and no lookup, and Sync only identifies jars with no record,
+  so an uploaded Lithium stayed "Other" with no version. Upload should run Sync's Modrinth
+  hash lookup, and Sync try `manual` records again.
+- Names and versions from the jar (agreed 2026-11-03, alongside): a jar no catalog
+  identifies is named after its file. `describeModJar` (crashdiag.ts) reads the declared name
+  and version on every loader, as ed2f33a uses for CurseForge's `project-<id>` names; find out
+  how reliable they are (unreplaced `${...}` properties, jars with several mods), then show
+  at least the name and version.
 - CurseForge fingerprints: the official API's fingerprint lookup (murmur2 of the jar without
   whitespace bytes) identifies CurseForge files; it needs the API key (the modpacks.ch
   mirror has no such lookup, packs-and-mods.md). Run for untracked jars, and for `manual`
