@@ -113,6 +113,18 @@ describe('defaults for new servers', () => {
 		expect((await readProperties((await newServer({ minecraftVersion: '1.21.8' })).path)).values).toMatchObject({ pvp: 'false', 'allow-nether': 'true' });
 	});
 
+	it("leaves out the keys a version does not read yet, and starts newer ones at Minecraft's own values", async () => {
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), properties: { ...defaults.BUILT_IN_DEFAULTS.properties } });
+		expect(defaults.BUILT_IN_DEFAULTS.properties).toMatchObject({ 'enable-status': 'true', 'enforce-secure-profile': 'true', 'chat-spam-threshold-seconds': '10', 'region-file-compression': 'deflate' });
+		// How a world is first generated is the server's own, like its seed.
+		expect(defaults.BUILT_IN_DEFAULTS.properties).not.toHaveProperty('initial-enabled-packs');
+		addJava(8);
+		const old = (await readProperties((await newServer({ minecraftVersion: '1.12.2' })).path)).values;
+		for (const key of ['enable-status', 'chat-spam-threshold-seconds', 'pause-when-empty-seconds', 'region-file-compression']) expect(old).not.toHaveProperty(key);
+		addJava(25);
+		expect((await readProperties((await newServer({ minecraftVersion: '26.3' })).path)).values).toMatchObject({ 'enable-status': 'true', 'chat-spam-threshold-seconds': '10' });
+	});
+
 	it('fits the default preset to the new server’s Java', async () => {
 		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), jvmPreset: 'zgc' });
 		// Java 21 takes -XX:+ZGenerational; Java 17 refuses to start with it.

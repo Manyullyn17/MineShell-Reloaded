@@ -79,4 +79,19 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `enable-command-block` are ignored, also for a world made on 1.21.8 (no migration): game
   rules, renamed again in 1.21.11 (`movedGameRules`), which Settings' Rules section sets in the
   active world since 2026-11-03 (`worldrules.ts`). Which keys each version writes, 1.2.5
-  to 26.3: ROADMAP (on `next`), "server.properties coverage".
+  to 26.3: ROADMAP, "server.properties coverage".
+- A field's `since` is the first release whose server jar has the key as a string (2026-11-03:
+  every release of 1.16, 1.18 and 1.19 downloaded to pin those down, the probe's last-of-line
+  versions for the rest). Quicker than booting each: unzip the jar (the inner
+  `META-INF/versions/<v>/server-<v>.jar` from 1.18) and run `strings` over its classes; from 26.1
+  (unobfuscated) the strings end in a control character, so strip that before matching.
+  `javap -c` on 26.x's `DedicatedServerProperties` shows how a key is parsed (an empty
+  `generator-settings` reads as `{}`), and the 26.2 spam thresholds are `TickThrottler`s:
+  +20 a message, -1 a tick, kicked at 20 x the setting, never at 0 or for operators.
+- The file lacks a version's keys until that version's first start writes them, so a field
+  showed a switch whose Minecraft default is on as off, and saving its section wrote `false`
+  (`enable-status=false` hides the server from the list). Fields carry `default`, filled in
+  for display by `withFieldDefaults`; the raw editor still shows the file as it is.
+- `query.port` is MineShell's: always the game port's number (query is UDP, so it does not
+  clash), set with it by `syncPortsToProperties`, and kept out of Other keys. Letting it be set
+  apart would mean the port bookkeeping (allocation, clashes, Ports) knowing about it.

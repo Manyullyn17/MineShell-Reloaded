@@ -239,12 +239,13 @@ function jvmArgsFor(presetId: string, minMb: number, maxMb: number, javaMajor: n
 
 /**
  * server.properties for a new server: built-in values, the stored defaults over them, then what
- * MineShell assigns; in the format its version reads, without the keys it no longer reads.
+ * MineShell assigns; in the format its version reads, without the keys it does not read (yet or
+ * any more).
  */
 function newServerProperties(opts: Parameters<typeof defaultProperties>[0]): Record<string, string> {
 	const values = propertiesForVersion({ ...defaultProperties(opts), ...getInstanceDefaults().properties }, opts.minecraftVersion);
 	const read = new Set(fieldsForVersion(PROPERTY_SCHEMA, opts.minecraftVersion).map((f) => f.key));
-	for (const field of PROPERTY_SCHEMA) if (field.until && !read.has(field.key)) delete values[field.key];
+	for (const field of PROPERTY_SCHEMA) if (!read.has(field.key)) delete values[field.key];
 	return values;
 }
 

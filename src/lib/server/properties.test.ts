@@ -15,7 +15,8 @@ import {
 	patchProperties,
 	readProperties,
 	serialiseProperties,
-	usesNamespacedLevelType
+	usesNamespacedLevelType,
+	withFieldDefaults
 } from './properties';
 import { tempDir } from '../../../tests/helpers/fs';
 
@@ -98,6 +99,32 @@ describe('fields by Minecraft version', () => {
 		expect(pause('1.21.11')).toBe(true);
 		expect(pause('26.1')).toBe(true);
 		expect(pause('')).toBe(true);
+	});
+
+	// The first version whose server jar has the key (every release of 1.16, 1.18 and 1.19 checked).
+	it.each([
+		['enable-status', '1.15.2', '1.16'],
+		['rate-limit', '1.16.1', '1.16.2'],
+		['hide-online-players', '1.17.1', '1.18'],
+		['enforce-secure-profile', '1.18.2', '1.19'],
+		['initial-enabled-packs', '1.19.2', '1.19.3'],
+		['log-ips', '1.20.1', '1.20.2'],
+		['accepts-transfers', '1.20.4', '1.20.5'],
+		['region-file-compression', '1.20.4', '1.20.5'],
+		['chat-spam-threshold-seconds', '26.1.2', '26.2'],
+		['generator-settings', '1.3.2', '1.4.2']
+	])('offers %s from the version that reads it (not %s, from %s)', (key, before, since) => {
+		const has = (version: string) => fieldsForVersion(PROPERTY_SCHEMA, version).some((f) => f.key === key);
+		expect([has(before), has(since), has('26.3'), has('')]).toEqual([false, true, true, true]);
+	});
+
+	it("shows Minecraft's own value for a key the file does not have yet, and the file's when it has one", () => {
+		const fields = fieldsForVersion(PROPERTY_SCHEMA, '1.21.11');
+		const values = withFieldDefaults({ 'enable-status': 'false', motd: 'Hi' }, fields);
+		expect(values).toMatchObject({ 'enable-status': 'false', 'enforce-secure-profile': 'true', 'log-ips': 'true', 'rate-limit': '0', 'region-file-compression': 'deflate', 'initial-enabled-packs': 'vanilla', 'generate-structures': 'true', motd: 'Hi' });
+		// A field without one stays absent, and fields the version lacks add nothing.
+		expect(values).not.toHaveProperty('generator-settings');
+		expect(values).not.toHaveProperty('chat-spam-threshold-seconds');
 	});
 
 	it('offers PvP, the Nether, monsters and command blocks up to 1.21.8, which they became game rules after', () => {

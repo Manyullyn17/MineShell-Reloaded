@@ -244,13 +244,10 @@ without a control, all Minecraft's own, so "Other keys" saying they are "usually
 or the pack" is wrong: it becomes "settings MineShell has no control for: newer or niche
 Minecraft settings, and ones a mod or the pack adds".
 
-- **Own controls**, with a note each and the version they came in (`since`):
-  `hide-online-players`, `enable-status`, `enforce-secure-profile` (chat signing; offline mode,
-  No Chat Reports), `rate-limit` (0 off; some mods trip it), `accepts-transfers`, `log-ips`,
-  `query.port` (beside "Enable query protocol"), `region-file-compression` (below);
-  `generator-settings`, `initial-enabled-packs` and `initial-disabled-packs` in World as "only
-  used when the world is first generated" (the packs ones pointing to Data packs);
-  `max-world-size` with "Game rules, world spawn and border".
+- **Own controls**: built 2026-11-03 (Settings: Connection, World, Joining, Ticking and disk;
+  `query.port` stays tied to the game port, explained under "Enable query protocol"; the
+  existing controls got notes too). Left: `max-world-size` with "Game rules, world spawn and
+  border" on the World tab.
 - **Elsewhere**: the `resource-pack*` keys are "Server resource pack" above. The
   `management-server-*` keys and `status-heartbeat-interval` (Minecraft's management API,
   already under "Loader, modpack and Java") get notes on what each does and why it is
@@ -261,10 +258,6 @@ Minecraft settings, and ones a mod or the pack adds".
   (its text in `codeofconduct/`), `bug-report-link`, `function-permission-level`,
   `max-chained-neighbor-updates`, `use-native-transport`, `prevent-proxy-connections`,
   `enable-jmx-monitoring`, `text-filtering-config` and `text-filtering-version` (Realms only).
-- **Notes on existing controls**: `network-compression-threshold` (packets above this many
-  bytes are compressed; -1 off, good on a LAN; lower costs CPU),
-  `entity-broadcast-range-percentage`, `enable-query`, `generate-structures`,
-  `spawn-protection` (ops are exempt, 0 off).
 - **LZ4 chunks**: built 2026-11-03 (`lz4.ts`; the chunk map and pruning read them), so the
   control needs no warning.
 - **Across versions** (probed 2026-10-30 with `mc-probe.mjs`: the last release of each line

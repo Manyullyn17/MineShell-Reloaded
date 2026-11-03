@@ -232,12 +232,12 @@
 	const PROPERTY_SECTIONS: Record<string, string[]> = {
 		motd: ['motd'],
 		rules: ['difficulty', 'gamemode', 'force-gamemode', 'hardcore', 'allow-flight', 'spawn-monsters', 'enable-command-block'],
-		world: ['level-name', 'level-seed', 'level-type', 'generate-structures', 'allow-nether', 'spawn-protection'],
-		joining: ['max-players', 'white-list', 'enforce-whitelist', 'player-idle-timeout'],
+		world: ['level-name', 'level-seed', 'level-type', 'generator-settings', 'initial-enabled-packs', 'initial-disabled-packs', 'generate-structures', 'allow-nether', 'spawn-protection'],
+		joining: ['max-players', 'white-list', 'enforce-whitelist', 'player-idle-timeout', 'chat-spam-threshold-seconds', 'command-spam-threshold-seconds'],
 		permissions: ['pvp', 'op-permission-level'],
-		connection: ['server-ip', 'online-mode', 'enable-query'],
+		connection: ['server-ip', 'online-mode', 'enforce-secure-profile', 'enable-status', 'hide-online-players', 'accepts-transfers', 'rate-limit', 'log-ips', 'enable-query'],
 		distances: ['view-distance', 'simulation-distance', 'entity-broadcast-range-percentage'],
-		ticking: ['max-tick-time', 'pause-when-empty-seconds', 'sync-chunk-writes', 'network-compression-threshold']
+		ticking: ['max-tick-time', 'pause-when-empty-seconds', 'sync-chunk-writes', 'region-file-compression', 'network-compression-threshold']
 	};
 	const placed = new Set(Object.values(PROPERTY_SECTIONS).flat());
 	const fieldsOf = (section: string) =>

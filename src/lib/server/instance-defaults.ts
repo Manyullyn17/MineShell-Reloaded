@@ -93,7 +93,10 @@ const PER_INSTANCE_PROPERTIES = new Set([
 	'rcon.password',
 	'level-name',
 	'level-seed',
-	'level-type'
+	'level-type',
+	'generator-settings',
+	'initial-enabled-packs',
+	'initial-disabled-packs'
 ]);
 
 export const DEFAULTABLE_PROPERTIES: PropertyField[] = PROPERTY_SCHEMA.filter(
@@ -103,7 +106,7 @@ export const DEFAULTABLE_PROPERTIES: PropertyField[] = PROPERTY_SCHEMA.filter(
 /** The built-in game settings, from the same function that writes a new server's file. */
 function builtInProperties(): Record<string, string> {
 	const all = defaultProperties({ port: 25565, rconPort: 25575, rconPassword: '', motd: '', minecraftVersion: '' });
-	return Object.fromEntries(DEFAULTABLE_PROPERTIES.map((f) => [f.key, all[f.key] ?? '']));
+	return Object.fromEntries(DEFAULTABLE_PROPERTIES.map((f) => [f.key, all[f.key] ?? f.default ?? '']));
 }
 
 export const BUILT_IN_DEFAULTS: InstanceDefaults = {

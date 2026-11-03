@@ -144,3 +144,31 @@ describe('settings that changed form between Minecraft versions', () => {
 		expect(before.gameRules).toBeNull();
 	});
 });
+
+describe('fields for keys the file does not have yet', () => {
+	// Before its first start (or first start on a newer version) the file lacks the keys only that version writes.
+	it("show Minecraft's own values, so saving a section does not turn them off", async () => {
+		systemdStopped();
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.11' }, { 'server.properties': 'motd=Hello\nlevel-name=world\nonline-mode=true\n' });
+		const params = { id: instance.id };
+		const owner = as(instance.id, 'settings.edit', 'software');
+		const shown = (await load(page, { params, access: owner })).properties as { values: Record<string, string>; raw: string };
+		expect(shown.values).toMatchObject({ 'enable-status': 'true', 'enforce-secure-profile': 'true', 'hide-online-players': 'false' });
+		// The raw editor shows the file as it is.
+		expect(shown.raw).not.toContain('enable-status');
+
+		// The Connection section posts its switches as the page showed them.
+		const fields = { 'online-mode': 'on', 'enforce-secure-profile': 'on', 'enable-status': 'on', 'log-ips': 'on', 'rate-limit': '0' } as Record<string, string>;
+		for (const key of ['online-mode', 'enforce-secure-profile', 'enable-status', 'hide-online-players', 'accepts-transfers', 'log-ips', 'enable-query']) fields[`present:${key}`] = '1';
+		expect(await post(actions.properties, { params, access: owner, fields })).toMatchObject({ ok: true });
+		expect(await file(instance.path)).toMatchObject({ 'enable-status': 'true', 'enforce-secure-profile': 'true', 'hide-online-players': 'false', 'accepts-transfers': 'false' });
+	});
+
+	it('leave query.port to MineShell, which keeps it at the game port', async () => {
+		systemdStopped();
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.11' }, { 'server.properties': 'motd=Hello\nlevel-name=world\nquery.port=25565\n' });
+		const shown = (await load(page, { params: { id: instance.id }, access: as(instance.id, 'settings.edit') })).properties as { extras: { key: string }[]; schema: { key: string }[] };
+		expect(shown.extras.map((e) => e.key)).not.toContain('query.port');
+		expect(shown.schema.map((f) => f.key)).not.toContain('query.port');
+	});
+});

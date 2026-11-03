@@ -25,6 +25,12 @@ export type PropertyField = {
 	since?: string;
 	/** The last Minecraft version that reads it; newer servers do not get the field. */
 	until?: string;
+	/**
+	 * Minecraft's own value, shown while the file does not have the key yet: the server writes
+	 * every key it reads on its first start, so before that (or before the first start on a
+	 * newer version) a switch would show off and saving its section would write that.
+	 */
+	default?: string;
 };
 
 export const PROPERTY_GROUPS = ['World', 'Players', 'Gameplay', 'Performance', 'Network'] as const;
@@ -34,11 +40,35 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'motd', label: 'Server description', type: 'textarea', group: 'Network', help: 'Shown in the multiplayer list.' },
 	{ key: 'server-port', label: 'Port', type: 'number', min: 1, max: 65535, group: 'Network', restartRequired: true },
 	{ key: 'server-ip', label: 'Bind address', type: 'text', group: 'Network', help: 'Leave blank to listen on every interface.', restartRequired: true },
-	{ key: 'online-mode', label: 'Verify accounts with Mojang', type: 'boolean', group: 'Network', help: 'Turning this off lets cracked clients join. Only do it behind a whitelist on a private network.' },
+	{ key: 'online-mode', label: 'Verify accounts with Mojang', type: 'boolean', group: 'Network', help: 'Turning this off lets cracked clients join. Only do it behind a whitelist on a private network.', default: 'true' },
 	{ key: 'enable-rcon', label: 'Enable RCON', type: 'boolean', group: 'Network', help: 'MineShell sends console commands over RCON. Turning it off makes the console read-only.', restartRequired: true },
 	{ key: 'rcon.port', label: 'RCON port', type: 'number', min: 1, max: 65535, group: 'Network', restartRequired: true },
 	{ key: 'rcon.password', label: 'RCON password', type: 'text', group: 'Network', help: "Managed by MineShell. Change it in the server's Settings (Network) instead." },
-	{ key: 'enable-query', label: 'Enable query protocol', type: 'boolean', group: 'Network' },
+	{ key: 'enable-query', label: 'Enable query protocol', type: 'boolean', group: 'Network', help: 'Answers server list sites and status tools (GameSpy4) over UDP on the game port\'s number, which MineShell keeps query.port at.' },
+	{
+		key: 'enforce-secure-profile',
+		label: 'Require signed chat',
+		type: 'boolean',
+		group: 'Network',
+		help: 'Only lets in players whose chat Mojang signs. Turn it off when players use No Chat Reports or similar and cannot join. Does nothing with account verification off.',
+		since: '1.19',
+		default: 'true'
+	},
+	{ key: 'enable-status', label: 'Show in the multiplayer list', type: 'boolean', group: 'Network', help: 'Off, the list shows the server as unreachable; players can still join by its address.', since: '1.16', default: 'true' },
+	{ key: 'hide-online-players', label: 'Hide who is online', type: 'boolean', group: 'Network', help: 'The multiplayer list shows how many are online, but not their names.', since: '1.18', default: 'false' },
+	{
+		key: 'rate-limit',
+		label: 'Packet limit per second',
+		type: 'number',
+		min: 0,
+		max: 100000,
+		group: 'Network',
+		help: 'Kicks a player whose game sends more packets a second than this. 0 is off; some mods send many and get players kicked by a low limit.',
+		since: '1.16.2',
+		default: '0'
+	},
+	{ key: 'accepts-transfers', label: 'Accept transferred players', type: 'boolean', group: 'Network', help: 'Lets another server send its players here with /transfer.', since: '1.20.5', default: 'false' },
+	{ key: 'log-ips', label: 'Log players\' IP addresses', type: 'boolean', group: 'Network', help: 'Writes the address each player joins from into the log.', since: '1.20.2', default: 'true' },
 
 	{ key: 'level-name', label: 'World folder', type: 'text', group: 'World', restartRequired: true },
 	{ key: 'level-seed', label: 'World seed', type: 'text', group: 'World', help: 'Only used when the world is first generated.', restartRequired: true },
@@ -56,15 +86,66 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 		],
 		restartRequired: true
 	},
-	{ key: 'generate-structures', label: 'Generate structures', type: 'boolean', group: 'World' },
-	{ key: 'allow-nether', label: 'Allow the Nether', type: 'boolean', group: 'World', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
-	{ key: 'spawn-protection', label: 'Spawn protection radius', type: 'number', min: 0, max: 256, group: 'World' },
+	{
+		key: 'generator-settings',
+		label: 'Generator settings',
+		type: 'text',
+		group: 'World',
+		help: 'Only used when the world is first generated: the superflat layers or a custom generator, as JSON from 1.13 (before, a superflat preset code). Blank is the world type\'s own.',
+		since: '1.4.2',
+		restartRequired: true
+	},
+	{
+		key: 'initial-enabled-packs',
+		label: 'Data packs enabled at first',
+		type: 'text',
+		group: 'World',
+		help: 'Only used when the world is first generated: the data packs it starts with, by name, separated by commas. After that, the Data packs tab.',
+		since: '1.19.3',
+		default: 'vanilla',
+		restartRequired: true
+	},
+	{
+		key: 'initial-disabled-packs',
+		label: 'Data packs disabled at first',
+		type: 'text',
+		group: 'World',
+		help: 'Only used when the world is first generated: packs a mod or the server offers that it starts without.',
+		since: '1.19.3',
+		default: '',
+		restartRequired: true
+	},
+	{ key: 'generate-structures', label: 'Generate structures', type: 'boolean', group: 'World', help: 'Villages, temples, strongholds and the like, in chunks generated from now on.', default: 'true' },
+	{ key: 'allow-nether', label: 'Allow the Nether', type: 'boolean', group: 'World', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8', default: 'true' },
+	{ key: 'spawn-protection', label: 'Spawn protection radius', type: 'number', min: 0, max: 256, group: 'World', help: 'Within this many blocks of the world spawn only operators can build (no protection while the server has no operators). 0 is off.' },
 
 	{ key: 'max-players', label: 'Player slots', type: 'number', min: 1, max: 2000, group: 'Players' },
 	{ key: 'white-list', label: 'Whitelist only', type: 'boolean', group: 'Players', help: 'When on, only players on the whitelist can join.' },
 	{ key: 'enforce-whitelist', label: 'Kick players removed from the whitelist', type: 'boolean', group: 'Players' },
-	{ key: 'pvp', label: 'Player versus player', type: 'boolean', group: 'Players', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
+	{ key: 'pvp', label: 'Player versus player', type: 'boolean', group: 'Players', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8', default: 'true' },
 	{ key: 'player-idle-timeout', label: 'Idle kick after (minutes)', type: 'number', min: 0, max: 600, group: 'Players', help: '0 never kicks.' },
+	{
+		key: 'chat-spam-threshold-seconds',
+		label: 'Chat spam kick (seconds)',
+		type: 'number',
+		min: 0,
+		max: 3600,
+		group: 'Players',
+		help: 'Each message counts a second, and the count goes down by one every second: a player is kicked when it reaches this, so 10 lets about ten quick messages through. 0 never kicks; operators are never kicked.',
+		since: '26.2',
+		default: '10'
+	},
+	{
+		key: 'command-spam-threshold-seconds',
+		label: 'Command spam kick (seconds)',
+		type: 'number',
+		min: 0,
+		max: 3600,
+		group: 'Players',
+		help: 'The same for commands. Command blocks and mods that run commands for a player can count too.',
+		since: '26.2',
+		default: '10'
+	},
 	{
 		key: 'op-permission-level',
 		label: 'Operator permission level',
@@ -105,7 +186,7 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 	{ key: 'force-gamemode', label: 'Force game mode on join', type: 'boolean', group: 'Gameplay' },
 	{ key: 'hardcore', label: 'Hardcore', type: 'boolean', group: 'Gameplay' },
 	{ key: 'allow-flight', label: 'Allow flight', type: 'boolean', group: 'Gameplay', help: 'Needed by most flight mods; otherwise players get kicked.' },
-	{ key: 'spawn-monsters', label: 'Spawn monsters', type: 'boolean', group: 'Gameplay', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
+	{ key: 'spawn-monsters', label: 'Spawn monsters', type: 'boolean', group: 'Gameplay', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8', default: 'true' },
 	{ key: 'enable-command-block', label: 'Enable command blocks', type: 'boolean', group: 'Gameplay', help: 'Minecraft 1.21.8 and older; a game rule from 1.21.9.', until: '1.21.8' },
 
 	{ key: 'view-distance', label: 'View distance', type: 'number', min: 2, max: 32, slider: { unit: 'chunks' }, group: 'Performance' },
@@ -118,12 +199,27 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 		min: 0,
 		max: 86400,
 		group: 'Performance',
-		help: 'Stops ticking the world once nobody has been online this long; the next player to join wakes it. 0 never pauses. Minecraft 1.21.2 and newer.',
+		help: 'Stops ticking the world once nobody has been online this long; the next player to join wakes it. 0 never pauses.',
 		since: '1.21.2'
 	},
-	{ key: 'sync-chunk-writes', label: 'Synchronous chunk writes', type: 'boolean', group: 'Performance', help: 'Off is faster; on is safer against sudden power loss.' },
-	{ key: 'network-compression-threshold', label: 'Network compression threshold', type: 'number', min: -1, max: 65535, group: 'Performance' },
-	{ key: 'entity-broadcast-range-percentage', label: 'Entity broadcast range (%)', type: 'number', min: 10, max: 1000, group: 'Performance' }
+	{ key: 'sync-chunk-writes', label: 'Synchronous chunk writes', type: 'boolean', group: 'Performance', help: 'Off is faster; on is safer against sudden power loss.', default: 'true' },
+	{
+		key: 'region-file-compression',
+		label: 'Chunk compression',
+		type: 'select',
+		group: 'Performance',
+		options: [
+			{ value: 'deflate', label: 'Zlib (default)' },
+			{ value: 'lz4', label: 'LZ4: quicker, larger files' },
+			{ value: 'none', label: 'None: largest files' }
+		],
+		help: 'For chunks saved from now on; the ones already saved keep theirs, and the world reads both. Minecraft before 1.20.5 cannot read LZ4 chunks.',
+		since: '1.20.5',
+		default: 'deflate',
+		restartRequired: true
+	},
+	{ key: 'network-compression-threshold', label: 'Network compression threshold', type: 'number', min: -1, max: 65535, group: 'Performance', help: 'Packets over this many bytes are compressed. -1 is off, good on a LAN; lower saves bandwidth and costs CPU.' },
+	{ key: 'entity-broadcast-range-percentage', label: 'Entity broadcast range (%)', type: 'number', min: 10, max: 1000, group: 'Performance', help: 'How far away players are sent entities, as a share of the normal distance. Lower saves bandwidth and the players\' frame rate on busy servers.' }
 ];
 
 const SCHEMA_KEYS = new Set(PROPERTY_SCHEMA.map((f) => f.key));
@@ -232,6 +328,12 @@ export function propertiesForVersion(values: Record<string, string>, minecraftVe
 	return out;
 }
 
+/** For a page of any version (the new-server defaults): the field's help says which versions read it. */
+export function withVersionNote(field: PropertyField): PropertyField {
+	if (!field.since) return field;
+	return { ...field, help: `${field.help ? `${field.help} ` : ''}Minecraft ${field.since} and newer.` };
+}
+
 /**
  * A field as this version reads it: the level types and numbered choices in its format, and
  * no note on the versions it is for (only the defaults for new servers, of any version, need it).
@@ -241,6 +343,13 @@ export function fieldForVersion(field: PropertyField, minecraftVersion: string):
 	if (field.key === 'level-type') return { ...field, options: levelTypeOptionsFor(minecraftVersion) };
 	if (!NUMBERED_CHOICES.includes(field.key)) return field;
 	return { ...field, options: field.options?.map((o) => ({ ...o, value: choiceValueFor(field.key, o.value, minecraftVersion) })) };
+}
+
+/** `values` with Minecraft's own value for each of `fields` the file does not have yet. */
+export function withFieldDefaults(values: Record<string, string>, fields: PropertyField[]): Record<string, string> {
+	const out = { ...values };
+	for (const field of fields) if (field.default !== undefined && !Object.hasOwn(out, field.key)) out[field.key] = field.default;
+	return out;
 }
 
 export type ParsedProperties = {

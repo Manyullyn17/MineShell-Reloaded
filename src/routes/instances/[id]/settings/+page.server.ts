@@ -69,6 +69,7 @@ import {
 	PROPERTY_SCHEMA,
 	fieldForVersion,
 	fieldsForVersion,
+	withFieldDefaults,
 	movedGameRules,
 	parseProperties,
 	propertiesForVersion,
@@ -102,8 +103,10 @@ import { plural } from '#lib/shared/format.js';
  * server.properties keys with a control of their own elsewhere: MineShell
  * owns RCON (the DB holds the password and port), and the game port is set
  * with the RCON port through the network action so the DB and file agree.
+ * query.port follows the game port (query is UDP, so the same number is
+ * free), which keeps it out of the port bookkeeping.
  */
-const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port', 'server-port']);
+const MANAGED_KEYS = new Set(['rcon.password', 'enable-rcon', 'rcon.port', 'server-port', 'query.port']);
 
 /**
  * Minecraft's management server (1.21.9+): an API on a port of its own that
@@ -170,6 +173,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		pickerReleaseVersions().catch(() => [] as string[]),
 		pickerLoaderVersions(instance.modloader, instance.minecraftVersion).catch(() => [] as string[])
 	]).then(([minecraft, loader]) => ({ minecraft, loader }));
+	const schema = fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) => fieldForVersion(field, instance.minecraftVersion));
 
 	return {
 		versions,
@@ -319,9 +323,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				? listScheduledCommands(instance.id)
 				: [],
 		properties: {
-			values: propertiesForVersion(shownProperties, instance.minecraftVersion),
+			// The raw editor below shows the file as it is; the fields show what the server reads.
+			values: withFieldDefaults(propertiesForVersion(shownProperties, instance.minecraftVersion), schema),
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k)).map((key) => ({ key, value: parsed.values[key] })),
-			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) => fieldForVersion(field, instance.minecraftVersion)),
+			schema,
 			gameRules: movedGameRules(instance.minecraftVersion),
 			/** Their values in the active world, by the key it stores (null before its first start). */
 			gameRuleValues: movedGameRules(instance.minecraftVersion) ? await activeWorldRuleValues(instance, movedGameRules(instance.minecraftVersion)!) : null,
