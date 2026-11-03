@@ -1033,8 +1033,12 @@
 		margin: var(--space-3) 0;
 	}
 
+	/* An address can be one long word (a tailnet name, playit.gg's): it wraps inside the
+	   panel instead of pushing Copy out of it. */
 	.address code {
 		flex: 1;
+		min-width: 0;
+		overflow-wrap: anywhere;
 		font-size: 1rem;
 		padding: 0.5rem 0.75rem;
 	}
@@ -1057,8 +1061,12 @@
 		margin-top: var(--space-4);
 	}
 
+	/* A command moves to the next line whole, and breaks only when longer than a line
+	   (Tailscale's ufw rule in a narrow column). */
 	.address + p code {
-		white-space: nowrap;
+		display: inline-block;
+		max-width: 100%;
+		overflow-wrap: anywhere;
 	}
 
 	.facts {
