@@ -52,8 +52,13 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; for a beta.6:
-d845c6a, a confirmation scrolled into view clears the save bar - found by the user on beta.5). 1.1.0 once a beta has run about
+**1.1 beta checklist** (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; since then,
+going straight into 1.1.0 (small, like beta.4's): d845c6a, a confirmation scrolled into view
+clears the save bar, and ed2f33a, CurseForge mods named "project-<id>" show their jar's name
+(both found by the user on beta.5; ed2f33a checked on dev's Irithyll copy, 2026-11-03)).
+On beta.5 (the user, 2026-11-03): the Connect box shows the LAN and playit.gg addresses (no
+VPN or Docker interface on this machine to skip), and the update to beta.5 asked no running
+server to restart (830a14f). 1.1.0 once a beta has run about
 three days with nothing big (ROADMAP, "Betas"); beta.4's small fixes (`.jsonc`, a gap, the 24h
 chart's peaks) did not restart the clock (the user, 2026-11-02). 830a14f (no needless "restart
 to apply" after an update), 5eec358 (a changed number of log days applied at the next tick,
@@ -127,9 +132,11 @@ outline going after a cancelled drag) go out as beta.5 once prod's own log clean
      install): put back with and without the session in the copy; the button said nothing
      while MineShell restarted (fixed in c802a1e: it says so and the page comes back).
    - Notifications' quiet hours: the user, 2026-11-02, saw an update notice go through them,
-     as built then; since 13b4a56 updates are held until the window ends (on beta.5: try an
-     update during a short window, it should arrive when it ends, with "held back by quiet
-     hours"). TPS per dimension: **done** on NeoForge 26.3 (the user, 2026-11-02, the three
+     as built then; since 13b4a56 updates are held until the window ends (on beta.5: a pack or
+     loader downgrade is never notified (2aca031), so use mods on a server without a pack:
+     an older mod A, Check now (shown, not sent), a quiet window ending in a few minutes, an
+     older mod B, Check now (news, held); it should arrive when the window ends, with "held
+     back by quiet hours"). TPS per dimension: **done** on NeoForge 26.3 (the user, 2026-11-02, the three
      vanilla dimensions) and on MeatballCraft (Cleanroom 0.5.17): four loaded, the table matching
      `forge tps` line for line - the overworld and three a mod keeps loaded (Extra Utilities
      2's quarry dimension, Random Things' Spectre, Storage Cell, likely AE2's spatial storage).
