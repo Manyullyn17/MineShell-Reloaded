@@ -86,7 +86,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `config/openloader/options.json` (strings in its jar; ATM10 ships `packs/` with its own).
   Older Open Loader builds' `config/openloader/data` and `openloader/data`, Paxi's
   `config/paxi/datapacks` and Global Packs' `global_packs/required_data`/`optional_data` are
-  from their documentation, not checked in a jar.
+  from their documentation, not checked in a jar. Which folders an Open Loader build reads is
+  told from its jar's name (the last dotted version's first number: 21 and up `packs/`, older
+  `data/`), since a pack change's new jars are not downloaded at preview; a name without a
+  version counts as every folder, so no warning.
 
 ## CurseForge's official API
 - The user has a key: saved in Settings of both the dev and the installed MineShell (encrypted

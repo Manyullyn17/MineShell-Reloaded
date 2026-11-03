@@ -1333,6 +1333,16 @@ into a new world), or left where they are with why (no build; added by hand). Th
 after the move is committed, into the world moved to; a failed download keeps the old build
 and is named in the status (loaders.md). The tracking rows stay per server.
 
+### Data pack loaders changing (1.2, 2026-11-03)
+
+Found 2026-11-02 while trying the pack change's data pack loader warning. Another loader taking
+over (Open Loader -> Paxi) still only said the packs stop loading, and the same loader
+reading another folder in its new build (Open Loader before 21: `config/openloader/data`;
+21: `packs`) counted as staying and said nothing. Built: the warning names who takes over and
+its folder, a same-mod folder change is a warning of its own (the build told from the jar's
+name, packs-and-mods.md), and a ticked option copies the user's packs into the new folder
+after the change commits. Copied, not moved, so nothing can be lost.
+
 ### Joining over Tailscale (1.2, 2026-11-03)
 
 Agreed 2026-11-02. MineShell itself could be served over Tailscale, its servers had no

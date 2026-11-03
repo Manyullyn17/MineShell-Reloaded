@@ -18,12 +18,50 @@ import { changesWorldgen } from './mods/datapacks';
  * kubejs/data. Recognised by mod id, or by file name for a jar that cannot
  * be read and for the new version's jars, which are not downloaded yet.
  */
-export const DATAPACK_LOADERS: { ids: string[]; name: string; file: RegExp; folders: string[] }[] = [
-	{ ids: ['openloader'], name: 'Open Loader', file: /^open-?loader[-_]/i, folders: ['config/openloader/packs', 'config/openloader/data', 'openloader/data', 'datapacks'] },
-	{ ids: ['paxi'], name: 'Paxi', file: /^paxi[-_]/i, folders: ['config/paxi/datapacks'] },
-	{ ids: ['globalpacks', 'globaldataandresourcepacks'], name: 'Global Packs', file: /^global[-_ ]?(data)?packs?[-_]/i, folders: ['global_packs/required_data', 'global_packs/optional_data'] },
-	{ ids: ['kubejs'], name: 'KubeJS', file: /^kubejs-(neoforge|forge|fabric|quilt)?[-_]?\d/i, folders: ['kubejs/data'] }
+type DatapackLoader = {
+	ids: string[];
+	name: string;
+	file: RegExp;
+	folders: string[];
+	/** The folders a build reads, by its version (from the jar's name); every one when not known. */
+	foldersOf?: (major: number) => string[];
+	/** Where to copy data packs into for it: a folder of pack zips and folders (KubeJS's holds data files, not packs). */
+	copyInto: string | null;
+};
+
+export const DATAPACK_LOADERS: DatapackLoader[] = [
+	{
+		ids: ['openloader'],
+		name: 'Open Loader',
+		file: /^open-?loader[-_]/i,
+		folders: ['config/openloader/packs', 'config/openloader/data', 'openloader/data', 'datapacks'],
+		// Open Loader 21 (the 1.21 line) moved to config/openloader/packs and the server's datapacks/.
+		foldersOf: (major) => (major >= 21 ? ['config/openloader/packs', 'datapacks'] : ['config/openloader/data', 'openloader/data']),
+		copyInto: 'config/openloader/packs'
+	},
+	{ ids: ['paxi'], name: 'Paxi', file: /^paxi[-_]/i, folders: ['config/paxi/datapacks'], copyInto: 'config/paxi/datapacks' },
+	{
+		ids: ['globalpacks', 'globaldataandresourcepacks'],
+		name: 'Global Packs',
+		file: /^global[-_ ]?(data)?packs?[-_]/i,
+		folders: ['global_packs/required_data', 'global_packs/optional_data'],
+		copyInto: 'global_packs/required_data'
+	},
+	{ ids: ['kubejs'], name: 'KubeJS', file: /^kubejs-(neoforge|forge|fabric|quilt)?[-_]?\d/i, folders: ['kubejs/data'], copyInto: null }
 ];
+
+/** The mod's own version's first number, from a jar name: the last dotted version in it (OpenLoader-neoforge-1.21.1-21.1.4.jar is 21). */
+function majorOf(fileName: string): number | null {
+	const versions = fileName.replace(/\.jar(\.disabled)?$/i, '').match(/\d+(?:\.\d+)+/g);
+	const major = versions ? Number(versions[versions.length - 1].split('.')[0]) : NaN;
+	return Number.isFinite(major) ? major : null;
+}
+
+/** The folders this jar of the loader reads. */
+function foldersRead(loader: DatapackLoader, fileName: string): string[] {
+	const major = loader.foldersOf ? majorOf(fileName) : null;
+	return loader.foldersOf && major !== null ? loader.foldersOf(major) : loader.folders;
+}
 
 export type LostDatapackLoader = {
 	mod: string;
@@ -33,12 +71,19 @@ export type LostDatapackLoader = {
 	packs: string[];
 	/** Some of them add world generation. */
 	worldgen: boolean;
+	/**
+	 * What reads data packs after the change: another loader the new version brings, or the
+	 * same mod's new build, which reads another folder. Null when nothing does.
+	 */
+	takenOverBy: { mod: string; sameMod: boolean; folder: string | null } | null;
 };
 
 /**
- * The data pack loaders a pack change drops (`removed` from mods/, none of
- * `added` taking over) whose folders hold data packs the installed version
- * did not ship (`shipped`; null when that is not known, then all count).
+ * The data pack loaders a pack change drops (`removed` from mods/) whose folders hold data
+ * packs the installed version did not ship (`shipped`; null when that is not known, then all
+ * count): gone with nothing in their place, replaced by another loader (Open Loader by Paxi),
+ * or by a build of the same mod that reads other folders (Open Loader 21). A newer build
+ * reading the same folders is no loss.
  */
 export async function lostDatapackLoaders(
 	root: string,
@@ -47,13 +92,27 @@ export async function lostDatapackLoaders(
 	shipped: ((rel: string) => boolean) | null
 ): Promise<LostDatapackLoader[]> {
 	const out: LostDatapackLoader[] = [];
+	const loaderOfName = (name: string) => DATAPACK_LOADERS.find((l) => l.file.test(name));
 	for (const fileName of removed) {
 		const ids = (await describeModJar(path.join(root, 'mods', fileName)))?.ids ?? [];
 		const loader = DATAPACK_LOADERS.find((l) => (ids.length ? l.ids.some((id) => ids.includes(id)) : l.file.test(fileName)));
-		if (!loader || added.some((name) => loader.file.test(name))) continue;
+		if (!loader) continue;
+		const newBuild = added.find((name) => loader.file.test(name));
+		const read = foldersRead(loader, fileName);
+		let folders = read;
+		let takenOverBy: LostDatapackLoader['takenOverBy'] = null;
+		if (newBuild) {
+			// The same mod: only folders the new build stops reading are lost.
+			const still = foldersRead(loader, newBuild);
+			folders = read.filter((f) => !still.includes(f));
+			takenOverBy = { mod: loader.name, sameMod: true, folder: still.includes(loader.copyInto ?? '') ? loader.copyInto : (still[0] ?? null) };
+		} else {
+			const other = added.map(loaderOfName).find((l) => l && l !== loader);
+			if (other) takenOverBy = { mod: other.name, sameMod: false, folder: other.copyInto };
+		}
 		const packs: string[] = [];
 		let worldgen = false;
-		for (const folder of loader.folders) {
+		for (const folder of folders) {
 			for (const entry of await fs.readdir(path.join(root, folder), { withFileTypes: true }).catch(() => [])) {
 				const rel = `${folder}/${entry.name}`;
 				if (entry.isFile() && !/\.zip$/i.test(entry.name)) continue;
@@ -62,11 +121,35 @@ export async function lostDatapackLoaders(
 				worldgen ||= await changesWorldgen(path.join(root, rel), entry.isDirectory());
 			}
 		}
-		if (packs.length) out.push({ mod: loader.name, fileName, packs, worldgen });
+		if (packs.length) out.push({ mod: loader.name, fileName, packs, worldgen, takenOverBy });
 	}
 	return out;
 }
 
+/**
+ * After a pack change: the lost loaders' data packs copied into the folder the loader that
+ * took over reads. Copied, not moved: the old folder is read by nothing, and a copy cannot
+ * lose a pack. One of the same name there already is left as it is. Returns what to report.
+ */
+export async function copyLostDatapacks(root: string, lost: LostDatapackLoader[]): Promise<{ copied: string[]; skipped: string[] }> {
+	const copied: string[] = [];
+	const skipped: string[] = [];
+	for (const loader of lost) {
+		const into = loader.takenOverBy?.folder;
+		if (!into) continue;
+		await fs.mkdir(path.join(root, into), { recursive: true });
+		for (const rel of loader.packs) {
+			const to = `${into}/${path.basename(rel)}`;
+			if (await fs.stat(path.join(root, to)).catch(() => null)) {
+				skipped.push(to);
+				continue;
+			}
+			await fs.cp(path.join(root, rel), path.join(root, to), { recursive: true, preserveTimestamps: true });
+			copied.push(to);
+		}
+	}
+	return { copied, skipped };
+}
 /** Every file of it came with the installed version: the pack's, not the user's. */
 async function shippedWhole(root: string, rel: string, isDirectory: boolean, shipped: (rel: string) => boolean): Promise<boolean> {
 	if (!isDirectory) return shipped(rel);

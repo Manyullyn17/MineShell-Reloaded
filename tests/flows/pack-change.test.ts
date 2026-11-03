@@ -826,6 +826,11 @@ describe('your config edits across a pack change', () => {
 	definePack('px1', '1.20.1', ['a.jar', 'paxi-1.0.jar'], { 'config/paxi/datapacks/packs-own.zip': 'the pack’s data pack' });
 	definePack('px2', '1.20.1', ['a.jar'], {});
 	definePack('px3', '1.20.1', ['a.jar', 'paxi-1.1.jar'], {});
+	// Paxi replaced by Open Loader; Open Loader before its 21 line, a newer 19 build and 21 (another folder).
+	definePack('pxo', '1.20.1', ['a.jar', 'OpenLoader-fabric-1.20.1-21.0.1.jar'], {});
+	definePack('ol19', '1.20.1', ['a.jar', 'OpenLoader-fabric-1.20.1-19.0.4.jar'], {});
+	definePack('ol19b', '1.20.1', ['a.jar', 'OpenLoader-fabric-1.20.1-19.0.5.jar'], {});
+	definePack('ol21', '1.20.1', ['a.jar', 'OpenLoader-fabric-1.20.1-21.0.1.jar'], {});
 
 	it('warns when the new version drops the mod that loads the user’s own data packs', async () => {
 		const { instance, taskId } = await createFromPack('Paxi', PACKS.px1(), { source: 'modrinth', projectId: 'p', versionId: 'px1' });
@@ -835,12 +840,48 @@ describe('your config edits across a pack change', () => {
 		await fs.writeFile(path.join(datapacks, 'notes.txt'), 'not a data pack');
 
 		expect((await planPackChange(reload(instance.id), 'px2')).lostLoaders).toEqual([
-			{ mod: 'Paxi', fileName: 'paxi-1.0.jar', packs: ['config/paxi/datapacks/mine.zip'], worldgen: true }
+			{ mod: 'Paxi', fileName: 'paxi-1.0.jar', packs: ['config/paxi/datapacks/mine.zip'], worldgen: true, takenOverBy: null }
 		]);
 		// A newer build of it in the new version, or no data pack of the user's: nothing to say.
 		expect((await planPackChange(reload(instance.id), 'px3')).lostLoaders).toEqual([]);
 		await fs.rm(path.join(datapacks, 'mine.zip'));
 		expect((await planPackChange(reload(instance.id), 'px2')).lostLoaders).toEqual([]);
+	});
+
+	it('names the loader that takes over, and copies the user’s data packs to its folder when asked', async () => {
+		const { instance, taskId } = await createFromPack('Paxi', PACKS.px1(), { source: 'modrinth', projectId: 'p', versionId: 'px1' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		await fs.writeFile(path.join(instance.path, 'config/paxi/datapacks/mine.zip'), 'my data pack');
+		expect((await planPackChange(reload(instance.id), 'pxo')).lostLoaders).toEqual([
+			{
+				mod: 'Paxi',
+				fileName: 'paxi-1.0.jar',
+				packs: ['config/paxi/datapacks/mine.zip'],
+				worldgen: false,
+				takenOverBy: { mod: 'Open Loader', sameMod: false, folder: 'config/openloader/packs' }
+			}
+		]);
+		const task = await waitForTask(await applyPackChange(reload(instance.id), 'pxo', { updateMods: [], confirmMinecraftChange: false, copyLostDatapacks: true }));
+		expect(task.state).toBe('done');
+		expect(await fs.readFile(path.join(instance.path, 'config/openloader/packs/mine.zip'), 'utf8')).toBe('my data pack');
+		expect(await fs.readFile(path.join(instance.path, 'config/paxi/datapacks/mine.zip'), 'utf8')).toBe('my data pack');
+	});
+
+	it('warns when the same loader’s new build reads another folder, not when it reads the same one', async () => {
+		const { instance, taskId } = await createFromPack('Open Loader', PACKS.ol19(), { source: 'modrinth', projectId: 'p', versionId: 'ol19' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		await fs.mkdir(path.join(instance.path, 'config/openloader/data'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, 'config/openloader/data/mine.zip'), 'my data pack');
+		expect((await planPackChange(reload(instance.id), 'ol19b')).lostLoaders).toEqual([]);
+		expect((await planPackChange(reload(instance.id), 'ol21')).lostLoaders).toEqual([
+			{
+				mod: 'Open Loader',
+				fileName: 'OpenLoader-fabric-1.20.1-19.0.4.jar',
+				packs: ['config/openloader/data/mine.zip'],
+				worldgen: false,
+				takenOverBy: { mod: 'Open Loader', sameMod: true, folder: 'config/openloader/packs' }
+			}
+		]);
 	});
 
 	it('without a record of the installed version’s files, brings back only the files ticked', async () => {

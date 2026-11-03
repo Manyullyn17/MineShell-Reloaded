@@ -429,6 +429,7 @@ export const actions: Actions = {
 			await applyPackChange(instance, versionId, {
 				updateMods: form.getAll('updateMod').map(String),
 				keepOwn: form.getAll('keepOwn').map(String),
+				copyLostDatapacks: form.get('copyLostDatapacks') === 'on',
 				confirmMinecraftChange: form.get('confirmMinecraft') === 'on',
 				snapshot: await decideSnapshot(instance, form.get('snapshot')),
 				downloadJava: downloadJavaFrom(form)

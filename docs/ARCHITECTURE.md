@@ -678,7 +678,10 @@ Paxi, Global Packs, KubeJS: `datapackloaders.ts`, by mod id or file name) going 
 that folder holds data packs the installed version did not ship is a warning
 (`lostLoaders`): they come back, but nothing loads them, and a world-generation one the
 world has loaded can stop it loading; the preview names them and the move into the world's
-`datapacks/`.
+`datapacks/`. So is another loader taking over (Open Loader for Paxi) or the same loader's
+new build reading other folders (Open Loader 21's `config/openloader/packs`): the preview
+names it, and a ticked option copies the packs into its folder after the change commits
+(copied, not moved, and one of the same name there is left alone).
 
 **Rolling a pack change back** (`packrollback.ts`). Each committed change writes a
 `pack_changes` row in its commit transaction (`commitOperation`'s `also`): the version and

@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { lostDatapackLoaders, type LostDatapackLoader } from './datapackloaders';
+import { copyLostDatapacks, lostDatapackLoaders, type LostDatapackLoader } from './datapackloaders';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
@@ -712,6 +712,8 @@ export async function applyPackChange(
 		rollback?: RollbackOf;
 		/** The user's own files to keep over the new version's, or to bring back (plan.ownFiles). */
 		keepOwn?: string[];
+		/** Copy the user's data packs of a loader the change drops into the folder of the one that takes over (plan.lostLoaders). */
+		copyLostDatapacks?: boolean;
 		/** Runs after the change has committed and the server is ready. */
 		then?: (task: TaskHandle) => Promise<void>;
 	}
@@ -1048,6 +1050,11 @@ export async function applyPackChange(
 			problems.push(`${blocking.length} of your own ${blocking.length === 1 ? 'mods has' : 'mods have'} no compatible version: ${blocking.map((m) => m.name).join(', ')}.`);
 		}
 		try {
+			if (opts.copyLostDatapacks) {
+				const { copied, skipped } = await copyLostDatapacks(root, plan.lostLoaders);
+				for (const to of copied) task.log(`Copied data pack to ${to}`);
+				if (skipped.length) problems.push(`${plural(skipped.length, 'data pack')} not copied, as one of the same name is there already: ${skipped.join(', ')}.`);
+			}
 			task.setProgress(null, 'Identifying mods');
 			await syncMods(requireInstance(instance.id), { packFiles: targetModNames(pack), curseforge: curseforgeOrigins(pack) });
 			// Only what this version added: a pack mod someone re-enabled stays on.
