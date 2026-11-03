@@ -1,4 +1,5 @@
 import { fail } from '@sveltejs/kit';
+import { GAME_MODES, gameModesFor, reachesSpawn, runPlayerCommand, type GameMode, type TeleportTarget } from '#lib/server/playercommands.js';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
 import { packIconPending } from '#lib/server/packicon.js';
@@ -168,6 +169,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			tailnet: tailnetAddress()
 		},
 		players,
+		/** Game modes and teleport to spawn in Online now's menu (playercommands.ts). */
+		inGame: { modes: gameModesFor(instance.minecraftVersion), spawn: reachesSpawn(instance.minecraftVersion) },
 		// Streamed: faces for who is online (skins from Mojang, cached).
 		faces: players?.names.length ? facesByName(instance, players.names) : {},
 		/** From the journal (history.ts): today's peak, since when each online player is on, start times. */
@@ -398,6 +401,44 @@ export const actions: Actions = {
 			throw err;
 		}
 		return { ok: true, message: 'Uploaded; the profile opens from the list below.' };
+	},
+
+	/** Game mode or teleport for an online player (playercommands.ts). */
+	gamemode: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim();
+		const mode = String(form.get('mode') ?? '') as GameMode;
+		if (!GAME_MODES.includes(mode)) return fail(400, { ok: false, message: 'Pick a game mode.' });
+		try {
+			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'gamemode', mode }) };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	teleport: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim();
+		const to = String(form.get('to') ?? '');
+		const number = (key: string) => Number(String(form.get(key) ?? '').trim() || NaN);
+		const target: TeleportTarget | null =
+			to === 'spawn'
+				? { kind: 'spawn' }
+				: to === 'player'
+					? { kind: 'player', name: String(form.get('player') ?? '').trim() }
+					: to === 'coords'
+						? { kind: 'coords', x: number('x'), y: number('y'), z: number('z'), dimension: String(form.get('dimension') ?? '').trim() || null }
+						: null;
+		if (!target) return fail(400, { ok: false, message: 'Pick where to.' });
+		try {
+			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'teleport', target }) };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	kick: async ({ request, params }) => {

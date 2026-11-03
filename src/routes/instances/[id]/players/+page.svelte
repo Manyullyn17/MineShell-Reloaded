@@ -18,6 +18,8 @@
 	let newName = $state('');
 	let newReason = $state('');
 	let kickReason = $state('');
+	// Teleport in the drawer: where to, and the fields for it.
+	let teleportTo = $state<'spawn' | 'player' | 'coords'>('spawn');
 	let playerQuery = $state('');
 	let panelMode = $state<'add' | 'manage' | null>(null);
 	let accessType = $state<'whitelist' | 'ops' | 'bans' | 'ipBans'>('whitelist');
@@ -291,6 +293,50 @@
 					</div>
 				{/if}
 			</section>
+			{#if selectedPerson.online && may('console.command')}
+				{@const others = (data.online?.names ?? []).filter((n) => n.toLowerCase() !== selectedPerson.name.toLowerCase())}
+				<section class="drawer-section">
+					<h3>In game</h3>
+					<form method="POST" action="?/gamemode" use:enhance={keepValues} class="game-modes">
+						<input type="hidden" name="name" value={selectedPerson.name} />
+						<span class="small muted">Game mode</span>
+						{#each data.inGame.modes as mode (mode)}
+							<button class="button-quiet" name="mode" value={mode}>{mode[0].toUpperCase() + mode.slice(1)}</button>
+						{/each}
+					</form>
+					<form method="POST" action="?/teleport" use:enhance={keepValues} class="drawer-form">
+						<input type="hidden" name="name" value={selectedPerson.name} />
+						<label for="teleport-to">Teleport to</label>
+						<select id="teleport-to" name="to" bind:value={teleportTo}>
+							{#if data.inGame.spawn}<option value="spawn">The world spawn</option>{/if}
+							{#if others.length}<option value="player">Another player</option>{/if}
+							<option value="coords">Coordinates</option>
+						</select>
+						{#if teleportTo === 'player'}
+							<select name="player" aria-label="Player to teleport to">
+								{#each others as other (other)}<option value={other}>{other}</option>{/each}
+							</select>
+						{:else if teleportTo === 'coords'}
+							<div class="coords">
+								<input name="x" inputmode="numeric" placeholder="x" aria-label="x" required />
+								<input name="y" inputmode="numeric" placeholder="y" aria-label="y" required />
+								<input name="z" inputmode="numeric" placeholder="z" aria-label="z" required />
+							</div>
+							{#if data.inGame.dimensions}
+								<select name="dimension" aria-label="Dimension">
+									<option value="">In their dimension</option>
+									<option value="minecraft:overworld">Overworld</option>
+									<option value="minecraft:the_nether">The Nether</option>
+									<option value="minecraft:the_end">The End</option>
+								</select>
+							{:else}
+								<p class="hint">Minecraft {data.instance.minecraftVersion} moves players within their own dimension only.</p>
+							{/if}
+						{/if}
+						<button class="button-quiet">Teleport</button>
+					</form>
+				</section>
+			{/if}
 			<section class="drawer-section">
 				<h3>Moderation</h3>
 				{#if selectedPerson.online}
@@ -574,6 +620,8 @@
 	.drawer-form label { margin: 0; }
 	.drawer-form input:not([type='checkbox']), .drawer-form select { width: 100%; }
 	.drawer-form button { justify-self: start; }
+	.game-modes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+	.coords { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 	.current-access { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-3) 0; }
 	.drawer-section { padding: var(--space-3) 0; border-top: 1px solid var(--line); }
 	.drawer-section h3 { margin: 0 0 var(--space-2); font-size: 0.92rem; }

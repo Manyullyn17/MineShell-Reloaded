@@ -1334,6 +1334,19 @@ into a new world), or left where they are with why (no build; added by hand). Th
 after the move is committed, into the world moved to; a failed download keeps the old build
 and is named in the status (loaders.md). The tracking rows stay per server.
 
+### Game mode and teleport for online players (1.2, 2026-11-03)
+
+Asked for 2026-10-26. Online players could be kicked, opped and banned, nothing else. Built
+(`playercommands.ts`, under `console.command`): the player drawer's "In game" section (game
+mode, teleport to another online player, the world spawn or coordinates with a dimension from
+1.13) and a menu per player in the overview's Online now (game modes, teleport to spawn). The
+commands per version: spectator from 1.8, adventure from 1.3; the spawn through
+`spreadplayers` (1.8+), which finds the surface as the spawn's height is not stored, in the
+overworld by `execute in` from 1.13; before 1.13 teleports stay in the player's dimension.
+Players are checked against the online list (the target too) and their name's form before
+going into a command. Tried on the screenshot world's fake server (its RCON answers, not the
+commands); a real server not yet.
+
 ### Data packs a loader mod reads, on the Data packs tab (1.2, 2026-11-03)
 
 User, 2026-11-02, for 1.2. The tab listed the active world's `datapacks/` only, so a pack in

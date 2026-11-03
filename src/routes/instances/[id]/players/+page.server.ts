@@ -1,8 +1,9 @@
 import { fail } from '@sveltejs/kit';
 import { requireAccess } from '#lib/server/access.js';
 import { can } from '#lib/shared/access.js';
+import { crossesDimensions, GAME_MODES, gameModesFor, reachesSpawn, runPlayerCommand, type GameMode, type TeleportTarget } from '#lib/server/playercommands.js';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '#lib/server/instances.js';
+import { InstanceError, requireInstance } from '#lib/server/instances.js';
 import {
 	addPlayer,
 	kickPlayer,
@@ -36,6 +37,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Streamed, from Mojang (cached): skins for the faces, and names for player files the server has none for.
 		profiles: uuids.length ? lookUpProfiles(uuids).then((found) => Object.fromEntries(found)) : {},
 		playtimes: playtimes(instance.id),
+		/** What game mode and teleport can do on this Minecraft version. */
+		inGame: { modes: gameModesFor(instance.minecraftVersion), dimensions: crossesDimensions(instance.minecraftVersion), spawn: reachesSpawn(instance.minecraftVersion) },
 		// Streamed: the listed players' stats files, for the leaderboard.
 		leaderboard: leaderboard(instance, new Set(playerFiles.map((f) => f.uuid))).catch(() => null)
 	};
@@ -103,6 +106,44 @@ export const actions: Actions = {
 			return { ok: true, removed: true, message: `Removed ${removed.length} ${removed.length === 1 ? 'file' : 'files'} to the trash (Files).` };
 		} catch (err) {
 			if (err instanceof PlayerDataError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	/** Game mode or teleport for an online player (playercommands.ts). */
+	gamemode: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim();
+		const mode = String(form.get('mode') ?? '') as GameMode;
+		if (!GAME_MODES.includes(mode)) return fail(400, { ok: false, message: 'Pick a game mode.' });
+		try {
+			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'gamemode', mode }) };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
+	},
+
+	teleport: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const name = String(form.get('name') ?? '').trim();
+		const to = String(form.get('to') ?? '');
+		const number = (key: string) => Number(String(form.get(key) ?? '').trim() || NaN);
+		const target: TeleportTarget | null =
+			to === 'spawn'
+				? { kind: 'spawn' }
+				: to === 'player'
+					? { kind: 'player', name: String(form.get('player') ?? '').trim() }
+					: to === 'coords'
+						? { kind: 'coords', x: number('x'), y: number('y'), z: number('z'), dimension: String(form.get('dimension') ?? '').trim() || null }
+						: null;
+		if (!target) return fail(400, { ok: false, message: 'Pick where to.' });
+		try {
+			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'teleport', target }) };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
 			throw err;
 		}
 	},

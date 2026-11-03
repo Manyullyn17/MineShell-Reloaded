@@ -159,6 +159,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			profileCancel: on('console.command'),
 			profileUpload: on('console.command'),
 			kick: on('players.manage'),
+			gamemode: on('console.command'),
+			teleport: on('console.command'),
 			pin: on('settings.edit'),
 			notes: on('settings.edit'),
 			addTag: on('settings.edit'),
@@ -270,6 +272,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			opOptions: { all: [on('players.manage'), on('console.command')] },
 			whitelist: on('players.manage'),
 			kick: on('players.manage'),
+			gamemode: on('console.command'),
+			teleport: on('console.command'),
 			// The player is in the posted form.
 			removeFiles: handler(on('players.data.edit', 'any'), 'the player is posted, checked against players.data.edit')
 		}

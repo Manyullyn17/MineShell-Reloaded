@@ -33,8 +33,8 @@ size, not a fixed list; entries move and get added along the way):
 - **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
-  upload), looking again when a CurseForge key is set. To build - game mode and
-  teleport for online players; game rules, world spawn and border; server.properties coverage
+  upload), looking again when a CurseForge key is set, game mode and teleport for online
+  players. To build - game rules, world spawn and border; server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
   gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
   the Remote access follow-ups 1-3 (Undecided).
@@ -104,8 +104,8 @@ in the order to build them where one needs another.
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
-5. **Players and how the server shows itself**: game mode and teleport for online players,
-   shared player lists, the server list preview, the server resource pack, maintenance mode
+5. **Players and how the server shows itself**: game mode and teleport for online players
+   (built), shared player lists, the server list preview, the server resource pack, maintenance mode
    (which changes the description the preview shows); joining over Tailscale, wanted for 1.2
    (user's call, 2026-11-02), so built first whatever step is under way.
 6. **Schedules**: hours a server runs, on the scheduler that restarts today, and one view of
@@ -231,16 +231,6 @@ to the trash. Files the running server writes (region files, `level.dat`) only w
 stopped, as other world restores.
 
 ### 5. Players and how the server shows itself
-
-#### Game mode and teleport for online players
-
-Asked for 2026-10-26. Online players can be kicked, opped and banned (overview, player
-drawer), but the player editor is read-only while they are online and nothing else acts on
-them. Buttons in the player drawer and on the overview's "Online now": game mode (the four
-modes, `gamemode <mode> <name>`; 1.12 takes the number or the name), and teleport to
-another online player, to the world spawn or to coordinates (`tp`, with the dimension where
-the version's `execute in` allows it, 1.13+). Over RCON, under the console permission
-(`console.command`) or a permission of its own.
 
 #### Shared player lists
 

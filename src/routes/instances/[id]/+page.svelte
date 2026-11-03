@@ -13,6 +13,7 @@
 	import AllowDownloadPrompt from '#lib/components/AllowDownloadPrompt.svelte';
 	import { formatBytes, formatDateTime, formatDuration, formatRelative, formatSeconds } from '#lib/shared/format.js';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
+	import RowMenu from '#lib/components/RowMenu.svelte';
 	import { applyPackIcon } from '#lib/shared/servericon.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { dimensionRows } from '#lib/shared/dimensionticks.js';
@@ -507,6 +508,25 @@
 									<span class="faint small" title="Online since {formatDateTime(data.history.onlineSince[name])}"
 										>{formatSeconds(Date.now() - data.history.onlineSince[name])}</span
 									>
+								{/if}
+								{#if may('console.command')}
+									<RowMenu label="Game mode and teleport for {name}">
+										{#snippet children(close)}
+											<form method="POST" action="?/gamemode" use:enhance>
+												<input type="hidden" name="name" value={name} />
+												{#each data.inGame.modes as mode (mode)}
+													<button type="submit" role="menuitem" name="mode" value={mode} onclick={close}>{mode[0].toUpperCase() + mode.slice(1)} mode</button>
+												{/each}
+											</form>
+											{#if data.inGame.spawn}
+												<form method="POST" action="?/teleport" use:enhance>
+													<input type="hidden" name="name" value={name} />
+													<button type="submit" role="menuitem" name="to" value="spawn" onclick={close}>Teleport to spawn</button>
+												</form>
+											{/if}
+											<a role="menuitem" href="/instances/{data.instance.id}/players" onclick={close}>More on Players →</a>
+										{/snippet}
+									</RowMenu>
 								{/if}
 								{#if may('players.manage')}
 									<form method="POST" action="?/kick" use:enhance>
