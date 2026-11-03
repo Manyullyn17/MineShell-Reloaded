@@ -517,3 +517,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The overview offered the first network address the machine listed, which can be Tailscale's 100.x or a Docker bridge before the network card | `server/network.test.ts` |
 | Cancel on a running task could be pressed again while the work got to its next step (a loader install runs to its end), each press another "Cancelling" message | `server/tasks.test.ts` ("only stops work that said it can"; "drops a cancel that comes too late") |
 | A drag taken back out of the window, or cancelled, over a drop zone left its outline on (Files, Mods, World): the last dragleave does not always come | `shared/dropzone.test.ts` ("goes when a drag ends elsewhere") |
+| Litematica, MiniHUD and Tweakeroo showed as "project-1205459" and the like: CurseForge's own placeholder name for a project without one, passed on by the mirror | `flows/mod-names.test.ts` |

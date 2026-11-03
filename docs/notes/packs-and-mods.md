@@ -19,6 +19,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Pack file lists carry `curseforge: {project, file}` per mod; that (and manifest.json's ids)
   is how pack mods get tracked as CurseForge. A CurseForge mod's `slug` is its numeric id.
 - `resolveProviderPack` is the one provider-version -> ParsedPack path.
+- A project with no name of its own is `project-<id>` on CurseForge itself (the mirror and
+  CFWidget agree, 2026-11-03): Litematica, MiniHUD and Tweakeroo for Fabric 1.21.11 (1205459,
+  1207445, 1207454, by Marceus), with real icons, summaries and files. The Mods list takes the
+  jar's declared name instead and stores it on the mod's row (`nameFromJar`, mods/index.ts).
 - Download hosts (checked 2026-10-10 on 7 FTB and 4 CurseForge packs, ATM9/10 and
   MeatballCraft among them): every entry had a URL; CurseForge jars point at
   `edge.forgecdn.net` (a redirector to `mediafilez.forgecdn.net`, the fallback source), FTB's

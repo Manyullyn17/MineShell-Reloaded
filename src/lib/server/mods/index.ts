@@ -9,7 +9,7 @@ import { ftbProvider } from './modpacksch';
 import { curseforgeModProvider, curseforgeProvider } from './curseforge';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeEntry, safeJoin } from '../files';
-import { indexMods } from '../crashdiag';
+import { describeModJar, indexMods } from '../crashdiag';
 
 export * from './types';
 export { modrinthProvider, curseforgeProvider, curseforgeModProvider, ftbProvider };
@@ -161,6 +161,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 		const record = byFile.get(fileName) ?? byFile.get(baseName);
 		const stat = await fs.stat(path.join(dir, fileName)).catch(() => null);
 		const sizeBytes = stat?.size ?? 0;
+		if (record && PLACEHOLDER_NAME.test(record.name)) record.name = await nameFromJar(record.modId, path.join(dir, fileName), record.name);
 		rows.push({
 			id: record?.modId ?? null,
 			name: record?.name ?? baseName.replace(/\.jar$/i, ''),
@@ -212,6 +213,24 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 	}
 
 	return rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
+/**
+ * CurseForge's name for a project that has none of its own ("project-1205459": Litematica,
+ * MiniHUD and Tweakeroo for Fabric 1.21.11), which the mirror passes on as the name.
+ */
+const PLACEHOLDER_NAME = /^project-\d+$/;
+
+/**
+ * The name the jar declares (fabric.mod.json, quilt.mod.json, mods.toml, mcmod.info),
+ * kept on the mod's row so update lists and notifications have it too; the catalog's
+ * placeholder when the jar names nothing usable.
+ */
+async function nameFromJar(modId: number, file: string, fallback: string): Promise<string> {
+	const declared = (await describeModJar(file).catch(() => null))?.names.find((n) => n.trim() && !/\$\{|@[a-z_]+@/i.test(n));
+	if (!declared) return fallback;
+	db.update(modsTable).set({ name: declared.trim() }).where(eq(modsTable.id, modId)).run();
+	return declared.trim();
 }
 
 export type SyncResult = {
