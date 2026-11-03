@@ -23,6 +23,8 @@
 		spawn: { x: number; y: number; z: number } | null;
 		border: { x: number; z: number; size: number } | null;
 		borderSupported: boolean;
+		/** The server's max-world-size, for every world; null before 1.8. */
+		maxWorldSize: number | null;
 	};
 
 	// svelte-ignore state_referenced_locally
@@ -36,6 +38,7 @@
 	let values = $state<Record<string, Value>>({});
 	let spawn = $state({ x: '', y: '', z: '' });
 	let border = $state({ on: false, x: '', z: '', size: '' });
+	let limit = $state('');
 
 	async function load(folder: string) {
 		loadError = '';
@@ -49,6 +52,7 @@
 			border = body.border
 				? { on: true, x: String(body.border.x), z: String(body.border.z), size: String(body.border.size) }
 				: { on: false, x: '0', z: '0', size: '' };
+			limit = body.maxWorldSize === null ? '' : String(body.maxWorldSize);
 		} catch (err) {
 			loaded = null;
 			loadError = err instanceof Error ? err.message : 'Could not read the world.';
@@ -67,15 +71,28 @@
 	const changes = $derived.by(() => {
 		if (!loaded) return null;
 		const rules = Object.fromEntries(loaded.rules.filter((r) => values[r.key] !== r.value).map((r) => [r.key, values[r.key]]));
-		const out: { rules?: Record<string, Value>; spawn?: { x: number; y: number; z: number }; border?: { x: number; z: number; size: number } | null } = {};
+		const out: {
+			rules?: Record<string, Value>;
+			spawn?: { x: number; y: number; z: number };
+			border?: { x: number; z: number; size: number } | null;
+			maxWorldSize?: number;
+		} = {};
 		if (Object.keys(rules).length) out.rules = rules;
 		const s = { x: Number(spawn.x), y: Number(spawn.y), z: Number(spawn.z) };
 		if (loaded.spawn && (s.x !== loaded.spawn.x || s.y !== loaded.spawn.y || s.z !== loaded.spawn.z)) out.spawn = s;
 		const b = border.on ? { x: Number(border.x), z: Number(border.z), size: Number(border.size) } : null;
 		if (loaded.borderSupported && JSON.stringify(b) !== JSON.stringify(loaded.border)) out.border = b;
+		if (loaded.maxWorldSize !== null && Number(limit) !== loaded.maxWorldSize) out.maxWorldSize = Number(limit);
 		return out;
 	});
 	const changed = $derived(!!changes && Object.keys(changes).length > 0);
+	/** Where the border reaches past the limit, the world stops at the limit instead. */
+	const borderPastLimit = $derived.by(() => {
+		const max = Number(limit);
+		if (!border.on || !(max > 0)) return false;
+		const half = Number(border.size) / 2;
+		return Math.abs(Number(border.x)) + half > max || Math.abs(Number(border.z)) + half > max;
+	});
 
 	async function save(event: SubmitEvent) {
 		event.preventDefault();
@@ -98,7 +115,7 @@
 			<p>
 				A world's own settings: the game rules (mods' too), where new players spawn and the world border. On a running
 				server the active world changes at once; any other world, or the server stopped, has them written to the world's
-				files, read at its next start.
+				files, read at its next start. The world size limit is the server's, for all its worlds.
 			</p>
 		</div>
 		{#if worlds.length > 1}
@@ -143,6 +160,19 @@
 							</div>
 						{/if}
 						<p class="hint">The overworld's; the Nether follows it at an eighth of the size.</p>
+						{#if borderPastLimit}
+							<p class="hint warn">Past {Number(limit).toLocaleString('en')} blocks from 0,0 the world size limit stops it first.</p>
+						{/if}
+					</fieldset>
+				{/if}
+				{#if loaded.maxWorldSize !== null}
+					<fieldset>
+						<legend>World size limit <span class="tag">restart</span></legend>
+						<label>Blocks from 0,0 <input bind:value={limit} inputmode="numeric" /></label>
+						<p class="hint">
+							No block further out than this in x or z, in every world and dimension of the server (server.properties
+							<code>max-world-size</code>). {Number(limit) === 29999984 ? 'This is the most, the normal edge of the world.' : 'At most 29,999,984, the normal edge of the world.'}
+						</p>
 					</fieldset>
 				{/if}
 			</div>
@@ -231,6 +261,10 @@
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-2);
 		margin: var(--space-2) 0;
+	}
+
+	.hint.warn {
+		color: var(--warning);
 	}
 
 	.xyz label {

@@ -7,6 +7,7 @@ import { unitState } from './systemd';
 import { serverWorldName } from './packworld';
 import { worldFolderNames } from './worlds';
 import { compareVersions } from './java';
+import { patchProperties, readProperties } from './properties';
 import { isVanillaRule, ruleDescription, ruleLabel } from '#lib/shared/gamerules.js';
 import type { ServerInstance } from './db/schema';
 
@@ -24,6 +25,10 @@ import type { ServerInstance } from './db/schema';
  *
  * Changed over RCON for the active world of a running server (a file written under it would
  * be saved over), else in the files: an inactive world, or any world while stopped.
+ *
+ * Beside them the server's `max-world-size` (server.properties, 1.8+, read at start): no block
+ * past that coordinate from 0,0 in x or z, every dimension and world alike, and the border's
+ * edges stop there too (WorldBorder clamps them; 26.3 read with javap).
  */
 
 export type RuleValue = boolean | number | string;
@@ -36,17 +41,22 @@ export type WorldRules = {
 	spawn: { x: number; y: number; z: number } | null;
 	/** Null when none is set (the default, the edge of the world). */
 	border: { x: number; z: number; size: number } | null;
+	/** The server's max-world-size; null before 1.8, which has none. */
+	maxWorldSize: number | null;
 };
 export type WorldRuleChanges = {
 	rules?: Record<string, RuleValue>;
 	spawn?: { x: number; y: number; z: number };
 	/** Null takes the border away. */
 	border?: { x: number; z: number; size: number } | null;
+	maxWorldSize?: number;
 };
 
 /** Minecraft's default border, the edge of the world: none set. 1.12 keeps 60,000,000. */
 const NO_BORDER = 59_999_968;
 const INT_MAX = 2_147_483_647;
+/** max-world-size's default and largest value; Minecraft clamps the key to 1..this. */
+export const MAX_WORLD_SIZE = 29_999_984;
 
 type Rules = { store: 'strings' | 'typed'; file: string; nbt: NbtFile; compound: Compound };
 type Border = { file: string; nbt: NbtFile; compound: Compound; keys: { x: string; z: string; size: string; target: string } };
@@ -131,7 +141,15 @@ export async function readWorldRules(instance: ServerInstance, world: string): P
 		located2 && size !== null && size > 0 && size < NO_BORDER
 			? { x: numberOf(child(located2.compound, located2.keys.x)) ?? 0, z: numberOf(child(located2.compound, located2.keys.z)) ?? 0, size }
 			: null;
-	return { world, live: await isLive(instance, world), rules, spawn, border };
+	return { world, live: await isLive(instance, world), rules, spawn, border, maxWorldSize: await maxWorldSize(instance) };
+}
+
+/** max-world-size as the server reads it: a number clamped to 1..MAX_WORLD_SIZE, else the default. */
+async function maxWorldSize(instance: ServerInstance): Promise<number | null> {
+	if (!hasBorder(instance.minecraftVersion)) return null;
+	const raw = (await readProperties(instance.path)).values['max-world-size']?.trim() ?? '';
+	const n = /^-?\d+$/.test(raw) ? Number(raw) : MAX_WORLD_SIZE;
+	return Math.min(Math.max(n, 1), MAX_WORLD_SIZE);
 }
 
 /** What a posted value is for a rule of this kind, or why it cannot be. */
@@ -177,7 +195,23 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 		if (!(border.size >= 1 && border.size < NO_BORDER)) throw new InstanceError(`The border is 1 to ${(NO_BORDER - 1).toLocaleString('en')} blocks across.`);
 	}
 	const borderChanged = border !== undefined && JSON.stringify(border) !== JSON.stringify(current.border);
-	if (!rules.length && !spawnChanged && !borderChanged) return 'Nothing changed.';
+	const limit = changes.maxWorldSize;
+	if (limit !== undefined) {
+		if (current.maxWorldSize === null) throw new InstanceError('Minecraft before 1.8 has no world size limit.');
+		if (!Number.isInteger(limit) || limit < 1 || limit > MAX_WORLD_SIZE) throw new InstanceError(`The world size limit is 1 to ${MAX_WORLD_SIZE.toLocaleString('en')} blocks from 0,0.`);
+	}
+	const limitChanged = limit !== undefined && limit !== current.maxWorldSize;
+	if (!rules.length && !spawnChanged && !borderChanged && !limitChanged) return 'Nothing changed.';
+	// The server's, not the world's: server.properties, read at the next start.
+	const limitNote = limitChanged ? ` The world size limit (${limit!.toLocaleString('en')} blocks from 0,0) applies from the server's next start.` : '';
+	// Written once the world's own changes went through, so a refused one leaves both as they were.
+	const saveLimit = async () => {
+		if (limitChanged) await patchProperties(instance.path, { 'max-world-size': String(limit) });
+	};
+	if (!rules.length && !spawnChanged && !borderChanged) {
+		await saveLimit();
+		return limitNote.trim();
+	}
 
 	const said: string[] = [];
 	if (rules.length) said.push(`${rules.length === 1 ? rules[0][0].name : `${rules.length} game rules`} changed`);
@@ -190,7 +224,8 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 		if (spawnChanged) commands.push(`setworldspawn ${spawn!.x} ${spawn!.y} ${spawn!.z}`);
 		if (borderChanged) commands.push(...(border ? [`worldborder center ${border.x} ${border.z}`, `worldborder set ${border.size}`] : [`worldborder set ${NO_BORDER}`]));
 		await viaRcon(instance, commands);
-		return `${capitalise(said.join(', '))}.`;
+		await saveLimit();
+		return `${capitalise(said.join(', '))}.${limitNote}`;
 	}
 
 	const dir = await worldDir(instance, world);
@@ -229,7 +264,8 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 		await fs.writeFile(tmp, writeNbt(nbt));
 		await fs.rename(tmp, file);
 	}
-	return `${capitalise(said.join(', '))}. ${world === (await serverWorldName(instance.path)) ? 'The server reads it at its next start.' : 'The world has it when it is next played.'}`;
+	await saveLimit();
+	return `${capitalise(said.join(', '))}. ${world === (await serverWorldName(instance.path)) ? 'The server reads it at its next start.' : 'The world has it when it is next played.'}${limitNote}`;
 }
 
 /** A typed rule keeps its own tag type: a byte for on or off, the number's own width. */

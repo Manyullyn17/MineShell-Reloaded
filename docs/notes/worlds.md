@@ -162,6 +162,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   (int array) with its dimension. Border: level.dat `Border*` up to 1.21.10 (60,000,000 in
   1.12 means none), 1.21.11 `data/world_border.dat` per dimension, 26 under
   `dimensions/minecraft/overworld/data/minecraft/`.
+- `max-world-size` (1.8+) is a coordinate limit, not a size: no block past that distance from
+  0,0 in x or z, and the border's edges are clamped to it (`WorldBorder`'s extents, 26.3 read
+  with javap), so a border reaching past it stops there. The key is clamped to 1..29,999,984,
+  which is also the default.
 - 1.21.11's renames are not one to one: some turned around (`disableRaids` -> `raids`, the
   elytra and player movement checks), `allowFireTicksAwayFromPlayer` became the number
   `fire_spread_radius_around_player`. Commands from 1.21.11 take `keep_inventory` or

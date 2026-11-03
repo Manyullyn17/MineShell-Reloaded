@@ -908,7 +908,11 @@ changed in the same place: over RCON for the running server's active world (a fi
 under it would be saved over), else in the files, each written to a temporary file and
 renamed over the old one, the tag types kept. Only what differs from what was read is
 applied. Names and descriptions come from a table of the vanilla rules made from the server
-jars' lang files (`lib/shared/gamerules.ts`); a mod's rule is named after its key.
+jars' lang files (`lib/shared/gamerules.ts`); a mod's rule is named after its key. Beside the
+border sits the server's world size limit, `max-world-size` in server.properties (1.8+, read
+at start, for every world): it is saved by the same action after the world's own changes went
+through, so a refusal leaves both. That action needs World tools, not Change settings, for
+this one key: it only shrinks how far the world reaches, never who can do what.
 
 Snapshots live inside the server folder, `.mineshell/snapshots/<id>/`, with the world
 folders at their relative paths and a `manifest.json`; one is assembled as `<id>.partial`

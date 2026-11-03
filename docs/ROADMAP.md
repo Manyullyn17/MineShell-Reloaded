@@ -246,8 +246,7 @@ Minecraft settings, and ones a mod or the pack adds".
 
 - **Own controls**: built 2026-11-03 (Settings: Connection, World, Joining, Ticking and disk;
   `query.port` stays tied to the game port, explained under "Enable query protocol"; the
-  existing controls got notes too). Left: `max-world-size` with "Game rules, world spawn and
-  border" on the World tab.
+  existing controls got notes too), and `max-world-size` beside the border on the World tab.
 - **Elsewhere**: the `resource-pack*` keys are "Server resource pack" above. The
   `management-server-*` keys and `status-heartbeat-interval` (Minecraft's management API,
   already under "Loader, modpack and Java") get notes on what each does and why it is

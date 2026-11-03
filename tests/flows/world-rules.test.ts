@@ -17,6 +17,7 @@ const { parseNbt, writeNbt, child } = await import('#lib/server/nbt.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, systemdStopped } = await import('../helpers/instances');
+const { readProperties } = await import('#lib/server/properties.js');
 const { fakeProcesses } = await import('../helpers/process');
 
 /**
@@ -145,5 +146,32 @@ describe("a world's game rules, spawn and border", () => {
 		await expect(changeWorldRules(instance, 'world', { border: { x: 0, z: 0, size: 0 } })).rejects.toThrow(/blocks across/);
 		await expect(readWorldRules(instance, '../elsewhere')).rejects.toThrow(/not on this server/);
 		expect(await changeWorldRules(instance, 'world', { rules: { keepInventory: false } })).toBe('Nothing changed.');
+	});
+
+	it("keeps the server's world size limit beside the border, in server.properties, for 1.8 and newer", async () => {
+		const props = (dir: string) => readProperties(dir).then((p) => p.values);
+		const instance = await server({ ...OLD, 'server.properties': Buffer.from('motd=Hi\n') });
+		// Not in the file before the first start: Minecraft's own.
+		expect((await readWorldRules(instance, 'world')).maxWorldSize).toBe(29_999_984);
+		expect(await changeWorldRules(instance, 'world', { maxWorldSize: 5000 })).toMatch(/limit \(5,000 blocks from 0,0\) applies from the server's next start/);
+		expect(await props(instance.path)).toEqual({ motd: 'Hi', 'max-world-size': '5000' });
+		expect((await readWorldRules(instance, 'world')).maxWorldSize).toBe(5000);
+		await expect(changeWorldRules(instance, 'world', { maxWorldSize: 30_000_000 })).rejects.toThrow(/1 to 29,999,984/);
+		await expect(changeWorldRules(instance, 'world', { maxWorldSize: 0 })).rejects.toThrow(/1 to 29,999,984/);
+
+		// Over RCON with the rest; a refusal there leaves the limit as it was too.
+		const live = await server({ ...MID, 'server.properties': Buffer.from('max-world-size=1000\n') }, '1.21.11');
+		running();
+		rcon.answer = 'Incorrect argument for command';
+		await expect(changeWorldRules(live, 'world', { rules: { 'minecraft:keep_inventory': true }, maxWorldSize: 2000 })).rejects.toThrow(/refused/);
+		expect((await props(live.path))['max-world-size']).toBe('1000');
+		rcon.answer = '';
+		expect(await changeWorldRules(live, 'world', { rules: { 'minecraft:keep_inventory': true }, maxWorldSize: 2000 })).toMatch(/^Keep inventory after death changed\. The world size limit/);
+		expect((await props(live.path))['max-world-size']).toBe('2000');
+
+		systemdStopped();
+		const ancient = await server(OLD, '1.7.10');
+		expect((await readWorldRules(ancient, 'world')).maxWorldSize).toBeNull();
+		await expect(changeWorldRules(ancient, 'world', { maxWorldSize: 100 })).rejects.toThrow(/before 1.8/);
 	});
 });
