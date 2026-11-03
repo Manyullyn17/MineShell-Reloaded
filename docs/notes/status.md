@@ -52,7 +52,8 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.1 beta checklist** (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; since then,
+**1.1 beta checklist: done, 1.1.0 released 2026-11-03** (CI and Release green; the user updated prod
+from beta.5 with the button, no problems seen). Kept as the record. (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; since then,
 going straight into 1.1.0 (small, like beta.4's): d845c6a, a confirmation scrolled into view
 clears the save bar, and ed2f33a, CurseForge mods named "project-<id>" show their jar's name
 and 1722177, Check now's answer beside its button and Mods > Updates checking when updates are
@@ -93,7 +94,7 @@ outline going after a cancelled drag) go out as beta.5 once prod's own log clean
    - JVM arguments holding a quoted space: none on prod (its unit env files, 2026-11-01); the
      2026-10-31 real-loader pass covered it.
 2. **Updating itself**: beta.1 -> beta.2 -> beta.3 with the Update button, betas on: **done**
-   (the user, 2026-11-01; beta.4 the same evening). Left: beta.4 -> 1.1.0 (offered with betas on or off), once it is out.
+   (the user, 2026-11-01; beta.4 the same evening). beta.5 -> 1.1.0 on prod: **done** (the user, 2026-11-03).
 3. **The script policy (CSP) on the built app**: **done** (2026-11-01): a production build on
    throwaway data swept with `page-sweep --errors` (123 views, nothing refused), and the user
    found nothing on prod, the Map tab with BlueMap and with Dynmap included.

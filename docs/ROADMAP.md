@@ -8,7 +8,8 @@ whatever it leaves out stays here.
 ## Current direction
 
 Versions (user's calls, 2026-10-16 and 2026-10-30): 1.0 came out 2026-11-01 (its checklist,
-"Road to 1.0", is in ROADMAP-ARCHIVE). 1.1 is in beta. After it maybe a few minor additions,
+"Road to 1.0", is in ROADMAP-ARCHIVE). 1.1.0 came out 2026-11-03; 1.2 is next (uploaded jars identified, names and versions from
+the jar, joining over Tailscale among it). After it maybe a few minor additions,
 then plugin servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
