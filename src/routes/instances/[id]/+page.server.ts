@@ -24,6 +24,7 @@ import { memoryAdvice } from '#lib/server/memoryadvice.js';
 import { resolveJava } from '#lib/server/java.js';
 import { cpus } from 'node:os';
 import { primaryLanAddress } from '#lib/server/network.js';
+import { tailnetAddress } from '#lib/server/tailscale.js';
 import { recentDiskBreakdown } from '#lib/server/diskusage.js';
 import { describeSchedule } from '#lib/server/scheduler.js';
 import { forgetDiagnosis, lastCrash } from '#lib/server/lastcrash.js';
@@ -162,7 +163,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			// resolve from another LAN machine, which most home networks don't
 			// have set up (confirmed: it doesn't resolve here) - the LAN IPv4
 			// address is what actually works, so that's shown instead.
-			host: primaryLanAddress()
+			host: primaryLanAddress(),
+			// Streamed: where the machine's tailnet devices reach it (Tailscale running), for the Connect box.
+			tailnet: tailnetAddress()
 		},
 		players,
 		// Streamed: faces for who is online (skins from Mojang, cached).

@@ -137,6 +137,20 @@ exec "${realSystemctl}" "$@"
 `,
 	{ mode: 0o755 }
 );
+// Tailscale as an invented tailnet: the overview's Connect box shows a "From your Tailscale
+// devices" row from `tailscale status`, which would otherwise be this machine's real one.
+fs.writeFileSync(
+	path.join(DATA, 'bin/tailscale'),
+	`#!/bin/bash
+# Screenshot runs only (tests/tools/screenshots/run.mjs): an invented tailnet, nothing served.
+if [[ "$1" == status ]]; then
+	echo '{"BackendState":"Running","Self":{"DNSName":"minecraft.tail1234.ts.net.","TailscaleIPs":["100.64.0.7"]},"CurrentTailnet":{"MagicDNSEnabled":true},"CertDomains":["minecraft.tail1234.ts.net"]}'
+else
+	echo '{}'
+fi
+`,
+	{ mode: 0o755 }
+);
 const started = sh('bash', ['tests/tools/devserver.sh', 'start', String(PORT), DATA], {
 	MINESHELL_UNIT_PREFIX: PREFIX,
 	MINESHELL_AUTH: long ? 'on' : 'off',

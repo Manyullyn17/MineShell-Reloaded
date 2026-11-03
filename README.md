@@ -160,6 +160,7 @@ Let players join from outside your local network without manually configuring po
 - Automatically manage the tunnel agent and server tunnel, keeping the tunnel associated with the server's port.
 - Display the public address in the server interface and remove the tunnel when the server is deleted.
 - Access the agent's playit.gg page and choose its connection location where supported by the account plan.
+- With Tailscale on the machine, the overview also gives the address your tailnet's devices join with, nothing to forward.
 
 ### Settings, files & Java
 

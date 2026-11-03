@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import os from 'node:os';
-import { operatorCommand, serveOverTailscale, serveState, stopServingOverTailscale, tailscaleState } from './tailscale';
+import { operatorCommand, serveOverTailscale, serveState, stopServingOverTailscale, tailnetAddress, tailscaleState } from './tailscale';
 import { fakeProcesses, spawnCalls, type FakeResult } from '../../../tests/helpers/process';
 
 const NAME = 'box.tail1234.ts.net';
@@ -113,5 +113,36 @@ describe('serving MineShell over Tailscale', () => {
 		tailscale({ serveStatus: served('http://127.0.0.1:3000') });
 		expect(await stopServingOverTailscale()).toEqual({ ok: true });
 		expect(changes()).toEqual(['serve --https=443 off']);
+	});
+});
+
+describe("where tailnet devices reach this machine (the overview's Connect box)", () => {
+	// Each a minute apart: the answer is kept for a minute.
+	let clock = 0;
+	const ask = () => tailnetAddress((clock += 61_000));
+	const withDns = (magicDns: boolean, state = 'Running') =>
+		JSON.stringify({ ...JSON.parse(status(state)), CurrentTailnet: { MagicDNSEnabled: magicDns } });
+
+	it('is its MagicDNS name, or its 100.x address when the tailnet has MagicDNS off', async () => {
+		tailscale({ status: { stdout: withDns(true) } });
+		expect(await ask()).toBe(NAME);
+		tailscale({ status: { stdout: withDns(false) } });
+		expect(await ask()).toBe('100.64.0.7');
+	});
+
+	it('is nothing without Tailscale running, or installed', async () => {
+		tailscale({ status: { stdout: withDns(true, 'Stopped') } });
+		expect(await ask()).toBeNull();
+		tailscale({ status: { code: 127, stdout: '' } });
+		expect(await ask()).toBeNull();
+	});
+
+	it('asks Tailscale once a minute, not on every reload', async () => {
+		tailscale({ status: { stdout: withDns(true) } });
+		const at = (clock += 61_000);
+		await tailnetAddress(at);
+		const calls = spawnCalls.length;
+		await tailnetAddress(at + 5_000);
+		expect(spawnCalls.length).toBe(calls);
 	});
 });

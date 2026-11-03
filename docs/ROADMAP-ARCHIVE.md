@@ -1241,6 +1241,17 @@ under the name and version it declares (`mainDeclaredMod`; surveyed on 1031 jars
 packs-and-mods.md), also for jars recorded before as their file name. Not built: looking
 again the moment a key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
 
+### Joining over Tailscale (1.2, 2026-11-03)
+
+Agreed 2026-11-02. MineShell itself could be served over Tailscale, its servers had no
+address for it: a friend on the tailnet, or the owner away from home, had to know to type
+the machine's 100.x address. Built: with Tailscale running, the overview's Connect box has a
+"From your Tailscale devices" row, the MagicDNS name (or the 100.x address when the tailnet
+has MagicDNS off) and the port, from `tailscale status --json` read at most once a minute.
+Its firewall hint is `sudo ufw allow in on tailscale0 to any port <port> proto tcp`, and voice
+chat's UDP port the same way: Tailscale adds no ufw rule of its own. Not checked yet: whether
+ufw lets tailscale0 in by default (ROADMAP). The screenshots show an invented tailnet.
+
 ---
 
 ## Near term

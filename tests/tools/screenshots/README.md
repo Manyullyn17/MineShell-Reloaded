@@ -104,7 +104,8 @@ The player is `WWWWWWWWWWWWWWWW` (`offlineUuid` in `scenes.mjs`). Backup folders
 
 ## What it cannot show (yet)
 
-Connect shows this machine's LAN address. Players joined a minute ago (their sessions come
+Connect shows this machine's LAN address (its Tailscale row is an invented tailnet,
+`minecraft.tail1234.ts.net`, from a stand-in `tailscale` in `$DATA/bin`). Players joined a minute ago (their sessions come
 from the fake's log). The rendered world map (BlueMap) is not drawn: it needs a render of
 the world first. A modded item's picture needs its real jar, which the scenes do not have
 (the inventory holds vanilla items).

@@ -33,6 +33,8 @@
 	// The layout's, for the Connect box: players elsewhere type this, the host's own network the LAN address.
 	const publicInfo = streamed(() => data.publicAddress, key);
 	const publicAddress = $derived(publicInfo.ready ? (publicInfo.value?.address ?? null) : null);
+	const tailnetInfo = streamed(() => data.detail.tailnet, key);
+	const tailnetHost = $derived(tailnetInfo.ready ? tailnetInfo.value : null);
 	const faces = $derived((facesInfo.ready ? facesInfo.value : {}) as Record<string, { id: string; skin: string | null }>);
 	const disk = streamed(() => data.disk, key);
 	const sparkInfo = streamed(() => data.spark, key);
@@ -653,15 +655,22 @@
 	<div class="column">
 		<section class="panel">
 			<h2>Connect</h2>
-			{#if publicAddress}<p class="address-label">On your network</p>{/if}
+			{#if publicAddress || tailnetHost}<p class="address-label">On your network</p>{/if}
 			{@render address(`${data.detail.host}:${data.detail.serverPort}`)}
 			<p class="faint small">
-				{publicAddress ? "Can't connect from your network?" : "Can't connect?"} Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>{#if data.detail.voicePort}, and voice chat's port: <code class="mono">sudo ufw allow {data.detail.voicePort}/udp</code>{/if}
+				{publicAddress || tailnetHost ? "Can't connect from your network?" : "Can't connect?"} Allow it through the firewall: <code class="mono">sudo ufw allow {data.detail.serverPort}/tcp</code>{#if data.detail.voicePort}, and voice chat's port: <code class="mono">sudo ufw allow {data.detail.voicePort}/udp</code>{/if}
 			</p>
 			{#if publicAddress}
 				<p class="address-label">From anywhere, through playit.gg</p>
 				{@render address(publicAddress)}
 				<p class="faint small">No firewall rule needed: playit.gg's agent reaches the server on this machine.</p>
+			{/if}
+			{#if tailnetHost}
+				<p class="address-label">From your Tailscale devices</p>
+				{@render address(`${tailnetHost}:${data.detail.serverPort}`)}
+				<p class="faint small">
+					Players on your tailnet, nothing to forward. Can't connect? Allow it in on Tailscale: <code class="mono">sudo ufw allow in on tailscale0 to any port {data.detail.serverPort} proto tcp</code>{#if data.detail.voicePort}, and voice chat's: <code class="mono">sudo ufw allow in on tailscale0 to any port {data.detail.voicePort} proto udp</code>{/if}
+				</p>
 			{/if}
 		</section>
 

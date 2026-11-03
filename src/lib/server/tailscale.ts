@@ -141,6 +141,34 @@ export async function tailscaleState(): Promise<TailscaleState> {
 	};
 }
 
+let tailnetCache: { at: number; address: Promise<string | null> } | null = null;
+
+/**
+ * Where this machine's tailnet devices reach it: its MagicDNS name when the tailnet has
+ * MagicDNS on, else its 100.x address; null without Tailscale running. For the overview's
+ * Connect box, which reloads every few seconds: `tailscale status` is asked once a minute.
+ */
+export function tailnetAddress(now = Date.now()): Promise<string | null> {
+	if (tailnetCache && now - tailnetCache.at < 60_000) return tailnetCache.address;
+	const address = run(['tailscale', 'status', '--json'], { timeoutMs: 10_000 }).then((status) => {
+		try {
+			const parsed = JSON.parse(status.stdout) as {
+				BackendState?: string;
+				Self?: { DNSName?: string; TailscaleIPs?: string[] };
+				CurrentTailnet?: { MagicDNSEnabled?: boolean } | null;
+			};
+			if (parsed.BackendState !== 'Running') return null;
+			const name = (parsed.Self?.DNSName ?? '').replace(/\.$/, '');
+			const ipv4 = parsed.Self?.TailscaleIPs?.find((ip) => !ip.includes(':')) ?? null;
+			return parsed.CurrentTailnet?.MagicDNSEnabled && name ? name : ipv4;
+		} catch {
+			return null;
+		}
+	});
+	tailnetCache = { at: now, address: address.catch(() => null) };
+	return tailnetCache.address;
+}
+
 const NOT_OPERATOR = () => `Tailscale only lets root or its operator change what it serves. Run this once on the machine, then try again: ${operatorCommand()}`;
 
 /** Tailscale's answer to a refused change, as something to do about it. */

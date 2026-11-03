@@ -1240,7 +1240,10 @@ The overview's Connect box gives the address to type: the LAN one (`primaryLanAd
 first private IPv4 of an interface that is not a VPN, container or VM bridge - tailscale0,
 docker0 and the like can be listed before the network card) with the firewall hint, and
 for a server public through playit.gg a second row with that address, which needs no
-firewall rule: the agent reaches the server over loopback.
+firewall rule: the agent reaches the server over loopback. With Tailscale running, a row for
+the tailnet's devices (`tailnetAddress`: the MagicDNS name, or the 100.x address with
+MagicDNS off; `tailscale status` read at most once a minute, as the overview reloads every
+few seconds), with its own firewall hint for tailscale0.
 
 All the servers' ports in one place (`portmap.ts`, MineShell settings > Ports, global
 admins): game, RCON, query (the game port's number over UDP, when `enable-query` is on),

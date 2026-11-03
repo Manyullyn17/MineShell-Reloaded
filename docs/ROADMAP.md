@@ -29,7 +29,7 @@ The other leftovers of those features (Cancel for version moves and loader chang
 copies to a backup folder, CurseForge data packs, zipping chosen files, Chunk Pregenerator)
 are extensions and wait.
 
-1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5), data packs
+1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5, built), data packs
 on a version move, dropping into a folder in Files and the Data packs tab showing what loader
 mods read, with an upload (Leftovers), all pushed out of a full 1.1.
 
@@ -393,16 +393,8 @@ For pack updates and other work players should stay out of.
 
 #### Joining over Tailscale
 
-Agreed 2026-11-02, for 1.2 (user's call: 1.1 is full). MineShell itself can be served over
-Tailscale (Settings > System, Remote access; `tailscale.ts`), its servers not: a friend on
-the same tailnet, or the owner away from home, has to know to type the machine's 100.x address.
-With Tailscale up, the overview's Connect box gets a third row beside "On your network" and
-playit.gg's: "From your Tailscale devices", the machine's MagicDNS name (or 100.x address) and
-the port, from the `tailscale status --json` MineShell already reads. Nothing to forward: the
-tailnet reaches the port directly. To check first: whether ufw on the machine lets tailscale0
-in by default (Tailscale adds no ufw rule; if it does not, the row gets its own firewall line,
-`sudo ufw allow in on tailscale0 to any port <port>`), and voice chat's UDP port the same way.
-`primaryLanAddress` skips tailscale0 since 2026-11-02, so the LAN row stays the home network's.
+Built 2026-11-03 (ROADMAP-ARCHIVE, "Joining over Tailscale"). Left: whether ufw lets
+tailscale0 in by default, tried from a tailnet device; the row's firewall hint goes if it does.
 
 ### 6. Schedules
 
