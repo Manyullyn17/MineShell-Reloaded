@@ -149,7 +149,9 @@ let tailnetCache: { at: number; address: Promise<string | null> } | null = null;
  * Connect box, which reloads every few seconds: `tailscale status` is asked once a minute.
  */
 export function tailnetAddress(now = Date.now()): Promise<string | null> {
-	if (tailnetCache && now - tailnetCache.at < 60_000) return tailnetCache.address;
+	// An answer from the future (the clock set back) is stale too, not kept until the clock catches up.
+	const age = tailnetCache ? now - tailnetCache.at : Infinity;
+	if (age >= 0 && age < 60_000) return tailnetCache!.address;
 	const address = run(['tailscale', 'status', '--json'], { timeoutMs: 10_000 }).then((status) => {
 		try {
 			const parsed = JSON.parse(status.stdout) as {

@@ -538,3 +538,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Online players could only be kicked, opped and banned: no game mode or teleport | `flows/player-commands.test.ts` |
 | Game rules, the spawn and the border were only changeable by console command | `flows/world-rules.test.ts` |
 | From 1.21.9 PvP, monsters, the Nether and command blocks had no control in Settings, only a note to type the game rule in the console | `routes/instances/[id]/settings/game-rules.test.ts` |
+| The Connect box's Tailscale address was kept for as long as the clock had been set back, not a minute; in tests it made `tailscale.test.ts` fail whenever the overview tests had run first in the same worker | `tailscale.test.ts` ("asks again when the clock was set back") |

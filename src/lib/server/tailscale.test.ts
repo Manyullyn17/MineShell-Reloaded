@@ -137,6 +137,14 @@ describe("where tailnet devices reach this machine (the overview's Connect box)"
 		expect(await ask()).toBeNull();
 	});
 
+	it('asks again when the clock was set back, instead of keeping the answer until it catches up', async () => {
+		tailscale({ status: { stdout: withDns(true) } });
+		const at = (clock += 61_000);
+		expect(await tailnetAddress(at + 3_600_000)).toBe(NAME);
+		tailscale({ status: { stdout: withDns(false) } });
+		expect(await tailnetAddress(at)).toBe('100.64.0.7');
+	});
+
 	it('asks Tailscale once a minute, not on every reload', async () => {
 		tailscale({ status: { stdout: withDns(true) } });
 		const at = (clock += 61_000);
