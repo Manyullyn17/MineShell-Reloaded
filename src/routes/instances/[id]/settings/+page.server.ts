@@ -70,6 +70,7 @@ import {
 	fieldForVersion,
 	fieldsForVersion,
 	withFieldDefaults,
+	propertyNote,
 	movedGameRules,
 	parseProperties,
 	propertiesForVersion,
@@ -325,7 +326,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		properties: {
 			// The raw editor below shows the file as it is; the fields show what the server reads.
 			values: withFieldDefaults(propertiesForVersion(shownProperties, instance.minecraftVersion), schema),
-			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k)).map((key) => ({ key, value: parsed.values[key] })),
+			extras: parsed.extraKeys
+				.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k))
+				.map((key) => ({ key, value: parsed.values[key], ...propertyNote(key) })),
 			schema,
 			gameRules: movedGameRules(instance.minecraftVersion),
 			/** Their values in the active world, by the key it stores (null before its first start). */

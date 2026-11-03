@@ -1389,6 +1389,66 @@ its folder, a same-mod folder change is a warning of its own (the build told fro
 name, packs-and-mods.md), and a ticked option copies the user's packs into the new folder
 after the change commits. Copied, not moved, so nothing can be lost.
 
+### server.properties coverage (1.2, 2026-11-03)
+
+Agreed 2026-10-30. A vanilla 1.21.11 server had 37 keys without a control, all Minecraft's
+own, while Other keys called them "usually added by a mod or the pack". Built, in four
+commits:
+- LZ4 chunks (`region-file-compression=lz4`, 1.20.5+) are read (`lz4.ts`: lz4-java's block
+  stream, not LZ4 frames), so the chunk map draws them and pruning judges them; checked on a
+  world vanilla 1.21.11 wrote. Pruning and chunk restore copy chunks as stored, so a region
+  mixes compressions as Minecraft's own do (worlds.md). Taking such a world below 1.20.5 is
+  noted under Undecided.
+- Controls in Settings for signed chat, the multiplayer list (shown, names hidden),
+  transfers, the packet limit, IP logging, the 26.2 spam kicks, chunk compression, generator
+  settings and a new world's data packs, each only for the versions that read it (`since`
+  from the server jars, every release of 1.16, 1.18 and 1.19 checked), and notes on the older
+  controls. Fields show Minecraft's default while the file lacks the key, which also fixed a
+  switch that is on by default showing off before the first start and being saved off.
+  `query.port` stays tied to the game port instead of getting a control.
+- `max-world-size` beside the border on World > Game rules.
+- Other keys: each of Minecraft's own keys without a control has a note (management API,
+  resource pack, ones older versions read), so a key without one is marked as a mod's; the
+  section says what it holds. A test lists every key a vanilla server read from 1.2.5 to
+  26.3 and checks each has a control, a note or is MineShell's.
+The `resource-pack*` keys keep only notes until "Server resource pack" (1.3).
+
+The entry as agreed:
+
+Agreed 2026-10-30 (user's call: after 1.0). A vanilla 1.21.11 server (Irithyll) has 37 keys
+without a control, all Minecraft's own, so "Other keys" saying they are "usually added by a mod
+or the pack" is wrong: it becomes "settings MineShell has no control for: newer or niche
+Minecraft settings, and ones a mod or the pack adds".
+
+- **Own controls**: built 2026-11-03 (Settings: Connection, World, Joining, Ticking and disk;
+  `query.port` stays tied to the game port, explained under "Enable query protocol"; the
+  existing controls got notes too), and `max-world-size` beside the border on the World tab.
+- **Elsewhere**: the `resource-pack*` keys are "Server resource pack" above. The
+  `management-server-*` keys and `status-heartbeat-interval` (Minecraft's management API,
+  already under "Loader, modpack and Java") get notes on what each does and why it is
+  dangerous; controls only if MineShell ever uses the API itself.
+- **Notes only**, shown beside the key in Other keys from a table of known vanilla keys (a key
+  not in it is then plainly a mod's): `broadcast-console-to-ops`, `broadcast-rcon-to-ops`
+  (MineShell turns it on, so console commands echo to ops in chat), `enable-code-of-conduct`
+  (its text in `codeofconduct/`), `bug-report-link`, `function-permission-level`,
+  `max-chained-neighbor-updates`, `use-native-transport`, `prevent-proxy-connections`,
+  `enable-jmx-monitoring`, `text-filtering-config` and `text-filtering-version` (Realms only).
+- **LZ4 chunks**: built 2026-11-03 (`lz4.ts`; the chunk map and pruning read them), so the
+  control needs no warning.
+- **Across versions** (probed 2026-10-30 with `mc-probe.mjs`: the last release of each line
+  1.2.5-1.19 and every 1.20.x, 1.21.x and 26.x; a key's first version is the first probed that
+  wrote it, so up to 1.14 it can be older, and RCON/query keys are written only when used):
+  new in 26.2 `chat-spam-threshold-seconds` and `command-spam-threshold-seconds` (default 10,
+  own controls in Players); `management-server-allowed-origins` from 1.21.11. Gone:
+  `texture-pack` (to 1.6.4, then `resource-pack`), `resource-pack-hash` (1.8, then
+  `resource-pack-sha1`), `announce-player-achievements` (to 1.11.2), `max-build-height` (to
+  1.16.5), `snooper-enabled` (to 1.17.1), `spawn-animals` and `spawn-npcs` (to 1.21.1),
+  `pvp`, `allow-nether`, `spawn-monsters`, `enable-command-block` (to 1.21.8; game rules from
+  1.21.9, which ignores the keys even for a world made on 1.21.8). 1.17.1 leaves the seed,
+  level type, generator settings and structures out of a new file but reads them. Each
+  control gets `since` and an `until`, and a renamed key maps to its name per version
+  (`mc-probe.mjs <version> --keep <dir>` repeats a probe).
+
 ### Joining over Tailscale (1.2, 2026-11-03)
 
 Agreed 2026-11-02. MineShell itself could be served over Tailscale, its servers had no

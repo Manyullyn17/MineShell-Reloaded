@@ -1125,7 +1125,7 @@
 		tab="advanced"
 		title="Other keys"
 		editable={may('settings.edit')}
-		description="Keys MineShell has no control for, usually added by a mod or the pack. Kept exactly as written."
+		description="Settings MineShell has no control for: newer or niche Minecraft settings, and ones a mod or the pack adds. Kept exactly as written."
 		dirty={dirtyIds.has('more')}
 	>
 		<form method="POST" action="?/properties" class="rows" bind:this={forms.more} onsubmit={onSectionSubmit}>
@@ -1142,6 +1142,7 @@
 				<div class="field">
 					<label for={`extra-${extra.key}`} class="mono">{extra.key}</label>
 					<input id={`extra-${extra.key}`} name={`extra:${extra.key}`} type="text" class="mono" bind:value={fieldValues[`extra:${extra.key}`]} />
+					<p class="hint">{#if !extra.vanilla}<span class="tag">mod</span>{/if} {extra.note}</p>
 				</div>
 			{:else}
 				{#if !unplaced.length}<p class="faint small">None: every key in server.properties has a control above.</p>{/if}

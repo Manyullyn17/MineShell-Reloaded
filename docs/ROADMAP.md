@@ -34,11 +34,9 @@ size, not a fixed list; entries move and get added along the way):
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
   upload), looking again when a CurseForge key is set, game mode and teleport for online
-  players, game rules, world spawn and border (the four 1.21.9 settings back in Settings). To
-  build - server.properties coverage
-  (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
-  gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
-  the Remote access follow-ups 1-3 (Undecided).
+  players, game rules, world spawn and border (the four 1.21.9 settings back in Settings),
+  server.properties coverage (LZ4 chunks included). To build - the Remote access follow-ups
+  1-3 (Undecided).
 - **1.3**: the mod config editor; the rest of step 5 (server list preview, server resource
   pack, maintenance mode).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
@@ -236,42 +234,6 @@ the SHA-1 (and again when the URL changes), and the prompt as text. To check: wh
 each Minecraft version reads (the prompt and `require-resource-pack` came in 1.17), and
 whether MineShell should also host an uploaded pack itself, which needs an address players
 can reach (playit.gg does not carry HTTP).
-
-#### server.properties coverage
-
-Agreed 2026-10-30 (user's call: after 1.0). A vanilla 1.21.11 server (Irithyll) has 37 keys
-without a control, all Minecraft's own, so "Other keys" saying they are "usually added by a mod
-or the pack" is wrong: it becomes "settings MineShell has no control for: newer or niche
-Minecraft settings, and ones a mod or the pack adds".
-
-- **Own controls**: built 2026-11-03 (Settings: Connection, World, Joining, Ticking and disk;
-  `query.port` stays tied to the game port, explained under "Enable query protocol"; the
-  existing controls got notes too), and `max-world-size` beside the border on the World tab.
-- **Elsewhere**: the `resource-pack*` keys are "Server resource pack" above. The
-  `management-server-*` keys and `status-heartbeat-interval` (Minecraft's management API,
-  already under "Loader, modpack and Java") get notes on what each does and why it is
-  dangerous; controls only if MineShell ever uses the API itself.
-- **Notes only**, shown beside the key in Other keys from a table of known vanilla keys (a key
-  not in it is then plainly a mod's): `broadcast-console-to-ops`, `broadcast-rcon-to-ops`
-  (MineShell turns it on, so console commands echo to ops in chat), `enable-code-of-conduct`
-  (its text in `codeofconduct/`), `bug-report-link`, `function-permission-level`,
-  `max-chained-neighbor-updates`, `use-native-transport`, `prevent-proxy-connections`,
-  `enable-jmx-monitoring`, `text-filtering-config` and `text-filtering-version` (Realms only).
-- **LZ4 chunks**: built 2026-11-03 (`lz4.ts`; the chunk map and pruning read them), so the
-  control needs no warning.
-- **Across versions** (probed 2026-10-30 with `mc-probe.mjs`: the last release of each line
-  1.2.5-1.19 and every 1.20.x, 1.21.x and 26.x; a key's first version is the first probed that
-  wrote it, so up to 1.14 it can be older, and RCON/query keys are written only when used):
-  new in 26.2 `chat-spam-threshold-seconds` and `command-spam-threshold-seconds` (default 10,
-  own controls in Players); `management-server-allowed-origins` from 1.21.11. Gone:
-  `texture-pack` (to 1.6.4, then `resource-pack`), `resource-pack-hash` (1.8, then
-  `resource-pack-sha1`), `announce-player-achievements` (to 1.11.2), `max-build-height` (to
-  1.16.5), `snooper-enabled` (to 1.17.1), `spawn-animals` and `spawn-npcs` (to 1.21.1),
-  `pvp`, `allow-nether`, `spawn-monsters`, `enable-command-block` (to 1.21.8; game rules from
-  1.21.9, which ignores the keys even for a world made on 1.21.8). 1.17.1 leaves the seed,
-  level type, generator settings and structures out of a new file but reads them. Each
-  control gets `since` and an `until`, and a renamed key maps to its name per version
-  (`mc-probe.mjs <version> --keep <dir>` repeats a probe).
 
 #### Maintenance mode
 

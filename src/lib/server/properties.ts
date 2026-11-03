@@ -224,6 +224,57 @@ export const PROPERTY_SCHEMA: PropertyField[] = [
 
 const SCHEMA_KEYS = new Set(PROPERTY_SCHEMA.map((f) => f.key));
 
+const MANAGEMENT_DANGER = 'a program holding the secret can make players operators, ban, and change the whitelist and settings. Only for a tool you run yourself, never on an address others reach.';
+
+/**
+ * Minecraft's own keys that have no control, each with what it does, for Other keys: there a
+ * key without a note is then plainly a mod's or the pack's. Every key a vanilla server read
+ * from 1.2.5 to 26.3 is either here, in the schema or managed (the server jars' strings and
+ * mc-probe.mjs, 2026-11-03).
+ */
+const KEY_NOTES: Record<string, string> = {
+	'max-world-size': 'How far from 0,0 the world reaches, in blocks: set beside the border under World > Game rules.',
+	'broadcast-console-to-ops': 'Operators see commands typed into the server console in their chat.',
+	'broadcast-rcon-to-ops': "The same for commands sent over RCON. MineShell's new servers have it on, so operators see what is sent from MineShell's console.",
+	'enable-code-of-conduct': "Shows joining players the code of conduct in the server's codeofconduct folder, one text file per language. Minecraft 1.21.9 and newer.",
+	'bug-report-link': "A page players are sent to from the game's bug report button.",
+	'function-permission-level': 'The permission level data pack functions run with (2 by default).',
+	'max-chained-neighbor-updates': 'Stops a chain of block updates after this many, so a huge redstone build cannot freeze the server. Negative is no limit.',
+	'use-native-transport': "Linux's faster network code (epoll) where the server can use it. Best left on.",
+	'prevent-proxy-connections': 'Kicks players whose connection comes from another address than the one they signed in to Mojang from (a VPN or proxy).',
+	'enable-jmx-monitoring': "Shows the server's tick times to Java monitoring tools (JMX), which also need JVM flags.",
+	'text-filtering-config': "Realms' chat filtering; nothing on a server of your own.",
+	'text-filtering-version': "Realms' chat filtering; nothing on a server of your own.",
+	'management-server-enabled': `Minecraft's management API (1.21.9 and newer): ${MANAGEMENT_DANGER}`,
+	'management-server-secret': `The management API's key: ${MANAGEMENT_DANGER}`,
+	'management-server-host': 'The address the management API listens on; localhost keeps it to this machine.',
+	'management-server-port': "The management API's port.",
+	'management-server-allowed-origins': 'Web pages that may use the management API from a browser.',
+	'management-server-tls-enabled': "Encrypts the management API's connections, with the keystore below.",
+	'management-server-tls-keystore': "The certificate store for the management API's encrypted connections.",
+	'management-server-tls-keystore-password': "The certificate store's password.",
+	'status-heartbeat-interval': 'How often the management API sends its clients the server status, in seconds (0 never).',
+	'resource-pack': 'The address of a resource pack players are offered when they join.',
+	'resource-pack-sha1': "That pack's SHA-1, so players' games can tell when it changed.",
+	'resource-pack-hash': "That pack's SHA-1, as Minecraft 1.8 called it.",
+	'resource-pack-id': "That pack's id, so players' games keep it apart from other servers' packs.",
+	'resource-pack-prompt': 'The text players are shown when asked to take that pack.',
+	'require-resource-pack': 'On, players who turn the pack down are disconnected.',
+	'texture-pack': 'A texture pack players are offered when they join. Minecraft 1.6.4 and older.',
+	'previews-chat': 'Chat preview: the server shows how a message will look while it is typed. Minecraft 1.19 to 1.19.2.',
+	'spawn-animals': 'Whether animals spawn. Minecraft 1.21.1 and older.',
+	'spawn-npcs': 'Whether villagers spawn. Minecraft 1.21.1 and older.',
+	'max-build-height': 'The highest players can build. Minecraft 1.16.5 and older.',
+	'snooper-enabled': 'Sends Mojang anonymous usage data. Minecraft 1.17.1 and older.',
+	'announce-player-achievements': 'Announces achievements in chat. Minecraft 1.11.2 and older; a game rule after.'
+};
+
+/** What a key under Other keys does: Minecraft's own have a note, others are a mod's or the pack's. */
+export function propertyNote(key: string): { note: string; vanilla: boolean } {
+	const note = KEY_NOTES[key] ?? (key.startsWith('management-server-') ? "Part of Minecraft's management API (1.21.9 and newer)." : undefined);
+	return note ? { note, vanilla: true } : { note: "Not one of Minecraft's own keys: a mod's or the pack's.", vanilla: false };
+}
+
 /**
  * The fields a server on this Minecraft version reads (an unknown version gets them all).
  * 1.21.9 made `pvp`, `allow-nether`, `spawn-monsters` and `enable-command-block` game rules

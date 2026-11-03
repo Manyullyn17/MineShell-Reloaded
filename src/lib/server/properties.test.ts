@@ -13,6 +13,7 @@ import {
 	parseProperties,
 	PROPERTY_SCHEMA,
 	patchProperties,
+	propertyNote,
 	readProperties,
 	serialiseProperties,
 	usesNamespacedLevelType,
@@ -170,5 +171,32 @@ describe('difficulty and game mode', () => {
 		await fs.writeFile(file, 'difficulty=2\nmotd=Hi\n');
 		await matchPropertiesToVersion(dir, '1.12.2');
 		expect(await fs.readFile(file, 'utf8')).toBe('difficulty=2\nmotd=Hi\n');
+	});
+});
+
+describe('keys without a control', () => {
+	// Every key in the files vanilla 1.21.11 and 26.3 wrote, and the older ones the server jars read back to 1.2.5.
+	const NEWEST = `accepts-transfers allow-flight broadcast-console-to-ops broadcast-rcon-to-ops bug-report-link chat-spam-threshold-seconds
+		command-spam-threshold-seconds difficulty enable-code-of-conduct enable-jmx-monitoring enable-query enable-rcon enable-status enforce-secure-profile
+		enforce-whitelist entity-broadcast-range-percentage force-gamemode function-permission-level gamemode generate-structures generator-settings hardcore
+		hide-online-players initial-disabled-packs initial-enabled-packs level-name level-seed level-type log-ips management-server-allowed-origins
+		management-server-enabled management-server-host management-server-port management-server-secret management-server-tls-enabled
+		management-server-tls-keystore management-server-tls-keystore-password max-chained-neighbor-updates max-players max-tick-time max-world-size motd
+		network-compression-threshold online-mode op-permission-level pause-when-empty-seconds player-idle-timeout prevent-proxy-connections query.port
+		rate-limit rcon.password rcon.port region-file-compression require-resource-pack resource-pack resource-pack-id resource-pack-prompt
+		resource-pack-sha1 server-ip server-port simulation-distance spawn-protection status-heartbeat-interval sync-chunk-writes text-filtering-config
+		text-filtering-version use-native-transport view-distance white-list`;
+	const OLDER = `allow-nether announce-player-achievements enable-command-block max-build-height previews-chat pvp resource-pack-hash snooper-enabled
+		spawn-animals spawn-monsters spawn-npcs texture-pack`;
+	// Kept by MineShell (settings page MANAGED_KEYS), with controls of their own elsewhere.
+	const MANAGED = new Set(['rcon.password', 'rcon.port', 'enable-rcon', 'server-port', 'query.port']);
+
+	it("are all Minecraft's own with a note, so a key without one is a mod's", () => {
+		const keys = `${NEWEST} ${OLDER}`.split(/\s+/).filter(Boolean);
+		const withControl = new Set(PROPERTY_SCHEMA.map((f) => f.key));
+		const unexplained = keys.filter((k) => !withControl.has(k) && !MANAGED.has(k) && !propertyNote(k).vanilla);
+		expect(unexplained).toEqual([]);
+		expect(propertyNote('management-server-secret').note).toMatch(/operators/);
+		expect(propertyNote('some-mod-setting')).toEqual({ note: expect.stringMatching(/a mod's or the pack's/), vanilla: false });
 	});
 });

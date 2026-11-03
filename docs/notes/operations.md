@@ -79,7 +79,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `enable-command-block` are ignored, also for a world made on 1.21.8 (no migration): game
   rules, renamed again in 1.21.11 (`movedGameRules`), which Settings' Rules section sets in the
   active world since 2026-11-03 (`worldrules.ts`). Which keys each version writes, 1.2.5
-  to 26.3: ROADMAP, "server.properties coverage".
+  to 26.3: ROADMAP-ARCHIVE, "server.properties coverage".
 - A field's `since` is the first release whose server jar has the key as a string (2026-11-03:
   every release of 1.16, 1.18 and 1.19 downloaded to pin those down, the probe's last-of-line
   versions for the rest). Quicker than booting each: unzip the jar (the inner
@@ -92,6 +92,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   showed a switch whose Minecraft default is on as off, and saving its section wrote `false`
   (`enable-status=false` hides the server from the list). Fields carry `default`, filled in
   for display by `withFieldDefaults`; the raw editor still shows the file as it is.
+- Other keys marks a key as a mod's when it is not in `KEY_NOTES` (properties.ts), so a key a
+  new Minecraft adds shows as a mod's until it gets a control or a note there;
+  `properties.test.ts` ("keys without a control") lists every vanilla key to date, the place
+  to add new ones (from a probe's server.properties).
 - `query.port` is MineShell's: always the game port's number (query is UDP, so it does not
   clash), set with it by `syncPortsToProperties`, and kept out of Other keys. Letting it be set
   apart would mean the port bookkeeping (allocation, clashes, Ports) knowing about it.
