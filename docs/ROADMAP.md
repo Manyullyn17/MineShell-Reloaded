@@ -35,8 +35,7 @@ size, not a fixed list; entries move and get added along the way):
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
   upload), looking again when a CurseForge key is set, game mode and teleport for online
   players, game rules, world spawn and border (the four 1.21.9 settings back in Settings),
-  server.properties coverage (LZ4 chunks included). To build - the Remote access follow-ups
-  1-3 (Undecided).
+  server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
 - **1.3**: the mod config editor; the rest of step 5 (server list preview, server resource
   pack, maintenance mode).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
@@ -545,15 +544,9 @@ is open, and each needs a test setup.
 
 Suggested, not yet confirmed or rejected:
 
-- **Remote access follow-ups** (suggested 2026-11-01, after the security pass; the first is
-  the one worth doing): (1) a warning in Remote access and `doctor` when the machine has a
-  global IPv6 address while MineShell listens on every address: IPv6 often needs no port
-  forwarding, so port 3000 can be reachable from the internet with nothing forwarded;
-  (2) and (3) done 2026-11-03: the cookie is `Secure` behind `tailscale serve` by the browser's
-  https Origin, and sign-ins through it count per tailnet device (`signInAddress`; Tailscale
-  1.104 sends `X-Forwarded-For`, `-Proto`, `-Host` and `Tailscale-User-*`, seen with a header
-  echo on a spare serve port). For public setups only: a notification on a sign-in from an
-  unknown address, two-factor sign-in.
+- **For public setups only** (suggested 2026-11-01, after the security pass): a notification
+  on a sign-in from an unknown address, two-factor sign-in. (The other Remote access
+  follow-ups were built: ROADMAP-ARCHIVE, "Remote access follow-ups".)
 
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`

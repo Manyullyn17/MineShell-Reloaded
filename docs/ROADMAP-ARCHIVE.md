@@ -1389,6 +1389,22 @@ its folder, a same-mod folder change is a warning of its own (the build told fro
 name, packs-and-mods.md), and a ticked option copies the user's packs into the new folder
 after the change commits. Copied, not moved, so nothing can be lost.
 
+### Remote access follow-ups (1.2, 2026-11-03)
+
+Suggested 2026-11-01 after the security pass, agreed 2026-11-03. Three things to check:
+- IPv6 (was: a warning when MineShell listens on every address while the machine has a
+  public IPv6 address). Found: MineShell is IPv4 only as installed (`HOST=0.0.0.0` in Node),
+  but Minecraft's Java listens on IPv6 too, RCON included. Built (the user's choice of a
+  warning with a fix over an IPv4-only switch, which would also stop players joining over
+  IPv6): Remote access and `doctor` name RCON ports (and MineShell's, with `HOST=::`) that
+  answer on a public IPv6 address, with a ufw rule keeping RCON to the machine; quieter when
+  ufw is on and denies by default, read from its world-readable config (`ipv6exposure.ts`).
+- The session cookie behind `tailscale serve`: already `Secure`, by the browser's https Origin.
+- The sign-in throttle behind it: every request came from 127.0.0.1, so one device's ten wrong
+  passwords locked out all; now counted per tailnet device from Tailscale's X-Forwarded-For,
+  trusted only from this machine with Tailscale's own headers (`signInAddress`). Tailscale
+  1.104's headers seen with an echo server on a spare serve port.
+
 ### server.properties coverage (1.2, 2026-11-03)
 
 Agreed 2026-10-30. A vanilla 1.21.11 server had 37 keys without a control, all Minecraft's

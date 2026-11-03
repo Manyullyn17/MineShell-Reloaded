@@ -236,7 +236,7 @@ For installation options, directory layout, and uninstall instructions, see [Dep
 
 ### Reaching it from outside your network
 
-MineShell is designed for your local network. To use it from elsewhere, connect through [Tailscale](https://tailscale.com): MineShell settings > System serves it at an https address only your own devices reach, in one click. A public address is possible but not recommended; `scripts/caddy.sh <domain>` puts it behind Caddy with an automatic certificate. Never forward port 3000 itself through your router: it is plain http, passwords included. See [Remote access](docs/DEPLOYMENT.md#remote-access).
+MineShell is designed for your local network. To use it from elsewhere, connect through [Tailscale](https://tailscale.com): MineShell settings > System serves it at an https address only your own devices reach, in one click. A public address is possible but not recommended; `scripts/caddy.sh <domain>` puts it behind Caddy with an automatic certificate. Never forward port 3000 itself through your router: it is plain http, passwords included. When the machine has a public IPv6 address, MineShell warns if a server's RCON port answers on it, since IPv6 needs no forwarding. See [Remote access](docs/DEPLOYMENT.md#remote-access).
 
 ## Development
 
@@ -256,7 +256,7 @@ See [`.env.example`](.env.example) for the complete list.
 | `MINESHELL_UNIT_PREFIX` | `minecraft` in development; `mineshell` in the installer | Prefix for systemd instance units. |
 | `CURSEFORGE_API_KEY` | Unset | Optional CurseForge API key for improved metadata access. Can also be configured in MineShell. |
 | `PORT`, `HOST` | `3000`, `0.0.0.0` | Where the web interface listens. `HOST=127.0.0.1` answers only on this machine (behind a reverse proxy or Tailscale serve). |
-| `ADDRESS_HEADER`, `XFF_DEPTH` | Unset, `1` | Behind a reverse proxy: read the client's address from `X-Forwarded-For`, so the login throttle works per client. See [Remote access](docs/DEPLOYMENT.md#remote-access). |
+| `ADDRESS_HEADER`, `XFF_DEPTH` | Unset, `1` | Behind a reverse proxy: read the client's address from `X-Forwarded-For`, so the login throttle works per client (not needed for Tailscale serve, which MineShell recognises). See [Remote access](docs/DEPLOYMENT.md#remote-access). |
 | `BODY_SIZE_LIMIT` | `Infinity` in the example configuration and installer settings | Controls request body size. Production rejects uploads larger than 512 KB when this is unset. |
 
 ## Documentation

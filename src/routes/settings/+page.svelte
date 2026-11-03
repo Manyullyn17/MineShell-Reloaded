@@ -61,6 +61,9 @@
 
 	const tailscaleInfo = streamed(() => data.tailscale);
 	const tailscale = $derived(tailscaleInfo.ready ? tailscaleInfo.value : null);
+	const ipv6Info = streamed(() => data.ipv6);
+	const ipv6 = $derived(ipv6Info.ready ? ipv6Info.value : null);
+	const PORT_NAMES = { panel: 'MineShell', rcon: 'RCON', game: 'Minecraft', query: 'Query', voice: 'Voice chat', map: 'Map mod' } as const;
 	/** How this page came, read in the browser (behind Tailscale, MineShell sees only http). */
 	let connection = $state<Connection | null>(null);
 	$effect(() => {
@@ -1353,6 +1356,37 @@
 		<div class="notice success"><p>This page came over https.</p></div>
 	{:else if connection === 'plain'}
 		<div class="notice warning"><p>This page came over plain http across the network.</p></div>
+	{/if}
+	{#if ipv6}
+		<div class="notice {ipv6.ufwDenies ? '' : 'warning'}">
+			<p>
+				This machine has a public IPv6 address (<span class="mono">{ipv6.address}</span>), and these ports answer on it:
+				{#each ipv6.ports as p, i (`${p.protocol}:${p.port}`)}{i ? '; ' : ''}{p.name ? `${p.name}'s ` : ''}{PORT_NAMES[p.kind]}
+					<span class="mono">{p.port}</span>{p.protocol === 'udp' ? ' (UDP)' : ''}{/each}. IPv6 needs no port forwarding, so
+				they can be reached from the internet unless a firewall turns connections from outside away.
+				{#if ipv6.ufwDenies}
+					This machine's ufw does that for every port no rule lets in; <code class="command">sudo ufw status</code> shows
+					whether one lets in {ipv6.ports
+						.filter((p) => p.kind === 'rcon' || p.kind === 'panel')
+						.map((p) => p.port)
+						.join(' or ')}.
+				{:else}
+					Most home routers do, but MineShell cannot see yours.
+				{/if}
+			</p>
+			{#if ipv6.rconCommand && !ipv6.ufwDenies}
+				<p>
+					RCON is the server's console, and only MineShell uses it, from this machine. With ufw, this keeps it there
+					(MineShell's console keeps working): <code class="command">{ipv6.rconCommand}</code>
+				</p>
+			{/if}
+			{#if ipv6.ports.some((p) => p.kind === 'panel')}
+				<p>
+					MineShell itself listens on every IPv6 address (<code>HOST=::</code>): <code>HOST=0.0.0.0</code> in its
+					settings file keeps it to IPv4, where your router only forwards what you set up.
+				</p>
+			{/if}
+		</div>
 	{/if}
 	<!-- One switch: it saves when flipped, no save bar. -->
 	<form method="POST" action="?/plainHttpWarning" use:enhance={() => async ({ update }) => update({ reset: false })}>

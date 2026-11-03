@@ -109,6 +109,7 @@ import { globalTarget, quietHoursFrom, removeGlobalTarget, saveGlobalTarget, sen
 import { addDestination, getServerBackup, listDestinations, removeDestination, sameDiskAsServers, setDestinationCompress, storeFor } from '#lib/server/backups.js';
 import { NOTIFICATION_KINDS, type NotificationKind, type TargetType } from '#lib/shared/notifications.js';
 import { serveOverTailscale, stopServingOverTailscale, tailscaleState } from '#lib/server/tailscale.js';
+import { ipv6Exposure, rconFirewallCommand } from '#lib/server/ipv6exposure.js';
 
 /**
  * The agent, and each server's tunnel next to the ones made on playit's
@@ -202,6 +203,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		ports: url.searchParams.get('tab') === 'ports' ? portOverview() : null,
 		// Streamed, and only on the System tab (any tab name not another's): it runs `tailscale` twice.
 		tailscale: OTHER_TABS.includes(url.searchParams.get('tab') ?? '') ? null : tailscaleState(),
+		// Streamed, on the System tab too: it reads every server's settings for its ports.
+		ipv6: OTHER_TABS.includes(url.searchParams.get('tab') ?? '') ? null : ipv6Exposure().then((e) => e && { ...e, rconCommand: rconFirewallCommand(e.ports) }),
 		plainHttpWarning: plainHttpWarning(),
 		/** For a public address: the script that sets up Caddy, and the settings file it changes. */
 		caddy: {

@@ -413,6 +413,16 @@ of preference:
 
 Never forward port 3000 itself through your router: that is plain http, passwords included.
 
+**IPv6.** Over IPv6 the machine often has a public address of its own, and nothing needs
+forwarding: a port listening on every address is reachable from the internet unless the
+router's IPv6 firewall (on by default on most) or one on the machine turns connections away.
+MineShell itself is IPv4 only as installed (`HOST=0.0.0.0`), but Minecraft's Java listens on
+IPv6 too, RCON included. "Remote access" and `doctor` say so when the machine has a public
+IPv6 address and RCON (or MineShell) answers on it, and give a ufw rule that keeps RCON to the
+machine; MineShell talks to RCON over 127.0.0.1, which ufw always lets through. With ufw on
+and denying incoming connections (its default), `sudo ufw status` shows whether a rule lets
+RCON in.
+
 ### Tailscale
 
 1. Install Tailscale on the MineShell machine and on each device you want to use it from

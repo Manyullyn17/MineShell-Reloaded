@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
  * Checks the things that silently break a self-hosted setup: systemd reachability,
- * lingering, journal access, Java, whether the data directory is writable, and whether
- * systemd can sandbox the servers.
+ * lingering, journal access, Java, whether the data directory is writable, whether
+ * systemd can sandbox the servers, and whether RCON or MineShell listen on a public IPv6
+ * address.
  *
  *   npm run doctor
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { homedir } from 'node:os';
+import { homedir, networkInterfaces } from 'node:os';
 import fs from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -80,6 +81,39 @@ async function tryRun(cmd, args) {
 	}
 }
 
+/**
+ * RCON ports (and MineShell's own) listening on a public IPv6 address: IPv6 needs no port
+ * forwarding, so they are reachable from the internet unless a firewall turns connections
+ * away. The app's copy is src/lib/server/ipv6exposure.ts (see there for why); this one finds
+ * RCON ports in each server's server.properties, as the database is not read here.
+ */
+async function ipv6Exposure() {
+	const address = Object.values(networkInterfaces())
+		.flat()
+		.find((a) => a && a.family === 'IPv6' && !a.internal && /^[23][0-9a-f]{0,3}:/i.test(a.address))?.address;
+	if (!address) return null;
+	const open = new Set();
+	for (const line of (await fs.readFile('/proc/net/tcp6', 'utf8').catch(() => '')).split('\n').slice(1)) {
+		const f = line.trim().split(/\s+/);
+		const [local, port] = (f[1] ?? '').split(':');
+		if (f[3] === '0A' && /^0{32}$/.test(local)) open.add(parseInt(port, 16));
+	}
+	const exposed = [];
+	const panel = Number(process.env.PORT) || 3000;
+	if (open.has(panel)) exposed.push({ what: `MineShell (${panel})`, port: panel, rcon: false });
+	for (const id of await fs.readdir(path.join(DATA_DIR, 'instances')).catch(() => [])) {
+		const text = await fs.readFile(path.join(DATA_DIR, 'instances', id, 'server.properties'), 'utf8').catch(() => '');
+		const port = Number(text.match(/^rcon\.port\s*[=:]\s*(\d+)/m)?.[1]);
+		if (/^enable-rcon\s*[=:]\s*true/m.test(text) && open.has(port)) exposed.push({ what: `${id}'s RCON (${port})`, port, rcon: true });
+	}
+	if (!exposed.length) return null;
+	const conf = await fs.readFile('/etc/ufw/ufw.conf', 'utf8').catch(() => '');
+	const defaults = await fs.readFile('/etc/default/ufw', 'utf8').catch(() => '');
+	const ufwDenies =
+		/^ENABLED=yes/m.test(conf) && /^IPV6=yes/m.test(defaults) && /^DEFAULT_INPUT_POLICY="?(DROP|REJECT)/m.test(defaults);
+	return { address, exposed, ufwDenies };
+}
+
 async function main() {
 	// package.json's engines.node, e.g. ">=22.19". A distro's own Node is often older
 	// (Ubuntu 24.04 ships 18), and the service unit runs whatever /usr/bin/node is.
@@ -130,6 +164,22 @@ async function main() {
 			? 'AppArmor keeps systemd from making user namespaces. See DEPLOYMENT.md, "Sandboxing the servers", for the fix (needs sudo once).'
 			: 'systemd ignores PrivateTmp= in user units here (no user namespaces?). See DEPLOYMENT.md, "Sandboxing the servers".';
 		record(sandboxed, 'systemd can sandbox servers', sandboxed ? '' : fix, true);
+	}
+
+	const ipv6 = await ipv6Exposure();
+	if (ipv6) {
+		const names = ipv6.exposed.map((e) => e.what).join(', ');
+		const rcon = ipv6.exposed.filter((e) => e.rcon).map((e) => e.port);
+		const fix = ipv6.ufwDenies
+			? `ufw turns away connections no rule lets in; check with: sudo ufw status`
+			: [
+					'Unless your router or a firewall turns away connections from outside, they are reachable from the internet.',
+					rcon.length ? `With ufw, this keeps RCON to this machine: sudo ufw deny proto tcp to any port ${rcon.join(',')}` : '',
+					ipv6.exposed.some((e) => !e.rcon) ? 'HOST=0.0.0.0 in the settings file keeps MineShell to IPv4.' : ''
+				]
+					.filter(Boolean)
+					.join('\n        ');
+		record(ipv6.ufwDenies, 'Public IPv6', `${names} ${ipv6.exposed.length === 1 ? 'listens' : 'listen'} on ${ipv6.address}.\n        ${fix}`, true);
 	}
 
 	console.log('');
