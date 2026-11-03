@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { cpus } from 'node:os';
+import { activeWorldRuleValues, changeWorldRules } from '#lib/server/worldrules.js';
+import { serverWorldName } from '#lib/server/packworld.js';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
 import { creatorId, requireGlobalAdmin } from '#lib/server/access.js';
@@ -321,6 +323,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			extras: parsed.extraKeys.filter((k) => !MANAGED_KEYS.has(k) && Object.hasOwn(shownProperties, k)).map((key) => ({ key, value: parsed.values[key] })),
 			schema: fieldsForVersion(editableProperties(), instance.minecraftVersion).map((field) => fieldForVersion(field, instance.minecraftVersion)),
 			gameRules: movedGameRules(instance.minecraftVersion),
+			/** Their values in the active world, by the key it stores (null before its first start). */
+			gameRuleValues: movedGameRules(instance.minecraftVersion) ? await activeWorldRuleValues(instance, movedGameRules(instance.minecraftVersion)!) : null,
 			raw: serialiseProperties(shownProperties, { unicode: true })
 		},
 		bootNote: bootStartNote(),
@@ -757,6 +761,22 @@ export const actions: Actions = {
 			.where(eq(serverInstances.id, instance.id))
 			.run();
 		return { ok: true, message: updates.updateCheck ? 'Update checks saved; the next one runs within a minute.' : 'Update checks turned off.' };
+	},
+
+	/** The four settings 1.21.9 made game rules (movedGameRules), in the active world (worldrules.ts). */
+	gameRules: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const names = movedGameRules(instance.minecraftVersion);
+		const current = names ? await activeWorldRuleValues(instance, names) : null;
+		if (!current) return fail(400, { ok: false, message: 'The world keeps no game rules yet: start the server once.' });
+		const rules = Object.fromEntries(Object.keys(current).filter((key) => form.has(`present:${key}`)).map((key) => [key, form.get(key) === 'on']));
+		try {
+			return { ok: true, message: await changeWorldRules(instance, await serverWorldName(instance.path), { rules }) };
+		} catch (err) {
+			if (err instanceof InstanceError) return fail(400, { ok: false, message: err.message });
+			throw err;
+		}
 	},
 
 	checkUpdates: async ({ params }) => {

@@ -153,6 +153,8 @@
 		return checks;
 	}
 	const snapshotServerValues = () => ({ ...data.snapshotSettings.values });
+	/** The four settings 1.21.9 made game rules, as the active world has them. */
+	const ruleServerValues = (): Record<string, boolean> => ({ ...(data.properties.gameRuleValues ?? {}) });
 
 	/** Copies what changed between two saved states into the edited one. */
 	function syncChanged<T extends Record<string, unknown>>(edited: T, before: T, after: T) {
@@ -176,12 +178,15 @@
 	// svelte-ignore state_referenced_locally
 	let snapshotValues = $state(snapshotServerValues());
 	// svelte-ignore state_referenced_locally
+	let ruleChecks = $state(ruleServerValues());
+	// svelte-ignore state_referenced_locally
 	let rawValue = $state(data.properties.raw);
 	let saved = {
 		sv: untrack(settingsValues),
 		values: untrack(propertyValues),
 		checks: untrack(propertyChecks),
 		snapshot: untrack(snapshotServerValues),
+		rules: untrack(ruleServerValues),
 		raw: untrack(() => data.properties.raw)
 	};
 	$effect(() => {
@@ -190,6 +195,7 @@
 			values: propertyValues(),
 			checks: propertyChecks(),
 			snapshot: snapshotServerValues(),
+			rules: ruleServerValues(),
 			raw: data.properties.raw
 		};
 		untrack(() => {
@@ -197,6 +203,7 @@
 			syncChanged(fieldValues, saved.values, next.values);
 			syncChanged(fieldChecks, saved.checks, next.checks);
 			syncChanged(snapshotValues, saved.snapshot, next.snapshot);
+			syncChanged(ruleChecks, saved.rules, next.rules);
 			if (saved.raw !== next.raw) rawValue = next.raw;
 		});
 		saved = next;
@@ -263,6 +270,8 @@
 		{ id: 'updates', tab: 'general', label: 'Update checks', restart: false, dirty: () => svChanged('updateCheck', 'updateCheckHours', 'updateChannel', 'modUpdateCheck') },
 		{ id: 'motd', tab: 'general', label: 'Server description', restart: true, dirty: () => PROPERTY_SECTIONS.motd.some(changedProperty) },
 		{ id: 'rules', tab: 'gameplay', label: 'Rules', restart: true, dirty: () => PROPERTY_SECTIONS.rules.some(changedProperty) },
+		// Game rules from 1.21.9: over RCON while running, so no restart.
+		{ id: 'gameRules', tab: 'gameplay', label: 'Game rules', restart: false, dirty: () => Object.keys(ruleChecks).some((k) => ruleChecks[k] !== data.properties.gameRuleValues?.[k]) },
 		{ id: 'world', tab: 'gameplay', label: 'World', restart: true, dirty: () => PROPERTY_SECTIONS.world.some(changedProperty) },
 		{ id: 'joining', tab: 'players', label: 'Joining', restart: true, dirty: () => PROPERTY_SECTIONS.joining.some(changedProperty) },
 		{ id: 'permissions', tab: 'players', label: 'Permissions', restart: true, dirty: () => PROPERTY_SECTIONS.permissions.some(changedProperty) },
@@ -401,6 +410,7 @@
 		fieldValues = propertyValues();
 		fieldChecks = propertyChecks();
 		snapshotValues = snapshotServerValues();
+		ruleChecks = ruleServerValues();
 		rotateRcon = false;
 		presetToApply = '';
 		message = null;
@@ -676,19 +686,39 @@
 	<!-- =========================================================== Gameplay -->
 
 	{#snippet gameRulesNote()}
-		{@const [pvp, monsters, nether, commandBlocks] = data.properties.gameRules ?? []}
-		PvP, monsters, the Nether and command blocks are game rules from Minecraft 1.21.9: set them in the
-		<a href="/instances/{encodeURIComponent(data.instance.id)}/console">Console</a>, as
-		<code>gamerule {pvp} false</code>, <code>{monsters}</code>, <code>{nether}</code> or <code>{commandBlocks}</code>.
+		PvP, monsters, the Nether and command blocks are game rules of the active world from Minecraft 1.21.9, set here as
+		such (at once on a running server); its other rules are under
+		<a href="/instances/{encodeURIComponent(data.instance.id)}/world?view=rules">World &gt; Game rules</a>.
 	{/snippet}
 	<SettingsSection
 		tab="gameplay"
 		title="Rules"
 		editable={may('settings.edit')}
 		description={data.properties.gameRules ? gameRulesNote : undefined}
-		dirty={dirtyIds.has('rules')}
+		dirty={dirtyIds.has('rules') || dirtyIds.has('gameRules')}
 	>
 		{@render propertyForm('rules')}
+		{#if data.properties.gameRules}
+			{@const labels = ['Player versus player', 'Spawn monsters', 'Allow the Nether', 'Enable command blocks']}
+			{#if data.properties.gameRuleValues}
+				<form method="POST" action="?/gameRules" class="rows" bind:this={forms.gameRules} onsubmit={onSectionSubmit}>
+					{#each data.properties.gameRules as name, i (name)}
+						{@const key = Object.keys(data.properties.gameRuleValues).find((k) => k.replace(/^minecraft:/, '') === name)}
+						{#if key}
+							<div class="field" class:changed={ruleChecks[key] !== data.properties.gameRuleValues[key]}>
+								<input type="hidden" name="present:{key}" value="1" />
+								<div class="check">
+									<input id="rule-{name}" name={key} type="checkbox" class="switch" role="switch" bind:checked={ruleChecks[key]} />
+									<label for="rule-{name}">{labels[i]} <span class="faint small mono">{key}</span></label>
+								</div>
+							</div>
+						{/if}
+					{/each}
+				</form>
+			{:else}
+				<p class="hint">These four are set once the world exists: start the server once.</p>
+			{/if}
+		{/if}
 	</SettingsSection>
 
 	<SettingsSection

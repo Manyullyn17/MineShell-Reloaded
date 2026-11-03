@@ -77,5 +77,6 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   and newer read both and write the name. `choiceValueFor` converts; `start()` rewrites names
   on an old server first. From 1.21.9 `pvp`, `allow-nether`, `spawn-monsters` and
   `enable-command-block` are ignored, also for a world made on 1.21.8 (no migration): game
-  rules, renamed again in 1.21.11 (`movedGameRules`). Which keys each version writes, 1.2.5
+  rules, renamed again in 1.21.11 (`movedGameRules`), which Settings' Rules section sets in the
+  active world since 2026-11-03 (`worldrules.ts`). Which keys each version writes, 1.2.5
   to 26.3: ROADMAP (on `next`), "server.properties coverage".

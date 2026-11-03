@@ -255,5 +255,20 @@ async function viaRcon(instance: ServerInstance, commands: string[]): Promise<vo
 	if (refused >= 0) throw new InstanceError(`The server refused "${commands[refused]}": ${(answers[refused] ?? '').replace(/§./g, '').trim()}`);
 }
 
+/**
+ * The active world's values of these rules (names as movedGameRules gives them, with or
+ * without `minecraft:`), by the key the world stores; null when the world cannot be read
+ * yet (no level.dat before the first start).
+ */
+export async function activeWorldRuleValues(instance: ServerInstance, names: string[]): Promise<Record<string, boolean> | null> {
+	try {
+		const { rules } = await readWorldRules(instance, await serverWorldName(instance.path));
+		const found = names.map((name) => rules.find((r) => r.key.replace(/^minecraft:/, '') === name && typeof r.value === 'boolean'));
+		return Object.fromEntries(found.filter((r) => !!r).map((r) => [r!.key, r!.value as boolean]));
+	} catch {
+		return null;
+	}
+}
+
 /** Whether this Minecraft version keeps a border (1.8 brought it). */
 export const hasBorder = (minecraft: string) => compareVersions(minecraft, '1.8') >= 0;

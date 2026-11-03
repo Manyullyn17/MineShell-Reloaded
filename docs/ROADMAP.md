@@ -34,8 +34,8 @@ size, not a fixed list; entries move and get added along the way):
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
   upload), looking again when a CurseForge key is set, game mode and teleport for online
-  players, game rules, world spawn and border. To build - the four 1.21.9 settings as game
-  rules; server.properties coverage
+  players, game rules, world spawn and border (the four 1.21.9 settings back in Settings). To
+  build - server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
   gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
   the Remote access follow-ups 1-3 (Undecided).
@@ -183,16 +183,11 @@ Files.
 
 ### 4. World
 
-#### The four 1.21.9 settings as game rules
+#### Game rules: what is left
 
-Left from "Game rules, world spawn and border" (built 2026-11-03, ROADMAP-ARCHIVE): from 1.21.9
-PvP, the Nether, monsters and command blocks are game rules only (`pvp`, `spawnMonsters`,
-`allowEnteringNetherUsingPortals`, `commandBlocksEnabled`; from 1.21.11 `spawn_monsters`,
-`allow_entering_nether_using_portals`, `command_blocks_work`): Settings hides their
-server.properties controls there and names the rules (0.33.15). They come back on 1.21.9+ as
-controls in the same places, set as game rules, and the Rules section's console note goes
-(user's call, 2026-10-30). Also open: the spawn picked on the chunk map; on 1.21.9+ the
-management server (Undecided) could list and set rules with types.
+From "Game rules, world spawn and border" (built 2026-11-03 with the four 1.21.9 settings back
+in Settings, ROADMAP-ARCHIVE): the spawn picked on the chunk map; on 1.21.9+ the management
+server (Undecided) could list and set rules with types.
 
 #### Pre-generation before 1.16 (Chunk Pregenerator)
 

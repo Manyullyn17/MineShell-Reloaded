@@ -529,3 +529,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The Data packs tab showed only the world's own packs, not the ones a loader mod reads for every world, and had no upload | `routes/instances/[id]/mods/datapacks.test.ts` |
 | Online players could only be kicked, opped and banned: no game mode or teleport | `flows/player-commands.test.ts` |
 | Game rules, the spawn and the border were only changeable by console command | `flows/world-rules.test.ts` |
+| From 1.21.9 PvP, monsters, the Nether and command blocks had no control in Settings, only a note to type the game rule in the console | `routes/instances/[id]/settings/game-rules.test.ts` |

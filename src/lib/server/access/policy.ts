@@ -335,6 +335,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			restarts: on('settings.edit'),
 			console: on('settings.edit'),
 			properties: on('settings.edit'),
+			gameRules: on('settings.edit'),
 			propertiesRaw: on('settings.edit'),
 			revealRcon: { any: [on('admin'), on('files')] },
 			// Public on the internet through MineShell's playit.gg agent.

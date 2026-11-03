@@ -1342,8 +1342,10 @@ number field, named and described from the vanilla lang text, with the spawn and
 beside them; only what changed is applied, over RCON to the running server's active world,
 else into the world's files in the format its version keeps (worlds.md, "Game rules, spawn
 and border": checked on 1.12.2, 1.21.10, 1.21.11 and 26.3, by booting the written files).
-Left on the roadmap: the four 1.21.9 settings that are game rules now, as controls in
-Settings; picking the spawn on the chunk map.
+The four settings 1.21.9 made game rules (PvP, monsters, the Nether, command blocks) came
+back the same day as switches in Settings' Rules section, set in the active world as game
+rules (user's call, 2026-10-30), its console note gone. Left on the roadmap: picking the
+spawn on the chunk map.
 
 ### Game mode and teleport for online players (1.2, 2026-11-03)
 
