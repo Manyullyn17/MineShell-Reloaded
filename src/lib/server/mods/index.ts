@@ -10,7 +10,7 @@ import { curseforgeModProvider, curseforgeProvider, identifyByFingerprint } from
 import { fingerprintFile } from './fingerprint';
 import type { ModProvider, ProjectVersion, SourceId } from './types';
 import { safeEntry, safeJoin } from '../files';
-import { describeModJar, indexMods } from '../crashdiag';
+import { describeModJar, indexMods, mainDeclaredMod } from '../crashdiag';
 
 export * from './types';
 export { modrinthProvider, curseforgeProvider, curseforgeModProvider, ftbProvider };
@@ -162,7 +162,7 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
 		const record = byFile.get(fileName) ?? byFile.get(baseName);
 		const stat = await fs.stat(path.join(dir, fileName)).catch(() => null);
 		const sizeBytes = stat?.size ?? 0;
-		if (record && PLACEHOLDER_NAME.test(record.name)) record.name = await nameFromJar(record.modId, path.join(dir, fileName), record.name);
+		if (record) Object.assign(record, await identityFromJar(record, path.join(dir, fileName), [fileName, baseName, baseName.replace(/\.jar$/i, '')]));
 		rows.push({
 			id: record?.modId ?? null,
 			name: record?.name ?? baseName.replace(/\.jar$/i, ''),
@@ -222,16 +222,37 @@ export async function listInstanceMods(instance: ServerInstance): Promise<ModRow
  */
 const PLACEHOLDER_NAME = /^project-\d+$/;
 
+/** Jars read for a name or version already: one that declares none is not read again on every list. */
+const readForIdentity = new Set<string>();
+
 /**
- * The name the jar declares (fabric.mod.json, quilt.mod.json, mods.toml, mcmod.info),
- * kept on the mod's row so update lists and notifications have it too; the catalog's
- * placeholder when the jar names nothing usable.
+ * What the jar declares (mainDeclaredMod: fabric.mod.json, quilt.mod.json, mods.toml,
+ * mcmod.info) where the record has nothing better: a name for CurseForge's placeholder or a
+ * manual jar still named after its file, a version for a manual jar without one. Kept on the
+ * records, so update lists and notifications have it too.
  */
-async function nameFromJar(modId: number, file: string, fallback: string): Promise<string> {
-	const declared = (await describeModJar(file).catch(() => null))?.names.find((n) => n.trim() && !/\$\{|@[a-z_]+@/i.test(n));
-	if (!declared) return fallback;
-	db.update(modsTable).set({ name: declared.trim() }).where(eq(modsTable.id, modId)).run();
-	return declared.trim();
+async function identityFromJar(
+	record: { rowId: number; modId: number; source: string; name: string; version: string | null },
+	file: string,
+	fileNames: string[]
+): Promise<{ name: string; version: string | null }> {
+	const manual = record.source === 'manual';
+	const wantsName = PLACEHOLDER_NAME.test(record.name) || (manual && fileNames.includes(record.name));
+	const wantsVersion = manual && record.version === null;
+	const kept = { name: record.name, version: record.version };
+	if ((!wantsName && !wantsVersion) || readForIdentity.has(file)) return kept;
+	readForIdentity.add(file);
+	const jar = await describeModJar(file).catch(() => null);
+	const declared = jar ? mainDeclaredMod(jar, path.basename(file)) : null;
+	if (wantsName && declared?.name) {
+		db.update(modsTable).set({ name: declared.name }).where(eq(modsTable.id, record.modId)).run();
+		kept.name = declared.name;
+	}
+	if (wantsVersion && declared?.version) {
+		db.update(instanceMods).set({ version: declared.version }).where(eq(instanceMods.id, record.rowId)).run();
+		kept.version = declared.version;
+	}
+	return kept;
 }
 
 export type SyncResult = {
@@ -642,13 +663,16 @@ export async function trackManualJar(
 	fileName: string,
 	opts: { fromPack?: boolean; hash?: string | null; name?: string; version?: string | null; projectUrl?: string } = {}
 ): Promise<void> {
-	const modId = upsertMod({ source: 'manual', slug: fileName, name: opts.name ?? fileName.replace(/\.jar$/i, ''), projectUrl: opts.projectUrl });
+	// What the jar declares, when the caller does not know better; else its file name.
+	const jar = await describeModJar(safeJoin(modsDir(instance.path), fileName)).catch(() => null);
+	const declared = jar ? mainDeclaredMod(jar, fileName) : null;
+	const modId = upsertMod({ source: 'manual', slug: fileName, name: opts.name ?? declared?.name ?? fileName.replace(/\.jar$/i, ''), projectUrl: opts.projectUrl });
 	// The same jar recorded earlier without them (by Sync, on another server) gets them too.
 	if (opts.name && opts.projectUrl) db.update(modsTable).set({ name: opts.name, projectUrl: opts.projectUrl }).where(eq(modsTable.id, modId)).run();
 	recordInstanceMod({
 		instanceId: instance.id,
 		modId,
-		version: opts.version ?? null,
+		version: opts.version ?? declared?.version ?? null,
 		versionId: null,
 		filePath: path.join('mods', fileName),
 		hash: opts.hash ?? null,

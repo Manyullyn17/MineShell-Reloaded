@@ -173,6 +173,7 @@ value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispa
 | `analyse-bench.mjs <folder holding region/> [runs]` (`npx tsx`) | Times a prune analysis of one dimension (read only), and the longest the event loop was held meanwhile: what other requests wait. Point it at a copy of a real world; MeatballCraft's overworld (499 regions) took 10.8 s warm |
 | `check-apis.sh [file filter...] [--vitest-option...]` | Every recorded-API test file (or those whose path contains a filter) against the live APIs, recorded into a temporary folder (see "No network") |
 | `curseforge-key.mjs <data dir>` | The CurseForge key saved in that MineShell's Settings, for recording the official API (see "No network") |
+| `jar-metadata-survey.mjs <data dir> [--list]` | What every jar of that MineShell's servers declares, the name and version `mainDeclaredMod` picks, and its catalog name beside it; read only (packs-and-mods.md) |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 | `snapshot-check.mjs <server folder>` | A server's snapshots checked on disk, reading only: each file its `hashes.json` records there with that size and SHA-256, the live world sharing no file with a snapshot, linked files per snapshot and the space all take (each file once). Safe on a real install (about 8 s for three snapshots of a 6 GB world); for checking shared snapshot files after one is deleted |
@@ -520,3 +521,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Litematica, MiniHUD and Tweakeroo showed as "project-1205459" and the like: CurseForge's own placeholder name for a project without one, passed on by the mirror | `flows/mod-names.test.ts` |
 | Mod updates found by the update check or Check now were on the overview but not under Mods > Updates until checked again there, and Check now's answer sat at the top of Settings, out of view | `routes/instances/[id]/mods/updates-tab.test.ts` |
 | An uploaded jar stayed "Other" with no version: Upload recorded it as manual without a lookup, and Sync only identified jars with no record; a CurseForge-only jar was never identified | `flows/mod-identify.test.ts`, `server/mods/curseforge-fingerprint.test.ts` |
+| A jar no catalog knew was named after its file with no version, though it declares both | `flows/mod-names.test.ts` ("jars no catalog knows") |

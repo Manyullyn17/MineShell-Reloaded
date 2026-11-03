@@ -43,7 +43,15 @@ export type ModJar = {
 	mixinConfigs: string[];
 	/** The picture the jar names for itself (Fabric/Quilt `icon`, Forge `logoFile`), as a path inside it. */
 	logo: string | null;
+	/**
+	 * Each mod the jar declares, with its own name and version: a jar can hold several (Ender
+	 * IO's eight), and a build property left in a version (`${file.jarVersion}`) is replaced by
+	 * the manifest's Implementation-Version, which is what Forge itself reads for it.
+	 */
+	mods: DeclaredMod[];
 };
+
+export type DeclaredMod = { id: string; name: string | null; version: string | null };
 
 const jarCache = new Map<string, { key: string; jar: Omit<ModJar, 'fileName' | 'enabled'> }>();
 
@@ -159,11 +167,19 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 		provides: [],
 		classes: new Set(),
 		mixinConfigs: [],
-		logo: null
+		logo: null,
+		mods: []
 	};
 	const zip = await openZipFile(file).catch(() => null);
 	if (!zip) return info;
 	await indexZip(zip, 0, info);
+	const manifest = await readText(zip, 'META-INF/MANIFEST.MF');
+	const manifestVersion = manifest?.match(/^Implementation-Version:\s*(.+?)\s*$/m)?.[1] ?? null;
+	const declare = (id: unknown, name: unknown, version: unknown) => {
+		if (!id) return;
+		const real = (v: unknown) => (typeof v === 'string' && v.trim() && !isBuildProperty(v) ? v.trim() : null);
+		info.mods.push({ id: String(id).toLowerCase(), name: real(name), version: real(version) ?? real(manifestVersion) });
+	};
 
 	const fabric = await readText(zip, 'fabric.mod.json');
 	if (fabric) {
@@ -172,6 +188,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.id) info.ids.push(String(meta.id));
 			if (meta.name) info.names.push(String(meta.name));
 			if (meta.version) info.version ??= String(meta.version);
+			declare(meta.id, meta.name, meta.version);
 			info.authors.push(...personNames(meta.authors));
 			if (meta.environment === 'client') info.clientOnly = true;
 			info.logo ??= iconPath(meta.icon);
@@ -189,6 +206,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 			if (meta.quilt_loader?.id) info.ids.push(String(meta.quilt_loader.id));
 			if (meta.quilt_loader?.metadata?.name) info.names.push(String(meta.quilt_loader.metadata.name));
 			if (meta.quilt_loader?.version) info.version ??= String(meta.quilt_loader.version);
+			declare(meta.quilt_loader?.id, meta.quilt_loader?.metadata?.name, meta.quilt_loader?.version);
 			info.logo ??= iconPath(meta.quilt_loader?.metadata?.icon);
 			if (Array.isArray(meta.quilt_loader?.provides)) info.provides.push(...meta.quilt_loader.provides.map(providedId));
 			// Quilt's contributors map names to roles.
@@ -212,6 +230,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 				info.ids.push(...tomlValues(block, 'modId'));
 				info.names.push(...tomlValues(block, 'displayName'));
 				info.version ??= tomlValues(block, 'version')[0] ?? null;
+				declare(tomlValues(block, 'modId')[0], tomlValues(block, 'displayName')[0], tomlValues(block, 'version')[0]);
 				info.authors.push(...splitAuthors(tomlValues(block, 'authors')[0]));
 				info.logo ??= tomlValues(block, 'logoFile')[0] ?? null;
 			}
@@ -222,6 +241,7 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 	}
 	const mcmod = await readText(zip, 'mcmod.info');
 	if (mcmod) {
+		for (const entry of mcmodEntries(mcmod)) declare(entry.modid, entry.name, entry.version);
 		info.ids.push(...[...mcmod.matchAll(/"modid"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.names.push(...[...mcmod.matchAll(/"name"\s*:\s*"([^"]+)"/g)].map((m) => m[1]));
 		info.version ??= mcmod.match(/"version"\s*:\s*"([^"]+)"/)?.[1] ?? null;
@@ -235,11 +255,59 @@ async function describeJar(file: string): Promise<Omit<ModJar, 'fileName' | 'ena
 	info.ids = [...new Set(info.ids.map((s) => s.toLowerCase()))];
 	info.names = [...new Set(info.names)];
 	// Build tools fill these in at build time; a jar that still has one never had it replaced.
-	if (info.version && /\$\{|@[a-z_]+@/i.test(info.version)) info.version = null;
+	if (info.version && isBuildProperty(info.version)) info.version = null;
 	info.authors = [...new Set(info.authors.map((a) => a.trim()).filter(Boolean))];
 	info.requires = [...new Set(info.requires.map((s) => s.toLowerCase()))];
 	info.provides = [...new Set(info.provides.map((s) => s.toLowerCase()).filter((id) => id && !info.ids.includes(id)))];
 	return info;
+}
+
+/** A value the build was meant to fill in (`${version}`, `@VERSION@`) and never did. */
+function isBuildProperty(value: string): boolean {
+	return /\$\{|@[a-z_]+@/i.test(value);
+}
+
+/**
+ * mcmod.info's entries: a list, or `{ modList: [...] }` (its version 2). Many are not strict
+ * JSON (line breaks inside strings: Chisel, Iron Chest), so those are read field by field:
+ * each "modid" with the "name" and "version" after it, up to the next "modid".
+ */
+function mcmodEntries(text: string): { modid?: unknown; name?: unknown; version?: unknown }[] {
+	try {
+		const parsed = JSON.parse(text);
+		const list = Array.isArray(parsed) ? parsed : parsed?.modList;
+		return Array.isArray(list) ? list.filter((e) => e && typeof e === 'object') : [];
+	} catch {
+		return text.split(/(?="modid"\s*:)/).slice(1).map((part) => {
+			const field = (key: string) => part.match(new RegExp(`"${key}"\\s*:\\s*"([^"]*)"`))?.[1];
+			return { modid: field('modid'), name: field('name'), version: field('version') };
+		});
+	}
+}
+
+/** Names mod templates ship with, which a jar keeps when its author never changed them. */
+const TEMPLATE_NAMES = /^(example ?mod|mod ?name|your ?mod( ?name)?|template( ?mod)?)$/i;
+
+/**
+ * The mod a jar is mainly, with a name and version to show for it: of the mods it declares
+ * with a usable name, the one whose id the file name holds (the longest, so "buildcraft-core"
+ * is BuildCraft, not BuildCraft Lib, and JourneyMap is not its Fabric stub
+ * "journeymap-wrongloader"), else the one with the most parts of its id in the file name
+ * (ProjectRed-...-integration is "projectred-integration"), else the first. Null when it
+ * names nothing usable. Checked on 1031 jars of the user's servers
+ * (tests/tools/jar-metadata-survey.mjs).
+ */
+export function mainDeclaredMod(jar: Pick<ModJar, 'mods'>, fileName: string): DeclaredMod | null {
+	const named = jar.mods.filter((m): m is DeclaredMod & { name: string } => !!m.name && !TEMPLATE_NAMES.test(m.name));
+	const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+	const file = squash(fileName.replace(/\.jar(\.disabled)?$/i, ''));
+	const whole = (m: DeclaredMod) => (squash(m.id).length >= 3 && file.includes(squash(m.id)) ? squash(m.id).length : 0);
+	const parts = (m: DeclaredMod) => m.id.split(/[^a-z0-9]+/).filter((p) => p.length >= 3 && file.includes(p)).length;
+	let best: DeclaredMod | null = null;
+	for (const m of named) {
+		if (!best || whole(m) > whole(best) || (whole(m) === whole(best) && parts(m) > parts(best))) best = m;
+	}
+	return best;
 }
 
 const DISABLED_SUFFIX = '.disabled';

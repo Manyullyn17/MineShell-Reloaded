@@ -129,15 +129,10 @@ again when Kit and svelte-check list 7 in their peer ranges.
 
 #### Mods from outside Modrinth's hash lookup
 
-Asked for 2026-10-29. Uploads and CurseForge fingerprints built 2026-11-03 (ROADMAP-ARCHIVE,
-"Identifying uploaded and CurseForge-only jars"). Left:
+Asked for 2026-10-29. Uploads, CurseForge fingerprints and names and versions from the jar
+built 2026-11-03 (ROADMAP-ARCHIVE, "Identifying uploaded and CurseForge-only jars"). Left:
 - Looking again when a key is first set: a jar recorded as manual is only tried again at the
   next Sync (or upload), not the moment a CurseForge key starts working.
-- Names and versions from the jar (agreed 2026-11-03, alongside): a jar no catalog
-  identifies is named after its file. `describeModJar` (crashdiag.ts) reads the declared name
-  and version on every loader, as ed2f33a uses for CurseForge's `project-<id>` names; find out
-  how reliable they are (unreplaced `${...}` properties, jars with several mods), then show
-  at least the name and version.
 - DynmapBlockScan updates: it is on no catalog. dynmap.us/builds/DynmapBlockScan/ is a plain
   directory listing with builds per Minecraft version and a `.MD5` beside the newer ones;
   1.12.2 has 3.6 (2023) and 3.7-beta-6 (2025-01-09) besides the 3.4-beta-1 MineShell

@@ -1236,8 +1236,10 @@ user's MeatballCraft copy). Built: Upload runs Sync's identification; Sync tries
 recorded as manual again (keeping their "Added" date, so a jar named late is not news to the
 update notifications); after Modrinth's hash lookup, with a working key, CurseForge's
 fingerprint lookup (`mods/fingerprint.ts`, checked against CurseForge's own fingerprints;
-packs-and-mods.md) and one `/mods` call for the names. Not built: looking again the moment a
-key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
+packs-and-mods.md) and one `/mods` call for the names. A jar none of them knows is shown
+under the name and version it declares (`mainDeclaredMod`; surveyed on 1031 jars first,
+packs-and-mods.md), also for jars recorded before as their file name. Not built: looking
+again the moment a key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
 
 ---
 

@@ -105,6 +105,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `POST /v1/mods` with `{ modIds }`. Recording either: put the file path before any `-u`
   (vitest 5's `-u` takes a value, so `run -u <file>` ran and re-recorded every file).
 
+- Jars' own names and versions (`mainDeclaredMod`, crashdiag.ts), surveyed 2026-11-03 on 1031
+  jars of the dev servers (`tests/tools/jar-metadata-survey.mjs`): 1015 give a usable name and
+  1005 a version. 58 hold several mods (Ender IO 8, Binnie 5; JourneyMap a Fabric stub
+  `journeymap-wrongloader` for the wrong loader), so the one the file is named after is picked.
+  `${file.jarVersion}` in mods.toml is the manifest's Implementation-Version (44 of 63 jars
+  without a version had one). Many 1.12 `mcmod.info` files are not strict JSON (line breaks in
+  strings: Chisel, Iron Chest). Template leftovers: modid `examplemod` with the name "Example
+  Mod" (Career Bees, REIM); the rest without a name are 1.12 jars declaring nothing (AppleCore).
+
 ## Pack install form
 - Picking a provider pack version fetches `/api/packs/preview` (`packs/preview.ts`): the pack's
   mods, client-only ones flagged by Modrinth hash (sha512 for .mrpack, sha1 for the mirror's
