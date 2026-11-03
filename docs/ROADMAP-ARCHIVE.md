@@ -192,8 +192,8 @@ otherwise have passed the quotes to Java.
 
 ### The servers' sandbox
 
-Built 2026-10-31 on the `next` branch, for 1.1 (ROADMAP, "Servers that are really
-sandboxed", for what is left). The template's `PrivateTmp=yes` was never applied on Ubuntu 24.04
+Built 2026-10-31 on the `next` branch, for 1.1 (what is left: ROADMAP, Leftovers, "The
+servers' sandbox"). The template's `PrivateTmp=yes` was never applied on Ubuntu 24.04
 (AppArmor's user namespace restriction, notes runtime.md). Now: the options a user unit gets
 without namespaces (`RestrictNamespaces`, a system call filter, `LockPersonality` and others;
 ARCHITECTURE, "The servers' sandbox"), tried on every loader; `RestrictNamespaces` and
@@ -205,6 +205,88 @@ The user applied it the same day. Then each server kept to its own folder where 
 probe finds the namespaces (`sandbox.conf`), the one-start file in a folder per server, and
 every server's unit files rewritten at startup; a second real-loader pass with it
 (`tests/tools/sandbox-check.sh`).
+
+Tests 2 and 5 were done during 1.1's betas (a Forge startup question with `scenarios.sh`,
+self-updates beta.1 to 1.1.0); 6 and a non-Ubuntu system are left (ROADMAP, Leftovers).
+
+#### The plan and its tests (moved from ROADMAP 2026-11-03)
+
+Agreed 2026-10-31 (user's call, after weighing it: it leaves the servers better off than
+today on every count). The template's `PrivateTmp=yes` is not applied on Ubuntu 24.04: a user
+unit needs a user namespace for it, AppArmor's `apparmor_restrict_unprivileged_userns=1`
+takes the namespace's capabilities, and systemd runs the unit unsandboxed without a word
+(notes, runtime.md). Mount options (`ProtectHome=`, `ProtectSystem=strict`, `PrivateUsers=`,
+`ProtectProc=`) fail the same way, so a mod can read and write everything the account can:
+MineShell's database and `secret.key`, `~/.ssh`, `~/.bashrc`, `~/.config/systemd/user`,
+other servers' `units/<id>.env` (whose `MS_JAVA` is a command). `systemd-analyze --user
+security` gives 9.2. Only Ubuntu (23.10+) and derivatives that kept its default: Debian and
+SUSE have AppArmor without the restriction, Fedora's SELinux and Arch do not block it, so
+there the sandbox applies already.
+
+What lifting the restriction gives up: it guards against kernel bugs reached through user
+namespaces; the file access it now costs needs no bug at all. Scoped as below, with
+`RestrictNamespaces=yes`, the servers get the file sandbox and cannot make namespaces at all
+(today they can, without capabilities), so they are better off on both.
+
+Built 2026-10-31 (ROADMAP-ARCHIVE, "The servers' sandbox"): the options without a namespace
+and `RestrictNamespaces=yes` in the template, the same for playit's unit and
+`mineshell.service`, the `doctor` check, the DEPLOYMENT section with the scoped exception
+(applied by the user the same day: `doctor` ok, Irithyll in its own namespace with network and
+heap reads), and each server kept to its own folder where the namespaces work. Left: tests 2
+(a real Forge startup question: `tests/tools/scenarios.sh forge-question`), 5 (a self-update,
+when there is one) and 6 below, and a non-Ubuntu system (a VM). Not possible yet:
+keeping a server from signalling MineShell or another server (same account), which needs a PID
+namespace (`PrivatePIDs=`, systemd 257; 24.04 has 255).
+
+- **The AppArmor exception, for one account.** A profile with no attachment,
+  `profile systemd-userns flags=(unconfined) { userns, }`, given only to that account's user
+  manager by a system drop-in `user@<uid>.service.d/` with `AppArmorProfile=-systemd-userns`
+  (the `-`: a profile that failed to load does not keep the user manager, and with it
+  MineShell, from starting at boot). Not the draft on branch `wip/server-sandbox`, which
+  attaches to `/usr/lib/systemd/systemd`: every account's user manager, PID 1 after a
+  `daemon-reexec` (Ubuntu's systemd upgrades do one) and, as an unconfined profile is kept
+  across exec, probably everything they start. Sudo once, documented in DEPLOYMENT next to
+  lingering and the dedicated account.
+- **`doctor` checks it** and points at that section: drafted on `wip/server-sandbox` (a
+  `systemd-run --user -p PrivateTmp=yes` probe comparing mount namespaces, shown as `warn`).
+- **`RestrictNamespaces=yes`** in the server template, the playit unit and `mineshell.service`
+  (seccomp, applied after systemd built the sandbox; applied in a transient unit). Helps on
+  every distro: elsewhere any program may make user namespaces.
+- **Options without a namespace**: built, as above. `@resources` stays allowed (the JVM calls
+  `setrlimit` and NUMA policy at startup), and a refused call fails with `EPERM` instead of
+  killing the server. Not `MemoryDenyWriteExecute=` (the JIT needs it).
+- **Then each server kept to its own folder**: built, as `sandbox.conf` per server, only where
+  MineShell's probe finds the namespaces (ARCHITECTURE). The one-start file moved into a folder
+  per server (`units/once/<id>/`), bound in alone, so the start line still deletes it and the
+  other servers' env files stay out of sight. No `ProtectProc=invisible`: same account.
+
+Tests, on Ubuntu with the exception in place:
+1. `doctor` says ok; a server's `/proc/<pid>/ns/mnt` differs from MineShell's: done
+   (`tests/tools/sandbox-check.sh`).
+2. Servers on each loader boot, stop with a save (RCON and SIGTERM), restart, and answer a
+   Forge startup question (the `.once` file).
+3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
+   separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
+   diagnosis, the console and RCON: heap reads, console, RCON and Spark (the user,
+   2026-10-31) done; crash diagnosis with `tests/tools/scenarios.sh`.
+4. The JVM under `RestrictNamespaces=yes` and the syscall filter: done (the 2026-10-31 pass).
+5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
+   which inherits the profile too).
+6. A broken or missing profile: the user manager still starts, `doctor` warns. A server now
+   fails with `226/NAMESPACE` where it ran unsandboxed before.
+7. Network inside the sandbox: players join, RCON, downloads from the server (mods fetching
+   things, BlueMap). Launchpad #2168612 (New, 2026-09-26, noble): a `flags=(unconfined)`
+   profile without a `network,` rule loses all sockets (EACCES) once `unprivileged_userns`
+   is stacked onto it, which happens when its process makes a mount-namespace unit. Ours
+   allows `userns`, so it should never be stacked: a server's `/proc/<pid>/attr/current`
+   must read `systemd-userns`, not a stack with `unprivileged_userns` (today, unfixed, it
+   reads `unprivileged_userns (enforce)` and has network). If it stacks anyway, `network,`
+   (or `allow all,`) in the profile is the bug's workaround. Done: Irithyll reads
+   `systemd-userns (unconfined)` and players join.
+
+Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
+applies there straight away. MineShell's units are the only user units on this machine with
+sandbox options, so nothing else here changes.
 
 ### Moving a server to an older Minecraft
 

@@ -8,8 +8,7 @@ whatever it leaves out stays here.
 ## Current direction
 
 Versions (user's calls, 2026-10-16 and 2026-10-30): 1.0 came out 2026-11-01 (its checklist,
-"Road to 1.0", is in ROADMAP-ARCHIVE). 1.1.0 came out 2026-11-03; 1.2 is next (uploaded jars identified, names and versions from
-the jar, joining over Tailscale among it). After it maybe a few minor additions,
+"Road to 1.0", is in ROADMAP-ARCHIVE). 1.1.0 came out 2026-11-03; 1.2 is next (below). After it maybe a few minor additions,
 then plugin servers (Paper and Purpur) as the first major update, 2.0; not before. GT New Horizons also
 has an agreed install-flow plan. None of this has a delivery date.
 
@@ -29,9 +28,19 @@ The other leftovers of those features (Cancel for version moves and loader chang
 copies to a backup folder, CurseForge data packs, zipping chosen files, Chunk Pregenerator)
 are extensions and wait.
 
-1.2 so far (user's calls, 2026-11-02): joining a server over Tailscale (step 5, built), data packs
-on a version move, dropping into a folder in Files and the Data packs tab showing what loader
-mods read, with an upload (Leftovers), all pushed out of a full 1.1.
+Release guide from 1.2 on (user's call, 2026-11-03: a guideline to keep releases a reasonable
+size, not a fixed list; entries move and get added along the way):
+- **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
+  jar, joining over Tailscale. To build - data packs on a version move, dropping into a folder
+  in Files, the Data packs tab showing what loader mods read (with an upload), data pack
+  loaders changing (Leftovers); looking again when a CurseForge key is set; game mode and
+  teleport for online players; game rules, world spawn and border; server.properties coverage
+  (LZ4 chunks included); the Remote access follow-ups 1-3 (Undecided).
+- **1.3**: the mod config editor; the rest of step 5 (server list preview, server resource
+  pack, maintenance mode).
+- **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
+  item icons and the status page as ordered below. Whenever convenient: the Fugue gaps,
+  Chunk Pregenerator, single files from a snapshot.
 
 After 1.1 (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
 suggested order of its steps: upkeep and quick wins, files, mod configs, world, players,
@@ -85,8 +94,8 @@ finished `feat:` commits are gathered into a minor every few days or more (DEPLO
 "Publishing a release"), not released one by one as in 0.x. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: TypeScript 7 (waits for Kit), servers that are really
-   sandboxed (quoted JVM arguments built 2026-10-31). Small, mostly reading what MineShell already has: a calm first
+1. **Upkeep and quick wins**: TypeScript 7 (waits for Kit); servers that are really
+   sandboxed and quoted JVM arguments built 2026-10-31 (two sandbox tests left, Leftovers). Small, mostly reading what MineShell already has: a calm first
    step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
    files, zips and folders).
@@ -152,85 +161,6 @@ declare (loaders.md, Cleanroom). Two gaps left:
 - The Java a build needs is a constant (`FUGUE_JAVA25_FROM`, 0.23.4 needs 25), measured from
   the jars' class-file versions by hand. Read it from the jar instead (the class file's major
   version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
-
-#### Servers that are really sandboxed
-
-Agreed 2026-10-31 (user's call, after weighing it: it leaves the servers better off than
-today on every count). The template's `PrivateTmp=yes` is not applied on Ubuntu 24.04: a user
-unit needs a user namespace for it, AppArmor's `apparmor_restrict_unprivileged_userns=1`
-takes the namespace's capabilities, and systemd runs the unit unsandboxed without a word
-(notes, runtime.md). Mount options (`ProtectHome=`, `ProtectSystem=strict`, `PrivateUsers=`,
-`ProtectProc=`) fail the same way, so a mod can read and write everything the account can:
-MineShell's database and `secret.key`, `~/.ssh`, `~/.bashrc`, `~/.config/systemd/user`,
-other servers' `units/<id>.env` (whose `MS_JAVA` is a command). `systemd-analyze --user
-security` gives 9.2. Only Ubuntu (23.10+) and derivatives that kept its default: Debian and
-SUSE have AppArmor without the restriction, Fedora's SELinux and Arch do not block it, so
-there the sandbox applies already.
-
-What lifting the restriction gives up: it guards against kernel bugs reached through user
-namespaces; the file access it now costs needs no bug at all. Scoped as below, with
-`RestrictNamespaces=yes`, the servers get the file sandbox and cannot make namespaces at all
-(today they can, without capabilities), so they are better off on both.
-
-Built 2026-10-31 (ROADMAP-ARCHIVE, "The servers' sandbox"): the options without a namespace
-and `RestrictNamespaces=yes` in the template, the same for playit's unit and
-`mineshell.service`, the `doctor` check, the DEPLOYMENT section with the scoped exception
-(applied by the user the same day: `doctor` ok, Irithyll in its own namespace with network and
-heap reads), and each server kept to its own folder where the namespaces work. Left: tests 2
-(a real Forge startup question: `tests/tools/scenarios.sh forge-question`), 5 (a self-update,
-when there is one) and 6 below, and a non-Ubuntu system (a VM). Not possible yet:
-keeping a server from signalling MineShell or another server (same account), which needs a PID
-namespace (`PrivatePIDs=`, systemd 257; 24.04 has 255).
-
-- **The AppArmor exception, for one account.** A profile with no attachment,
-  `profile systemd-userns flags=(unconfined) { userns, }`, given only to that account's user
-  manager by a system drop-in `user@<uid>.service.d/` with `AppArmorProfile=-systemd-userns`
-  (the `-`: a profile that failed to load does not keep the user manager, and with it
-  MineShell, from starting at boot). Not the draft on branch `wip/server-sandbox`, which
-  attaches to `/usr/lib/systemd/systemd`: every account's user manager, PID 1 after a
-  `daemon-reexec` (Ubuntu's systemd upgrades do one) and, as an unconfined profile is kept
-  across exec, probably everything they start. Sudo once, documented in DEPLOYMENT next to
-  lingering and the dedicated account.
-- **`doctor` checks it** and points at that section: drafted on `wip/server-sandbox` (a
-  `systemd-run --user -p PrivateTmp=yes` probe comparing mount namespaces, shown as `warn`).
-- **`RestrictNamespaces=yes`** in the server template, the playit unit and `mineshell.service`
-  (seccomp, applied after systemd built the sandbox; applied in a transient unit). Helps on
-  every distro: elsewhere any program may make user namespaces.
-- **Options without a namespace**: built, as above. `@resources` stays allowed (the JVM calls
-  `setrlimit` and NUMA policy at startup), and a refused call fails with `EPERM` instead of
-  killing the server. Not `MemoryDenyWriteExecute=` (the JIT needs it).
-- **Then each server kept to its own folder**: built, as `sandbox.conf` per server, only where
-  MineShell's probe finds the namespaces (ARCHITECTURE). The one-start file moved into a folder
-  per server (`units/once/<id>/`), bound in alone, so the start line still deletes it and the
-  other servers' env files stay out of sight. No `ProtectProc=invisible`: same account.
-
-Tests, on Ubuntu with the exception in place:
-1. `doctor` says ok; a server's `/proc/<pid>/ns/mnt` differs from MineShell's: done
-   (`tests/tools/sandbox-check.sh`).
-2. Servers on each loader boot, stop with a save (RCON and SIGTERM), restart, and answer a
-   Forge startup question (the `.once` file).
-3. Heap reads (`heap.ts` reads the JVM's socket through `/proc/<pid>/root/tmp`, only then a
-   separate `/tmp`; the JVM's attach peer check inside the user namespace), Spark, crash
-   diagnosis, the console and RCON: heap reads, console, RCON and Spark (the user,
-   2026-10-31) done; crash diagnosis with `tests/tools/scenarios.sh`.
-4. The JVM under `RestrictNamespaces=yes` and the syscall filter: done (the 2026-10-31 pass).
-5. The real install after a reboot and after a self-update (a `systemd-run --user` unit,
-   which inherits the profile too).
-6. A broken or missing profile: the user manager still starts, `doctor` warns. A server now
-   fails with `226/NAMESPACE` where it ran unsandboxed before.
-7. Network inside the sandbox: players join, RCON, downloads from the server (mods fetching
-   things, BlueMap). Launchpad #2168612 (New, 2026-09-26, noble): a `flags=(unconfined)`
-   profile without a `network,` rule loses all sockets (EACCES) once `unprivileged_userns`
-   is stacked onto it, which happens when its process makes a mount-namespace unit. Ours
-   allows `userns`, so it should never be stacked: a server's `/proc/<pid>/attr/current`
-   must read `systemd-userns`, not a stack with `unprivileged_userns` (today, unfixed, it
-   reads `unprivileged_userns (enforce)` and has network). If it stacks anyway, `network,`
-   (or `allow all,`) in the profile is the bug's workaround. Done: Irithyll reads
-   `systemd-userns (unconfined)` and players join.
-
-Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
-applies there straight away. MineShell's units are the only user units on this machine with
-sandbox options, so nothing else here changes.
 
 ### 2. Files
 
@@ -687,6 +617,11 @@ is open, and each needs a test setup.
   which stay where they were; hand-added ones are listed, not looked up. The tracking rows
   are per server, not per world: a pack left in the old world is skipped by the update check
   while another world is active.
+- **The servers' sandbox** (ROADMAP-ARCHIVE, "The servers' sandbox", with its test list): a
+  broken or missing AppArmor profile not tried (the user manager should still start, `doctor`
+  warn, a server fail with `226/NAMESPACE`), nor a non-Ubuntu system (a Debian or Fedora VM).
+  Keeping a server from signalling MineShell or another server needs a PID namespace
+  (`PrivatePIDs=`, systemd 257; Ubuntu 24.04 has 255).
 - **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask).
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was

@@ -84,7 +84,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   `SystemCallFilter=`, `RestrictNamespaces=`, `LockPersonality=`, `UMask=` applied in a
   transient unit). Probe: `systemd-run --user --wait --pipe -p PrivateTmp=yes readlink
   /proc/self/ns/mnt`. `doctor` runs that probe; the fix is DEPLOYMENT, "Sandboxing the servers" (the rest:
-  ROADMAP, "Servers that are really sandboxed").
+  ROADMAP-ARCHIVE, "The servers' sandbox").
 
 - The servers' sandbox (2026-10-31): HotSpot's attach listener (AttachListener::pd_init)
   `chown`s its socket file to its own euid; with `SystemCallFilter=~@privileged` that fails
