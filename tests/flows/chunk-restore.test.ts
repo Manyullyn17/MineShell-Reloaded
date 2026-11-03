@@ -90,6 +90,32 @@ describe('restoring chunks from a snapshot', () => {
 		expect(await readRegion(path.join(world, 'region', 'r.0.0.mca'))).toEqual({ 1: 9, 2: 1 });
 	});
 
+	it('copies chunks byte for byte whatever their compression, so a region can hold zlib and LZ4 side by side', async () => {
+		// Snapshot taken while the server wrote zlib; region-file-compression=lz4 since, so the live
+		// chunks are LZ4 (Minecraft converts only the chunks it saves again, and reads each by its own type).
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.11' }, { 'server.properties': 'level-name=world\n' });
+		const region = path.join(instance.path, 'world', 'region');
+		await writeRegion(region, 0, 0, [{ index: 0, ticks: 1 }, { index: 1, ticks: 1, compression: 1 }]);
+		expect((await waitForTask(await snapshotNow(instance))).state).toBe('done');
+		const [snapshot] = await listSnapshots(instance.path);
+		const old = await fs.readFile(path.join(region, 'r.0.0.mca'));
+		await writeRegion(region, 0, 0, [{ index: 0, ticks: 9, compression: 4 }, { index: 1, ticks: 9, compression: 4 }, { index: 2, ticks: 9, compression: 4 }]);
+		const live = await fs.readFile(path.join(region, 'r.0.0.mca'));
+
+		expect((await waitForTask(await restoreChunks(instance, snapshot.id, 'world/region', [[0, 0]], { snapshot: false }))).state).toBe('done');
+		const file = await fs.readFile(path.join(region, 'r.0.0.mca'));
+		expect(await readRegion(path.join(region, 'r.0.0.mca'))).toEqual({ 0: 1, 1: 9, 2: 9 });
+		const stored = (buf: Buffer, index: number) => {
+			const entry = buf.readUInt32BE(index * 4);
+			const start = (entry >>> 8) * 4096;
+			return buf.subarray(start, start + 4 + buf.readUInt32BE(start));
+		};
+		expect(stored(file, 0)).toEqual(stored(old, 0));
+		expect(stored(file, 0)[4]).toBe(2);
+		expect(stored(file, 1)).toEqual(stored(live, 1));
+		expect(stored(file, 1)[4]).toBe(4);
+	});
+
 	it('refuses chunks neither side has, and snapshots of another dimension', async () => {
 		const { instance, snapshot } = await serverWithSnapshot();
 		await expect(restoreChunks(instance, snapshot.id, 'world/region', [[100, 100]], { snapshot: false })).rejects.toThrow(/any of those chunks/);

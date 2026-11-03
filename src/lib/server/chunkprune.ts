@@ -29,7 +29,7 @@ import { keptBySpawn, NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type Pr
  * A chunk is removed from region/, entities/ and poi/ alike, so old mobs and
  * points of interest do not turn up in the new terrain. Each touched file is
  * rewritten without the removed chunks, which is what frees the space; a file
- * left empty is deleted. A chunk that cannot be read (LZ4, damaged) is kept.
+ * left empty is deleted. A chunk that cannot be read (damaged) is kept.
  */
 
 export type PruneOptions = PruneRule & {
@@ -59,7 +59,7 @@ export function inhabitedTime(root: Tag): number | null {
 /** Where a chunk keeps InhabitedTime: at the top from 1.18, under Level before. */
 const INHABITED = [['InhabitedTime'], ['Level', 'InhabitedTime']];
 
-/** The InhabitedTime of one stored chunk; null when it cannot be read (LZ4, damaged). */
+/** The InhabitedTime of one stored chunk; null when it cannot be read (damaged). */
 async function chunkTicks(dir: string, file: Buffer, region: [number, number], loc: Location): Promise<number | null> {
 	try {
 		const data = await readChunk(dir, file, region, loc);

@@ -28,19 +28,21 @@ const prune = async (instance: ServerInstance, settings: PruneSettings, opts: { 
 describe('chunk pruning', () => {
 	beforeEach(() => systemdStopped());
 
-	it('picks chunks visited less than the threshold, in both NBT layouts, and keeps what it cannot read', async () => {
+	it('picks chunks visited less than the threshold, in both NBT layouts and LZ4, and keeps what it cannot read', async () => {
 		const root = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		const base = path.join(root.path, 'world');
 		await writeRegion(path.join(base, 'region'), 0, 0, [
 			{ index: 0, ticks: 0 },
 			{ index: 1, ticks: 50 * MINUTE },
 			{ index: 2, ticks: 10, legacy: true },
-			{ index: 3, ticks: 0, compression: 4 }, // LZ4: not readable here, so it stays
-			{ index: 4, ticks: 0, external: true, pad: 9000 }
+			{ index: 3, ticks: 0, compression: 4 },
+			{ index: 4, ticks: 0, external: true, pad: 9000 },
+			{ index: 5, ticks: 0, compression: 4, external: true, pad: 90000 },
+			{ index: 6, damaged: true } // not readable, so it stays
 		]);
 		const plan = await planPrune(base, { maxTicks: MINUTE, keep: null });
-		expect(plan).toMatchObject({ chunks: 5, remove: 3, unreadable: 1 });
-		expect([...plan.files.get('r.0.0.mca')!].sort()).toEqual([0, 2, 4]);
+		expect(plan).toMatchObject({ chunks: 7, remove: 5, unreadable: 1 });
+		expect([...plan.files.get('r.0.0.mca')!].sort()).toEqual([0, 2, 3, 4, 5]);
 	});
 
 	it('keeps everything around the spawn', async () => {
@@ -93,11 +95,12 @@ describe('chunk pruning', () => {
 		await writeRegion(path.join(base, 'region'), -1, 0, [
 			{ index: 0, ticks: 7 },
 			{ index: 33, ticks: 3 * MINUTE, legacy: true, pad: 9000, compression: 3 },
-			{ index: 2, compression: 4 }
+			{ index: 2, damaged: true },
+			{ index: 3, ticks: 5, compression: 4 }
 		]);
 		const [region] = (await analyseRegions(base))!;
 		expect(region).toMatchObject({ x: -1, z: 0 });
-		expect([region.ticks[0], region.ticks[33], region.ticks[2], region.ticks[1]]).toEqual([7, 3 * MINUTE, UNREADABLE, NO_CHUNK]);
+		expect([region.ticks[0], region.ticks[33], region.ticks[2], region.ticks[3], region.ticks[1]]).toEqual([7, 3 * MINUTE, UNREADABLE, 5, NO_CHUNK]);
 		expect(region.sectors[33]).toBeGreaterThan(1);
 		expect(region.sectors[1]).toBe(0);
 	});

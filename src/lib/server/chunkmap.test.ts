@@ -233,15 +233,18 @@ describe('chunk map: a region', () => {
 			// The ring 1.18+ leaves around loaded chunks: biomes but no blocks, or no sections at all yet.
 			{ index: 1, root: chunk('minecraft:biomes', [air]) },
 			{ index: 2, root: chunk('minecraft:structure_starts', []) },
-			{ index: 3, compression: 4 },
+			{ index: 3, damaged: true },
 			// Nearer in, blocks and trees already, but finished only when a neighbour is: drawn, and marked.
-			{ index: 4, root: chunk('minecraft:features', [stone]) }
+			{ index: 4, root: chunk('minecraft:features', [stone]) },
+			// region-file-compression=lz4 (1.20.5+) is drawn like any other.
+			{ index: 5, root: chunk('minecraft:full', [stone]), compression: 4 }
 		]);
 		const columns = (await readRegionColumns(dir, 'r.0.0.mca', null))!;
 		expect(columns.keys).toEqual(['minecraft:stone']);
 		expect(columns.bare).toEqual({ 1: 'biomes', 2: 'structure_starts' });
 		expect(columns.partial).toEqual({ 4: 'features' });
 		expect(columns.blocks[4 * 16]).toBe(1);
+		expect(columns.blocks[5 * 16]).toBe(1);
 		expect(columns.unreadable).toEqual([3]);
 		await fs.rm(dir, { recursive: true, force: true });
 	});

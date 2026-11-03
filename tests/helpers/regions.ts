@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { inhabitedTime } from '#lib/server/chunkprune.js';
+import { readLz4Stream, xxHash32 } from '#lib/server/lz4.js';
 import { parseNbt, writeNbt, type Tag } from '#lib/server/nbt.js';
 
 /**
@@ -16,7 +17,10 @@ export type ChunkSpec = {
 	index: number;
 	ticks?: number;
 	legacy?: boolean;
+	/** 1 gzip, 2 zlib (the default), 3 none, 4 LZ4. */
 	compression?: number;
+	/** Bytes no decompressor takes, as a damaged chunk has. */
+	damaged?: boolean;
 	external?: boolean;
 	pad?: number;
 	/** Small compounds to parse, as a real chunk's sections and block entities make it slow to read. */
@@ -42,6 +46,45 @@ function chunkNbt(spec: ChunkSpec): Buffer {
 	return writeNbt({ name: '', gzipped: false, root: root as Extract<Tag, { type: 'compound' }> });
 }
 
+/**
+ * An LZ4 chunk as lz4-java frames it, with its blocks stored rather than
+ * compressed (a valid stream, which the reader takes the same way); real LZ4
+ * blocks come from a world Minecraft wrote (tests/fixtures/regions).
+ */
+export function lz4Stream(data: Buffer, blockSize = 65536): Buffer {
+	const parts: Buffer[] = [];
+	const header = (method: number, block: Buffer) => {
+		const h = Buffer.alloc(21);
+		h.write('LZ4Block', 'latin1');
+		h[8] = method | 6;
+		h.writeInt32LE(block.length, 9);
+		h.writeInt32LE(block.length, 13);
+		h.writeInt32LE(block.length ? xxHash32(block, 0x9747b28c) & 0x0fffffff : 0, 17);
+		return h;
+	};
+	for (let at = 0; at < data.length; at += blockSize) {
+		const block = data.subarray(at, at + blockSize);
+		parts.push(header(0x10, block), block);
+	}
+	parts.push(header(0x10, Buffer.alloc(0)));
+	return Buffer.concat(parts);
+}
+
+function compress(compression: number, nbt: Buffer): Buffer {
+	if (compression === 1) return zlib.gzipSync(nbt);
+	if (compression === 2) return zlib.deflateSync(nbt);
+	if (compression === 4) return lz4Stream(nbt);
+	return nbt;
+}
+
+/** A stored chunk's NBT bytes, by its compression byte. */
+function decompress(compression: number, data: Buffer): Buffer {
+	if (compression === 1) return zlib.gunzipSync(data);
+	if (compression === 2) return zlib.inflateSync(data);
+	if (compression === 4) return readLz4Stream(data, Infinity)!;
+	return data;
+}
+
 /** Writes r.<rx>.<rz>.mca in Minecraft's format; an `external` chunk goes to c.<x>.<z>.mcc. */
 export async function writeRegion(dir: string, rx: number, rz: number, chunks: ChunkSpec[]): Promise<void> {
 	await fs.mkdir(dir, { recursive: true });
@@ -50,7 +93,7 @@ export async function writeRegion(dir: string, rx: number, rz: number, chunks: C
 	let next = 2;
 	for (const spec of chunks) {
 		const compression = spec.compression ?? 2;
-		const data = compression === 2 ? zlib.deflateSync(chunkNbt(spec)) : chunkNbt(spec);
+		const data = spec.damaged ? Buffer.from('not a chunk') : compress(compression, chunkNbt(spec));
 		let payload: Buffer;
 		if (spec.external) {
 			await fs.writeFile(path.join(dir, `c.${rx * 32 + (spec.index % 32)}.${rz * 32 + Math.floor(spec.index / 32)}.mcc`), data);
@@ -70,7 +113,7 @@ export async function writeRegion(dir: string, rx: number, rz: number, chunks: C
 	await fs.writeFile(path.join(dir, `r.${rx}.${rz}.mca`), Buffer.concat([header, ...bodies]));
 }
 
-/** InhabitedTime of every chunk still in a region file, by index; external chunks are read from their .mcc. */
+/** InhabitedTime of every chunk still in a region file, by index, whatever its compression; external chunks are read from their .mcc. */
 export async function readRegion(file: string): Promise<Record<number, number>> {
 	const buf = await fs.readFile(file);
 	const [rx, rz] = path.basename(file).split('.').slice(1, 3).map(Number);
@@ -84,7 +127,7 @@ export async function readRegion(file: string): Promise<Record<number, number>> 
 			buf[start + 4] & 128
 				? await fs.readFile(path.join(path.dirname(file), `c.${rx * 32 + (index % 32)}.${rz * 32 + Math.floor(index / 32)}.mcc`))
 				: buf.subarray(start + 5, start + 4 + length);
-		found[index] = inhabitedTime(parseNbt(zlib.inflateSync(data)).root)!;
+		found[index] = inhabitedTime(parseNbt(decompress(buf[start + 4] & 127, data)).root)!;
 	}
 	return found;
 }

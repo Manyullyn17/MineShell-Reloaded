@@ -354,7 +354,7 @@ export type RegionColumns = {
 	blocks: Uint16Array;
 	heights: Int16Array;
 	depths: Uint8Array;
-	/** Chunk indices present but not readable (LZ4, damaged): drawn as plain chunks. */
+	/** Chunk indices present but not readable (damaged): drawn as plain chunks. */
 	unreadable: number[];
 	/**
 	 * Chunks present with nothing to draw, by index: their generation status (without

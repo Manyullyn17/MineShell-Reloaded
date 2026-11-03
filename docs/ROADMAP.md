@@ -265,10 +265,8 @@ Minecraft settings, and ones a mod or the pack adds".
   bytes are compressed; -1 off, good on a LAN; lower costs CPU),
   `entity-broadcast-range-percentage`, `enable-query`, `generate-structures`,
   `spawn-protection` (ops are exempt, 0 off).
-- **LZ4 chunks** (user's call: support it, not just warn): with `region-file-compression=lz4`
-  (1.20.5+) the chunk map draws every chunk plain and pruning keeps every chunk, silently
-  (`regionfile.ts` reads gzip, zlib and none). MineShell learns to read LZ4 chunks (lz4-java's
-  block stream format, as Minecraft writes them), so the control needs no warning.
+- **LZ4 chunks**: built 2026-11-03 (`lz4.ts`; the chunk map and pruning read them), so the
+  control needs no warning.
 - **Across versions** (probed 2026-10-30 with `mc-probe.mjs`: the last release of each line
   1.2.5-1.19 and every 1.20.x, 1.21.x and 26.x; a key's first version is the first probed that
   wrote it, so up to 1.14 it can be older, and RCON/query keys are written only when used):
@@ -581,9 +579,7 @@ is open, and each needs a test setup.
   players as `world/players/<name>.dat`, so the Players tab's lists and the player editor are
   empty there (checked on vanilla 1.6.4 with `mc-probe.mjs`); their log is `server.log` beside
   the server, with "<name>[/ip] logged in" for joins (the Logs tab and join detection are
-  unchecked on it). Chunks stored with `region-file-compression=lz4` (1.20.5+, off by default)
-  are unreadable to the chunk map and kept by pruning: to be read (Later, "server.properties
-  coverage").
+  unchecked on it).
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
   are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
@@ -605,6 +601,13 @@ Suggested, not yet confirmed or rejected:
   (`ADDRESS_HEADER`, if Tailscale sets `X-Forwarded-For`). For public setups only: a
   notification on a sign-in from an unknown address, two-factor sign-in.
 
+- **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
+  a chunk keeps the compression it was written with, so after `region-file-compression=lz4`
+  a world mixes zlib and LZ4 chunks, as do regions put together by chunk restore (fine:
+  Minecraft reads each by its own type byte). Before 1.20.5 type 4 is unknown, so a world
+  with LZ4 chunks taken below 1.20.5 (the version change with "new world" unticked, a world
+  uploaded or copied in) cannot read them. MineShell could warn there (it reads the type
+  bytes already), or rewrite LZ4 chunks as zlib first, which would be its first chunk writer.
 - **Versions of files changed outside MineShell** (user, 2026-10-29: maybe later): earlier
   versions of edited files keeps only what MineShell's own saves replace. A mod rewriting its
   config, or an edit over SFTP, leaves no version; noticing those would mean watching or

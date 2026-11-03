@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { promisify } from 'node:util';
+import { readLz4Stream } from './lz4';
 import { NBT_MAX_BYTES } from './nbt';
 
 /**
@@ -66,19 +67,21 @@ const inflate = promisify(zlib.inflate);
  * .mcc beside the region can be any size. On zlib's thread pool, not the one
  * thread every request shares: unpacking was most of a prune analysis (18.6 s
  * for MeatballCraft's 499 regions), and callers can unpack several at once.
+ * LZ4 is unpacked in JavaScript, which is quick enough to stay on the main thread.
  */
 async function decompress(type: number, data: Buffer): Promise<Buffer | null> {
 	try {
 		if (type === 1) return await gunzip(data, { maxOutputLength: NBT_MAX_BYTES });
 		if (type === 2) return await inflate(data, { maxOutputLength: NBT_MAX_BYTES });
 		if (type === 3) return data.length <= NBT_MAX_BYTES ? data : null;
+		if (type === 4) return readLz4Stream(data, NBT_MAX_BYTES);
 	} catch {
 		/* damaged */
 	}
 	return null;
 }
 
-/** A chunk's NBT bytes; null when it cannot be read (LZ4, damaged, its .mcc missing). */
+/** A chunk's NBT bytes; null when it cannot be read (damaged, its .mcc missing). */
 export async function readChunk(dir: string, file: Buffer, region: [number, number], loc: Location): Promise<Buffer | null> {
 	const start = loc.offset * SECTOR;
 	if (start + 5 > file.length) return null;
@@ -104,7 +107,9 @@ export function presentChunks(file: Buffer): Uint8Array {
 /**
  * A region file put together from chunks: for each index, `pick` says which
  * of the given files it comes from (or none). Chunks are copied as they are,
- * sectors and timestamp, never decoded, so LZ4 and damaged ones travel too.
+ * sectors and timestamp, never decoded, so damaged ones travel too and a
+ * chunk keeps the compression it was written with: Minecraft reads each chunk by
+ * its own type byte, so one region may mix them (docs/notes/worlds.md).
  * Null when no chunk is left.
  */
 export function assembleRegion(files: (Buffer | null)[], pick: (index: number) => number | null): Buffer | null {

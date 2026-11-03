@@ -1054,7 +1054,7 @@ icon index (`blockLook`: the blockstate's model, else the item's picture); 1.12 
 texture named after them (`fluidColour`: cwater -> cwater_still); Minecraft's own
 blocks without its client jar (EULA unanswered; the page offers the same one-click answer
 as item pictures) by a short table of rough colours (`VANILLA_COLOURS`); a block without
-a texture is plain grey and the height shading still shows the land. LZ4 and damaged chunks
+a texture is plain grey and the height shading still shows the land. Damaged chunks
 are drawn as grey squares; chunks with nothing to draw (from 1.18 a ring generated only partway,
 status structure_starts, biomes and the like, surrounds everything loaded: a third of irithyll's
 chunks) faintly, with their status in the tooltip, so a region keeps its placeholder's shape. Item pictures turned off means no colours.

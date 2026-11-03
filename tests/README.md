@@ -264,6 +264,14 @@ general.
 The usual loop tries every n until the operation finishes, checking after each restart that
 `tree(instance.path)` is what it was before.
 
+`tests/helpers/regions.ts`: `writeRegion(dir, rx, rz, chunks)` writes a region file whose
+chunks carry an InhabitedTime (or the NBT given), in any compression (`compression: 4` is a
+valid LZ4 stream of stored blocks, `lz4Stream`), in their own `.mcc` (`external`) or
+`damaged`; `readRegion(file)` reads the times back. Real LZ4 blocks are in
+`tests/fixtures/regions/lz4-1.21.11.mca`: three chunks (one over 64 KiB, so two blocks) cut
+with `assembleRegion` from a vanilla 1.21.11 world made by
+`mc-probe.mjs 1.21.11 --file "server.properties=...region-file-compression=lz4" --keep <dir>`.
+
 ## When fixing a bug
 
 Add a test that fails without the fix first. Each of these fails if its bug comes back:

@@ -141,6 +141,14 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - NBT is read at most 64 MiB unpacked (`NBT_MAX_BYTES`, 2026-10-28): level.dat and region
   chunks come from uploaded worlds, and 1 MiB of gzip unpacks to 1 GiB. A chunk over it reads
   as unreadable, which pruning keeps and the chunk map leaves out.
+- Chunk compression is per chunk (2026-11-03): each stored chunk has its own type byte (1 gzip,
+  2 zlib, 3 none, 4 LZ4 from 1.20.5), and Minecraft reads each by it. `region-file-compression`
+  only sets how chunks are written from then on; nothing is converted, so a world (one region,
+  even) mixes types after a change, and pruning and chunk restore copy stored bytes as they
+  are, which makes a restore from an older snapshot mix them the same way. Below 1.20.5 type 4
+  is unknown (ROADMAP, Undecided, "Chunk compression on an older Minecraft"). LZ4 chunks are
+  lz4-java's LZ4BlockOutputStream, not LZ4 frames (`lz4.ts`); a 1.21.11 world's 529 spawn
+  chunks unpacked in 11 ms, so they stay on the main thread where zlib went to the pool.
 - Removing a world-generation data pack from a world that loaded it stops the world loading
   (level.dat's generation settings name its biomes); MineShell refuses unless confirmed.
 
