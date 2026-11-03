@@ -172,10 +172,18 @@ function checkedValue(rule: WorldRule, value: RuleValue): RuleValue {
 	return text;
 }
 
-const coordinate = (n: number, what: string) => {
+const inWorld = (n: number, what: string) => {
 	if (!Number.isFinite(n) || Math.abs(n) > 30_000_000) throw new InstanceError(`${what} is out of the world.`);
-	return Math.round(n);
+	return n;
 };
+const coordinate = (n: number, what: string) => Math.round(inWorld(n, what));
+
+/**
+ * A border centre for `worldborder center`. Minecraft moves a whole number to the block's
+ * middle (0 becomes 0.5), so the centre read back never matched what was sent and every
+ * later save rounded it a block further; "0.0" is taken as it is (26.3, 2026-11-04).
+ */
+const centre = (n: number) => (Number.isInteger(n) ? `${n}.0` : String(n));
 
 /**
  * Applies what changed and answers with what it did. Over RCON for the running server's
@@ -196,7 +204,8 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 	const spawnChanged = !!spawn && JSON.stringify(spawn) !== JSON.stringify(current.spawn);
 	let border = changes.border;
 	if (border) {
-		border = { x: coordinate(border.x, 'The border centre'), z: coordinate(border.z, 'The border centre'), size: Math.round(border.size) };
+		// The centre as given, half blocks included: the file keeps a double.
+		border = { x: inWorld(border.x, 'The border centre'), z: inWorld(border.z, 'The border centre'), size: Math.round(border.size) };
 		if (!(border.size >= 1 && border.size < NO_BORDER)) throw new InstanceError(`The border is 1 to ${(NO_BORDER - 1).toLocaleString('en')} blocks across.`);
 	}
 	const borderChanged = border !== undefined && JSON.stringify(border) !== JSON.stringify(current.border);
@@ -227,7 +236,7 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 		const commands = rules.map(([rule, value]) => `gamerule ${rule.key.replace(/^minecraft:/, '')} ${value}`);
 		// From the console, setworldspawn sets the overworld's.
 		if (spawnChanged) commands.push(`setworldspawn ${spawn!.x} ${spawn!.y} ${spawn!.z}`);
-		if (borderChanged) commands.push(...(border ? [`worldborder center ${border.x} ${border.z}`, `worldborder set ${border.size}`] : [`worldborder set ${NO_BORDER}`]));
+		if (borderChanged) commands.push(...(border ? [`worldborder center ${centre(border.x)} ${centre(border.z)}`, `worldborder set ${border.size}`] : [`worldborder set ${NO_BORDER}`]));
 		const flush = !savingPaused(instance.id);
 		await viaRcon(instance, flush ? [...commands, 'save-all'] : commands);
 		await saveLimit();

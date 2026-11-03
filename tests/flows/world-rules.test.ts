@@ -134,7 +134,11 @@ describe("a world's game rules, spawn and border", () => {
 		const before = await fs.readFile(path.join(instance.path, 'world/level.dat'));
 		await changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true, 'minecraft:random_tick_speed': 3 }, spawn: { x: 1, y: 70, z: 2 }, border: { x: 5, z: 6, size: 3000 } });
 		// Then saved, so the files read back (and compared against next time) have it.
-		expect(rcon.commands).toEqual(['gamerule keep_inventory true', 'worldborder center 5 6', 'worldborder set 3000', 'save-all']);
+		expect(rcon.commands).toEqual(['gamerule keep_inventory true', 'worldborder center 5.0 6.0', 'worldborder set 3000', 'save-all']);
+		// A centre in the middle of a block stays there: the command took 0 as 0.5, and each save rounded it a block on.
+		rcon.commands = [];
+		await changeWorldRules(instance, 'world', { border: { x: 0.5, z: -0.5, size: 3000 } });
+		expect(rcon.commands).toContain('worldborder center 0.5 -0.5');
 		expect(await fs.readFile(path.join(instance.path, 'world/level.dat'))).toEqual(before);
 		rcon.answer = 'Incorrect argument for command';
 		await expect(changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true } })).rejects.toThrow(/refused "gamerule keep_inventory true"/);
