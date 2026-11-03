@@ -18,6 +18,8 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, systemdStopped } = await import('../helpers/instances');
 const { readProperties } = await import('#lib/server/properties.js');
+const { holdSaving, savingPaused } = await import('#lib/server/savepause.js');
+const { pauseSaving } = await import('#lib/server/world.js');
 const { fakeProcesses } = await import('../helpers/process');
 
 /**
@@ -131,10 +133,29 @@ describe("a world's game rules, spawn and border", () => {
 		expect((await readWorldRules(instance, 'world')).live).toBe(true);
 		const before = await fs.readFile(path.join(instance.path, 'world/level.dat'));
 		await changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true, 'minecraft:random_tick_speed': 3 }, spawn: { x: 1, y: 70, z: 2 }, border: { x: 5, z: 6, size: 3000 } });
-		expect(rcon.commands).toEqual(['gamerule keep_inventory true', 'worldborder center 5 6', 'worldborder set 3000']);
+		// Then saved, so the files read back (and compared against next time) have it.
+		expect(rcon.commands).toEqual(['gamerule keep_inventory true', 'worldborder center 5 6', 'worldborder set 3000', 'save-all']);
 		expect(await fs.readFile(path.join(instance.path, 'world/level.dat'))).toEqual(before);
 		rcon.answer = 'Incorrect argument for command';
 		await expect(changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true } })).rejects.toThrow(/refused "gamerule keep_inventory true"/);
+	});
+
+	it('leaves the save to the server while MineShell copies the world with saving paused', async () => {
+		const instance = await server(MID, '1.21.11');
+		running();
+		const release = holdSaving(instance.id);
+		expect(await changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true } })).toMatch(/saving paused, so this page shows it once the server saves again/);
+		expect(rcon.commands).toEqual(['gamerule keep_inventory true']);
+		release();
+		// A world download pauses saving the same way, until it is done.
+		const resume = await pauseSaving(instance, 'its world');
+		expect(savingPaused(instance.id)).toBe(true);
+		resume();
+		resume();
+		expect(savingPaused(instance.id)).toBe(false);
+		rcon.commands = [];
+		await changeWorldRules(instance, 'world', { rules: { 'minecraft:keep_inventory': true } });
+		expect(rcon.commands).toEqual(['gamerule keep_inventory true', 'save-all']);
 	});
 
 	it('refuses rules the world does not have, values of the wrong kind, and worlds not on the server', async () => {

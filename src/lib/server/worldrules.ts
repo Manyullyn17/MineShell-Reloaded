@@ -8,6 +8,7 @@ import { serverWorldName } from './packworld';
 import { worldFolderNames } from './worlds';
 import { compareVersions } from './java';
 import { patchProperties, readProperties } from './properties';
+import { savingPaused } from './savepause';
 import { isVanillaRule, ruleDescription, ruleLabel } from '#lib/shared/gamerules.js';
 import type { ServerInstance } from './db/schema';
 
@@ -24,7 +25,11 @@ import type { ServerInstance } from './db/schema';
  *   dimensions/minecraft/overworld/data/minecraft/ (26).
  *
  * Changed over RCON for the active world of a running server (a file written under it would
- * be saved over), else in the files: an inactive world, or any world while stopped.
+ * be saved over), else in the files: an inactive world, or any world while stopped. A live
+ * change ends with save-all: the files are read back for the page and compared against for
+ * the next change, and Minecraft writes them only at its next autosave (up to 5 minutes),
+ * so turning PvP off and on again read "on" from the file and answered "Nothing changed".
+ * Not while MineShell copies the world with saving paused (savepause.ts).
  *
  * Beside them the server's `max-world-size` (server.properties, 1.8+, read at start): no block
  * past that coordinate from 0,0 in x or z, every dimension and world alike, and the border's
@@ -223,9 +228,11 @@ export async function changeWorldRules(instance: ServerInstance, world: string, 
 		// From the console, setworldspawn sets the overworld's.
 		if (spawnChanged) commands.push(`setworldspawn ${spawn!.x} ${spawn!.y} ${spawn!.z}`);
 		if (borderChanged) commands.push(...(border ? [`worldborder center ${border.x} ${border.z}`, `worldborder set ${border.size}`] : [`worldborder set ${NO_BORDER}`]));
-		await viaRcon(instance, commands);
+		const flush = !savingPaused(instance.id);
+		await viaRcon(instance, flush ? [...commands, 'save-all'] : commands);
 		await saveLimit();
-		return `${capitalise(said.join(', '))}.${limitNote}`;
+		const shown = flush ? '' : ' The world is being copied with saving paused, so this page shows it once the server saves again.';
+		return `${capitalise(said.join(', '))}.${shown}${limitNote}`;
 	}
 
 	const dir = await worldDir(instance, world);

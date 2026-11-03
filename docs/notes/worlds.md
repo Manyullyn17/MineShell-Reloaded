@@ -166,6 +166,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   0,0 in x or z, and the border's edges are clamped to it (`WorldBorder`'s extents, 26.3 read
   with javap), so a border reaching past it stops there. The key is clamped to 1..29,999,984,
   which is also the default.
+- A rule, spawn or border changed over RCON reaches level.dat and world_border.dat only at the
+  next autosave (up to 5 minutes; tried on 1.21.11, 2026-11-04), and MineShell reads the files:
+  a live change ends with `save-all`, except while a copy holds saving paused (`savepause.ts`).
 - 1.21.11's renames are not one to one: some turned around (`disableRaids` -> `raids`, the
   elytra and player movement checks), `allowFireTicksAwayFromPlayer` became the number
   `fire_spread_radius_around_player`. Commands from 1.21.11 take `keep_inventory` or

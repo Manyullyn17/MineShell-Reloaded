@@ -1,3 +1,4 @@
+import { holdSaving } from './savepause';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import path from 'node:path';
@@ -1321,15 +1322,18 @@ export async function pauseSaving(instance: ServerInstance, what: string): Promi
 	const password = rconPassword(instance);
 	if (!password) throw new InstanceError(`RCON is not set up for this server; stop it to download ${what}.`);
 	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
+	const release = holdSaving(instance.id);
 	try {
 		await rcon(['save-off', 'save-all flush']);
 	} catch {
+		release();
 		throw new InstanceError(`The server did not answer over RCON, so saving could not be paused. Stop it to download ${what}.`);
 	}
 	let resumed = false;
 	return () => {
 		if (resumed) return;
 		resumed = true;
+		release();
 		void rcon(['save-on']).catch(() => {
 			setStatus(instance.id, 'ready', 'Saving was paused for a download and could not be turned back on. Run "save-on" in the console.');
 		});

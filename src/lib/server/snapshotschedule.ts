@@ -1,3 +1,4 @@
+import { holdSaving } from './savepause';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq, gt, isNull, or } from 'drizzle-orm';
@@ -387,10 +388,12 @@ async function liveSnapshot(
 	// Which run of the server saving is paused in: one started since saves as usual.
 	const run = (await unitState(instance.id, { fresh: true }).catch(() => null))?.activeEnterTimestamp ?? null;
 	task.setProgress(null, 'Pausing saving');
+	const release = holdSaving(instance.id);
 	try {
 		await rcon(['save-off', 'save-all flush']);
 	} catch {
 		// save-off may have got through before the failure.
+		release();
 		await rcon(['save-on']).catch(() => undefined);
 		throw new Error('The server did not answer over RCON, so saving could not be paused; no snapshot was taken.');
 	}
@@ -402,6 +405,7 @@ async function liveSnapshot(
 		if (!settled) task.log(`Files were still being written after ${scheduleTiming.quietMaxMs / 1000} s; copying anyway.`);
 		await copy(instance, task, input);
 	} finally {
+		release();
 		try {
 			await rcon(['save-on']);
 			task.log('Saving turned back on (save-on).');

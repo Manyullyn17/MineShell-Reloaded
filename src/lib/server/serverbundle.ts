@@ -1,3 +1,4 @@
+import { holdSaving } from './savepause';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -336,9 +337,11 @@ async function pauseSaving(instance: ServerInstance, task: TaskHandle): Promise<
 	const password = rconPassword(instance);
 	if (!password) throw new InstanceError('RCON is not set up for this server; stop it to export it with its world.');
 	const rcon = (commands: string[]) => rconExec({ port: instance.rconPort, password }, commands);
+	const release = holdSaving(instance.id);
 	try {
 		await rcon(['save-off', 'save-all flush']);
 	} catch {
+		release();
 		throw new InstanceError('The server did not answer over RCON, so saving could not be paused. Stop it to export it with its world.');
 	}
 	task.log('Saving is paused while the world is copied.');
@@ -346,6 +349,7 @@ async function pauseSaving(instance: ServerInstance, task: TaskHandle): Promise<
 	return async () => {
 		if (resumed) return;
 		resumed = true;
+		release();
 		await rcon(['save-on']).catch(() => task.log('Saving could not be turned back on: run "save-on" in the console.'));
 	};
 }
