@@ -14,8 +14,11 @@ import { cookieJar, load, post } from '../../../tests/helpers/routes';
 // The throttle is kept in memory for the whole run: each test signs in from an address of its own.
 const address = () => `10.${crypto.randomInt(256)}.${crypto.randomInt(256)}.${crypto.randomInt(1, 255)}`;
 
-const signIn = (fields: Record<string, string>, ip: string | Error, cookies = cookieJar()) =>
-	post(actions.login, { fields, ip, cookies, url: 'http://localhost/login' });
+const signIn = (fields: Record<string, string>, ip: string | Error, cookies = cookieJar(), headers?: Record<string, string>) =>
+	post(actions.login, { fields, ip, cookies, headers, url: 'http://localhost/login' });
+
+/** What `tailscale serve` adds to a request from a tailnet device (tried on 1.104). */
+const viaTailscale = (device: string) => ({ 'x-forwarded-for': device, 'x-forwarded-proto': 'https', 'tailscale-user-login': 'friend@example.com', 'tailscale-headers-info': 'https://tailscale.com/s/serve-headers' });
 
 describe('signing in', () => {
 	it('starts a session for the account and goes back where it was', async () => {
@@ -90,5 +93,22 @@ describe('the sign-in page', () => {
 		} finally {
 			setPlainHttpWarning(true);
 		}
+	});
+
+	// Behind `tailscale serve` every request comes from 127.0.0.1: one device's wrong passwords locked out everyone.
+	it('counts tries through Tailscale against the tailnet device, and a forged header from anywhere else against the sender', async () => {
+		owner();
+		const device = () => `100.${crypto.randomInt(64, 128)}.${crypto.randomInt(256)}.${crypto.randomInt(1, 255)}`;
+		const guesser = device();
+		for (let i = 0; i < 10; i++) expect(await signIn({ username: 'admin', password: 'wrong' }, '127.0.0.1', cookieJar(), viaTailscale(guesser))).toMatchObject({ status: 401 });
+		expect(await signIn({ username: 'admin', password: OWNER_PASSWORD }, '127.0.0.1', cookieJar(), viaTailscale(guesser))).toMatchObject({ status: 429 });
+		expect(await signIn({ username: 'admin', password: OWNER_PASSWORD }, '127.0.0.1', cookieJar(), viaTailscale(device()))).toEqual({ redirect: '/' });
+
+		// From the LAN the headers are the sender's to make up: its own address counts.
+		const lan = address();
+		for (let i = 0; i < 10; i++) {
+			expect(await signIn({ username: 'admin', password: 'wrong' }, lan, cookieJar(), viaTailscale(device()))).toMatchObject({ status: 401 });
+		}
+		expect(await signIn({ username: 'admin', password: OWNER_PASSWORD }, lan, cookieJar(), viaTailscale(device()))).toMatchObject({ status: 429 });
 	});
 });

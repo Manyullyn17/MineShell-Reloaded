@@ -13,6 +13,7 @@ import {
 	setupCode,
 	setupCodeMatches,
 	throttleAddress,
+	signInAddress,
 	verifyLogin
 } from './auth';
 import { db } from './db';
@@ -136,5 +137,22 @@ describe('the setup code', () => {
 		expect(setupCodeMatches(code.toLowerCase().replace(/-/g, ' '))).toBe(true);
 		expect(setupCodeMatches('')).toBe(false);
 		expect(setupCodeMatches('AAAA-AAAA-AAAA')).toBe(code === 'AAAA-AAAA-AAAA');
+	});
+});
+
+describe('the address a sign-in counts against', () => {
+	const req = (headers: Record<string, string>) => new Request('http://127.0.0.1:3000/login', { method: 'POST', headers });
+	const tailnet = { 'x-forwarded-for': '100.91.198.110', 'tailscale-user-login': 'me@example.com' };
+
+	it("is the tailnet device's behind tailscale serve, the proxy's last entry when the device sent one too", () => {
+		expect(signInAddress(req(tailnet), () => '127.0.0.1', '')).toBe('100.91.198.110');
+		expect(signInAddress(req({ ...tailnet, 'x-forwarded-for': '6.6.6.6, 100.91.198.110' }), () => '::ffff:127.0.0.1', '')).toBe('100.91.198.110');
+	});
+
+	it('is the socket otherwise: another address, no Tailscale headers, or Caddy setting it', () => {
+		expect(signInAddress(req(tailnet), () => '192.168.1.20', '')).toBe('192.168.1.20');
+		expect(signInAddress(req({ 'x-forwarded-for': '100.91.198.110' }), () => '127.0.0.1', '')).toBe('127.0.0.1');
+		expect(signInAddress(req(tailnet), () => '203.0.113.9', 'X-Forwarded-For')).toBe('203.0.113.9');
+		expect(signInAddress(req({}), () => { throw new Error('Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request'); }, 'X-Forwarded-For')).toBe('127.0.0.1');
 	});
 });

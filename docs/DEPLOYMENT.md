@@ -432,6 +432,10 @@ Never forward port 3000 itself through your router: that is plain http, password
 Without the button (or for another port): `tailscale serve --bg 3000` on the machine does the
 same; `tailscale serve status` shows it, `tailscale serve --https=443 off` stops it.
 
+Over `tailscale serve`, the sign-in throttle counts each tailnet device on its own (Tailscale
+says which one sent a request), with nothing to set up, and the session cookie is marked
+secure, as the browser is on https.
+
 Optional: with `HOST=127.0.0.1` in MineShell's settings file (then
 `systemctl --user restart mineshell`), it no longer answers on the LAN address at all, only
 through Tailscale. Don't do that if devices without Tailscale still need it.

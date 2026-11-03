@@ -10,6 +10,7 @@ import {
 	plainHttpWarning,
 	recordFailedLogin,
 	sessionCookieOptions,
+	signInAddress,
 	soleUsername,
 	verifyLogin
 } from '#lib/server/auth.js';
@@ -22,15 +23,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 export const actions: Actions = {
 	login: async ({ request, cookies, getClientAddress, url }) => {
-		// With ADDRESS_HEADER set (behind Caddy), adapter-node throws for a request without that
-		// header: one sent to MineShell's port on this machine itself, which scripts/caddy.sh's
-		// HOST=127.0.0.1 makes the only kind. It counts as this machine's.
-		let ip: string;
-		try {
-			ip = getClientAddress();
-		} catch {
-			ip = '127.0.0.1';
-		}
+		const ip = signInAddress(request, getClientAddress);
 		const form = await request.formData();
 		const username = String(form.get('username') ?? '');
 		const password = String(form.get('password') ?? '');

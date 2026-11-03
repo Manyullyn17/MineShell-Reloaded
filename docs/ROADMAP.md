@@ -549,11 +549,11 @@ Suggested, not yet confirmed or rejected:
   the one worth doing): (1) a warning in Remote access and `doctor` when the machine has a
   global IPv6 address while MineShell listens on every address: IPv6 often needs no port
   forwarding, so port 3000 can be reachable from the internet with nothing forwarded;
-  (2) check on the real install that the session cookie is `Secure` behind `tailscale serve`
-  (it depends on Tailscale passing `X-Forwarded-Proto`); (3) behind `tailscale serve` every
-  sign-in comes from 127.0.0.1, so ten wrong passwords lock everyone out for 15 minutes
-  (`ADDRESS_HEADER`, if Tailscale sets `X-Forwarded-For`). For public setups only: a
-  notification on a sign-in from an unknown address, two-factor sign-in.
+  (2) and (3) done 2026-11-03: the cookie is `Secure` behind `tailscale serve` by the browser's
+  https Origin, and sign-ins through it count per tailnet device (`signInAddress`; Tailscale
+  1.104 sends `X-Forwarded-For`, `-Proto`, `-Host` and `Tailscale-User-*`, seen with a header
+  echo on a spare serve port). For public setups only: a notification on a sign-in from an
+  unknown address, two-factor sign-in.
 
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`

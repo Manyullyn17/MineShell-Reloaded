@@ -294,6 +294,32 @@ export function throttleAddress(ip: string): string {
 		.join(':')}::/64`;
 }
 
+const LOOPBACK = /^(127\.|::1$|::ffff:127\.)/;
+
+/**
+ * The address a sign-in counts against. Behind `tailscale serve` every request reaches
+ * MineShell from 127.0.0.1, so ten wrong passwords from one device locked out every other.
+ * Tailscale passes the device's tailnet address on as X-Forwarded-For, with headers of its own
+ * (Tailscale-User-Login and the like; tried on Tailscale 1.104, 2026-11-03): from this machine,
+ * with them, the last X-Forwarded-For entry is the one Tailscale added. Never from another
+ * address, which could send any header. Behind Caddy (adapter-node's ADDRESS_HEADER) the
+ * socket address is already the header's, and a request without the header (sent to
+ * MineShell's port on this machine itself, the only kind with caddy.sh's HOST=127.0.0.1)
+ * throws, which counts as this machine.
+ */
+export function signInAddress(request: Request, socketAddress: () => string, addressHeader = process.env.ADDRESS_HEADER): string {
+	let ip: string;
+	try {
+		ip = socketAddress();
+	} catch {
+		return '127.0.0.1';
+	}
+	if (addressHeader || !LOOPBACK.test(ip)) return ip;
+	const viaTailscale = request.headers.has('tailscale-user-login') || request.headers.has('tailscale-headers-info');
+	const forwarded = request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim();
+	return viaTailscale && forwarded ? forwarded : ip;
+}
+
 const ipKey = (ip: string) => `ip:${throttleAddress(ip)}`;
 const accountKey = (username: string) => `user:${username.trim().toLowerCase()}`;
 

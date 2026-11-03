@@ -1419,7 +1419,10 @@ source code it also serves is public anyway.
 throttle per address (10 failures in 15 minutes) and per account name (50, high enough that
 failing on purpose does not easily lock the owner out). IPv6 addresses count per /64
 (`throttleAddress`), since one client is usually given a whole one, and IPv4-mapped ones as the
-IPv4 address. A visitor without a session may send at most 64 KB in a state-changing request
+IPv4 address. Behind `tailscale serve` every request arrives from 127.0.0.1; a request from
+this machine carrying Tailscale's own headers counts against the last X-Forwarded-For entry,
+the tailnet device Tailscale names (`signInAddress`), and one from anywhere else against its
+own address whatever headers it sends. A visitor without a session may send at most 64 KB in a state-changing request
 (`anonymousBodyTooBig`, 413): the installer's `BODY_SIZE_LIMIT=Infinity` is for uploads, and
 `/login` reads its whole form into memory. The guard reads the session's account
 on every request, so a deleted session or a disabled account stops at once. The owner, named
