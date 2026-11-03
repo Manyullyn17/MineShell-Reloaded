@@ -521,6 +521,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Litematica, MiniHUD and Tweakeroo showed as "project-1205459" and the like: CurseForge's own placeholder name for a project without one, passed on by the mirror | `flows/mod-names.test.ts` |
 | Mod updates found by the update check or Check now were on the overview but not under Mods > Updates until checked again there, and Check now's answer sat at the top of Settings, out of view | `routes/instances/[id]/mods/updates-tab.test.ts` |
 | An uploaded jar stayed "Other" with no version: Upload recorded it as manual without a lookup, and Sync only identified jars with no record; a CurseForge-only jar was never identified | `flows/mod-identify.test.ts`, `server/mods/curseforge-fingerprint.test.ts` |
+| A CurseForge key added later named nothing recorded as "Other" until Sync was pressed on each server | `flows/mod-identify.test.ts` ("looks up the manual jars on every server") |
 | A jar no catalog knew was named after its file with no version, though it declares both | `flows/mod-names.test.ts` ("jars no catalog knows") |
 | A version move left data packs at their old build, and a new world (moving down) without them | `flows/migrate.test.ts` (the three data pack cases) |
 | A pack change replacing a data pack loader (Paxi by Open Loader), or moving to an Open Loader build that reads another folder, did not say where the user's packs would be read from, or said nothing | `flows/pack-change.test.ts` ("names the loader that takes over", "reads another folder") |

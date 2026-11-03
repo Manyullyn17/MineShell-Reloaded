@@ -9,6 +9,8 @@ import {
 	systemdUnitDir
 } from '#lib/server/config.js';
 import { curseforgeKeySource, curseforgeKeyValid, setCurseforgeApiKey } from '#lib/server/curseforge.js';
+import { identifyManualModsEverywhere } from '#lib/server/modupdates.js';
+import { plural } from '#lib/shared/format.js';
 import {
 	AGENT_UNIT,
 	agentPage,
@@ -506,7 +508,11 @@ export const actions: Actions = {
 		const apiKey = String((await request.formData()).get('apiKey') ?? '');
 		if (!apiKey) return fail(400, { ok: false, message: 'Enter a key, or use "Remove" to clear it.' });
 		const result = await setCurseforgeApiKey(apiKey);
-		return { ok: result.ok, message: result.message };
+		if (!result.ok) return { ok: false, message: result.message };
+		// Jars recorded as "Other" before there was a key can be named now (fingerprints).
+		const lookup = identifyManualModsEverywhere();
+		const more = lookup ? ` Looking up ${plural(lookup.jars, 'mod')} recorded as Other on ${plural(lookup.servers, 'server')}; follow it in Activity.` : '';
+		return { ok: true, message: `${result.message}${more}` };
 	},
 
 	plainHttpWarning: async ({ request }) => {

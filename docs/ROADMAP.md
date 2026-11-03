@@ -33,7 +33,7 @@ size, not a fixed list; entries move and get added along the way):
 - **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
   jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
   dropping into a folder in Files, the Data packs tab showing what loader mods read (with an
-  upload). To build - looking again when a CurseForge key is set; game mode and
+  upload), looking again when a CurseForge key is set. To build - game mode and
   teleport for online players; game rules, world spawn and border; server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
   gap it leaves in basic settings; its `resource-pack*` keys stay with that entry in 1.3);
@@ -140,10 +140,9 @@ again when Kit and svelte-check list 7 in their peer ranges.
 
 #### Mods from outside Modrinth's hash lookup
 
-Asked for 2026-10-29. Uploads, CurseForge fingerprints and names and versions from the jar
-built 2026-11-03 (ROADMAP-ARCHIVE, "Identifying uploaded and CurseForge-only jars"). Left:
-- Looking again when a key is first set: a jar recorded as manual is only tried again at the
-  next Sync (or upload), not the moment a CurseForge key starts working.
+Asked for 2026-10-29. Uploads, CurseForge fingerprints, names and versions from the jar and
+looking again when a key is set built 2026-11-03 (ROADMAP-ARCHIVE, "Identifying uploaded and
+CurseForge-only jars"). Left:
 - DynmapBlockScan updates: it is on no catalog. dynmap.us/builds/DynmapBlockScan/ is a plain
   directory listing with builds per Minecraft version and a `.MD5` beside the newer ones;
   1.12.2 has 3.6 (2023) and 3.7-beta-6 (2025-01-09) besides the 3.4-beta-1 MineShell

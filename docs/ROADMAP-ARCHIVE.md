@@ -1320,8 +1320,9 @@ update notifications); after Modrinth's hash lookup, with a working key, CurseFo
 fingerprint lookup (`mods/fingerprint.ts`, checked against CurseForge's own fingerprints;
 packs-and-mods.md) and one `/mods` call for the names. A jar none of them knows is shown
 under the name and version it declares (`mainDeclaredMod`; surveyed on 1031 jars first,
-packs-and-mods.md), also for jars recorded before as their file name. Not built: looking
-again the moment a key is set (ROADMAP, "Mods from outside Modrinth's hash lookup").
+packs-and-mods.md), also for jars recorded before as their file name. Saving a key that
+works then looks up every server's manual jars at once, as one task in Activity (user's
+pick over a prompt, 2026-11-03).
 
 ### Data packs on a version move (1.2, 2026-11-03)
 

@@ -15,7 +15,9 @@ const { listInstanceMods, syncMods, trackManualJar } = await import('#lib/server
 const { curseforgeFingerprint } = await import('#lib/server/mods/fingerprint.js');
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods } = await import('#lib/server/db/schema.js');
-const { createInstance, systemdStopped } = await import('../helpers/instances');
+const { createInstance, systemdStopped, waitForTask } = await import('../helpers/instances');
+const { identifyManualModsEverywhere } = await import('#lib/server/modupdates.js');
+const { serverInstances } = await import('#lib/server/db/schema.js');
 const { fetchCalls, useRecordedHttp } = await import('../helpers/http');
 const { zipBuffer } = await import('../helpers/fs');
 const { post } = await import('../helpers/routes');
@@ -93,5 +95,23 @@ describe('identifying jars', () => {
 			'lithium.jar': { source: 'modrinth', name: 'Lithium' },
 			'cfonly.jar': { source: 'curseforge', name: 'CF Only' }
 		});
+	});
+
+	// A key set after the jars were recorded as manual: every server's are looked up at once.
+	it('looks up the manual jars on every server once a key works, leaving a server mid-operation alone', async () => {
+		key.valid = true;
+		const first = await fabric({ 'cfonly.jar': CF_ONLY });
+		const second = await fabric({ 'cfonly.jar': CF_ONLY, 'nowhere.jar': NOWHERE });
+		const busy = await fabric({ 'cfonly.jar': CF_ONLY });
+		for (const [instance, files] of [[first, ['cfonly.jar']], [second, ['cfonly.jar', 'nowhere.jar']], [busy, ['cfonly.jar']]] as const) {
+			for (const file of files) await trackManualJar(instance, file);
+		}
+		db.update(serverInstances).set({ status: 'provisioning' }).where(eq(serverInstances.id, busy.id)).run();
+		const lookup = identifyManualModsEverywhere();
+		expect(lookup).toMatchObject({ servers: expect.any(Number), jars: expect.any(Number) });
+		expect((await waitForTask(lookup!.taskId)).state).toBe('done');
+		expect((await byFile(first))['cfonly.jar'].source).toBe('curseforge');
+		expect(await byFile(second)).toMatchObject({ 'cfonly.jar': { source: 'curseforge' }, 'nowhere.jar': { source: 'manual' } });
+		expect((await byFile(busy))['cfonly.jar'].source).toBe('manual');
 	});
 });

@@ -2,10 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from './db';
-import { instanceDatapacks, instanceMods, type ServerInstance } from './db/schema';
+import { instanceDatapacks, instanceMods, mods as modsTable, type ServerInstance } from './db/schema';
 import {
 	audit,
+	getInstance,
 	InstanceError,
+	listInstances,
 	requireInstance,
 	requireStopped,
 	setStatus,
@@ -32,6 +34,7 @@ import { getLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
 import { clearDatapackNotice, clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
+import { isBisecting } from './bisect';
 import { snapshotStep } from './snapshots';
 import { disabledCopies, indexMods } from './crashdiag';
 import { cleanroomDisabledReasons, fugueUpdate, isFugueJar } from './cleanroom';
@@ -73,6 +76,42 @@ export async function syncInstanceMods(instance: ServerInstance): Promise<string
 	if (trackedAsManual) parts.push(`tracked ${plural(trackedAsManual, 'unrecognised file')} as manual`);
 	if (removedStale) parts.push(`cleared ${plural(removedStale, 'stale record')}`);
 	return parts.length ? parts.join(', ') : null;
+}
+
+/**
+ * After a CurseForge key starts working: Sync for every server with jars recorded as manual,
+ * which the fingerprint lookup can now name (a key set later otherwise needed Sync pressed on
+ * each server). One background task in Activity; a server mid-operation or mid-bisect is
+ * left for its own next Sync. Returns the task, or null when there is nothing to look up.
+ */
+export function identifyManualModsEverywhere(): { taskId: string; servers: number; jars: number } | null {
+	const manual = db
+		.select({ instanceId: instanceMods.instanceId })
+		.from(instanceMods)
+		.innerJoin(modsTable, eq(instanceMods.modId, modsTable.id))
+		.where(eq(modsTable.source, 'manual'))
+		.all();
+	const byServer = new Map<string, number>();
+	for (const { instanceId } of manual) byServer.set(instanceId, (byServer.get(instanceId) ?? 0) + 1);
+	const servers = listInstances().filter((i) => byServer.has(i.id) && i.status === 'ready' && !isBisecting(i.id));
+	if (!servers.length) return null;
+	const jars = servers.reduce((n, i) => n + byServer.get(i.id)!, 0);
+	const taskId = startTask({ label: 'Looking up mods recorded as Other on CurseForge' }, async (task) => {
+		let n = 0;
+		for (const instance of servers) {
+			task.setProgress(Math.round((n++ / servers.length) * 100), instance.name);
+			const fresh = getInstance(instance.id);
+			if (fresh?.status !== 'ready') continue;
+			try {
+				const summary = await syncInstanceMods(fresh);
+				task.log(`${instance.name}: ${summary ?? 'nothing new found'}`);
+			} catch (err) {
+				task.log(`${instance.name}: could not be looked up (${err instanceof Error ? err.message : 'unknown error'})`);
+			}
+		}
+		task.setProgress(100, 'Done');
+	});
+	return { taskId, servers: servers.length, jars };
 }
 
 export type Filter = { minecraftVersion: string; loaders: string[] };

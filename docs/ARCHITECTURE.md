@@ -602,7 +602,8 @@ recognises is tracked as manual, under the name and version the jar declares
 (`mainDeclaredMod`: in a jar of several mods, the one its file is named after; a build
 placeholder in the version replaced by the manifest's Implementation-Version), or its file
 name. Upload goes through the same identification, and Sync tries jars recorded as manual
-again, keeping when they were added.
+again, keeping when they were added. Saving a CurseForge key that tests as working runs that
+Sync for every server with manual jars, as one task (`identifyManualModsEverywhere`).
 
 Pack import detects the format from what is inside the archive: `modrinth.index.json`
 means an mrpack, `manifest.json` means CurseForge. Both resolve to the same internal
