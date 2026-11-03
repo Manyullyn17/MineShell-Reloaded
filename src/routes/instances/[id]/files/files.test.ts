@@ -86,6 +86,17 @@ describe('the Files tab stays inside the server folder', () => {
 	});
 });
 
+describe('uploading', () => {
+	// A drop onto a folder opened in the tree goes there, not into the folder shown.
+	it('puts files into the folder posted, and says which', async () => {
+		const { instance, params } = await server();
+		const file = new File(['dropped'], 'dropped.txt');
+		expect(await post(actions.upload, { params, fields: { dir: 'config', withFolders: '1', files: file } })).toEqual({ ok: true, message: 'Uploaded 1 file into config/.' });
+		expect(await fs.readFile(path.join(instance.path, 'config/dropped.txt'), 'utf8')).toBe('dropped');
+		expect(await post(actions.upload, { params, fields: { dir: '', files: file } })).toEqual({ ok: true, message: 'Uploaded 1 file.' });
+	});
+});
+
 describe('a link to a file', () => {
 	// Disk usage linked a leftover file with ?path=, which was listed as a folder: ENOTDIR.
 	it('opens the folder holding it: in the editor if it is text, else with the file picked out', async () => {

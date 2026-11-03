@@ -31,8 +31,8 @@ are extensions and wait.
 Release guide from 1.2 on (user's call, 2026-11-03: a guideline to keep releases a reasonable
 size, not a fixed list; entries move and get added along the way):
 - **1.2**: built - uploaded and CurseForge-only jars identified, names and versions from the
-  jar, joining over Tailscale, data packs on a version move, data pack loaders changing. To
-  build - dropping into a folder in Files, the Data packs tab showing what loader mods read
+  jar, joining over Tailscale, data packs on a version move, data pack loaders changing,
+  dropping into a folder in Files. To build - the Data packs tab showing what loader mods read
   (with an upload) (Leftovers); looking again when a CurseForge key is set; game mode and
   teleport for online players; game rules, world spawn and border; server.properties coverage
   (LZ4 chunks included; moved up from 1.3 though it sits next to the resource pack, for the
@@ -586,10 +586,6 @@ is open, and each needs a test setup.
   process at once (nothing of the server is kept); a pack change could too, since its old
   loader files are in the journal and the change is put back from it either way - to check
   first that a half-written `libraries/` is among what the rollback restores or removes.
-- **Dropping into a folder in Files** (user's call, 2026-11-02: for 1.2). The whole file list
-  is one drop zone uploading into the folder shown; with folders opened as a tree, a drop on
-  one of them should go there (the folder row outlined under the pointer, as a file manager
-  does), the list's own outline for the rest.
 - **Data packs a loader mod reads, on the Data packs tab** (user, 2026-11-02, for 1.2 with the
   one above). The tab lists the active world's `datapacks/` only: one put in Open Loader's
   `config/openloader/packs` (or Paxi's, Global Packs', KubeJS's; `DATAPACK_LOADERS` has the

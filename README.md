@@ -172,7 +172,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Browse, upload, download, rename, delete, and edit text files within an instance directory. The editor has line numbers and colours for JSON, TOML, YAML, Forge `.cfg`, `.properties`, scripts and shell files, marks a syntax error as you type, and before saving a broken JSON (with comments too: `.jsonc`), JSON5, TOML or YAML file names the line and asks (with "Save anyway").
 - Every save in the editor keeps the version it replaced (the last 20 per file, up to 90 days), to load back and save again.
 - Search a server's configs and scripts for some text, or a folder of them, and open each matching line in the editor; file and folder names are matched too, mods and logs included.
-- Upload files and folders by dragging them into the file browser.
+- Upload files and folders by dragging them into the file browser, or onto a folder opened in its tree to put them there.
 - Unpack an uploaded zip where it lies or into a folder named after it (asking before replacing anything, which goes to the trash), and download any folder as a zip; a running server's world folder pauses saving while it downloads.
 - Recover deleted files from a per-server trash, with configurable automatic cleanup.
 - Open server directories in a file manager through SFTP links, with the address to copy and what to change when the browser opens nothing.

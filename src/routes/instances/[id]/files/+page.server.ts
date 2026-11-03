@@ -134,7 +134,7 @@ export const actions: Actions = {
 			for (const file of files) {
 				await saveUpload(instance.path, uploadPath(dir, file.name, withFolders), file);
 			}
-			return { ok: true, message: `Uploaded ${files.length} file${files.length === 1 ? '' : 's'}.` };
+			return { ok: true, message: `Uploaded ${files.length} file${files.length === 1 ? '' : 's'}${dir ? ` into ${dir}/` : ''}.` };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Upload failed.' });
 		}

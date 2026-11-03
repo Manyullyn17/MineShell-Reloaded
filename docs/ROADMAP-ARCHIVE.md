@@ -1333,6 +1333,15 @@ into a new world), or left where they are with why (no build; added by hand). Th
 after the move is committed, into the world moved to; a failed download keeps the old build
 and is named in the status (loaders.md). The tracking rows stay per server.
 
+### Dropping into a folder in Files (1.2, 2026-11-03)
+
+User's call 2026-11-02. The whole file list was one drop zone uploading into the folder
+shown. Built: over a folder row opened in the tree, that row is outlined (the list's own
+outline and label give way) and a drop goes into it; anywhere else, into the folder shown.
+The row is found by the pointer's height, as the zone's overlay is the list's own
+pseudo-element and every drag event's target is the list. Tried in Chrome with synthetic
+drags on a throwaway server: a folder row, a nested one, a file row.
+
 ### Data pack loaders changing (1.2, 2026-11-03)
 
 Found 2026-11-02 while trying the pack change's data pack loader warning. Another loader taking

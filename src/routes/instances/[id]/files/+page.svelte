@@ -215,15 +215,33 @@
 
 	// ---- uploads: the button, or files and folders dropped onto the file list (use:dropzone).
 	let uploading = $state<number | null>(null);
+	let listing = $state<HTMLElement | null>(null);
+	/** The opened folder the drag is over, which a drop goes into; else the folder shown. */
+	let dropDir = $state<string | null>(null);
+
+	/**
+	 * By the pointer's height: the zone's overlay is the list's own pseudo-element, so the
+	 * event's target is always the list, never a row.
+	 */
+	function folderUnder(event: DragEvent) {
+		const rows = listing?.querySelectorAll<HTMLElement>('tr[data-drop-dir]') ?? [];
+		const row = [...rows].find((r) => {
+			const box = r.getBoundingClientRect();
+			return event.clientY >= box.top && event.clientY < box.bottom;
+		});
+		dropDir = row?.dataset.dropDir ?? null;
+	}
 
 	function onDrop(event: DragEvent) {
+		const into = dropDir ?? data.dir;
+		dropDir = null;
 		if (data.editing || !event.dataTransfer) return;
 		// Entries must be taken now: the drop's items are gone after the first await.
 		const entries = [...event.dataTransfer.items].map((item) => item.webkitGetAsEntry?.()).filter((e) => e != null);
 		const plain = [...event.dataTransfer.files];
 		void (async () => {
 			const files = entries.length ? (await Promise.all(entries.map((e) => filesIn(e, '')))).flat() : plain.map((file) => ({ file, path: file.name }));
-			await upload(files);
+			await upload(files, into);
 		})();
 	}
 
@@ -246,10 +264,10 @@
 	}
 
 	/** Posts to the same action as the button, with each file named by its path. */
-	async function upload(files: { file: File; path: string }[]) {
+	async function upload(files: { file: File; path: string }[], dir: string) {
 		if (!files.length || uploading !== null) return;
 		const body = new FormData();
-		body.set('dir', data.dir);
+		body.set('dir', dir);
 		body.set('withFolders', '1');
 		for (const { file, path } of files) body.append('files', file, path);
 		uploading = files.length;
@@ -272,7 +290,12 @@
 
 {#snippet entryRows(entries: typeof data.entries, depth: number)}
 	{#each entries as entry (entry.relPath)}
-						<tr class:shown={entry.relPath === data.show} use:scrollToShown={entry.relPath === data.show}>
+		<tr
+			class:shown={entry.relPath === data.show}
+			class:drop-into={entry.isDirectory && dropDir === entry.relPath}
+			data-drop-dir={entry.isDirectory ? entry.relPath : undefined}
+			use:scrollToShown={entry.relPath === data.show}
+		>
 			<td style:padding-left="{1 + depth * 1.4}rem">
 				{#if renaming === entry.relPath}
 					<form method="POST" action="?/rename" use:enhance class="inline-form">
@@ -741,7 +764,18 @@
 				{/if}
 			</div>
 		{:else}
-		<div class="listing" use:dropzone={{ onDrop, disabled: !!data.editing, label: `Drop to upload into ${data.instance.id}/${data.dir}` }}>
+		<div
+			class="listing"
+			role="region"
+			aria-label="Files in {data.dir || 'the server folder'}"
+			class:into-folder={dropDir !== null}
+			bind:this={listing}
+			ondragover={folderUnder}
+			ondragleave={(event) => {
+				if (!listing?.contains(event.relatedTarget as Node | null)) dropDir = null;
+			}}
+			use:dropzone={{ onDrop, disabled: !!data.editing, label: `Drop to upload into ${data.instance.id}/${data.dir}` }}
+		>
 		{#if data.entries.length === 0}
 			<div class="empty"><p>This folder is empty.</p></div>
 		{:else}
@@ -996,6 +1030,23 @@
 	.inline-form input {
 		width: auto;
 		flex: 1 1 12rem;
+	}
+
+	/* Over a folder row while dragging: that row is the target, outlined as a file manager
+	   does, instead of the whole list and its label. */
+	.listing.into-folder:global(.dropping) {
+		outline: none;
+	}
+
+	.listing.into-folder:global(.dropping)::after {
+		content: none;
+	}
+
+	.listing:global(.dropping) tr.drop-into > td {
+		background: color-mix(in srgb, var(--accent) 16%, transparent);
+		box-shadow:
+			inset 0 2px 0 var(--accent),
+			inset 0 -2px 0 var(--accent);
 	}
 
 	tr.shown > td {
