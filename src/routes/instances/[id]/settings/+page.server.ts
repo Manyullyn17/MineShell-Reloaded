@@ -763,10 +763,10 @@ export const actions: Actions = {
 		const result = await checkForUpdates(instance);
 		if (!result.ok) return fail(502, { ok: false, message: `Could not check: ${result.error}` });
 		const mods = modsChecked(instance) ? await checkModsForUpdates(instance) : null;
-		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${plural(mods.count, 'mod update')} found; ${mods.count === 1 ? 'it is' : 'they are'} on the overview.` : ' The mods are up to date.';
+		const modPart = !mods ? '' : !mods.ok ? ` Mods could not be checked: ${mods.error}` : mods.count ? ` ${plural(mods.count, 'mod update')} found; ${mods.count === 1 ? 'it is' : 'they are'} under Mods > Updates.` : ' The mods are up to date.';
 		const packs = hasTrackedDatapacks(instance.id) ? await checkDatapacksForUpdates(instance) : null;
 		const packPart = !packs ? '' : !packs.ok ? ` Data packs could not be checked: ${packs.error}` : packs.count ? ` ${plural(packs.count, 'data pack update')} found; on the overview.` : ' The data packs are up to date.';
-		const main = result.found ? `${result.found.label} is available.` : updateKind(instance) ? 'Nothing newer to install.' : '';
+		const main = result.found ? `${result.found.label} is available.` : updateKind(instance) ? `No newer ${updateKind(instance) === 'pack' ? 'pack version' : 'loader build'}.` : '';
 		return { ok: true, message: (main + modPart + packPart).trim() };
 	},
 

@@ -671,7 +671,7 @@
 	snapshotPrompt={data.snapshotPrompt}
 	bind:packMods
 	bind:available={updatesFound}
-	checkOnOpen={arrivedFor === 'updates'}
+	checkOnOpen={arrivedFor === 'updates' || data.modUpdatesKnown}
 />
 
 <ModBrowser

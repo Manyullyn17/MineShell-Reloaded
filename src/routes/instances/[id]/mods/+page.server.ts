@@ -20,7 +20,8 @@ import {
 	setModLocked,
 	trackManualJar
 } from '#lib/server/mods/index.js';
-import { dropFromModNotice } from '#lib/server/modnotice.js';
+import { currentModNotice, dropFromModNotice } from '#lib/server/modnotice.js';
+import { modsChecked } from '#lib/server/updatecheck.js';
 import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '#lib/server/modloaders.js';
 import { installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
 import { saveUpload } from '#lib/server/files.js';
@@ -58,6 +59,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */
 		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
+		/** The update check found mod updates: the Updates tab checks when opened, to list them. */
+		modUpdatesKnown: instance.updateCheck && modsChecked(instance) && !!currentModNotice(instance.id)?.updates.length,
 		running: summary.running,
 		busy: instance.status === 'provisioning',
 		/** Changing single mods of a modpack is opt-in on the page; the pack's version is the usual thing to change. */

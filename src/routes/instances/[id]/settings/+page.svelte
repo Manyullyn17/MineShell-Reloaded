@@ -425,6 +425,20 @@
 		await save(false);
 	}
 
+	// Check now answers beside its button: the page's message sits at the top, out of view
+	// from the Updates section, and the line there only covers the pack or loader.
+	let checkingUpdates = $state(false);
+	let checkResult = $state<{ ok: boolean; message: string } | null>(null);
+	function checkNow() {
+		checkingUpdates = true;
+		checkResult = null;
+		return async ({ result }: { result: Parameters<typeof actionMessage>[0] }) => {
+			checkResult = { ok: result.type === 'success', message: actionMessage(result, 'Checked.') };
+			checkingUpdates = false;
+			await invalidateAll();
+		};
+	}
+
 	function keepValues() {
 		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
 			await update({ reset: false });
@@ -620,13 +634,13 @@
 						Not checked yet.
 					{:else}
 						Last checked {formatDateTime(data.updates.checkedAt)}:
-						{#if !found}nothing newer.
+						{#if !found}no newer {data.updates.kind === 'pack' ? 'pack version' : data.updates.kind === 'loader' ? `${data.instance.modloaderLabel} build` : 'version'}.
 						{:else if found.skipped}<strong>{found.label}</strong> is out, skipped.
 						{:else}{@const note = channelNote(found.channel, found.kind === 'loader' ? data.settings.modloader : null)}<strong>{found.label}</strong>{note ? ` (${note})` : ''} is available.{/if}
 					{/if}
 				</p>
-				<form method="POST" action="?/checkUpdates" use:enhance>
-					<button class="button-quiet" type="submit">Check now</button>
+				<form method="POST" action="?/checkUpdates" use:enhance={checkNow}>
+					<button class="button-quiet" type="submit" disabled={checkingUpdates}>{checkingUpdates ? 'Checking…' : 'Check now'}</button>
 				</form>
 				{#if found?.skipped}
 					<form method="POST" action="?/unskipUpdate" use:enhance>
@@ -634,6 +648,7 @@
 					</form>
 				{/if}
 			</div>
+			{#if checkResult}<p class="small update-result" class:error={!checkResult.ok}>{checkResult.message}</p>{/if}
 		</SettingsSection>
 		{/if}
 	{/snippet}
@@ -1246,6 +1261,14 @@
 
 	.update-status p {
 		margin: 0;
+	}
+
+	.update-result {
+		margin: var(--space-2) 0 0;
+	}
+
+	.update-result.error {
+		color: var(--error);
 	}
 
 	.preset-preview {

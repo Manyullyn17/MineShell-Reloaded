@@ -29,7 +29,7 @@
 		packMods: boolean;
 		/** How many updates the last check found, for the tab's badge. */
 		available?: number;
-		/** Run the check at once (arriving from the overview's notice). */
+		/** Run the check when the tab first opens (arriving from the overview's notice, or updates already found). */
 		checkOnOpen?: boolean;
 	} = $props();
 
