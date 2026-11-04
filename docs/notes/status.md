@@ -61,7 +61,11 @@ game rule/border read-back and the border centre). Release notes by hand, withou
 
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the
-   release history shows beta.2 and beta.1 tagged Beta, with notes (bfda974).
+   release history shows beta.2 and beta.1 tagged Beta, with notes (bfda974). **Done**
+   (2026-11-04): updated with the button, both betas listed after a Check now (the check
+   stored by beta.1 had no betas in its list; later ones keep them). Beta.2 was not offered
+   at first: "Offer betas too" had been switched off by a stray click after the update to
+   beta.1 (audit log, 01:59).
 2. **Players**: game mode and teleport (to a player, the spawn, coordinates) with a real player
    online, from the player drawer and the overview's Online now menu; on Irithyll (1.21.11)
    and a 1.12 server (teleports stay in the player's dimension there).
