@@ -1137,8 +1137,9 @@
 				<label for="beta">Offer betas too</label>
 				<p class="hint">
 					A beta is the next version before its release, for trying it out first: it may still have problems the release
-					fixes. With this on, a newer beta is offered like a release; the release that follows it is offered either way,
-					and going back lands on a release, never a beta.
+					fixes. With this on, a newer beta is offered like a release, and the betas of the next version are in the release
+					history below, to read their notes or go back to an earlier one; the release that follows them is offered either
+					way, and replaces them in the history.
 				</p>
 			</div>
 		</div>
@@ -1270,8 +1271,8 @@
 		<p class="muted">{u.check ? 'No releases found.' : 'Check for updates to see the releases.'}</p>
 	{:else}
 		<p class="small muted">
-			Every release, newest first. Going back to an older one is meant for stepping back from a release that brought a
-			problem; the version after it is one update away again.
+			Every release, newest first{beta ? ', with the betas of the next version' : ''}. Going back to an older one is meant
+			for stepping back from a release that brought a problem; the version after it is one update away again.
 			{#if u.releases.some((r) => r.olderThanCurrent && !r.mayGoBack)}
 				From {u.current.split('.')[0]}.0 on, that is to releases of the same major version and the last one before it;
 				the older ones are here for their notes.
@@ -1283,6 +1284,7 @@
 					<details open={r.version === u.current || downgrade?.release.version === r.version}>
 						<summary>
 							<strong>{r.name}</strong>
+							{#if r.prerelease}<span class="badge">Beta</span>{/if}
 							{#if r.version === u.current}<span class="tag accent">running</span>{/if}
 							<span class="small muted">{formatDateTime(Date.parse(r.publishedAt))}</span>
 						</summary>

@@ -58,7 +58,7 @@ export type Release = {
 	/** A beta (a GitHub pre-release, tagged v1.1.0-beta.1): offered only with betas on. Absent in checks stored before 1.1. */
 	prerelease?: boolean;
 };
-/** `releases`: every published release, newest first (absent in checks stored before 0.24). */
+/** `releases`: every published release and beta that can be installed, newest first (absent in checks stored before 0.24; betas from 1.2). */
 export type UpdateCheck = { checkedAt: number; latest: Release | null; releases?: Release[]; error: string | null };
 export type UpdateRun = {
 	from: string;
@@ -203,8 +203,8 @@ async function fetchReleases(): Promise<GithubRelease[]> {
 
 /**
  * Asks GitHub for every release and keeps the answer: the newest is the latest
- * (drafts never count, betas only with betas on), the other releases are the
- * release list. Betas are never in that list: going back from one lands on a release.
+ * (drafts never count, betas only with betas on), and every one that can be
+ * installed, betas too, is kept for the release list (releaseHistory picks).
  */
 export async function checkForUpdate(): Promise<UpdateCheck> {
 	let result: UpdateCheck;
@@ -215,7 +215,7 @@ export async function checkForUpdate(): Promise<UpdateCheck> {
 		if (!offered.length) throw new Error(`${UPDATE_REPO} has no releases.`);
 		const latest = toRelease(offered[0]);
 		// An older release without its archive cannot be installed, so it is not listed.
-		const releases = published.flatMap((r) => {
+		const releases = all.flatMap((r) => {
 			try {
 				return [toRelease(r)];
 			} catch {
@@ -268,20 +268,26 @@ const major = (version: string) => Number.parseInt(version.replace(/^v/, ''), 10
  * brings a problem. Further back is the installer's MINESHELL_VERSION, which
  * is not supported. A rule rather than a version, so 2.0 works the same.
  */
-export function mayGoBackTo(version: string, releases: Pick<Release, 'version'>[] = releaseHistory(), current = currentVersion()): boolean {
+export function mayGoBackTo(version: string, releases: Pick<Release, 'version' | 'prerelease'>[] = releaseHistory(), current = currentVersion()): boolean {
 	if (compareVersions(version, current) >= 0) return false;
 	const running = major(current);
 	if (running === 0 || major(version) === running) return true;
 	return version === lastOfMajor(running - 1, releases);
 }
 
-function lastOfMajor(m: number, releases: Pick<Release, 'version'>[]): string | null {
-	return releases.map((r) => r.version).filter((v) => major(v) === m).sort(compareVersions).at(-1) ?? null;
+function lastOfMajor(m: number, releases: Pick<Release, 'version' | 'prerelease'>[]): string | null {
+	return releases.filter((r) => !r.prerelease).map((r) => r.version).filter((v) => major(v) === m).sort(compareVersions).at(-1) ?? null;
 }
 
-/** Every release the last check found, newest first. */
-export function releaseHistory(): Release[] {
-	return lastCheck()?.releases ?? [];
+/**
+ * The release list, newest first: every release the last check found, and with betas on the
+ * betas newer than the newest release, so their notes can be read and an earlier one gone back
+ * to. Betas of a version that is out are left out: its release replaced them.
+ */
+export function releaseHistory(betas = betaEnabled()): Release[] {
+	const all = lastCheck()?.releases ?? [];
+	const newest = all.find((r) => !r.prerelease)?.version;
+	return all.filter((r) => !r.prerelease || (betas && (!newest || compareVersions(r.version, newest) > 0)));
 }
 
 export type DowngradePlan = {

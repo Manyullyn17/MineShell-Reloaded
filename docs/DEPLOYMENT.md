@@ -222,8 +222,10 @@ Betas: the next version can be tried before its release. A beta (`1.1.0-beta.1`,
 `-beta.2`, ...) is published on GitHub as a pre-release, and nothing offers it unless asked:
 the installer's latest release and the update check pass it by. Settings > Updates, "Offer
 betas too" (the owner) makes the check offer a newer beta like a release; the release that
-follows the betas is offered either way, so a beta install moves on to it. Going back from a
-beta lands on a release; betas are not in that list. A MineShell from before betas existed
+follows the betas is offered either way, so a beta install moves on to it. With it on, the
+release history also lists the betas of the next version, with their notes, and going back to
+an earlier one of them is offered like going back to a release; once the release is out it
+replaces them there. A MineShell from before betas existed
 (1.0.x) gets its first one with the installer: `MINESHELL_VERSION=v1.1.0-beta.1`.
 
 Running the installer again: it installs the newest release next to the running one, switches

@@ -401,9 +401,10 @@ does MineShell offer to update (a source checkout updates with git). The check r
 GitHub's release list (drafts left out; the highest version is the latest) every 12 hours,
 keeping the answer in `settings` (`update.check`): the latest, and every release that has its
 archive, which Settings > Updates lists with their notes. Betas are GitHub pre-releases
-(`v1.1.0-beta.1`): they count for the latest only with `update.beta` on ("Offer betas too",
-the owner's), and are never in the list to go back to. `compareVersions` orders them as semver
-does (`1.1.0-beta.1 < 1.1.0-beta.2 < 1.1.0`), so a beta is offered its release either way;
+(`v1.1.0-beta.1`): kept with the releases by every check, listed (`releaseHistory`) only with
+`update.beta` on ("Offer betas too", the owner's) and only while newer than the newest
+release, and they count for the latest only with it on. `compareVersions` orders them as
+semver does (`1.1.0-beta.1 < 1.1.0-beta.2 < 1.1.0`), so a beta is offered its release either way;
 read as equal, as it was until 1.1, a beta would never have been. The update downloads the archive, checks it against the
 published SHA-256, takes `install.sh` out of that archive and runs it with `systemd-run
 --user` as a transient unit (`<service>-update-<ms>`): the installer restarts MineShell,

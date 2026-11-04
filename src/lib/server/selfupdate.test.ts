@@ -172,7 +172,7 @@ describe('checking for updates', () => {
 		expect(availableUpdate()?.version).toBe('9.0.0');
 	});
 
-	it('offers betas only to who turned them on, and never lists them to go back to', async () => {
+	it('offers betas only to who turned them on', async () => {
 		latest = { ...release('9.1.0-beta.2'), prerelease: true };
 		older = [release('9.0.0'), { ...release('9.1.0-beta.1'), prerelease: true }];
 		await checkForUpdate();
@@ -180,7 +180,31 @@ describe('checking for updates', () => {
 		setBeta(true);
 		await checkForUpdate();
 		expect(availableUpdate()).toMatchObject({ version: '9.1.0-beta.2', prerelease: true });
-		expect(releaseHistory().map((r) => r.version)).toEqual(['9.0.0']);
+	});
+
+	// With betas on, their notes were nowhere to read and an earlier beta could not be gone back to.
+	it("lists the next version's betas with betas on, to read and go back to, until their release replaces them", async () => {
+		pretendVersion('9.1.0-beta.2');
+		try {
+			latest = { ...release('9.1.0-beta.2'), prerelease: true };
+			older = [{ ...release('9.1.0-beta.1'), prerelease: true }, release('9.0.0'), { ...release('9.0.0-beta.3'), prerelease: true }, release('8.4.0')];
+			setBeta(true);
+			await checkForUpdate();
+			expect(releaseHistory().map((r) => r.version)).toEqual(['9.1.0-beta.2', '9.1.0-beta.1', '9.0.0', '8.4.0']);
+			expect(mayGoBackTo('9.1.0-beta.1')).toBe(true);
+			// The way out of a major is its last release, never a beta of it.
+			expect(mayGoBackTo('8.4.0')).toBe(true);
+			expect(releaseHistory(false).map((r) => r.version)).toEqual(['9.0.0', '8.4.0']);
+			await expect(planDowngrade('9.1.0-beta.1')).resolves.toMatchObject({ release: { version: '9.1.0-beta.1', prerelease: true } });
+
+			latest = release('9.1.0');
+			older = [{ ...release('9.1.0-beta.2'), prerelease: true }, { ...release('9.1.0-beta.1'), prerelease: true }, release('9.0.0')];
+			await checkForUpdate();
+			expect(releaseHistory().map((r) => r.version)).toEqual(['9.1.0', '9.0.0']);
+		} finally {
+			pretendVersion(null);
+			setBeta(false);
+		}
 	});
 
 	// The release that follows its betas wins over them, betas on or off.
