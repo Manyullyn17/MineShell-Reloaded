@@ -1132,7 +1132,15 @@
 					class="switch"
 					role="switch"
 					bind:checked={beta}
-					onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					onchange={(e) => {
+						// On a beta, switched off by a stray click it went unnoticed: no newer beta, none of their fixes.
+						const release = u.current.replace(/-.*/, '');
+						if (!beta && u.current.includes('-') && !confirm(`MineShell ${u.current} is a beta. With betas off, no newer beta is offered: it stays on ${u.current} until ${release} is released. Turn betas off?`)) {
+							beta = true;
+							return;
+						}
+						e.currentTarget.form?.requestSubmit();
+					}}
 				/>
 				<label for="beta">Offer betas too</label>
 				<p class="hint">
