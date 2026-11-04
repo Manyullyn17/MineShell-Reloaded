@@ -4,7 +4,7 @@
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
-	import { invalidate, invalidateAll, refreshAll } from '$app/navigation';
+	import { afterNavigate, invalidate, invalidateAll, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import StatusPill from '#lib/components/StatusPill.svelte';
 	import Flash from '#lib/components/Flash.svelte';
@@ -56,6 +56,12 @@
 		menuOpen = !menuOpen;
 	}
 	let message = $state<{ ok?: boolean; message?: string } | null>(null);
+	// The layout stays mounted from tab to tab, so the header's message went along to the
+	// next one and sat between its tabs and its sub-tabs; a page's own `form` is cleared by
+	// the navigation. Reloads of the same page (refreshAll) keep it.
+	afterNavigate(({ from, to }) => {
+		if (from?.url.pathname !== to?.url.pathname) message = null;
+	});
 
 	/**
 	 * The header's forms post to the overview's actions from every tab. The
