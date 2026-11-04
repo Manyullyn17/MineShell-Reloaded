@@ -216,6 +216,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   confirm" in every language. MineShell sends cancel and confirm together, so cancel's answer
   is the prompt and the confirm's is what happened ("Task cancelled for ..."): only the latter
   is shown (source read 2026-10-31, 1.3.0 to 1.5.0 alike).
+- A task per dimension, side by side: a start for another dimension runs alongside, one for
+  a dimension already generating is refused ("Task already started for minecraft:overworld!",
+  Chunky 1.4.23, 2026-11-04). The planner's Start is greyed for that dimension.
 - `chunky pause` only marks a task stopped; its thread ends after the current batch, saves it
   and only then leaves the running tasks, which is all `chunky progress` lists ("No tasks
   running." when none). So progress can name a task for a moment after pausing it;

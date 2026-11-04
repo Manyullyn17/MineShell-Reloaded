@@ -43,7 +43,10 @@
 		instanceId: string;
 		dimensions: PregenDimension[];
 		running: boolean;
-		/** Dimensions Chunky is generating now: their map is read again every little while. */
+		/**
+		 * Dimensions Chunky is generating now: their map is read again every little while. Chunky
+		 * runs a task per dimension, side by side; a second start on one already going is refused.
+		 */
 		generating?: string[];
 	} = $props();
 
@@ -224,6 +227,9 @@
 	};
 	const noSelection = new SvelteSet<string>();
 	const otherWorld = $derived(world === 'other');
+	const picked = $derived(otherWorld ? customWorld.trim() : world);
+	const busy = $derived(generating.includes(picked));
+	const others = $derived(generating.filter((w) => w !== picked).length);
 </script>
 
 <form
@@ -328,29 +334,43 @@
 	{/if}
 
 	<div class="go">
+		<!-- Each sentence (and clause) a box of its own: a line that has to wrap breaks between them first. -->
 		<p class="small summary">
 			{#if otherWorld || overviewState === 'none'}
-				About {total.toLocaleString()} chunks{overviewState === 'none' && !otherWorld ? ', none generated here yet' : ''}.
+				<span class="part">About {total.toLocaleString()} chunks{overviewState === 'none' && !otherWorld ? ', none generated here yet' : ''}.</span>
 			{:else if overviewState === 'loading'}
-				About {total.toLocaleString()} chunks in the area; reading which are there…
+				<span class="part">About {total.toLocaleString()} chunks in the area;</span>
+				<span class="part">reading which are there…</span>
 			{:else if there.unchecked}
-				About {total.toLocaleString()} chunks in the area; checking which of the {(there.unchecked + there.existing).toLocaleString()}
-				there are fully generated ({there.toCheck.length.toLocaleString()} region{there.toCheck.length === 1 ? '' : 's'} to go)…
+				<span class="part">About {total.toLocaleString()} chunks in the area;</span>
+				<span class="part">checking which of the {(there.unchecked + there.existing).toLocaleString()} there are fully generated ({there.toCheck.length.toLocaleString()}
+					region{there.toCheck.length === 1 ? '' : 's'} to go)…</span>
 			{:else if fresh === 0}
-				Nothing to generate: all {total.toLocaleString()} chunks in the area are fully generated already.
+				<span class="part">Nothing to generate: all {total.toLocaleString()} chunks in the area are fully generated already.</span>
 			{:else}
-				About <strong>{fresh.toLocaleString()} chunks to generate</strong> of {total.toLocaleString()} in the area{there.existing
-					? `; ${there.existing.toLocaleString()} are fully generated already`
-					: ''}.
-				{#if estimate !== null}About {formatBytes(estimate)} more on disk.{/if}
+				<span class="part"
+					><span class="part">About <strong>{fresh.toLocaleString()} chunks to generate</strong> of {total.toLocaleString()} in the area{there.existing ? ';' : '.'}</span>
+					{#if there.existing}<span class="part">{there.existing.toLocaleString()} are fully generated already.</span>{/if}</span
+				>
+				{#if estimate !== null}<span class="part">About {formatBytes(estimate)} more on disk.</span>{/if}
 			{/if}
-			{#if live}
-				Chunky is generating this dimension now; its progress is at the top.
+			{#if busy}
+				<span class="part">Chunky is generating this dimension now;</span>
+				<span class="part">its progress is at the top, to pause or cancel it.</span>
+			{:else if !running}
+				<span class="part">Chunky runs in the server: start it to begin.</span>
 			{:else}
-				{running ? 'Generation is heavy work for the server; players notice it.' : 'Chunky runs in the server: start it to begin.'}
+				<span class="part">Generation is heavy work for the server;</span>
+				<span class="part">players notice it.</span>
+				{#if others}
+					<span class="part">{others === 1 ? 'Another dimension is' : `${others} other dimensions are`} generating already:</span>
+					<span class="part">several at once can slow the server down badly.</span>
+				{/if}
 			{/if}
 		</p>
-		<button class="button-primary" type="submit" disabled={total === 0 || !running || starting}>{starting ? 'Starting…' : 'Start'}</button>
+		<button class="button-primary" type="submit" disabled={total === 0 || !running || starting || busy}
+			>{starting ? 'Starting…' : busy ? 'Generating' : 'Start'}</button
+		>
 	</div>
 </form>
 
@@ -431,9 +451,15 @@
 		gap: var(--space-3);
 	}
 
+	/* Up to the button: not the line length other paragraphs keep to. */
 	.summary {
 		margin: 0;
 		flex: 1 1 20rem;
+		max-width: none;
+	}
+
+	.part {
+		display: inline-block;
 	}
 
 	/* Without a mouse the map says it under itself ("Tap the map ...", ChunkMap's tapHint). */
