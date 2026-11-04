@@ -337,7 +337,7 @@ describe('importing a server', () => {
 	it('turns away an export with a file outside the server folder before anything is created', async () => {
 		const evil = path.join(TMP_DIR, `evil-${crypto.randomUUID()}.zip`);
 		const { zipBuffer } = await import('../helpers/fs');
-		await fs.writeFile(evil, await zipBuffer({ [MANIFEST]: JSON.stringify({ format: 1, server: { minecraftVersion: '1.21.1' } }), 'files/../escaped.txt': 'x' }));
+		await fs.writeFile(evil, await zipBuffer({ [MANIFEST]: JSON.stringify({ format: 1, server: { minecraftVersion: '1.21.1', modloader: 'fabric' } }), 'files/../escaped.txt': 'x' }));
 		await expect(stageImport(evil, 'evil.zip', true)).rejects.toThrow(/cannot be imported/);
 	});
 

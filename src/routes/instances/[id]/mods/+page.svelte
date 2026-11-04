@@ -271,6 +271,10 @@
 
 <Flash {form} />
 
+{#if data.instance.unknownLoader}
+	<div class="notice warning"><p>{data.instance.unknownLoader}</p></div>
+{/if}
+
 {#if !data.supportsMods}
 	<div class="notice info">
 		<p>

@@ -581,9 +581,9 @@ Suggested, not yet confirmed or rejected:
     (`getLoader` throws), so 1. legacy versions and loaders are 2.0 and plugin servers 3.0
     (the user's lean: honest about what going back does), or 2. a 1.x minor first learns to
     tolerate unknown servers, after which new loaders and versions can be minors; the cost
-    is an invisible line at the release that brought the tolerance. That tolerance (a
-    server with an unknown loader or version shown as made by a newer MineShell, still
-    started and stopped) is wanted either way.
+    is an invisible line at the release that brought the tolerance. That tolerance is
+    wanted either way and built in 1.2.0 (ARCHITECTURE, "Updating itself": a server with an
+    unknown loader or version loads, starts and stops, and says why the rest is refused).
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`
   a world mixes zlib and LZ4 chunks, as do regions put together by chunk restore (fine:

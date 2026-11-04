@@ -82,7 +82,7 @@ import {
 import { cleanWorldPath } from '#lib/server/packworld.js';
 import { rescheduleInstance } from '#lib/server/scheduler.js';
 import { encryptSecret, randomPassword } from '#lib/server/crypto.js';
-import { LOADER_LIST, findLoader, pickerLoaderVersions, pickerReleaseVersions, type ModloaderId } from '#lib/server/modloaders.js';
+import { LOADER_LIST, findLoader, pickerLoaderVersions, pickerReleaseVersions, unknownLoaderMessage, type ModloaderId } from '#lib/server/modloaders.js';
 import {
 	argsProblem,
 	composeJvmArgs,
@@ -412,6 +412,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const minecraft = String(form.get('minecraft') ?? '').trim();
 		const loader = String(form.get('loader') ?? '');
+		if (!findLoader(instance.modloader)) return fail(400, { ok: false, message: unknownLoaderMessage(instance.modloader) });
 		if (!minecraft || !findLoader(loader)) return fail(400, { ok: false, message: 'Pick a Minecraft version and a loader.' });
 		const newWorld = form.get('newWorld') === 'on' && compareVersions(minecraft, instance.minecraftVersion) < 0;
 		try {

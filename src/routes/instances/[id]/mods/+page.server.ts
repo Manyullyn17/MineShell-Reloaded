@@ -21,7 +21,7 @@ import {
 } from '#lib/server/mods/index.js';
 import { currentModNotice, dropFromModNotice } from '#lib/server/modnotice.js';
 import { modsChecked } from '#lib/server/updatecheck.js';
-import { getLoader, LOADER_FALLBACKS, type ModloaderId } from '#lib/server/modloaders.js';
+import { findLoader, LOADER_FALLBACKS, unknownLoaderMessage, type ModloaderId } from '#lib/server/modloaders.js';
 import { datapacksDir, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
 import { loaderDatapackFolders } from '#lib/server/datapackloaders.js';
 import { saveUpload } from '#lib/server/files.js';
@@ -45,8 +45,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	const summary = await summarise(instance);
 	const mods = await listInstanceMods(instance);
 	const datapacks = await listDatapacks(instance);
-	const loader = getLoader(instance.modloader);
-	const catalogLoader = loader.catalogLoader ?? loader.id;
+	// A loader this MineShell does not know (a newer one set the server up): its jars are listed
+	// and toggled as files, and installing is refused (the install action).
+	const loader = findLoader(instance.modloader);
+	const catalogLoader = loader ? (loader.catalogLoader ?? loader.id) : instance.modloader;
 	const jars = indexMods(modsDir(instance.path));
 
 	return {
@@ -69,7 +71,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		/** Changing single mods of a modpack is opt-in on the page; the pack's version is the usual thing to change. */
 		packName: instance.packSource ? (instance.packName ?? 'a modpack') : null,
 		snapshotPrompt: await snapshotPrompt(instance),
-		supportsMods: loader.supportsMods,
+		supportsMods: loader?.supportsMods ?? true,
 		modloader: instance.modloader,
 		/** What mod catalogs call this loader; Cleanroom mods are listed as Forge. */
 		catalogLoader,
@@ -263,7 +265,8 @@ export const actions: Actions = {
 			return fail(400, { ok: false, message: 'Pick a mod and a version.' });
 		}
 
-		const loader = getLoader(instance.modloader);
+		const loader = findLoader(instance.modloader);
+		if (!loader) return fail(400, { ok: false, message: unknownLoaderMessage(instance.modloader) });
 		const catalogLoader = loader.catalogLoader ?? loader.id;
 		let datapacks = 0;
 		/** A data pack release goes into the world's datapacks folder, anything else into mods/. */

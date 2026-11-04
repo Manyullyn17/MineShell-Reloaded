@@ -182,6 +182,10 @@
 	</div>
 {/if}
 
+{#if data.instance.unknownLoader}
+	<div class="notice warning"><p>{data.instance.unknownLoader}</p></div>
+{/if}
+
 {#if data.summary.javaWarning}
 	<div class="notice warning"><p>{data.summary.javaWarning}</p></div>
 {/if}

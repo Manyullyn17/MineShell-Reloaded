@@ -6,7 +6,7 @@ import { settings, type ServerInstance } from './db/schema';
 import { InstanceError, onlinePlayers, rconPassword } from './instances';
 import { compareVersions } from './java';
 import { installRequiredMods } from './moddeps';
-import { getLoader } from './modloaders';
+import { findLoader, loaderLabel, unknownLoaderMessage } from './modloaders';
 import { bestVersion, hasEnabledMod, installModVersion, syncMods } from './mods';
 import { compatibleVersions, filterFor } from './modupdates';
 import { startTask } from './tasks';
@@ -51,9 +51,10 @@ const CHUNKY_PROJECT = 'chunky';
  */
 export function chunkyUnsupported(instance: Pick<ServerInstance, 'modloader' | 'minecraftVersion'>): string | null {
 	if (instance.modloader === 'vanilla') return 'Pre-generating uses the Chunky mod, and a vanilla server cannot load mods.';
+	if (!findLoader(instance.modloader)) return unknownLoaderMessage(instance.modloader);
 	const fabric = instance.modloader === 'fabric' || instance.modloader === 'quilt';
 	if (instance.modloader === 'cleanroom' || compareVersions(instance.minecraftVersion, fabric ? '1.16' : '1.16.5') < 0) {
-		return `Pre-generating uses the Chunky mod, which has no build for ${getLoader(instance.modloader).label} ${instance.minecraftVersion}: it starts at Minecraft 1.16 on Fabric and 1.16.5 on Forge.`;
+		return `Pre-generating uses the Chunky mod, which has no build for ${loaderLabel(instance.modloader)} ${instance.minecraftVersion}: it starts at Minecraft 1.16 on Fabric and 1.16.5 on Forge.`;
 	}
 	return null;
 }
@@ -66,7 +67,7 @@ export async function installChunky(instance: ServerInstance): Promise<string> {
 	return startTask({ label: `Install Chunky on ${instance.name}`, instanceId: instance.id }, async (task) => {
 		task.setProgress(null, 'Installing Chunky');
 		const best = bestVersion(await compatibleVersions('modrinth', CHUNKY_PROJECT, filterFor(instance)));
-		if (!best) throw new InstanceError(`Chunky has no build for ${getLoader(instance.modloader).label} ${instance.minecraftVersion}.`);
+		if (!best) throw new InstanceError(`Chunky has no build for ${loaderLabel(instance.modloader)} ${instance.minecraftVersion}.`);
 		await installModVersion(instance, 'modrinth', { id: CHUNKY_PROJECT, slug: CHUNKY_PROJECT, name: 'Chunky', projectUrl: null, iconUrl: null }, best);
 		task.log(`Installed Chunky ${best.versionNumber}.`);
 		await installRequiredMods(instance, best, task);

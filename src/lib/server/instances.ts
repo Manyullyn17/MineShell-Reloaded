@@ -40,7 +40,8 @@ import {
 } from './systemd';
 import { rconExec, parsePlayerList } from './rcon';
 import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
-import { getLoader, type ModloaderId } from './modloaders';
+import { getLoader, instanceLoader, type ModloaderId } from './modloaders';
+import { InstanceError } from './instanceerror';
 import {
 	applyOverrides,
 	curseforgeOrigins,
@@ -90,7 +91,7 @@ import { applyChunkyConfig, deleteChunkySettings } from './chunky';
 import { copyDatapackRows } from './mods/datapacks';
 import { claimVoicePort, voicePortProblem } from './voicechat';
 
-export class InstanceError extends Error {}
+export { InstanceError } from './instanceerror';
 
 /** The longest server name: the forms' maxlength, and what a pack's or export's own name is cut to. */
 export const SERVER_NAME_MAX = 80;
@@ -1133,7 +1134,7 @@ export async function changeLoaderVersion(
 	loaderVersion: string | null,
 	opts: { snapshot?: boolean; downloadJava?: JavaVendor } = {}
 ): Promise<string> {
-	const loader = getLoader(instance.modloader);
+	const loader = instanceLoader(instance);
 	if (instance.modloader === 'vanilla') {
 		throw new InstanceError('Vanilla has no loader version to change.');
 	}

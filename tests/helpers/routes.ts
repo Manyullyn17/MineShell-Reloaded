@@ -92,6 +92,8 @@ function base(event: RouteEvent, url: string) {
 		url: new URL(url),
 		locals: { authenticated: true, access: event.access ?? FULL_ACCESS, user: event.user ?? null },
 		cookies: event.cookies ?? { get: () => event.cookie },
+		// A load's own invalidation keys: nothing reloads here.
+		depends: () => undefined,
 		getClientAddress: () => {
 			if (event.ip instanceof Error) throw event.ip;
 			return event.ip ?? '127.0.0.1';

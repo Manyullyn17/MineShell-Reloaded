@@ -12,7 +12,7 @@ import {
 	setModEnabled
 } from './mods';
 import { projectsByIds, versionsFromHashes } from './mods/modrinth';
-import { getLoader } from './modloaders';
+import { findLoader } from './modloaders';
 
 /**
  * Client-only mods in a server install. Packs bring them in because their
@@ -133,7 +133,8 @@ async function curseforgeClientOnly(
 ): Promise<Map<string, string>> {
 	const found = new Map<string, string>();
 	const queue = rows.filter((r) => r.source === 'curseforge' && r.slug);
-	const loader = getLoader(instance.modloader);
+	const loader = findLoader(instance.modloader);
+	if (!loader) return found;
 	const filter = { minecraftVersion: instance.minecraftVersion, loader: loader.catalogLoader ?? loader.id };
 	const worker = async () => {
 		for (let row = queue.shift(); row; row = queue.shift()) {

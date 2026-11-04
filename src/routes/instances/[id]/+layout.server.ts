@@ -4,7 +4,7 @@ import { getInstance, removedByCancelledInstall, summarise } from '#lib/server/i
 import { getCountdown } from '#lib/server/countdown.js';
 import { activeProfile, hasSpark } from '#lib/server/spark.js';
 import { primaryLanAddress } from '#lib/server/network.js';
-import { LOADERS } from '#lib/server/modloaders.js';
+import { findLoader, LOADERS, unknownLoaderMessage } from '#lib/server/modloaders.js';
 import { playitStatus, publicAddress, serverTunnel } from '#lib/server/playit.js';
 import type { ModloaderId } from '#lib/server/modloaders.js';
 
@@ -30,6 +30,8 @@ export const load: LayoutServerLoad = async ({ params, url, depends }) => {
 			// display spelling ('Fabric'). Only the label should ever reach the UI.
 			modloaderLabel: LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader,
 			modloaderVersion: instance.modloaderVersion,
+			/** What the overview and the Mods tab say when this MineShell does not know the loader (a newer one set the server up). */
+			unknownLoader: findLoader(instance.modloader) ? null : unknownLoaderMessage(instance.modloader),
 			packName: instance.packName,
 			packVersionName: instance.packVersionName,
 			serverPort: instance.serverPort,

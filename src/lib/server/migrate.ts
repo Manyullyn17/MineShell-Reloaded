@@ -25,7 +25,7 @@ import {
 	type DependencyPlan,
 	type ResolvedDependency
 } from './modupdates';
-import { getLoader, type ModloaderId } from './modloaders';
+import { getLoader, instanceLoader, loaderLabel, type ModloaderId } from './modloaders';
 import { datapacksDir, installDatapackVersion, listDatapacks } from './mods/datapacks';
 import { compareVersions, resolveJava } from './java';
 import { snapshotStep } from './snapshots';
@@ -142,6 +142,7 @@ const PREPARED_TTL = 15 * 60_000;
 const keyOf = (target: MigrationTarget) => `${target.minecraft}|${target.loader}|${target.loaderVersion ?? ''}`;
 
 function validate(instance: ServerInstance, target: MigrationTarget): void {
+	instanceLoader(instance);
 	if (instance.packProjectId || instance.packSource) {
 		throw new InstanceError(
 			'This server was installed from a pack: move it with the pack (Modpack version), so its mods and configs come from the pack version for that Minecraft.'
@@ -329,7 +330,7 @@ export async function applyMigration(
 		throw err;
 	}
 	const label = `${loader.label} ${target.loaderVersion ?? '(latest)'} on Minecraft ${target.minecraft}`;
-	const from = `${getLoader(instance.modloader).label} ${instance.modloaderVersion ?? ''} on Minecraft ${instance.minecraftVersion}`.replace('  ', ' ');
+	const from = `${loaderLabel(instance.modloader)} ${instance.modloaderVersion ?? ''} on Minecraft ${instance.minecraftVersion}`.replace('  ', ' ');
 	setStatus(instance.id, 'provisioning', `Moving to ${label}`);
 	return startTask({ label: `Move ${instance.name} to ${label}`, instanceId: instance.id }, async (task) => {
 		const staging = path.join(root, journal.staging);

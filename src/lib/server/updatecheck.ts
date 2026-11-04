@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { instanceDatapacks, serverInstances, updateNotices, type ServerInstance, type UpdateNotice } from './db/schema';
 import { getProvider } from './mods/index';
-import { compareSemver, forgePromotions, LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
+import { compareSemver, findLoader, forgePromotions, LOADERS, pickerLoaderVersions, type ModloaderId } from './modloaders';
 import { compareVersions } from './java';
 import { notify } from './notifications';
 import { checkDatapackUpdates, checkModUpdates } from './modupdates';
@@ -32,8 +32,12 @@ export function channelAllowed(channel: string, setting: string): boolean {
 	return (RANK[channel as UpdateChannel] ?? 0) <= RANK[wanted];
 }
 
-/** What a server is checked for, if anything. An uploaded pack has no project to list versions from. */
+/**
+ * What a server is checked for, if anything. An uploaded pack has no project to list versions
+ * from; a loader this MineShell does not know (a newer one set the server up) nothing it could install.
+ */
 export function updateKind(instance: Pick<ServerInstance, 'packSource' | 'packProjectId' | 'modloader'>): UpdateKind | null {
+	if (!findLoader(instance.modloader)) return null;
 	if (instance.packSource) return instance.packProjectId ? 'pack' : null;
 	return instance.modloader === 'vanilla' ? null : 'loader';
 }
@@ -298,7 +302,8 @@ export async function runDueUpdateChecks(now = Date.now()): Promise<void> {
 	checking = true;
 	try {
 		for (const instance of db.select().from(serverInstances).all()) {
-			if (!checkDue(instance, now)) continue;
+			// A loader this MineShell does not know: its mods and data packs cannot be matched to builds either.
+			if (!checkDue(instance, now) || !findLoader(instance.modloader)) continue;
 			await checkForUpdates(instance);
 			if (modsChecked(instance)) await checkModsForUpdates(instance);
 			if (hasTrackedDatapacks(instance.id)) await checkDatapacksForUpdates(instance);

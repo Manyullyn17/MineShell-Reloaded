@@ -30,7 +30,7 @@ import { latestVersionsFromHashes } from './mods/modrinth';
 import { curseforgeOrigins } from './packs';
 import { resolveProviderPack } from './packs/resolve';
 import { hashFile } from './download';
-import { getLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
+import { instanceLoader, LOADER_FALLBACKS, type ModloaderId } from './modloaders';
 import { beginOperation, commitOperation, endOperation, OperationInProgressError, type Journal } from './operations';
 import { clearDatapackNotice, clearModNotice } from './modnotice';
 import { startTask, type TaskHandle } from './tasks';
@@ -118,7 +118,7 @@ export type Filter = { minecraftVersion: string; loaders: string[] };
 
 /** What a mod build must support to run on `instance` (or on what a migration moves it to). */
 export function filterFor(instance: Pick<ServerInstance, 'modloader' | 'minecraftVersion'>): Filter {
-	const loader = getLoader(instance.modloader);
+	const loader = instanceLoader(instance);
 	const catalog = loader.catalogLoader ?? loader.id;
 	return {
 		minecraftVersion: instance.minecraftVersion,

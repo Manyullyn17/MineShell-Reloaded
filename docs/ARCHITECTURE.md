@@ -459,6 +459,15 @@ counts them in full and can delete snapshots to fit its budget; its Files tab wr
 files) and backup folders, both 0.32.0. `since` has to be the release that ships it: if the
 next release is not 0.32.0, change it there.
 
+A server a newer MineShell set up can name a loader this one does not know (one a later major
+adds). From 1.2.0 on that server is not a crash: its launch line is stored, so it starts and
+stops as before; the overview and Mods say why the rest is refused (`unknownLoaderMessage`),
+and what needs the loader (`instanceLoader`: version moves, loader builds, installing mods,
+Chunky, importing such an export) refuses with that, while the update checks leave the
+server out. Its mods are still listed and switched as files. A Minecraft version this one
+does not list (an old beta) needs nothing: versions are compared leniently and Java falls
+back to 8. `tests/flows/unknown-loader.test.ts` holds both.
+
 Tables: `server_instances`, `mods`, `instance_mods`, `instance_datapacks`,
 `resource_samples`, `java_runtimes`, `settings`, `scheduled_commands`, `operations`,
 `player_fields`, `sessions`, `audit_log`.

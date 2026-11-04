@@ -4,6 +4,7 @@ import { downloadFile, fetchJson, fetchText, HttpError } from './download';
 import { run } from './systemd';
 import type { TaskHandle } from './tasks';
 import { CLEANROOM_MINECRAFT } from '#lib/shared/cleanroom.js';
+import { InstanceError } from './instanceerror';
 
 /**
  * Every loader answers the same two questions: what versions exist, and how do I
@@ -603,6 +604,27 @@ export function getLoader(id: string): Modloader {
 	const loader = findLoader(id);
 	if (!loader) throw new Error(`Unknown mod loader "${id}".`);
 	return loader;
+}
+
+/**
+ * Said of a server whose loader this MineShell does not know: a newer one set it up and this
+ * one was gone back to (ROADMAP, "Legacy versions, more loaders and hybrids"). It still starts
+ * and stops (its launch line is stored), but nothing that needs the loader is offered.
+ */
+export function unknownLoaderMessage(id: string): string {
+	return `This server runs ${id}, which this version of MineShell does not know: a newer MineShell set it up. It starts and stops as before; update MineShell to change its loader, Minecraft version or mods.`;
+}
+
+/** The server's loader, or a refusal (not a crash) when this MineShell does not know it. */
+export function instanceLoader(instance: { modloader: string }): Modloader {
+	const loader = findLoader(instance.modloader);
+	if (!loader) throw new InstanceError(unknownLoaderMessage(instance.modloader));
+	return loader;
+}
+
+/** The loader's name for messages, or its id when this MineShell does not know it. */
+export function loaderLabel(id: string): string {
+	return findLoader(id)?.label ?? id;
 }
 
 const pickerLists = new Map<string, { at: number; versions: string[] }>();

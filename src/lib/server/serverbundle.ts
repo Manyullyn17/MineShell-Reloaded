@@ -32,7 +32,7 @@ import {
 	syncUnit,
 	watchTaskFailure
 } from './instances';
-import { getLoader } from './modloaders';
+import { findLoader, getLoader } from './modloaders';
 import { DISABLED_SUFFIX } from './mods';
 import { versionsFromHashes } from './mods/modrinth';
 import { downloadPackFiles, type PackDownload } from './packs';
@@ -536,6 +536,9 @@ async function readBundle(file: string): Promise<{ manifest: BundleManifest; ico
 	}
 	if (manifest.format > BUNDLE_FORMAT) {
 		throw new InstanceError(`That export is from a newer MineShell (${manifest.mineshell ?? 'unknown version'}); update this one to import it.`);
+	}
+	if (!findLoader(manifest.server.modloader)) {
+		throw new InstanceError(`That export runs ${manifest.server.modloader}, which this MineShell does not know: it is from a newer one (${manifest.mineshell ?? 'unknown version'}); update this one to import it.`);
 	}
 	return { manifest, icon };
 }
