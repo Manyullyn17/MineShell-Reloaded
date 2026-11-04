@@ -90,7 +90,7 @@ Text MineShell reads from elsewhere is written as long as it gets: server names 
 names and versions, mods named both spaced and as one unbroken word with long file names and
 versions, twenty 16-character players online with 256-character chat, ban reasons, files and
 folders at 255 bytes, a modded dimension, items with long names, lore and ids, a crash naming
-long mods. No network. Sign-in is on, with sessions for the owner and a restricted account
+long mods, a mod's server.properties keys and game rules named long, with long values. No network. Sign-in is on, with sessions for the owner and a restricted account
 (32-character name, some permissions on two servers), printed at the end for the sweep:
 
 ```sh

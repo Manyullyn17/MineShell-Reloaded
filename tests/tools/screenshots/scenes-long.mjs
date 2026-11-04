@@ -130,7 +130,9 @@ export const longScenes = [
 				loaderVersion: LOADER_VERSION,
 				memoryMb: 65536,
 				worldMb: 120,
-				pack: { source: 'curseforge', project: '999999', version: '8888888', versionName: PACK_VERSION, name: PACK_NAME }
+				pack: { source: 'curseforge', project: '999999', version: '8888888', versionName: PACK_VERSION, name: PACK_NAME },
+				// A mod's own keys under Settings > Other keys: one named long, one with a long value.
+				properties: { 'level-name': 'world', [unbroken(120, 'somemod.setting.')]: 'true', 'somemod.motd': unbroken(255, 'W') }
 			});
 			ctx.server({
 				id: 'crashed',
@@ -275,6 +277,33 @@ export const longScenes = [
 				]);
 				fs.writeFileSync(path.join(dir, `${offlineUuid(name)}.dat`), writeNbt({ name: '', root, gzipped: true }));
 			}
+
+			// The world's level.dat as 1.21.1 keeps it, for World > Game rules: a mod's rules with a long
+			// name and a long text value beside vanilla ones, the spawn and a border far out.
+			const level = compound([
+				[
+					'Data',
+					compound([
+						[
+							'GameRules',
+							compound([
+								['keepInventory', string('true')],
+								['randomTickSpeed', string('2147483647')],
+								[unbroken(120, 'someModsGameRule'), string('false')],
+								[words(60, 3).replace(/ (.)/g, (_, c) => c.toUpperCase()), string(unbroken(250, 'W'))]
+							])
+						],
+						['SpawnX', int(-29999984)],
+						['SpawnY', int(320)],
+						['SpawnZ', int(29999984)],
+						['BorderCenterX', { type: 'double', value: -29999983.5 }],
+						['BorderCenterZ', { type: 'double', value: 29999983.5 }],
+						['BorderSize', { type: 'double', value: 59999967 }],
+						['BorderSizeLerpTarget', { type: 'double', value: 59999967 }]
+					])
+				]
+			]);
+			fs.writeFileSync(path.join(ctx.dataDir, 'instances/unbroken/world/level.dat'), writeNbt({ name: '', root: level, gzipped: true }));
 		}
 	}
 ];
