@@ -65,8 +65,9 @@ The user, on prod (a click or two each; what a real server, player or account br
    online, from the player drawer and the overview's Online now menu; on Irithyll (1.21.11)
    and a 1.12 server (teleports stay in the player's dimension there).
 3. **Mods** (2026-11-04: a jar downloaded from CurseForge was found through Modrinth, since
-   it is on both; the key is set and works. Left: a jar that is only on CurseForge, and the
-   look-up of "Other" mods, which ran when the key was saved before): on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
+   it is on both; the key is set and works. **Done** 2026-11-04: Unloader (CurseForge only)
+   identified through CurseForge. The look-up of "Other" mods on saving a key is not tried
+   again: nothing is "Other" any more): on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
    "Other" looked up when the key is saved; a CurseForge-only jar uploaded; an unknown jar
    showing the name and version it declares.
 4. **Data packs**: the Data packs tab on a server with Open Loader or Paxi (the loader's folders
