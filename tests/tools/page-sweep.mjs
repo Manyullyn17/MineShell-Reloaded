@@ -84,7 +84,8 @@ const pages = [
 
 fs.mkdirSync(out, { recursive: true });
 const SETTLE = `new Promise((r) => setTimeout(r, 2500))`;
-const COUNT_SUBTABS = `document.querySelectorAll('.subtabs > button, .subtabs > a').length`;
+const SUBTABS = `document.querySelectorAll('.subtabs > button, .subtabs > a')`;
+const COUNT_SUBTABS = `${SUBTABS}.length`;
 
 /** One pageshot run; its printed lines. @param {string} page @param {string} file @param {string[]} extra @returns {Promise<string[]>} */
 function shoot(page, file, extra) {
@@ -133,7 +134,9 @@ pages.forEach((page, i) => {
 		// The first sub-tab is what the page opens on; the others are switched to in place.
 		for (let n = 2; n <= Number(count); n++) {
 			queue.push(async () => {
-				const [, tab] = await result(page, `${name}_tab${n}.png`, `${page} (sub-tab ${n})`, ['--click', `.subtabs > :nth-child(${n})`]);
+				// The n-th tab itself: by position among the bar's children, the divider before
+				// Settings' Java tab moved every later click one tab early, and Advanced was never shot.
+				const [, tab] = await result(page, `${name}_tab${n}.png`, `${page} (sub-tab ${n})`, ['--eval', `${SUBTABS}[${n - 1}].click()`]);
 				report(i * 100 + n, tab);
 			});
 		}
