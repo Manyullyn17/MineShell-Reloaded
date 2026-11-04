@@ -52,7 +52,8 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
-**1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04). 1.2.0 once a
+**1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
+2026-11-04 afternoon with the fixes below). 1.2.0 once a
 beta has run about three days with nothing big. Before beta.1: a quick pass on throwaway data
 (2026-11-04, vanilla 1.21.11 moved to 26.3 and a Fabric 1.21.1 server; found and fixed the live
 game rule/border read-back and the border centre). Release notes by hand, without fixes of
