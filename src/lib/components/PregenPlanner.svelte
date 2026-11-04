@@ -154,6 +154,8 @@
 	});
 	// While Chunky generates this dimension, what it has done shows as it goes.
 	const live = $derived(!!current && generating.includes(current.id));
+	/** Start pressed, Chunky not answered yet: the answer and the progress show at the top, often out of sight. */
+	let starting = $state(false);
 	$effect(() => {
 		const key = currentKey;
 		if (!live || !key) return;
@@ -224,7 +226,18 @@
 	const otherWorld = $derived(world === 'other');
 </script>
 
-<form method="POST" action="?/chunkyStart" use:enhance={() => async ({ update }) => update({ reset: false })} class="planner">
+<form
+	method="POST"
+	action="?/chunkyStart"
+	use:enhance={() => {
+		starting = true;
+		return async ({ update }) => {
+			await update({ reset: false });
+			starting = false;
+		};
+	}}
+	class="planner"
+>
 	<div class="fields">
 		<div class="field">
 			<label for="pregen-world">Dimension</label>
@@ -331,9 +344,13 @@
 					: ''}.
 				{#if estimate !== null}About {formatBytes(estimate)} more on disk.{/if}
 			{/if}
-			{running ? 'Generation is heavy work for the server; players notice it.' : 'Chunky runs in the server: start it to begin.'}
+			{#if live}
+				Chunky is generating this dimension now; its progress is at the top.
+			{:else}
+				{running ? 'Generation is heavy work for the server; players notice it.' : 'Chunky runs in the server: start it to begin.'}
+			{/if}
 		</p>
-		<button class="button-primary" type="submit" disabled={total === 0 || !running}>Start</button>
+		<button class="button-primary" type="submit" disabled={total === 0 || !running || starting}>{starting ? 'Starting…' : 'Start'}</button>
 	</div>
 </form>
 
