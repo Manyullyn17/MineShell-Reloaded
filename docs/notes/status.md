@@ -52,6 +52,46 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
+**1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04). 1.2.0 once a
+beta has run about three days with nothing big. Before beta.1: a quick pass on throwaway data
+(2026-11-04, vanilla 1.21.11 moved to 26.3 and a Fabric 1.21.1 server; found and fixed the live
+game rule/border read-back and the border centre). Release notes by hand, without fixes of
+1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 at least).
+
+The user, on prod (a click or two each; what a real server, player or account brings):
+1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the
+   release history shows beta.2 and beta.1 tagged Beta, with notes (bfda974).
+2. **Players**: game mode and teleport (to a player, the spawn, coordinates) with a real player
+   online, from the player drawer and the overview's Online now menu; on Irithyll (1.21.11)
+   and a 1.12 server (teleports stay in the player's dimension there).
+3. **Mods**: on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
+   "Other" looked up when the key is saved; a CurseForge-only jar uploaded; an unknown jar
+   showing the name and version it declares.
+4. **Data packs**: the Data packs tab on a server with Open Loader or Paxi (the loader's folders
+   listed, an upload into one, a drop onto the tab); a pack change where the loader changes,
+   with "copy my packs" ticked (`tests/tools/datapack-loader-packs.mjs`); a version move of a
+   server with a data pack from the browser (moved to its build for the new version).
+5. **Files**: a drop onto a folder row in the tree.
+6. **World > Game rules** on Irithyll, running and stopped: a rule, the spawn, the border
+   (stays where put), the world size limit (after a restart); Settings' Rules switches off and
+   on again; a 1.12 server's rules (strings, mods' too).
+7. **Settings**: the new fields on Irithyll (1.21.11) and a 26.x server (spam kicks); Other
+   keys on a modded server (Minecraft's keys with notes, a mod's tagged).
+8. **LZ4**: on a test server, chunk compression switched to LZ4, played or pre-generated, then
+   the chunk map and a prune analysis.
+9. **Tailscale and IPv6**: from a tailnet device, joining with the Connect box's ts.net address
+   (and whether ufw lets tailscale0 in without the hint's rule); a wrong password from the
+   phone over Tailscale not locking out the PC; Remote access's IPv6 note and
+   `sudo ufw status` for RCON 26565.
+
+Claude, on throwaway data:
+10. **The built app**: a production build swept with `page-sweep --errors` (the script policy
+    on the new pages: World > Game rules, Remote access's note, the Data packs tab).
+11. **Long names**: the long world (`npm run screenshots -- --long`) swept with `--spill`, for the
+    new Settings fields, Other keys' notes and the release history's Beta tags.
+12. Not needed this time: the real-loader checklist (1.2 changed nothing in how a server
+    starts or installs).
+
 **1.1 beta checklist: done, 1.1.0 released 2026-11-03** (CI and Release green; the user updated prod
 from beta.5 with the button, no problems seen). Kept as the record. (2026-11-01; 1.1.0-beta.5 released 2026-11-02 afternoon; since then,
 going straight into 1.1.0 (small, like beta.4's): d845c6a, a confirmation scrolled into view
