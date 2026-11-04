@@ -80,8 +80,10 @@ update, once the modded and general features are finished. What it would take:
   diagnosis (plugin stack traces name plugins, not mods; crashdiag only knows mod jars),
   the pack install form (no plugin packs), the migration (a plugin server moves by
   swapping the jar; plugins mostly survive a Minecraft update).
-- **Not planned**: hybrids that load Forge/NeoForge mods and plugins together (Mohist,
-  Arclight, Youer): fragile with big packs, and every crash becomes "is it the hybrid".
+- **Hybrids** that load Forge/NeoForge mods and plugins together (Mohist, Arclight, Youer):
+  first judged not worth it (fragile with big packs, and every crash becomes "is it the
+  hybrid"); reopened 2026-11-04 as research, Undecided, "Legacy versions, more loaders and
+  hybrids".
 
 ---
 
@@ -564,6 +566,24 @@ Suggested, not yet confirmed or rejected:
   install that skipped `X.0` (1.4 -> 2.3 straight) would lose it; covering that means
   offering "the version updated from" (the database copies' names hold it), likely not
   worth it at one release a day.
+- **Legacy versions, more loaders and hybrids** (user, 2026-11-04: ideas for majors, nothing
+  set; each needs research into how it works and whether it is worth it):
+  - Minecraft before 1.2.5 (betas, alphas): Mojang's manifest has no server jars there
+    (`OLDEST_SERVER_RELEASE`), so they would come from community archives; how complete and
+    trustworthy those are decides it.
+  - Legacy Fabric (Fabric before 1.14) and Ornithe.
+  - Hybrids beside plugin servers: Arclight, Mohist, Magma, SpongeForge (see Planned,
+    "Plugin servers", for why they were first left out).
+  - Order (user): legacy versions and loaders before plugin servers, as they extend the
+    modded management rather than adding a parallel ecosystem; hybrids with or after plugins.
+  - Numbering, open: the user's reading of a major is "going back from it breaks something
+    its new features made". A 1.x MineShell meeting a loader it does not know fails
+    (`getLoader` throws), so 1. legacy versions and loaders are 2.0 and plugin servers 3.0
+    (the user's lean: honest about what going back does), or 2. a 1.x minor first learns to
+    tolerate unknown servers, after which new loaders and versions can be minors; the cost
+    is an invisible line at the release that brought the tolerance. That tolerance (a
+    server with an unknown loader or version shown as made by a newer MineShell, still
+    started and stopped) is wanted either way.
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`
   a world mixes zlib and LZ4 chunks, as do regions put together by chunk restore (fine:
