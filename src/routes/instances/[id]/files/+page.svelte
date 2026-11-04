@@ -278,7 +278,11 @@
 				body
 			});
 			const result = deserialize(await res.text());
-			if (result.type === 'success') await refreshAll();
+			if (result.type === 'success') {
+				await refreshAll();
+				// Dropped onto a closed folder's row: opened, so what went in is in sight.
+				if (dir !== data.dir && !expanded[dir]) await toggle(dir);
+			}
 			await applyAction(result);
 		} catch {
 			await applyAction({ type: 'failure', status: 500, location: location.href, data: { ok: false, message: 'The upload did not reach MineShell.' } });
