@@ -61,7 +61,8 @@ game rule/border read-back and the border centre). Release notes by hand, withou
 
 Waiting for beta.3 (two small `feat:`s, so a beta rather than straight into 1.2.0): turning
 "Offer betas too" off while running a beta asks first (5eab1bc; **checked by the user on dev**
-2026-11-04: it works); servers set up by a newer MineShell keep working after going back
+2026-11-04: it works; left for 1.2.0 on prod, the first release with it: switching betas off
+there does not ask, and on again); servers set up by a newer MineShell keep working after going back
 (97ba0d8, the safety net for a later major's loaders; held by `flows/unknown-loader.test.ts`.
 What crashed was found on a throwaway dev server with a `legacyfabric` and a `b1.7.3` server
 before the fix; the fixed pages and their notice not yet looked at in a browser).
