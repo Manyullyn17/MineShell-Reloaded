@@ -64,25 +64,34 @@ The user, on prod (a click or two each; what a real server, player or account br
 2. **Players**: game mode and teleport (to a player, the spawn, coordinates) with a real player
    online, from the player drawer and the overview's Online now menu; on Irithyll (1.21.11)
    and a 1.12 server (teleports stay in the player's dimension there).
-3. **Mods**: on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
+3. **Mods** (2026-11-04: a jar downloaded from CurseForge was found through Modrinth, since
+   it is on both; the key is set and works. Left: a jar that is only on CurseForge, and the
+   look-up of "Other" mods, which ran when the key was saved before): on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
    "Other" looked up when the key is saved; a CurseForge-only jar uploaded; an unknown jar
    showing the name and version it declares.
 4. **Data packs**: the Data packs tab on a server with Open Loader or Paxi (the loader's folders
    listed, an upload into one, a drop onto the tab); a pack change where the loader changes,
    with "copy my packs" ticked (`tests/tools/datapack-loader-packs.mjs`); a version move of a
    server with a data pack from the browser (moved to its build for the new version).
-5. **Files**: a drop onto a folder row in the tree.
+5. **Files**: a drop onto a folder row in the tree. **Done** (2026-11-04): it went in, but a
+   closed folder stayed closed (b51c5f6 opens it); try again on beta.2.
 6. **World > Game rules** on Irithyll, running and stopped: a rule, the spawn, the border
    (stays where put), the world size limit (after a restart); Settings' Rules switches off and
    on again; a 1.12 server's rules (strings, mods' too).
 7. **Settings**: the new fields on Irithyll (1.21.11) and a 26.x server (spam kicks); Other
    keys on a modded server (Minecraft's keys with notes, a mod's tagged).
-8. **LZ4**: on a test server, chunk compression switched to LZ4, played or pre-generated, then
+8. **LZ4** (**done** 2026-11-04 on prod's `test`: the map draws LZ4 and zlib chunks alike.
+   Found: Pre-generate's Start gave no sign (0a1f623), saved areas showed only over existing
+   chunks (0a25719); both for beta.2): on a test server, chunk compression switched to LZ4, played or pre-generated, then
    the chunk map and a prune analysis.
 9. **Tailscale and IPv6**: from a tailnet device, joining with the Connect box's ts.net address
    (and whether ufw lets tailscale0 in without the hint's rule); a wrong password from the
    phone over Tailscale not locking out the PC; Remote access's IPv6 note and
-   `sudo ufw status` for RCON 26565.
+   `sudo ufw status` for RCON 26565 (**done** 2026-11-04: ufw lets 26565 in on neither IPv4
+   nor IPv6, and the note says ufw turns it away).
+   Found on the way: the header's banner (Start, Stop) followed to the next tab, between its
+   tabs and sub-tabs (f7d43a7). Not ours: joining a test server once got Mojang's
+   "authentication servers are down".
 
 Claude, on throwaway data:
 10. **The built app**: **done** (2026-11-04): a production build of beta.1 on throwaway data

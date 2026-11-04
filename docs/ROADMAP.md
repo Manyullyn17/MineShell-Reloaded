@@ -548,6 +548,12 @@ Suggested, not yet confirmed or rejected:
   on a sign-in from an unknown address, two-factor sign-in. (The other Remote access
   follow-ups were built: ROADMAP-ARCHIVE, "Remote access follow-ups".)
 
+- **One place for in-app messages** (user, 2026-11-04, during the 1.2 beta: revisit, not
+  planned yet): three kinds of message today. The green/red banner under a page's header
+  (`Flash`, a form's answer, gone after a few seconds), the toasts at the bottom right (a
+  task finished, from the task stream) and the bell's list at the top right (notifications
+  and tasks). The banner pushes the page down while it is there. To decide: which messages
+  go where, whether a form's answer becomes a toast, and what the bell keeps.
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`
   a world mixes zlib and LZ4 chunks, as do regions put together by chunk restore (fine:
