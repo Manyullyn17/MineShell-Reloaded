@@ -83,8 +83,10 @@ The user, on prod (a click or two each; what a real server, player or account br
 7. **Settings**: the new fields on Irithyll (1.21.11) and a 26.x server (spam kicks); Other
    keys on a modded server (Minecraft's keys with notes, a mod's tagged).
 8. **LZ4** (**done** 2026-11-04 on prod's `test`: the map draws LZ4 and zlib chunks alike.
-   Found: Pre-generate's Start gave no sign (0a1f623), saved areas showed only over existing
-   chunks (0a25719); both for beta.2): on a test server, chunk compression switched to LZ4, played or pre-generated, then
+   Found: Pre-generate's Start gave no sign (0a1f623) and was clickable again for the dimension
+   it had started (a017d9a: greyed for it, parallel dimensions allowed with a note, the summary
+   wrapping between sentences; checked by the user on dev 2026-11-04 at 720p and on a phone),
+   saved areas showed only over existing chunks (0a25719)): on a test server, chunk compression switched to LZ4, played or pre-generated, then
    the chunk map and a prune analysis.
 9. **Tailscale and IPv6**: from a tailnet device, joining with the Connect box's ts.net address
    (and whether ufw lets tailscale0 in without the hint's rule); a wrong password from the
