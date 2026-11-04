@@ -85,10 +85,14 @@ The user, on prod (a click or two each; what a real server, player or account br
    `sudo ufw status` for RCON 26565.
 
 Claude, on throwaway data:
-10. **The built app**: a production build swept with `page-sweep --errors` (the script policy
-    on the new pages: World > Game rules, Remote access's note, the Data packs tab).
-11. **Long names**: the long world (`npm run screenshots -- --long`) swept with `--spill`, for the
-    new Settings fields, Other keys' notes and the release history's Beta tags.
+10. **The built app**: **done** (2026-11-04): a production build of beta.1 on throwaway data
+    (a 1.21.11 server with a real world, Fabric with Open Loader's folder and jars, 26.3), every
+    page at 1280 and 390 px with `--errors --overflow --spill`: nothing refused by the script
+    policy, nothing past the edge or out of its box (168 views each).
+11. **Long names**: **done** (2026-11-04): the long world, now with a mod's long keys in Other keys
+    and long mod game rules (and the Settings tabs swept again after page-sweep's fix: it had
+    never reached Advanced), at 390 px: nothing found. The release history's Beta tags need a
+    real check against GitHub (item 1).
 12. Not needed this time: the real-loader checklist (1.2 changed nothing in how a server
     starts or installs).
 
