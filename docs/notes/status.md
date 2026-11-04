@@ -75,7 +75,8 @@ The user, on prod (a click or two each; what a real server, player or account br
    with "copy my packs" ticked (`tests/tools/datapack-loader-packs.mjs`); a version move of a
    server with a data pack from the browser (moved to its build for the new version).
 5. **Files**: a drop onto a folder row in the tree. **Done** (2026-11-04): it went in, but a
-   closed folder stayed closed (b51c5f6 opens it); try again on beta.2.
+   closed folder stayed closed (b51c5f6 opens it; checked by the user on dev 2026-11-04: the
+   folder opened with the file listed, other open folders stayed open).
 6. **World > Game rules** on Irithyll, running and stopped: a rule, the spawn, the border
    (stays where put), the world size limit (after a restart); Settings' Rules switches off and
    on again; a 1.12 server's rules (strings, mods' too).
