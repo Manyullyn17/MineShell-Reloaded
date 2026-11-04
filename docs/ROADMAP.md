@@ -554,6 +554,16 @@ Suggested, not yet confirmed or rejected:
   task finished, from the task stream) and the bell's list at the top right (notifications
   and tasks). The banner pushes the page down while it is there. To decide: which messages
   go where, whether a form's answer becomes a toast, and what the bell keeps.
+- **When the way out of a major is offered** (user, 2026-11-04: revisit when 2.0 comes into
+  view): `mayGoBackTo` offers the last release of the previous major from any release of
+  the running one (2.5.0 -> last 1.x, as 1.2 offers 0.33.0 today). Only an unsafe migration
+  stops it, by accident rather than by rule, and 2.1+ data would be left to a 1.x. The
+  user's model: going back is for a release that broke something, so the way out belongs to
+  the release right after it. Suggested: offer it only while on `X.0.x` (its patches and the
+  `X.0.0` betas too); DEPLOYMENT's "or to the last 0.x" changes with it. Left open: an
+  install that skipped `X.0` (1.4 -> 2.3 straight) would lose it; covering that means
+  offering "the version updated from" (the database copies' names hold it), likely not
+  worth it at one release a day.
 - **Chunk compression on an older Minecraft** (2026-11-03, user: note it for later, not now):
   a chunk keeps the compression it was written with, so after `region-file-compression=lz4`
   a world mixes zlib and LZ4 chunks, as do regions put together by chunk restore (fine:
