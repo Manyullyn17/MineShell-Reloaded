@@ -566,6 +566,31 @@ Suggested, not yet confirmed or rejected:
   install that skipped `X.0` (1.4 -> 2.3 straight) would lose it; covering that means
   offering "the version updated from" (the database copies' names hold it), likely not
   worth it at one release a day.
+- **Reversible migrations** (user, 2026-11-04: look at it when a major needs a schema change
+  an older MineShell cannot read; nothing safe today changes, so not urgent): a migration an
+  older version cannot work with ships its down beside its up, owned by the newer version,
+  so going back converts the database instead of refusing (`planDowngrade`) or needing the
+  pre-update copy, which stays the fallback. A down puts data back in its old shape and
+  removes what the old schema lacks; newer data it cannot express is dropped or set aside
+  for the next update's up. The newest version holds every down, so going back several
+  releases runs them newest first. Notes from the first look:
+  - The marker grows: `-- downgrade: safe | reversible | lossy - <what is lost> | unsafe -
+    <why>`. A lossy one lists what goes in the going-back dialog and asks to confirm
+    (guard rails, with the database copy taken as always), not a refusal.
+  - Order: today a failed downgrade leaves the database untouched and the installer keeps
+    the current version. With downs, the newer version converts and then hands over; if that
+    install fails it restarts on a database it no longer reads. Run the downs on a copy that
+    replaces the database only once the older version is in, or put the pre-downgrade copy
+    back on failure.
+  - A down removes its `_migrations` row, so the next update runs the up again. Data set
+    aside comes back through that up, which has to reconcile with what the older version
+    changed or deleted meanwhile.
+  - Testable without per-migration checks: every up, then the downs back to release X,
+    compared with a fresh database given only X's migrations (schema, indexes).
+  - Database only: data on disk a newer version writes differently (`LEFT_BEHIND`, folder
+    layouts, units) needs its own way back or stays a warning in the dialog.
+  - With downs, the way out of a major no longer depends on the major staying additive, so
+    when it is offered (the entry above) becomes a choice rather than a limit.
 - **Legacy versions, more loaders and hybrids** (user, 2026-11-04: ideas for majors, nothing
   set; each needs research into how it works and whether it is worth it):
   - Minecraft before 1.2.5 (betas, alphas): Mojang's manifest has no server jars there
