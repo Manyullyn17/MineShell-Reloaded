@@ -59,6 +59,13 @@ beta has run about three days with nothing big. Before beta.1: a quick pass on t
 game rule/border read-back and the border centre). Release notes by hand, without fixes of
 1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 at least).
 
+Waiting for beta.3 (two small `feat:`s, so a beta rather than straight into 1.2.0): turning
+"Offer betas too" off while running a beta asks first (5eab1bc; **checked by the user on dev**
+2026-11-04: it works); servers set up by a newer MineShell keep working after going back
+(97ba0d8, the safety net for a later major's loaders; held by `flows/unknown-loader.test.ts`.
+What crashed was found on a throwaway dev server with a `legacyfabric` and a `b1.7.3` server
+before the fix; the fixed pages and their notice not yet looked at in a browser).
+
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the
    release history shows beta.2 and beta.1 tagged Beta, with notes (bfda974). **Done**
