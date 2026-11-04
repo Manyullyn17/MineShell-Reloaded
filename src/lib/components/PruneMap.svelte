@@ -143,6 +143,8 @@
 	/** This dimension's areas, by chunk: their chunks are never pruned. */
 	const dimensionAreas = $derived(areas.filter((a) => a.dimension === dimension));
 	const inArea = $derived(new Map(dimensionAreas.flatMap((a) => a.chunks.map((c) => [c, a.name] as const))));
+	// Outlined as well as coloured: the colour is only on chunks that are there, and an area often reaches past them.
+	const outlined = $derived(inArea.size ? { chunks: new Set(inArea.keys()), colour: '--warning' } : null);
 
 	// Codes per chunk for the map's layer: 1-7 the heat steps, 8 would go, 9 unreadable, 10 in an area.
 	const PRUNED = 8;
@@ -355,7 +357,7 @@
 		{#if circle}<li><span class="swatch circle"></span>Kept around spawn</li>{/if}
 	</ul>
 
-	<ChunkMap {overview} {regionUrl} selected={protect} {center} {selecting} {layer} {circle} {describe} tapHint="Tap a chunk to protect it and see how long players spent there." />
+	<ChunkMap {overview} {regionUrl} selected={protect} {center} {selecting} {layer} {circle} {outlined} {describe} tapHint="Tap a chunk to protect it and see how long players spent there." />
 
 	<form
 		class="prune"

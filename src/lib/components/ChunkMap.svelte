@@ -33,6 +33,7 @@
 		layer = null,
 		circle = null,
 		area = null,
+		outlined = null,
 		onpick = null,
 		describe = null,
 		tapHint = 'Tap a chunk to select it and see what is there.'
@@ -67,6 +68,11 @@
 		 * marked. With `rows` (the chunks it holds, row by row) it follows chunk edges once chunks are big
 		 * enough to see: the chunks that are in, not the shape they were picked by.
 		 */
+		/**
+		 * Chunks outlined in a colour (a custom property), whether they are there or not: World > Prune's
+		 * saved areas, which reach past the generated land the layer colours.
+		 */
+		outlined?: { chunks: Set<string>; colour: string } | null;
 		area?: {
 			x: number;
 			z: number;
@@ -235,6 +241,7 @@
 		void layer;
 		void circle;
 		void area;
+		void outlined;
 		untrack(redraw);
 	});
 
@@ -379,7 +386,8 @@
 		if (area) drawArea(ctx, area, colour('--accent'));
 
 		drawGrid(ctx, colour('--text'), colour('--text-muted'), colour('--bg-sunken'));
-		drawSelection(ctx, colour('--accent'));
+		if (outlined?.chunks.size) drawChunks(ctx, outlined.chunks, colour(outlined.colour), 0.15);
+		drawChunks(ctx, selected, colour('--accent'), 0.3);
 		drawHover(ctx, colour('--text'));
 		if (drag?.rect) drawRect(ctx, colour('--accent'));
 	}
@@ -546,7 +554,8 @@
 		for (let z = Math.ceil(wz(0) / step) * step; z <= wz(height); z += step) if (sz(z) > 18) label(`z ${z}`, 3, Math.round(sz(z)) + 3);
 	}
 
-	function drawSelection(ctx: CanvasRenderingContext2D, accent: string) {
+	/** A set of chunks filled see-through, with its outer edge drawn: the selection, saved areas. */
+	function drawChunks(ctx: CanvasRenderingContext2D, selected: Set<string>, accent: string, alpha: number) {
 		if (!selected.size) return;
 		const size = 16 * scale;
 		const cx0 = Math.floor(wx(0) / 16) - 1;
@@ -555,7 +564,7 @@
 		const cz1 = Math.floor(wz(height) / 16) + 1;
 		ctx.fillStyle = accent;
 		ctx.strokeStyle = accent;
-		ctx.globalAlpha = 0.3;
+		ctx.globalAlpha = alpha;
 		const edges = new Path2D();
 		for (const key of selected) {
 			const [cx, cz] = key.split(',').map(Number);
@@ -572,7 +581,7 @@
 		ctx.globalAlpha = 1;
 		ctx.lineWidth = size >= 6 ? 2 : 1;
 		ctx.stroke(edges);
-		// Zoomed far out a chunk is a pixel or less: outline the regions holding selected chunks too.
+		// Zoomed far out a chunk is a pixel or less: outline the regions holding the chunks too.
 		if (REGION * scale < 48) {
 			const regions = new Set([...selected].map((k) => k.split(',').map((n) => Math.floor(Number(n) / 32)).join(',')));
 			ctx.lineWidth = 1.5;
