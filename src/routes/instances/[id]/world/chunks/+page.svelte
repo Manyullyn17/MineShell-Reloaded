@@ -180,8 +180,8 @@
 		<form class="field jump" onsubmit={go}>
 			<span class="label">Go to</span>
 			<div class="jump-row">
-				<input type="text" inputmode="numeric" aria-label="Block x" placeholder="x" bind:value={jumpX} />
-				<input type="text" inputmode="numeric" aria-label="Block z" placeholder="z" bind:value={jumpZ} />
+				<input type="text" autocomplete="off" inputmode="numeric" aria-label="Block x" placeholder="x" bind:value={jumpX} />
+				<input type="text" autocomplete="off" inputmode="numeric" aria-label="Block z" placeholder="z" bind:value={jumpZ} />
 				<button type="submit" class="button-quiet">Go</button>
 			</div>
 		</form>

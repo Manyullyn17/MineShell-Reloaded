@@ -539,7 +539,7 @@
 		</summary>
 		{#if opened[key] || startsOpen(c, nested)}
 			{#if c.items.length > 54}
-				<input class="container-filter" type="search" placeholder="Filter by name or id" bind:value={containerFilter[key]} />
+				<input class="container-filter" type="search" autocomplete="off" placeholder="Filter by name or id" bind:value={containerFilter[key]} />
 			{/if}
 			<div class="grid wide">
 				{#each containerSlots(c) as slot (slot)}
@@ -608,6 +608,7 @@
 			{:else if f.kind === 'list'}
 				<textarea
 					id="f-{f.key}"
+					autocomplete="off"
 					class="mono"
 					rows={Math.min(8, String(values[f.key] ?? '').split('\n').length + 1)}
 					bind:value={values[f.key]}
@@ -623,6 +624,7 @@
 					id="f-{f.key}"
 					class:mono={f.kind === 'text'}
 					type={f.kind === 'number' && !/Array$/.test(f.type) ? 'number' : 'text'}
+					autocomplete="off"
 					step="any"
 					bind:value={values[f.key]}
 					disabled={locked}
@@ -735,7 +737,7 @@
 {#snippet duration(target: { seconds: number }, label: string)}
 	<div class="duration">
 		{#if target.seconds >= 0}
-			<input type="number" min="1" bind:value={target.seconds} aria-label={label} disabled={locked} />
+			<input type="number" autocomplete="off" min="1" bind:value={target.seconds} aria-label={label} disabled={locked} />
 		{/if}
 		<label class="check"
 			><input type="checkbox" bind:checked={() => target.seconds < 0, (on) => (target.seconds = on ? -1 : 60)} disabled={locked} /> Forever</label
@@ -754,7 +756,7 @@
 					{@const edit = effectEdits[JSON.stringify(e.path)]}
 					<tr>
 						<td class="mono small">{e.id}</td>
-						<td>{#if edit}<input type="number" min="1" max="128" bind:value={edit.level} aria-label="Level" disabled={locked} />{/if}</td>
+						<td>{#if edit}<input type="number" autocomplete="off" min="1" max="128" bind:value={edit.level} aria-label="Level" disabled={locked} />{/if}</td>
 						<td>{#if edit}{@render duration(edit, 'Seconds left')}{/if}</td>
 						<td class="right">
 							<button type="button" disabled={locked || busy || (edit?.level === e.level && edit?.seconds === e.seconds)} onclick={() => saveEffect(e)}>Save</button>
@@ -768,11 +770,11 @@
 	<form class="add-effect" onsubmit={addNewEffect}>
 		<div class="field">
 			<label for="effect-id">Add an effect</label>
-			<input id="effect-id" class="mono" bind:value={newEffect.id} placeholder={data.view.effects.numericIds ? 'minecraft:speed or 1' : 'minecraft:speed'} required disabled={locked} />
+			<input id="effect-id" autocomplete="off" class="mono" bind:value={newEffect.id} placeholder={data.view.effects.numericIds ? 'minecraft:speed or 1' : 'minecraft:speed'} required disabled={locked} />
 		</div>
 		<div class="field small-field">
 			<label for="effect-level">Level</label>
-			<input id="effect-level" type="number" min="1" max="128" bind:value={newEffect.level} disabled={locked} />
+			<input id="effect-level" type="number" autocomplete="off" min="1" max="128" bind:value={newEffect.level} disabled={locked} />
 		</div>
 		<div class="field">
 			<span class="label">Seconds</span>
@@ -830,11 +832,12 @@
 					<label for="item-id">Item id</label>
 					<div class="id-row">
 						{#if itemId}<ItemIcon loader={icons} id={itemId} damage={itemDamage === '' || itemDamage === null ? null : Number(itemDamage)} size={40} />{/if}
-						<input id="item-id" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
+						<input id="item-id" autocomplete="off" class="mono" bind:value={itemId} placeholder="minecraft:diamond" required disabled={locked} />
 					</div>
 					{#if !locked}
 						<input
 							type="search"
+							autocomplete="off"
 							class="find"
 							placeholder="Find an item by name"
 							aria-label="Find an item by name"
@@ -875,12 +878,12 @@
 				<div class="item-row">
 					<div class="field narrow">
 						<label for="item-count">Count</label>
-						<input id="item-count" type="number" min="1" bind:value={itemCount} disabled={locked} />
+						<input id="item-count" type="number" autocomplete="off" min="1" bind:value={itemCount} disabled={locked} />
 					</div>
 					{#if legacy}
 						<div class="field narrow">
 							<label for="item-damage">Damage</label>
-							<input id="item-damage" type="number" bind:value={itemDamage} disabled={locked} />
+							<input id="item-damage" type="number" autocomplete="off" bind:value={itemDamage} disabled={locked} />
 						</div>
 					{/if}
 				</div>
@@ -888,18 +891,18 @@
 				{#if selectedItem}
 					<div class="field">
 						<label for="item-name">Name</label>
-						<input id="item-name" bind:value={itemName} placeholder="No custom name" disabled={locked} />
+						<input id="item-name" autocomplete="off" bind:value={itemName} placeholder="No custom name" disabled={locked} />
 					</div>
 					<div class="field">
 						<label for="item-lore">Lore (one line per line)</label>
-						<textarea id="item-lore" rows="2" bind:value={itemLore} disabled={locked}></textarea>
+						<textarea id="item-lore" autocomplete="off" rows="2" bind:value={itemLore} disabled={locked}></textarea>
 					</div>
 					<div class="item-row">
 						<label class="check"><input type="checkbox" bind:checked={itemUnbreakable} disabled={locked} /> Unbreakable</label>
 						{#if !legacy}
 							<div class="field narrow">
 								<label for="item-durability">Durability used</label>
-								<input id="item-durability" type="number" min="0" bind:value={itemDurability} disabled={locked} />
+								<input id="item-durability" type="number" autocomplete="off" min="0" bind:value={itemDurability} disabled={locked} />
 							</div>
 						{/if}
 					</div>
@@ -916,9 +919,9 @@
 										{#each legacyOptions as o (o.number)}<option value={o.number}>{o.label}</option>{/each}
 									</select>
 								{:else}
-									<input class="mono" bind:value={e.id} placeholder="minecraft:sharpness" aria-label="Enchantment" disabled={locked} />
+									<input autocomplete="off" class="mono" bind:value={e.id} placeholder="minecraft:sharpness" aria-label="Enchantment" disabled={locked} />
 								{/if}
-								<input type="number" min="1" max="255" bind:value={e.level} aria-label="Level" disabled={locked} />
+								<input type="number" autocomplete="off" min="1" max="255" bind:value={e.level} aria-label="Level" disabled={locked} />
 								<button type="button" class="button-quiet button-danger" aria-label="Remove enchantment" disabled={locked} onclick={() => itemEnchants.splice(i, 1)}>×</button>
 							</div>
 						{/each}
@@ -944,7 +947,7 @@
 						<details class="item-data" open={selectedItem.containers.length === 0}>
 							<summary class="small">All item data</summary>
 							<div class="tree-search">
-								<input type="search" placeholder="Search keys and values" bind:value={itemSearch} aria-label="Search the item’s data" />
+								<input type="search" autocomplete="off" placeholder="Search keys and values" bind:value={itemSearch} aria-label="Search the item’s data" />
 								{#if itemQuery}
 									{@const found = countMatches(tree, itemQuery)}
 									<span class="small muted">{found} match{found === 1 ? '' : 'es'}</span>
@@ -985,7 +988,7 @@
 	{#if mapping}
 		<form class="map-form" onsubmit={addMapped}>
 			<span class="small">New field for <code>{mapping.path.join(' › ')}</code></span>
-			<input bind:value={mapping.label} aria-label="Field name" required />
+			<input autocomplete="off" bind:value={mapping.label} aria-label="Field name" required />
 			<select bind:value={mapping.kind} aria-label="Shown as">
 				{#if mapping.kind === 'list'}
 					<option value="list">List, one entry per line</option>
@@ -1003,7 +1006,7 @@
 		</form>
 	{/if}
 	<div class="tree-search">
-		<input type="search" placeholder="Search keys and values" bind:value={search} aria-label="Search the data" />
+		<input type="search" autocomplete="off" placeholder="Search keys and values" bind:value={search} aria-label="Search the data" />
 		{#if query}<span class="small muted">{matchCount} match{matchCount === 1 ? '' : 'es'}</span>{/if}
 	</div>
 	<ul class="tree">

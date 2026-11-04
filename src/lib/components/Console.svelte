@@ -376,7 +376,7 @@
 		<span class="spacer"></span>
 		<span class="search">
 			<span aria-hidden="true">⌕</span>
-			<input type="search" bind:value={search} placeholder="Search the output" aria-label="Search the output" />
+			<input type="search" autocomplete="off" bind:value={search} placeholder="Search the output" aria-label="Search the output" />
 		</span>
 		{#if filtering}
 			<span class="faint small shown-count">{visible.length} of {lines.length}</span>

@@ -771,7 +771,7 @@
 			<section class="panel">
 				<form method="POST" action="?/notes" use:enhance={() => async ({ update }) => update({ reset: false })} class="notes">
 					<label for="notes"><h2>Notes</h2></label>
-					<textarea id="notes" name="notes" rows="3" placeholder="Anything you want to remember about this server."
+					<textarea id="notes" name="notes" autocomplete="off" rows="3" placeholder="Anything you want to remember about this server."
 						>{data.detail.notes ?? ''}</textarea
 					>
 					<button class="button-quiet" type="submit">Save notes</button>

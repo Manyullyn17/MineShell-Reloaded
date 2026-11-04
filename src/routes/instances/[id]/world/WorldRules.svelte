@@ -139,9 +139,9 @@
 					<legend>World spawn</legend>
 					{#if loaded.spawn}
 						<div class="xyz">
-							<label>x <input bind:value={spawn.x} inputmode="numeric" /></label>
-							<label>y <input bind:value={spawn.y} inputmode="numeric" /></label>
-							<label>z <input bind:value={spawn.z} inputmode="numeric" /></label>
+							<label>x <input autocomplete="off" bind:value={spawn.x} inputmode="numeric" /></label>
+							<label>y <input autocomplete="off" bind:value={spawn.y} inputmode="numeric" /></label>
+							<label>z <input autocomplete="off" bind:value={spawn.z} inputmode="numeric" /></label>
 						</div>
 						<p class="hint">Where new players and ones without a bed appear (spread around it by the spawn radius rule).</p>
 					{:else}
@@ -154,9 +154,9 @@
 						<label class="check"><input type="checkbox" class="switch" role="switch" bind:checked={border.on} /> A border</label>
 						{#if border.on}
 							<div class="xyz">
-								<label>Centre x <input bind:value={border.x} inputmode="numeric" /></label>
-								<label>Centre z <input bind:value={border.z} inputmode="numeric" /></label>
-								<label>Across <input bind:value={border.size} inputmode="numeric" placeholder="blocks" /></label>
+								<label>Centre x <input autocomplete="off" bind:value={border.x} inputmode="numeric" /></label>
+								<label>Centre z <input autocomplete="off" bind:value={border.z} inputmode="numeric" /></label>
+								<label>Across <input autocomplete="off" bind:value={border.size} inputmode="numeric" placeholder="blocks" /></label>
 							</div>
 						{/if}
 						<p class="hint">The overworld's; the Nether follows it at an eighth of the size.</p>
@@ -168,7 +168,7 @@
 				{#if loaded.maxWorldSize !== null}
 					<fieldset>
 						<legend>World size limit <span class="tag">restart</span></legend>
-						<label>Blocks from 0,0 <input bind:value={limit} inputmode="numeric" /></label>
+						<label>Blocks from 0,0 <input autocomplete="off" bind:value={limit} inputmode="numeric" /></label>
 						<p class="hint">
 							No block further out than this in x or z, in every world and dimension of the server (server.properties
 							<code>max-world-size</code>). {Number(limit) === 29999984 ? 'This is the most, the normal edge of the world.' : 'At most 29,999,984, the normal edge of the world.'}
@@ -179,7 +179,7 @@
 
 			<div class="rules-head">
 				<h3>Rules <span class="faint small">{loaded.rules.length}</span></h3>
-				<input type="search" placeholder="Filter rules" bind:value={filter} aria-label="Filter rules" />
+				<input type="search" autocomplete="off" placeholder="Filter rules" bind:value={filter} aria-label="Filter rules" />
 			</div>
 			{#if !loaded.rules.length}
 				<p class="hint">This world keeps no game rules yet: start the server once.</p>
@@ -208,6 +208,7 @@
 									{:else if typeof rule.value === 'number'}
 										<input
 											id="rule-{rule.key}"
+											autocomplete="off"
 											inputmode="numeric"
 											value={String(values[rule.key])}
 											oninput={(e) => {
@@ -216,7 +217,7 @@
 											}}
 										/>
 									{:else}
-										<input id="rule-{rule.key}" value={String(values[rule.key])} oninput={(e) => (values[rule.key] = e.currentTarget.value)} />
+										<input id="rule-{rule.key}" autocomplete="off" value={String(values[rule.key])} oninput={(e) => (values[rule.key] = e.currentTarget.value)} />
 									{/if}
 								</td>
 							</tr>

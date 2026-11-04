@@ -136,9 +136,9 @@
 				}}
 			>
 				{#if editing === 'snbt'}
-					<textarea class="mono" rows={Math.min(16, draft.split('\n').length + 1)} bind:value={draft} aria-label="SNBT"></textarea>
+					<textarea autocomplete="off" class="mono" rows={Math.min(16, draft.split('\n').length + 1)} bind:value={draft} aria-label="SNBT"></textarea>
 				{:else}
-					<input class="mono" bind:value={draft} aria-label={editing === 'name' ? 'New name' : 'New value'} />
+					<input autocomplete="off" class="mono" bind:value={draft} aria-label={editing === 'name' ? 'New name' : 'New value'} />
 					{#if editing === 'value' && !inList}
 						<select bind:value={draftType} aria-label="Type">
 							{#each PRIMITIVES as t (t)}<option value={t}>{t}</option>{/each}
@@ -179,15 +179,15 @@
 						}}
 					>
 						{#if tag.type === 'compound'}
-							<input class="mono" placeholder="name" bind:value={newName} aria-label="Name" required />
+							<input autocomplete="off" class="mono" placeholder="name" bind:value={newName} aria-label="Name" required />
 						{/if}
 						<select bind:value={newType} aria-label="Type">
 							{#each listType ? ['snbt', listType] : ADDABLE as t (t)}<option value={t}>{t === 'snbt' ? 'SNBT (paste)' : t}</option>{/each}
 						</select>
 						{#if newType === 'snbt'}
-							<textarea class="mono" rows="3" placeholder={'{id:"minecraft:sharpness",lvl:5s}'} bind:value={newValue} aria-label="SNBT"></textarea>
+							<textarea autocomplete="off" class="mono" rows="3" placeholder={'{id:"minecraft:sharpness",lvl:5s}'} bind:value={newValue} aria-label="SNBT"></textarea>
 						{:else if !['compound', 'list'].includes(newType)}
-							<input class="mono" placeholder="value" bind:value={newValue} aria-label="Value" />
+							<input autocomplete="off" class="mono" placeholder="value" bind:value={newValue} aria-label="Value" />
 						{/if}
 						<button type="submit" class="button-primary">Add</button>
 						<button type="button" onclick={() => (adding = false)}>Cancel</button>

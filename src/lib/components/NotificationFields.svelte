@@ -64,8 +64,8 @@
 </div>
 {#if values.quietOn}
 	<div class="quiet-times">
-		<label>From <input name="quietFrom" type="time" required bind:value={values.quietFrom} /></label>
-		<label>to <input name="quietTo" type="time" required bind:value={values.quietTo} /></label>
+		<label>From <input name="quietFrom" type="time" autocomplete="off" required bind:value={values.quietFrom} /></label>
+		<label>to <input name="quietTo" type="time" autocomplete="off" required bind:value={values.quietTo} /></label>
 	</div>
 {/if}
 <p class="hint">

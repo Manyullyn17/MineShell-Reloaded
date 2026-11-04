@@ -548,6 +548,7 @@
 					<span aria-hidden="true">⌕</span>
 					<input
 						type="search"
+						autocomplete="off"
 						placeholder="Search modpacks, or leave blank for popular ones"
 						aria-label="Search modpacks"
 						bind:value={term}
@@ -752,7 +753,7 @@
 							onchange={() => (versionTouched = true)}
 						/>
 					{:else}
-						<input id="minecraftVersion" name="minecraftVersion" bind:value={minecraftVersion} placeholder="1.21.1" required />
+						<input id="minecraftVersion" name="minecraftVersion" autocomplete="off" bind:value={minecraftVersion} placeholder="1.21.1" required />
 						<p class="hint">Mojang's version list was unreachable, so type the version.</p>
 					{/if}
 				</div>
@@ -772,7 +773,7 @@
 									: [{ value: '', label: `Latest (${loaderVersions[0]})` }, ...loaderVersions.map((version) => ({ value: version, label: version }))]}
 							/>
 						{:else}
-							<input id="modloaderVersion" name="modloaderVersion" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
+							<input id="modloaderVersion" name="modloaderVersion" autocomplete="off" bind:value={modloaderVersion} placeholder="Leave blank for the latest" />
 						{/if}
 						{#if loaderVersionError}
 							<p class="hint">{loaderVersionError}</p>
@@ -830,6 +831,7 @@
 				<input
 					id="server-name"
 					name="name"
+					autocomplete="off"
 					maxlength="80"
 					bind:value={name}
 					oninput={() => (nameTouched = true)}
@@ -840,7 +842,7 @@
 			</div>
 			<div class="field">
 				<label for="serverPort">Game port</label>
-				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" placeholder={String(data.nextPort)} />
+				<input id="serverPort" name="serverPort" type="number" autocomplete="off" min="1" max="65535" placeholder={String(data.nextPort)} />
 				<p class="hint">
 					Blank takes the next free one, {data.nextPort}.{data.usedPorts.length
 						? ` ${data.usedPorts.join(', ')} ${data.usedPorts.length === 1 ? 'is' : 'are'} taken by your other servers.`

@@ -69,7 +69,7 @@
 				server or crash it, so they start unticked, as do mods the pack itself ships disabled.
 			</p>
 			{#if mods.length > 12}
-				<input class="filter" type="search" placeholder="Filter mods" bind:value={filter} />
+				<input class="filter" type="search" autocomplete="off" placeholder="Filter mods" bind:value={filter} />
 			{/if}
 			<ul>
 				{#each shown as mod (mod.target)}

@@ -494,6 +494,7 @@
 										<input
 											id="snap-world-{s.id}"
 											name="name"
+											autocomplete="off"
 											maxlength="60"
 											value="{worldName(s.worldFolder)}, {formatDateTime(s.createdAt)}"
 										/>
@@ -521,13 +522,14 @@
 									<input type="hidden" name="id" value={s.id} />
 									<div class="field">
 										<label for="snap-note-{s.id}">Name</label>
-										<input id="snap-note-{s.id}" name="note" maxlength="120" value={s.note ?? ''} placeholder={s.label} />
+										<input id="snap-note-{s.id}" name="note" autocomplete="off" maxlength="120" value={s.note ?? ''} placeholder={s.label} />
 									</div>
 									<div class="field">
 										<label for="snap-tags-{s.id}">Tags</label>
 										<input
 											id="snap-tags-{s.id}"
 											name="tags"
+											autocomplete="off"
 											value={(s.tags ?? []).join(', ')}
 											placeholder="e.g. before boss fight, keep"
 										/>
@@ -760,7 +762,7 @@
 									<input type="hidden" name="world" value={w.folder} />
 									<div class="field">
 										<label for="world-name-{w.folder}">Name</label>
-										<input id="world-name-{w.folder}" name="name" maxlength="60" value={w.name} />
+										<input id="world-name-{w.folder}" name="name" autocomplete="off" maxlength="60" value={w.name} />
 										<p class="hint">Its folder stays <code>{w.folder}</code>.</p>
 									</div>
 									<div class="button-row">
@@ -808,7 +810,7 @@
 		}}>
 			<div class="field restore-scope">
 				<label for="new-world-name">Name</label>
-				<input id="new-world-name" name="name" maxlength="60" required placeholder="e.g. Season 2" />
+				<input id="new-world-name" name="name" autocomplete="off" maxlength="60" required placeholder="e.g. Season 2" />
 			</div>
 			<div class="field">
 				<span class="label" id="new-seed-label">Seed</span>
@@ -822,7 +824,7 @@
 						name="seedMode"
 						labelledby="new-seed-label"
 					/>
-					{#if newWorldSeed === 'set'}<input name="seed" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
+					{#if newWorldSeed === 'set'}<input name="seed" autocomplete="off" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
 				</div>
 			</div>
 			{#if data.datapackCount}
@@ -855,7 +857,7 @@
 		<form onsubmit={uploadNewWorld}>
 			<div class="field restore-scope">
 				<label for="upload-world-name">Name</label>
-				<input id="upload-world-name" name="name" maxlength="60" placeholder="The zip's name" />
+				<input id="upload-world-name" name="name" autocomplete="off" maxlength="60" placeholder="The zip's name" />
 			</div>
 			<div class="field">
 				<label for="upload-world-zip">World zip</label>
@@ -1126,7 +1128,7 @@
 					name="seedMode"
 					labelledby="reset-seed-label"
 				/>
-				{#if seedMode === 'set'}<input name="seed" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
+				{#if seedMode === 'set'}<input name="seed" autocomplete="off" aria-label="Seed" placeholder="Seed" class="mono" />{/if}
 			</div>
 			{#if seedMode === 'keep'}
 				<p class="hint">{data.worldSeed || data.seed ? `The current seed: ${data.worldSeed ?? data.seed}.` : 'The current one is random: the new world gets another.'}</p>

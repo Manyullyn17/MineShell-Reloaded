@@ -133,13 +133,13 @@
 			</p>
 			<div class="field">
 				<label for="bisect-text">The problem (optional)</label>
-				<input id="bisect-text" name="logText" placeholder="Text from the log, e.g. an error line" />
+				<input id="bisect-text" name="logText" autocomplete="off" placeholder="Text from the log, e.g. an error line" />
 				<p class="hint">Empty: a crash before the server finishes starting. With text: a start fails when that text shows in the log.</p>
 			</div>
 			<div class="field">
 				<span class="label-text">Keep these on ({keepOn.length})</span>
 				<p class="hint">Mods you trust, like libraries: they stay on in every test, so fewer starts are needed.</p>
-				<input type="search" placeholder="Filter" aria-label="Filter mods" bind:value={keepFilter} />
+				<input type="search" autocomplete="off" placeholder="Filter" aria-label="Filter mods" bind:value={keepFilter} />
 				<div class="keep-list">
 					{#each enabledMods.filter((m) => !keepFilter || m.name.toLowerCase().includes(keepFilter.toLowerCase())) as m (m.fileName)}
 						<label class="check">

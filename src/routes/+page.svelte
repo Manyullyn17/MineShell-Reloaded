@@ -183,7 +183,7 @@
 	<section class="list-tools panel" aria-label="Find servers">
 		<label class="search-field">
 			<span class="visually-hidden">Search servers</span>
-			<input type="search" bind:value={search} placeholder="Search servers, packs, versions, loaders, or tags" />
+			<input type="search" autocomplete="off" bind:value={search} placeholder="Search servers, packs, versions, loaders, or tags" />
 		</label>
 		<div class="list-controls">
 			<div class="segmented" role="group" aria-label="Server status">

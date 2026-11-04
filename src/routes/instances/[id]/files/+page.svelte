@@ -304,7 +304,7 @@
 				{#if renaming === entry.relPath}
 					<form method="POST" action="?/rename" use:enhance class="inline-form">
 						<input type="hidden" name="from" value={entry.relPath} />
-						<input name="to" bind:value={renameValue} aria-label="New name" />
+						<input name="to" autocomplete="off" bind:value={renameValue} aria-label="New name" />
 						<button class="button-primary" type="submit">Save</button>
 						<button class="button-quiet" type="button" onclick={() => (renaming = null)}>
 							Cancel
@@ -606,6 +606,7 @@
 				{#if data.dir}<input type="hidden" name="path" value={data.dir} />{/if}
 				<input
 					type="search"
+					autocomplete="off"
 					name="search"
 					value={data.searchQuery}
 					placeholder={data.dir ? `Search text in ${data.dir}/` : 'Search text in configs and scripts'}
@@ -666,7 +667,7 @@
 		{#if showNewFolder}
 			<form method="POST" action="?/mkdir" use:enhance class="inline-form">
 				<input type="hidden" name="dir" value={data.dir} />
-				<input name="name" bind:value={newFolder} placeholder="Folder name" aria-label="Folder name" />
+				<input name="name" autocomplete="off" bind:value={newFolder} placeholder="Folder name" aria-label="Folder name" />
 				<button class="button-primary" type="submit">Create</button>
 			</form>
 		{/if}

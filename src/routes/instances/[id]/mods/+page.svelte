@@ -222,6 +222,7 @@
 				<span aria-hidden="true">⌕</span>
 				<input
 					type="search"
+					autocomplete="off"
 					bind:value={term}
 					placeholder="Search {SOURCES.find((s) => s.id === source)?.label}"
 					aria-label="Search mods"
@@ -232,7 +233,7 @@
 		{:else if view === 'installed'}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>
-				<input type="search" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
+				<input type="search" autocomplete="off" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
 			</span>
 		{/if}
 		{#if may('mods')}

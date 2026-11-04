@@ -154,11 +154,11 @@
 			<div class="grid-2">
 				<div class="field">
 					<label for="export-name">Pack name</label>
-					<input id="export-name" name="name" bind:value={name} />
+					<input id="export-name" name="name" autocomplete="off" bind:value={name} />
 				</div>
 				<div class="field">
 					<label for="export-version">Version</label>
-					<input id="export-version" name="version" bind:value={version} />
+					<input id="export-version" name="version" autocomplete="off" bind:value={version} />
 				</div>
 			</div>
 			{#if plan.pack}
@@ -180,7 +180,7 @@
 				<div class="grid-2">
 					<div class="field">
 						<label for="export-server-name">Name in the list</label>
-						<input id="export-server-name" name="serverName" bind:value={serverName} />
+						<input id="export-server-name" name="serverName" autocomplete="off" bind:value={serverName} />
 					</div>
 					<div class="field">
 						<label for="export-server-address">Address</label>
@@ -260,7 +260,7 @@
 					</p>
 				</div>
 				<div class="row">
-					<input type="search" placeholder="Filter" aria-label="Filter mods" bind:value={modFilter} />
+					<input type="search" autocomplete="off" placeholder="Filter" aria-label="Filter mods" bind:value={modFilter} />
 					<button type="button" class="button-quiet" onclick={() => (excludedMods = new Set())}>All</button>
 					<button type="button" class="button-quiet" onclick={() => (excludedMods = new Set(plan.mods.map((m) => m.file)))}>None</button>
 				</div>

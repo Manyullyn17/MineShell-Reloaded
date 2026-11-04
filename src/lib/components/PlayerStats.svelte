@@ -96,7 +96,7 @@
 					</button>
 				{/each}
 			</nav>
-			<input type="search" placeholder="Search" aria-label="Search stats" bind:value={query} />
+			<input type="search" autocomplete="off" placeholder="Search" aria-label="Search stats" bind:value={query} />
 		</div>
 		{#if rows.length === 0}
 			<p class="muted">{query.trim() ? 'Nothing matches that search.' : 'Nothing counted here yet.'}</p>

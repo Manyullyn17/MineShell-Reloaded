@@ -55,13 +55,13 @@
 			</table>
 		{/if}
 		<form method="POST" action="?/addCommand" use:enhance class="add-command">
-			<input name="command" class="mono grow" placeholder="say Remember to vote!" aria-label="Command" required />
+			<input name="command" autocomplete="off" class="mono grow" placeholder="say Remember to vote!" aria-label="Command" required />
 			<select name="mode" bind:value={commandMode} aria-label="When">
 				<option value="interval">Repeating</option>
 				<option value="daily">Daily at</option>
 			</select>
 			{#if commandMode === 'daily'}
-				<input name="dailyTime" type="time" value="04:00" aria-label="Time of day" required />
+				<input name="dailyTime" type="time" autocomplete="off" value="04:00" aria-label="Time of day" required />
 			{:else}
 				<select name="everyMinutes" value="60" aria-label="How often">
 					{#each EVERY_MINUTES as p (p.value)}

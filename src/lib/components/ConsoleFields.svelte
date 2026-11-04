@@ -7,11 +7,11 @@
 <div class="grid-2">
 	<div class="field">
 		<label for="consoleBacklogLines">History loaded on connect</label>
-		<input id="consoleBacklogLines" name="consoleBacklogLines" type="number" min="0" max="10000" bind:value={values.consoleBacklogLines} />
+		<input id="consoleBacklogLines" name="consoleBacklogLines" type="number" autocomplete="off" min="0" max="10000" bind:value={values.consoleBacklogLines} />
 	</div>
 	<div class="field">
 		<label for="consoleBufferLines">Lines kept in the browser</label>
-		<input id="consoleBufferLines" name="consoleBufferLines" type="number" min="100" max="100000" bind:value={values.consoleBufferLines} />
+		<input id="consoleBufferLines" name="consoleBufferLines" type="number" autocomplete="off" min="100" max="100000" bind:value={values.consoleBufferLines} />
 		<p class="hint">
 			{values.consoleBufferLines > 20000
 				? 'Above about 20,000 lines the console gets sluggish in most browsers.'

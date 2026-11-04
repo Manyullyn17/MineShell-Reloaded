@@ -201,7 +201,7 @@
 		{#if every === 'interval'}
 			<PresetSelect name="intervalHours" label="How often" choices={EVERY_HOURS} other={unevenHours} bind:value={intervalHours} />
 		{:else if every === 'daily'}
-			<label class="inline">at <input name="dailyTime" type="time" bind:value={dailyTime} /></label>
+			<label class="inline">at <input name="dailyTime" type="time" autocomplete="off" bind:value={dailyTime} /></label>
 		{/if}
 		{#if scheduleChanged}<button type="submit" class="button-quiet">Save</button>{/if}
 		{#if map.settings.schedule.every !== 'off' && map.settings.nextAt && !scheduleChanged}

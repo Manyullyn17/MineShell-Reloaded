@@ -99,7 +99,7 @@
 <div class="logs" class:picked>
 	<section class="list">
 		<form class="search" method="GET" action={base} role="search">
-			<input type="search" name="q" value={data.query} placeholder="Search logs" aria-label="Search all runs and log files" />
+			<input type="search" autocomplete="off" name="q" value={data.query} placeholder="Search logs" aria-label="Search all runs and log files" />
 			<button class="button-quiet" type="submit">Search</button>
 		</form>
 		{#if data.search}

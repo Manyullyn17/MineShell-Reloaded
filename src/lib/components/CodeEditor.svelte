@@ -91,6 +91,7 @@
 <textarea
 	bind:this={textarea}
 	{name}
+	autocomplete="off"
 	rows="26"
 	spellcheck="false"
 	class="plain-editor"

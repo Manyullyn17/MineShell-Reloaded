@@ -148,6 +148,8 @@ Cross-cutting UI facts stay here, since most UI work touches them:
 - The redesign mockup is fully built (ROADMAP-ARCHIVE, "UI redesign").
 
 ### UI pitfalls already paid for
+- Every text box gets `autocomplete="off"` (sign-in fields name what they are instead): browsers
+  offer old entries by field name across the site (`src/autocomplete.test.ts`).
 - `use:enhance` resets forms after success; data-bound forms use `update({ reset: false })`.
 - Selects/checkboxes bound one-way to `data` miss post-save updates; use `bind:` on local state
   re-synced by `$effect`.

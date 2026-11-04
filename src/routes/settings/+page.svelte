@@ -351,7 +351,7 @@
 	<form method="POST" action="?/addJava" use:enhance class="inline-form">
 		<div class="field grow">
 			<label for="java-path">Add a runtime by path</label>
-			<input id="java-path" name="path" class="mono" bind:value={manualJava} placeholder="/opt/jdk-21/bin/java" />
+			<input id="java-path" name="path" autocomplete="off" class="mono" bind:value={manualJava} placeholder="/opt/jdk-21/bin/java" />
 		</div>
 		<button type="submit">Add</button>
 	</form>
@@ -416,15 +416,15 @@
 							<input type="hidden" name="presetId" value={preset.id} />
 							<div class="field">
 								<label for="edit-name-{preset.id}">Name</label>
-								<input id="edit-name-{preset.id}" name="presetName" value={preset.name} maxlength="60" />
+								<input id="edit-name-{preset.id}" name="presetName" autocomplete="off" value={preset.name} maxlength="60" />
 							</div>
 							<div class="field">
 								<label for="edit-description-{preset.id}">Description <span class="muted">(optional)</span></label>
-								<input id="edit-description-{preset.id}" name="presetDescription" value={preset.description} maxlength="200" />
+								<input id="edit-description-{preset.id}" name="presetDescription" autocomplete="off" value={preset.description} maxlength="200" />
 							</div>
 							<div class="field">
 								<label for="edit-flags-{preset.id}">Flags</label>
-								<textarea id="edit-flags-{preset.id}" name="jvmArgs" rows="2" class="mono" spellcheck="false">{preset.flags}</textarea>
+								<textarea id="edit-flags-{preset.id}" name="jvmArgs" autocomplete="off" rows="2" class="mono" spellcheck="false">{preset.flags}</textarea>
 							</div>
 							<div class="actions">
 								<button class="button-primary" type="submit">Save</button>
@@ -459,15 +459,15 @@
 	<form method="POST" action="?/savePreset" use:enhance class="preset-form">
 		<div class="field">
 			<label for="preset-name">Name</label>
-			<input id="preset-name" name="presetName" placeholder="My tuning" maxlength="60" />
+			<input id="preset-name" name="presetName" autocomplete="off" placeholder="My tuning" maxlength="60" />
 		</div>
 		<div class="field">
 			<label for="preset-description">Description <span class="muted">(optional)</span></label>
-			<input id="preset-description" name="presetDescription" placeholder="What it is for, shown when picking it" maxlength="200" />
+			<input id="preset-description" name="presetDescription" autocomplete="off" placeholder="What it is for, shown when picking it" maxlength="200" />
 		</div>
 		<div class="field">
 			<label for="preset-flags">Flags</label>
-			<textarea id="preset-flags" name="jvmArgs" rows="2" class="mono" spellcheck="false" placeholder="-XX:+UseG1GC ..."></textarea>
+			<textarea id="preset-flags" name="jvmArgs" autocomplete="off" rows="2" class="mono" spellcheck="false" placeholder="-XX:+UseG1GC ..."></textarea>
 			<p class="hint">Without <code>-Xms</code>/<code>-Xmx</code>: memory is set per server. A name that exists already replaces that preset.</p>
 		</div>
 		<button type="submit">Save preset</button>
@@ -600,11 +600,11 @@
 		<form method="POST" action="?/addBackupFolder" use:enhance class="inline-form text-aligned">
 			<div class="field grow">
 				<label for="backup-path">Add a folder</label>
-				<input id="backup-path" name="path" class="mono" placeholder="/mnt/backup/minecraft" value={(form as { backupPath?: string } | null)?.backupPath ?? ''} />
+				<input id="backup-path" name="path" autocomplete="off" class="mono" placeholder="/mnt/backup/minecraft" value={(form as { backupPath?: string } | null)?.backupPath ?? ''} />
 			</div>
 			<div class="field">
 				<label for="backup-name">Name <span class="muted">(optional)</span></label>
-				<input id="backup-name" name="name" placeholder="USB drive" />
+				<input id="backup-name" name="name" autocomplete="off" placeholder="USB drive" />
 			</div>
 			<div class="field check">
 				<input id="backup-compress" name="compress" type="checkbox" class="switch" role="switch" checked />
@@ -678,7 +678,7 @@
 									<form method="POST" action="?/portChange" use:enhance={() => async ({ result, update }) => { if (result.type === 'success') editingPort = null; await update({ reset: false }); }} class="port-form">
 										<input type="hidden" name="instanceId" value={row.instanceId} />
 										<input type="hidden" name="kind" value={row.kind} />
-										<input name="port" type="number" min="1" max="65535" value={row.port} aria-label="New port" />
+										<input name="port" type="number" autocomplete="off" min="1" max="65535" value={row.port} aria-label="New port" />
 										<button type="submit">Save</button>
 										<button type="button" class="button-quiet" onclick={() => (editingPort = null)}>Cancel</button>
 									</form>
@@ -738,22 +738,22 @@
 		<div class="rows">
 			<div class="field">
 				<label for="rangeGame">Game ports from</label>
-				<input id="rangeGame" name="game" type="number" min="1024" max="65535" bind:value={ranges.game} placeholder={String(data.portRanges.defaults.game)} />
+				<input id="rangeGame" name="game" type="number" autocomplete="off" min="1024" max="65535" bind:value={ranges.game} placeholder={String(data.portRanges.defaults.game)} />
 			</div>
 			<div class="field">
 				<label for="rangeRcon">RCON above the game port by</label>
-				<input id="rangeRcon" name="rconOffset" type="number" min="1" max="30000" bind:value={ranges.rconOffset} placeholder={String(data.portRanges.defaults.rconOffset)} />
+				<input id="rangeRcon" name="rconOffset" type="number" autocomplete="off" min="1" max="30000" bind:value={ranges.rconOffset} placeholder={String(data.portRanges.defaults.rconOffset)} />
 				{#if Number(ranges.game) && Number(ranges.rconOffset)}
 					<p class="hint">Game port {ranges.game} gets RCON {Number(ranges.game) + Number(ranges.rconOffset)}.</p>
 				{/if}
 			</div>
 			<div class="field">
 				<label for="rangeVoice">Voice chat ports from</label>
-				<input id="rangeVoice" name="voice" type="number" min="1024" max="65535" bind:value={ranges.voice} placeholder={String(data.portRanges.defaults.voice)} />
+				<input id="rangeVoice" name="voice" type="number" autocomplete="off" min="1024" max="65535" bind:value={ranges.voice} placeholder={String(data.portRanges.defaults.voice)} />
 			</div>
 			<div class="field">
 				<label for="rangeMap">Map mod ports from</label>
-				<input id="rangeMap" name="map" type="number" min="1024" max="65535" bind:value={ranges.map} placeholder={String(data.portRanges.defaults.map)} />
+				<input id="rangeMap" name="map" type="number" autocomplete="off" min="1024" max="65535" bind:value={ranges.map} placeholder={String(data.portRanges.defaults.map)} />
 			</div>
 		</div>
 		{#if rangesInEphemeral.length}
@@ -1680,15 +1680,15 @@
 			</div>
 			<div class="field">
 				<label for="sftpHost">Host</label>
-				<input id="sftpHost" name="sftpHost" value={data.sftp.host ?? ''} placeholder="The address MineShell was opened at" />
+				<input id="sftpHost" name="sftpHost" autocomplete="off" value={data.sftp.host ?? ''} placeholder="The address MineShell was opened at" />
 			</div>
 			<div class="field">
 				<label for="sftpPort">SSH port</label>
-				<input id="sftpPort" name="sftpPort" type="number" min="1" max="65535" value={data.sftp.port ?? ''} placeholder={String(data.sftp.defaults.port)} />
+				<input id="sftpPort" name="sftpPort" type="number" autocomplete="off" min="1" max="65535" value={data.sftp.port ?? ''} placeholder={String(data.sftp.defaults.port)} />
 			</div>
 			<div class="field">
 				<label for="sftpUser">Account</label>
-				<input id="sftpUser" name="sftpUser" value={data.sftp.user ?? ''} placeholder={data.sftp.defaults.user} />
+				<input id="sftpUser" name="sftpUser" autocomplete="off" value={data.sftp.user ?? ''} placeholder={data.sftp.defaults.user} />
 			</div>
 		</div>
 	</form>
@@ -1700,7 +1700,7 @@
 		<div class="rows">
 			<div class="field">
 				<label for="trashDays">Keep deleted files for (days)</label>
-				<input id="trashDays" name="trashDays" type="number" min="0" max={data.trash.max} step="1" value={data.trash.days} required />
+				<input id="trashDays" name="trashDays" type="number" autocomplete="off" min="0" max={data.trash.max} step="1" value={data.trash.days} required />
 				<p class="hint">
 					What is deleted in a server's Files tab goes to its trash first, where it can be restored, and is deleted for good
 					after this many days. 0 deletes straight away, with no undo.
@@ -1716,7 +1716,7 @@
 		<div class="rows">
 			<div class="field">
 				<label for="logDays">Delete archived logs and crash reports after (days)</label>
-				<input id="logDays" name="logDays" type="number" min="0" max={data.logs.max} step="1" value={data.logs.days} required />
+				<input id="logDays" name="logDays" type="number" autocomplete="off" min="0" max={data.logs.max} step="1" value={data.logs.days} required />
 				<p class="hint">
 					Each start archives the last log to <code>logs/</code>, and nothing removes them. With a number of days
 					here, every server's archived logs and crash reports older than that are deleted; the current log is kept.

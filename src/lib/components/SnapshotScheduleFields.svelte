@@ -38,7 +38,7 @@
 {#if values.snapshotEvery === 'daily'}
 	<div class="field">
 		<label for="snapshotDailyTime">At</label>
-		<input id="snapshotDailyTime" name="snapshotDailyTime" type="time" bind:value={values.snapshotDailyTime} />
+		<input id="snapshotDailyTime" name="snapshotDailyTime" type="time" autocomplete="off" bind:value={values.snapshotDailyTime} />
 	</div>
 {:else}
 	<input type="hidden" name="snapshotDailyTime" value={values.snapshotDailyTime} />

@@ -257,7 +257,7 @@
 		{#if otherWorld}
 			<div class="field">
 				<label for="pregen-custom">Dimension id</label>
-				<input id="pregen-custom" name="customWorld" class="mono" bind:value={customWorld} placeholder="twilightforest:twilight_forest" required />
+				<input id="pregen-custom" name="customWorld" autocomplete="off" class="mono" bind:value={customWorld} placeholder="twilightforest:twilight_forest" required />
 			</div>
 		{/if}
 		<div class="field">
@@ -269,11 +269,11 @@
 	<div class="fields">
 		<div class="field narrow">
 			<label for="pregen-x">Center X</label>
-			<input id="pregen-x" name="centerX" type="number" step="1" bind:value={x} required />
+			<input id="pregen-x" name="centerX" type="number" autocomplete="off" step="1" bind:value={x} required />
 		</div>
 		<div class="field narrow">
 			<label for="pregen-z">Center Z</label>
-			<input id="pregen-z" name="centerZ" type="number" step="1" bind:value={z} required />
+			<input id="pregen-z" name="centerZ" type="number" autocomplete="off" step="1" bind:value={z} required />
 		</div>
 		<div class="field">
 			<span class="label">Center on</span>
@@ -294,12 +294,12 @@
 	<div class="fields">
 		<div class="field narrow">
 			<label for="pregen-radius">{twoRadii(shape) ? 'Radius east-west' : 'Radius'}</label>
-			<input id="pregen-radius" name="radius" type="number" min="16" step="1" bind:value={radius} required />
+			<input id="pregen-radius" name="radius" type="number" autocomplete="off" min="16" step="1" bind:value={radius} required />
 		</div>
 		{#if twoRadii(shape)}
 			<div class="field narrow">
 				<label for="pregen-radius-z">Radius north-south</label>
-				<input id="pregen-radius-z" name="radiusZ" type="number" min="16" step="1" bind:value={radiusZ} required />
+				<input id="pregen-radius-z" name="radiusZ" type="number" autocomplete="off" min="16" step="1" bind:value={radiusZ} required />
 			</div>
 		{/if}
 		<div class="field">

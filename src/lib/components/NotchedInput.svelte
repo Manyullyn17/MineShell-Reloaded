@@ -87,6 +87,7 @@
 		<input
 			{id}
 			type="number"
+			autocomplete="off"
 			min={boxMin}
 			max={boxMax}
 			step="any"

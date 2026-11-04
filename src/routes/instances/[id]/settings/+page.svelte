@@ -492,7 +492,7 @@
 	</nav>
 	<span class="search">
 		<span aria-hidden="true">⌕</span>
-		<input type="search" bind:value={query} placeholder="Search all settings" aria-label="Search all settings" />
+		<input type="search" autocomplete="off" bind:value={query} placeholder="Search all settings" aria-label="Search all settings" />
 	</span>
 </div>
 
@@ -516,7 +516,7 @@
 		<form method="POST" action="?/general" class="rows" bind:this={forms.identity} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="name">Display name</label>
-				<input id="name" name="name" bind:value={sv.name} maxlength="80" required />
+				<input id="name" name="name" autocomplete="off" bind:value={sv.name} maxlength="80" required />
 			</div>
 		</form>
 		{@render propertyForm('motd')}
@@ -591,6 +591,7 @@
 						<input
 							id="modloaderVersion"
 							name="modloaderVersion"
+							autocomplete="off"
 							bind:value={sv.modloaderVersion}
 							aria-label="Version to install"
 							placeholder="The version list was unreachable; type the exact version"
@@ -752,7 +753,7 @@
 		<form method="POST" action="?/network" class="rows" bind:this={forms.port} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="serverPort">Game port <span class="tag warn">restart</span></label>
-				<input id="serverPort" name="serverPort" type="number" min="1" max="65535" bind:value={sv.serverPort} />
+				<input id="serverPort" name="serverPort" type="number" autocomplete="off" min="1" max="65535" bind:value={sv.serverPort} />
 				<PortCheck instanceId={data.instance.id} field="game" value={sv.serverPort} current={data.settings.serverPort} name="moveGame" />
 				<p class="hint">Written to server.properties too.</p>
 			</div>
@@ -764,7 +765,7 @@
 		<form method="POST" action="?/network" class="rows" bind:this={forms.rcon} onsubmit={onSectionSubmit}>
 			<div class="field">
 				<label for="rconPort">RCON port <span class="tag warn">restart</span></label>
-				<input id="rconPort" name="rconPort" type="number" min="1" max="65535" bind:value={sv.rconPort} />
+				<input id="rconPort" name="rconPort" type="number" autocomplete="off" min="1" max="65535" bind:value={sv.rconPort} />
 				<PortCheck instanceId={data.instance.id} field="rcon" value={sv.rconPort} current={data.settings.rconPort} name="moveRcon" />
 			</div>
 			<div class="field">
@@ -795,7 +796,7 @@
 			<form method="POST" action="?/voiceChat" class="rows" bind:this={forms.voice} onsubmit={onSectionSubmit}>
 				<div class="field">
 					<label for="voicePort">Voice chat port (UDP) <span class="tag warn">restart</span></label>
-					<input id="voicePort" name="voicePort" type="number" min="1" max="65535" bind:value={sv.voicePort} />
+					<input id="voicePort" name="voicePort" type="number" autocomplete="off" min="1" max="65535" bind:value={sv.voicePort} />
 					<p class="hint">
 						Each server on this machine needs its own; MineShell checks it before a start and gives new and copied servers
 						a free one. Players reach it like the game port: allow it through the firewall
@@ -929,6 +930,7 @@
 					<input
 						id="javaPathManual"
 						name="javaPathManual"
+						autocomplete="off"
 						class="mono"
 						placeholder="/usr/lib/jvm/java-21-openjdk/bin/java"
 						bind:value={sv.javaPathManual}
@@ -997,7 +999,7 @@
 				{/if}
 				<div class="field wide">
 					<label for="jvmArgs">JVM arguments <span class="tag warn">restart</span></label>
-					<textarea id="jvmArgs" name="jvmArgs" rows="3" class="mono" spellcheck="false" disabled={Boolean(presetToApply)} bind:value={sv.jvmArgs}
+					<textarea id="jvmArgs" name="jvmArgs" autocomplete="off" rows="3" class="mono" spellcheck="false" disabled={Boolean(presetToApply)} bind:value={sv.jvmArgs}
 					></textarea>
 					<p class="hint">
 						<code>-Xms</code> and <code>-Xmx</code> are rewritten from Memory, so you do not have to keep them in sync.
@@ -1006,7 +1008,7 @@
 				</div>
 				<div class="field wide">
 					<label for="launchArgs">Launch arguments <span class="tag warn">restart</span></label>
-					<input id="launchArgs" name="launchArgs" class="mono" bind:value={sv.launchArgs} />
+					<input id="launchArgs" name="launchArgs" autocomplete="off" class="mono" bind:value={sv.launchArgs} />
 					<p class="hint">
 						After the JVM options, written to the unit environment as <code>MS_LAUNCH_ARGS</code>. Modern Forge and NeoForge
 						use an <code>@argfile</code> here instead of a jar. Only change this if a loader install produced the wrong result.
@@ -1103,7 +1105,7 @@
 				</div>
 				<div class="field">
 					<label for="backupKeep">Copies kept there</label>
-					<input id="backupKeep" name="backupKeep" type="number" min="1" max="1000" bind:value={sv.backupKeep} />
+					<input id="backupKeep" name="backupKeep" type="number" autocomplete="off" min="1" max="1000" bind:value={sv.backupKeep} />
 					<p class="hint">The newest ones there; the settings above are for the ones here. Pinned snapshots are kept there too, not counted.</p>
 				</div>
 			{:else}
@@ -1141,7 +1143,7 @@
 			{#each data.properties.extras as extra (extra.key)}
 				<div class="field">
 					<label for={`extra-${extra.key}`} class="mono">{extra.key}</label>
-					<input id={`extra-${extra.key}`} name={`extra:${extra.key}`} type="text" class="mono" bind:value={fieldValues[`extra:${extra.key}`]} />
+					<input id={`extra-${extra.key}`} name={`extra:${extra.key}`} type="text" autocomplete="off" class="mono" bind:value={fieldValues[`extra:${extra.key}`]} />
 					<p class="hint">{#if !extra.vanilla}<span class="tag">mod</span>{/if} {extra.note}</p>
 				</div>
 			{:else}
@@ -1152,7 +1154,7 @@
 
 	<SettingsSection tab="advanced" title="Raw file" editable={may('settings.edit')} description="Edit server.properties directly. Saved as-is; comments and ordering are not kept.">
 		<form method="POST" action="?/propertiesRaw" use:enhance={keepValues} class="block raw">
-			<textarea name="raw" rows="16" spellcheck="false" class="mono" bind:value={rawValue}></textarea>
+			<textarea name="raw" autocomplete="off" rows="16" spellcheck="false" class="mono" bind:value={rawValue}></textarea>
 			<div class="button-row">
 				<button type="submit" disabled={rawValue === data.properties.raw}>Save file</button>
 				<span class="faint small">Saved on its own, not with the bar below.</span>

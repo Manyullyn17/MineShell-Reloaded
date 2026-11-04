@@ -241,7 +241,7 @@
 				{/if}
 				{#if accessType === 'bans' || accessType === 'ipBans'}
 					<label for="new-ban-reason">Reason (optional)</label>
-					<input id="new-ban-reason" name="reason" bind:value={newReason} maxlength="200" />
+					<input id="new-ban-reason" name="reason" autocomplete="off" bind:value={newReason} maxlength="200" />
 				{/if}
 				{#if isAddress && accessType !== 'ipBans'}<p class="hint warn-text">This looks like an address. Choose Ban IP to ban an address.</p>{/if}
 				<button class:button-danger={accessType === 'bans' || accessType === 'ipBans'} class:button-primary={accessType === 'whitelist'} disabled={isAddress && accessType !== 'ipBans'}>
@@ -318,9 +318,9 @@
 							</select>
 						{:else if teleportTo === 'coords'}
 							<div class="coords">
-								<input name="x" inputmode="numeric" placeholder="x" aria-label="x" required />
-								<input name="y" inputmode="numeric" placeholder="y" aria-label="y" required />
-								<input name="z" inputmode="numeric" placeholder="z" aria-label="z" required />
+								<input name="x" autocomplete="off" inputmode="numeric" placeholder="x" aria-label="x" required />
+								<input name="y" autocomplete="off" inputmode="numeric" placeholder="y" aria-label="y" required />
+								<input name="z" autocomplete="off" inputmode="numeric" placeholder="z" aria-label="z" required />
 							</div>
 							{#if data.inGame.dimensions}
 								<select name="dimension" aria-label="Dimension">
@@ -342,7 +342,7 @@
 				{#if selectedPerson.online}
 					<form method="POST" action="?/kick" use:enhance class="drawer-form">
 						<input type="hidden" name="name" value={selectedPerson.name} />
-						<label for="kick-reason">Kick reason (optional)</label><input id="kick-reason" name="reason" bind:value={kickReason} maxlength="200" />
+						<label for="kick-reason">Kick reason (optional)</label><input id="kick-reason" name="reason" autocomplete="off" bind:value={kickReason} maxlength="200" />
 						<button class="button-quiet">Kick player</button>
 					</form>
 				{/if}
@@ -352,7 +352,7 @@
 				{:else}
 					<form method="POST" action="?/add" use:enhance class="drawer-form">
 						<input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="bans" />
-						<label for="manage-ban-reason">Ban reason (optional)</label><input id="manage-ban-reason" name="reason" bind:value={newReason} maxlength="200" />
+						<label for="manage-ban-reason">Ban reason (optional)</label><input id="manage-ban-reason" name="reason" autocomplete="off" bind:value={newReason} maxlength="200" />
 						<button class="button-danger">Ban player</button>
 					</form>
 					{#if selectedPerson.online}<form method="POST" action="?/add" use:enhance class="drawer-form"><input type="hidden" name="name" value={selectedPerson.name} /><input type="hidden" name="list" value="ipBans" /><button class="button-danger">Ban this player’s IP address</button></form>{/if}
@@ -394,7 +394,7 @@
 			</button>
 		{/each}
 	</div>
-	<label class="player-search"><span class="visually-hidden">Search players</span><input type="search" bind:value={playerQuery} placeholder="Search players" /></label>
+	<label class="player-search"><span class="visually-hidden">Search players</span><input type="search" autocomplete="off" bind:value={playerQuery} placeholder="Search players" /></label>
 	<span class="faint small">
 		{data.lists.serverRunning
 			? 'Server running, so changes apply live.'

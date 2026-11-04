@@ -314,7 +314,7 @@
 		{#if isOverworld && current.spawn}
 			<div class="field">
 				<label for="prune-keep">Always keep within (blocks of spawn)</label>
-				<input id="prune-keep" type="number" min="0" step="16" bind:value={keepAroundSpawn} />
+				<input id="prune-keep" type="number" autocomplete="off" min="0" step="16" bind:value={keepAroundSpawn} />
 			</div>
 		{/if}
 		<div class="field">
@@ -412,7 +412,7 @@
 			<input type="hidden" name="dimension" value={dimension} />
 			<label for="prune-area-name">Save the {protect.size.toLocaleString()} protected chunk{protect.size === 1 ? '' : 's'} as an area</label>
 			<div class="inline">
-				<input id="prune-area-name" name="name" bind:value={areaName} maxlength="60" placeholder="Spawn town, my base…" />
+				<input id="prune-area-name" name="name" autocomplete="off" bind:value={areaName} maxlength="60" placeholder="Spawn town, my base…" />
 				<button type="submit" disabled={!areaName.trim()}>Save area</button>
 			</div>
 		</form>

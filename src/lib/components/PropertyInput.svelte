@@ -64,7 +64,7 @@
 			{/each}
 		</select>
 	{:else if field.type === 'textarea'}
-		<textarea id={field.key} name={field.key} rows="2" bind:value></textarea>
+		<textarea id={field.key} name={field.key} autocomplete="off" rows="2" bind:value></textarea>
 	{:else if field.type === 'number' && field.slider && field.min !== undefined && field.max !== undefined}
 		<div class="control slider-control">
 			<NotchedInput
@@ -83,12 +83,13 @@
 			id={field.key}
 			name={field.key}
 			type="number"
+			autocomplete="off"
 			min={field.min}
 			max={field.max}
 			bind:value
 		/>
 	{:else}
-		<input id={field.key} name={field.key} type="text" bind:value />
+		<input id={field.key} name={field.key} type="text" autocomplete="off" bind:value />
 	{/if}
 {/if}
 {#if field.help}

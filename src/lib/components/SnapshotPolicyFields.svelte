@@ -53,19 +53,19 @@
 		<div class="grid-2">
 			<div class="field">
 				<label for="{idPrefix}-keepMin">Full snapshots always kept</label>
-				<input id="{idPrefix}-keepMin" name="keepMin" type="number" min="1" bind:value={values.keepMin} placeholder={placeholders?.keepMin} />
+				<input id="{idPrefix}-keepMin" name="keepMin" type="number" autocomplete="off" min="1" bind:value={values.keepMin} placeholder={placeholders?.keepMin} />
 			</div>
 			<div class="field">
 				<label for="{idPrefix}-keepMax">Full snapshots at most</label>
-				<input id="{idPrefix}-keepMax" name="keepMax" type="number" min="1" bind:value={values.keepMax} placeholder={placeholders?.keepMax} />
+				<input id="{idPrefix}-keepMax" name="keepMax" type="number" autocomplete="off" min="1" bind:value={values.keepMax} placeholder={placeholders?.keepMax} />
 			</div>
 			<div class="field">
 				<label for="{idPrefix}-partialMin">Partial snapshots always kept</label>
-				<input id="{idPrefix}-partialMin" name="partialMin" type="number" min="0" bind:value={values.partialMin} placeholder={placeholders?.partialMin} />
+				<input id="{idPrefix}-partialMin" name="partialMin" type="number" autocomplete="off" min="0" bind:value={values.partialMin} placeholder={placeholders?.partialMin} />
 			</div>
 			<div class="field">
 				<label for="{idPrefix}-partialMax">Partial snapshots at most</label>
-				<input id="{idPrefix}-partialMax" name="partialMax" type="number" min="0" bind:value={values.partialMax} placeholder={placeholders?.partialMax} />
+				<input id="{idPrefix}-partialMax" name="partialMax" type="number" autocomplete="off" min="0" bind:value={values.partialMax} placeholder={placeholders?.partialMax} />
 			</div>
 		</div>
 		<p class="faint small">
@@ -78,7 +78,7 @@
 		<div class="grid-2">
 			<div class="field">
 				<label for="{idPrefix}-budget">Keep more while they fit in (GB per server)</label>
-				<input id="{idPrefix}-budget" name="budgetGb" type="number" min="0" step="0.5" bind:value={values.budgetGb} placeholder={placeholders?.budgetGb} />
+				<input id="{idPrefix}-budget" name="budgetGb" type="number" autocomplete="off" min="0" step="0.5" bind:value={values.budgetGb} placeholder={placeholders?.budgetGb} />
 				<p class="hint">
 					Beyond the ones always kept, newest first, full and partial together. Sizes are file sizes; on btrfs or XFS
 					snapshots share space with the world and take less.
@@ -94,7 +94,7 @@
 					/>
 					{#if mode('minFreeGb') === 'on'}
 						<div class="size">
-							<input id="{idPrefix}-minFree" name="minFreeGb" type="number" min="0" step="0.5" bind:value={values.minFreeGb} aria-labelledby="{idPrefix}-minFreeLabel" />
+							<input id="{idPrefix}-minFree" name="minFreeGb" type="number" autocomplete="off" min="0" step="0.5" bind:value={values.minFreeGb} aria-labelledby="{idPrefix}-minFreeLabel" />
 							<span class="faint">GB</span>
 						</div>
 					{:else}
@@ -119,7 +119,7 @@
 					/>
 					{#if mode('askAboveGb') === 'on'}
 						<div class="size">
-							<input id="{idPrefix}-ask" name="askAboveGb" type="number" min="0" step="0.5" bind:value={values.askAboveGb} aria-labelledby="{idPrefix}-askLabel" />
+							<input id="{idPrefix}-ask" name="askAboveGb" type="number" autocomplete="off" min="0" step="0.5" bind:value={values.askAboveGb} aria-labelledby="{idPrefix}-askLabel" />
 							<span class="faint">GB</span>
 						</div>
 					{:else}

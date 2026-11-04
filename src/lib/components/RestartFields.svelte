@@ -73,7 +73,7 @@
 	<div class="grid-2">
 		<div class="field">
 			<label for="crashRestartLimit">Give up after</label>
-			<input id="crashRestartLimit" name="crashRestartLimit" type="number" min="1" max="50" bind:value={values.crashRestartLimit} />
+			<input id="crashRestartLimit" name="crashRestartLimit" type="number" autocomplete="off" min="1" max="50" bind:value={values.crashRestartLimit} />
 			<p class="hint">Attempts before systemd stops trying.</p>
 		</div>
 		<div class="field">
@@ -119,7 +119,7 @@
 	{#if values.restartSchedule === 'daily'}
 		<div class="field">
 			<label for="restartDailyTime">Time of day</label>
-			<input id="restartDailyTime" name="restartDailyTime" type="time" bind:value={values.restartDailyTime} />
+			<input id="restartDailyTime" name="restartDailyTime" type="time" autocomplete="off" bind:value={values.restartDailyTime} />
 			<p class="hint">In the server machine's local timezone.</p>
 		</div>
 	{/if}
