@@ -3,6 +3,7 @@
 	import { copyText } from '#lib/shared/clipboard.js';
 	import ServerIcon from '#lib/components/ServerIcon.svelte';
 	import type { SubmitFunction } from '$app/forms';
+	import type { Action } from 'svelte/action';
 	import { enhance } from '#lib/shared/forms.js';
 	import { afterNavigate, invalidate, invalidateAll, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -86,6 +87,12 @@
 			}
 			await invalidateAll();
 		};
+	};
+
+	// The layout comes before the page, so the message sat between the tabs and a page's
+	// sub-tab bar, which pulls itself up against the tabs and covered the message's bottom.
+	const belowSubhead: Action = (node) => {
+		node.parentElement?.querySelector('.subhead')?.after(node);
 	};
 
 	async function copyAddress(address = data.address) {
@@ -270,7 +277,7 @@
 </div>
 
 {#if message}
-	<Flash form={message} />
+	<div use:belowSubhead><Flash form={message} /></div>
 {/if}
 
 {@render children()}
