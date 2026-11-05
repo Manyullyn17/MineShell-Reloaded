@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { postAction, actionMessage } from '#lib/shared/forms.js';
+	import { followKey } from '#lib/shared/follow.svelte.js';
 	import Flash from '#lib/components/Flash.svelte';
 
 	/**
@@ -59,9 +60,15 @@
 		}
 	}
 
-	$effect(() => {
-		void load(world);
-	});
+	// Only for another world: a running server's page reloads every few seconds, and reading
+	// the world again each time threw away what was being typed here.
+	followKey(
+		() => `${instanceId}/${world}`,
+		() => {
+			void load(world);
+			return () => {};
+		}
+	);
 
 	const shown = $derived(
 		(loaded?.rules ?? []).filter((r) => !filter.trim() || `${r.name} ${r.key} ${r.description ?? ''}`.toLowerCase().includes(filter.trim().toLowerCase()))
