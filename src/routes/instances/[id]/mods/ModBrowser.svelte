@@ -11,6 +11,7 @@
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
 	import DetailsDialog from '#lib/components/DetailsDialog.svelte';
 	import FilterSidebar from '#lib/components/FilterSidebar.svelte';
+	import { SEARCH_DELAY_MS } from '#lib/shared/modsearch.js';
 	import type { PageData } from './$types';
 
 	/**
@@ -190,7 +191,19 @@
 		if (active && !hits.length && !untrack(() => searching || searchError)) void untrack(search);
 	});
 
+	// Typing or changing a filter searches by itself.
+	$effect(() => {
+		const query = searchQuery().toString();
+		if (!active || query === lastQuery) return;
+		// Enter or the Search button may have run this very search in the meantime.
+		const timer = setTimeout(() => query !== lastQuery && void search(), SEARCH_DELAY_MS);
+		return () => clearTimeout(timer);
+	});
+
+	// Searches can now overlap: only the newest one's answer counts.
+	let searchRun = 0;
 	export async function search() {
+		const run = ++searchRun;
 		searching = true;
 		searchError = '';
 		selected = null;
@@ -199,13 +212,15 @@
 			lastQuery = searchQuery().toString();
 			const res = await fetch(`/api/mods/search?${lastQuery}`);
 			if (!res.ok) throw new Error('Search failed.');
-			hits = (await res.json()).hits ?? [];
+			const found = (await res.json()).hits ?? [];
+			if (run !== searchRun) return;
+			hits = found;
 			moreHits = hits.length > 0;
 			if (!hits.length) searchError = 'Nothing matched. Try different terms or fewer filters.';
 		} catch (err) {
-			searchError = err instanceof Error ? err.message : 'Search failed.';
+			if (run === searchRun) searchError = err instanceof Error ? err.message : 'Search failed.';
 		} finally {
-			searching = false;
+			if (run === searchRun) searching = false;
 		}
 	}
 
@@ -214,12 +229,16 @@
 		loadingMore = true;
 		try {
 			// The search as it ran, not as the boxes read now.
-			const params = new URLSearchParams(lastQuery);
+			const query = lastQuery;
+			const params = new URLSearchParams(query);
 			params.set('page', String(searchPage + 1));
 			const res = await fetch(`/api/mods/search?${params}`);
 			if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'Could not load more.');
 			const known = new Set(hits.map((h) => h.id));
-			const fresh = ((await res.json()).hits ?? []).filter((h: Hit) => !known.has(h.id));
+			const page = (await res.json()).hits ?? [];
+			// A search that ran meanwhile replaced the list this page belonged to.
+			if (query !== lastQuery) return;
+			const fresh = page.filter((h: Hit) => !known.has(h.id));
 			searchPage += 1;
 			hits = [...hits, ...fresh];
 			moreHits = fresh.length > 0;
