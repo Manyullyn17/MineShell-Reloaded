@@ -181,3 +181,8 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   name, version and link, and the list shows the link's host.
 - Forge/NeoForge mods.toml `version` is often `${file.jarVersion}` left unreplaced; treated as
   no version.
+
+Modrinth's dependencies are per version, not per loader: a multi-loader version lists the same
+ones for every loader, so Netherracked's Fabric builds name Create (Forge and NeoForge only;
+Create Fabric is another project) as optional, and Add mods truthfully says it has no Fabric
+build. Client-only mods are left out of searches on purpose: searching "sodium" finds no Sodium.

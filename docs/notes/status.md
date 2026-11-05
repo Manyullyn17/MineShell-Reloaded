@@ -59,7 +59,7 @@ beta has run about three days with nothing big. Before beta.1: a quick pass on t
 game rule/border read-back and the border centre). Release notes by hand, without fixes of
 1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 at least).
 
-Waiting for beta.3 (two small `feat:`s, so a beta rather than straight into 1.2.0): turning
+Beta.3 (released and on prod 2026-11-05; two small `feat:`s, so a beta rather than straight into 1.2.0): turning
 "Offer betas too" off while running a beta asks first (5eab1bc; **checked by the user on dev**
 2026-11-04: it works; left for 1.2.0 on prod, the first release with it: switching betas off
 there does not ask, and on again); servers set up by a newer MineShell keep working after going back
@@ -86,11 +86,13 @@ The user, on prod (a click or two each; what a real server, player or account br
    identified through CurseForge. The look-up of "Other" mods on saving a key is not tried
    again: nothing is "Other" any more): on MeatballCraft (CurseForge mods), with the CurseForge key: mods recorded as
    "Other" looked up when the key is saved; a CurseForge-only jar uploaded; an unknown jar
-   showing the name and version it declares.
+   showing the name and version it declares. **Done** (2026-11-05, prod's `Test 5`): the jar showed
+   its declared name and version.
 4. **Data packs**: the Data packs tab on a server with Open Loader or Paxi (the loader's folders
    listed, an upload into one, a drop onto the tab); a pack change where the loader changes,
    with "copy my packs" ticked (`tests/tools/datapack-loader-packs.mjs`); a version move of a
-   server with a data pack from the browser (moved to its build for the new version).
+   server with a data pack from the browser (moved to its build for the new version; **done**
+   2026-11-05 on prod's `Test 5`, 1.21.1 -> 1.21.11: the data pack updated, the sourceless mod disabled).
 5. **Files**: a drop onto a folder row in the tree. **Done** (2026-11-04): it went in, but a
    closed folder stayed closed (b51c5f6 opens it; checked by the user on dev 2026-11-04: the
    folder opened with the file listed, other open folders stayed open).
