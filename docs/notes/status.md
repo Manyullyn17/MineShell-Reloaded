@@ -65,7 +65,11 @@ Waiting for beta.3 (two small `feat:`s, so a beta rather than straight into 1.2.
 there does not ask, and on again); servers set up by a newer MineShell keep working after going back
 (97ba0d8, the safety net for a later major's loaders; held by `flows/unknown-loader.test.ts`.
 What crashed was found on a throwaway dev server with a `legacyfabric` and a `b1.7.3` server
-before the fix; the fixed pages and their notice not yet looked at in a browser).
+before the fix. **Checked in a browser** 2026-11-05 on the same two servers: every page at 1280 and
+390 px, and upload, sync, switching a mod, export, copy, a real start and stop, the refusals and
+the import's. Found: Settings still offered the version pickers (a blank Loader box, 502s from the
+version list), now the notice in their place, and the notice said mods could not be changed while
+uploads and switching work; both fixed and rechecked).
 
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the

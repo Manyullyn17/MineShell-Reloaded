@@ -30,7 +30,7 @@ export const load: LayoutServerLoad = async ({ params, url, depends }) => {
 			// display spelling ('Fabric'). Only the label should ever reach the UI.
 			modloaderLabel: LOADERS[instance.modloader as ModloaderId]?.label ?? instance.modloader,
 			modloaderVersion: instance.modloaderVersion,
-			/** What the overview and the Mods tab say when this MineShell does not know the loader (a newer one set the server up). */
+			/** What the overview, Mods and Settings say when this MineShell does not know the loader (a newer one set the server up). */
 			unknownLoader: findLoader(instance.modloader) ? null : unknownLoaderMessage(instance.modloader),
 			packName: instance.packName,
 			packVersionName: instance.packVersionName,

@@ -461,10 +461,10 @@ next release is not 0.32.0, change it there.
 
 A server a newer MineShell set up can name a loader this one does not know (one a later major
 adds). From 1.2.0 on that server is not a crash: its launch line is stored, so it starts and
-stops as before; the overview and Mods say why the rest is refused (`unknownLoaderMessage`),
+stops as before; the overview, Mods and Settings say why the rest is refused (`unknownLoaderMessage`; Settings shows that in place of the version pickers),
 and what needs the loader (`instanceLoader`: version moves, loader builds, installing mods,
 Chunky, importing such an export) refuses with that, while the update checks leave the
-server out. Its mods are still listed and switched as files. A Minecraft version this one
+server out. Its mods are still listed, uploaded and switched as files. A Minecraft version this one
 does not list (an old beta) needs nothing: versions are compared leniently and Java falls
 back to 8. `tests/flows/unknown-loader.test.ts` holds both.
 

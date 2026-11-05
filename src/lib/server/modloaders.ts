@@ -612,7 +612,7 @@ export function getLoader(id: string): Modloader {
  * and stops (its launch line is stored), but nothing that needs the loader is offered.
  */
 export function unknownLoaderMessage(id: string): string {
-	return `This server runs ${id}, which this version of MineShell does not know: a newer MineShell set it up. It starts and stops as before; update MineShell to change its loader, Minecraft version or mods.`;
+	return `This server runs ${id}, which this version of MineShell does not know: a newer MineShell set it up. It starts and stops as before, and its mods can be uploaded and switched as files; update MineShell to change its loader or Minecraft version or to install mods.`;
 }
 
 /** The server's loader, or a refusal (not a crash) when this MineShell does not know it. */

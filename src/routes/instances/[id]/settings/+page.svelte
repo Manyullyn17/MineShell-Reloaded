@@ -547,7 +547,15 @@
 	{/if}
 
 	<!-- Pack servers move with their pack; Cleanroom has its own section below. -->
-	{#if !data.pack && data.settings.modloader !== 'cleanroom'}
+	{#if data.instance.unknownLoader}
+		<SettingsSection
+			tab="general"
+			title="Minecraft version and loader"
+			description="Runs {data.instance.modloaderLabel} {data.settings.modloaderVersion ?? ''} on Minecraft {data.settings.minecraftVersion}."
+		>
+			<div class="notice warning"><p>{data.instance.unknownLoader}</p></div>
+		</SettingsSection>
+	{:else if !data.pack && data.settings.modloader !== 'cleanroom'}
 		<SettingsSection tab="general" title="Minecraft version and loader" editable={may('software')}>
 			{#snippet description()}
 				Runs <strong>{data.instance.modloaderLabel}{data.settings.modloader === 'vanilla' ? '' : ` ${data.settings.modloaderVersion ?? ''}`}</strong> on
@@ -567,7 +575,7 @@
 		</SettingsSection>
 	{/if}
 
-	{#if data.settings.modloader !== 'vanilla'}
+	{#if data.settings.modloader !== 'vanilla' && !data.instance.unknownLoader}
 		<SettingsSection tab="general" id="loader-version" title="{data.instance.modloaderLabel} version" editable={may('software')}>
 			{#snippet description()}
 				Installed: <strong>{data.settings.modloaderVersion ?? 'not recorded'}</strong>. Reinstalls the loader in place; the

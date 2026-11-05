@@ -44,6 +44,8 @@ describe('a server with a loader this MineShell does not know', () => {
 		const params = { id: instance.id };
 		const head = await load(layout, { params });
 		expect((head.instance as { unknownLoader: string | null }).unknownLoader).toMatch(UNKNOWN);
+		// Uploading and switching work on such a server: the notice must not refuse them.
+		expect((head.instance as { unknownLoader: string }).unknownLoader).toMatch(/can be uploaded and switched as files; update MineShell to change its loader or Minecraft version or to install mods/);
 		await load(overview, { params });
 		const mods = await load(modsPage, { params });
 		expect(mods.mods).toEqual([expect.objectContaining({ fileName: 'legacy-mod.jar' })]);
