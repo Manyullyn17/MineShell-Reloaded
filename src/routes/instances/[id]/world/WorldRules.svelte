@@ -20,7 +20,7 @@
 	type Rules = {
 		world: string;
 		live: boolean;
-		rules: { key: string; name: string; description: string | null; value: Value; vanilla: boolean }[];
+		rules: { key: string; name: string; description: string | null; value: Value; vanilla: boolean; default: number | null }[];
 		spawn: { x: number; y: number; z: number } | null;
 		border: { x: number; z: number; size: number } | null;
 		borderSupported: boolean;
@@ -158,15 +158,15 @@
 				{#if loaded.borderSupported}
 					<fieldset>
 						<legend>World border</legend>
-						<label class="check"><input type="checkbox" class="switch" role="switch" bind:checked={border.on} /> A border</label>
+						<label class="check"><input type="checkbox" class="switch" role="switch" bind:checked={border.on} /> Set a world border</label>
 						{#if border.on}
 							<div class="xyz">
 								<label>Centre x <input autocomplete="off" bind:value={border.x} inputmode="numeric" /></label>
 								<label>Centre z <input autocomplete="off" bind:value={border.z} inputmode="numeric" /></label>
-								<label>Across <input autocomplete="off" bind:value={border.size} inputmode="numeric" placeholder="blocks" /></label>
+								<label>Side length <input autocomplete="off" bind:value={border.size} inputmode="numeric" placeholder="blocks" /></label>
 							</div>
 						{/if}
-						<p class="hint">The overworld's; the Nether follows it at an eighth of the size.</p>
+						<p class="hint">A square, this many blocks from edge to edge around its centre. The overworld's; the Nether follows it at an eighth of the size.</p>
 						{#if borderPastLimit}
 							<p class="hint warn">Past {Number(limit).toLocaleString('en')} blocks from 0,0 the world size limit stops it first.</p>
 						{/if}
@@ -197,10 +197,10 @@
 						{#each shown as rule (rule.key)}
 							<tr class:changed={values[rule.key] !== rule.value}>
 								<td>
-									<label for="rule-{rule.key}"><strong>{rule.name}</strong></label>
-									{#if !rule.vanilla}<span class="tag">mod</span>{/if}
+									<label class="rule-name" for="rule-{rule.key}"><strong>{rule.name}</strong>{#if !rule.vanilla}<span class="tag">mod</span>{/if}</label>
 									<div class="faint small mono key">{rule.key}</div>
 									{#if rule.description}<div class="muted small">{rule.description}</div>{/if}
+									{#if rule.default !== null}<div class="faint small">Default: {rule.default.toLocaleString('en')}</div>{/if}
 								</td>
 								<td class="value">
 									{#if typeof rule.value === 'boolean'}
@@ -301,6 +301,13 @@
 
 	td .key {
 		overflow-wrap: anywhere;
+	}
+
+	.rule-name {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	td.value {

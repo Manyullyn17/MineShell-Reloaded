@@ -92,7 +92,7 @@ describe("a world's game rules, spawn and border", () => {
 		expect(old.rules.map((r) => [r.key, r.name, r.value, r.vanilla])).toEqual([
 			['keepInventory', 'Keep inventory after death', false, true],
 			['someModRule', 'Some mod rule', true, false],
-			['gameLoopFunction', 'Game loop function', '-', false],
+			['gameLoopFunction', 'Game loop function', '-', true],
 			['randomTickSpeed', 'Random tick speed rate', 3, true]
 		]);
 		const mid = await readWorldRules(await server(MID), 'world');

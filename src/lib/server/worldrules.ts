@@ -9,7 +9,7 @@ import { worldFolderNames } from './worlds';
 import { compareVersions } from './java';
 import { patchProperties, readProperties } from './properties';
 import { savingPaused } from './savepause';
-import { isVanillaRule, ruleDescription, ruleLabel } from '#lib/shared/gamerules.js';
+import { isVanillaRule, ruleDefault, ruleDescription, ruleLabel } from '#lib/shared/gamerules.js';
 import type { ServerInstance } from './db/schema';
 
 /**
@@ -37,7 +37,7 @@ import type { ServerInstance } from './db/schema';
  */
 
 export type RuleValue = boolean | number | string;
-export type WorldRule = { key: string; name: string; description: string | null; value: RuleValue; vanilla: boolean };
+export type WorldRule = { key: string; name: string; description: string | null; value: RuleValue; vanilla: boolean; default: number | null };
 export type WorldRules = {
 	world: string;
 	/** Changes go over RCON (the running server's active world). */
@@ -128,7 +128,8 @@ export async function readWorldRules(instance: ServerInstance, world: string): P
 		name: ruleLabel(key),
 		description: ruleDescription(key),
 		value: valueOf(tag, located!.store),
-		vanilla: isVanillaRule(key)
+		vanilla: isVanillaRule(key),
+		default: ruleDefault(key)
 	}));
 	rules.sort((a, b) => Number(typeof a.value !== 'boolean') - Number(typeof b.value !== 'boolean') || a.name.localeCompare(b.name));
 

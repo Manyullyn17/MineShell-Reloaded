@@ -177,6 +177,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   The server jars hold en_us.json from 1.13 (1.12's .lang has no rule names).
 - Files written by MineShell were checked by booting them: each version reported the changed
   rules, the border width and kept the spawn through its own save.
+- Number rules' defaults (`NUMBER_RULE_DEFAULTS`) are read from fresh worlds, not from memory:
+  the creative portal delay is 1 in 1.21.1's `playersNetherPortalCreativeDelay` and 0 in
+  1.21.11's `players_nether_portal_creative_delay`. A rule missing from `VANILLA_GAME_RULES` is
+  tagged "mod", so a new Minecraft version's rules need adding there.
 
 ## Chunk map and chunk restore
 - Built 2026-10-17 (World > Restore chunks; ARCHITECTURE, "Worlds"). RoughlyEnoughIDs/JEID

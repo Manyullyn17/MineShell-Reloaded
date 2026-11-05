@@ -34,6 +34,7 @@ export const VANILLA_GAME_RULES: Record<string, { name: string; description?: st
 	doWeatherCycle: { name: 'Update weather' },
 	drowningDamage: { name: 'Deal drowning damage' },
 	enderPearlsVanishOnDeath: { name: 'Thrown Ender Pearls vanish on death', description: 'Whether Ender Pearls thrown by a player vanish when that player dies.' },
+	gameLoopFunction: { name: 'Game loop function', description: 'The function run every tick (1.12; empty for none).' },
 	fallDamage: { name: 'Deal fall damage' },
 	fireDamage: { name: 'Deal fire damage' },
 	forgiveDeadPlayers: { name: 'Forgive dead players', description: 'Angered neutral mobs stop being angry when the targeted player dies nearby.' },
@@ -59,6 +60,7 @@ export const VANILLA_GAME_RULES: Record<string, { name: string; description?: st
 	sendCommandFeedback: { name: 'Send command feedback' },
 	showDeathMessages: { name: 'Show death messages' },
 	snowAccumulationHeight: { name: 'Snow accumulation height', description: 'When it snows, layers of snow form on the ground up to at most this number of layers.' },
+	spawnChunkRadius: { name: 'Spawn chunk radius', description: 'Amount of chunks that stay loaded around the overworld spawn position.' },
 	spawnMonsters: { name: 'Spawn Monsters', description: 'Controls whether monsters naturally spawn.' },
 	spawnRadius: { name: 'Respawn location radius', description: 'Controls the size of the area around the spawn point that players can spawn in.' },
 	spawnerBlocksEnabled: { name: 'Enable Spawner Blocks' },
@@ -126,6 +128,35 @@ export const VANILLA_GAME_RULES: Record<string, { name: string; description?: st
 	water_source_conversion: { name: 'Water converts to source', description: 'When flowing water is surrounded on two sides by water sources, it converts into a source.' }
 };
 
+/**
+ * The rules set by a number, as fresh worlds of 1.12.2, 1.21.1, 1.21.11 and 26.3 wrote them
+ * (2026-11-05): nothing in the game shows them. An on or off rule needs none: its switch says it.
+ */
+const NUMBER_RULE_DEFAULTS: Record<string, number> = {
+	commandModificationBlockLimit: 32768,
+	fire_spread_radius_around_player: 128,
+	max_block_modifications: 32768,
+	max_command_forks: 65536,
+	max_command_sequence_length: 65536,
+	max_entity_cramming: 24,
+	max_snow_accumulation_height: 1,
+	maxCommandChainLength: 65536,
+	maxCommandForkCount: 65536,
+	maxEntityCramming: 24,
+	players_nether_portal_creative_delay: 0,
+	players_nether_portal_default_delay: 80,
+	players_sleeping_percentage: 100,
+	playersNetherPortalCreativeDelay: 1,
+	playersNetherPortalDefaultDelay: 80,
+	playersSleepingPercentage: 100,
+	random_tick_speed: 3,
+	randomTickSpeed: 3,
+	respawn_radius: 10,
+	snowAccumulationHeight: 1,
+	spawnChunkRadius: 2,
+	spawnRadius: 10
+};
+
 /** keepInventory, spawn_monsters, minecraft:pvp -> "Keep inventory", "Spawn monsters", "Pvp". */
 export function ruleLabel(key: string): string {
 	const bare = key.replace(/^minecraft:/, '');
@@ -136,6 +167,8 @@ export function ruleLabel(key: string): string {
 }
 
 export const ruleDescription = (key: string): string | null => VANILLA_GAME_RULES[key.replace(/^minecraft:/, '')]?.description ?? null;
+
+export const ruleDefault = (key: string): number | null => NUMBER_RULE_DEFAULTS[key.replace(/^minecraft:/, '')] ?? null;
 
 /** Whether this key is one of Minecraft's own rules (else a mod's, or one the table does not know). */
 export const isVanillaRule = (key: string): boolean => key.replace(/^minecraft:/, '') in VANILLA_GAME_RULES;
