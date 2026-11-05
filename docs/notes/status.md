@@ -59,7 +59,8 @@ beta has run about three days with nothing big. Before beta.1: a quick pass on t
 game rule/border read-back and the border centre). Release notes by hand, without fixes of
 1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 at least).
 
-Beta.3 (released and on prod 2026-11-05; two small `feat:`s, so a beta rather than straight into 1.2.0): turning
+Beta.4 (search as you type, filter reset, search caching, the banner under the tab bars) is on
+prod since 2026-11-05. Beta.3 (released and on prod 2026-11-05; two small `feat:`s, so a beta rather than straight into 1.2.0): turning
 "Offer betas too" off while running a beta asks first (5eab1bc; **checked by the user on dev**
 2026-11-04: it works; left for 1.2.0 on prod, the first release with it: switching betas off
 there does not ask, and on again); servers set up by a newer MineShell keep working after going back
@@ -98,9 +99,17 @@ The user, on prod (a click or two each; what a real server, player or account br
    folder opened with the file listed, other open folders stayed open).
 6. **World > Game rules** on Irithyll, running and stopped: a rule, the spawn, the border
    (stays where put), the world size limit (after a restart); Settings' Rules switches off and
-   on again; a 1.12 server's rules (strings, mods' too).
+   on again; a 1.12 server's rules (strings, mods' too). **Done** (2026-11-05): all work; the size
+   limit held after a restart, not tried at the edge in game. Found and fixed, waiting for the next
+   beta: a paused server's status refresh wiped unsaved edits every 15 s, the sidebar froze on pages
+   that do not reload, unclear border wording, the mod tag's place, spawnChunkRadius and
+   gameLoopFunction tagged as mods, and numeric rules' defaults added. A border's values are not
+   kept when it is switched off and saved: left that way (the user's call, fine as it is).
 7. **Settings**: the new fields on Irithyll (1.21.11) and a 26.x server (spam kicks); Other
-   keys on a modded server (Minecraft's keys with notes, a mod's tagged).
+   keys on a modded server (Minecraft's keys with notes, a mod's tagged). **Done** (2026-11-05, on
+   beta.3/4): the fields read well and game rule changes show in the console. Spam kicks save to
+   server.properties; their effect in game was not tried. MeatballCraft's server.properties holds
+   only Minecraft's keys, so a real mod's tag is unseen on prod (the long world's sweep has it).
 8. **LZ4** (**done** 2026-11-04 on prod's `test`: the map draws LZ4 and zlib chunks alike.
    Found: Pre-generate's Start gave no sign (0a1f623) and was clickable again for the dimension
    it had started (a017d9a: greyed for it, parallel dimensions allowed with a note, the summary
@@ -112,6 +121,8 @@ The user, on prod (a click or two each; what a real server, player or account br
    phone over Tailscale not locking out the PC; Remote access's IPv6 note and
    `sudo ufw status` for RCON 26565 (**done** 2026-11-04: ufw lets 26565 in on neither IPv4
    nor IPv6, and the note says ufw turns it away).
+   Remote access's IPv6 note read by the user 2026-11-05: right, and it names only RCON's port
+   on purpose, the one that should not be open.
    Found on the way: the header's banner (Start, Stop) followed to the next tab, between its
    tabs and sub-tabs (f7d43a7). Not ours: joining a test server once got Mojang's
    "authentication servers are down".

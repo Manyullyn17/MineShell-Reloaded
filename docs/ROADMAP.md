@@ -236,6 +236,9 @@ each Minecraft version reads (the prompt and `require-resource-pack` came in 1.1
 whether MineShell should also host an uploaded pack itself, which needs an address players
 can reach (playit.gg does not carry HTTP).
 
+Settings' `initial-enabled-packs` and `initial-disabled-packs` are one long string of data pack
+ids: functional, not nice (user, 2026-11-05). Revisit them with this work, as a list to pick from.
+
 #### Maintenance mode
 
 Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks whoever is
