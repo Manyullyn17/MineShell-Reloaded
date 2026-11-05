@@ -60,6 +60,10 @@ same worker, in an order that can change: give mods, projects and servers ids no
 other test uses (`upsertMod` reuses a row with the same source and slug, name included), and
 do not assert an order that comes from such shared rows.
 
+A file that turns on `vi.useFakeTimers()` restores the real clock in `afterEach`, not a
+`beforeEach`: in a shared worker a clock left on makes whichever file comes next time out, a
+different one each run, which looks like a flaky test elsewhere.
+
 Two Vitest projects (`vite.config.ts`): files containing `vi.mock(` run **isolated** (a fresh
 module registry per file, because a mock cannot reach modules another file already loaded, and
 a module loaded under one file's mock stays mocked); all others run with `isolate: false` and

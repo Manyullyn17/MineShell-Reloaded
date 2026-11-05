@@ -186,3 +186,11 @@ Modrinth's dependencies are per version, not per loader: a multi-loader version 
 ones for every loader, so Netherracked's Fabric builds name Create (Forge and NeoForge only;
 Create Fabric is another project) as optional, and Add mods truthfully says it has no Fabric
 build. Client-only mods are left out of searches on purpose: searching "sodium" finds no Sodium.
+
+Searches and project details are cached 10 minutes on the server (`mods/catalogcache.ts`), version
+lists are not: what can be installed is always asked for. Nothing found is not kept, a failed
+lookup neither (a changelog that failed is thrown through the cache, not stored as "none"). The
+Search button sends `fresh` past the cache; typing and Enter do not. CurseForge's entries are
+dropped when the key changes, since the key decides between its API and the mirror.
+`CACHE_MAX_ENTRIES` is shared with the mirror's lookups, two for each mod in an update check: 200
+would throw them out during MeatballCraft's check, so it is 2000.

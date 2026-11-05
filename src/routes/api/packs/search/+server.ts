@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { cachedSearch } from '#lib/server/mods/catalogcache.js';
 import { getProvider } from '#lib/server/mods/index.js';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -7,16 +8,17 @@ export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const mcVersions = url.searchParams.getAll('mc');
 		const provider = getProvider(source);
-		const hits = await provider.search({
+		const query = {
 			term: url.searchParams.get('term') ?? '',
 			minecraftVersion: mcVersions[0],
 			minecraftVersions: mcVersions.length ? mcVersions : undefined,
 			loaders: url.searchParams.getAll('loader'),
 			categories: url.searchParams.getAll('category'),
-			kind: 'modpack',
+			kind: 'modpack' as const,
 			page: Number(url.searchParams.get('page') ?? 1),
 			limit: 20
-		});
+		};
+		const hits = await cachedSearch(source, query, () => provider.search(query), url.searchParams.has('fresh'));
 		return Response.json({ hits });
 	} catch (err) {
 		error(502, err instanceof Error ? err.message : 'Search failed.');

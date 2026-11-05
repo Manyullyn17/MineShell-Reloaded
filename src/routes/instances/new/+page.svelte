@@ -384,7 +384,8 @@
 
 	// Searches can overlap: only the newest one's answer counts.
 	let searchRun = 0;
-	async function search() {
+	/** `fresh`: the Search button, past what the server keeps of the last 10 minutes. */
+	async function search(fresh = false) {
 		const run = ++searchRun;
 		searching = true;
 		searchError = '';
@@ -393,7 +394,7 @@
 		searchPage = 1;
 		try {
 			lastQuery = searchQuery().toString();
-			const res = await fetch(`/api/packs/search?${lastQuery}`);
+			const res = await fetch(`/api/packs/search?${lastQuery}${fresh ? '&fresh=1' : ''}`);
 			if (!res.ok) throw new Error((await res.json()).message ?? 'Search failed.');
 			const found = (await res.json()).hits ?? [];
 			if (run !== searchRun) return;
@@ -580,7 +581,7 @@
 						}}
 					/>
 				</span>
-				<button type="button" onclick={search} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
+				<button type="button" onclick={() => search(true)} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
 				<button type="button" class="button-quiet" aria-expanded={showFilters} onclick={() => (showFilters = !showFilters)}>
 					{showFilters ? 'Hide filters' : 'Filters'}
 				</button>

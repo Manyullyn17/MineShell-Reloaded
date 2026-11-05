@@ -229,7 +229,7 @@
 					onkeydown={(e) => e.key === 'Enter' && browser?.search()}
 				/>
 			</span>
-			<button type="button" onclick={() => browser?.search()} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
+			<button type="button" onclick={() => browser?.search(true)} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
 		{:else if view === 'installed'}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>

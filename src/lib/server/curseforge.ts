@@ -4,6 +4,7 @@ import { settings } from './db/schema';
 import { encryptSecret, decryptSecret } from './crypto';
 import { CURSEFORGE_API_KEY as ENV_KEY } from './config';
 import { outboundFetch } from './outbound';
+import { forgetCurseforgeAnswers } from './mods/catalogcache';
 
 /**
  * CurseForge API key storage and testing. Overridable at runtime from the
@@ -61,6 +62,7 @@ export function curseforgeKeyValid(): boolean {
 
 function setValid(valid: boolean): void {
 	writeRow(VALID_ROW, valid ? 'true' : 'false');
+	forgetCurseforgeAnswers();
 }
 
 /**
@@ -106,6 +108,7 @@ export async function setCurseforgeApiKey(key: string): Promise<{ ok: boolean; m
 	const effective = getCurseforgeApiKey();
 	if (!effective) {
 		db.delete(settings).where(eq(settings.key, VALID_ROW)).run();
+		forgetCurseforgeAnswers();
 		return {
 			ok: true,
 			message: trimmed

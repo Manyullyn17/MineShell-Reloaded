@@ -202,7 +202,8 @@
 
 	// Searches can now overlap: only the newest one's answer counts.
 	let searchRun = 0;
-	export async function search() {
+	/** `fresh`: the Search button, past what the server keeps of the last 10 minutes. */
+	export async function search(fresh = false) {
 		const run = ++searchRun;
 		searching = true;
 		searchError = '';
@@ -210,7 +211,7 @@
 		searchPage = 1;
 		try {
 			lastQuery = searchQuery().toString();
-			const res = await fetch(`/api/mods/search?${lastQuery}`);
+			const res = await fetch(`/api/mods/search?${lastQuery}${fresh ? '&fresh=1' : ''}`);
 			if (!res.ok) throw new Error('Search failed.');
 			const found = (await res.json()).hits ?? [];
 			if (run !== searchRun) return;

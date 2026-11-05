@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { cachedDetails } from '#lib/server/mods/catalogcache.js';
 import { getModProvider, getProvider } from '#lib/server/mods/index.js';
 
 /**
@@ -25,20 +26,20 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	try {
 		const provider = kind === 'mod' ? getModProvider(source) : getProvider(source);
-		const project = await provider.getProject(projectId);
-
-		const description = (await provider.description?.(projectId)) ?? null;
-		let changelog: string | null = null;
+		const { project, description } = await cachedDetails(source, kind, projectId, null, async () => ({
+			project: await provider.getProject(projectId),
+			description: (await provider.description?.(projectId)) ?? null
+		}));
 
 		// Every provider's getVersion() already carries the changelog (a
 		// second, changelog-only request for the version this app already
 		// needs for gameVersions/loaders would be redundant).
 		// A version the source cannot look up by id alone (an older CurseForge
-		// mod file) just shows no changelog rather than failing the description.
-		if (versionId) {
-			const version = await provider.getVersion(projectId, versionId).catch(() => null);
-			changelog = version?.changelog?.trim() || null;
-		}
+		// mod file) just shows no changelog rather than failing the description,
+		// and that failure stays out of the cache: it is thrown through it.
+		const changelog = versionId
+			? await cachedDetails(source, kind, projectId, versionId, async () => (await provider.getVersion(projectId, versionId)).changelog?.trim() || null).catch(() => null)
+			: null;
 
 		return Response.json({
 			name: project.name,
