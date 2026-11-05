@@ -9,18 +9,22 @@
 	 * groups exist and what to do with the selections.
 	 */
 	import { fitToViewport } from '#lib/shared/fitToViewport.js';
+	import { filtersChanged, resetFilters, type FilterSelection } from '#lib/shared/modsearch.js';
 
 	type FilterGroup = { id: string; label: string; options: { value: string; label: string }[] };
 
 	let {
 		groups = [],
 		selected = $bindable({}),
+		defaults = {},
 		loading = false,
 		limitNote = '',
 		maxHeightMarginPx = 24
 	}: {
 		groups?: FilterGroup[];
-		selected?: Record<string, string[]>;
+		selected?: FilterSelection;
+		/** Where the filters start and what the button goes back to; none, and it clears them. */
+		defaults?: FilterSelection;
 		loading?: boolean;
 		/** Shown once at the top - e.g. "only the first pick per group applies here". */
 		limitNote?: string;
@@ -57,17 +61,16 @@
 		Object.values(selected).reduce((sum, values) => sum + values.length, 0)
 	);
 
-	function clearAll() {
-		selected = {};
-	}
+	const hasDefaults = $derived(Object.values(defaults).some((values) => values.length));
+	const changed = $derived(filtersChanged(selected, defaults));
 </script>
 
 <aside class="sidebar" use:fitToViewport={maxHeightMarginPx}>
 	<div class="head">
 		<h3>Filters</h3>
-		{#if activeCount > 0}
-			<button type="button" class="button-quiet clear" onclick={clearAll}>
-				Clear ({activeCount})
+		{#if changed}
+			<button type="button" class="button-quiet clear" onclick={() => (selected = resetFilters(defaults))}>
+				{hasDefaults ? 'Reset' : `Clear (${activeCount})`}
 			</button>
 		{/if}
 	</div>

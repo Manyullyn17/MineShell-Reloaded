@@ -337,7 +337,7 @@
 
 	<div class="browse" class:with-filters={showFilters}>
 		{#if showFilters}
-			<FilterSidebar groups={filterGroups} bind:selected={filterSelections} loading={loadingFilters} limitNote={filterLimitNote} />
+			<FilterSidebar groups={filterGroups} bind:selected={filterSelections} defaults={{ loaders: compatibleLoaders }} loading={loadingFilters} limitNote={filterLimitNote} />
 		{/if}
 
 		<ul class="hits" use:fitToViewport={{ bottomMarginPx: 24 }}>
