@@ -30,7 +30,29 @@
 	const bare = $derived(page.url.pathname === '/login' || page.url.pathname === '/setup');
 	/** A map on a page of its own: nothing around it. */
 	const mapOnly = $derived(page.route.id === '/instances/[id]/map/full');
-	const instances = $derived(data.railInstances ?? []);
+	/** What the rail last read by itself; a reload of the page's data is newer. */
+	let railRead = $state<typeof data.railInstances | null>(null);
+	$effect(() => {
+		void data.railInstances;
+		railRead = null;
+	});
+	const instances = $derived(railRead ?? data.railInstances ?? []);
+
+	// Only a server's own tabs and the overviews reload by themselves, so anywhere else the rail
+	// kept what it last read until the next navigation: "Starting" long after, or nothing of a
+	// schedule's restart or a crash. Its own endpoint, not an invalidate: new page data would run
+	// every page's effects on `data` again, which is how World > Game rules lost what was typed.
+	// Closer together while a server is starting or stopping, not at all in a tab nobody sees.
+	const railSettling = $derived(instances.some((s) => describeState(s.active, s.sub, s.phase).tone === 'busy'));
+	$effect(() => {
+		const read = async () => {
+			if (document.hidden) return;
+			const res = await fetch('/api/rail').catch(() => null);
+			if (res?.ok) railRead = (await res.json()).instances;
+		};
+		const timer = setInterval(() => void read(), railSettling ? 3000 : 15_000);
+		return () => clearInterval(timer);
+	});
 
 	// A phone's tab bars show the tab you are on, not only the first few (tabbars.ts).
 	afterNavigate(() => revealCurrentTabs());

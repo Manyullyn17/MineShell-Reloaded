@@ -118,6 +118,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			access: handler('globalAdmin', 'accounts.ts mayManage')
 		}
 	},
+	'/api/rail': { methods: { GET: 'signedIn' } },
 	'/api/tasks': { methods: { GET: 'signedIn' } },
 	'/api/update': { methods: { GET: 'owner' } },
 	// Lets downloads reach one exact local or private address (downloadaccess.ts).

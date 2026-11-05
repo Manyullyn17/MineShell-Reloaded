@@ -1,10 +1,10 @@
 import type { LayoutServerLoad } from './$types';
-import { recentPlayerCount, summariseAll } from '#lib/server/instances.js';
+import { summariseAll } from '#lib/server/instances.js';
+import { railInstances } from '#lib/server/rail.js';
 import { listTasks } from '#lib/server/tasks.js';
 import { availableUpdate } from '#lib/server/selfupdate.js';
 import { sees, seesTask } from '#lib/server/access.js';
 import { NO_ACCESS } from '#lib/shared/access.js';
-import { gaveUpAfter } from '#lib/shared/format.js';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	if (!locals.authenticated) {
@@ -23,19 +23,6 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		/** Already finished: the notification center does not announce these (taskwatch.ts). */
 		finishedTasks: tasks.filter((t) => t.state !== 'running').map((t) => t.id),
 		updateAvailable: locals.access.owner ? (availableUpdate()?.version ?? null) : null,
-		railInstances: await Promise.all(
-			summaries.map(async (s) => ({
-				id: s.instance.id,
-				name: s.instance.name,
-				iconVersion: s.iconVersion,
-				active: s.state.active,
-				sub: s.state.sub,
-				phase: s.phase,
-				pinned: s.instance.pinned,
-				status: s.instance.status,
-				players: s.running ? await recentPlayerCount(s.instance) : null,
-				gaveUpAfter: gaveUpAfter(s.state.active, s.state.result, s.instance.crashRestartLimit)
-			}))
-		)
+		railInstances: await railInstances(summaries)
 	};
 };
