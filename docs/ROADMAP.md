@@ -138,6 +138,31 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 `typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
 again when Kit and svelte-check list 7 in their peer ranges.
 
+#### Scheduled CI
+
+Agreed 2026-11-06, after 1.2. The tests take about 7 s and run offline, so a scheduled run is
+not for what is too slow for a push: it is for what can break without a commit. In this order:
+1. **Real APIs**: API code replays recorded responses, so Modrinth, CurseForge, the mirror or a
+   loader's metadata changing shape leaves CI green. Call the real ones and check the shape,
+   nightly (the only part that needs to be).
+2. **A real server on real systemd**: boot vanilla, then stop, Force stop and a crash, weekly.
+   `--kill-whom=all` passed its mocked test and failed on a real unit, and the RCON deadlock
+   took a real server. First check that GitHub's runners allow user units.
+3. **Repeated tests**: 20 runs in shuffled order, weekly. Shared workers (`isolate: false`) make
+   order bugs real: a fake clock left on stalled other test files.
+4. **Ubuntu versions**: installer, `doctor` and smoke test on 22.04 and 24.04, weekly, since
+   `ubuntu-latest` can move.
+
+`page-sweep.mjs` (overflow, page errors) could join in. Property-based tests belong in the normal
+suite (`snbt.ts`, NBT, zip: a parser bug can damage player data), with more random seeds on the
+schedule. Mutation testing only by hand now and then, on critical files (access policy, path
+safety). Not wanted: pixel diffs (they flag every intended UI change), benchmarks (shared runners
+vary too much).
+
+For one person: weekly unless there is a reason for nightly, `npm run release` warns or refuses
+when the last run failed so a red result cannot be missed, and GitHub pauses schedules after 60
+days without repo activity.
+
 #### Mods from outside Modrinth's hash lookup
 
 Asked for 2026-10-29. Uploads, CurseForge fingerprints, names and versions from the jar and
