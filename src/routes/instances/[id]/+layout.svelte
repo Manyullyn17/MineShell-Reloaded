@@ -174,7 +174,8 @@
 				<button name="verb" value="restart">Restart</button>
 				<button class="button-primary" name="verb" value="stop">Save and stop</button>
 			{:else}
-				<button class="button-primary" name="verb" value="start" disabled={!canStart}>Start</button>
+				{@const stopping = data.state.active === 'deactivating'}
+				<button class="button-primary" name="verb" value="start" disabled={!canStart || stopping}>{stopping ? 'Stopping' : 'Start'}</button>
 			{/if}
 			<div class="menu-wrap" bind:this={menuWrap}>
 				<button
