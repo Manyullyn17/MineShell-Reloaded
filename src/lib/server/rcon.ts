@@ -223,8 +223,10 @@ export class RconClient {
  * State shared by every copy of this module: dev HMR re-evaluates it, and a
  * fresh pool would leave the old one's sockets open until their servers stop.
  */
+type HeldConnection = { client: RconClient; password: string; stoppingSince?: number };
+
 const globals = globalThis as {
-	__mineshellRcon?: { lines: Map<string, Promise<unknown>>; pool: Map<string, { client: RconClient; password: string }> };
+	__mineshellRcon?: { lines: Map<string, Promise<unknown>>; pool: Map<string, HeldConnection> };
 };
 const shared = (globals.__mineshellRcon ??= { lines: new Map(), pool: new Map() });
 
@@ -248,6 +250,25 @@ const lines = shared.lines;
  */
 const pool = shared.pool;
 
+/**
+ * A command that reaches a stopping server can hang it for good: the command waits for the
+ * server thread, which no longer runs tasks, and the server thread waits for that RCON thread
+ * to end ("attempting force stop", on vanilla too). So from a stop on, nothing more is sent.
+ * This ends by itself: Minecraft closes the listener before it waits, so once the connection
+ * has closed a new one is refused until the next run answers. The time limit is for a stop
+ * that never happened (a mod's own `stop`): longer than GRACEFUL_STOP_MS gives a real one.
+ */
+const STOPPING_LIMIT_MS = 10 * 60_000;
+const SERVER_STOPPING = 'The server is stopping.';
+
+export const isStopCommand = (command: string) => /^\/?stop\s*$/i.test(command.trim());
+
+/** Nothing more is sent to this server on the way down: it was told to stop some other way (SIGTERM). */
+export function rconStopping(opts: Pick<RconTarget, 'host' | 'port'>): void {
+	const held = pool.get(`${opts.host ?? '127.0.0.1'}:${opts.port}`);
+	if (held) held.stoppingSince = Date.now();
+}
+
 /** `timeoutMs` is for tests: connect and each command otherwise get 5 s. */
 export type RconTarget = { host?: string; port: number; password: string; timeoutMs?: number };
 
@@ -266,13 +287,17 @@ export function rconExec(opts: RconTarget, commands: string[]): Promise<string[]
 
 async function execNow(key: string, opts: RconTarget, commands: string[]): Promise<string[]> {
 	const results: string[] = [];
-	for (const cmd of commands) results.push(await commandOn(key, opts, cmd));
+	for (const cmd of commands) {
+		results.push(await commandOn(key, opts, cmd));
+		if (isStopCommand(cmd)) rconStopping(opts);
+	}
 	return results;
 }
 
 async function commandOn(key: string, opts: RconTarget, cmd: string): Promise<string> {
 	const held = pool.get(key);
-	if (held && !held.client.closed && held.password === opts.password) {
+	if (held?.stoppingSince && !held.client.closed && Date.now() - held.stoppingSince < STOPPING_LIMIT_MS) throw new RconError(SERVER_STOPPING);
+	if (held && !held.client.closed && held.password === opts.password && !held.stoppingSince) {
 		try {
 			return await held.client.command(cmd);
 		} catch (err) {

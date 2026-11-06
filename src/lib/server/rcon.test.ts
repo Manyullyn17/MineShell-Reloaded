@@ -1,6 +1,6 @@
 import net from 'node:net';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { parsePlayerList, rconExec } from './rcon';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { parsePlayerList, rconExec, rconStopping } from './rcon';
 
 describe('parsePlayerList', () => {
 	it('reads the 1.13+ format', () => {
@@ -117,6 +117,47 @@ describe('rconExec', () => {
 		fake = await fakeServer();
 	});
 	afterEach(() => fake.close());
+
+	// A command reaching a stopping server hangs it for good: it waits for the server thread,
+	// which waits for that RCON thread to end. Reproduced on vanilla 1.21.1; the server
+	// polling MineShell does made a small server hit it (2026-11-06, "attempting force stop").
+	describe('after a stop', () => {
+		afterEach(() => vi.useRealTimers());
+
+		it('sends nothing more until the connection has gone', async () => {
+			expect(await rconExec(fake.opts, ['save-all', 'stop'])).toEqual(['reply to save-all', 'reply to stop']);
+			await expect(rconExec(fake.opts, ['list'])).rejects.toThrow('The server is stopping.');
+			fake.dropClients();
+			await new Promise((r) => setTimeout(r, 20));
+			expect(await rconExec(fake.opts, ['list'])).toEqual(['reply to list']);
+		});
+
+		it('refuses a command already waiting behind the stop', async () => {
+			const [stop, list] = await Promise.allSettled([rconExec(fake.opts, ['stop']), rconExec(fake.opts, ['list'])]);
+			expect(stop.status).toBe('fulfilled');
+			expect(list).toMatchObject({ status: 'rejected', reason: expect.objectContaining({ message: 'The server is stopping.' }) });
+		});
+
+		it('counts a typed /stop, and not a command that only starts like one', async () => {
+			await rconExec(fake.opts, ['stopsound @a']);
+			expect(await rconExec(fake.opts, ['list'])).toEqual(['reply to list']);
+			await rconExec(fake.opts, ['/stop ']);
+			await expect(rconExec(fake.opts, ['list'])).rejects.toThrow('The server is stopping.');
+		});
+
+		it('also holds for a stop by signal', async () => {
+			await rconExec(fake.opts, ['list']);
+			rconStopping(fake.opts);
+			await expect(rconExec(fake.opts, ['list'])).rejects.toThrow('The server is stopping.');
+		});
+
+		it('gives up holding back a server that never stopped', async () => {
+			vi.useFakeTimers({ toFake: ['Date'] });
+			await rconExec(fake.opts, ['stop']);
+			vi.setSystemTime(Date.now() + 11 * 60_000);
+			expect(await rconExec(fake.opts, ['list'])).toEqual(['reply to list']);
+		});
+	});
 
 	// The overview asked for the player list and the tick rate at once; the
 	// list came back with the tick report in it, and a player appeared named

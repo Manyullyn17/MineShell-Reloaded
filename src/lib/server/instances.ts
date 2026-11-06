@@ -38,7 +38,7 @@ import {
 	resetFailed,
 	type UnitState
 } from './systemd';
-import { rconExec, parsePlayerList } from './rcon';
+import { isStopCommand, rconExec, rconStopping, parsePlayerList } from './rcon';
 import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
 import { getLoader, instanceLoader, type ModloaderId } from './modloaders';
 import { InstanceError } from './instanceerror';
@@ -1412,6 +1412,7 @@ export async function stop(
 			/* fall through to SIGTERM */
 		}
 	}
+	rconStopping({ port: instance.rconPort });
 	const res = await stopUnit(instance.id);
 	audit('instance.stop', { instanceId: instance.id, detail: 'systemd' });
 	return {
@@ -1433,6 +1434,7 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 	await applyChunkyConfig(instance).catch(() => undefined);
 	await syncUnit(instance);
 	await writeOnceArgs(instance.id, null);
+	rconStopping({ port: instance.rconPort });
 	const res = await restartUnit(instance.id);
 	audit('instance.restart', { instanceId: instance.id });
 	if (res.code === 0) setWantedRunning(instance.id, true);
@@ -1448,7 +1450,7 @@ export async function sendCommand(instance: ServerInstance, command: string): Pr
 	const [response] = await rconExec({ port: instance.rconPort, password }, [command]);
 	// Stopped from the console: it stays stopped after a reboot too, and shows as stopping
 	// (with systemd's stop if the save hangs) like the Stop button's.
-	if (/^\/?stop\s*$/i.test(command.trim())) {
+	if (isStopCommand(command)) {
 		setWantedRunning(instance.id, false);
 		cancelPendingStop(instance.id);
 		awaitStop(instance.id, Date.now() + GRACEFUL_STOP_MS);
