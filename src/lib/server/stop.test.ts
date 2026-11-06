@@ -66,6 +66,17 @@ describe('Force stop', () => {
 	});
 });
 
+describe('Force stop just as a server ended by itself', () => {
+	it('says so instead of systemd\'s error', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		invalidateUnitState();
+		fakeProcesses((_cmd, args) =>
+			args.includes('show') ? { stdout: 'ActiveState=inactive\nSubState=dead\n' } : args.includes('kill') ? { code: 1, stderr: 'Failed to kill unit: no process' } : {}
+		);
+		expect(await forceStop(instance)).toEqual({ ok: true, message: 'It had already stopped.' });
+	});
+});
+
 describe('a server stuck on its way down', () => {
 	const journal = (text: string) => fakeProcesses((cmd) => (cmd === 'journalctl' ? { stdout: text } : {}));
 

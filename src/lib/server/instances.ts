@@ -1432,7 +1432,10 @@ export async function forceStop(instance: ServerInstance): Promise<{ ok: boolean
 	rconStopping({ port: instance.rconPort });
 	const res = await killUnit(instance.id);
 	audit('instance.stop', { instanceId: instance.id, detail: 'killed' });
-	return { ok: res.code === 0, message: res.code === 0 ? 'Killed.' : res.stderr.trim() || 'Force stop failed.' };
+	if (res.code === 0) return { ok: true, message: 'Killed.' };
+	// Nothing left to kill: it finished by itself just as this was pressed.
+	if ((await unitState(instance.id, { fresh: true })).active === 'inactive') return { ok: true, message: 'It had already stopped.' };
+	return { ok: false, message: res.stderr.trim() || 'Force stop failed.' };
 }
 
 /**
