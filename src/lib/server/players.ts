@@ -181,7 +181,7 @@ const plain = (text: string) => text.replace(/§./g, '').trim();
  * not exist", "Nothing changed. The player is already whitelisted", ...). RCON
  * itself succeeds either way, so the answer is all there is to go by.
  */
-const REFUSED = /^(invalid|nothing changed|that player does not exist|no player was found|unknown|could not|player is already|incorrect argument)/i;
+export const REFUSED = /^(invalid|nothing changed|that player does not exist|no player was found|unknown|could not|player is already|incorrect argument)/i;
 
 function rconResult(answer: string, fallback: string): { ok: boolean; message: string } {
 	const message = plain(answer);

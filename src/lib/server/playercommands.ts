@@ -1,5 +1,6 @@
 import { compareVersions } from './java';
 import { onlinePlayers, rconPassword, InstanceError } from './instances';
+import { REFUSED } from './players';
 import { rconExec } from './rcon';
 import { worldSpawn } from './world';
 import type { ServerInstance } from './db/schema';
@@ -97,5 +98,7 @@ export async function runPlayerCommand(
 	} catch {
 		throw new InstanceError('The server is not reachable over RCON.');
 	}
-	return plain(response ?? '') || 'Done.';
+	const said = plain(response ?? '');
+	if (REFUSED.test(said)) throw new InstanceError(said);
+	return said || 'Done.';
 }

@@ -543,6 +543,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | A pack change replacing a data pack loader (Paxi by Open Loader), or moving to an Open Loader build that reads another folder, did not say where the user's packs would be read from, or said nothing | `flows/pack-change.test.ts` ("names the loader that takes over", "reads another folder") |
 | The Data packs tab showed only the world's own packs, not the ones a loader mod reads for every world, and had no upload | `routes/instances/[id]/mods/datapacks.test.ts` |
 | Online players could only be kicked, opped and banned: no game mode or teleport | `flows/player-commands.test.ts` |
+| A teleport Minecraft refused (an unknown dimension) came back as a success with its error as the message | `flows/player-commands.test.ts` |
 | Game rules, the spawn and the border were only changeable by console command | `flows/world-rules.test.ts` |
 | From 1.21.9 PvP, monsters, the Nether and command blocks had no control in Settings, only a note to type the game rule in the console | `routes/instances/[id]/settings/game-rules.test.ts` |
 | The Connect box's Tailscale address was kept for as long as the clock had been set back, not a minute; in tests it made `tailscale.test.ts` fail whenever the overview tests had run first in the same worker | `tailscale.test.ts` ("asks again when the clock was set back") |

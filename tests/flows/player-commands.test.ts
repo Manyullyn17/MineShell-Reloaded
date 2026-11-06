@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The server, over RCON: `list` answers who is online, anything else is recorded and answered.
-const rcon = vi.hoisted(() => ({ commands: [] as string[], online: ['Steve', 'Alex'], fail: false }));
+const rcon = vi.hoisted(() => ({ commands: [] as string[], online: ['Steve', 'Alex'], fail: false, answer: '§eDone the thing' }));
 vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
@@ -9,7 +9,7 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 		return commands.map((command) => {
 			if (command === 'list') return `There are ${rcon.online.length} of a max of 20 players online: ${rcon.online.join(', ')}`;
 			rcon.commands.push(command);
-			return '§eDone the thing';
+			return rcon.answer;
 		});
 	})
 }));
@@ -54,6 +54,7 @@ describe('running them on a server', () => {
 		rcon.commands = [];
 		rcon.online = ['Steve', 'Alex'];
 		rcon.fail = false;
+		rcon.answer = '§eDone the thing';
 	});
 	const server = () => createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPort: 25598, rconPasswordEnc: encryptSecret('pw') });
 
@@ -68,6 +69,15 @@ describe('running them on a server', () => {
 		rcon.online = ['Steve x'];
 		await expect(runPlayerCommand(instance, 'Steve x', { kind: 'gamemode', mode: 'creative' })).rejects.toThrow(/not online/);
 		expect(rcon.commands).toHaveLength(2);
+	});
+
+	it('fails with what the server said when it refuses, rather than answering as if it had worked', async () => {
+		const instance = await server();
+		const nowhere = { kind: 'coords' as const, x: 1, y: 80, z: 1, dimension: 'minecraft:nope' };
+		rcon.answer = "§cUnknown dimension 'minecraft:nope'";
+		await expect(runPlayerCommand(instance, 'Steve', { kind: 'teleport', target: nowhere })).rejects.toThrow("Unknown dimension 'minecraft:nope'");
+		rcon.answer = 'Could not spread 1 entity around 0, 0 (too many entities for space - try using spread of at most 0.00)';
+		await expect(runPlayerCommand(instance, 'Steve', { kind: 'teleport', target: { kind: 'player', name: 'Alex' } })).rejects.toThrow(/Could not spread/);
 	});
 
 	it('says so when RCON does not answer', async () => {
