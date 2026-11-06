@@ -100,7 +100,7 @@ in the order to build them where one needs another.
    sandboxed and quoted JVM arguments built 2026-10-31 (two sandbox tests left, Leftovers). Small, mostly reading what MineShell already has: a calm first
    step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
-   files, zips and folders).
+   files, zips and folders); a general NBT editor agreed since (2026-11-07), not scheduled.
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -163,6 +163,28 @@ For one person: weekly unless there is a reason for nightly, `npm run release` w
 when the last run failed so a red result cannot be missed, and GitHub pauses schedules after 60
 days without repo activity.
 
+#### Java builds
+
+Found by the user 2026-11-06, wanted for the version after 1.2; nothing decided yet. Settings
+offers a vendor and a major and always installs that vendor's newest build. Each build gets its
+own folder, so several of one major sit side by side, and it already goes well: a newer one
+stays beside the old, a click with nothing newer only registers what is there, and old builds
+go by hand. What is missing:
+- **Seeing a newer build**: the button is labelled with the major only, so nothing says what it
+  would install or whether that is news. This is the "newer Java update is not shown" of
+  "Update availability" (Leftovers). Only the lookup is needed, in `updatecheck.ts`.
+- **What a new build does to servers**: servers matching automatically move to it at their next
+  start, with no word about it (`runtimeForMajor`, newest across vendors); a default set for the
+  major or a pinned path stays on the old build. Say so at the download at least.
+- **Picking a build**: a version picker in the download. Both APIs list them (checked for 25:
+  Temurin 25 to 25.0.5 through `/v3/assets/feature_releases/25/ga`, Zulu 25.0.0 to 25.0.5 without
+  `latest=true`). The reasons to want an older one are few (a mod broken by a newer build), so
+  it is the least needed of the three. `installJava` and its shared run go by major today.
+- **To look into first**: Prism shows only 25.0.5 and 25.0.3 for Zulu 25, while Azul's API lists
+  more for a Linux x64 JRE (25.0.4 and 25.0.4.1 among them, 2026-11-06). The user suspects this
+  matters: find out why before building on those lists. It may be Prism's own filter, or builds
+  that are not meant to be picked.
+
 #### Mods from outside Modrinth's hash lookup
 
 Asked for 2026-10-29. Uploads, CurseForge fingerprints, names and versions from the jar and
@@ -191,6 +213,31 @@ declare (loaders.md, Cleanroom). Two gaps left:
 ### 2. Files
 
 All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
+
+#### NBT editor
+
+Agreed 2026-11-07, not scheduled yet (found while comparing with the player editor). Beside
+the player editor nothing edits NBT: `level.dat` is read for many things, and only game rules,
+spawn and border can be changed, through their forms. Its time, weather, difficulty,
+generation settings and mods' data can only be reached with an outside tool. The user's call: a
+general NBT editor with its own UI, opened from Files, not a page for `level.dat` alone. So it
+also takes `world_border.dat`, `game_rules.dat` and mods' files in `world/data/`.
+- **Is it NBT?** Not by the name: `.dat` is any binary format a mod likes. Look at the content
+  and offer the editor only when the whole file parses. A first look (gzip's magic or a compound
+  tag's id) rules most files out cheaply, but it proves nothing. `parseNbt` also leaves bytes after
+  the root tag unread, so a real check has to see the file end with it. Other extensions
+  (`.nbt`, structures, schematics) go through the same check. `parseNbt` knows gzip and plain:
+  zlib is not handled, so check whether mods' files use it. Region files are not NBT as a whole.
+- **Written back as it came**: gzipped or plain and the root's name, which `NbtFile` keeps. Test
+  that an untouched file comes back with the same content, and `NBT_MAX_BYTES` still applies.
+- **Reuse**: `nbt.ts` and `NbtNode.svelte` as they are. Generic edits have to come out of
+  `playerdata.ts` (`parseEdits`, `parseValue`, the path edits), and the tree's search off the
+  player page.
+- **Safety**: a running server saves over `level.dat`, so files it writes only with it stopped,
+  or for a world it is not on, and a raw edit cannot go over RCON as game rules do. A bad edit can
+  stop a whole world loading: warn, and keep the old file in Files' earlier versions (check
+  they take binary files) or take a snapshot, the guard-rail way.
+- **Atomic write**: temp file and rename, as `worldrules.ts`. Files' access rules apply.
 
 ### 3. Mod configs
 
