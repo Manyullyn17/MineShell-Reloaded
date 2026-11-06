@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
+	import { saveFile } from '#lib/shared/savefile.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
@@ -91,12 +92,12 @@
 
 	const download = $derived(task?.state === 'done' && taskId ? `/api/instances/${encodeURIComponent(data.instance.id)}/export?task=${taskId}` : null);
 
-	// The browser saves it as soon as it is built (the response is an attachment, so the page stays); the button is for another copy.
+	// Saved as soon as it is built; the button is for another copy.
 	let fetched: string | null = null;
 	$effect(() => {
 		if (!download || fetched === taskId) return;
 		fetched = taskId;
-		location.assign(download);
+		saveFile(download);
 	});
 </script>
 

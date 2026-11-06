@@ -170,6 +170,10 @@ Cross-cutting UI facts stay here, since most UI work touches them:
 - CSS a component gives to markup rendered inside it by others: `:global(.own-class .x)`
   has the specificity a page's `.x` rule had; `.own-class :global(.x)` adds the hash class
   and outranks the children's own rules (RestartFields' amber boot note went grey).
+- A download the page starts by itself goes through `saveFile` (`lib/shared/savefile.ts`), never
+  `location.assign`: that is a navigation, and Firefox ends the page's running requests at it. A
+  cut-off data reload puts up Kit's 500, though the file arrives (only with a reload running:
+  `tests/tools/export-download-check.mjs`).
 - List heights use the `fitToViewport` action (`src/lib/shared/fitToViewport.ts`), not
   `calc(100vh - ...)`.
 - A panel that opens in place under its button (a confirmation, a rename, Delete server)

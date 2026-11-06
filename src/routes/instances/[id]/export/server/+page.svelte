@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '#lib/shared/forms.js';
+	import { saveFile } from '#lib/shared/savefile.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import { formatBytes } from '#lib/shared/format.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
@@ -30,12 +31,12 @@
 	});
 
 	const download = $derived(task?.state === 'done' && taskId ? `/api/instances/${encodeURIComponent(data.instance.id)}/export/server?task=${taskId}` : null);
-	// Saved as soon as it is built (an attachment, so the page stays); the button is for another copy.
+	// Saved as soon as it is built; the button is for another copy.
 	let fetched: string | null = null;
 	$effect(() => {
 		if (!download || fetched === taskId) return;
 		fetched = taskId;
-		location.assign(download);
+		saveFile(download);
 	});
 </script>
 
