@@ -1563,6 +1563,12 @@ before the creator is made admin).
 SvelteKit 3, Svelte 5 runes, no UI framework. Server state comes from `load` functions and
 form actions; only the genuinely live things (console, stats, task progress) use SSE.
 
+A reload of the page's own data that gets no answer at all (the connection went, MineShell
+restarting) leaves the page as it is, for the next reload to catch up: `hooks.client.ts` answers
+it with Kit's own "nothing changed" (`lib/shared/keeppage.ts`). Without it the failed request
+becomes Kit's 500 page, which timers do not come back from. A move to another page still fails
+with an error, and so does anything the server answers with one.
+
 There is no separate REST API layer. The notes reasoned that no other consumer is planned,
 so endpoints (`src/routes/api/`) exist only where a form action cannot do the job: SSE
 streams, file and world downloads (and a folder's listing, for folders opened in place in
