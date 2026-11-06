@@ -260,6 +260,17 @@
 		}
 	}
 
+	// The arrows reach the history from anywhere on the page, not only from the input.
+	function onWindowKeydown(event: KeyboardEvent) {
+		if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || event.defaultPrevented) return;
+		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+		const on = event.target instanceof HTMLElement ? event.target : null;
+		if (on?.closest('input, textarea, select, [contenteditable], [role="menu"], dialog')) return;
+		if (!input || input.disabled) return;
+		input.focus();
+		onKeydown(event);
+	}
+
 	// ---- macros: saved commands; a click fills the input, Enter sends it.
 	let macroList = $state<string[]>([]);
 	$effect(() => {
@@ -314,6 +325,8 @@
 		if (flushTimer) clearTimeout(flushTimer);
 	});
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <div class="console">
 	<div class="bar">
@@ -404,7 +417,7 @@
 		onscroll={onScroll}
 		tabindex="0"
 		role="log"
-		use:fitToViewport={{ bottomMarginPx: 20, reserveElement: below }}
+		use:fitToViewport={{ bottomMarginPx: 34, reserveElement: below }}
 	>
 		{#if lines.length === 0}
 			<p class="faint">Waiting for output. Nothing is logged while the server is stopped.</p>
@@ -489,7 +502,7 @@
 							: 'Type a server command, e.g. say hello   ·   ↑ for history'}
 				bind:value={command}
 				onkeydown={onKeydown}
-				disabled={!canSend || sending}
+				disabled={!canSend}
 				autocomplete="off"
 				spellcheck="false"
 				aria-label={chatMode ? 'Chat message' : 'Server command'}
