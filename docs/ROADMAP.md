@@ -549,6 +549,13 @@ is open, and each needs a test setup.
 
 Suggested, not yet confirmed or rejected:
 
+- **A player's in-game `/stop`** (user, 2026-11-06: would be nice, a bit difficult to do well):
+  MineShell holds its RCON commands back from any stop it sends, because a command reaching a
+  stopping server hangs it for good (`docs/notes/runtime.md`). It cannot see a `/stop` typed in
+  the game coming, so its polling can still meet one, and the stuck banner does not show either:
+  MineShell does not know the server is stopping until Stop is pressed. Reading "Stopping
+  server" from the console stream would close most of it, but only after the race has started.
+
 - **For public setups only** (suggested 2026-11-01, after the security pass): a notification
   on a sign-in from an unknown address, two-factor sign-in. (The other Remote access
   follow-ups were built: ROADMAP-ARCHIVE, "Remote access follow-ups".)
