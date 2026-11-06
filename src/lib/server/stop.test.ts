@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { awaitStop, GRACEFUL_STOP_MS, start } from './instances';
+import { awaitStop, forceStop, GRACEFUL_STOP_MS, start, stuckStopping } from './instances';
 import { invalidateUnitState } from './systemd';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 import { createInstance } from '../../../tests/helpers/instances';
@@ -48,5 +48,36 @@ describe('stopping over RCON', () => {
 		spawnCalls.length = 0;
 		await vi.advanceTimersByTimeAsync(GRACEFUL_STOP_MS);
 		expect(systemctlStops()).toEqual([]);
+	});
+});
+
+describe('Force stop', () => {
+	it('kills the process, after a stop job so that Restart=on-failure does not bring it back', async () => {
+		unit().stopped();
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
+		spawnCalls.length = 0;
+		expect(await forceStop(instance)).toMatchObject({ ok: true });
+		const calls = spawnCalls.filter((c) => c.args[0] === '--user' && ['stop', 'kill', 'reset-failed'].includes(c.args[1])).map((c) => c.args.slice(1, 3));
+		expect(calls).toEqual([
+			['stop', '--no-block'],
+			['kill', '--signal=SIGKILL'],
+			['reset-failed', expect.any(String)]
+		]);
+	});
+});
+
+describe('a server stuck on its way down', () => {
+	const journal = (text: string) => fakeProcesses((cmd) => (cmd === 'journalctl' ? { stdout: text } : {}));
+
+	it('is told from the lines Minecraft logs, with whether its save got through', async () => {
+		journal('ThreadedAnvilChunkStorage: All dimensions are saved\nWaited 5 seconds attempting force stop!\n');
+		expect(await stuckStopping('stuck', 1)).toEqual({ saved: true });
+		journal('Thread net.minecraft.class_3389@5e114f7 (WAITING) failed to exit after 2 seconds\n');
+		expect(await stuckStopping('stuck', 1)).toEqual({ saved: false });
+	});
+
+	it('is not one that is only saving', async () => {
+		journal('Saving worlds\nSaving chunks for level\n');
+		expect(await stuckStopping('saving', 1)).toBeNull();
 	});
 });

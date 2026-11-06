@@ -28,6 +28,7 @@ import {
 	startSettingsChangedAt,
 	startUnit,
 	writeOnceArgs,
+	killUnit,
 	stopUnit,
 	unitState,
 	writeResourceLimits,
@@ -39,6 +40,7 @@ import {
 	type UnitState
 } from './systemd';
 import { isStopCommand, rconExec, rconStopping, parsePlayerList } from './rcon';
+import { readJournal } from './journal';
 import { getTask, listTasks, startTask, type TaskHandle } from './tasks';
 import { getLoader, instanceLoader, type ModloaderId } from './modloaders';
 import { InstanceError } from './instanceerror';
@@ -1419,6 +1421,29 @@ export async function stop(
 		ok: res.code === 0,
 		message: res.code === 0 ? 'Stopping.' : res.stderr.trim() || 'Stop failed.'
 	};
+}
+
+/** Force stop: the process ends now, without saving. For a server a stop cannot end. */
+export async function forceStop(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
+	if (bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
+	intentionalStops.set(instance.id, Date.now());
+	setWantedRunning(instance.id, false);
+	cancelPendingStop(instance.id);
+	rconStopping({ port: instance.rconPort });
+	const res = await killUnit(instance.id);
+	audit('instance.stop', { instanceId: instance.id, detail: 'killed' });
+	return { ok: res.code === 0, message: res.code === 0 ? 'Killed.' : res.stderr.trim() || 'Force stop failed.' };
+}
+
+/**
+ * A server stuck on its way down: Minecraft logs this once a second, for as long as a thread
+ * will not end, which it never does by itself (rcon.ts). What decides whether Force stop costs
+ * anything is whether its save got through, which comes before it in the log.
+ */
+export async function stuckStopping(id: string, since: number): Promise<{ saved: boolean } | null> {
+	const log = await readJournal(id, 300, since).catch(() => '');
+	if (!/attempting force stop|failed to exit after/.test(log)) return null;
+	return { saved: /All dimensions are saved/.test(log) };
 }
 
 export async function restart(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {

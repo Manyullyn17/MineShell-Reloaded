@@ -244,10 +244,19 @@
 						<a role="menuitem" href={may('files') ? `${base}/export` : `${base}/export/mods`} onclick={() => (menuOpen = false)}>
 							<span>Export</span><span class="hint">{may('files') ? 'pack, mod list, server' : 'mod list'}</span>
 						</a>
-						{#if data.running && may('power')}
+						{#if (data.running || data.state.active === 'deactivating') && may('power')}
 							<div class="menu-head">If it's stuck</div>
-							<button type="submit" role="menuitem" class="danger" name="verb" value="kill">
-								<span>Force stop</span><span class="hint">kills the process</span>
+							<button
+								type="submit"
+								role="menuitem"
+								class="danger"
+								name="verb"
+								value="kill"
+								onclick={(e) => {
+									if (!confirm('Kill the server now? Whatever it has not saved is lost.')) e.preventDefault();
+								}}
+							>
+								<span>Force stop</span><span class="hint">kills the process, without saving</span>
 							</button>
 						{/if}
 					</div>
@@ -264,6 +273,17 @@
 				<strong class="mono">{clock(data.countdown.at - now)}</strong>; players have been warned.
 			</span>
 			{#if may('power')}<button class="button-quiet" type="submit">Cancel</button>{/if}
+		</form>
+	{/if}
+
+	{#if data.stopStuck}
+		<form class="countdown" method="POST" action={actionUrl('power')} use:enhance={inPlace}>
+			<span class="dot busy"></span>
+			<span>
+				Stuck shutting down: it is waiting for a thread that will not end, and it will not finish by itself.
+				{data.stopStuck.saved ? 'Its world has saved, so Force stop loses nothing.' : 'Its save may not have finished.'}
+			</span>
+			{#if may('power')}<button class="button-quiet" type="submit" name="verb" value="kill">Force stop</button>{/if}
 		</form>
 	{/if}
 

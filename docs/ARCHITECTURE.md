@@ -180,6 +180,11 @@ success, because only a stop someone asked for sends it. Big packs can take minu
 save, which is why the wait is long: the old fixed 20 seconds cut saves off and could stop
 a server that had been started again in the meantime.
 
+Nothing more goes over RCON once a server is told to stop (`isStopCommand`, `rconStopping`): a
+command reaching a stopping Minecraft hangs it for good (`docs/notes/runtime.md`). Force stop is
+SIGKILL (`killUnit`), and a server logging that hang while stopping gets a banner offering it,
+saying whether its world has saved (`stuckStopping`).
+
 ### User scope only
 
 MineShell uses `systemctl --user`, which needs no root at all, and servers run as the

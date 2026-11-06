@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { getInstance, removedByCancelledInstall, summarise } from '#lib/server/instances.js';
+import { getInstance, removedByCancelledInstall, stuckStopping, summarise } from '#lib/server/instances.js';
 import { getCountdown } from '#lib/server/countdown.js';
 import { activeProfile, hasSpark } from '#lib/server/spark.js';
 import { primaryLanAddress } from '#lib/server/network.js';
@@ -43,6 +43,8 @@ export const load: LayoutServerLoad = async ({ params, url, depends }) => {
 		state: { active: summary.state.active, sub: summary.state.sub },
 		running: summary.running,
 		phase: summary.phase,
+		stopStuck:
+			summary.stopping || summary.state.active === 'deactivating' ? await stuckStopping(instance.id, summary.state.activeEnterTimestamp) : null,
 		eulaAccepted: summary.eulaAccepted,
 		iconVersion: summary.iconVersion,
 		// The header's actions work from every tab, so what they need is here.

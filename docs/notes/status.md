@@ -72,6 +72,20 @@ the import's. Found: Settings still offered the version pickers (a blank Loader 
 version list), now the notice in their place, and the notice said mods could not be changed while
 uploads and switching work; both fixed and rechecked).
 
+Test 6's stuck stop (2026-11-06): a real deadlock in Minecraft that MineShell's polling triggered,
+and Force stop only asked. Fixed (see runtime.md), waiting for beta.5, which must not go out
+without it: the sidebar's own polling (1363ae0) adds to that polling.
+
+Found on test 6, still to do:
+- Data packs tab: the folder picker lists `world/datapacks` and two Open Loader folders; say what
+  each is. It goes back to `world/datapacks` after a drop: keep the choice. Dropping onto a
+  section should go into that section's folder, as in Files.
+- Add mods: a data pack always goes to `world/datapacks`; let it pick the destination.
+- Console: Up should reach the history without the input focused, and the input stays selected
+  after a command. The page is slightly too tall: the gap under the input brings a scrollbar.
+- `/reload` does not pick up Open Loader's packs (both folders work after a restart): check
+  whether that is Open Loader's limit, and say so in the tab if it is.
+
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the
    release history shows beta.2 and beta.1 tagged Beta, with notes (bfda974). **Done**

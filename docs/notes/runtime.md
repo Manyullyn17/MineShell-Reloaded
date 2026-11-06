@@ -71,6 +71,18 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   (crashhold.ts cancelling a crash's restart) logs no "Stopping", only "Stopped", and leaves
   it inactive with Result=success: the overview still counts the run as a crash (no `Done (`). The template is
   rewritten at boot when an older MineShell-written one is installed (`refreshTemplateUnit`).
+- A command reaching a stopping server hangs it for good, on vanilla too: the RCON thread waits
+  for the server thread, which no longer runs tasks and is waiting for that RCON thread to end.
+  The log says "failed to exit after", then "Waited N seconds attempting force stop!" forever;
+  SIGTERM cannot end it (TimeoutStopSec, 3 min, then systemd kills it and the unit is `failed`).
+  Everything has saved by then. `rcon.ts` sends nothing more after a stop until the connection
+  has closed, which needs no bookkeeping: Minecraft closes the listener before it waits, so a
+  new connection is refused until the next run. Polling through a stop, 6 of 6 runs hung before,
+  0 of 12 after (`tests/tools/rcon-stop-race.mjs`). A player's in-game `/stop` is not covered:
+  MineShell cannot see it coming.
+- Force stop is SIGKILL (`killUnit`), not a stop without RCON: a stop job first, or Restart=
+  on-failure brings the server back; `--kill-whom=main`, since `all` fails with EINVAL on user
+  units after killing it; then reset-failed, or a stop that was asked for reads as a crash.
 - An RCON stop waits up to 5 min for the JVM to exit (`awaitStop`) before systemctl stop; it
   used to fire after a fixed 20 s, mid-save on big packs, and could stop a run started again.
 - `pkill -f` in a shell whose own command line contains the pattern kills that shell.

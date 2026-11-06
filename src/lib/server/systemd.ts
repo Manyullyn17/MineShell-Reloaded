@@ -510,6 +510,27 @@ export async function stopUnit(id: string) {
 	invalidateUnitState(id);
 	return res;
 }
+/**
+ * Ends the process at once: for one that a stop cannot end, since a stop only asks and a hung
+ * JVM never answers. The stop job comes first, or Restart=on-failure would start it again, and
+ * finishes off anything else in the unit. A killed unit is left `failed`; this was asked for,
+ * so it reads as stopped, not as a crash. `--kill-whom=all` fails on user units (EINVAL) after
+ * killing the main process.
+ */
+export async function killUnit(id: string) {
+	invalidateUnitState(id);
+	await systemctl('stop', '--no-block', unitName(id));
+	const res = await systemctl('kill', '--signal=SIGKILL', '--kill-whom=main', unitName(id));
+	for (let i = 0; i < 30; i++) {
+		invalidateUnitState(id);
+		const { active } = await unitState(id, { fresh: true });
+		if (active === 'failed' || active === 'inactive') break;
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+	await systemctl('reset-failed', unitName(id));
+	invalidateUnitState(id);
+	return res;
+}
 export async function restartUnit(id: string) {
 	invalidateUnitState(id);
 	const res = await systemctl('restart', unitName(id));

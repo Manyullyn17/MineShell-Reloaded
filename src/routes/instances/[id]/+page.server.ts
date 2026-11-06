@@ -16,6 +16,7 @@ import {
 	requireInstance,
 	restart,
 	start,
+	forceStop,
 	stop,
 	summarise
 } from '#lib/server/instances.js';
@@ -274,7 +275,7 @@ export const actions: Actions = {
 				: verb === 'stop'
 					? await stop(instance)
 					: verb === 'kill'
-						? await stop(instance, { graceful: false })
+						? await forceStop(instance)
 						: verb === 'restart'
 							? await restart(instance)
 							: { ok: false, message: `Unknown action "${verb}".` };
