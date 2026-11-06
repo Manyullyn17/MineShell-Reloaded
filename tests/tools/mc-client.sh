@@ -2,7 +2,7 @@
 # A real Minecraft client without a screen (HeadlessMC), for what needs a player online on a
 # test server: game mode, teleport, the online-player refusal, whether a modded client gets in.
 #
-#   tests/tools/mc-client.sh start <player> <loader> <version> [--mods dir] [--server host:port]
+#   tests/tools/mc-client.sh start <player> <loader> <version> [--mods dir] [--server host:port] [--heap 4G] [--build n]
 #   tests/tools/mc-client.sh cmd <player> <command...>     # prints what the client answers
 #   tests/tools/mc-client.sh stop <player>
 #   tests/tools/mc-client.sh clean
@@ -20,6 +20,14 @@
 # lists them all. The server needs online-mode=false: these are offline accounts, which
 # HeadlessMC allows for headless launches only. A dead player stays on the respawn screen and a
 # teleport then answers "Teleported" and does nothing, so test in creative or check player.dead.
+#
+# Headless means LWJGL is stubbed, and every image loads blank: small modded setups are fine, but
+# a mod that reads pixels while loading crashes the client. All the Mods 10 (458 mods) did, first
+# Supplementaries ("has too few colors"), and without it 20 more, texture work on stubs. A pack
+# like that needs a real display (Xvfb), which HeadlessMC only allows with a Microsoft account.
+# --build is the loader's last number (251 for NeoForge 21.1.251, `version ls -r neoforge 1.21.1`).
+# A pack's client also needs its config and kubejs folders in run/<player>/game. With big ones,
+# run mem-guard.sh too: that test took 12.7 GB (5 GB heaps) on top of everything else.
 #
 # Everything lives under $MC_CLIENT_DIR (default ~/.cache/mineshell-mc-client, about 600 MB per
 # Minecraft version, once): Java ignores $HOME, so without -Duser.home the launcher writes
@@ -52,13 +60,15 @@ case "$cmd" in
 start)
 	loader="${3:-}"
 	mc="${4:-}"
-	[[ -n "$player" && -n "$loader" && -n "$mc" ]] || { echo "usage: $0 start <player> <loader> <version> [--mods dir] [--server host:port]" >&2; exit 2; }
+	[[ -n "$player" && -n "$loader" && -n "$mc" ]] || { echo "usage: $0 start <player> <loader> <version> [--mods dir] [--server host:port] [--heap 4G] [--build n]" >&2; exit 2; }
 	shift 4
-	mods="" server=""
+	mods="" server="" heap="" build=""
 	while (($#)); do
 		case "$1" in
 		--mods) mods="$2"; shift 2 ;;
 		--server) server="$2"; shift 2 ;;
+		--heap) heap="$2"; shift 2 ;;
+		--build) build="$2"; shift 2 ;;
 		*) echo "unknown option $1" >&2; exit 2 ;;
 		esac
 	done
@@ -86,7 +96,7 @@ start)
 	rm -f "$run/in" "$run/out"
 	mkfifo "$run/in"
 	: >"$run/out"
-	args=(launch "$loader" "$mc" --headless -j "-Duser.home=$home")
+	args=(launch "$loader" "$mc" ${build:+"$build"} --headless -j "-Duser.home=$home${heap:+ -Xmx$heap}")
 	[[ -n "$server" ]] && args+=(--server "$server")
 	# tail keeps stdin open, so it goes with the launcher (kill 0) or a launcher that exits goes
 	# unnoticed. Its own session, so stop can end the game with the launcher.
