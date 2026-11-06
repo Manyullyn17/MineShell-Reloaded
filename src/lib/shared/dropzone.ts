@@ -20,6 +20,8 @@ export type DropzoneOptions = {
 	input?: HTMLInputElement | null;
 	/** Handles the drop itself instead of filling an input. */
 	onDrop?: (event: DragEvent) => void;
+	/** Runs just before the input is filled: what this zone's drop should change on the form. */
+	before?: () => void;
 	disabled?: boolean;
 	/** Shown on the zone while dragging, e.g. "Drop to upload into world/". */
 	label?: string;
@@ -120,6 +122,7 @@ export const dropzone: Action<HTMLElement, DropzoneOptions | undefined> = (node,
 		const files = [...event.dataTransfer.files].filter((_, i) => items[i]?.webkitGetAsEntry?.()?.isFile ?? true);
 		const fitting = files.filter((f) => accepts(input.accept, f));
 		if (!fitting.length) return refuse(files.length ? `Not a ${input.accept.split(',')[0].trim()} file` : 'Only files, not folders');
+		options.before?.();
 		const picked = new DataTransfer();
 		for (const file of input.multiple ? fitting : fitting.slice(0, 1)) picked.items.add(file);
 		input.files = picked.files;

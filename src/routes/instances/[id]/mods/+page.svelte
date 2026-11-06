@@ -8,6 +8,7 @@
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { refreshAll } from '$app/navigation';
+	import { flushSync } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Flash from '#lib/components/Flash.svelte';
 	import InfoTip from '#lib/components/InfoTip.svelte';
@@ -46,7 +47,17 @@
 	let packForm = $state<HTMLFormElement | null>(null);
 	let packInput = $state<HTMLInputElement | null>(null);
 	let packFolder = $state('');
-	const packTarget = $derived(packFolder || `${data.datapacks.world}/datapacks`);
+	/** One section of the Data packs tab: a drop goes into its folder, which the picker then shows. */
+	const packZone = (folder: string, name: string) => ({
+		input: packInput,
+		label: `Drop data pack .zip files to add them to ${name}`,
+		disabled: !may('datapacks'),
+		before: () => flushSync(() => (packFolder = folder))
+	});
+	/** Mods that read more than one folder, which is the question the list raises. */
+	const severalFolders = $derived(
+		[...new Set(data.loaderDatapacks.map((f) => f.mod))].filter((mod) => data.loaderDatapacks.filter((f) => f.mod === mod).length > 1)
+	);
 	const loaderPackCount = $derived(data.loaderDatapacks.reduce((n, f) => n + f.packs.length, 0));
 	let pendingDelete = $state<string | null>(null);
 	// A pack's first sync looks up every jar on CurseForge, which takes half a
@@ -607,14 +618,27 @@
 				{[...new Set(data.loaderDatapacks.map((f) => f.mod))].join(' and ')} loads for every world{/if}. Minecraft loads new ones
 				when the world loads; on a running server, <code>/reload</code> loads them now. Ones that change world generation
 				only affect new chunks.
+				{#if severalFolders.length}{severalFolders.join(' and ')} reads each of its folders the same way, so either works.{/if}
 			</p>
 		</div>
 		{#if may('datapacks')}
-			<form method="POST" action="?/uploadDatapacks" enctype="multipart/form-data" use:enhance bind:this={packForm} class="pack-upload">
+			<!-- Not reset after an upload: the folder stays picked, and only the files go. -->
+			<form
+				method="POST"
+				action="?/uploadDatapacks"
+				enctype="multipart/form-data"
+				use:enhance={() =>
+					async ({ update }) => {
+						await update({ reset: false });
+						if (packInput) packInput.value = '';
+					}}
+				bind:this={packForm}
+				class="pack-upload"
+			>
 				{#if data.loaderDatapacks.length}
 					<select name="folder" bind:value={packFolder} aria-label="Upload into">
-						<option value="">{data.datapacks.world}/datapacks</option>
-						{#each data.loaderDatapacks as f (f.folder)}<option value={f.folder}>{f.folder} ({f.mod})</option>{/each}
+						<option value="">This world: {data.datapacks.world}/datapacks</option>
+						{#each data.loaderDatapacks as f (f.folder)}<option value={f.folder}>Every world: {f.folder} ({f.mod})</option>{/each}
 					</select>
 				{/if}
 				<label class="button upload">
@@ -632,7 +656,8 @@
 			</form>
 		{/if}
 	</div>
-	<div use:dropzone={{ input: packInput, label: `Drop data pack .zip files to add them to ${packTarget}`, disabled: !may('datapacks') }}>
+	{#if data.loaderDatapacks.length}<h3 class="loader-packs">This world only, from <code>{data.datapacks.world}/datapacks</code></h3>{/if}
+	<div use:dropzone={packZone('', `${data.datapacks.world}/datapacks`)}>
 	{#if may('datapacks') && data.datapacks.packs.some((p) => p.tracked)}
 		<DatapackUpdates
 			instanceId={data.instance.id}
@@ -696,8 +721,13 @@
 			</table>
 		</div>
 	{/if}
-	{#each data.loaderDatapacks.filter((f) => f.packs.length) as f (f.folder)}
-		<h3 class="loader-packs">Loaded by {f.mod} for every world, from <code>{f.folder}</code></h3>
+	</div>
+	{#each data.loaderDatapacks as f (f.folder)}
+		<h3 class="loader-packs">Every world, through {f.mod}, from <code>{f.folder}</code></h3>
+		<div use:dropzone={packZone(f.folder, f.folder)}>
+		{#if !f.packs.length}
+			<div class="empty"><p>Nothing here yet. Drop a .zip here to add it.</p></div>
+		{:else}
 		<div class="table-box">
 			<table>
 				<thead>
@@ -738,8 +768,9 @@
 				</tbody>
 			</table>
 		</div>
+		{/if}
+		</div>
 	{/each}
-	</div>
 {/if}
 
 <ModUpdates
