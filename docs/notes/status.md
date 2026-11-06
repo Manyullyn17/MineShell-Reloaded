@@ -76,15 +76,13 @@ Test 6's stuck stop (2026-11-06): a real deadlock in Minecraft that MineShell's 
 and Force stop only asked. Fixed (see runtime.md), waiting for beta.5, which must not go out
 without it: the sidebar's own polling (1363ae0) adds to that polling.
 
-Found on test 6, still to do:
-- Data packs tab: the folder picker lists `world/datapacks` and two Open Loader folders; say what
-  each is. It goes back to `world/datapacks` after a drop: keep the choice. Dropping onto a
-  section should go into that section's folder, as in Files.
-- Add mods: a data pack always goes to `world/datapacks`; let it pick the destination.
-- Console: Up should reach the history without the input focused, and the input stays selected
-  after a command. The page is slightly too tall: the gap under the input brings a scrollbar.
-- `/reload` does not pick up Open Loader's packs (both folders work after a restart): check
-  whether that is Open Loader's limit, and say so in the tab if it is.
+Found on test 6, fixed 2026-11-06 unless said: the Data packs tab's sections each take a drop for
+their folder, empty ones too, the picker says what each folder is and keeps its choice; the
+console's arrows reach the history from anywhere on the page, the input keeps focus through a
+send, and the page no longer scrolls by 14 px. `/reload` was not at fault: prod's journal shows it
+found and ran the pack each time a pack was in an Open Loader folder (a copy of Test 6 too), so
+the tab's text stands. Add mods choosing a data pack's folder waits until after 1.2 (ROADMAP,
+Leftovers, Data packs).
 
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the

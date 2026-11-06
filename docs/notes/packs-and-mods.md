@@ -194,3 +194,8 @@ Search button sends `fresh` past the cache; typing and Enter do not. CurseForge'
 dropped when the key changes, since the key decides between its API and the mirror.
 `CACHE_MAX_ENTRIES` is shared with the mirror's lookups, two for each mod in an update check: 200
 would throw them out during MeatballCraft's check, so it is 2000.
+
+Open Loader 21.1.5 picks up a new pack on `/reload`, from both its folders: its scan runs on each
+reload (`CachedSupplier` holds only its config), tried on a copy of a real server and read in the
+journal of the real one (2026-11-06). A `/reload` that seems not to work has found nothing in the
+folder: "Located 0 packs" in the log. Paxi has not been tried.

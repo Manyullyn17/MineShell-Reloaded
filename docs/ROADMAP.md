@@ -467,7 +467,11 @@ is open, and each needs a test setup.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
-  does not search; the mirror's coverage of it is unchecked).
+  does not search; the mirror's coverage of it is unchecked). Add mods choosing a data pack's
+  folder (user's call, 2026-11-06: after 1.2): it always installs to `world/datapacks`, and
+  tracking assumes that folder in install, listing, removal, updates and version moves, so a
+  loader folder needs a folder column on `instance_datapacks` and all of those; untracked
+  installs would stop updating without saying so. Uploading on the tab reaches every folder.
 - **Item icons and names**: 1.12 mod damage variants whose model names only the mod's code
   maps (AE2 material/part, IE metal, Botania manaresource; user's call: decide later), names
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),
