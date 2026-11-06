@@ -31,8 +31,6 @@ export function renderTemplateUnit({ prefix, instancesDir, unitsDir }) {
 # One instance per Minecraft server: ${prefix}@<instance-id>.service
 [Unit]
 Description=Minecraft server (%i) managed by MineShell
-After=network-online.target
-Wants=network-online.target
 # Crash-loop brake. MineShell writes these defaults; per-instance values set in
 # the UI go into a drop-in next to this file, ${prefix}@<id>.service.d/restart.conf
 StartLimitIntervalSec=600

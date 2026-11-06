@@ -142,8 +142,6 @@ main() {
 		# Running the installer again rewrites this file; settings go in $config.
 		[Unit]
 		Description=MineShell
-		After=network-online.target
-		Wants=network-online.target
 
 		[Service]
 		Type=simple

@@ -170,8 +170,6 @@ To start it at boot, write `~/.config/systemd/user/mineshell.service` by hand:
 ```ini
 [Unit]
 Description=MineShell
-After=network-online.target
-Wants=network-online.target
 
 [Service]
 Type=simple

@@ -158,8 +158,6 @@ export function renderAgentUnit(binary = agentBinary()): string {
 	return `# Managed by MineShell
 [Unit]
 Description=playit.gg agent for MineShell
-After=network-online.target
-Wants=network-online.target
 
 [Service]
 ExecStart="${binary}" --secret-path "${KEY_FILE}" --socket-path %t/${UNIT_PREFIX}-playit.sock

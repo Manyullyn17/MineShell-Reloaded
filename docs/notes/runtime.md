@@ -147,6 +147,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   nothing). Needs MineShell itself started at boot; the user runs `npm run dev`, so the
   settings show the "not a systemd service" note (`INVOCATION_ID` unset).
 - `enableUnit`/`isUnitEnabled` in systemd.ts stay unused on purpose (ARCHITECTURE says why).
+- User units cannot wait for the network: `network-online.target` exists only in the system
+  manager (in the user manager it is `not-found`, and `Wants=`/`After=` on it did nothing, so
+  they were removed 2026-11-06). On this Ubuntu the user manager still starts after it, by
+  accident of the system's order: network-online > open-iscsi (skipped, but its order counts) >
+  remote-fs-pre > remote-fs > systemd-user-sessions > user@1000; 15 ms apart on the last boot. A
+  system without that chain may start MineShell and the servers before the network is up, which
+  is untested. Binding every address (the default) does not care, and playit retries by itself
+  (it failed one IPv6 ping at boot and connected 2 s later). What could fail is a server with a
+  Bind address (`server-ip`) not up yet. If that is ever reported, the fix is a wait before start.
 
 ## Console view
 - Line handling is `lib/shared/consolelines.ts`. Lines without a "[time] [thread/LEVEL]"

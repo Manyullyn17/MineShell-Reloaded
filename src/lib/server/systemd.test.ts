@@ -175,6 +175,11 @@ describe('unit files', () => {
 		expect(renderTemplateUnit()).toMatch(/^SuccessExitStatus=143$/m);
 	});
 
+	// A system manager's target: a user unit naming it waits for nothing (notes/runtime.md).
+	it('names no network target, which user units do not have', () => {
+		expect(renderTemplateUnit()).not.toContain('network-online');
+	});
+
 	it('brings an installed template from an older MineShell up to date, and leaves one it did not write', async () => {
 		fakeProcesses(() => ({}));
 		const file = path.join(systemdUnitDir(), TEMPLATE_UNIT);
