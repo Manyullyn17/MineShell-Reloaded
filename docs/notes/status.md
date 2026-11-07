@@ -91,7 +91,10 @@ anywhere, no shift), the sidebar catching up in another tab (about 3 s late), ga
 kept on a paused server, defaults, border wording), and stopping (stop, restart, Start greyed while
 stopping; no hang seen in a few tries, kept an eye on). Found: a console command over 1446 bytes
 ended in "RCON connection closed" (Minecraft drops it), now refused with its size first.
-**Left**: players in game (item 2) and Tailscale from a phone (item 9).
+Players in game (item 2) on Irithyll: **done**, all work. The game mode buttons wrapped Spectator
+under the label (now a row of four, two by two on a phone) and "In their dimension" reads as
+"Their current dimension"; the rest went to ROADMAP, "More for online players". **Left**:
+Tailscale (item 9): joining from a tailnet device that is not this machine, and the lockout.
 
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the

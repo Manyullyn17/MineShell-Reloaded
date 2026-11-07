@@ -317,6 +317,19 @@ Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks
 not on it with a message, and changes the description to say so; off puts all three back.
 For pack updates and other work players should stay out of.
 
+#### More for online players
+
+From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07), not scheduled:
+- **Teleport to their own spawn point**, not only the world spawn. It is in the player's data
+  (`respawn` from 1.21.5, `SpawnX/Y/Z` and `SpawnDimension` before), readable over RCON with
+  `data get entity`; with none set, the world spawn is where they would go anyway.
+- **The game mode they are in** shown on the picker (`playerGameType`, same read), and the
+  coordinates' dimension preselected to the one they are in, rather than "Their current
+  dimension".
+- **The player page while they are online**: the editor refuses then (the game writes the file
+  over it). What has a command could work live instead: game mode first, then XP, health,
+  giving or clearing items. Arbitrary edits cannot: vanilla refuses `data modify` on a player.
+
 #### Joining over Tailscale
 
 Built 2026-11-03 (ROADMAP-ARCHIVE, "Joining over Tailscale"). Left: whether ufw lets
