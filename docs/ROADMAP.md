@@ -330,11 +330,6 @@ From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07), not scheduled:
   over it). What has a command could work live instead: game mode first, then XP, health,
   giving or clearing items. Arbitrary edits cannot: vanilla refuses `data modify` on a player.
 
-#### Joining over Tailscale
-
-Built 2026-11-03 (ROADMAP-ARCHIVE, "Joining over Tailscale"). Left: whether ufw lets
-tailscale0 in by default, tried from a tailnet device; the row's firewall hint goes if it does.
-
 ### 6. Schedules
 
 #### Hours a server runs

@@ -1472,9 +1472,11 @@ address for it: a friend on the tailnet, or the owner away from home, had to kno
 the machine's 100.x address. Built: with Tailscale running, the overview's Connect box has a
 "From your Tailscale devices" row, the MagicDNS name (or the 100.x address when the tailnet
 has MagicDNS off) and the port, from `tailscale status --json` read at most once a minute.
-Its firewall hint is `sudo ufw allow in on tailscale0 to any port <port> proto tcp`, and voice
-chat's UDP port the same way: Tailscale adds no ufw rule of its own. Not checked yet: whether
-ufw lets tailscale0 in by default (ROADMAP). The screenshots show an invented tailnet.
+It first had a firewall hint (`sudo ufw allow in on tailscale0 to any port <port> proto tcp`,
+and voice chat's UDP port), Tailscale adding no ufw rule. Not needed, it turned out (2026-11-08,
+the user from another tailnet device with no such rule): tailscaled's own `ts-input` chain sits
+ahead of ufw's and accepts everything on tailscale0, so the row says no rule is needed. The
+screenshots show an invented tailnet.
 
 ---
 

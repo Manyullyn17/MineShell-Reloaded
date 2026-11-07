@@ -693,7 +693,7 @@
 				<p class="address-label">From your Tailscale devices</p>
 				{@render address(`${tailnetHost}:${data.detail.serverPort}`)}
 				<p class="faint small">
-					Players on your tailnet, nothing to forward. Can't connect? Allow it in on Tailscale: <code class="mono">sudo ufw allow in on tailscale0 to any port {data.detail.serverPort} proto tcp</code>{#if data.detail.voicePort}, and voice chat's: <code class="mono">sudo ufw allow in on tailscale0 to any port {data.detail.voicePort} proto udp</code>{/if}
+					Players on your tailnet, nothing to forward and no firewall rule needed: Tailscale lets its own traffic in.
 				</p>
 			{/if}
 		</section>
@@ -1085,8 +1085,7 @@
 		margin-top: var(--space-4);
 	}
 
-	/* A command moves to the next line whole, and breaks only when longer than a line
-	   (Tailscale's ufw rule in a narrow column). */
+	/* A command moves to the next line whole, and breaks only when longer than a line. */
 	.address + p code {
 		display: inline-block;
 		max-width: 100%;

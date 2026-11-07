@@ -1277,7 +1277,9 @@ for a server public through playit.gg a second row with that address, which need
 firewall rule: the agent reaches the server over loopback. With Tailscale running, a row for
 the tailnet's devices (`tailnetAddress`: the MagicDNS name, or the 100.x address with
 MagicDNS off; `tailscale status` read at most once a minute, as the overview reloads every
-few seconds), with its own firewall hint for tailscale0.
+few seconds). That row needs no firewall rule either: tailscaled puts its own `ts-input` chain
+ahead of ufw's, accepting everything on tailscale0 (checked on the user's machine 2026-11-08,
+joined from another tailnet device with no ufw rule for it).
 
 All the servers' ports in one place (`portmap.ts`, MineShell settings > Ports, global
 admins): game, RCON, query (the game port's number over UDP, when `enable-query` is on),
