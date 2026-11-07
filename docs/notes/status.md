@@ -57,7 +57,7 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 beta has run about three days with nothing big. Before beta.1: a quick pass on throwaway data
 (2026-11-04, vanilla 1.21.11 moved to 26.3 and a Fabric 1.21.1 server; found and fixed the live
 game rule/border read-back and the border centre). Release notes by hand, without fixes of
-1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 at least).
+1.2's own features (7c4140d, cff1938, 99b4e76 and the Tailscale row's f7562a0 and 171dabc, the game mode row's 3e5f19f at least).
 
 Beta.4 (search as you type, filter reset, search caching, the banner under the tab bars) is on
 prod since 2026-11-05. Beta.3 (released and on prod 2026-11-05; two small `feat:`s, so a beta rather than straight into 1.2.0): turning
@@ -94,7 +94,10 @@ ended in "RCON connection closed" (Minecraft drops it), now refused with its siz
 Players in game (item 2) on Irithyll: **done**, all work. The game mode buttons wrapped Spectator
 under the label (now a row of four, two by two on a phone) and "In their dimension" reads as
 "Their current dimension"; the rest went to ROADMAP, "More for online players". **Left**:
-Tailscale (item 9): joining from a tailnet device that is not this machine, and the lockout.
+Tailscale (item 9): the lockout only. Joining **done** (2026-11-08) from the main PC over its
+ts.net address (a direct connection across the LAN, still arriving on tailscale0) with no ufw
+rule for it: tailscaled's `ts-input` chain accepts tailscale0 ahead of ufw, so the row's ufw
+hint went.
 
 The user, on prod (a click or two each; what a real server, player or account brings):
 1. **Updating itself**: beta.1 -> beta.2 with the button; then "Check for updates" and the
