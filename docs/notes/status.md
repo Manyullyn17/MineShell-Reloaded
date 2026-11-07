@@ -93,8 +93,9 @@ stopping; no hang seen in a few tries, kept an eye on). Found: a console command
 ended in "RCON connection closed" (Minecraft drops it), now refused with its size first.
 Players in game (item 2) on Irithyll: **done**, all work. The game mode buttons wrapped Spectator
 under the label (now a row of four, two by two on a phone) and "In their dimension" reads as
-"Their current dimension"; the rest went to ROADMAP, "More for online players". **Left**:
-Tailscale (item 9): the lockout only. Joining **done** (2026-11-08) from the main PC over its
+"Their current dimension"; the rest went to ROADMAP, "More for online players". With Tailscale below,
+the 1.2 beta checklist is done (2026-11-08). Tailscale (item 9): the lockout **done** (2026-11-08), locked out on the phone over Tailscale,
+the PC signed in right after. Joining **done** (2026-11-08) from the main PC over its
 ts.net address (a direct connection across the LAN, still arriving on tailscale0) with no ufw
 rule for it: tailscaled's `ts-input` chain accepts tailscale0 ahead of ufw, so the row's ufw
 hint went.
