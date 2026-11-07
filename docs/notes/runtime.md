@@ -178,6 +178,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   client (read timeout 0), closes the connection unless a read holds exactly one packet (so
   never two in flight), and splits answers every 4096 characters - an end marker (unknown
   request type, answered "Unknown request") is sent once a full-size piece arrives.
+- A request over 1446 UTF-8 bytes (Minecraft reads into a 1460-byte buffer) is dropped the
+  same way, without an answer: tried on a copy of a Fabric 1.21.1 server (2026-11-07, 1446
+  answered, 1447 closed). The console said only "RCON connection closed", the retry on a new
+  connection being closed too; `commandOn` now refuses it with the size first. Minecraft also
+  logs anything said over RCON as `[Not Secure] [Rcon] ...` (unsigned chat, 1.19.1+): not ours.
 - A packet length outside 10 bytes to 1 MiB ends the connection as "not RCON" (2026-10-28): a
   length of -4 used to leave the read loop on the same packet forever, freezing all of
   MineShell, timers included. Whatever answers on the port is read, not only Minecraft.

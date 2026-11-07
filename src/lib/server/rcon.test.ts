@@ -1,6 +1,6 @@
 import net from 'node:net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parsePlayerList, rconExec, rconStopping } from './rcon';
+import { MAX_COMMAND_BYTES, parsePlayerList, rconExec, rconStopping } from './rcon';
 
 describe('parsePlayerList', () => {
 	it('reads the 1.13+ format', () => {
@@ -193,6 +193,15 @@ describe('rconExec', () => {
 		expect(await rconExec(fake.opts, ['say hi'])).toEqual(['reply to say hi']);
 		expect(fake.state.ran).toEqual(['list', 'say hi']);
 		expect(fake.state.connections).toBe(2);
+	});
+
+	// Minecraft closes the connection on a request over its buffer, and the retry on a
+	// new one was closed too: the console said only "RCON connection closed".
+	it('refuses a command too long for the server before sending it', async () => {
+		await expect(rconExec(fake.opts, ['say ' + 'a'.repeat(MAX_COMMAND_BYTES)])).rejects.toThrow('too long for RCON');
+		await expect(rconExec(fake.opts, ['say ' + 'ä'.repeat(722)])).rejects.toThrow('1448 bytes');
+		expect(await rconExec(fake.opts, ['say ' + 'a'.repeat(MAX_COMMAND_BYTES - 4)])).toHaveLength(1);
+		expect(fake.state.ran).toEqual(['say ' + 'a'.repeat(MAX_COMMAND_BYTES - 4)]);
 	});
 
 	it('does not read a timed-out answer as the next command\'s', async () => {

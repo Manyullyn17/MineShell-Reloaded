@@ -25,6 +25,12 @@ const MAX_FRAGMENT = 4096;
  */
 const MIN_PACKET = 10;
 const MAX_PACKET = 1024 * 1024;
+/**
+ * The longest command the server takes, in UTF-8 bytes: it reads a request into
+ * a 1460-byte buffer, and one that does not fit closes the connection without
+ * an answer. Tried on 1.21.1 (1446 answered, 1447 dropped); 1.12's buffer is the same.
+ */
+export const MAX_COMMAND_BYTES = 1446;
 
 function encode(id: number, type: number, body: string): Buffer {
 	const payload = Buffer.from(body, 'utf8');
@@ -295,6 +301,10 @@ async function execNow(key: string, opts: RconTarget, commands: string[]): Promi
 }
 
 async function commandOn(key: string, opts: RconTarget, cmd: string): Promise<string> {
+	const bytes = Buffer.byteLength(cmd, 'utf8');
+	if (bytes > MAX_COMMAND_BYTES) {
+		throw new RconError(`That command is too long for RCON: ${bytes} bytes, Minecraft takes at most ${MAX_COMMAND_BYTES}.`);
+	}
 	const held = pool.get(key);
 	if (held?.stoppingSince && !held.client.closed && Date.now() - held.stoppingSince < STOPPING_LIMIT_MS) throw new RconError(SERVER_STOPPING);
 	if (held && !held.client.closed && held.password === opts.password && !held.stoppingSince) {
