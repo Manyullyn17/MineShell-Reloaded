@@ -7,8 +7,13 @@ const { portUser, rconPortFor, RCON_OFFSET } = await import('#lib/server/ports.j
 const { createInstance, reload } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
 
-/** Ports clear of anything on the machine (25565 is taken here) and of other test files. */
-const base = 20000 + (process.pid % 200) * 20;
+/**
+ * Ports clear of anything on the machine (25565 is taken here) and of other test files. The
+ * highest used is base + 1700 (a map port): with `% 200` it reached 25680, among the servers
+ * other files create from 25565 on, and on one worker (one database) a voice or map port came
+ * out one higher (repeat-tests.sh, seed 362610696 on GitHub). `% 100` keeps it under 23700.
+ */
+const base = 20000 + (process.pid % 100) * 20;
 
 async function server(name: string, serverPort: number, rconPort: number) {
 	return createInstance({ name, modloader: 'vanilla', minecraftVersion: '1.21.1', serverPort, rconPort }, { 'server.properties': `server-port=${serverPort}\nrcon.port=${rconPort}\n` });

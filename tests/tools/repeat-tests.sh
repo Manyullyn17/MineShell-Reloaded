@@ -20,8 +20,9 @@ for ((i = 1; i <= runs; i++)); do
 	printf 'Run %d of %d: %s\n' "$i" "$runs" "${options[*]}"
 	out=$(npx vitest run "${options[@]}" 2>&1)
 	if [ $? -ne 0 ]; then
-		# Without the colour codes, which GitHub's runners get: the lines did not match.
-		printf '%s\n' "$out" | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^ +(FAIL|Test Files|Tests) ' | sed 's/^/  /'
+		# The failures with their assertions, without the colour codes GitHub's runners get (the
+		# names alone left a failed run there with nothing to go on).
+		printf '%s\n' "$out" | sed 's/\x1b\[[0-9;]*m//g' | sed -n '/Failed Tests/,/^ *Test Files/p' | head -n 80 | sed 's/^/  /'
 		failed+=("npx vitest run ${options[*]}")
 	fi
 done
