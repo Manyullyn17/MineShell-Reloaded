@@ -43,6 +43,9 @@ size, not a fixed list; entries move and get added along the way):
   between. Then the server resource pack browser and Add mods choosing a data pack's folder
   (both built 2026-11-08; user, 2026-11-08: both still go in, a larger release is fine). Maintenance mode to 1.4.
   Scheduled CI during the beta (not user facing, so outside any release; built 2026-11-08).
+  Last, formatted text in its other places (resource pack prompt, data pack descriptions; built
+  2026-11-08), then the beta (user, 2026-11-08: nothing else joins). Whether Ubuntu 22.04 can
+  sandbox the servers is tried during the beta, a fix going into it if needed.
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
   item icons and the status page as ordered below. Whenever convenient: Chunk Pregenerator,
   single files from a snapshot.
@@ -203,10 +206,9 @@ what joining a list does with the entries a server already has.
 
 #### Formatted text: what is left
 
-From the server list preview and formatted text (built 2026-11-08, ROADMAP-ARCHIVE): more
-places that hold Minecraft text, on the same model and input (`mctext.ts`,
-`FormattedTextInput.svelte`): `resource-pack-prompt` (JSON text) with the resource pack work,
-`pack.mcmeta` descriptions on the Data packs tab (shown only), the status page. The preview's
+From the server list preview and formatted text (built 2026-11-08 with the resource pack
+prompt and data pack descriptions, ROADMAP-ARCHIVE): the status page, when it is built, on the
+same model and input (`mctext.ts`, `FormattedTextInput.svelte`). The preview's
 widths are exact for the bitmap fonts' 2413 glyphs; others (CJK, emoji) come from Unifont and
 are guessed (9 wide or 6), so a description in them may break a word early or late.
 

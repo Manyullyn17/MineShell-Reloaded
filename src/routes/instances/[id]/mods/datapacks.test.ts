@@ -38,11 +38,33 @@ describe("the Data packs tab and data pack loaders' folders", () => {
 				mod: 'Paxi',
 				folder: 'config/paxi/datapacks',
 				packs: [
-					{ fileName: 'folder-pack', path: 'config/paxi/datapacks/folder-pack', sizeBytes: 0, worldgen: false, name: 'folder-pack', version: null, projectUrl: null, tracked: false },
-					{ fileName: 'mine.zip', path: 'config/paxi/datapacks/mine.zip', sizeBytes: pack.length, worldgen: false, name: 'mine', version: null, projectUrl: null, tracked: false }
+					{ fileName: 'folder-pack', path: 'config/paxi/datapacks/folder-pack', sizeBytes: 0, worldgen: false, description: null, name: 'folder-pack', version: null, projectUrl: null, tracked: false },
+					{ fileName: 'mine.zip', path: 'config/paxi/datapacks/mine.zip', sizeBytes: pack.length, worldgen: false, description: null, name: 'mine', version: null, projectUrl: null, tracked: false }
 				]
 			}
 		]);
+	});
+
+	it("shows each pack's own description from its pack.mcmeta, colours kept, in the world's folder and a loader's", async () => {
+		const mcmeta = (description: unknown) => JSON.stringify({ pack: { pack_format: 48, description } });
+		const { instance, params } = await server({ 'paxi-1.21-1.0.jar': jar('paxi') });
+		const world = path.join(instance.path, 'world/datapacks');
+		await fs.mkdir(path.join(world, 'Folder'), { recursive: true });
+		await fs.writeFile(path.join(world, 'Folder/pack.mcmeta'), mcmeta('§6Gold§r and plain'));
+		await fs.writeFile(path.join(world, 'json.zip'), zipBuffer({ 'pack.mcmeta': mcmeta([{ text: 'Adds ', color: 'gray' }, { text: 'towers', color: '#ff8800', bold: true }]) }));
+		await fs.writeFile(path.join(world, 'none.zip'), pack);
+		await fs.writeFile(path.join(world, 'broken.zip'), zipBuffer({ 'pack.mcmeta': '{ not json' }));
+		await fs.mkdir(path.join(instance.path, 'config/paxi/datapacks'), { recursive: true });
+		await fs.writeFile(path.join(instance.path, 'config/paxi/datapacks/loader.zip'), zipBuffer({ 'pack.mcmeta': mcmeta({ text: 'Every world', color: 'aqua' }) }));
+		type Row = { fileName: string; description: string | null };
+		const { datapacks, loaderDatapacks } = (await load(page, { params })) as { datapacks: { packs: Row[] }; loaderDatapacks: { packs: Row[] }[] };
+		expect(Object.fromEntries(datapacks.packs.map((p) => [p.fileName, p.description]))).toEqual({
+			Folder: '§6Gold§r and plain',
+			'json.zip': '§7Adds §#ff8800§ltowers',
+			'none.zip': null,
+			'broken.zip': null
+		});
+		expect(loaderDatapacks[0].packs[0].description).toBe('§bEvery world');
 	});
 
 	it("uploads zips into the world's datapacks/ or a folder a loader reads, and no other", async () => {

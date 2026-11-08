@@ -6,6 +6,7 @@
 	import { SEARCH_DELAY_MS } from '#lib/shared/modsearch.js';
 	import { formatBytes, formatDateTime } from '#lib/shared/format.js';
 	import FormattedTextInput from '#lib/components/FormattedTextInput.svelte';
+	import ResourcePackPromptPreview from '#lib/components/ResourcePackPromptPreview.svelte';
 	import type { PageData } from './$types';
 
 	/**
@@ -246,9 +247,12 @@
 					<span>Players must take the pack: those who turn it down are disconnected.</span>
 				</label>
 				<label class="field" for="resource-pack-prompt">
-					<span id="resource-pack-prompt-label">What players are asked <span class="faint small">(blank: the game's own question)</span></span>
+					<span id="resource-pack-prompt-label"
+						>A message under the game's question <span class="faint small">(optional: the game always asks its own)</span></span
+					>
 				</label>
-				<FormattedTextInput id="resource-pack-prompt" name="prompt" bind:value={prompt} labelledby="resource-pack-prompt-label" placeholder="This server recommends the use of a custom resource pack." />
+				<FormattedTextInput id="resource-pack-prompt" name="prompt" hex bind:value={prompt} labelledby="resource-pack-prompt-label" />
+				<ResourcePackPromptPreview {prompt} {required} />
 				<div class="row">
 					<button type="submit" disabled={!optionsChanged || !!saving}>{saving === 'options' ? 'Saving' : 'Save'}</button>
 				</div>

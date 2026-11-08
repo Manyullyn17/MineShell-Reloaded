@@ -72,6 +72,9 @@
 		display: inline-block;
 		width: calc(var(--w) * var(--mc-px, 1px));
 		white-space: pre;
+		/* Centred text around it (the resource pack prompt) centred the unscaled text in here
+		   first, and the stretch from its left edge then pushed it right. */
+		text-align: left;
 	}
 	.natural {
 		display: inline-block;

@@ -5,7 +5,8 @@ import { db } from '../db';
 import { instanceDatapacks, type InstanceDatapack, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
 import { serverWorldName } from '../packworld';
-import { zipEntryNames } from '../zip';
+import { openZipFile, zipEntryNames } from '../zip';
+import { fromJson, toCodes } from '#lib/shared/mctext.js';
 import { child, parseNbt } from '../nbt';
 import type { ProjectVersion, SourceId } from './types';
 
@@ -123,6 +124,35 @@ export async function changesWorldgen(full: string, isDirectory: boolean): Promi
 	return false;
 }
 
+/**
+ * A data pack's own description (`pack.description` in its pack.mcmeta) as `§`-codes: a string
+ * as written, JSON text with its colours. Null when it has none or it cannot be read.
+ */
+export async function datapackDescription(full: string, isDirectory: boolean): Promise<string | null> {
+	let text: string | null = null;
+	try {
+		if (isDirectory) text = await fs.readFile(path.join(full, 'pack.mcmeta'), 'utf8');
+		else {
+			const zip = await openZipFile(full);
+			const entry = zip?.entries.find((e) => e.name === 'pack.mcmeta');
+			// A few hundred bytes in practice; anything near this is not a pack's metadata.
+			if (zip && entry && entry.size < 64 * 1024) text = (await zip.read(entry)).toString('utf8');
+		}
+	} catch {
+		return null;
+	}
+	if (!text) return null;
+	let description: unknown;
+	try {
+		description = (JSON.parse(text.replace(/^\uFEFF/, '')) as { pack?: { description?: unknown } }).pack?.description;
+	} catch {
+		return null;
+	}
+	const spans = description === undefined ? null : fromJson(description);
+	const codes = spans ? toCodes(spans).trim() : '';
+	return codes || null;
+}
+
 /** The world's enabled packs as level.dat records them: "file/Terralith_1.20_v2.5.4.zip", "vanilla", ... */
 async function enabledInWorld(root: string, world: string): Promise<Set<string>> {
 	try {
@@ -153,6 +183,8 @@ export type DatapackRow = {
 	worldgen: boolean;
 	/** level.dat lists it as enabled: the world has loaded it. */
 	loadedByWorld: boolean;
+	/** Its pack.mcmeta description, as `§`-codes. */
+	description: string | null;
 };
 
 /** What is in the world's datapacks folder, with where each came from. */
@@ -188,7 +220,8 @@ export async function listDatapacks(instance: ServerInstance): Promise<{ world: 
 			fromPack: fromPack.has(entry.name),
 			tracked: !!row,
 			worldgen: await changesWorldgen(path.join(dir, entry.name), entry.isDirectory()),
-			loadedByWorld: enabled.has(`file/${entry.name}`)
+			loadedByWorld: enabled.has(`file/${entry.name}`),
+			description: await datapackDescription(path.join(dir, entry.name), entry.isDirectory())
 		});
 	}
 	return { world, packs: packs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })) };

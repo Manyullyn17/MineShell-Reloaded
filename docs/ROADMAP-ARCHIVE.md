@@ -1594,6 +1594,20 @@ Minecraft text is typed, item names and lore first. Built:
 - Found on the way: the tooltip's name took the "Your fields" cards' `.custom` flex rule (class
   renamed); 1.21.5+ names MineShell wrote as plain strings showed italic in game.
 
+Then the other places that hold Minecraft text (the user's call, 2026-11-08: slipped in before
+the beta, it completes the work):
+- **The resource pack prompt**: it had the code buttons from the resource pack work; now hex
+  colours (JSON text) and a preview of the client's question. The game never replaces its own
+  question: it adds the server's text under "Message from server:"
+  (`multiplayer.texturePrompt.serverPrompt`, read from the 1.17.1, 1.20.4 and 1.21.11 jars'
+  en_us.json), so the field said wrongly that a blank one meant "the game's own question". The
+  preview wraps at the confirm screen's width in the game's default window (854 x 480, GUI
+  scale 2: 377 of 427).
+- **Data pack descriptions**: each pack's `pack.description` (a coded string or JSON text) on
+  the Data packs tab, for the world's packs and a loader's, on a dark strip on every theme.
+- Found on the way: `McText`'s measured text inherited centring from around it and drew right
+  of where it belongs.
+
 What it leaves: ROADMAP, "Formatted text: what is left".
 
 ### Mod config editor (1.3, 2026-11-08)

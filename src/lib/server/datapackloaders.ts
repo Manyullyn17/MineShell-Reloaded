@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describeModJar, indexMods } from './crashdiag';
-import { changesWorldgen, moveTrackedDatapack } from './mods/datapacks';
+import { changesWorldgen, datapackDescription, moveTrackedDatapack } from './mods/datapacks';
 import type { ServerInstance } from './db/schema';
 
 /**
@@ -168,6 +168,8 @@ export type LoaderDatapack = {
 	path: string;
 	sizeBytes: number;
 	worldgen: boolean;
+	/** Its pack.mcmeta description, as `§`-codes. */
+	description: string | null;
 };
 
 /** A folder a data pack loader on the server reads, for every world. */
@@ -194,7 +196,8 @@ export async function loaderDatapackFolders(root: string): Promise<LoaderDatapac
 					fileName: entry.name,
 					path: `${folder}/${entry.name}`,
 					sizeBytes: stat?.isFile() ? stat.size : 0,
-					worldgen: await changesWorldgen(full, entry.isDirectory())
+					worldgen: await changesWorldgen(full, entry.isDirectory()),
+					description: await datapackDescription(full, entry.isDirectory())
 				});
 			}
 			packs.sort((a, b) => a.fileName.localeCompare(b.fileName, undefined, { numeric: true }));

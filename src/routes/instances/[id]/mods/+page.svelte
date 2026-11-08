@@ -3,6 +3,8 @@
 	import { reveal } from '#lib/shared/reveal.js';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import DatapackUpdates from './DatapackUpdates.svelte';
+	import McText from '#lib/components/McText.svelte';
+	import { parseCodes } from '#lib/shared/mctext.js';
 	import { can, type InstancePermission } from '#lib/shared/access.js';
 	import type { SubmitFunction } from '$app/forms';
 	import { enhance } from '#lib/shared/forms.js';
@@ -750,6 +752,7 @@
 								{/if}
 								{#if pack.fromPack}<span class="tag">from the modpack</span>{/if}
 								{#if pack.worldgen}<span class="tag warn" title="Adds or changes world generation">world generation</span>{/if}
+								{#if pack.description}<div class="small pack-description"><McText spans={parseCodes(pack.description)} /></div>{/if}
 							</td>
 							<td class="mono small">{pack.version ?? ''}</td>
 							<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
@@ -806,6 +809,7 @@
 									<span class="mono small">{pack.name}</span>
 								{/if}
 								{#if pack.worldgen}<span class="tag warn" title="Adds or changes world generation">world generation</span>{/if}
+								{#if pack.description}<div class="small pack-description"><McText spans={parseCodes(pack.description)} /></div>{/if}
 							</td>
 							<td class="mono small">{pack.version ?? ''}</td>
 							<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
@@ -879,6 +883,21 @@
 />
 
 <style>
+	/* A pack's own description in its colours, grey where it sets none, on the game's dark
+	   ground on every theme: its yellows and aquas are unreadable on Daylight's white. */
+	.pack-description {
+		display: block;
+		width: fit-content;
+		max-width: 100%;
+		margin-top: 4px;
+		padding: 2px 6px;
+		border-radius: var(--radius);
+		background: #1b1b1f;
+		color: #aaaaaa;
+		/* Not "anywhere": that let the table squeeze the column to a few letters on a phone. */
+		overflow-wrap: break-word;
+	}
+
 	.duplicates ul {
 		list-style: none;
 		margin: var(--space-2) 0 0;

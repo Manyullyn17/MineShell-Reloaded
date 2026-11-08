@@ -97,7 +97,7 @@ user before the beta):
    Nether, Creative marked after switching); a bed and a modded server not yet.
 7. **Server resource pack** (Mods > Resource pack): pick one from Modrinth and from CurseForge
    (with the key) on a real server, join with a client and take it (the prompt and "must take
-   it" shown), and an address of your own. Checked 2026-11-08 on a throwaway dev server and
+   it" shown, matching the preview under the message field), and an address of your own. Checked 2026-11-08 on a throwaway dev server and
    against the live catalogs; no player has downloaded one yet.
 8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
    release into its folder from Add mods, start the server and see it loaded (Open Loader's
@@ -107,6 +107,12 @@ user before the beta):
    with its three dependencies through Add mods): Dungeons and Taverns into
    `config/openloader/packs`, "Located 1 packs" and the pack in `/datapack list`, then v4.4.3 in
    its place, the update check offering v4.4.4 for that folder, the update, and v4.4.4 loaded.
+9. **Data pack descriptions** (Mods > Data packs): a real pack's description in its colours, as
+   the game's own data pack screen shows it.
+10. **Ubuntu 22.04 sandbox**: on a real 22.04 machine or VM, does `doctor` find the servers
+   sandboxed? GitHub's 22.04 runner made no mount namespace for a user unit (ROADMAP,
+   Leftovers, Scheduled CI); if a normal install cannot either, doctor's wording and
+   DEPLOYMENT get a fix in the beta.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
