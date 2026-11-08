@@ -163,7 +163,27 @@ describe('Cleanroom fixes and Fugue', () => {
 		expect(downloads).toEqual([]);
 		// Kept in the database, not only in memory: a restart of MineShell does not read them again.
 		const kept = db.select().from(settings).where(eq(settings.key, 'fugue-jar:fugue:remember-fugue-0.23.7')).get();
-		expect(JSON.parse(kept!.value)).toEqual({ range: '[0.5.14-alpha,)', callsGetUrl: false });
+		expect(JSON.parse(kept!.value)).toEqual({ range: '[0.5.14-alpha,)', callsGetUrl: false, java: null });
+	});
+
+	it('reads a build again that was kept before its Java was read', async () => {
+		// 1.2 kept range and getURL only; a kept row taken as it is would say nothing about Java.
+		const downloads: string[] = [];
+		globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+			const href = String(input instanceof Request ? input.url : input);
+			downloads.push(href);
+			return new Response(new Uint8Array(fugueJar('[0.5.14-alpha,)', false)));
+		}) as typeof fetch;
+		const fresh = versions().map((v) => ({ ...v, id: `old-${v.id}` }));
+		for (const [v, , range] of RELEASES) {
+			const value = JSON.stringify({ range, callsGetUrl: false });
+			db.insert(settings).values({ key: `fugue-jar:fugue:old-fugue-${v}`, value }).run();
+		}
+		await pickFugue(fresh, '0.5.17-alpha', false);
+		expect(downloads.length).toBeGreaterThan(0);
+		const read = RELEASES.find(([v]) => downloads[0] === url(v))![0];
+		const kept = db.select().from(settings).where(eq(settings.key, `fugue-jar:fugue:old-fugue-${read}`)).get();
+		expect(JSON.parse(kept!.value)).toHaveProperty('java', null);
 	});
 
 	it('keeps the old Fugue when no replacement can be had', async () => {

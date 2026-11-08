@@ -64,8 +64,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   a curated must-remove list (never content mods), reports the "replace with fork" list.
   Mods are matched by mcmod.info name/modid and filename because modids lie (Born in a Barn =
   "examplemod", Relictium = "vintagium").
-- Fugue >= 0.23.4 needs Java 25; Cleanroom 0.4.x gets the newest earlier build
-  (`pickVersionForJava`). Fugue declares `requires cleanroom@[min,)` inside the jar (0.24.x:
+- Fugue >= 0.23.4 needs Java 25 (class-file version 69 in every class; 65, Java 21, up to
+  0.23.3, checked on the release jars 2026-11-08), so Cleanroom 0.4.x gets an earlier build.
+  Read from the jar since 1.3 (`inspectFugueJar`'s `java`), no longer a constant: builds kept by
+  1.2 lack it and are read once more. Fugue declares `requires cleanroom@[min,)` inside the jar (0.24.x:
   0.6.10, so "newest" broke every 0.5.x server): `pickFugue` reads it from the jars
   (`inspectFugueJar`), each build once ever (kept in `settings` as `fugue-jar:<project>:<id>`).
   Minimums only grow with the version, so a binary search finds the newest build not too new

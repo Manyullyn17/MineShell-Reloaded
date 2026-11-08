@@ -104,11 +104,20 @@ describe('cleanroomDisabledReasons', () => {
 
 const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
 
-/** A Fugue jar with what inspectFugueJar reads: the declared range and, for <= 0.23.2, the getURL rewrite. */
-function fugueJar(range: string, callsGetUrl: boolean): Record<string, string> {
+/** A class file's first bytes: magic and version, for Java `java` (major = java + 44). */
+function classHeader(java: number): Buffer {
+	return Buffer.from([0xca, 0xfe, 0xba, 0xbe, 0, 0, 0, java + 44]);
+}
+
+/**
+ * A Fugue jar with what inspectFugueJar reads: the declared range, for <= 0.23.2
+ * the getURL rewrite, and with `java` a real class header saying what it is compiled for.
+ */
+function fugueJar(range: string, callsGetUrl: boolean, java?: number): Record<string, string | Buffer> {
+	const main = `\u0000required-after:cleanroom@${range};\u0000`;
 	return {
 		'mcmod.info': mcmodInfo('fugue', 'Fugue'),
-		'com/cleanroommc/fugue/Fugue.class': `\u0000required-after:cleanroom@${range};\u0000`,
+		'com/cleanroommc/fugue/Fugue.class': java ? Buffer.concat([classHeader(java), Buffer.from(main)]) : main,
 		'com/cleanroommc/fugue/transformer/universal/URLClassLoaderTransformer.class': callsGetUrl
 			? `\u0000getURLs\u0000${HACKERY}\u0000getURL\u0000`
 			: '\u0000getURLs\u0000com/cleanroommc/fugue/helper/HookHelper\u0000getURL\u0000',
@@ -159,6 +168,16 @@ describe('Fugue against the Cleanroom version', () => {
 		expect((await cleanroomReport(dir, '0.6.13-alpha')).replace).toEqual([]);
 	});
 
+	it('flags a Fugue compiled for a newer Java than this Cleanroom runs on', async () => {
+		// Fugue 0.24.4 (Java 25) did not boot on Cleanroom 0.4.4 (Java 21). The range is
+		// widened here so only the Java can say so.
+		const dir = await tempDir();
+		await writeJar(`${dir}/mods`, '+Fugue-0.24.4.jar', fugueJar('[0.4.4-alpha,)', false, 25));
+		const r = await cleanroomReport(dir, '0.4.4-alpha');
+		expect(r.replace.map((x) => x.reason)).toEqual(['It needs Java 25, and this Cleanroom runs on Java 21.']);
+		expect((await cleanroomReport(dir, '0.5.17-alpha')).replace).toEqual([]);
+	});
+
 	it("reads the newer installer's jar under libraries/", async () => {
 		const dir = await tempDir();
 		const jar = `${dir}/libraries/com/cleanroommc/cleanroom/0.7.11-alpha/cleanroom-0.7.11-alpha-universal.jar`;
@@ -175,19 +194,29 @@ describe('Fugue against the Cleanroom version', () => {
 
 	it('inspects the jars it reads', async () => {
 		const dir = await tempDir();
-		const file = await writeJar(dir, 'f.jar', fugueJar('[0.5.7-alpha,)', false));
-		expect(await inspectFugueJar(file)).toEqual({ range: '[0.5.7-alpha,)', callsGetUrl: false });
+		const file = await writeJar(dir, 'f.jar', fugueJar('[0.5.7-alpha,)', false, 25));
+		expect(await inspectFugueJar(file)).toEqual({ range: '[0.5.7-alpha,)', callsGetUrl: false, java: 25 });
+		// No class says its version: unknown, not a guess.
+		const plain = await writeJar(dir, 'p.jar', fugueJar('[0.5.7-alpha,)', false));
+		expect((await inspectFugueJar(plain)).java).toBeNull();
+		// The highest class counts, except a multi-release jar's classes for newer Java only.
+		const mixed = await writeJar(dir, 'm.jar', {
+			...fugueJar('[0.4.4-alpha,)', false, 21),
+			'com/cleanroommc/fugue/Old.class': classHeader(8),
+			'META-INF/versions/25/com/cleanroommc/fugue/Fugue.class': classHeader(25)
+		});
+		expect((await inspectFugueJar(mixed)).java).toBe(21);
 	});
 });
 
-/** Fugue's releases as measured from the jars (2026-10-11): declared range, getURL rewrite. */
-const FUGUE_RELEASES: [string, string, string, boolean][] = [
-	['0.24.4', '2026-09-14', '[0.6.10-alpha,)', false],
-	['0.23.7', '2026-07-10', '[0.5.14-alpha,)', false],
-	['0.23.4', '2026-04-01', '[0.5.7-alpha,)', false],
-	['0.23.3', '2026-03-15', '[0.4.4-alpha,)', false],
-	['0.23.2', '2026-03-11', '[0.4.4-alpha,)', true],
-	['0.21.0', '2025-10-11', '[0.3.20-alpha,)', true]
+/** Fugue's releases as measured from the jars (2026-10-11, Java 2026-11-08): declared range, getURL rewrite, Java. */
+const FUGUE_RELEASES: [string, string, string, boolean, number][] = [
+	['0.24.4', '2026-09-14', '[0.6.10-alpha,)', false, 25],
+	['0.23.7', '2026-07-10', '[0.5.14-alpha,)', false, 25],
+	['0.23.4', '2026-04-01', '[0.5.7-alpha,)', false, 25],
+	['0.23.3', '2026-03-15', '[0.4.4-alpha,)', false, 21],
+	['0.23.2', '2026-03-11', '[0.4.4-alpha,)', true, 21],
+	['0.21.0', '2025-10-11', '[0.3.20-alpha,)', true, 21]
 ];
 
 function fugueVersion(versionNumber: string, datePublished: string): ProjectVersion {
@@ -209,8 +238,8 @@ function fugueVersion(versionNumber: string, datePublished: string): ProjectVers
 describe('pickFugue', () => {
 	const versions = FUGUE_RELEASES.map(([v, date]) => fugueVersion(v, date));
 	const info = async (v: ProjectVersion) => {
-		const [, , range, callsGetUrl] = FUGUE_RELEASES.find(([n]) => n === v.versionNumber)!;
-		return { range, callsGetUrl };
+		const [, , range, callsGetUrl, java] = FUGUE_RELEASES.find(([n]) => n === v.versionNumber)!;
+		return { range, callsGetUrl, java };
 	};
 	const pick = async (cleanroom: string, hasGetUrl: boolean) => (await pickFugue(versions, cleanroom, hasGetUrl, info))?.versionNumber;
 
@@ -229,6 +258,10 @@ describe('pickFugue', () => {
 	it('keeps Java 21 Cleanroom on Java 21 builds', async () => {
 		expect(await pick('0.4.4-alpha', true)).toBe('0.23.3');
 		expect(await pick('0.4.3-alpha', true)).toBe('0.21.0');
+		// By the Java the jar is compiled for, whatever range it declares.
+		const wide = async (v: ProjectVersion) => ({ ...(await info(v)), range: '[0.3.20-alpha,)' });
+		expect((await pickFugue(versions, '0.4.4-alpha', true, wide))?.versionNumber).toBe('0.23.3');
+		expect((await pickFugue(versions, '0.5.17-alpha', false, wide))?.versionNumber).toBe('0.24.4');
 	});
 
 	it('finds the build however many newer ones there are, reading a handful of jars', async () => {
@@ -238,17 +271,17 @@ describe('pickFugue', () => {
 		const read: string[] = [];
 		const counted = async (v: ProjectVersion) => {
 			read.push(v.versionNumber);
-			return v.versionNumber.startsWith('0.30.') ? { range: '[0.7.3-alpha,)', callsGetUrl: false } : info(v);
+			return v.versionNumber.startsWith('0.30.') ? { range: '[0.7.3-alpha,)', callsGetUrl: false, java: 25 } : info(v);
 		};
 		expect((await pickFugue(all, '0.5.17-alpha', false, counted))?.versionNumber).toBe('0.23.7');
 		expect(new Set(read).size).toBeLessThanOrEqual(8);
 	});
 
 	it('never picks a build whose jar does not say what it needs', async () => {
-		const unreadable = async (v: ProjectVersion) => (v.versionNumber === '0.24.4' || v.versionNumber === '0.23.7' ? { range: null, callsGetUrl: false } : info(v));
+		const unreadable = async (v: ProjectVersion) => (v.versionNumber === '0.24.4' || v.versionNumber === '0.23.7' ? { range: null, callsGetUrl: false, java: 25 } : info(v));
 		// Counted as fitting, the newest would win; the newest known one does instead.
 		expect((await pickFugue(versions, '0.6.13-alpha', false, unreadable))?.versionNumber).toBe('0.23.4');
-		expect(await pickFugue(versions, '0.6.13-alpha', false, async () => ({ range: null, callsGetUrl: false }))).toBeNull();
+		expect(await pickFugue(versions, '0.6.13-alpha', false, async () => ({ range: null, callsGetUrl: false, java: null }))).toBeNull();
 	});
 });
 

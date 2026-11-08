@@ -113,9 +113,6 @@ const ADVISE_RULES: Rule[] = [
 	{ label: "Oh The Biomes You'll Go", reason: 'MCreator-based with extensive bugs.', modids: ['biomesyougo'] }
 ];
 
-/** Fugue's first build compiled for Java 25 (measured from the release jars). */
-export const FUGUE_JAVA25_FROM = '0.23.4';
-
 type RequiredMod = {
 	label: string;
 	reason: string;
@@ -125,11 +122,6 @@ type RequiredMod = {
 	curseforgeProjectId?: string;
 	modids: string[];
 	file: RegExp;
-	/**
-	 * First version compiled for Java 25. Older Cleanroom (<= 0.4.x) runs on
-	 * Java 21 and cannot load these, so it gets the newest version before.
-	 */
-	java25From?: string;
 };
 
 /** Cleanroom's guide: add both; neither loads on plain Forge, so they are harmless after a revert. */
@@ -141,10 +133,7 @@ const REQUIRED_MODS: RequiredMod[] = [
 		projectId: 'fugue',
 		curseforgeProjectId: '1005815',
 		modids: ['fugue'],
-		file: /fugue/i,
-		// Measured from the release jars' class-file versions (and a failed
-		// boot of 0.24.4 on Cleanroom 0.4.4 / Java 21).
-		java25From: FUGUE_JAVA25_FROM
+		file: /fugue/i
 	},
 	{
 		label: 'Scalar Legacy',
@@ -167,19 +156,29 @@ const REQUIRED_MODS: RequiredMod[] = [
  * so the range alone misses it; the crash then shows only the patched mod.
  * Measured on the release jars, 2026-10-11: 0.24.x needs 0.6.10, 0.23.6-0.23.7
  * 0.5.14, 0.23.4 0.5.7, 0.23.3 0.4.4 (the only build for 0.5.3-0.5.6).
+ *
+ * `java`: the Java its classes are compiled for, from their class-file
+ * version (major minus 44). Up to 0.23.3 that is 21, from 0.23.4 25 (every
+ * class of a jar the same, 2026-11-08), which a Java 21 Cleanroom (<= 0.4.x)
+ * cannot load: a failed boot of 0.24.4 on Cleanroom 0.4.4.
  */
-export type FugueJarInfo = { range: string | null; callsGetUrl: boolean };
+export type FugueJarInfo = { range: string | null; callsGetUrl: boolean; java: number | null };
 
 const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
 
 export async function inspectFugueJar(file: string): Promise<FugueJarInfo> {
-	const info: FugueJarInfo = { range: null, callsGetUrl: false };
+	const info: FugueJarInfo = { range: null, callsGetUrl: false, java: null };
 	const zip = await openZipFile(file).catch(() => null);
 	if (!zip) return info;
 	for (const entry of zip.entries) {
 		if (!entry.name.endsWith('.class')) continue;
+		const data = await zip.read(entry);
+		// Classes for newer Java only (a multi-release jar) are not what it needs.
+		if (data.length >= 8 && data.readUInt32BE(0) === 0xcafebabe && !entry.name.startsWith('META-INF/versions/')) {
+			info.java = Math.max(info.java ?? 0, data.readUInt16BE(6) - 44);
+		}
 		// Constant pool strings are plain bytes in the class file.
-		const text = (await zip.read(entry)).toString('latin1');
+		const text = data.toString('latin1');
 		info.range ??= text.match(/cleanroom@([[(][^\])]*[\])])/)?.[1] ?? null;
 		if (text.includes(HACKERY) && text.includes('getURL')) info.callsGetUrl = true;
 	}
@@ -213,10 +212,16 @@ export async function cleanroomHasGetUrl(instancePath: string, cleanroomVersion:
 /** Why a Fugue does not run on this Cleanroom, or null when nothing says it will not. */
 export function fugueMismatch(info: FugueJarInfo, cleanroomVersion: string, hasGetUrl: boolean): string | null {
 	if (info.range && !inVersionRange(cleanroomVersion, info.range)) return `It needs Cleanroom ${info.range}.`;
+	const java = cleanroomJavaMajor(cleanroomVersion);
+	if (needsNewerJava(info, java)) return `It needs Java ${info.java}, and this Cleanroom runs on Java ${java}.`;
 	if (info.callsGetUrl && !hasGetUrl) {
 		return 'It patches mods to call ReflectionHackery.getURL, which this Cleanroom no longer has (removed in 0.5.3).';
 	}
 	return null;
+}
+
+function needsNewerJava(info: FugueJarInfo, java: number): boolean {
+	return info.java !== null && info.java > java;
 }
 
 /** Whether `version` is below the lowest version `range` accepts; an unreadable range says nothing. */
@@ -234,9 +239,11 @@ export function belowRangeMinimum(version: string, range: string): boolean {
 async function fugueVersionInfo(version: ProjectVersion): Promise<FugueJarInfo> {
 	const key = `fugue-jar:${version.projectId}:${version.id}`;
 	const row = db.select().from(settings).where(eq(settings.key, key)).get();
-	if (row) return JSON.parse(row.value) as FugueJarInfo;
+	const kept = row ? (JSON.parse(row.value) as Partial<FugueJarInfo>) : null;
+	// Kept before the Java was read (1.2 and older): read once more.
+	if (kept && kept.java !== undefined) return kept as FugueJarInfo;
 	const file = version.files.find((f) => f.primary) ?? version.files[0];
-	if (!file) return { range: null, callsGetUrl: false };
+	if (!file) return { range: null, callsGetUrl: false, java: null };
 	const temp = path.join(TMP_DIR, `fugue-${crypto.randomUUID()}.jar`);
 	try {
 		await downloadFile(file.url, temp, { hash: file.hash });
@@ -271,13 +278,14 @@ export async function pickFugue(
 	info: (version: ProjectVersion) => Promise<FugueJarInfo> = fugueVersionInfo
 ): Promise<ProjectVersion | null> {
 	const java = cleanroomJavaMajor(cleanroomVersion);
-	const sorted = [...usableForJava(versions, FUGUE_JAVA25_FROM, java)].sort(compareVersionPriority);
+	const sorted = [...versions].sort(compareVersionPriority);
 	// Releases, then betas, then alphas: each its own newest-first run.
 	for (const channel of [...new Set(sorted.map((v) => v.channel))]) {
 		const builds = sorted.filter((v) => v.channel === channel);
+		// The Java a build needs only grows with the version, as its minimum Cleanroom does.
 		const tooNew = async (v: ProjectVersion) => {
-			const { range } = await info(v);
-			return !range || belowRangeMinimum(cleanroomVersion, range);
+			const found = await info(v);
+			return !found.range || belowRangeMinimum(cleanroomVersion, found.range) || needsNewerJava(found, java);
 		};
 		let lo = 0;
 		let hi = builds.length;
@@ -474,20 +482,6 @@ export async function cleanroomDisabledReasons(instancePath: string): Promise<Re
 
 // --------------------------------------------------------------- applying ---
 
-/** Builds from `java25From` on need Java 25, which a Java 21 Cleanroom (<= 0.4.x) cannot load. */
-function usableForJava(versions: ProjectVersion[], java25From: string | undefined, java: number): ProjectVersion[] {
-	return java25From && java < 25 ? versions.filter((v) => compareVersions(v.versionNumber, java25From) < 0) : versions;
-}
-
-/** The newest suitable build of a required mod for the Cleanroom generation in use. */
-export function pickVersionForJava(
-	versions: ProjectVersion[],
-	java25From: string | undefined,
-	java: number
-): ProjectVersion | null {
-	return bestVersion(usableForJava(versions, java25From, java));
-}
-
 /**
  * Where a required mod comes from: CurseForge when it is there and most of
  * the server's tracked mods come from CurseForge (a CurseForge pack, uploaded
@@ -514,7 +508,7 @@ async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): P
 	const version =
 		mod.label === 'Fugue' && cleanroom
 			? await pickFugue(all, cleanroom, await cleanroomHasGetUrl(instance.path, cleanroom))
-			: pickVersionForJava(all, mod.java25From, java);
+			: bestVersion(all);
 	if (!version) {
 		throw new Error(`no ${CLEANROOM_MINECRAFT} build for ${cleanroom ? `Cleanroom ${cleanroom}` : `Java ${java}`} found`);
 	}

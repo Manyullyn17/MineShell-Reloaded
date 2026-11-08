@@ -205,7 +205,8 @@ CurseForge-only jars"). Left:
 #### Fugue on Cleanroom: what the jar range cannot say
 
 Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges the jars
-declare (loaders.md, Cleanroom). Two gaps left:
+declare (loaders.md, Cleanroom). The Java a build needs is read from its jar since
+2026-11-08 (it was a constant). Left:
 - An older Fugue that breaks on a newer Cleanroom: ranges only give a minimum
   (`cleanroom@[min,)`), so nothing marks it before a start. The one known case (Fugue <= 0.23.2
   calling `ReflectionHackery.getURL`, removed in Cleanroom 0.5.3) is looked for in the jar by
@@ -213,9 +214,6 @@ declare (loaders.md, Cleanroom). Two gaps left:
   method or field of `com.cleanroommc` called from another mod while Fugue is enabled; found
   2026-11-08, this entry predated knowing it), but offers no fix: it could install the Fugue
   `pickFugue` finds for the installed Cleanroom.
-- The Java a build needs is a constant (`FUGUE_JAVA25_FROM`, 0.23.4 needs 25), measured from
-  the jars' class-file versions by hand. Read it from the jar instead (the class file's major
-  version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
 
 ### 2. Files
 

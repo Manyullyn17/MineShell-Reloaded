@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { modrinthProvider, spdxOrName, versionsFromHashes } from './modrinth';
-import { compareVersions } from '../java';
-import { FUGUE_JAVA25_FROM, pickVersionForJava } from '../cleanroom';
 import { isDatapackVersion } from './datapacks';
 import { fetchCalls, useRecordedHttp } from '../../../../tests/helpers/http';
 
@@ -78,21 +76,6 @@ describe('modrinth projects and versions', () => {
 		expect(isDatapackVersion(jar, 'fabric')).toBe(false);
 		expect(isDatapackVersion(jar, 'vanilla')).toBe(jar.loaders.includes('datapack'));
 		expect(isDatapackVersion(pack, 'quilt')).toBe(true);
-	});
-
-	it('picks a Fugue a Java 21 Cleanroom can load', async () => {
-		// The boot crash this guards against: Fugue 0.24 (Java 25) on Cleanroom 0.4.4.
-		const versions = await modrinthProvider.listVersions('fugue', { minecraftVersion: '1.12.2', loader: 'forge' });
-		const forJava21 = pickVersionForJava(versions, FUGUE_JAVA25_FROM, 21)!;
-		const forJava25 = pickVersionForJava(versions, FUGUE_JAVA25_FROM, 25)!;
-		expect(compareVersions(forJava21.versionNumber, FUGUE_JAVA25_FROM)).toBeLessThan(0);
-		expect(compareVersions(forJava25.versionNumber, FUGUE_JAVA25_FROM)).toBeGreaterThanOrEqual(0);
-		const newestJava21 = versions
-			.map((v) => v.versionNumber)
-			.filter((n) => compareVersions(n, FUGUE_JAVA25_FROM) < 0)
-			.sort(compareVersions)
-			.pop();
-		expect(forJava21.versionNumber).toBe(newestJava21);
 	});
 
 	it('identifies files by hash in one request', async () => {

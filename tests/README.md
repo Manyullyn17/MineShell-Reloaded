@@ -135,7 +135,7 @@ is saved in Settings of the dev MineShell (and the installed one), encrypted, no
 
 Code with side effects beyond that is tested through its pure parts (planning, parsing,
 matching), which is why some modules export small helpers such as `targetModNames` in
-`packchange.ts` and `pickVersionForJava` in `cleanroom.ts`.
+`packchange.ts` and `fugueMismatch` in `cleanroom.ts`.
 
 ## Flow tests
 
