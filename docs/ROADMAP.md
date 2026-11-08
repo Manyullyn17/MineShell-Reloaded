@@ -300,11 +300,17 @@ Split in two (user's call, 2026-11-08):
    `resource-pack-sha1` comes from the catalog (Modrinth lists a sha1 per file; CurseForge's
    file hashes include one). MineShell hosts nothing. A URL typed by hand stays possible, for
    packs on other sites or the owner's own file hosting; then MineShell downloads it once for
-   the SHA-1. To check: CurseForge projects that refuse third-party downloads (no download
-   URL in the API), whether the modpacks.ch mirror lists resource packs (as for CurseForge
-   data packs, unchecked), and the update check (a newer pack version means a new URL and
-   SHA-1, so clients download it again). If CurseForge has no good way in (no mirror listing,
-   no download URL), Modrinth alone first and CurseForge once a way is found (user, 2026-11-08).
+   the SHA-1. A missing download URL does not stop CurseForge (checked 2026-11-08): the API
+   gives none for projects that opted out of third-party downloads, but the file's CDN path
+   follows from its id and name (`curseforgeCdnUrl`), as pack installs and mods already use;
+   give players `mediafilez.forgecdn.net` directly, since `edge.forgecdn.net` only redirects.
+   Whether pointing clients at an opted-out project's file is fine is the user's call (mods
+   are already downloaded that way). A pack found but with no usable file is still listed,
+   with a note saying CurseForge gives no download for it, so a search for it does not just
+   come up empty (user, 2026-11-08). To check: whether the modpacks.ch mirror lists resource
+   packs (searching without a key; as for CurseForge data packs, unchecked), and the update
+   check (a newer pack version means a new URL and SHA-1, so clients download it again). If
+   CurseForge has no good way in, Modrinth alone first and CurseForge once a way is found.
 2. **Later**: MineShell hosting an uploaded pack, for custom packs no catalog has. The hard
    part of the whole feature: it needs an address players' clients can reach over HTTP
    (playit.gg does not carry HTTP; a port forward or Tailscale only reach some players), so
