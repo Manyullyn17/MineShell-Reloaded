@@ -325,7 +325,8 @@ Split in two (user's call, 2026-11-08):
    the SHA-1. To check: CurseForge projects that refuse third-party downloads (no download
    URL in the API), whether the modpacks.ch mirror lists resource packs (as for CurseForge
    data packs, unchecked), and the update check (a newer pack version means a new URL and
-   SHA-1, so clients download it again).
+   SHA-1, so clients download it again). If CurseForge has no good way in (no mirror listing,
+   no download URL), Modrinth alone first and CurseForge once a way is found (user, 2026-11-08).
 2. **Later**: MineShell hosting an uploaded pack, for custom packs no catalog has. The hard
    part of the whole feature: it needs an address players' clients can reach over HTTP
    (playit.gg does not carry HTTP; a port forward or Tailscale only reach some players), so
