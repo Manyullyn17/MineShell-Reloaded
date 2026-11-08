@@ -165,6 +165,14 @@
 			its data, so change only what you know.
 		</p>
 	{/if}
+	{#if view.path.split('/').pop() === 'level.dat'}
+		<!-- Minecraft sets these from server.properties at every start: an edit here came back on the next one. -->
+		<p class="small muted">
+			Difficulty, hardcore and the default game mode (<code>GameType</code>) are set from the server's
+			<a href="/instances/{encodeURIComponent(instanceId)}/settings">Settings</a> at every start: a change to them here does not
+			last.
+		</p>
+	{/if}
 	{#if message}
 		<p class="small" class:warn-text={!message.ok} class:muted={message.ok} role={message.ok ? 'status' : 'alert'}>{message.text}</p>
 	{/if}
