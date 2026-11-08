@@ -244,6 +244,11 @@ server's configs through it, 2026-11-08 on the four dev servers: 9,073 of 9,276 
   everything after the `=` (trailing spaces included) and trims list items. The last
   `Valid values:` block in a comment is the choices; a mod's own text can have an earlier one
   with descriptions after each value.
+- Darkhax's mods (Bookshelf's config library: AttributeFix, Botany Pots, Enchantment
+  Descriptions, Open Loader; 209 files in ATM10) write each setting as `{"//": description,
+  "//default": default, "value": value}`, a long description as a list of lines padded to one
+  width. Read as one setting (2026-11-08; before, the description and default showed as
+  settings of their own). Open Loader honoured `load_data_packs` set to false that way.
 - Lists with comments between their items (darkmodeeverywhere's shader list) would lose them if
   rewritten: such a list is edited as its text.
 - Not every `.cfg` is Forge's: PneumaticCraft's and others are refused with the line. 82 JSON

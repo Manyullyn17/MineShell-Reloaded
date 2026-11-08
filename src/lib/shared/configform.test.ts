@@ -234,6 +234,33 @@ describe('JSON and JSON5', () => {
 		expect(edit('json', JSON5_TEXT, 'ratio', '+2')).toContain('"ratio": 2,');
 	});
 
+	it("reads a setting written as {\"//\": description, \"//default\": d, \"value\": v} as one, and changes only its value", () => {
+		// Darkhax's mods (Open Loader, AttributeFix, Botany Pots; 209 files in ATM10): the form showed
+		// the description and the default as settings of their own beside an unlabelled "value".
+		const text = [
+			'{',
+			'  "load_data_packs": {',
+			'    "//": "Determines if OpenLoader should load data packs.",',
+			'    "//default": true,',
+			'    "value": true',
+			'  },',
+			'  "additional_locations": {',
+			'    "//": [',
+			'      "A list of additional locations to load packs from.   ",',
+			'      "Folders or files.                                    "',
+			'    ],',
+			'    "//default": [],',
+			'    "value": []',
+			'  },',
+			'  "plain": { "value": 1, "other": 2 }',
+			'}'
+		].join('\n');
+		expect(fields('json', text).map((f) => f.key)).toEqual(['load_data_packs', 'additional_locations', 'value', 'other']);
+		expect(field('json', text, 'load_data_packs')).toMatchObject({ kind: 'boolean', value: true, hint: 'Determines if OpenLoader should load data packs.', defaultText: 'true' });
+		expect(field('json', text, 'additional_locations')).toMatchObject({ kind: 'list', value: [], hint: 'A list of additional locations to load packs from. Folders or files.', defaultText: '[]' });
+		expect(edit('json', text, 'load_data_packs', false)).toBe(text.replace('"value": true', '"value": false'));
+	});
+
 	it('refuses a file that is a list or no JSON at all', () => {
 		expect(() => readConfig('json', '["a", "b"]')).toThrow(/list/);
 		expect(() => readConfig('json', '{"a": }')).toThrow(ConfigFormError);

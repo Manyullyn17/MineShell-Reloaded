@@ -550,6 +550,49 @@ class JsonScanner {
 		return this.text.slice(lineStart).match(/^[ \t]*/)![0];
 	}
 
+	/**
+	 * The object at i when it is one setting written as `{"//": description, "//default":
+	 * default, "value": value}` (Darkhax's mods: Bookshelf, AttributeFix, Botany Pots, Open
+	 * Loader; 209 files in ATM10): its value as one field with the description as its hint,
+	 * read past the object. Null otherwise, with i where it was.
+	 */
+	describedValue(): Omit<ConfigField, 'id' | 'key' | 'indent'> | null {
+		const from = this.i;
+		// Skipping reads the comments inside; they stay the next key's only if this is not one setting.
+		const comments = [...this.comments];
+		const end = this.skip();
+		this.i = from;
+		this.comments = comments;
+		let parsed: unknown;
+		try {
+			parsed = JSON5.parse(this.text.slice(from, end));
+		} catch {
+			return null;
+		}
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+		const o = parsed as Record<string, unknown>;
+		const keys = Object.keys(o);
+		if (!keys.includes('value') || !(keys.includes('//') || keys.includes('//default'))) return null;
+		if (keys.some((k) => k !== 'value' && k !== '//' && k !== '//default')) return null;
+		// The value's place in the text, read as any other: an object as the value is left as sections.
+		const scratch: ConfigSection = { id: '', title: '', hint: '', depth: 0, fields: [] };
+		const inner = new JsonScanner(this.text, new Fields());
+		inner.i = from;
+		inner.object(scratch, []);
+		const value = scratch.fields.find((f) => f.key === 'value');
+		if (!value) return null;
+		const fallback = scratch.fields.find((f) => f.key === '//default');
+		const note = o['//'];
+		this.i = end;
+		const { id: _id, key: _key, indent: _indent, ...field } = value;
+		return {
+			...field,
+			// Long descriptions come as a list of lines padded to one width.
+			hint: Array.isArray(note) ? note.map((l) => String(l).trim()).join(' ') : typeof note === 'string' ? note : '',
+			...(fallback ? { defaultText: fallback.raw } : {})
+		};
+	}
+
 	object(section: ConfigSection, path: string[]): void {
 		const t = this.text;
 		this.i++;
@@ -574,6 +617,11 @@ class JsonScanner {
 			this.comments = [];
 			const start = this.i;
 			const c = t[start];
+			const described = c === '{' ? this.describedValue() : null;
+			if (described) {
+				this.out.add(section, { key, ...described, hint: [hint, described.hint].filter(Boolean).join('\n'), indent: this.lineIndent(keyAt) });
+				continue;
+			}
 			if (c === '{') {
 				const inner = [...path, key];
 				const child = this.out.section(JSON.stringify(inner), inner.join(' › '), hint, inner.length);
