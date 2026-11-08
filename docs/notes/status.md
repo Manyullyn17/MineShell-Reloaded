@@ -67,18 +67,28 @@ user before the beta):
    file: a coloured name kept through an edit, one typed with codes showing in game as previewed,
    on 1.21.11 (JSON), a 26.x server (NBT text) and a 1.12 one. Checked on throwaway data
    2026-11-08 (a saved name read back from the file as intended); not yet against the game.
+   Quick pass 2026-11-08: a real 1.21.11 server's status answer (`tests/tools/status-ping.mjs`)
+   sends the description exactly as saved, codes included; it carried a `\r` from the
+   textarea's line break, fixed. How a client draws it is still to see.
 4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
    change a `-common.toml` setting in the form and see the server pick it up (its log says the
    config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
    throwaway data 2026-11-08 (copies of ATM10's and MeatballCraft's configs: two settings saved,
    exactly those two lines changed, an earlier version kept, the save in the audit log; 1280 and
-   390 px); not yet against a running server.
+   390 px); not yet against a running server. Quick pass 2026-11-08: Open Loader's
+   `options.json` on a real Fabric 1.21.1 server, `load_data_packs` off through the form and the
+   mod loaded no packs at the next start; found and fixed: Bookshelf-style JSON settings
+   (`{"//", "//default", "value"}`, 209 files in ATM10) showed as three settings each. A NeoForge
+   TOML reloading while running and a 1.12 `.cfg` still to try.
 5. **NBT editor** (Files, a `.dat` or `.nbt`): on a stopped server, change something visible in
    `level.dat` (the time, the weather, the world's name) and start it to see it; on a running one,
    the world's files read-only and another world's or a structure's changeable. Checked on
    throwaway data 2026-11-08 (copies of ATM10's level.dat and data files, a Twilight Forest
    structure cache: an edit saved with a version kept, a search match 1,150 entries into a list
    revealed, whole SNBT of a partly loaded list; 390 px); not yet with a server started on it.
+   Quick pass 2026-11-08: a real 1.21.11 server started on an edited `level.dat` (DayTime 18000,
+   LevelName): the game took both and kept them through its own save. Difficulty went back to
+   server.properties' at the start, as Minecraft does: the editor now says so on level.dat.
 6. **Online players** (the drawer's In game): with a real player on a 1.21.x server and a 1.16-1.20
    one, the game mode marked, the dimension and position shown, "Their spawn point" after
    sleeping in a bed (lands on the bed, or beside it under a low ceiling) and in the Nether with
@@ -92,8 +102,11 @@ user before the beta):
 8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
    release into its folder from Add mods, start the server and see it loaded (Open Loader's
    "Located 1 packs"), then update it from the Data packs tab. Checked 2026-11-08 on a throwaway
-   dev server with a stand-in Open Loader jar (the file, the update, the folder choice); not yet
-   loaded by the real mod.
+   dev server with a stand-in Open Loader jar (the file, the update, the folder choice). **Done
+   in the quick pass 2026-11-08** with the real Open Loader 21.1.5 on Fabric 1.21.1 (installed
+   with its three dependencies through Add mods): Dungeons and Taverns into
+   `config/openloader/packs`, "Located 1 packs" and the pack in `/datapack list`, then v4.4.3 in
+   its place, the update check offering v4.4.4 for that folder, the update, and v4.4.4 loaded.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
