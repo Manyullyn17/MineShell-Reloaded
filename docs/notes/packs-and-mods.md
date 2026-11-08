@@ -117,6 +117,21 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   strings: Chisel, Iron Chest). Template leftovers: modid `examplemod` with the name "Example
   Mod" (Career Bees, REIM); the rest without a name are 1.12 jars declaring nothing (AppleCore).
 
+## Server resource pack
+- CurseForge resource packs are class 12; their categories are 393-405, 4465 (Mod Support),
+  5193, 5244, 8939. The mirror's term search does not find them (Fresh Animations 453763 and
+  Motschen's Better Leaves 380969 missing for their own names, "xray ultimate" finds nothing,
+  2026-11-08), though `/public/mod/{id}` knows them, tagged with those category ids, and lists
+  files with URL and sha1: for Fresh Animations, which opted out (the API's `downloadUrl` is
+  null), it still gives `edge.forgecdn.net`. That counts as a URL the catalog gives (user,
+  2026-11-08); `edge` only redirects (302) to `mediafilez.forgecdn.net`, which players are given.
+- Modrinth: `project_type:resourcepack`; their versions' loader is `minecraft`. The same file
+  can be on both catalogs (Fresh Animations 1.11.2: one SHA-1 on Modrinth and CurseForge).
+- Keys per version from the server jars' strings (`~/.cache/mineshell-mc-probe/*/server.jar`,
+  2026-11-08): 1.6.4 `texture-pack`; 1.7.10 `resource-pack`; 1.8.9 adds `resource-pack-hash`;
+  1.9.4 adds `resource-pack-sha1`; 1.17.1 adds `require-resource-pack` and
+  `resource-pack-prompt`; 1.20.3 adds `resource-pack-id`. Not yet tried with a player joining.
+
 ## Pack install form
 - Picking a provider pack version fetches `/api/packs/preview` (`packs/preview.ts`): the pack's
   mods, client-only ones flagged by Modrinth hash (sha512 for .mrpack, sha1 for the mirror's

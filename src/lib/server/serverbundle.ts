@@ -159,6 +159,17 @@ const text = (max: number, nullable = false): Rule => (v) =>
 	v === null && nullable ? null : typeof v === 'string' && v.length <= max && !/[\r\n\0]/.test(v) ? v : undefined;
 const notes: Rule = (v) => (v === null ? null : typeof v === 'string' && v.length <= 20_000 ? v : undefined);
 const clock: Rule = (v) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : undefined);
+/** The resource pack picked from a catalog (resourcepacks.ts), JSON with its source, ids and URL. */
+const catalogPack: Rule = (v) => {
+	if (v === null) return null;
+	if (typeof v !== 'string' || v.length > 4000) return undefined;
+	try {
+		const p = JSON.parse(v);
+		return ['modrinth', 'curseforge'].includes(p?.source) && ['projectId', 'fileId', 'name', 'version', 'url'].every((k) => typeof p[k] === 'string') ? v : undefined;
+	} catch {
+		return undefined;
+	}
+};
 
 /**
  * The server's own settings that travel, each checked on import as a settings
@@ -187,6 +198,7 @@ const SETTINGS: Record<string, Rule> = {
 	updateCheckHours: int(1, 24 * 60),
 	updateChannel: oneOf('release', 'beta', 'alpha'),
 	modUpdateCheck: bool,
+	resourcePack: catalogPack,
 	notes
 };
 

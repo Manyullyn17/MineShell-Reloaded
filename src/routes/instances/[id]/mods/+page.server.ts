@@ -25,6 +25,8 @@ import { findLoader, LOADER_FALLBACKS, unknownLoaderMessage, type ModloaderId } 
 import { datapacksDir, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
 import { loaderDatapackFolders } from '#lib/server/datapackloaders.js';
 import { configFilesByMod } from '#lib/server/modconfigs.js';
+import { unitState } from '#lib/server/systemd.js';
+import { PACK_SOURCES, removeResourcePack, resourcePackState, setResourcePackOptions, useCatalogPack, useUrlPack, type PackSource } from '#lib/server/resourcepacks.js';
 import { can } from '#lib/shared/access.js';
 import { saveUpload } from '#lib/server/files.js';
 import { db } from '#lib/server/db/index.js';
@@ -66,6 +68,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */
 		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
+		/** The server resource pack players are offered (the Resource pack sub-tab). */
+		resourcePack: await resourcePackState(instance),
 		/** Folders a data pack loader mod reads for every world (Open Loader, Paxi, Global Packs), with their packs. */
 		loaderDatapacks: await loaderDatapackFolders(instance.path),
 		/** The update check found mod updates: the Updates tab checks when opened, to list them. */
@@ -116,6 +120,12 @@ function packGuard(instance: ServerInstance, form: FormData) {
 		});
 	}
 	return null;
+}
+
+/** The server reads server.properties when it starts. */
+async function packSaved(instance: ServerInstance, message: string): Promise<string> {
+	const state = (await unitState(instance.id, { fresh: true })).active;
+	return state === 'inactive' || state === 'failed' ? message : `${message} Restart the server for players to get it.`;
 }
 
 function refused(err: unknown) {
@@ -378,6 +388,47 @@ export const actions: Actions = {
 			ok: true,
 			message: `Added ${zips.length} data pack${zips.length === 1 ? '' : 's'} to ${into}/${skipped ? ` (${skipped} not a .zip, skipped)` : ''}. Restart the server or run /reload to load ${zips.length === 1 ? 'it' : 'them'}.`
 		};
+	},
+
+	resourcePack: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		const source = String(form.get('source') ?? '') as PackSource;
+		if (!PACK_SOURCES.includes(source)) return fail(400, { ok: false, message: 'Unknown catalog.' });
+		try {
+			const pack = await useCatalogPack(instance, source, String(form.get('projectId') ?? ''), String(form.get('fileId') ?? ''));
+			return { ok: true, message: await packSaved(instance, `Players are offered ${pack.name} ${pack.version}.`) };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	resourcePackUrl: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await useUrlPack(instance, String(form.get('url') ?? ''));
+			return { ok: true, message: await packSaved(instance, 'Players are offered the pack at that address.') };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	resourcePackOptions: async ({ request, params }) => {
+		const instance = requireInstance(params.id);
+		const form = await request.formData();
+		try {
+			await setResourcePackOptions(instance, form.get('required') === 'on', String(form.get('prompt') ?? ''));
+			return { ok: true, message: await packSaved(instance, 'Saved.') };
+		} catch (err) {
+			return refused(err);
+		}
+	},
+
+	resourcePackRemove: async ({ params }) => {
+		const instance = requireInstance(params.id);
+		await removeResourcePack(instance);
+		return { ok: true, message: await packSaved(instance, 'Players are offered no resource pack.') };
 	},
 
 	removeDatapack: async ({ request, params }) => {

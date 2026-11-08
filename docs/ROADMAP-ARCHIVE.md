@@ -1360,6 +1360,23 @@ Players are checked against the online list (the target too) and their name's fo
 going into a command. Tried on the screenshot world's fake server (its RCON answers, not the
 commands); a real server not yet.
 
+### Server resource pack browser (1.3, 2026-11-08)
+
+Asked for 2026-10-26 (long meant to); split 2026-11-08 into a catalog browser now and hosting
+later. Built as Mods > Resource pack: Modrinth's resource packs and CurseForge's (through its
+API with a key: the mirror's search does not find them) for the server's Minecraft version,
+most downloaded without a term; a picked file's URL and SHA-1 written to server.properties
+under the keys the version reads (from the server jars: 1.7.10 to 26.3), so players download it
+from the catalog and MineShell hosts nothing; only URLs a catalog gives (user, 2026-11-08: none
+made up from the CDN path; the mirror's URL for an opted-out file counts), a file without one
+listed and not pickable; a newer file of the pack offered; a typed address downloaded once for
+its SHA-1; from 1.17 "must take it" and the prompt in colour. Tried on a throwaway dev server
+(Modrinth's list, a pick, an older version with the newer offered, the options, CurseForge
+without a key; 390 px); catalog answers recorded with the dev key. Not yet with a player joining.
+
+What it leaves: hosting an uploaded pack (ROADMAP, "Server resource pack"); the update check's
+notices and Settings' `initial-enabled-packs` stay as they were.
+
 ### More for online players (1.3, 2026-11-08)
 
 From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07). Built in the drawer's In game,

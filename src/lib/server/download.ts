@@ -133,6 +133,37 @@ export async function downloadFile(
 	if (opts.hash) await recordDownload(destination, opts.hash);
 }
 
+/**
+ * A download's SHA-1 and size without keeping it (a resource pack typed by hand), through the same
+ * checks as downloadFile. Throws past `maxBytes`, as soon as that is known.
+ */
+export async function hashUrl(url: string, maxBytes: number): Promise<{ sha1: string; size: number }> {
+	const res = await fetchPublic(url);
+	if (!res.ok || !res.body) {
+		await res.body?.cancel();
+		throw new HttpError(url, res.status, res.statusText);
+	}
+	const tooBig = () => new Error(`${url} is larger than ${Math.round(maxBytes / 1048576)} MB.`);
+	if (Number(res.headers.get('content-length')) > maxBytes) {
+		await res.body.cancel();
+		throw tooBig();
+	}
+	const hasher = crypto.createHash('sha1');
+	let size = 0;
+	const reader = res.body.getReader();
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		size += value.length;
+		if (size > maxBytes) {
+			await reader.cancel();
+			throw tooBig();
+		}
+		hasher.update(value);
+	}
+	return { sha1: hasher.digest('hex'), size };
+}
+
 export async function hashFile(
 	filePath: string,
 	algo: 'sha1' | 'sha512' = 'sha512'

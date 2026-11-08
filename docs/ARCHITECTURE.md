@@ -820,6 +820,21 @@ from the instance Cleanroom publishes with each release (0.5.x on). Modrinth and
 packs cannot name Cleanroom, so they ask for Forge 1.12.2 (the version migrated from, else
 14.23.5.2860) and the page says so.
 
+**The server resource pack** (`resourcepacks.ts`, Mods > Resource pack): players' games are
+pointed at a catalog's own download, so MineShell hosts nothing: `resource-pack` is the file's
+URL and the SHA-1 the catalog gives goes under the key the version reads (`resource-pack-hash`
+on 1.8, `resource-pack-sha1` from 1.9; none on 1.7.10), with a stale `resource-pack-id` cleared
+so players' games take it as a new pack. Modrinth's resource packs, and CurseForge's through its
+API with a key (the mirror's search does not find them); CurseForge files come from the mirror
+as mods' do, which gives a URL for opted-out projects too, else from the API, which gives none
+for those. Only a URL the catalog gives is used (user, 2026-11-08): a file without one is listed
+and cannot be picked. The pick is kept in `server_instances.resource_pack` (it travels with
+exports) and counts only while `resource-pack` is still its URL; a newer file of the pack is
+offered on the tab. A URL typed by hand is streamed once for its SHA-1 through the download
+checks (`hashUrl`: local addresses refused, 250 MB at most) and not kept. From 1.17 the tab
+also sets `require-resource-pack` and `resource-pack-prompt` (written as JSON text from colour
+codes). The server reads all of it at start.
+
 **Mod list export** (`modlist.ts`, the Export page's "Mod list") lists the mods in the
 folder as text, like Prism Launcher's: the server sends the entries and the page formats
 them (`lib/shared/modlist.ts`: Markdown, plain text, HTML, CSV, JSON), so changing the

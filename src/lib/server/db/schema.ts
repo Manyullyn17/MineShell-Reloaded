@@ -92,6 +92,8 @@ export const serverInstances = sqliteTable('server_instances', {
 	 */
 	updateSeenVersion: text('update_seen_version'),
 	updateSeenAt: integer('update_seen_at'),
+	/** The server resource pack picked from a catalog, as JSON (resourcepacks.ts). */
+	resourcePack: text('resource_pack'),
 	/** The same check also looks for mod updates (servers without a pack only). */
 	modUpdateCheck: integer('mod_update_check', { mode: 'boolean' }).notNull().default(true),
 

@@ -40,7 +40,7 @@ size, not a fixed list; entries move and get added along the way):
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
   (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players (built 2026-11-08) anywhere in
-  between. Then the server resource pack browser and Add mods choosing a data pack's folder
+  between. Then the server resource pack browser (built 2026-11-08) and Add mods choosing a data pack's folder
   (user, 2026-11-08: both still go in; a larger release is fine). Maintenance mode to 1.4.
   Scheduled CI during the beta (not user facing, so outside any release).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
@@ -237,36 +237,11 @@ are guessed (9 wide or 6), so a description in them may break a word early or la
 
 #### Server resource pack
 
-Nothing yet (user, 2026-10-26: long meant to, never mentioned): the pack is only reachable as
-extra `server.properties` keys (`resource-pack`, `resource-pack-sha1`,
-`require-resource-pack`, `resource-pack-prompt`, `resource-pack-id` on newer versions).
-Typed fields in the server's settings, with MineShell downloading the pack once to work out
-the SHA-1 (and again when the URL changes), and the prompt as text. To check: which keys
-each Minecraft version reads (the prompt and `require-resource-pack` came in 1.17).
-
-Split in two (user's call, 2026-11-08):
-1. **Now (1.3 if there is room)**: a resource pack browser like the mod browser (Modrinth's
-   and CurseForge's resource packs, for the server's Minecraft version), and the server
-   points players at the catalog's own download: `resource-pack` is the file's URL and
-   `resource-pack-sha1` comes from the catalog (Modrinth lists a sha1 per file; CurseForge's
-   file hashes include one). MineShell hosts nothing. A URL typed by hand stays possible, for
-   packs on other sites or the owner's own file hosting; then MineShell downloads it once for
-   the SHA-1. A missing download URL does not stop CurseForge (checked 2026-11-08): the API
-   gives none for projects that opted out of third-party downloads, but the file's CDN path
-   follows from its id and name (`curseforgeCdnUrl`), as pack installs and mods already use;
-   give players `mediafilez.forgecdn.net` directly, since `edge.forgecdn.net` only redirects.
-   Not for this (user, 2026-11-08): clients are pointed only at a download URL the catalog
-   gives. CurseForge's API when a key is set, else the mirror for what it has of CurseForge;
-   no URL is made up from the CDN path for an opted-out file. A pack found but with no usable file is still listed,
-   with a note saying CurseForge gives no download for it, so a search for it does not just
-   come up empty (user, 2026-11-08). To check: whether the modpacks.ch mirror lists resource
-   packs (searching without a key; as for CurseForge data packs, unchecked), and the update
-   check (a newer pack version means a new URL and SHA-1, so clients download it again). If
-   CurseForge has no good way in, Modrinth alone first and CurseForge once a way is found.
-2. **Later**: MineShell hosting an uploaded pack, for custom packs no catalog has. The hard
-   part of the whole feature: it needs an address players' clients can reach over HTTP
-   (playit.gg does not carry HTTP; a port forward or Tailscale only reach some players), so
-   it is left until it is worth that.
+The catalog browser is built (ROADMAP-ARCHIVE, "Server resource pack browser"). Left:
+- **Later**: MineShell hosting an uploaded pack, for custom packs no catalog has. The hard
+  part of the whole feature: it needs an address players' clients can reach over HTTP
+  (playit.gg does not carry HTTP; a port forward or Tailscale only reach some players), so
+  it is left until it is worth that.
 
 Settings' `initial-enabled-packs` and `initial-disabled-packs` are one long string of data pack
 ids: functional, not nice (user, 2026-11-05). Revisit them with this work, as a list to pick from.

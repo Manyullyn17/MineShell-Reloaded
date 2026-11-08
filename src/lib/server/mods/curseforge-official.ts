@@ -25,7 +25,7 @@ import { outboundFetch } from '../outbound';
 
 const API = 'https://api.curseforge.com/v1';
 const MINECRAFT_GAME_ID = 432;
-const CLASS_ID = { modpack: 4471, mod: 6 } as const;
+const CLASS_ID = { modpack: 4471, mod: 6, resourcePack: 12 } as const;
 
 /** developer.curseforge.com's ModLoaderType enum. */
 const LOADER_TO_ENUM: Record<string, number> = {
@@ -290,4 +290,42 @@ export async function filterGroups(kind: 'mod' | 'modpack' | undefined): Promise
 		options: categories.map((c) => ({ value: String(c.id), label: c.name }))
 	};
 	return categoryGroup.options.length ? [loaderGroup, categoryGroup] : [loaderGroup];
+}
+
+/**
+ * Resource packs (their own class), popular first, for one Minecraft version. The mirror's term
+ * search does not find them (Fresh Animations, Better Leaves, 2026-11-08), so this needs the key.
+ */
+export async function searchResourcePacks(term: string, minecraftVersion: string, page = 1, limit = 20): Promise<SearchHit[]> {
+	const data = await cfFetch<{ data: CfMod[] }>('/mods/search', {
+		gameId: MINECRAFT_GAME_ID,
+		classId: CLASS_ID.resourcePack,
+		searchFilter: term || undefined,
+		gameVersion: minecraftVersion || undefined,
+		sortField: 2, // Popularity
+		sortOrder: 'desc',
+		pageSize: limit,
+		index: (page - 1) * limit
+	});
+	return (data.data ?? []).map(modToHit);
+}
+
+/** A file as players' games would download it: no URL for a project that opted out of other sites. */
+export type CfPackFile = { id: string; name: string; fileName: string; channel: string; date: string | null; gameVersions: string[]; url: string | null; sha1: string | null; size: number | null };
+
+/** A project's files for one Minecraft version, newest first (the first 50 are plenty for a pack). */
+export async function resourcePackFiles(id: string, minecraftVersion: string): Promise<CfPackFile[]> {
+	const data = await cfFetch<{ data: CfFile[] }>(`/mods/${id}/files`, { gameVersion: minecraftVersion || undefined, pageSize: 50 });
+	return (data.data ?? []).map((file) => ({
+		id: String(file.id),
+		name: file.displayName || file.fileName,
+		fileName: file.fileName,
+		channel: RELEASE_TYPE[file.releaseType ?? 1] ?? 'release',
+		date: file.fileDate ?? null,
+		gameVersions: splitGameVersions(file.gameVersions).gameVersions,
+		url: file.downloadUrl || null,
+		// algo 1 is SHA-1, 2 MD5.
+		sha1: file.hashes?.find((h) => h.algo === 1)?.value ?? null,
+		size: file.fileLength ?? null
+	}));
 }

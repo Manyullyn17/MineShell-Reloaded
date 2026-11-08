@@ -19,6 +19,7 @@
 	import DependencyList, { type DependencyPlan } from './DependencyList.svelte';
 	import ModBrowser, { SOURCES } from './ModBrowser.svelte';
 	import ModUpdates from './ModUpdates.svelte';
+	import ResourcePackPanel from './ResourcePackPanel.svelte';
 	import VersionPicker from '#lib/components/VersionPicker.svelte';
 
 	let { data, form } = $props();
@@ -36,7 +37,9 @@
 	/** Which sub-tab is open. */
 	// The overview's update notices link to ?view=updates and ?view=datapacks, which check on arrival.
 	const arrivedFor = page.url.searchParams.get('view');
-	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks'>(arrivedFor === 'updates' || arrivedFor === 'datapacks' ? arrivedFor : 'installed');
+	let view = $state<'installed' | 'updates' | 'browse' | 'datapacks' | 'resourcepack'>(
+		arrivedFor === 'updates' || arrivedFor === 'datapacks' || arrivedFor === 'resourcepack' ? arrivedFor : 'installed'
+	);
 	// Once: the data packs view mounts again each time its tab opens.
 	let checkDatapacksOnOpen = $state(arrivedFor === 'datapacks');
 	let modFilter = $state<'all' | 'enabled' | 'disabled' | 'attention' | 'client'>('all');
@@ -216,6 +219,10 @@
 	let term = $state('');
 	let searching = $state(false);
 	let updatesFound = $state(0);
+	let packPanel = $state<ResourcePackPanel | null>(null);
+	let packSource = $state<'modrinth' | 'curseforge'>('modrinth');
+	let packTerm = $state('');
+	let packSearching = $state(false);
 </script>
 
 <div class="subhead">
@@ -236,6 +243,9 @@
 		<button type="button" aria-current={view === 'datapacks' ? 'page' : undefined} onclick={() => (view = 'datapacks')}>
 			Data packs<span class="count">{data.datapacks.packs.length + loaderPackCount}</span>
 		</button>
+		<button type="button" aria-current={view === 'resourcepack' ? 'page' : undefined} onclick={() => (view = 'resourcepack')}>
+			Resource pack{#if data.resourcePack.url}<span class="count">1</span>{/if}
+		</button>
 	</nav>
 	<div class="tools">
 		{#if view === 'browse'}
@@ -251,13 +261,26 @@
 				/>
 			</span>
 			<button type="button" onclick={() => browser?.search(true)} disabled={searching}>{searching ? 'Searching' : 'Search'}</button>
+		{:else if view === 'resourcepack' && may('settings.edit') && data.resourcePack.supported}
+			<span class="search">
+				<span aria-hidden="true">⌕</span>
+				<input
+					type="search"
+					autocomplete="off"
+					bind:value={packTerm}
+					placeholder="Search {packSource === 'modrinth' ? 'Modrinth' : 'CurseForge'}"
+					aria-label="Search resource packs"
+					onkeydown={(e) => e.key === 'Enter' && packPanel?.search()}
+				/>
+			</span>
+			<button type="button" onclick={() => packPanel?.search(true)} disabled={packSearching}>{packSearching ? 'Searching' : 'Search'}</button>
 		{:else if view === 'installed'}
 			<span class="search">
 				<span aria-hidden="true">⌕</span>
 				<input type="search" autocomplete="off" placeholder="Filter installed mods" bind:value={filter} aria-label="Filter installed mods" />
 			</span>
 		{/if}
-		{#if may('mods')}
+		{#if may('mods') && view !== 'resourcepack'}
 		<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance bind:this={uploadForm}>
 			<label class="button upload">
 				Upload jars
@@ -283,10 +306,12 @@
 			</button>
 		</form>
 		{/if}
-		{#if may('files')}
-			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
+		{#if view !== 'resourcepack'}
+			{#if may('files')}
+				<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export" title="A pack players import into their launcher">Export pack</a>
+			{/if}
+			<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export/mods" title="The mods as Markdown, text, HTML, CSV or JSON">Mod list</a>
 		{/if}
-		<a class="button button-quiet" href="/instances/{encodeURIComponent(data.instance.id)}/export/mods" title="The mods as Markdown, text, HTML, CSV or JSON">Mod list</a>
 	</div>
 </div>
 
@@ -832,6 +857,17 @@
 	bind:source
 	bind:term
 	bind:searching
+/>
+
+<ResourcePackPanel
+	bind:this={packPanel}
+	active={view === 'resourcepack'}
+	pack={data.resourcePack}
+	minecraftVersion={data.minecraftVersion}
+	canEdit={may('settings.edit')}
+	bind:source={packSource}
+	bind:term={packTerm}
+	bind:searching={packSearching}
 />
 
 <style>
