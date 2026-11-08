@@ -319,6 +319,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/api/instances/[id]/file-history': { methods: { GET: on('files') } },
 	// The NBT editor: reading and changing files, as Files does.
 	'/api/instances/[id]/nbt': { methods: { GET: on('files'), POST: on('files') } },
+	// Where an online player is and in which game mode: read with the commands In game sends.
+	'/api/instances/[id]/player-state': { methods: { GET: on('console.command') } },
 	// A client pack carries the server's configs.
 	'/instances/[id]/export': { load: on('files'), actions: { export: on('files') } },
 	'/api/instances/[id]/export': { methods: { GET: on('files') } },

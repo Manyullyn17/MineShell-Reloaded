@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { requireAccess } from '#lib/server/access.js';
 import { can } from '#lib/shared/access.js';
-import { crossesDimensions, GAME_MODES, gameModesFor, reachesSpawn, runPlayerCommand, type GameMode, type TeleportTarget } from '#lib/server/playercommands.js';
+import { crossesDimensions, GAME_MODES, gameModesFor, reachesSpawn, readsPlayers, runPlayerCommand, type GameMode, teleportTargetFrom } from '#lib/server/playercommands.js';
 import type { Actions, PageServerLoad } from './$types';
 import { InstanceError, requireInstance } from '#lib/server/instances.js';
 import {
@@ -38,7 +38,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		profiles: uuids.length ? lookUpProfiles(uuids).then((found) => Object.fromEntries(found)) : {},
 		playtimes: playtimes(instance.id),
 		/** What game mode and teleport can do on this Minecraft version. */
-		inGame: { modes: gameModesFor(instance.minecraftVersion), dimensions: crossesDimensions(instance.minecraftVersion), spawn: reachesSpawn(instance.minecraftVersion) },
+		inGame: {
+			modes: gameModesFor(instance.minecraftVersion),
+			dimensions: crossesDimensions(instance.minecraftVersion),
+			spawn: reachesSpawn(instance.minecraftVersion),
+			// Their game mode, dimension, position and own spawn point, asked when the drawer opens.
+			state: readsPlayers(instance.minecraftVersion)
+		},
 		// Streamed: the listed players' stats files, for the leaderboard.
 		leaderboard: leaderboard(instance, new Set(playerFiles.map((f) => f.uuid))).catch(() => null)
 	};
@@ -129,16 +135,7 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const name = String(form.get('name') ?? '').trim();
-		const to = String(form.get('to') ?? '');
-		const number = (key: string) => Number(String(form.get(key) ?? '').trim() || NaN);
-		const target: TeleportTarget | null =
-			to === 'spawn'
-				? { kind: 'spawn' }
-				: to === 'player'
-					? { kind: 'player', name: String(form.get('player') ?? '').trim() }
-					: to === 'coords'
-						? { kind: 'coords', x: number('x'), y: number('y'), z: number('z'), dimension: String(form.get('dimension') ?? '').trim() || null }
-						: null;
+		const target = teleportTargetFrom(form);
 		if (!target) return fail(400, { ok: false, message: 'Pick where to.' });
 		try {
 			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'teleport', target }) };

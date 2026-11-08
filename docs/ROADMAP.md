@@ -39,7 +39,7 @@ size, not a fixed list; entries move and get added along the way):
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
-  (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players anywhere in
+  (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players (built 2026-11-08) anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
   Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
   (not MineShell's own code).
@@ -283,13 +283,8 @@ stop, or checking the result before letting players back in).
 
 #### More for online players
 
-From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07), not scheduled:
-- **Teleport to their own spawn point**, not only the world spawn. It is in the player's data
-  (`respawn` from 1.21.5, `SpawnX/Y/Z` and `SpawnDimension` before), readable over RCON with
-  `data get entity`; with none set, the world spawn is where they would go anyway.
-- **The game mode they are in** shown on the picker (`playerGameType`, same read), and the
-  coordinates' dimension preselected to the one they are in, rather than "Their current
-  dimension".
+From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07); the spawn point, game mode and
+dimension built 2026-11-08 (ROADMAP-ARCHIVE). Left:
 - **The player page while they are online**: the editor refuses then (the game writes the file
   over it). What has a command could work live instead: game mode first, then XP, health,
   giving or clearing items. Arbitrary edits cannot: vanilla refuses `data modify` on a player.

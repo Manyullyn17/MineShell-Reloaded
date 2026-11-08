@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { can, type InstancePermission } from '#lib/shared/access.js';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import Flash from '#lib/components/Flash.svelte';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
@@ -86,6 +86,37 @@
 		);
 	});
 	const selectedPerson = $derived(people.find((p) => p.key === selectedPersonKey) ?? null);
+
+	// ---- In game: what the picked online player is doing, asked over RCON (1.13+)
+	type InGameState = {
+		gameMode: string | null;
+		dimension: string | null;
+		pos: { x: number; y: number; z: number } | null;
+		spawn: { x: number; y: number; z: number; dimension: string } | null;
+	};
+	let inGame = $state<InGameState | null>(null);
+	let coordsDimension = $state('');
+	const DIMENSIONS: Record<string, string> = { 'minecraft:overworld': 'Overworld', 'minecraft:the_nether': 'The Nether', 'minecraft:the_end': 'The End' };
+	const dimensionName = (id: string) => DIMENSIONS[id] ?? id;
+	// Keyed on the name: the page's data reloads (and with it selectedPerson) without the player changing.
+	const stateFor = $derived(selectedPerson?.online && data.inGame.state && may('console.command') ? selectedPerson.name : null);
+	async function readState(name: string) {
+		const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/player-state?name=${encodeURIComponent(name)}`).catch(() => null);
+		if (stateFor !== name) return;
+		inGame = res?.ok ? await res.json() : null;
+		coordsDimension = inGame?.dimension ?? '';
+	}
+	$effect(() => {
+		const name = stateFor;
+		inGame = null;
+		coordsDimension = '';
+		if (name) void readState(name);
+	});
+	// A game mode change or teleport answered: read again what changed.
+	$effect(() => {
+		if (!form) return;
+		untrack(() => stateFor && void readState(stateFor));
+	});
 	/** Player data files whose owner's name is not known. */
 	const unnamedFiles = $derived(playerFiles.filter((f) => !f.name));
 
@@ -297,11 +328,18 @@
 				{@const others = (data.online?.names ?? []).filter((n) => n.toLowerCase() !== selectedPerson.name.toLowerCase())}
 				<section class="drawer-section">
 					<h3>In game</h3>
+					{#if inGame?.dimension || inGame?.pos}
+						<p class="small where">
+							{inGame.dimension ? dimensionName(inGame.dimension) : ''}{inGame.pos ? ` at ${Math.floor(inGame.pos.x)}, ${Math.floor(inGame.pos.y)}, ${Math.floor(inGame.pos.z)}` : ''}
+						</p>
+					{/if}
 					<form method="POST" action="?/gamemode" use:enhance={keepValues} class="game-modes">
 						<input type="hidden" name="name" value={selectedPerson.name} />
 						<span class="small muted game-modes-label">Game mode</span>
 						{#each data.inGame.modes as mode (mode)}
-							<button class="button-quiet" name="mode" value={mode}>{mode[0].toUpperCase() + mode.slice(1)}</button>
+							<button class="button-quiet" class:current={inGame?.gameMode === mode} aria-pressed={inGame ? inGame.gameMode === mode : undefined} name="mode" value={mode}
+								>{mode[0].toUpperCase() + mode.slice(1)}</button
+							>
 						{/each}
 					</form>
 					<form method="POST" action="?/teleport" use:enhance={keepValues} class="drawer-form">
@@ -309,6 +347,11 @@
 						<label for="teleport-to">Teleport to</label>
 						<select id="teleport-to" name="to" bind:value={teleportTo}>
 							{#if data.inGame.spawn}<option value="spawn">The world spawn</option>{/if}
+							{#if inGame?.spawn}
+								<option value="ownSpawn"
+									>Their spawn point ({inGame.spawn.x}, {inGame.spawn.y}, {inGame.spawn.z}{inGame.spawn.dimension === 'minecraft:overworld' ? '' : `, ${dimensionName(inGame.spawn.dimension)}`})</option
+								>
+							{/if}
 							{#if others.length}<option value="player">Another player</option>{/if}
 							<option value="coords">Coordinates</option>
 						</select>
@@ -318,16 +361,17 @@
 							</select>
 						{:else if teleportTo === 'coords'}
 							<div class="coords">
-								<input name="x" autocomplete="off" inputmode="numeric" placeholder="x" aria-label="x" required />
-								<input name="y" autocomplete="off" inputmode="numeric" placeholder="y" aria-label="y" required />
-								<input name="z" autocomplete="off" inputmode="numeric" placeholder="z" aria-label="z" required />
+								{#each ['x', 'y', 'z'] as const as axis (axis)}
+									<!-- Where they are now, as the hint. -->
+									<input name={axis} autocomplete="off" inputmode="numeric" placeholder={inGame?.pos ? `${axis} ${Math.floor(inGame.pos[axis])}` : axis} aria-label={axis} required />
+								{/each}
 							</div>
 							{#if data.inGame.dimensions}
-								<select name="dimension" aria-label="Dimension">
-									<option value="">Their current dimension</option>
-									<option value="minecraft:overworld">Overworld</option>
-									<option value="minecraft:the_nether">The Nether</option>
-									<option value="minecraft:the_end">The End</option>
+								<select name="dimension" aria-label="Dimension" bind:value={coordsDimension}>
+									{#if !inGame?.dimension}<option value="">Their current dimension</option>{/if}
+									{#each Object.entries(DIMENSIONS) as [id, label] (id)}<option value={id}>{label}{id === inGame?.dimension ? ' (where they are)' : ''}</option>{/each}
+									<!-- A mod's dimension they are in. -->
+									{#if inGame?.dimension && !DIMENSIONS[inGame.dimension]}<option value={inGame.dimension}>{inGame.dimension} (where they are)</option>{/if}
 								</select>
 							{:else}
 								<p class="hint">Minecraft {data.instance.minecraftVersion} moves players within their own dimension only.</p>
@@ -625,6 +669,8 @@
 	.game-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-1) var(--space-2); }
 	@media (max-width: 28rem) { .game-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	.game-modes-label { grid-column: 1 / -1; }
+	.game-modes .current { border-color: var(--accent); color: var(--accent); }
+	.where { margin: 0 0 var(--space-2); overflow-wrap: anywhere; }
 	.coords { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 	.current-access { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-3) 0; }
 	.drawer-section { padding: var(--space-3) 0; border-top: 1px solid var(--line); }

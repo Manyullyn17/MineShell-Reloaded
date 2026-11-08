@@ -66,6 +66,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   1.21.1) and 1.12.2 (the user tested MeatballCraft, Cleanroom), 2026-10-09; 1.21.11
   (components/equipment) tested by the user. Not yet on real files: the flat 1.13-1.20 format
   and versions below 1.12.2 (1.7.10's numeric ids only on the throwaway server's level.dat).
+- Reading an online player (vanilla 1.21.1 and 1.21.11 with a headless client joined,
+  2026-11-08): `data get entity <name> <field>` answers `<name> has the following entity data:
+  <SNBT>` (with spaces: `{pos: [I; 10, 70, -20], forced: 1b, ...}`), `Found no elements matching
+  <field>` for one it lacks, `No entity was found` for nobody. `respawn` (1.21.5+) and
+  SpawnX/Y/Z/SpawnDimension/SpawnForced (before) exist only once a spawn point is set; a
+  /spawnpoint one is `forced`. Dimension is a string from 1.16, a number (0, -1, 1) before. `tp`
+  with whole numbers centres x and z on the block (10 -> 10.5).
 
 ## NBT editor (Files)
 - What NBT files look like on real servers (`tests/tools/nbt-sweep.ts`, the four dev servers,

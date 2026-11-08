@@ -79,6 +79,11 @@ user before the beta):
    throwaway data 2026-11-08 (copies of ATM10's level.dat and data files, a Twilight Forest
    structure cache: an edit saved with a version kept, a search match 1,150 entries into a list
    revealed, whole SNBT of a partly loaded list; 390 px); not yet with a server started on it.
+6. **Online players** (the drawer's In game): with a real player on a 1.21.x server and a 1.16-1.20
+   one, the game mode marked, the dimension and position shown, "Their spawn point" after
+   sleeping in a bed (lands on the bed) and in the Nether with an anchor. Checked 2026-11-08 on
+   vanilla 1.21.11 under a throwaway MineShell with a headless client (a /spawnpoint spot, the
+   Nether, Creative marked after switching); a bed and a modded server not yet.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The server, over RCON: `list` answers who is online, anything else is recorded and answered.
-const rcon = vi.hoisted(() => ({ commands: [] as string[], online: ['Steve', 'Alex'], fail: false, answer: '§eDone the thing' }));
+const rcon = vi.hoisted(() => ({ commands: [] as string[], online: ['Steve', 'Alex'], fail: false, answer: '§eDone the thing', answers: {} as Record<string, string> }));
 vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
@@ -9,12 +9,12 @@ vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 		return commands.map((command) => {
 			if (command === 'list') return `There are ${rcon.online.length} of a max of 20 players online: ${rcon.online.join(', ')}`;
 			rcon.commands.push(command);
-			return rcon.answer;
+			return rcon.answers[command] ?? rcon.answer;
 		});
 	})
 }));
 
-const { gameModeCommand, gameModesFor, runPlayerCommand, teleportCommand } = await import('#lib/server/playercommands.js');
+const { gameModeCommand, gameModesFor, ownSpawnCommand, playerState, readPlayerState, runPlayerCommand, teleportCommand, teleportTargetFrom } = await import('#lib/server/playercommands.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { createInstance } = await import('../helpers/instances');
 
@@ -49,12 +49,68 @@ describe('the commands per Minecraft version', () => {
 	});
 });
 
+/** `data get entity` answers as vanilla gave them with a client joined (2026-11-08), per field asked. */
+const NONE = (field: string) => `Found no elements matching ${field}`;
+const has = (value: string) => `Steve has the following entity data: ${value}`;
+const FIELDS = ['playerGameType', 'Dimension', 'Pos', 'respawn', 'SpawnX', 'SpawnY', 'SpawnZ', 'SpawnDimension', 'SpawnForced'];
+const answering = (given: Record<string, string>) => FIELDS.map((f) => (f in given ? has(given[f]) : NONE(f)));
+
+describe("an online player's state", () => {
+	it('reads 1.21.5 on: the respawn compound', () => {
+		const state = readPlayerState(
+			answering({ playerGameType: '1', Dimension: '"minecraft:the_nether"', Pos: '[9.5d, -60.0d, -8.5d]', respawn: '{pos: [I; 10, 70, -20], forced: 1b, pitch: 0.0f, dimension: "minecraft:overworld", yaw: 0.0f}' })
+		);
+		expect(state).toEqual({ gameMode: 'creative', dimension: 'minecraft:the_nether', pos: { x: 9.5, y: -60, z: -8.5 }, spawn: { x: 10, y: 70, z: -20, dimension: 'minecraft:overworld', forced: true } });
+	});
+
+	it('reads SpawnX/Y/Z before it, and numbered dimensions before 1.16', () => {
+		const old = readPlayerState(answering({ playerGameType: '0', Dimension: '"minecraft:overworld"', Pos: '[1.0d, 2.0d, 3.0d]', SpawnX: '10', SpawnY: '70', SpawnZ: '-20', SpawnDimension: '"minecraft:the_nether"', SpawnForced: '0b' }));
+		expect(old.spawn).toEqual({ x: 10, y: 70, z: -20, dimension: 'minecraft:the_nether', forced: false });
+		const older = readPlayerState(answering({ playerGameType: '3', Dimension: '-1', SpawnX: '5', SpawnY: '64', SpawnZ: '5' }));
+		expect(older).toMatchObject({ gameMode: 'spectator', dimension: 'minecraft:the_nether', pos: null, spawn: { dimension: 'minecraft:overworld' } });
+		// A mod's numbered dimension is not guessed; no spawn point set is none.
+		expect(readPlayerState(answering({ Dimension: '7' }))).toEqual({ gameMode: null, dimension: null, pos: null, spawn: null });
+		expect(readPlayerState(['No entity was found'])).toEqual({ gameMode: null, dimension: null, pos: null, spawn: null });
+	});
+
+	it('teleports onto a bed or anchor, and to a /spawnpoint spot itself', () => {
+		expect(ownSpawnCommand('Steve', { x: 10, y: 70, z: -20, dimension: 'minecraft:overworld', forced: true })).toBe('execute in minecraft:overworld run tp Steve 10 70 -20');
+		expect(ownSpawnCommand('Steve', { x: 10, y: 70, z: -20, dimension: 'minecraft:the_nether', forced: false })).toBe('execute in minecraft:the_nether run tp Steve 10 71 -20');
+		expect(() => ownSpawnCommand('Steve', { x: 0, y: 0, z: 0, dimension: 'x; op Steve', forced: true })).toThrow(/cannot name/);
+	});
+
+	it('takes the target from the teleport form', () => {
+		const form = (fields: Record<string, string>) => Object.entries(fields).reduce((f, [k, v]) => (f.append(k, v), f), new FormData());
+		expect(teleportTargetFrom(form({ to: 'ownSpawn' }))).toEqual({ kind: 'ownSpawn' });
+		expect(teleportTargetFrom(form({ to: 'coords', x: '1', y: '2', z: '3', dimension: '' }))).toEqual({ kind: 'coords', x: 1, y: 2, z: 3, dimension: null });
+		expect(teleportTargetFrom(form({ to: 'elsewhere' }))).toBeNull();
+	});
+});
+
 describe('running them on a server', () => {
 	beforeEach(() => {
 		rcon.commands = [];
 		rcon.online = ['Steve', 'Alex'];
 		rcon.fail = false;
 		rcon.answer = '§eDone the thing';
+		rcon.answers = {};
+	});
+
+	it("reads a player's state and sends them to their own spawn point, which they must have", async () => {
+		const instance = await server();
+		const ask = (given: Record<string, string>) =>
+			(rcon.answers = Object.fromEntries(FIELDS.map((f, i) => [`data get entity Steve ${f}`, answering(given)[i]])));
+		ask({ playerGameType: '2', Dimension: '"minecraft:overworld"', respawn: '{pos: [I; 4, 65, 4], forced: 0b, dimension: "minecraft:overworld"}' });
+		expect(await playerState(instance, 'steve')).toMatchObject({ gameMode: 'adventure', spawn: { x: 4, y: 65, z: 4 } });
+		rcon.commands = [];
+		await runPlayerCommand(instance, 'Steve', { kind: 'teleport', target: { kind: 'ownSpawn' } });
+		expect(rcon.commands.at(-1)).toBe('execute in minecraft:overworld run tp Steve 4 66 4');
+		ask({ playerGameType: '0' });
+		await expect(runPlayerCommand(instance, 'Steve', { kind: 'teleport', target: { kind: 'ownSpawn' } })).rejects.toThrow(/no spawn point of their own/);
+		await expect(playerState(instance, 'Herobrine')).rejects.toThrow(/not online/);
+		const old = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2', rconPort: 25597, rconPasswordEnc: encryptSecret('pw') });
+		await expect(playerState(old, 'Steve')).rejects.toThrow(/1.12.2 has no command/);
+		await expect(runPlayerCommand(old, 'Steve', { kind: 'teleport', target: { kind: 'ownSpawn' } })).rejects.toThrow(/spawn point/);
 	});
 	const server = () => createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPort: 25598, rconPasswordEnc: encryptSecret('pw') });
 

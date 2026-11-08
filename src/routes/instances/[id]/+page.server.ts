@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { GAME_MODES, gameModesFor, reachesSpawn, runPlayerCommand, type GameMode, type TeleportTarget } from '#lib/server/playercommands.js';
+import { GAME_MODES, gameModesFor, reachesSpawn, runPlayerCommand, type GameMode, teleportTargetFrom } from '#lib/server/playercommands.js';
 import type { Actions, PageServerLoad } from './$types';
 import { can } from '#lib/shared/access.js';
 import { packIconPending } from '#lib/server/packicon.js';
@@ -437,16 +437,7 @@ export const actions: Actions = {
 		const instance = requireInstance(params.id);
 		const form = await request.formData();
 		const name = String(form.get('name') ?? '').trim();
-		const to = String(form.get('to') ?? '');
-		const number = (key: string) => Number(String(form.get(key) ?? '').trim() || NaN);
-		const target: TeleportTarget | null =
-			to === 'spawn'
-				? { kind: 'spawn' }
-				: to === 'player'
-					? { kind: 'player', name: String(form.get('player') ?? '').trim() }
-					: to === 'coords'
-						? { kind: 'coords', x: number('x'), y: number('y'), z: number('z'), dimension: String(form.get('dimension') ?? '').trim() || null }
-						: null;
+		const target = teleportTargetFrom(form);
 		if (!target) return fail(400, { ok: false, message: 'Pick where to.' });
 		try {
 			return { ok: true, message: await runPlayerCommand(instance, name, { kind: 'teleport', target }) };

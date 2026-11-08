@@ -1360,6 +1360,19 @@ Players are checked against the online list (the target too) and their name's fo
 going into a command. Tried on the screenshot world's fake server (its RCON answers, not the
 commands); a real server not yet.
 
+### More for online players (1.3, 2026-11-08)
+
+From the 1.2 beta's in-game check on Irithyll (user, 2026-11-07). Built in the drawer's In game,
+from Minecraft 1.13 (`data get entity`; before it no command reads a player): the game mode
+they are in marked, their dimension and position shown, the coordinates' dimension preselected
+to theirs (a mod's dimension too) with their position as the boxes' hint, and "Their spawn
+point" to teleport to when they have one (`respawn` from 1.21.5, `SpawnX/Y/Z` before; onto a bed
+or anchor, to a /spawnpoint spot itself). The answers were read from vanilla 1.21.1 and 1.21.11
+with a headless client joined (`mc-client.sh`), and the drawer tried on a vanilla 1.21.11 server
+under a throwaway MineShell with that client in it.
+
+What it leaves: the player page while they are online (ROADMAP, "More for online players").
+
 ### Data packs a loader mod reads, on the Data packs tab (1.2, 2026-11-03)
 
 User, 2026-11-02, for 1.2. The tab listed the active world's `datapacks/` only, so a pack in

@@ -130,7 +130,7 @@ Administer players and inspect their saved data, including inventories containin
 ![A player's inventory with the game's own item pictures: armour, offhand, inventory and hotbar](docs/screenshots/player.png)
 
 - Manage whitelists, operators and operator levels, bans with reasons, and IP bans.
-- Change an online player's game mode, or teleport them to another player, the world spawn or coordinates (into another dimension from Minecraft 1.13).
+- Change an online player's game mode, or teleport them to another player, the world spawn, their own spawn point or coordinates (into another dimension from Minecraft 1.13). From 1.13 the player's drawer shows the game mode, dimension and position they are in.
 - Remove a player from a world (their player file, stats and advancements go to the trash), for someone who joined once and should not stay in the list.
 - Update player lists through RCON while the server is running, or edit the relevant JSON files while it is stopped.
 - Resolve player names to UUIDs through Mojang and identify players in imported worlds using their current account names.
