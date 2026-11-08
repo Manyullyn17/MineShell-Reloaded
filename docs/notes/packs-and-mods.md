@@ -221,8 +221,10 @@ server's configs through it, 2026-11-08 on the four dev servers: 9,073 of 9,276 
 - Lists with comments between their items (darkmodeeverywhere's shader list) would lose them if
   rewritten: such a list is edited as its text.
 - Not every `.cfg` is Forge's: PneumaticCraft's and others are refused with the line. 82 JSON
-  configs are a list at the top (whitelists), 20 hold no settings; FTB's are SNBT (2,265 files on
-  the dev servers), not read by the form yet.
+  configs are a list at the top (whitelists), 20 hold no settings. FTB's settings are SNBT (`config/ftb*.snbt`,
+  serverconfig's `ftbessentials.snbt`: about ten files a pack, with `# Default:`, `# Range:` and
+  `# Valid values:` comments), not read by the form yet; the other 2,250 `.snbt` files on the dev
+  servers are FTB Quests' quest book (`config/ftbquests/quests/`), data rather than settings.
 - NeoForge watches each config it opens (`ConfigTracker.openConfig` -> night-config's
   `FileWatcher`, "Watching TOML config file {} for changes"), unless fml.toml's
   `disableConfigWatcher`; a `-client.toml` is not loaded on a dedicated server. Read in FML

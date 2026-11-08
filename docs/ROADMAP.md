@@ -535,8 +535,9 @@ is open, and each needs a test setup.
 - **MineShell's database copies**: copying them to a backup folder along with the snapshots.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
-- **Mod configs**: FTB's SNBT configs (`config/ftb*.snbt`, comments above keys: the most
-  common format the form does not read, 2,265 files on the dev servers); JSON configs that are
+- **Mod configs**: FTB's SNBT configs (`config/ftb*.snbt`, comments above keys, typed
+  numbers like `0.0d`; about ten files a pack; FTB Quests' `.snbt` quest book is data, not for
+  this form); JSON configs that are
   a list at the top (whitelists), now text only; YAML and `.properties` configs. A list of
   objects or an inline table is edited as its text, not field by field.
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
