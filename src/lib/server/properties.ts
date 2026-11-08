@@ -309,7 +309,9 @@ export function propertiesFromForm(form: FormData, fields: PropertyField[]): Rec
 		if (field.type === 'boolean') {
 			if (form.has(`present:${field.key}`)) values[field.key] = form.get(field.key) === 'on' ? 'true' : 'false';
 		} else if (form.has(field.key)) {
-			values[field.key] = String(form.get(field.key) ?? '');
+			const value = String(form.get(field.key) ?? '');
+			// A posted textarea's line breaks are \r\n, and the server sent the \r on to clients.
+			values[field.key] = field.type === 'textarea' ? value.replace(/\r\n?/g, '\n') : value;
 		}
 	}
 	return values;

@@ -11,8 +11,9 @@ import {
 	matchPropertiesToVersion,
 	movedGameRules,
 	parseProperties,
-	PROPERTY_SCHEMA,
 	patchProperties,
+	propertiesFromForm,
+	PROPERTY_SCHEMA,
 	propertyNote,
 	readProperties,
 	serialiseProperties,
@@ -61,6 +62,15 @@ describe('parseProperties', () => {
 		const text = serialiseProperties(values);
 		expect(text).toContain('motd=\\u00A76\\u00A7lHome\\u00A7r\\n\\u00A7aJoin us\n');
 		expect(parseProperties(text).values).toEqual(values);
+	});
+});
+
+describe('the Settings form', () => {
+	it("stores a description's line breaks as \\n, not the \\r\\n a posted textarea has", () => {
+		// The server sent the \r on to every client's multiplayer list.
+		const form = new FormData();
+		form.set('motd', '§6First line\r\n§bsecond line');
+		expect(propertiesFromForm(form, PROPERTY_SCHEMA)).toMatchObject({ motd: '§6First line\n§bsecond line' });
 	});
 });
 
