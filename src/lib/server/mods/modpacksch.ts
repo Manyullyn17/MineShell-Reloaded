@@ -7,8 +7,9 @@ import type { FilterGroup, ModProvider, ProjectVersion, SearchHit, SearchQuery, 
  * metadata and serves FTB's own packs, so MineShell can browse both without a
  * CurseForge API key.
  *
- * This file was rewritten against modpacks.ch's actual OpenAPI spec (kept in
- * project knowledge), not the original design doc's incomplete notes - that
+ * This file was rewritten against modpacks.ch's actual OpenAPI spec (a copy in
+ * docs/reference/modpacksch-openapi.json, served at modpacks.ch/openapi.json),
+ * not the original design doc's incomplete notes - that
  * incomplete picture is what produced the first version of this file, which
  * never actually worked. Confirmed straight from the spec:
  *

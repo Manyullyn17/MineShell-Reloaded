@@ -4,6 +4,10 @@ Hard-won facts that are not obvious from the code, moved out of CLAUDE.md (2026-
 Keep them current: a change that makes one wrong updates it in the same commit.
 
 ## Modpacks and the modpacks.ch mirror
+- Its OpenAPI spec is served at `https://modpacks.ch/openapi.json` (not under api.modpacks.ch,
+  whose `/docs`, `/api-docs` and `/v3/api-docs` answer 200 with "Invalid endpoint"); a copy from
+  2026-11-08 is `docs/reference/modpacksch-openapi.json`. Its route descriptions are vague about
+  which segment is which (category, loader, version): try a real request before trusting one.
 - File lists ship configs/scripts/bundled jars as one `overrides.zip` at path `./` -> becomes
   `pack.overridesArchive`, unpacked like an archive's `overrides/`. Paths are inconsistent
   (`mods/` and `./` in one response); `packFromFileList` normalises.
@@ -121,7 +125,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - CurseForge resource packs are class 12; their categories are 393-405, 4465 (Mod Support),
   5193, 5244, 8939. The mirror's term search does not find them (Fresh Animations 453763 and
   Motschen's Better Leaves 380969 missing for their own names, "xray ultimate" finds nothing,
-  2026-11-08), though `/public/mod/{id}` knows them, tagged with those category ids, and lists
+  2026-11-08), and nothing else in the spec does: its search and browse cover mods, modpacks and
+  Bukkit plugins only. Tried: term search with loader filters (`any`, unlike `all` or `vanilla`, matches
+  all) and with the fourth `{variant}` segment (`resourcepack` and the like change nothing),
+  `/curseforge/mods/browse/<393|400|4465|5193>/featured` (0 hits; `/curseforge/mods/tags` lists no
+  resource pack category), and modpack search (its CurseForge ids are modpacks named alike).
+  Yet `/public/mod/{id}` knows them, tagged with those category ids, and lists
   files with URL and sha1: for Fresh Animations, which opted out (the API's `downloadUrl` is
   null), it still gives `edge.forgecdn.net`. That counts as a URL the catalog gives (user,
   2026-11-08); `edge` only redirects (302) to `mediafilez.forgecdn.net`, which players are given.
