@@ -1172,11 +1172,20 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 	return ranked.map(({ at: _at, consequence: _consequence, ...d }) => d);
 }
 
+/**
+ * systemd's line starting a run (or the text beginning with it): "Started mstest@x.service -
+ * Minecraft server (x) managed by MineShell." from systemd 252 on; before, the description
+ * alone ("Started Minecraft server (x) managed by MineShell.", Ubuntu 22.04's 249).
+ */
+export function isUnitStart(line: string): boolean {
+	return /^Started (\S+\.service\b|Minecraft server \(\S+\) managed by MineShell\b)/.test(line);
+}
+
 /** The output of the most recent run: everything after the last systemd "Started" line. */
 export function lastRun(journal: string): string {
 	const lines = journal.split('\n');
 	for (let i = lines.length - 1; i >= 0; i--) {
-		if (/^Started \S+\.service/.test(lines[i])) return lines.slice(i).join('\n');
+		if (isUnitStart(lines[i])) return lines.slice(i).join('\n');
 	}
 	return journal;
 }

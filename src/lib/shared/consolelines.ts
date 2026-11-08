@@ -108,8 +108,12 @@ export function isChat(text: string): boolean {
 	return CHAT.test(stripAnsi(text));
 }
 
-/** systemd's own lines about the unit ("Started mstest@x.service - ...", "x.service: Consumed 2min CPU time"). */
-const SYSTEMD_LINE = /^(Started|Starting|Stopped|Stopping) \S+\.service\b|^\S+\.service: /;
+/**
+ * systemd's own lines about the unit ("Started mstest@x.service - ...", "x.service: Consumed 2min
+ * CPU time"); before systemd 252 the first kind names only the description ("Started Minecraft
+ * server (x) managed by MineShell.").
+ */
+const SYSTEMD_LINE = /^(Started|Starting|Stopped|Stopping) (\S+\.service\b|Minecraft server \(\S+\) managed by MineShell\b)|^\S+\.service: /;
 
 /**
  * A line of a message logged over several lines: Fabric's mod list, a banner.

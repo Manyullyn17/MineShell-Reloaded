@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { desc, eq } from 'drizzle-orm';
 import { db } from './db';
 import { bisectSessions, serverRuns, type ServerInstance } from './db/schema';
-import { diagnoseRun, lastRun, tickLimitOf, type Diagnosis, type RunContext } from './crashdiag';
+import { diagnoseRun, isUnitStart, lastRun, tickLimitOf, type Diagnosis, type RunContext } from './crashdiag';
 import { wasStopIntentional, type InstanceSummary } from './instances';
 import { hungAfterCrash, isCrashLine } from './history';
 import { readLastRun } from './journal';
@@ -65,7 +65,7 @@ export async function lastCrash(summary: InstanceSummary): Promise<LastCrash | n
 	// Not read for a stop MineShell asked for unless the history saw a crash line in that run.
 	if (!hung && wasStopIntentional(instance.id) && !lastRunLoggedCrash(instance.id)) return null;
 	const log = lastRun(await readLastRun(instance.id, instance.createdAt));
-	const startedRun = /^Started \S+\.service/.test(log);
+	const startedRun = isUnitStart(log);
 	const loggedCrash = log.split('\n').some(isCrashLine);
 	const crashed =
 		hung || loggedCrash || (!wasStopIntentional(instance.id) && (state.active === 'failed' || state.result === 'exit-code' || (startedRun && !/\]: Done \(/.test(log))));

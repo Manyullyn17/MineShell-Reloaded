@@ -1,5 +1,5 @@
 import { audit, getInstance } from './instances';
-import { lastRun } from './crashdiag';
+import { isUnitStart, lastRun } from './crashdiag';
 import { diagnoseLastRun } from './lastcrash';
 import { noteRestartHeld } from './history';
 import { readLastRun } from './journal';
@@ -26,7 +26,7 @@ export async function holdFixableRestart(instanceId: string, invocation: string)
 	const instance = getInstance(instanceId);
 	if (!instance?.autoRestartOnCrash || !instance.crashRestartSkipFixable) return false;
 	const log = lastRun(await readLastRun(instanceId, instance.createdAt));
-	if (!/^Started \S+\.service/.test(log) || /\]: Done \(/.test(log)) return false;
+	if (!isUnitStart(log) || /\]: Done \(/.test(log)) return false;
 	const stopped = (await diagnoseLastRun(instance, log)).find((d) => d.fatal && (d.fix || d.install));
 	if (!stopped) return false;
 	await stopUnit(instanceId);

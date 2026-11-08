@@ -127,6 +127,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   otherwise reads one run by invocation id (`_SYSTEMD_INVOCATION_ID` on the service's lines,
   `USER_INVOCATION_ID`/`INVOCATION_ID` on the manager's). `InvocationID` from `systemctl show`
   is empty once the unit is inactive.
+- systemd 249 (Ubuntu 22.04) differs in two ways, found by the weekly CI (2026-11-08): the
+  manager's lines about a unit also carry `_SYSTEMD_INVOCATION_ID`, the user manager's own
+  run, so the manager's fields are read first (`invocationOf`; the other way round no run
+  was recorded there); and "Started" names only the description ("Started Minecraft server
+  (x) managed by MineShell."), not "<unit>.service - <description>" as from 252 on
+  (`isUnitStart`, consolelines' `SYSTEMD_LINE`; crash diagnosis read every run as one and the
+  crash hold never applied). Checked in a `ubuntu:22.04` container with systemd as PID 1.
 - `listRuns`/`readRun` (Logs tab) keep what they read and continue with `--after-cursor`;
   `--show-cursor` puts the last entry's cursor at the end of `-o cat` output.
 - The journal outlives an instance; a recreated server with the same id shares it, so reads

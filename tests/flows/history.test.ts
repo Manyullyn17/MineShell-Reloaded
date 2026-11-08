@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 const { applyEvents, clearCrashes, crashCausesByRun, crashesClearable, crashFixPending, hungAfterCrash, noteCrashFix, onlineSince, pausedSince, peakPlayers, playtimes, recentCrashes, recordHistory, startTimes, startTimesByRun } = await import('#lib/server/history.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { db } = await import('#lib/server/db/index.js');
-const { bisectSessions } = await import('#lib/server/db/schema.js');
+const { bisectSessions, serverRuns } = await import('#lib/server/db/schema.js');
+const { eq } = await import('drizzle-orm');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
 
 const MIN = 60_000;
@@ -349,6 +350,24 @@ describe('reading the journal', () => {
 		expect(spawnCalls.find((c) => c.args.includes('-g'))!.args).toContain('--after-cursor=c1');
 		expect(onlineSince(s.id)).toEqual({});
 		expect(reload(s.id).historyCursor).toBe('c2');
+	});
+
+	it("files systemd 249's lines under the run, not the user manager's own invocation", async () => {
+		// Ubuntu 22.04: the manager's lines about a unit carry its own _SYSTEMD_INVOCATION_ID beside
+		// the run's USER_INVOCATION_ID, and nothing was recorded there (the weekly CI found it).
+		const s = await server();
+		const manager = (at: number, message: string) => ({ ...entry(at, message), _SYSTEMD_INVOCATION_ID: 'f'.repeat(32), USER_INVOCATION_ID: inv(1) });
+		newest = { cursor: 'm1', at: T0 + 5 * MIN };
+		matches = [
+			manager(T0, 'Started Minecraft server (x) managed by MineShell.'),
+			entry(T0 + MIN, line('Done (3.0s)! For help, type "help"')),
+			manager(T0 + 2 * MIN, 'mstest@x.service: Main process exited, code=killed, status=9/KILL'),
+			manager(T0 + 2 * MIN, "mstest@x.service: Failed with result 'signal'.")
+		];
+		await recordHistory(reload(s.id));
+		expect(db.select().from(serverRuns).where(eq(serverRuns.instanceId, s.id)).all()).toEqual([
+			expect.objectContaining({ invocation: inv(1), startedAt: T0, doneAt: T0 + MIN, endedAt: T0 + 2 * MIN, exitStatus: 9, crashed: true })
+		]);
 	});
 
 	it('does not read again when nothing new was logged', async () => {

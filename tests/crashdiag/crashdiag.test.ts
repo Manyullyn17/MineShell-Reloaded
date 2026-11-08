@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diagnoseLog, diagnoseRun, duplicateMods, indexMods, raisedTickLimit, requiredBy, type ModJar } from '#lib/server/crashdiag.js';
+import { diagnoseLog, diagnoseRun, duplicateMods, indexMods, lastRun, raisedTickLimit, requiredBy, type ModJar } from '#lib/server/crashdiag.js';
 import { mcmodInfo, tempDir, writeJar, zipBuffer } from '../helpers/fs';
 
 /**
@@ -325,5 +325,14 @@ describe('what needs a mod', () => {
 		await writeJar(dir, 'api.jar.disabled', { 'fabric.mod.json': fabric('fabric-api', 'Fabric API', { provides: ['fabric'] }) });
 		await writeJar(dir, 'old.jar', { 'fabric.mod.json': fabric('old', 'Old', { depends: { fabric: '*', 'cloth-config': '*' } }) });
 		expect(requiredBy(await indexMods(dir))).toEqual({ 'api.jar.disabled': ['Old'] });
+	});
+});
+
+describe('the last run of a journal', () => {
+	it("starts at systemd's last Started line, also where it names only the description", () => {
+		const runs = (started: (n: number) => string) => [started(1), '[10:00:00] [main/INFO]: first', started(2), '[10:05:00] [main/INFO]: second'].join('\n');
+		expect(lastRun(runs((n) => `Started mstest@x.service - Minecraft server (x) managed by MineShell.`))).toMatch(/^Started .*\n.*second$/);
+		// systemd 249 (Ubuntu 22.04): every run was taken as one, the crash diagnosis reading all of them.
+		expect(lastRun(runs(() => 'Started Minecraft server (x) managed by MineShell.'))).toBe('Started Minecraft server (x) managed by MineShell.\n[10:05:00] [main/INFO]: second');
 	});
 });

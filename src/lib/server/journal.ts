@@ -152,10 +152,7 @@ async function newestEntry(id: string, since: number): Promise<{ cursor: string 
 	} catch {
 		/* unreadable entry: callers fall back to line counts */
 	}
-	const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
-		(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
-	);
-	return { cursor: typeof entry.__CURSOR === 'string' ? entry.__CURSOR : null, invocation: invocation ?? null };
+	return { cursor: typeof entry.__CURSOR === 'string' ? entry.__CURSOR : null, invocation: invocationOf(entry) };
 }
 
 /** Every entry of one run: the service's own lines and the service manager's about it. */
@@ -281,9 +278,7 @@ function mergeRuns(runs: Map<string, RunSummary>, out: string): void {
 		} catch {
 			continue;
 		}
-		const invocation = [entry.USER_INVOCATION_ID, entry.INVOCATION_ID, entry._SYSTEMD_INVOCATION_ID].find(
-			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
-		);
+		const invocation = invocationOf(entry);
 		const message = messageOf(entry.MESSAGE);
 		const at = Math.floor(Number(entry.__REALTIME_TIMESTAMP) / 1000);
 		if (!invocation || !Number.isFinite(at)) continue;
@@ -408,6 +403,20 @@ function messageOf(field: unknown): string {
 	return '';
 }
 
+/**
+ * The run an entry belongs to. The service's own lines carry `_SYSTEMD_INVOCATION_ID`; the
+ * service manager's lines about it ("Started ...", "Consumed ...") name the run in
+ * `USER_INVOCATION_ID` (`INVOCATION_ID` for a system unit). systemd 249 (Ubuntu 22.04) also
+ * gives those `_SYSTEMD_INVOCATION_ID`, the user manager's own run, so that is read last:
+ * read first, every start and end there went under the manager and no run was recorded.
+ */
+function invocationOf(entry: Record<string, unknown>): string | null {
+	const found = [entry.USER_INVOCATION_ID, entry.INVOCATION_ID, entry._SYSTEMD_INVOCATION_ID].find(
+		(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
+	);
+	return found ?? null;
+}
+
 /** `journalctl -o json` output as events, oldest first; none after `until` (µs) if given. */
 function parseEvents(out: string, until = Infinity): JournalEvent[] {
 	const events: JournalEvent[] = [];
@@ -422,10 +431,7 @@ function parseEvents(out: string, until = Infinity): JournalEvent[] {
 		const at = Number(entry.__REALTIME_TIMESTAMP);
 		if (!Number.isFinite(at) || at > until) continue;
 		const message = messageOf(entry.MESSAGE);
-		const invocation = [entry._SYSTEMD_INVOCATION_ID, entry.USER_INVOCATION_ID, entry.INVOCATION_ID].find(
-			(v): v is string => typeof v === 'string' && /^[0-9a-f]{32}$/.test(v)
-		);
-		events.push({ at: Math.floor(at / 1000), message, invocation: invocation ?? null });
+		events.push({ at: Math.floor(at / 1000), message, invocation: invocationOf(entry) });
 	}
 	return events.sort((a, b) => a.at - b.at);
 }

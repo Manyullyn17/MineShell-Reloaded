@@ -34,6 +34,13 @@ describe('a crash restart that would only fail again', () => {
 		expect(stops()).toHaveLength(1);
 	});
 
+	it("is cancelled where systemd's Started line names only the description (systemd 249, Ubuntu 22.04)", async () => {
+		const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1' });
+		journal.log = 'Started Minecraft server (x) managed by MineShell.\n' + crash;
+		expect(await holdFixableRestart(instance.id, 'run-1')).toBe(true);
+		expect(stops()).toHaveLength(1);
+	});
+
 	it('is let happen with the setting off, or for a crash after the server was up', async () => {
 		const off = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1', crashRestartSkipFixable: false });
 		expect(await holdFixableRestart(off.id, 'run-1')).toBe(false);

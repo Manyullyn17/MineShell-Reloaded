@@ -63,13 +63,18 @@ describe('console lines', () => {
 			'\t- fabricloader 0.19.5',
 			'\t   \\-- mixinextras 0.5.5',
 			'mstest@sparktest.service: Consumed 1min 55.691s CPU time, 2.2G memory peak.',
-			'Started mstest@sparktest.service - Minecraft server (sparktest) managed by MineShell.'
+			'Started mstest@sparktest.service - Minecraft server (sparktest) managed by MineShell.',
+			'[20:42:27] [main/INFO]: Loading 3 mods:',
+			// systemd 249 (Ubuntu 22.04) names only the description.
+			'Stopping Minecraft server (sparktest) managed by MineShell...'
 		]);
 		expect(entries.map((e) => [e.level, e.tone])).toEqual([
 			['info', ''],
 			['info', ''],
 			['info', ''],
 			[null, 'meta'],
+			[null, 'meta'],
+			['info', ''],
 			[null, 'meta']
 		]);
 	});

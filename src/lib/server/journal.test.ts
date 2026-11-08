@@ -38,6 +38,17 @@ describe('readLastRun', () => {
 		expect(spawnCalls).toHaveLength(2);
 	});
 
+	it("reads the run, not the user manager's own invocation systemd 249 also names", async () => {
+		// Ubuntu 22.04: the newest entry of a stopped server is the manager's "Consumed" line.
+		fakeProcesses((_cmd, args) => {
+			if (args.includes('json')) {
+				return { stdout: JSON.stringify({ __CURSOR: 's=1', _SYSTEMD_INVOCATION_ID: 'f'.repeat(32), USER_INVOCATION_ID: INVOCATION, MESSAGE: 'Consumed 4min CPU time.' }) + '\n' };
+			}
+			return args.includes(`USER_INVOCATION_ID=${INVOCATION}`) ? { stdout: RUN } : { stdout: 'the manager\'s lines\n' };
+		});
+		expect(await readLastRun('pack-249')).toBe(RUN);
+	});
+
 	it('ignores runs from before the instance existed', async () => {
 		// A server deleted and recreated under the same name shares the unit's journal.
 		fakeProcesses(() => ({ stdout: '' }));
