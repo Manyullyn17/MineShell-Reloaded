@@ -1,4 +1,5 @@
 import { child, num, removeChild, setChild, str, type Compound, type Tag } from './nbt';
+import { fromJson, hasHex, parseCodes, plainText, toCodes, toJson } from '#lib/shared/mctext.js';
 import type { ItemIds } from './itemids';
 import type { Path } from '#lib/shared/nbt.js';
 
@@ -38,8 +39,14 @@ export type Section = 'main' | 'armor' | 'offhand' | 'ender' | 'other' | 'contai
 export type Enchantment = { id: string; level: number };
 
 export type ItemFields = {
+	/** With its formatting as `§` codes (mctext.ts); plain text for a field in `kept`. */
 	name: string | null;
 	lore: string[];
+	/**
+	 * Name or lore holding what the editor cannot (translated text, click events, a font):
+	 * shown as plain text and left as it is, editable in the tree only.
+	 */
+	kept: ('name' | 'lore')[];
 	enchantments: Enchantment[];
 	/** An enchanted book: its enchantments are stored, not applied. */
 	stored: boolean;
@@ -148,10 +155,58 @@ function jsonText(value: unknown): string {
 	return '';
 }
 
-/** Text written the way the format stores it. */
-function textTag(text: string, style: Style): Tag {
-	if (style.format === 'legacy' || style.nbtText) return { type: 'string', value: text };
-	return { type: 'string', value: JSON.stringify({ text, italic: false }) };
+/**
+ * Custom names and lore are italic in game unless their text says otherwise, so text without
+ * `italic` reads as `§o`, and MineShell writes them inside a non-italic root: what is typed is
+ * what shows, and an untouched-looking edit leaves the item looking the same.
+ */
+const READ_BASE = { italic: true };
+const WRITE_ROOT = { italic: false };
+
+/** A text tag as `§` codes, or null when it holds what the model cannot. 1.12's are strings with codes already. */
+function codesOf(tag: Tag, style: Style): string | null {
+	if (style.format === 'legacy') return tag.type === 'string' ? tag.value : null;
+	if (style.nbtText) {
+		const spans = fromJson(nbtToPlain(tag), READ_BASE);
+		return spans && toCodes(spans);
+	}
+	if (tag.type !== 'string') return null;
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(tag.value);
+	} catch {
+		// Not JSON: plain text, as a few tools write it.
+		return toCodes(parseCodes(tag.value, READ_BASE));
+	}
+	const spans = fromJson(parsed, READ_BASE);
+	return spans && toCodes(spans);
+}
+
+/** NBT text as the JSON shape fromJson reads (bytes stay numbers; it takes 1 as true). */
+function nbtToPlain(tag: Tag): unknown {
+	if (tag.type === 'compound') return Object.fromEntries(tag.value.map(([k, v]) => [k, nbtToPlain(v)]));
+	if (tag.type === 'list') return tag.value.map(nbtToPlain);
+	if (tag.type === 'long') return Number(tag.value);
+	return tag.value;
+}
+
+/** A JSON text component as NBT text: booleans as bytes, lists of compounds. */
+function plainToNbt(value: unknown): Tag {
+	if (typeof value === 'string') return { type: 'string', value };
+	if (typeof value === 'boolean') return { type: 'byte', value: value ? 1 : 0 };
+	if (typeof value === 'number') return { type: 'int', value };
+	if (Array.isArray(value)) return { type: 'list', itemType: 'compound', value: value.map(plainToNbt) };
+	return { type: 'compound', value: Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, plainToNbt(v)]) };
+}
+
+/** `§`-coded text written the way the format stores it. */
+function textTag(codes: string, style: Style): Tag {
+	if (style.format === 'legacy') {
+		if (hasHex(codes)) throw new PlayerDataError('Minecraft 1.12 and older have only the 16 colours: no hex colours in names or lore.');
+		return { type: 'string', value: codes };
+	}
+	const json = toJson(parseCodes(codes), WRITE_ROOT);
+	return style.nbtText ? plainToNbt(json) : { type: 'string', value: JSON.stringify(json) };
 }
 
 // ----------------------------------------------------------------- fields ---
@@ -194,9 +249,27 @@ export function readFields(item: Compound, style: Style): ItemFields {
 		enchantments = map.value.filter(([, v]) => v.type !== 'compound' && num(v) !== null).map(([id, v]) => ({ id, level: num(v)! }));
 	}
 
+	const kept: ItemFields['kept'] = [];
+	const nameTag = style.format === 'components' ? component('minecraft:custom_name') : child(display, 'Name');
+	let name: string | null = null;
+	if (nameTag) {
+		name = codesOf(nameTag, style);
+		if (name === null) {
+			kept.push('name');
+			name = textOf(nameTag);
+		}
+	}
+	const loreLines = loreTag?.type === 'list' ? loreTag.value : [];
+	let lore = loreLines.map((l) => codesOf(l, style));
+	if (lore.some((l) => l === null)) {
+		kept.push('lore');
+		lore = loreLines.map((l) => textOf(l) ?? '');
+	}
+
 	return {
-		name: textOf(style.format === 'components' ? component('minecraft:custom_name') : child(display, 'Name')),
-		lore: loreTag?.type === 'list' ? loreTag.value.map((l) => textOf(l) ?? '') : [],
+		name,
+		lore: lore as string[],
+		kept,
 		enchantments,
 		stored,
 		unbreakable: style.format === 'components' ? !!component('minecraft:unbreakable') : num(component('Unbreakable')) === 1,
@@ -222,7 +295,8 @@ export function writeFields(item: Compound, fields: Partial<Omit<ItemFields, 'st
 	};
 
 	if (fields.name !== undefined) {
-		const name = fields.name?.trim() ? textTag(fields.name, style) : null;
+		// Codes alone are no name.
+		const name = fields.name && plainText(fields.name).trim() ? textTag(fields.name, style) : null;
 		if (components) name ? setChild(data, 'minecraft:custom_name', name) : removeChild(data, 'minecraft:custom_name');
 		else name ? setChild(display(), 'Name', name) : removeChild(display(), 'Name');
 	}
@@ -489,7 +563,8 @@ export function describeItem(item: Tag, section: Section, slot: number, at: Path
 		id,
 		count: num(child(item, 'count')) ?? num(child(item, 'Count')) ?? 1,
 		damage: style.format === 'legacy' ? num(child(item, 'Damage')) : null,
-		name: fields.name,
+		// Plain: slot titles and the search; the editor reads fields.name, with its codes.
+		name: fields.name === null ? null : plainText(fields.name),
 		hasData: data?.type === 'compound' ? data.value.length > 0 : !!data,
 		path: at,
 		fields,

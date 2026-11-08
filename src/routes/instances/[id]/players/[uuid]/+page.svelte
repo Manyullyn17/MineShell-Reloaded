@@ -7,6 +7,9 @@
 	import { refreshAll } from '$app/navigation';
 	import NbtNode from '#lib/components/NbtNode.svelte';
 	import ItemIcon from '#lib/components/ItemIcon.svelte';
+	import McText from '#lib/components/McText.svelte';
+	import FormattedTextInput from '#lib/components/FormattedTextInput.svelte';
+	import { parseCodes } from '#lib/shared/mctext.js';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import PlayerStats from '#lib/components/PlayerStats.svelte';
 	import { page } from '$app/state';
@@ -370,6 +373,9 @@
 	}
 
 	const legacy = $derived(data.view.format === 'legacy');
+	/** 1.12 makes custom names and lore italic whatever they say; later text says it itself (playeritems.ts). */
+	const textBase = $derived(legacy ? { italic: true } : {});
+	const keptNote = 'It uses what this editor cannot show (translated text, click events, a font): change it in the data below.';
 
 	async function saveItem(event: SubmitEvent) {
 		event.preventDefault();
@@ -484,9 +490,13 @@
 {#if hovered}
 	{@const h = hovered}
 	<div class="tooltip" role="tooltip" style:left="{h.x + 14}px" style:top="{h.y + 14}px">
-		<div class="tip-name" class:custom={!!h.item.name}>{nameOf(h.item)}</div>
+		<div class="tip-name" class:named={!!h.item.name}>
+			{#if h.item.fields.name !== null && !h.item.fields.kept.includes('name')}<McText spans={parseCodes(h.item.fields.name, textBase)} />{:else}{nameOf(h.item)}{/if}
+		</div>
 		{#each h.item.fields.enchantments as e, i (i)}<div class="tip-enchant">{enchantLine(e)}</div>{/each}
-		{#each h.item.fields.lore as line, i (i)}<div class="tip-lore">{line}</div>{/each}
+		{#each h.item.fields.lore as line, i (i)}<div class="tip-lore">
+				{#if h.item.fields.kept.includes('lore')}{line}{:else}<McText spans={parseCodes(line, textBase)} />{/if}
+			</div>{/each}
 		{#if h.item.fields.unbreakable}<div class="tip-blue">Unbreakable</div>{/if}
 		{#if durabilityLine(h)}<div>{durabilityLine(h)}</div>{/if}
 		{#if h.item.energy !== null}<div>Energy: {h.item.energy.toLocaleString()} FE</div>{/if}
@@ -890,13 +900,35 @@
 
 				{#if selectedItem}
 					<div class="field">
-						<label for="item-name">Name</label>
-						<input id="item-name" autocomplete="off" bind:value={itemName} placeholder="No custom name" disabled={locked} />
+						<label for="item-name" id="item-name-label">Name</label>
+						<FormattedTextInput
+							id="item-name"
+							bind:value={itemName}
+							placeholder="No custom name"
+							hex={!legacy}
+							disabled={locked || selectedItem.fields.kept.includes('name')}
+							labelledby="item-name-label"
+						/>
+						{#if selectedItem.fields.kept.includes('name')}<p class="small muted">{keptNote}</p>{/if}
 					</div>
 					<div class="field">
-						<label for="item-lore">Lore (one line per line)</label>
-						<textarea id="item-lore" autocomplete="off" rows="2" bind:value={itemLore} disabled={locked}></textarea>
+						<label for="item-lore" id="item-lore-label">Lore (one line per line)</label>
+						<FormattedTextInput
+							id="item-lore"
+							multiline
+							bind:value={itemLore}
+							hex={!legacy}
+							disabled={locked || selectedItem.fields.kept.includes('lore')}
+							labelledby="item-lore-label"
+						/>
+						{#if selectedItem.fields.kept.includes('lore')}<p class="small muted">{keptNote}</p>{/if}
 					</div>
+					{#if (itemName || itemLore) && !selectedItem.fields.kept.length}
+						<div class="item-preview" aria-label="The name and lore as the game shows them">
+							{#if itemName}<div class="tip-name named"><McText spans={parseCodes(itemName, textBase)} /></div>{/if}
+							{#each itemLore ? itemLore.split('\n') : [] as line, i (i)}<div class="tip-lore"><McText spans={parseCodes(line, textBase)} /></div>{/each}
+						</div>
+					{/if}
 					<div class="item-row">
 						<label class="check"><input type="checkbox" bind:checked={itemUnbreakable} disabled={locked} /> Unbreakable</label>
 						{#if !legacy}
@@ -1395,6 +1427,19 @@
 	}
 
 	/* As the game draws it: dark, a purple edge, the name on top, the id faint at the bottom. */
+	.item-preview {
+		align-self: flex-start;
+		max-width: 100%;
+		padding: 0.35rem 0.55rem;
+		background: rgb(16 0 16 / 0.94);
+		border: 2px solid #2d0d63;
+		border-radius: 3px;
+		color: #fff;
+		font-size: 0.82rem;
+		line-height: 1.35;
+		overflow-wrap: anywhere;
+	}
+
 	.tooltip {
 		position: fixed;
 		z-index: 60;
@@ -1415,8 +1460,7 @@
 		margin-bottom: 0.15rem;
 	}
 
-	.tip-name.custom {
-		font-style: italic;
+	.tip-name.named {
 		color: #55ffff;
 	}
 
@@ -1427,7 +1471,6 @@
 
 	.tip-lore {
 		color: #aa00aa;
-		font-style: italic;
 	}
 
 	.tip-blue {

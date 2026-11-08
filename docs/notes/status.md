@@ -62,6 +62,11 @@ user before the beta):
    Download, the Build picker for both vendors, and the note naming the servers that move.
    Checked on throwaway data 2026-11-08 (an older Temurin 21 picked and downloaded for real, the
    note on its row, 1280 and 390 px); not yet on prod's own runtimes.
+3. **Formatted text**: a server's description with the code buttons and the preview (does the
+   real multiplayer list break and colour it the same?), and item names and lore on a real player
+   file: a coloured name kept through an edit, one typed with codes showing in game as previewed,
+   on 1.21.11 (JSON), a 26.x server (NBT text) and a 1.12 one. Checked on throwaway data
+   2026-11-08 (a saved name read back from the file as intended); not yet against the game.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

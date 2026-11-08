@@ -55,6 +55,13 @@ describe('parseProperties', () => {
 		expect(shown).toContain('Gemütlich');
 		expect(parseProperties(shown).values).toEqual(values);
 	});
+
+	it('keeps a description with colour codes and a second line, as the formatted input gives it', () => {
+		const values = { motd: '§6§lHome§r\n§aJoin us' };
+		const text = serialiseProperties(values);
+		expect(text).toContain('motd=\\u00A76\\u00A7lHome\\u00A7r\\n\\u00A7aJoin us\n');
+		expect(parseProperties(text).values).toEqual(values);
+	});
 });
 
 describe('server.properties on disk', () => {

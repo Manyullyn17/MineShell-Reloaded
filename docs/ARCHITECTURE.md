@@ -1587,6 +1587,17 @@ Files), a world upload streamed to disk (a form body would be
 held in memory whole), console commands and saved commands sent from the console, and the
 search and preview endpoints the browse-and-install forms call as you type.
 
+**Formatted text** (`lib/shared/mctext.ts`): Minecraft's colours and styles, one model for the
+three ways the game stores them: `§` codes in a string (the description, 1.12 item names), JSON
+text (names and lore 1.13 to 1.21.4) and NBT text (1.21.5 on; `playeritems.ts` converts it to the
+JSON shape and back). Editors work on a `§`-coded string (`FormattedTextInput.svelte`, with the
+code buttons), hex colours as MineShell's own `§#rrggbb`, which only JSON and NBT targets take;
+`McText.svelte` draws it. Text holding what the model cannot (translated text, click events, a
+font) is never flattened: the item editor shows it read-only and leaves it as it is. The server
+list preview (`ServerListPreview.svelte`) uses the 26.3 client's layout and the glyph widths of
+its font (`mcfontwidths.ts`, measured from the font images), so the description breaks where the
+game breaks it; each line is drawn in the browser's font and scaled to the game's width.
+
 **The file editor** (`CodeEditor.svelte`, Files): CodeMirror 6, set up in
 `lib/shared/codemirror.ts` and imported when the editor mounts, so its ~115 KB (gzipped) load
 only there. A textarea under it is what the save form posts (kept in step with every change,

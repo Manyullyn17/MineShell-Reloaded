@@ -38,7 +38,7 @@ size, not a fixed list; entries move and get added along the way):
   server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
-  preview, also for item names and lore; the mod config editor (the headline); the NBT editor
+  preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline); the NBT editor
   (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
   Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
@@ -110,7 +110,7 @@ in the order to build them where one needs another.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
 5. **Players and how the server shows itself**: game mode and teleport for online players
-   (built), shared player lists, the server list preview, the server resource pack, maintenance mode
+   (built), shared player lists, the server list preview (built), the server resource pack, maintenance mode
    (which changes the description the preview shows); joining over Tailscale, wanted for 1.2
    (user's call, 2026-11-02), so built first whatever step is under way.
 6. **Schedules**: hours a server runs, on the scheduler that restarts today, and one view of
@@ -264,25 +264,14 @@ over RCON while it runs and to its JSON file while stopped, as the Players tab a
 for one. To decide: whether a following server can still have its own extra entries, and
 what joining a list does with the entries a server already has.
 
-#### Server list preview
+#### Formatted text: what is left
 
-Agreed 2026-10-27. The description (`motd`) is a plain text field, so `§` formatting is
-typed blind. Beside it: the server as the multiplayer list draws it (icon, description in
-its colours and styles, players online/max), with buttons that insert colour and format
-codes. To check: how each version escapes `§` and `§` in `server.properties`, and
-that the two-line limit and width match the client.
-
-Formatted text beyond the description (user's call, 2026-11-08, with it in 1.3): the same
-colours and styles wherever Minecraft text is typed, item names and lore first. Minecraft keeps
-such text three ways: `§` codes in a string (the description, item names before 1.13), JSON
-text (names and lore 1.13 to 1.21.4) and NBT text (1.21.5 on); hex colours exist only in the
-last two. So one formatted-text model with a converter for each, a renderer and an input with
-the code buttons, shared by every place. Today the player editor reads names and lore as plain
-text (`textOf`) and writes plain text back (`textTag`): untouched items keep their colours,
-but renaming a coloured item, or editing one line of a coloured lore, loses all of it. Text the
-model cannot hold (translated names, click events, fonts) is kept and shown as such, never
-flattened. Later users: `resource-pack-prompt` (JSON text), `pack.mcmeta` descriptions on the
-Data packs tab (shown only), the status page.
+From the server list preview and formatted text (built 2026-11-08, ROADMAP-ARCHIVE): more
+places that hold Minecraft text, on the same model and input (`mctext.ts`,
+`FormattedTextInput.svelte`): `resource-pack-prompt` (JSON text) with the resource pack work,
+`pack.mcmeta` descriptions on the Data packs tab (shown only), the status page. The preview's
+widths are exact for the bitmap fonts' 2413 glyphs; others (CJK, emoji) come from Unifont and
+are guessed (9 wide or 6), so a description in them may break a word early or late.
 
 #### Server resource pack
 

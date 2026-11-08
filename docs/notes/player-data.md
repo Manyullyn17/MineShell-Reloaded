@@ -34,6 +34,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Removing a player (Players > Manage, `removePlayerFiles`): player file, `.dat_old`, stats,
   advancements and MineShell's backups go to the Files trash; mods' per-player data elsewhere
   stays. Refused while online (the server writes them back on leaving).
+- Names and lore (`playeritems.ts`, `mctext.ts`): custom names and lore are italic in game unless
+  their text says otherwise (`italic: false`); 1.12 makes them italic whatever they say. So JSON
+  and NBT text without `italic` reads as `§o`, and MineShell writes inside a non-italic root: an
+  anvil name edited keeps looking italic, typed text is not. A 1.21.5+ name written as a plain
+  string tag (what MineShell wrote before 1.3) shows italic. NBT lists hold one type: lore with
+  mixed strings and compounds cannot exist, the converter writes compounds throughout.
 - `playeritems.ts`: item fields (name, lore, enchantments, unbreakable, durability) per format
   (legacy/flat/components, and 1.21.5's NBT text and plain enchantment map), and item lists:
   known ones (BlockEntityTag.Items, minecraft:container `{slot,item}`, bundle contents) plus any

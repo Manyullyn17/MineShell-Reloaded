@@ -4,6 +4,8 @@ import { parseSnbt } from './snbt';
 import { describeItem, findContainers, readFields, setContainerItem, setKeyedItem, styleOf, writeFields, PlayerDataError } from './playeritems';
 
 const snbt = (text: string) => parseSnbt(text) as Compound;
+/** A 1.13-1.20.4 item's display Name as stored (a JSON string). */
+const readFlatName = (item: Compound) => ((item.value.find(([k]) => k === 'tag')![1] as Compound).value.find(([k]) => k === 'display')![1] as Compound).value.find(([k]) => k === 'Name')![1].value as string;
 const LEGACY = styleOf(1343);
 const FLAT = styleOf(3700);
 const COMPONENTS = styleOf(3955);
@@ -19,10 +21,36 @@ describe('item fields', () => {
 		];
 		for (const [style, text] of cases) {
 			const fields = readFields(snbt(text), style);
-			expect(fields).toMatchObject({ name: 'Edge', lore: ['sharp'], unbreakable: true, stored: false });
+			// Italic in game: JSON and NBT text without `italic` reads as §o; 1.12's strings as they are.
+			const italic = style === LEGACY ? '' : '§o';
+			expect(fields).toMatchObject({ name: `${italic}Edge`, lore: [`${italic}sharp`], kept: [], unbreakable: true, stored: false });
 			expect(fields.enchantments).toEqual([{ id: style === LEGACY ? '16' : 'minecraft:sharpness', level: 5 }]);
 			expect(fields.damage).toBe(style === LEGACY ? null : 5);
 		}
+	});
+
+	// Names and lore read as plain text: renaming a coloured item, or editing one line of a
+	// coloured lore, wrote them all back without their colours.
+	it('keeps colours and styles through a read and a write, in every format', () => {
+		const codes = '§6Gold §lbold§r §#12abefhex';
+		for (const style of [FLAT, COMPONENTS, NBT_TEXT]) {
+			const item = snbt(style.format === 'components' ? '{id:"minecraft:stick",count:1}' : '{id:"minecraft:stick",Count:1b}');
+			writeFields(item, { name: codes, lore: ['§cred line', 'plain'] }, style);
+			expect(readFields(item, style)).toMatchObject({ name: codes, lore: ['§cred line', 'plain'], kept: [] });
+		}
+		const legacy = snbt('{id:"minecraft:stick",Count:1b}');
+		writeFields(legacy, { name: '§6Gold §lbold', lore: ['§cred'] }, LEGACY);
+		expect(readFields(legacy, LEGACY)).toMatchObject({ name: '§6Gold §lbold', lore: ['§cred'] });
+		expect(() => writeFields(legacy, { name: '§#12abefhex' }, LEGACY)).toThrow(PlayerDataError);
+		// Written as the game keeps it: JSON with a non-italic root, NBT with bytes.
+		const flat = snbt('{id:"minecraft:stick",Count:1b}');
+		writeFields(flat, { name: '§6Gold §lbold' }, FLAT);
+		expect(JSON.parse(readFlatName(flat))).toEqual({ text: '', italic: false, extra: [{ text: 'Gold ', color: 'gold' }, { text: 'bold', color: 'gold', bold: true }] });
+	});
+
+	it('leaves text it cannot edit as it is, saying so', () => {
+		const item = snbt('{id:"minecraft:stick",count:1,components:{"minecraft:custom_name":{translate:"item.minecraft.stick",color:"gold"},"minecraft:lore":[{text:"one"},{text:"two",click_event:{action:"open_url",url:"x"}}]}}');
+		expect(readFields(item, NBT_TEXT)).toMatchObject({ name: '', lore: ['one', 'two'], kept: ['name', 'lore'] });
 	});
 
 	it('writes fields in the item’s own format and reads them back', () => {
@@ -40,7 +68,7 @@ describe('item fields', () => {
 		expect(flat.value[2][1]).toEqual(snbt('{display:{Name:\'{"text":"Wand","italic":false}\'}}'));
 		const modern = snbt('{id:"minecraft:stick",count:1}');
 		writeFields(modern, { name: 'Wand', enchantments: [{ id: 'minecraft:mending', level: 1 }] }, NBT_TEXT);
-		expect(modern.value[2][1]).toEqual(snbt('{"minecraft:custom_name":"Wand","minecraft:enchantments":{"minecraft:mending":1}}'));
+		expect(modern.value[2][1]).toEqual(snbt('{"minecraft:custom_name":{text:"Wand",italic:0b},"minecraft:enchantments":{"minecraft:mending":1}}'));
 	});
 
 	it('removes emptied fields and leaves no empty data behind, but keeps show_in_tooltip', () => {

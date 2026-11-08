@@ -142,6 +142,7 @@ Administer players and inspect their saved data, including inventories containin
 - View item icons and 3D block models sourced from Minecraft and installed mod JARs.
 - Render supported special models, including chests, shulker boxes, beds, banners, heads, shields, conduits, decorated pots, and additional model-based variants.
 - Inspect item tooltips containing information such as enchantments, durability, energy, and item identifiers.
+- Edit item names and lore with their colours and styles (hex colours from Minecraft 1.16 on), previewed as the game shows them.
 
 Item rendering can be disabled in MineShell settings, leaving names and data available without loading or drawing item models.
 
@@ -171,6 +172,7 @@ Manage server configuration and files without needing direct shell access for ro
 
 - Searchable, tabbed settings for general options, gameplay, players, networking, performance, Java and memory, automation, snapshots, and advanced configuration.
 - Typed controls for common `server.properties` options, alongside an editor for additional keys and a raw configuration editor. Unrecognized properties are preserved.
+- The server description with buttons for Minecraft's colour and format codes, and a preview of the server as the multiplayer list shows it, with the game's own line breaks.
 - Port availability checks, with options to swap ports with another server or move to a free port.
 - Browse, upload, download, rename, delete, and edit text files within an instance directory. The editor has line numbers and colours for JSON, TOML, YAML, Forge `.cfg`, `.properties`, scripts and shell files, marks a syntax error as you type, and before saving a broken JSON (with comments too: `.jsonc`), JSON5, TOML or YAML file names the line and asks (with "Save anyway").
 - Every save in the editor keeps the version it replaced (the last 20 per file, up to 90 days), to load back and save again.

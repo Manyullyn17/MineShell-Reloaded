@@ -71,6 +71,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Latin-1: a UTF-8 "Gemütlich" motd came back as `Gem\u00C3\u00BCtlich`. Letters past ASCII are
   written as `\uXXXX` (every version reads that); the raw editor shows them as letters.
   Tried by running both vanilla jars on a scratch file (`tests/tools/mc-probe.mjs` does that).
+- The multiplayer list (26.3 client's `ServerSelectionList$OnlineServerEntry`, read with `javap`
+  2026-11-08): rows are 305 px (`getRowWidth`), content 4 less; the icon 32 at the left, the name at
+  x+35 y+1 in white, the description split to content width - 34 = 267 px and at most 2 lines drawn,
+  at y+12 and y+21, in 0x808080 where it sets no colour; players as grey numbers around a dark grey
+  slash, the ping icon 10x8 at content right - 15. A newline in `motd` starts the second line.
+  Glyph advances: the rightmost filled column of each bitmap glyph + 1, scaled to the font's height
+  (`include/default.json`: ascii, accented, nonlatin_european), space 4; the rest is Unifont.
 - Keys that changed form (mc-probe.mjs, 2026-10-30): up to 1.13.2 `difficulty` and `gamemode`
   are numbers only: a name falls back to Easy/Survival without a word and the server writes the
   number back (vanilla 1.12.2; the Cleanroom MeatballCraft copy had `difficulty=1` too). 1.14

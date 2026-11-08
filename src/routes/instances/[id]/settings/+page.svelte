@@ -19,6 +19,8 @@
 	import { channelNote } from '#lib/shared/updatecheck.js';
 	import SnapshotPolicyFields from '#lib/components/SnapshotPolicyFields.svelte';
 	import PropertyInput from '#lib/components/PropertyInput.svelte';
+	import FormattedTextInput from '#lib/components/FormattedTextInput.svelte';
+	import ServerListPreview from '#lib/components/ServerListPreview.svelte';
 	import MemoryAdvice from '#lib/components/MemoryAdvice.svelte';
 	import PortCheck from '#lib/components/PortCheck.svelte';
 	import SettingsSection, { provideSettingsView } from '#lib/components/SettingsSection.svelte';
@@ -458,8 +460,20 @@
 
 {#snippet propertyRows(section: string)}
 	{#each fieldsOf(section) as field (field.key)}
-		<div class="field" class:changed={changedProperty(field.key)}>
-			{#if field.type === 'boolean'}
+		<div class="field" class:changed={changedProperty(field.key)} class:wide={field.key === 'motd'}>
+			{#if field.key === 'motd'}
+				<!-- Codes and a preview: § formatting was typed blind. -->
+				<label for="motd" id="motd-label">{field.label} {#if field.restartRequired}<span class="tag">restart</span>{/if}</label>
+				<FormattedTextInput id="motd" name="motd" multiline bind:value={fieldValues.motd} labelledby="motd-label" />
+				<ServerListPreview
+					motd={fieldValues.motd ?? ''}
+					name={data.instance.name}
+					instanceId={data.instance.id}
+					iconVersion={data.iconVersion}
+					maxPlayers={Number(fieldValues['max-players'] || data.properties.values['max-players'] || 20)}
+				/>
+				<p class="small muted">As the multiplayer list shows it, with its line breaks; the name is whatever each player calls the server.</p>
+			{:else if field.type === 'boolean'}
 				<PropertyInput {field} bind:checked={fieldChecks[field.key]} />
 			{:else}
 				<PropertyInput {field} bind:value={fieldValues[field.key]} segmented />

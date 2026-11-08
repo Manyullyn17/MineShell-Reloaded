@@ -1518,6 +1518,31 @@ vendor's newest build, with nothing saying what it would install or whether it w
   quarters back (21.0.13 and 21.0.11, not 21.0.12 or 21.0.12.1; Java 17 and 25 alike), for
   reasons Azul does not give. Widening it to every Zulu build is a one-line change if wanted.
 
+### Server list preview and formatted text (1.3, 2026-11-08)
+
+Agreed 2026-10-27 (the preview); the user's call 2026-11-08 to take the colour codes wherever
+Minecraft text is typed, item names and lore first. Built:
+- **One model** (`lib/shared/mctext.ts`) for the three ways the game stores formatted text: `§`
+  codes in a string (the description, 1.12 item names), JSON text (names and lore 1.13 to
+  1.21.4), NBT text (1.21.5 on). Editors work on a `§`-coded string, hex colours as MineShell's
+  `§#rrggbb` where the target takes them. `FormattedTextInput.svelte` puts codes in with
+  buttons (on a selection, the style after it is put back); `McText.svelte` draws them.
+- **The description** in a server's Settings: the input, and the server as the multiplayer list
+  draws it (`ServerListPreview.svelte`), from the 26.3 client's layout read with `javap`: a 305 px
+  row, the description broken at 267 px with the game's glyph widths (measured from its font
+  images, `mcfontwidths.ts`), two lines shown, grey where it sets no colour; a note when more is
+  cut off. `§` goes into `server.properties` as `\u00A7`, a line break as `\n`, as before.
+- **Item names and lore** in the player editor keep their formatting: read through the model
+  (names without `italic` read as `§o`, as the game shows them), written inside a non-italic root
+  as JSON or NBT text, 1.12's as coded strings (no hex there, refused). Renaming a coloured item
+  or editing one lore line used to write them all back as plain text. Text the model cannot hold
+  (translated text, click events, a font) shows read-only with a note and is left as it is. A
+  preview box under the fields, and the hover tooltip in colour.
+- Found on the way: the tooltip's name took the "Your fields" cards' `.custom` flex rule (class
+  renamed); 1.21.5+ names MineShell wrote as plain strings showed italic in game.
+
+What it leaves: ROADMAP, "Formatted text: what is left".
+
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,
