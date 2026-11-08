@@ -30,6 +30,8 @@
 		compatibleLoaders,
 		mods,
 		datapackWorld,
+		datapackFolders,
+		datapackFolderOf,
 		source = $bindable('modrinth'),
 		term = $bindable(''),
 		searching = $bindable(false)
@@ -46,6 +48,10 @@
 		mods: PageData['mods'];
 		/** The world folder data packs go into. */
 		datapackWorld: string;
+		/** Folders a data pack loader on the server reads for every world, offered beside the world's. */
+		datapackFolders: { folder: string; mod: string }[];
+		/** Where each data pack from the browser is now, by "<source>:<projectId>" ('' for the world's). */
+		datapackFolderOf: Record<string, string>;
 		source?: string;
 		term?: string;
 		searching?: boolean;
@@ -80,6 +86,8 @@
 	};
 	let versions = $state<Version[]>([]);
 	let versionId = $state('');
+	/** The data pack folder an install goes into: '' for the world's (datapackFolders). */
+	let packFolder = $state('');
 	let loadingVersions = $state(false);
 	/** Versions are listed in batches: a big project has hundreds. */
 	const VERSION_BATCH = 50;
@@ -252,6 +260,8 @@
 
 	async function choose(hit: Hit) {
 		selected = hit;
+		// A data pack already installed is offered where it is; a new one the world's folder.
+		packFolder = datapackFolderOf[`${source}:${hit.id}`] ?? '';
 		versions = [];
 		shownVersions = VERSION_BATCH;
 		versionId = '';
@@ -449,10 +459,27 @@
 							<input type="hidden" name="versionId" value={versionId} />
 
 							{#if pick?.datapack}
-								<p class="notice info small">
-									A data pack: it goes into <code>{datapackWorld}/datapacks</code>, not the mods folder. Packs that
-									change world generation only affect chunks generated after it is installed.
-								</p>
+								{#if datapackFolders.length}
+									<p class="notice info small">
+										A data pack: it goes into a data pack folder, not the mods folder. Packs that change world generation
+										only affect chunks generated after it is installed.
+									</p>
+									<label class="pack-folder">
+										<span class="small">Put it in</span>
+										<select name="folder" bind:value={packFolder}>
+											<option value="">This world: {datapackWorld}/datapacks</option>
+											{#each datapackFolders as f (f.folder)}<option value={f.folder}>Every world: {f.folder} ({f.mod})</option>{/each}
+										</select>
+									</label>
+									{#if selected && datapackFolderOf[`${source}:${selected.id}`] !== undefined && datapackFolderOf[`${source}:${selected.id}`] !== packFolder}
+										<p class="small muted">It is in {datapackFolderOf[`${source}:${selected.id}`] || `${datapackWorld}/datapacks`} now; installing moves it.</p>
+									{/if}
+								{:else}
+									<p class="notice info small">
+										A data pack: it goes into <code>{datapackWorld}/datapacks</code>, not the mods folder. Packs that
+										change world generation only affect chunks generated after it is installed.
+									</p>
+								{/if}
 							{/if}
 							{#if pick?.clientOnly}
 								<p class="notice warning small">
@@ -720,6 +747,18 @@
 
 	.install .notice {
 		margin-bottom: var(--space-2);
+	}
+
+	.pack-folder {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
+
+	.pack-folder select {
+		min-width: 0;
+		flex: 1;
 	}
 
 	.deps {

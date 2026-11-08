@@ -714,9 +714,7 @@
 			</form>
 		{/if}
 	</div>
-	{#if data.loaderDatapacks.length}<h3 class="loader-packs">This world only, from <code>{data.datapacks.world}/datapacks</code></h3>{/if}
-	<div use:dropzone={packZone('', `${data.datapacks.world}/datapacks`)}>
-	{#if may('datapacks') && data.datapacks.packs.some((p) => p.tracked)}
+	{#if may('datapacks') && (data.datapacks.packs.some((p) => p.tracked) || data.loaderDatapacks.some((f) => f.packs.some((p) => p.tracked)))}
 		<DatapackUpdates
 			instanceId={data.instance.id}
 			running={data.running}
@@ -726,6 +724,8 @@
 			onopencheck={() => (checkDatapacksOnOpen = false)}
 		/>
 	{/if}
+	{#if data.loaderDatapacks.length}<h3 class="loader-packs">This world only, from <code>{data.datapacks.world}/datapacks</code></h3>{/if}
+	<div use:dropzone={packZone('', `${data.datapacks.world}/datapacks`)}>
 	{#if data.datapacks.packs.length === 0}
 		<div class="empty"><p>No data packs in this world. Data pack releases from Add mods land here, or upload a .zip.</p></div>
 	{:else}
@@ -791,6 +791,7 @@
 				<thead>
 					<tr>
 						<th>Data pack</th>
+						<th>Version</th>
 						<th class="num">Size</th>
 						<th><span class="visually-hidden">Actions</span></th>
 					</tr>
@@ -799,9 +800,14 @@
 					{#each f.packs as pack (pack.fileName)}
 						<tr>
 							<td>
-								<span class="mono small">{pack.fileName.replace(/\.zip$/i, '')}</span>
+								{#if webLink(pack.projectUrl)}
+									<a href={webLink(pack.projectUrl)} target="_blank" rel="noreferrer">{pack.name}</a>
+								{:else}
+									<span class="mono small">{pack.name}</span>
+								{/if}
 								{#if pack.worldgen}<span class="tag warn" title="Adds or changes world generation">world generation</span>{/if}
 							</td>
+							<td class="mono small">{pack.version ?? ''}</td>
 							<td class="num mono small">{pack.sizeBytes ? formatBytes(pack.sizeBytes) : 'folder'}</td>
 							<td class="right">
 								{#if may('datapacks')}
@@ -810,8 +816,8 @@
 										action="?/removeDatapack"
 										use:enhance={({ cancel }) => {
 											const question = pack.worldgen
-												? `${pack.fileName} changes world generation. A world that has loaded it may not load without it. Take a snapshot on the World tab first. Remove it anyway?`
-												: `Remove ${pack.fileName}?`;
+												? `${pack.name} changes world generation. A world that has loaded it may not load without it. Take a snapshot on the World tab first. Remove it anyway?`
+												: `Remove ${pack.name}?`;
 											if (!confirm(question)) cancel();
 										}}
 									>
@@ -854,6 +860,8 @@
 	compatibleLoaders={data.compatibleLoaders}
 	mods={data.mods}
 	datapackWorld={data.datapacks.world}
+	datapackFolders={data.loaderDatapacks.map((f) => ({ folder: f.folder, mod: f.mod }))}
+	datapackFolderOf={data.datapackFolderOf}
 	bind:source
 	bind:term
 	bind:searching

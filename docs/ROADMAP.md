@@ -40,8 +40,8 @@ size, not a fixed list; entries move and get added along the way):
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
   (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players (built 2026-11-08) anywhere in
-  between. Then the server resource pack browser (built 2026-11-08) and Add mods choosing a data pack's folder
-  (user, 2026-11-08: both still go in; a larger release is fine). Maintenance mode to 1.4.
+  between. Then the server resource pack browser and Add mods choosing a data pack's folder
+  (both built 2026-11-08; user, 2026-11-08: both still go in, a larger release is fine). Maintenance mode to 1.4.
   Scheduled CI during the beta (not user facing, so outside any release).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
   item icons and the status page as ordered below. Whenever convenient: Chunk Pregenerator,
@@ -495,11 +495,9 @@ is open, and each needs a test setup.
   a list at the top (whitelists), now text only; YAML and `.properties` configs. A list of
   objects or an inline table is edited as its text, not field by field.
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
-  does not search; the mirror's coverage of it is unchecked). Add mods choosing a data pack's
-  folder (user's call, 2026-11-06: after 1.2): it always installs to `world/datapacks`, and
-  tracking assumes that folder in install, listing, removal, updates and version moves, so a
-  loader folder needs a folder column on `instance_datapacks` and all of those; untracked
-  installs would stop updating without saying so. Uploading on the tab reaches every folder.
+  does not search; the mirror's coverage of it is unchecked). A version move that drops the
+  data pack loader (a loader change where it has no build) leaves its folder's packs read by
+  nothing; the plan does not say so yet.
 - **Item icons and names**: 1.12 mod damage variants whose model names only the mod's code
   maps (AE2 material/part, IE metal, Botania manaresource; user's call: decide later), names
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),

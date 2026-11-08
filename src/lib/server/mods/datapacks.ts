@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db';
-import { instanceDatapacks, type ServerInstance } from '../db/schema';
+import { instanceDatapacks, type InstanceDatapack, type ServerInstance } from '../db/schema';
 import { downloadFile, hashFile } from '../download';
 import { serverWorldName } from '../packworld';
 import { zipEntryNames } from '../zip';
@@ -12,7 +12,9 @@ import type { ProjectVersion, SourceId } from './types';
 /**
  * Data packs from the mod browser. Modrinth lists a data pack release under
  * the loader "datapack"; such a version (one that does not also run on the
- * server's loader) goes into <level-name>/datapacks/ instead of mods/.
+ * server's loader) goes into <level-name>/datapacks/ instead of mods/, or a
+ * folder a data pack loader on the server reads for every world (Open Loader's
+ * config/openloader/packs), when picked.
  * Minecraft loads a new pack found there when the world loads; with no world
  * yet, it is there when the world is created, which world-generation packs
  * need.
@@ -32,6 +34,18 @@ export async function datapacksDir(root: string): Promise<{ world: string; dir: 
 	return { world, dir: path.join(root, world, 'datapacks') };
 }
 
+/**
+ * A tracked pack's folder: '' is the world's datapacks/, anything else a folder a data pack
+ * loader reads (datapackloaders.ts), relative to the server folder. Callers check a folder
+ * from a form against loaderDatapackFolders; this only keeps it inside the server folder.
+ */
+export async function datapackFolderDir(root: string, folder: string): Promise<string> {
+	if (!folder) return (await datapacksDir(root)).dir;
+	const dir = path.resolve(root, folder);
+	if (path.isAbsolute(folder) || !dir.startsWith(path.resolve(root) + path.sep)) throw new Error(`"${folder}" is not a folder in this server.`);
+	return dir;
+}
+
 /** A data pack's file name as it may sit in the folder: no path, no tricks. */
 function safeFileName(name: string): string {
 	const base = path.basename(name);
@@ -43,24 +57,27 @@ export async function installDatapackVersion(
 	instance: ServerInstance,
 	source: SourceId,
 	project: { id: string; slug: string; name: string; projectUrl: string | null; iconUrl: string | null },
-	version: ProjectVersion
+	version: ProjectVersion,
+	/** '' for the world's datapacks/, or a loader's folder (datapackFolderDir). */
+	folder = ''
 ): Promise<string> {
 	const file = version.files.find((f) => f.primary) ?? version.files[0];
 	if (!file) throw new Error(`${project.name} ${version.versionNumber} has no downloadable file.`);
 	const fileName = safeFileName(file.filename);
-	const { dir } = await datapacksDir(instance.path);
+	const dir = await datapackFolderDir(instance.path, folder);
 	await fs.mkdir(dir, { recursive: true });
 	const destination = path.join(dir, fileName);
 	await downloadFile(file.url, destination, { hash: file.hash });
 
-	// One file per project: a newer version replaces the older one's file and row.
+	// One file per project: a newer version replaces the older one's file and row, and one
+	// installed into another folder moves it there (two copies would load it twice).
 	const previous = db
 		.select()
 		.from(instanceDatapacks)
 		.where(and(eq(instanceDatapacks.instanceId, instance.id), eq(instanceDatapacks.projectId, project.id)))
 		.all();
-	for (const row of previous.filter((r) => r.fileName !== fileName)) {
-		await fs.rm(path.join(dir, row.fileName), { recursive: true, force: true });
+	for (const row of previous.filter((r) => r.fileName !== fileName || r.folder !== folder)) {
+		await fs.rm(path.join(await datapackFolderDir(instance.path, row.folder), row.fileName), { recursive: true, force: true });
 		db.delete(instanceDatapacks).where(eq(instanceDatapacks.id, row.id)).run();
 	}
 
@@ -74,6 +91,7 @@ export async function installDatapackVersion(
 		iconUrl: project.iconUrl,
 		version: version.versionNumber,
 		versionId: version.id,
+		folder,
 		fileName,
 		hash: file.hash?.value ?? (await hashFile(destination)),
 		installedAt: Date.now()
@@ -141,7 +159,11 @@ export type DatapackRow = {
 export async function listDatapacks(instance: ServerInstance): Promise<{ world: string; packs: DatapackRow[] }> {
 	const { world, dir } = await datapacksDir(instance.path);
 	const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
-	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all();
+	const rows = db
+		.select()
+		.from(instanceDatapacks)
+		.where(and(eq(instanceDatapacks.instanceId, instance.id), eq(instanceDatapacks.folder, '')))
+		.all();
 	const byFile = new Map(rows.map((r) => [r.fileName, r]));
 	let fromPack = new Set<string>();
 	try {
@@ -190,9 +212,53 @@ export async function removeDatapack(instance: ServerInstance, fileName: string,
 		}
 	}
 	await fs.rm(full, { recursive: true, force: true });
+	forgetDatapack(instance.id, '', name);
+}
+
+/** The row of a pack that was removed from `folder` (by removeDatapack, or from a loader's folder). */
+export function forgetDatapack(instanceId: string, folder: string, fileName: string): void {
 	db.delete(instanceDatapacks)
-		.where(and(eq(instanceDatapacks.instanceId, instance.id), eq(instanceDatapacks.fileName, name)))
+		.where(and(eq(instanceDatapacks.instanceId, instanceId), eq(instanceDatapacks.folder, folder), eq(instanceDatapacks.fileName, fileName)))
 		.run();
+}
+
+export type TrackedDatapack = {
+	row: InstanceDatapack;
+	/**
+	 * Adds world generation a world may depend on: in the world's folder when level.dat lists it
+	 * as enabled, in a loader's folder whenever it adds world generation (every world reads it).
+	 */
+	worldgenInUse: boolean;
+};
+
+/** The packs from the mod browser that are still where they were put, in any folder. */
+export async function trackedDatapacks(instance: ServerInstance): Promise<TrackedDatapack[]> {
+	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all();
+	const world = new Map((await listDatapacks(instance)).packs.map((p) => [p.fileName, p]));
+	const out: TrackedDatapack[] = [];
+	for (const row of rows) {
+		if (!row.folder) {
+			const pack = world.get(row.fileName);
+			if (pack) out.push({ row, worldgenInUse: pack.worldgen && pack.loadedByWorld });
+			continue;
+		}
+		const full = path.join(await datapackFolderDir(instance.path, row.folder).catch(() => ''), row.fileName);
+		const stat = await fs.stat(full).catch(() => null);
+		if (stat) out.push({ row, worldgenInUse: await changesWorldgen(full, stat.isDirectory()) });
+	}
+	return out;
+}
+
+/** Where each project from the mod browser is, by "<source>:<projectId>": Add mods offers that folder first. */
+export function trackedFolderByProject(instanceId: string): Record<string, string> {
+	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instanceId)).all();
+	return Object.fromEntries(rows.map((r) => [`${r.source}:${r.projectId}`, r.folder]));
+}
+
+/** What the mod browser says about packs in a loader's folders: name, version and link by file name. */
+export function trackedInFolders(instanceId: string): Map<string, InstanceDatapack> {
+	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instanceId)).all();
+	return new Map(rows.filter((r) => r.folder).map((r) => [`${r.folder}/${r.fileName}`, r]));
 }
 
 /** A copied server's files include the data packs; its rows say where they came from. */

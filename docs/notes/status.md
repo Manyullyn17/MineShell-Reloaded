@@ -89,6 +89,11 @@ user before the beta):
    (with the key) on a real server, join with a client and take it (the prompt and "must take
    it" shown), and an address of your own. Checked 2026-11-08 on a throwaway dev server and
    against the live catalogs; no player has downloaded one yet.
+8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
+   release into its folder from Add mods, start the server and see it loaded (Open Loader's
+   "Located 1 packs"), then update it from the Data packs tab. Checked 2026-11-08 on a throwaway
+   dev server with a stand-in Open Loader jar (the file, the update, the folder choice); not yet
+   loaded by the real mod.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

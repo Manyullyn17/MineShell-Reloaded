@@ -38,8 +38,8 @@ describe("the Data packs tab and data pack loaders' folders", () => {
 				mod: 'Paxi',
 				folder: 'config/paxi/datapacks',
 				packs: [
-					{ fileName: 'folder-pack', path: 'config/paxi/datapacks/folder-pack', sizeBytes: 0, worldgen: false },
-					{ fileName: 'mine.zip', path: 'config/paxi/datapacks/mine.zip', sizeBytes: pack.length, worldgen: false }
+					{ fileName: 'folder-pack', path: 'config/paxi/datapacks/folder-pack', sizeBytes: 0, worldgen: false, name: 'folder-pack', version: null, projectUrl: null, tracked: false },
+					{ fileName: 'mine.zip', path: 'config/paxi/datapacks/mine.zip', sizeBytes: pack.length, worldgen: false, name: 'mine', version: null, projectUrl: null, tracked: false }
 				]
 			}
 		]);
@@ -69,5 +69,27 @@ describe("the Data packs tab and data pack loaders' folders", () => {
 		expect(await post(page.actions.removeDatapack, { params, fields: { fileName: 'mine.zip', folder: 'config/paxi/datapacks' } })).toMatchObject({ ok: true });
 		expect(await fs.readdir(path.join(instance.path, 'config/paxi/datapacks'))).toEqual([]);
 		expect(await fs.readdir(path.join(instance.path, 'config'))).toContain('keep.zip');
+	});
+
+	it("installs from Add mods only into a folder a loader on the server reads, and forgets a removed pack's record", async () => {
+		const { db } = await import('#lib/server/db/index.js');
+		const { instanceDatapacks } = await import('#lib/server/db/schema.js');
+		const { instance, params } = await server({ 'paxi-1.21-1.0.jar': jar('paxi') });
+		expect(await post(page.actions.install, { params, fields: { projectId: 'p', versionId: 'v', folder: 'config/openloader/packs' } })).toMatchObject({
+			status: 400,
+			data: { message: expect.stringMatching(/No data pack loader/) }
+		});
+		const folder = 'config/paxi/datapacks';
+		await fs.mkdir(path.join(instance.path, folder), { recursive: true });
+		await fs.writeFile(path.join(instance.path, folder, 'mine.zip'), pack);
+		db.insert(instanceDatapacks)
+			.values({ instanceId: instance.id, source: 'modrinth', projectId: 'p', slug: 'mine', name: 'Mine', projectUrl: 'https://modrinth.com/datapack/mine', iconUrl: null, version: '1.0', versionId: 'v', folder, fileName: 'mine.zip', hash: null, installedAt: 1 })
+			.run();
+		expect(await load(page, { params })).toMatchObject({
+			loaderDatapacks: [{ folder, packs: [{ fileName: 'mine.zip', name: 'Mine', version: '1.0', tracked: true }] }],
+			datapackFolderOf: { 'modrinth:p': folder }
+		});
+		expect(await post(page.actions.removeDatapack, { params, fields: { fileName: 'mine.zip', folder } })).toMatchObject({ ok: true });
+		expect(await load(page, { params })).toMatchObject({ datapackFolderOf: {} });
 	});
 });

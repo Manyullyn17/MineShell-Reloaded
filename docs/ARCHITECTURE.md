@@ -657,13 +657,18 @@ Details worth keeping:
   "Try again" that tracks what arrives as pack mods. A file in place drops off the list, and
   the next install or pack change replaces it.
 - Data packs from the mod browser (Modrinth releases tagged `datapack`) go into the world's
-  `datapacks/` folder and are tracked in `instance_datapacks`, apart from `instance_mods`,
-  whose rows all live in `mods/`. Their updates (`checkDatapackUpdates`/`applyDatapackUpdates`
+  `datapacks/` folder, or, picked in Add mods, a folder a data pack loader on the server reads
+  for every world (the row's `folder`, relative to the server folder; '' is the world's). They
+  are tracked in `instance_datapacks`, apart from `instance_mods`, whose rows all live in
+  `mods/`. A file name is one pack in whichever folder (the unique index older versions'
+  upserts need), and installing a pack into another folder moves it, so it never loads twice. Their updates (`checkDatapackUpdates`/`applyDatapackUpdates`
   in modupdates.ts, the Data packs sub-tab) list the project's data pack builds for the
   Minecraft version and pick as for mods; installing a version replaces the older file
-  after downloading the new one. A world-generation pack the world has loaded can stop it
-  loading when a biome it named goes away: it starts unticked, needs the server stopped,
-  and takes the snapshot first. Not journalled: one file per pack, old one kept until the
+  after downloading the new one, in the folder the old one was in (`trackedDatapacks`). A
+  world-generation pack the world has loaded (in a loader's folder: any, since every world
+  reads it) can stop it loading when a biome it named goes away: it starts unticked, needs
+  the server stopped, and takes the snapshot first. A version move updates the ones in a
+  loader's folder in place, and copies only the world's into a new world. Not journalled: one file per pack, old one kept until the
   new one is in. The tab also lists the folders a data pack loader on the server reads for
   every world (`loaderDatapackFolders`: the enabled loader's build's folders, KubeJS left
   out), and uploads zips into the world's `datapacks/` or one of those; an upload or removal

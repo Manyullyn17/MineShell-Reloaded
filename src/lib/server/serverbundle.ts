@@ -114,6 +114,8 @@ type DatapackRecord = {
 	iconUrl: string | null;
 	version: string | null;
 	versionId: string | null;
+	/** '' for the world's datapacks/, or a data pack loader's folder; missing in exports from before 1.3. */
+	folder?: string;
 	fileName: string;
 	hash: string | null;
 };
@@ -697,6 +699,10 @@ function restoreRecords(instanceId: string, r: Partial<BundleManifest['records']
 		const fileName = str(d?.fileName, 300);
 		const [source, projectId, slug, name] = [str(d?.source, 40), str(d?.projectId, 200), str(d?.slug, 200), str(d?.name, 400)];
 		if (!fileName || fileName.includes('/') || fileName.startsWith('.') || !source || !projectId || !slug || !name) continue;
+		// A data pack loader's folder, relative to the server folder; '' (or an export from before
+		// folders) is the world's datapacks/. Anything that could leave the folder is dropped.
+		const folder = str(d.folder, 300) ?? '';
+		if (folder && (folder.startsWith('/') || folder.split('/').some((part) => !part || part === '.' || part === '..'))) continue;
 		db.insert(instanceDatapacks)
 			.values({
 				instanceId,
@@ -708,6 +714,7 @@ function restoreRecords(instanceId: string, r: Partial<BundleManifest['records']
 				iconUrl: str(d.iconUrl),
 				version: str(d.version, 400),
 				versionId: str(d.versionId, 400),
+				folder,
 				fileName,
 				hash: str(d.hash, 200),
 				installedAt: now

@@ -133,6 +133,9 @@ async function source() {
 	db.insert(instanceDatapacks)
 		.values({ instanceId: instance.id, source: 'modrinth', projectId: 'dp', slug: 'dp', name: 'Terralith', fileName: 'terralith.zip', installedAt: 1 })
 		.run();
+	db.insert(instanceDatapacks)
+		.values({ instanceId: instance.id, source: 'modrinth', projectId: 'lv', slug: 'lv', name: 'Leaves', folder: 'config/openloader/packs', fileName: 'leaves.zip', installedAt: 1 })
+		.run();
 	return instance;
 }
 
@@ -291,7 +294,11 @@ describe('importing a server', () => {
 		expect(listScheduledCommands(copy.id)).toMatchObject([{ command: 'say hello', dailyTime: '18:00' }]);
 		expect(getMacros(copy.id)).toEqual(['weather clear']);
 		expect(listCustomFields(copy.id)).toMatchObject([{ label: 'Mana', kind: 'number', path: ['ForgeCaps', 'mana'] }]);
-		expect(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, copy.id)).all()).toMatchObject([{ name: 'Terralith', fileName: 'terralith.zip' }]);
+		const packRows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, copy.id)).all();
+		expect(packRows.sort((a, b) => a.name.localeCompare(b.name))).toMatchObject([
+			{ name: 'Leaves', folder: 'config/openloader/packs', fileName: 'leaves.zip' },
+			{ name: 'Terralith', folder: '', fileName: 'terralith.zip' }
+		]);
 		const tags = db.select({ name: serverTags.name }).from(instanceTags).innerJoin(serverTags, eq(serverTags.id, instanceTags.tagId)).where(eq(instanceTags.instanceId, copy.id)).all();
 		expect(tags).toEqual([{ name: `Friends-${original.id}` }]);
 		// The uploaded copy is gone once imported.
@@ -353,7 +360,13 @@ describe('importing a server', () => {
 			downloads: [{ target: '../../outside.jar', urls: ['https://cdn.modrinth.com/data/sodium.jar'], hash: null, required: true, size: 1 }],
 			files: 2,
 			bytes: 2,
-			records: {}
+			// A data pack record whose folder points out of the server folder: an update would write there.
+			records: {
+				datapacks: [
+					{ source: 'modrinth', projectId: 'a', slug: 'a', name: 'Out', folder: '../../elsewhere', fileName: 'out.zip' },
+					{ source: 'modrinth', projectId: 'b', slug: 'b', name: 'In', folder: 'config/openloader/packs', fileName: 'in.zip' }
+				]
+			}
 		};
 		await fs.writeFile(evil, await zipBuffer({ [MANIFEST]: JSON.stringify(manifest), 'files/config/ok.txt': 'ok' }));
 		fakeInstall();
@@ -363,5 +376,6 @@ describe('importing a server', () => {
 		const files = await tree(reload(instance.id).path, /^$/);
 		expect(files).toHaveProperty(['config/ok.txt']);
 		await expect(fs.access(path.join(path.dirname(reload(instance.id).path), '..', 'outside.jar'))).rejects.toThrow();
+		expect(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all().map((r) => r.name)).toEqual(['In']);
 	});
 });

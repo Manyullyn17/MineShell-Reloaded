@@ -574,7 +574,12 @@ export const instanceDatapacks = sqliteTable(
 		iconUrl: text('icon_url'),
 		version: text('version'),
 		versionId: text('version_id'),
-		/** Relative to <level-name>/datapacks, which follows level-name. */
+		/**
+		 * '' for <level-name>/datapacks, which follows level-name; otherwise a folder a data pack
+		 * loader reads, relative to the server folder (datapackloaders.ts).
+		 */
+		folder: text('folder').notNull().default(''),
+		/** In `folder`; one name is one pack, in whichever folder. */
 		fileName: text('file_name').notNull(),
 		hash: text('hash'),
 		installedAt: integer('installed_at').notNull()

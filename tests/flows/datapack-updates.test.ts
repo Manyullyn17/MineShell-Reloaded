@@ -19,7 +19,7 @@ vi.mock('#lib/server/mods/index.js', async (importOriginal) => {
 	return { ...actual, getModProvider: (id: string) => (id === 'modrinth' ? fake : actual.getModProvider(id)) };
 });
 
-const { installDatapackVersion, listDatapacks } = await import('#lib/server/mods/datapacks.js');
+const { installDatapackVersion, listDatapacks, trackedInFolders } = await import('#lib/server/mods/datapacks.js');
 const { applyDatapackUpdates, checkDatapackUpdates } = await import('#lib/server/modupdates.js');
 const { listSnapshots } = await import('#lib/server/snapshots.js');
 const { writeNbt } = await import('#lib/server/nbt.js');
@@ -70,7 +70,7 @@ describe('data pack updates', () => {
 		const check = await checkDatapackUpdates(instance);
 		// Releases stay on releases; the hand-added pack has nothing to look up.
 		expect(check.updates).toEqual([
-			{ fileName: 'Terralith_v2.5.8.zip', name: 'Terralith', currentVersion: '2.5.8', targetVersionId: 'v-2.6.0', targetVersion: '2.6.0', channel: 'release', worldgenInUse: false, addedAt: expect.any(Number) }
+			{ fileName: 'Terralith_v2.5.8.zip', name: 'Terralith', currentVersion: '2.5.8', targetVersionId: 'v-2.6.0', targetVersion: '2.6.0', channel: 'release', worldgenInUse: false, folder: '', addedAt: expect.any(Number) }
 		]);
 		expect((await waitForTask(await applyDatapackUpdates(instance, [{ fileName: 'Terralith_v2.5.8.zip', versionId: 'v-2.6.0' }], { snapshot: false }))).state).toBe('done');
 		const { packs } = await listDatapacks(instance);
@@ -96,5 +96,34 @@ describe('data pack updates', () => {
 		expect((await waitForTask(await applyDatapackUpdates(instance, [{ fileName: 'Terralith_v2.5.8.zip', versionId: 'v-2.6.0' }], { snapshot: true }))).state).toBe('done');
 		expect((await listSnapshots(instance.path)).map((s) => s.reason)).toEqual(['mod-update']);
 		expect((await listDatapacks(instance)).packs.map((p) => p.version)).toEqual(['2.6.0']);
+	});
+
+	// Add mods only knew the world's datapacks/: a pack wanted for every world through Open Loader
+	// had to be uploaded by hand, and then nothing updated it.
+	it("installs into a data pack loader's folder and updates it there", async () => {
+		const instance = await createInstance({ modloader: 'neoforge', minecraftVersion: '1.21.1' });
+		const folder = 'config/openloader/packs';
+		await installDatapackVersion(instance, 'modrinth', PROJECT, version('2.5.8', '2026-10-01T00:00:00Z'), folder);
+		expect(await fs.readdir(path.join(instance.path, folder))).toEqual(['Terralith_v2.5.8.zip']);
+		expect((await listDatapacks(instance)).packs).toEqual([]);
+		expect(trackedInFolders(instance.id).get(`${folder}/Terralith_v2.5.8.zip`)).toMatchObject({ name: 'Terralith', version: '2.5.8', folder });
+
+		const check = await checkDatapackUpdates(instance);
+		expect(check.updates).toMatchObject([{ fileName: 'Terralith_v2.5.8.zip', targetVersion: '2.6.0', worldgenInUse: false, folder }]);
+		expect((await waitForTask(await applyDatapackUpdates(instance, [{ fileName: 'Terralith_v2.5.8.zip', versionId: 'v-2.6.0' }], { snapshot: false }))).state).toBe('done');
+		expect(await fs.readdir(path.join(instance.path, folder))).toEqual(['Terralith_v2.6.0.zip']);
+		expect(await fs.readdir(path.join(instance.path, 'world')).catch(() => [])).toEqual([]);
+	});
+
+	it('moves a pack installed into another folder, so it is never loaded twice', async () => {
+		const instance = await createInstance({ modloader: 'neoforge', minecraftVersion: '1.21.1' });
+		const folder = 'config/openloader/packs';
+		await installDatapackVersion(instance, 'modrinth', PROJECT, version('2.5.8', '2026-10-01T00:00:00Z'), folder);
+		await installDatapackVersion(instance, 'modrinth', PROJECT, version('2.5.8', '2026-10-01T00:00:00Z'));
+		expect(await fs.readdir(path.join(instance.path, folder))).toEqual([]);
+		expect((await listDatapacks(instance)).packs.map((p) => [p.fileName, p.tracked])).toEqual([['Terralith_v2.5.8.zip', true]]);
+		expect(trackedInFolders(instance.id).size).toBe(0);
+		// Nothing outside the server folder, whatever a row says.
+		await expect(installDatapackVersion(instance, 'modrinth', PROJECT, version('2.6.0', '2026-10-02T00:00:00Z'), '../elsewhere')).rejects.toThrow(/not a folder in this server/);
 	});
 });

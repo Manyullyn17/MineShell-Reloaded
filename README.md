@@ -95,7 +95,7 @@ Manage server mods and prepare matching client installations from the same inter
 - Detect mods added outside MineShell or uploaded, and identify them on Modrinth, or on CurseForge with an API key, rather than silently ignoring them.
 - Spot the same mod installed twice (for example once from Modrinth and once from CurseForge under another file name) by the mod ids inside the jars, and disable one copy.
 - Detect and disable client-only mods after pack installation.
-- Browse and install data pack releases directly into a world's `datapacks/` directory, and update them (a world-generation pack the world uses only with the server stopped, after a snapshot).
+- Browse and install data pack releases directly into a world's `datapacks/` directory, or into the folder a data pack loader mod (Open Loader, Paxi, Global Packs) reads for every world, and update them where they are (a world-generation pack in use only with the server stopped, after a snapshot).
 - See the data packs a loader mod (Open Loader, Paxi, Global Packs) loads for every world beside the world's own, and upload data pack zips into either by button or drag and drop.
 - Offer players a server resource pack picked from Modrinth or CurseForge (with an API key) for the server's version: their games download it from there, and a newer version of the pack is pointed out. Or give the address of a pack hosted elsewhere, downloaded once for its SHA-1. From Minecraft 1.17, make the pack required and write the question players are asked, in colour.
 - Export client installations as Modrinth `.mrpack` files, CurseForge ZIP archives, or Prism Launcher instances.

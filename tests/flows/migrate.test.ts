@@ -103,6 +103,17 @@ async function withDatapacks(instance: Awaited<ReturnType<typeof forgeServer>>, 
 	}
 	return instance;
 }
+/** A data pack from the mod browser at its 1.20.1 build in a data pack loader's folder, read for every world. */
+async function inLoaderFolder(instance: Awaited<ReturnType<typeof forgeServer>>, slug: string, folder: string) {
+	const { instanceDatapacks } = await import('#lib/server/db/schema.js');
+	const version = BUILDS[slug]['datapack 1.20.1'].version;
+	const fileName = fileOf(slug, version, 'datapack');
+	await fs.mkdir(path.join(instance.path, folder), { recursive: true });
+	await fs.writeFile(path.join(instance.path, folder, fileName), `${slug} ${version}`);
+	db.insert(instanceDatapacks)
+		.values({ instanceId: instance.id, source: 'modrinth', projectId: slug, slug, name: NAMES[slug], projectUrl: null, iconUrl: null, version, versionId: `${slug}-${version}`, folder, fileName, hash: 'x', installedAt: 1 })
+		.run();
+}
 const packsIn = async (root: string, world: string) => (await fs.readdir(path.join(root, world, 'datapacks')).catch(() => [] as string[])).sort();
 
 const rowsOf = (id: string) =>
@@ -254,6 +265,18 @@ describe('moving a server to another Minecraft version and loader', () => {
 			const active = await levelName(instance.path);
 			expect(await packsIn(instance.path, active)).toEqual(['breeze-0.9.zip', 'towers-2.0.zip']);
 			expect(await packsIn(instance.path, 'world')).toEqual(['breeze-1.0.zip', 'handmade.zip', 'oldonly-1.0.zip', 'towers-2.0.zip']);
+		});
+
+		it("moves a data pack in a loader's folder to its build where it is, and copies none of it into the new world", async () => {
+			const instance = await withDatapacks(await forgeServer(), ['towers']);
+			await inLoaderFolder(instance, 'breeze', 'config/paxi/datapacks');
+			const plan = await planMigration(instance, OLDER);
+			expect(plan.datapacks.find((d) => d.name === 'More Breeze')).toMatchObject({ action: 'update', to: '0.9', folder: 'config/paxi/datapacks' });
+			expect(plan.datapacks.find((d) => d.name === 'Towers')).toMatchObject({ action: 'keep', folder: null });
+			const task = await waitForTask(await applyMigration(instance, OLDER, { confirmMinecraftChange: true, newWorld: true }));
+			expect(task.state).toBe('done');
+			expect(await fs.readdir(path.join(instance.path, 'config/paxi/datapacks'))).toEqual(['breeze-0.9.zip']);
+			expect(await packsIn(instance.path, await levelName(instance.path))).toEqual(['towers-2.0.zip']);
 		});
 
 		it('keeps the world when asked to, opened by the older version as it is', async () => {

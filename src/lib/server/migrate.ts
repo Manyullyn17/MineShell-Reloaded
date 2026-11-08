@@ -26,7 +26,7 @@ import {
 	type ResolvedDependency
 } from './modupdates';
 import { getLoader, instanceLoader, loaderLabel, type ModloaderId } from './modloaders';
-import { datapacksDir, installDatapackVersion, listDatapacks } from './mods/datapacks';
+import { datapacksDir, installDatapackVersion, listDatapacks, trackedDatapacks } from './mods/datapacks';
 import { compareVersions, resolveJava } from './java';
 import { snapshotStep } from './snapshots';
 import { createWorld, deleteWorld, switchWorld, worldSeed } from './world';
@@ -111,6 +111,8 @@ export type MigrationDatapackPlan = {
 	to: string | null;
 	/** Why it stays. */
 	reason: string | null;
+	/** A data pack loader's folder it is in (read for every world, so never copied), or null for the world's. */
+	folder: string | null;
 };
 
 export type MigrationPlan = {
@@ -212,14 +214,19 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 	const order = { disable: 0, update: 1, keep: 2 };
 	mods.sort((a, b) => order[a.action] - order[b.action] || a.name.localeCompare(b.name));
 
-	// The active world's data packs: the browser's are looked up for the target, as the
-	// data pack update check does; ones put there by hand or by a pack are not.
+	// The active world's data packs and the browser's in a data pack loader's folders: the
+	// browser's are looked up for the target, as the data pack update check does; ones put
+	// there by hand or by a pack are not.
 	const datapacks: MigrationDatapackPlan[] = [];
 	const datapackUpdates = new Map<string, ProjectVersion>();
 	const tracked = new Map(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all().map((r) => [r.fileName, r]));
 	const onTarget = { minecraftVersion: target.minecraft, modloader: target.loader };
-	await eachLimited((await listDatapacks(instance)).packs, async (pack) => {
-		const base = { fileName: pack.fileName, name: pack.name, from: pack.version };
+	const listed = [
+		...(await listDatapacks(instance)).packs.map((p) => ({ fileName: p.fileName, name: p.name, version: p.version, folder: null as string | null })),
+		...(await trackedDatapacks(instance)).filter((t) => t.row.folder).map(({ row }) => ({ fileName: row.fileName, name: row.name, version: row.version, folder: row.folder }))
+	];
+	await eachLimited(listed, async (pack) => {
+		const base = { fileName: pack.fileName, name: pack.name, from: pack.version, folder: pack.folder };
 		const row = tracked.get(pack.fileName);
 		if (!row) return void datapacks.push({ ...base, action: 'stay', to: null, reason: 'Not added from the mod browser, so MineShell cannot look it up.' });
 		try {
@@ -413,9 +420,9 @@ export async function applyMigration(
 				if (pack.action === 'update' && row && version) {
 					task.setProgress(null, `Data pack ${pack.name} ${version.versionNumber}`);
 					const project = { id: row.projectId, slug: row.slug, name: row.name, projectUrl: row.projectUrl, iconUrl: row.iconUrl };
-					await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version);
+					await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version, row.folder);
 					done.push(`Data pack ${pack.name} ${pack.from ?? '?'} -> ${version.versionNumber}`);
-				} else if (pack.action === 'keep' && packsTo !== packsFrom) {
+				} else if (pack.action === 'keep' && !pack.folder && packsTo !== packsFrom) {
 					await fs.mkdir(packsTo, { recursive: true });
 					await fs.cp(path.join(packsFrom, pack.fileName), path.join(packsTo, pack.fileName), { recursive: true, preserveTimestamps: true });
 					done.push(`Data pack ${pack.name} copied into the new world`);

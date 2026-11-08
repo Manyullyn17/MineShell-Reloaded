@@ -26,7 +26,7 @@
 	} = $props();
 
 	type Check = {
-		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; worldgenInUse: boolean }[];
+		updates: { fileName: string; name: string; currentVersion: string | null; targetVersionId: string; targetVersion: string; channel: string; worldgenInUse: boolean; folder: string }[];
 		upToDate: number;
 		skipped: { fileName: string; name: string; reason: string }[];
 	};
@@ -105,7 +105,10 @@
 									{#if u.worldgenInUse}<span class="tag warn">world generation, in use</span>{/if}
 								</span>
 								{#if u.worldgenInUse}
-									<span class="faint small">This world has loaded it: a version that renames or drops a biome can keep the world from loading.</span>
+									<span class="faint small">
+										{#if u.folder}Every world reads it from <code>{u.folder}</code>{:else}This world has loaded it{/if}: a version that
+										renames or drops a biome can keep {u.folder ? 'a world' : 'the world'} from loading.
+									</span>
 								{/if}
 							</span>
 							<span class="mono small versions">{u.currentVersion ?? '?'} → <span class="to">{u.targetVersion}</span></span>

@@ -38,7 +38,7 @@ import { isBisecting } from './bisect';
 import { snapshotStep } from './snapshots';
 import { disabledCopies, indexMods } from './crashdiag';
 import { cleanroomDisabledReasons, fugueUpdate, isFugueJar } from './cleanroom';
-import { installDatapackVersion, isDatapackVersion, listDatapacks } from './mods/datapacks';
+import { installDatapackVersion, isDatapackVersion, trackedDatapacks } from './mods/datapacks';
 
 /**
  * Updating mods outside a pack version change: all of them at once ("Update
@@ -340,8 +340,13 @@ export type DatapackUpdate = {
 	targetVersionId: string;
 	targetVersion: string;
 	channel: string;
-	/** Adds or changes world generation, and this world has loaded it: a newer version can break loading. */
+	/**
+	 * Adds or changes world generation, and this world has loaded it (or, in a loader's folder,
+	 * every world reads it): a newer version can break loading.
+	 */
 	worldgenInUse: boolean;
+	/** A data pack loader's folder it is in, or '' for the world's datapacks/. */
+	folder: string;
 	/** When it was installed or last updated from the mod browser. */
 	addedAt: number;
 };
@@ -365,20 +370,16 @@ export async function datapackBuilds(source: string, projectId: string, on: Pick
 export async function checkDatapackUpdates(
 	instance: ServerInstance
 ): Promise<{ updates: DatapackUpdate[]; upToDate: number; skipped: { fileName: string; name: string; reason: string }[] }> {
-	const { packs } = await listDatapacks(instance);
-	const present = new Map(packs.map((p) => [p.fileName, p]));
-	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all();
 	const result = { updates: [] as DatapackUpdate[], upToDate: 0, skipped: [] as { fileName: string; name: string; reason: string }[] };
 	await eachLimited(
-		rows.filter((r) => present.has(r.fileName)),
-		async (row) => {
+		await trackedDatapacks(instance),
+		async ({ row, worldgenInUse }) => {
 			try {
 				const target = pickUpdate(await datapackVersions(instance, row.source, row.projectId), row);
 				if (!target) {
 					result.upToDate++;
 					return;
 				}
-				const pack = present.get(row.fileName)!;
 				result.updates.push({
 					fileName: row.fileName,
 					name: row.name,
@@ -386,7 +387,8 @@ export async function checkDatapackUpdates(
 					targetVersionId: target.id,
 					targetVersion: target.versionNumber,
 					channel: target.channel,
-					worldgenInUse: pack.worldgen && pack.loadedByWorld,
+					worldgenInUse,
+					folder: row.folder,
 					addedAt: row.installedAt
 				});
 			} catch (err) {
@@ -417,8 +419,8 @@ export async function applyDatapackUpdates(instance: ServerInstance, changes: Ve
 	);
 	const unknown = changes.find((c) => !rows.has(c.fileName));
 	if (unknown) throw new InstanceError(`${unknown.fileName} is not a data pack MineShell installed.`);
-	const { packs } = await listDatapacks(instance);
-	const risky = changes.filter((c) => packs.some((p) => p.fileName === c.fileName && p.worldgen && p.loadedByWorld));
+	const tracked = await trackedDatapacks(instance);
+	const risky = changes.filter((c) => tracked.some((t) => t.row.fileName === c.fileName && t.worldgenInUse));
 	if (risky.length) await requireStopped(instance);
 	const label = `Updating ${changes.length} data pack${changes.length === 1 ? '' : 's'}`;
 	return startTask({ label: `${label}: ${instance.name}`, instanceId: instance.id }, async (task) => {
@@ -430,7 +432,7 @@ export async function applyDatapackUpdates(instance: ServerInstance, changes: Ve
 			const version = (await datapackVersions(instance, row.source, row.projectId)).find((v) => v.id === change.versionId);
 			if (!version) throw new Error(`${row.name}: that version is no longer listed.`);
 			const project = { id: row.projectId, slug: row.slug, name: row.name, projectUrl: row.projectUrl, iconUrl: row.iconUrl };
-			await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version);
+			await installDatapackVersion(instance, row.source as Parameters<typeof installDatapackVersion>[1], project, version, row.folder);
 			task.log(`${row.name}: ${row.version ?? '?'} -> ${version.versionNumber}`);
 		}
 		audit('instance.datapacks_updated', { instanceId: instance.id, detail: changes.map((c) => rows.get(c.fileName)!.name).join(', ') });

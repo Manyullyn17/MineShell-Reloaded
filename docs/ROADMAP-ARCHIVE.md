@@ -1360,6 +1360,24 @@ Players are checked against the online list (the target too) and their name's fo
 going into a command. Tried on the screenshot world's fake server (its RCON answers, not the
 commands); a real server not yet.
 
+### Add mods choosing a data pack's folder (1.3, 2026-11-08)
+
+Asked for 2026-11-06 (after 1.2). A data pack release in Add mods goes into the world's
+`datapacks/` or, when a data pack loader on the server reads a folder of its own (Open Loader,
+Paxi, Global Packs: the folders the Data packs tab lists), into that folder, picked beside
+Install and preset to wherever the pack already is. `instance_datapacks` got a `folder` column
+(0034, '' for the world's; the unique file name index kept, since older versions' upserts need
+it), and installing into another folder moves the pack. Updates, the update check, the Data
+packs tab (name, version and link in a loader's folder), removal, version moves (updated where
+they are, not copied into a new world) and server export and import (a folder leaving the
+server folder dropped) all follow the folder. Tried on a throwaway dev server with Dungeons and
+Taverns' data pack build into Open Loader's `config/openloader/packs`: installed, its update
+found and applied in place, the folder choice in Add mods, 390 px; not yet loaded by a real Open
+Loader.
+
+What it leaves: a version move that drops the loader mod does not warn about its folder's packs
+(ROADMAP, Leftovers, "Data packs").
+
 ### Server resource pack browser (1.3, 2026-11-08)
 
 Asked for 2026-10-26 (long meant to); split 2026-11-08 into a catalog browser now and hosting

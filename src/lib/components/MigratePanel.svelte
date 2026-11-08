@@ -41,7 +41,16 @@
 		reason: string | null;
 		disabled: boolean;
 	};
-	type DatapackPlan = { fileName: string; name: string; from: string | null; action: 'update' | 'keep' | 'stay'; to: string | null; reason: string | null };
+	type DatapackPlan = {
+		fileName: string;
+		name: string;
+		from: string | null;
+		action: 'update' | 'keep' | 'stay';
+		to: string | null;
+		reason: string | null;
+		/** A data pack loader's folder: every world reads it, so a new world needs no copy. */
+		folder: string | null;
+	};
 	type Plan = {
 		current: { minecraft: string; loader: string; loaderVersion: string | null };
 		target: { minecraft: string; loader: string; loaderVersion: string | null };
@@ -262,7 +271,7 @@
 			{#if plan.datapacks.length}
 				<li>
 					Data packs: <strong>{packs('update').length}</strong> moved to a build for it,
-					{#if plan.downgrade && newWorld}{packs('keep').length} copied as they are, {packs('stay').length} left with the current world{:else}{packs('keep').length + packs('stay').length} left as they are{/if}
+					{#if plan.downgrade && newWorld}{packs('keep').filter((d) => !d.folder).length} copied as they are, {packs('stay').filter((d) => !d.folder).length} left with the current world{#if plan.datapacks.some((d) => d.folder && d.action !== 'update')}, {plan.datapacks.filter((d) => d.folder && d.action !== 'update').length} in a loader's folder every world reads{/if}{:else}{packs('keep').length + packs('stay').length} left as they are{/if}
 				</li>
 			{/if}
 			{#if plan.downgrade && newWorld}
@@ -324,9 +333,10 @@
 					{#each plan.datapacks as d (d.fileName)}
 						<li class:off={d.action === 'stay'}>
 							<strong>{d.name}</strong>
+							{#if d.folder}<span class="muted small">in <code>{d.folder}</code></span>{/if}
 							{#if d.action === 'update'}{d.from ?? '?'} → {d.to}
 							{:else if d.action === 'keep'}<span class="muted small">this build runs there too</span>
-							{:else}<span class="muted small">{d.reason} {plan.downgrade && newWorld ? 'Stays with the current world.' : 'Left as it is; it may not load on ' + plan.target.minecraft + '.'}</span>{/if}
+							{:else}<span class="muted small">{d.reason} {plan.downgrade && newWorld && !d.folder ? 'Stays with the current world.' : 'Left as it is; it may not load on ' + plan.target.minecraft + '.'}</span>{/if}
 						</li>
 					{/each}
 				</ul>

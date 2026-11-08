@@ -22,7 +22,7 @@ import {
 import { currentModNotice, dropFromModNotice } from '#lib/server/modnotice.js';
 import { modsChecked } from '#lib/server/updatecheck.js';
 import { findLoader, LOADER_FALLBACKS, unknownLoaderMessage, type ModloaderId } from '#lib/server/modloaders.js';
-import { datapacksDir, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
+import { datapacksDir, forgetDatapack, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack, trackedFolderByProject, trackedInFolders } from '#lib/server/mods/datapacks.js';
 import { loaderDatapackFolders } from '#lib/server/datapackloaders.js';
 import { configFilesByMod } from '#lib/server/modconfigs.js';
 import { unitState } from '#lib/server/systemd.js';
@@ -42,6 +42,18 @@ import path from 'node:path';
  */
 function touchInstance(id: string) {
 	db.update(serverInstances).set({ updatedAt: Date.now() }).where(eq(serverInstances.id, id)).run();
+}
+
+/** A loader folder's packs, with what the mod browser recorded for the ones it put there. */
+async function withTracking(instanceId: string, folders: Awaited<ReturnType<typeof loaderDatapackFolders>>) {
+	const tracked = trackedInFolders(instanceId);
+	return folders.map((f) => ({
+		...f,
+		packs: f.packs.map((p) => {
+			const row = tracked.get(p.path);
+			return { ...p, name: row?.name ?? p.fileName.replace(/\.zip$/i, ''), version: row?.version ?? null, projectUrl: row?.projectUrl ?? null, tracked: !!row };
+		})
+	}));
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -70,8 +82,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		datapacks,
 		/** The server resource pack players are offered (the Resource pack sub-tab). */
 		resourcePack: await resourcePackState(instance),
-		/** Folders a data pack loader mod reads for every world (Open Loader, Paxi, Global Packs), with their packs. */
-		loaderDatapacks: await loaderDatapackFolders(instance.path),
+		/**
+		 * Folders a data pack loader mod reads for every world (Open Loader, Paxi, Global Packs), with
+		 * their packs; ones from the mod browser with its name, version and link.
+		 */
+		loaderDatapacks: await withTracking(instance.id, await loaderDatapackFolders(instance.path)),
+		/** The folder each data pack from the mod browser is in, by "<source>:<projectId>" ('' for the world's). */
+		datapackFolderOf: trackedFolderByProject(instance.id),
 		/** The update check found mod updates: the Updates tab checks when opened, to list them. */
 		modUpdatesKnown: instance.updateCheck && modsChecked(instance) && !!currentModNotice(instance.id)?.updates.length,
 		running: summary.running,
@@ -282,8 +299,13 @@ export const actions: Actions = {
 		const loader = findLoader(instance.modloader);
 		if (!loader) return fail(400, { ok: false, message: unknownLoaderMessage(instance.modloader) });
 		const catalogLoader = loader.catalogLoader ?? loader.id;
+		// Data packs into the world's datapacks/ (''), or a folder a data pack loader on the server reads.
+		const folder = String(form.get('folder') ?? '');
+		if (folder && !(await loaderDatapackFolders(instance.path)).some((f) => f.folder === folder)) {
+			return fail(400, { ok: false, message: 'No data pack loader on this server reads that folder.' });
+		}
 		let datapacks = 0;
-		/** A data pack release goes into the world's datapacks folder, anything else into mods/. */
+		/** A data pack release goes into the picked data pack folder, anything else into mods/. */
 		const installVersion = async (
 			provider: ReturnType<typeof getModProvider>,
 			project: Awaited<ReturnType<ReturnType<typeof getModProvider>['getProject']>>,
@@ -295,7 +317,7 @@ export const actions: Actions = {
 			requireAccess(locals, instance.id, datapack ? 'datapacks' : 'mods');
 			if (datapack) {
 				datapacks++;
-				return installDatapackVersion(instance, provider.id, meta, version);
+				return installDatapackVersion(instance, provider.id, meta, version, folder);
 			}
 			return installModVersion(instance, provider.id, meta, version);
 		};
@@ -440,10 +462,11 @@ export const actions: Actions = {
 		const folder = String(form.get('folder') ?? '');
 		try {
 			if (folder) {
-				// One of a loader's folders: only a name in one it lists, nothing tracked to drop.
+				// One of a loader's folders: only a name in one it lists.
 				const listed = (await loaderDatapackFolders(instance.path)).find((f) => f.folder === folder);
 				if (!listed?.packs.some((p) => p.fileName === fileName)) throw new Error(`${fileName} is not a data pack in a folder a loader on this server reads.`);
 				await fs.rm(path.join(instance.path, folder, fileName), { recursive: true, force: true });
+				forgetDatapack(instance.id, folder, fileName);
 			} else {
 				await removeDatapack(instance, fileName, { force: form.get('force') === 'on' });
 			}
