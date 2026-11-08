@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Updating mods and switching one mod's version (modupdates.ts), against a fake Modrinth. */
@@ -116,9 +116,12 @@ async function server() {
 			'world/level.dat': 'world'
 		}
 	);
-	const modId = (slug: string) =>
-		db.insert(mods).values({ source: 'modrinth', slug, name: slug === 'sodium' ? 'Sodium' : 'Lithium' }).onConflictDoNothing().run() &&
-		db.select().from(mods).where(eq(mods.slug, slug)).get()!.id;
+	// Its name set even where an earlier file in this worker stored the project under another one.
+	const modId = (slug: string) => {
+		const name = slug === 'sodium' ? 'Sodium' : 'Lithium';
+		db.insert(mods).values({ source: 'modrinth', slug, name }).onConflictDoUpdate({ target: [mods.source, mods.slug], set: { name } }).run();
+		return db.select().from(mods).where(and(eq(mods.source, 'modrinth'), eq(mods.slug, slug))).get()!.id;
+	};
 	const row = { instanceId: instance.id, installedAt: 1, hashAlgo: 'sha512' };
 	db.insert(instanceMods)
 		.values([
