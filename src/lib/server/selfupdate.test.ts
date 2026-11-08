@@ -207,6 +207,23 @@ describe('checking for updates', () => {
 		}
 	});
 
+	// After 1.2.0 the list had no beta left, so a problem the release brought and its last beta
+	// did not have had no easy way back (user, 2026-11-08).
+	it('keeps the last beta of the release running in the list, betas on or off', async () => {
+		pretendVersion('9.1.0');
+		try {
+			latest = release('9.1.0');
+			older = [{ ...release('9.1.0-beta.2'), prerelease: true }, { ...release('9.1.0-beta.1'), prerelease: true }, release('9.0.0'), { ...release('9.0.0-beta.3'), prerelease: true }];
+			await checkForUpdate();
+			expect(releaseHistory().map((r) => r.version)).toEqual(['9.1.0', '9.1.0-beta.2', '9.0.0']);
+			expect(releaseHistory(true).map((r) => r.version)).toEqual(['9.1.0', '9.1.0-beta.2', '9.0.0']);
+			expect(mayGoBackTo('9.1.0-beta.2')).toBe(true);
+			await expect(planDowngrade('9.1.0-beta.2')).resolves.toMatchObject({ release: { version: '9.1.0-beta.2', prerelease: true } });
+		} finally {
+			pretendVersion(null);
+		}
+	});
+
 	// The release that follows its betas wins over them, betas on or off.
 	it('offers a beta its own release', async () => {
 		pretendVersion('9.1.0-beta.2');

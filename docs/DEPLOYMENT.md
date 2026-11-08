@@ -223,7 +223,8 @@ betas too" (the owner) makes the check offer a newer beta like a release; the re
 follows the betas is offered either way, so a beta install moves on to it. With it on, the
 release history also lists the betas of the next version, with their notes, and going back to
 an earlier one of them is offered like going back to a release; once the release is out it
-replaces them there. A MineShell from before betas existed
+replaces them there, all but the last beta, kept while that release runs (betas on or off): the
+way back if the release brings a problem the beta did not have. A MineShell from before betas existed
 (1.0.x) gets its first one with the installer: `MINESHELL_VERSION=v1.1.0-beta.1`.
 
 Running the installer again: it installs the newest release next to the running one, switches

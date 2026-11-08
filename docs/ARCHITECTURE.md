@@ -408,7 +408,8 @@ keeping the answer in `settings` (`update.check`): the latest, and every release
 archive, which Settings > Updates lists with their notes. Betas are GitHub pre-releases
 (`v1.1.0-beta.1`): kept with the releases by every check, listed (`releaseHistory`) only with
 `update.beta` on ("Offer betas too", the owner's) and only while newer than the newest
-release, and they count for the latest only with it on. `compareVersions` orders them as
+release - except the last beta of the release running, listed either way as its way back -
+and they count for the latest only with it on. `compareVersions` orders them as
 semver does (`1.1.0-beta.1 < 1.1.0-beta.2 < 1.1.0`), so a beta is offered its release either way;
 read as equal, as it was until 1.1, a beta would never have been. The update downloads the archive, checks it against the
 published SHA-256, takes `install.sh` out of that archive and runs it with `systemd-run

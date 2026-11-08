@@ -282,12 +282,15 @@ function lastOfMajor(m: number, releases: Pick<Release, 'version' | 'prerelease'
 /**
  * The release list, newest first: every release the last check found, and with betas on the
  * betas newer than the newest release, so their notes can be read and an earlier one gone back
- * to. Betas of a version that is out are left out: its release replaced them.
+ * to. Betas of a version that is out are left out: its release replaced them. Except the last
+ * beta of the release running, betas on or off: the way back when the release brings a problem
+ * that beta did not have, the release being the beta's code plus fixes no beta ran (user, 2026-11-08).
  */
-export function releaseHistory(betas = betaEnabled()): Release[] {
+export function releaseHistory(betas = betaEnabled(), current = currentVersion()): Release[] {
 	const all = lastCheck()?.releases ?? [];
 	const newest = all.find((r) => !r.prerelease)?.version;
-	return all.filter((r) => !r.prerelease || (betas && (!newest || compareVersions(r.version, newest) > 0)));
+	const lastBeta = all.find((r) => r.prerelease && r.version.split('-')[0] === current)?.version;
+	return all.filter((r) => !r.prerelease || r.version === lastBeta || (betas && (!newest || compareVersions(r.version, newest) > 0)));
 }
 
 export type DowngradePlan = {
