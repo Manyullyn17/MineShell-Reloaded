@@ -513,7 +513,11 @@ is open, and each needs a test setup.
 - **NBT editor**: zlib-wrapped files (none found on the dev servers; `parseNbt` reads gzip and
   plain only); files over 8 MiB unpacked (structure caches); chunks inside region files and
   structures inside jars; a link from World > Game rules to `level.dat`; a search that filters
-  the tree in place, as the player editor's does, instead of a list of matches.
+  the tree in place, as the player editor's does, instead of a list of matches. Changing the
+  running world (user, 2026-11-08: nice some day, read-only is fine for now): only what has a
+  command could go live, as game rules do over RCON (`time set`, `weather`, `difficulty`); a raw
+  edit cannot, the server saves over it. The same as the player page while online (More for
+  online players).
 - **Mod configs**: FTB's SNBT configs (`config/ftb*.snbt`, comments above keys, typed
   numbers like `0.0d`; about ten files a pack; FTB Quests' `.snbt` quest book is data, not for
   this form); JSON configs that are
