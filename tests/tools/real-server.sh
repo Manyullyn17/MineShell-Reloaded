@@ -52,6 +52,26 @@ runs() { # one line per run: crashed|exit status|reached Done
 	' "$APP" "$DATA" "$id"
 }
 
+# What the history had to go on, for a run check that failed on a machine not at hand (CI).
+diagnose_runs() {
+	echo "-- every server_runs row, and where the history got to:"
+	node -e '
+		const db = new (require(process.argv[1] + "/node_modules/better-sqlite3"))(process.argv[2] + "/mineshell.db", { readonly: true });
+		console.log(db.prepare("select * from server_runs where instance_id = ?").all(process.argv[3]));
+		console.log(db.prepare("select created_at, history_cursor from server_instances where id = ?").get(process.argv[3]));
+	' "$APP" "$DATA" "$id"
+	echo "-- systemd $(systemctl --version | head -n 1); the unit's systemd lines with their ids:"
+	journalctl --user --user-unit="$unit.service" -o json --no-pager | node -e '
+		for (const line of require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean)) {
+			const e = JSON.parse(line);
+			if (e.SYSLOG_IDENTIFIER !== "systemd") continue;
+			console.log(JSON.stringify({ m: String(e.MESSAGE).slice(0, 60), t: e.__REALTIME_TIMESTAMP, uinv: e.USER_INVOCATION_ID, sinv: e._SYSTEMD_INVOCATION_ID, inv: e.INVOCATION_ID, uunit: e.USER_UNIT, sunit: e._SYSTEMD_USER_UNIT }));
+		}'
+	echo "-- the history's own read (newest entry, then the pattern search):"
+	journalctl --user --user-unit="$unit.service" -n 1 -o json --no-pager | head -c 400; echo
+	journalctl --user --user-unit="$unit.service" -o cat -g '^Started |Main process exited|Failed with result|service: Consumed |\]: Done \(' --no-pager | head -20
+}
+
 curl -fs -o /dev/null "$U/" || { echo "No MineShell at $U (tests/tools/devserver.sh start)." >&2; exit 1; }
 [[ -d "$DATA/instances/$id" ]] && { echo "$DATA/instances/$id is there already: delete that server first." >&2; exit 1; }
 
@@ -113,6 +133,7 @@ deadline=$((SECONDS + 90))
 until [[ "$(runs)" == "$want" ]]; do
 	if ((SECONDS >= deadline)); then
 		printf 'Expected (crashed|exit status|reached Done):\n%s\nRecorded:\n%s\n' "$want" "$(runs)" >&2
+		diagnose_runs >&2
 		fail "the recorded runs"
 	fi
 	sleep 5
