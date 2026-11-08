@@ -73,17 +73,19 @@ start)
 		esac
 	done
 	run="$root/run/$player"
+	# A release asset: GitHub's download host answered 504 for an hour while the API (gh) worked.
+	fetch() { curl -fsSL -o "$1" "https://github.com/$2/releases/download/$3/$4" || { command -v gh >/dev/null && gh release download "$3" -R "$2" -p "$4" -O "$1" --clobber; }; }
 	if running "$run"; then echo "$player is running already"; exit 1; fi
 	mkdir -p "$run/game/mods" "$home/.config/headlessmc"
 	if [[ ! -f "$jar" ]]; then
-		curl -fsSL -o "$jar" "https://github.com/headlesshq/headlessmc/releases/download/$version/headlessmc.jar" || { echo "could not download HeadlessMC" >&2; exit 1; }
+		fetch "$jar" headlesshq/headlessmc "$version" headlessmc.jar || { echo "could not download HeadlessMC" >&2; exit 1; }
 	fi
 	[[ -n "$mods" ]] && cp "$mods"/*.jar "$run/game/mods/"
 	kind="$loader"
 	[[ "$loader" == forge ]] && kind=lexforge
 	specifics="hmc-specifics-$mc-$specifics_version-$kind-release.jar"
 	if [[ ! -f "$run/game/mods/$specifics" ]]; then
-		curl -fsSL -o "$run/game/mods/$specifics" "https://github.com/headlesshq/hmc-specifics/releases/download/$specifics_version/$specifics" || { echo "no $specifics: hmc-specifics has no build for that version" >&2; exit 1; }
+		fetch "$run/game/mods/$specifics" headlesshq/hmc-specifics "$specifics_version" "$specifics" || { echo "no $specifics: hmc-specifics has no build for that version" >&2; exit 1; }
 	fi
 	# The first-launch accessibility screen would hold up quick play.
 	[[ -f "$run/game/options.txt" ]] || printf 'pauseOnLostFocus:false\nonboardAccessibility:false\nnarrator:0\n' >"$run/game/options.txt"

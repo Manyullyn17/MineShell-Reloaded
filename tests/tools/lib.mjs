@@ -61,7 +61,9 @@ const server = await createServer({
 });
 // SvelteKit writes this run's output to .svelte-kit-<hash of the data folder> (vite.config.ts);
 // the code goes there too, inside the repo so #lib resolves, and both are removed afterwards.
+// A dev server on the same data folder (devserver.sh) uses that folder: then only the code goes.
 const outDir = path.join(repo, `.svelte-kit-${createHash('sha256').update(data).digest('hex').slice(0, 8)}`);
+const sharedOut = fs.existsSync(outDir);
 fs.mkdirSync(outDir, { recursive: true });
 const entry = path.join(outDir, `lib-run-${process.pid}.ts`);
 fs.writeFileSync(entry, `export default async function () {\n${code}\n}\n`);
@@ -75,7 +77,7 @@ try {
 	exit = 1;
 } finally {
 	await server.close();
-	fs.rmSync(outDir, { recursive: true, force: true });
+	fs.rmSync(sharedOut ? entry : outDir, { recursive: true, force: true });
 	if (!given) fs.rmSync(data, { recursive: true, force: true });
 }
 process.exit(exit);
