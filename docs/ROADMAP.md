@@ -39,7 +39,7 @@ size, not a fixed list; entries move and get added along the way):
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
-  (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
+  (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
   Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
   (not MineShell's own code).
@@ -105,7 +105,7 @@ in the order to build them where one needs another.
    sandboxed and quoted JVM arguments built 2026-10-31 (two sandbox tests left, Leftovers). Small, mostly reading what MineShell already has: a calm first
    step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
-   files, zips and folders); a general NBT editor agreed since (2026-11-07), not scheduled.
+   files, zips and folders); the NBT editor (built 2026-11-08, ROADMAP-ARCHIVE).
 3. **Mod configs**: the mod config editor, on step 2's editor, search and file history.
 4. **World**: game rules, world spawn and border, with the per-world game settings left from
    "Several worlds" (Leftovers); single files from a snapshot.
@@ -183,31 +183,6 @@ CurseForge-only jars"). Left:
 ### 2. Files
 
 All built (ROADMAP-ARCHIVE: the file editor, search in files, earlier versions, zips).
-
-#### NBT editor
-
-Agreed 2026-11-07, not scheduled yet (found while comparing with the player editor). Beside
-the player editor nothing edits NBT: `level.dat` is read for many things, and only game rules,
-spawn and border can be changed, through their forms. Its time, weather, difficulty,
-generation settings and mods' data can only be reached with an outside tool. The user's call: a
-general NBT editor with its own UI, opened from Files, not a page for `level.dat` alone. So it
-also takes `world_border.dat`, `game_rules.dat` and mods' files in `world/data/`.
-- **Is it NBT?** Not by the name: `.dat` is any binary format a mod likes. Look at the content
-  and offer the editor only when the whole file parses. A first look (gzip's magic or a compound
-  tag's id) rules most files out cheaply, but it proves nothing. `parseNbt` also leaves bytes after
-  the root tag unread, so a real check has to see the file end with it. Other extensions
-  (`.nbt`, structures, schematics) go through the same check. `parseNbt` knows gzip and plain:
-  zlib is not handled, so check whether mods' files use it. Region files are not NBT as a whole.
-- **Written back as it came**: gzipped or plain and the root's name, which `NbtFile` keeps. Test
-  that an untouched file comes back with the same content, and `NBT_MAX_BYTES` still applies.
-- **Reuse**: `nbt.ts` and `NbtNode.svelte` as they are. Generic edits have to come out of
-  `playerdata.ts` (`parseEdits`, `parseValue`, the path edits), and the tree's search off the
-  player page.
-- **Safety**: a running server saves over `level.dat`, so files it writes only with it stopped,
-  or for a world it is not on, and a raw edit cannot go over RCON as game rules do. A bad edit can
-  stop a whole world loading: warn, and keep the old file in Files' earlier versions (check
-  they take binary files) or take a snapshot, the guard-rail way.
-- **Atomic write**: temp file and rename, as `worldrules.ts`. Files' access rules apply.
 
 ### 3. Mod configs
 
@@ -535,6 +510,10 @@ is open, and each needs a test setup.
 - **MineShell's database copies**: copying them to a backup folder along with the snapshots.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
+- **NBT editor**: zlib-wrapped files (none found on the dev servers; `parseNbt` reads gzip and
+  plain only); files over 8 MiB unpacked (structure caches); chunks inside region files and
+  structures inside jars; a link from World > Game rules to `level.dat`; a search that filters
+  the tree in place, as the player editor's does, instead of a list of matches.
 - **Mod configs**: FTB's SNBT configs (`config/ftb*.snbt`, comments above keys, typed
   numbers like `0.0d`; about ten files a pack; FTB Quests' `.snbt` quest book is data, not for
   this form); JSON configs that are

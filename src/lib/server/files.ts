@@ -86,6 +86,8 @@ export type DirEntry = {
 	modified: number;
 	/** Best guess at whether the browser should offer an editor. */
 	editable: boolean;
+	/** Looks like NBT (mightBeNbt): opened in the NBT editor, which checks the whole file. */
+	nbt: boolean;
 };
 
 const TEXT_EXTENSIONS = new Set([
@@ -107,6 +109,29 @@ export function attachment(name: string): string {
 	const plain = name.replace(/[^\x20-\x7e]|["\\%]/g, '_');
 	const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 	return `attachment; filename="${plain}"; filename*=UTF-8''${encoded}`;
+}
+
+/** Names NBT files have (`.dat` is any binary format a mod likes, so the content decides). */
+const NBT_NAMES = /\.(dat|dat_old|nbt|schematic|schem|litematic)$/i;
+
+/** Worth offering the NBT editor for: such a name, and gzip's magic or a compound tag first. */
+export function mightBeNbt(name: string, head: Buffer): boolean {
+	if (!NBT_NAMES.test(name) || head.length < 2) return false;
+	return (head[0] === 0x1f && head[1] === 0x8b) || head[0] === 0x0a;
+}
+
+/** mightBeNbt on the file's first bytes. */
+export async function looksNbt(full: string, name: string): Promise<boolean> {
+	if (!NBT_NAMES.test(name)) return false;
+	const handle = await fs.open(full, 'r').catch(() => null);
+	if (!handle) return false;
+	try {
+		const head = Buffer.alloc(2);
+		const { bytesRead } = await handle.read(head, 0, 2, 0);
+		return mightBeNbt(name, head.subarray(0, bytesRead));
+	} finally {
+		await handle.close();
+	}
 }
 
 export function looksEditable(name: string, size: number): boolean {
@@ -141,7 +166,8 @@ export async function listDirectory(root: string, relative: string): Promise<Dir
 				isDirectory: stat.isDirectory(),
 				size: stat.size,
 				modified: stat.mtimeMs,
-				editable: !stat.isDirectory() && looksEditable(entry.name, stat.size)
+				editable: !stat.isDirectory() && looksEditable(entry.name, stat.size),
+				nbt: stat.isFile() && (await looksNbt(full, entry.name))
 			} satisfies DirEntry;
 		})
 	);

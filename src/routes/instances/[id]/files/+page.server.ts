@@ -5,6 +5,7 @@ import {
 	createDirectory,
 	listDirectory,
 	looksEditable,
+	looksNbt,
 	readTextFile,
 	renameEntry,
 	safeJoin,
@@ -21,11 +22,14 @@ import { deleteToTrash, emptyTrash, listTrash, purgeTrashItem, restoreFromTrash,
 import { searchFiles } from '#lib/server/filesearch.js';
 import { keepVersion, listVersions, type FileVersion } from '#lib/server/filehistory.js';
 import { CONFLICTS_SHOWN, UnpackConflict, unpackZip, type UnpackInto } from '#lib/server/filezips.js';
+import { NbtEditError, readNbtFile, type NbtFileView } from '#lib/server/nbtfiles.js';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const instance = requireInstance(params.id);
 	const dir = url.searchParams.get('path') ?? '';
 	const edit = url.searchParams.get('edit');
+	// An NBT file, in the NBT editor (nbtfiles.ts).
+	const nbtPath = url.searchParams.get('nbt');
 	const search = url.searchParams.get('search')?.trim() || null;
 	const trash = await listTrash(instance.path).catch(() => []);
 	// The trash, shown in place of a folder.
@@ -45,7 +49,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		const folder = path.posix.dirname(file);
 		if (folder === '.') to.searchParams.delete('path');
 		else to.searchParams.set('path', folder);
-		to.searchParams.set(looksEditable(file, stat.size) ? 'edit' : 'show', file);
+		to.searchParams.set(looksEditable(file, stat.size) ? 'edit' : (await looksNbt(target.full, file)) ? 'nbt' : 'show', file);
 		redirect(307, to.pathname + to.search);
 	}
 
@@ -75,6 +79,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		}
 	}
 
+	let nbt: NbtFileView | null = null;
+	let nbtError: string | null = null;
+	if (nbtPath && !edit) {
+		try {
+			nbt = await readNbtFile(instance, nbtPath);
+		} catch (err) {
+			nbtError = err instanceof NbtEditError ? err.message : 'Could not open that file.';
+		}
+	}
+
 	// Breadcrumbs, so it is always obvious where you are inside the instance.
 	const parts = dir.split('/').filter(Boolean);
 	const crumbs = parts.map((part, i) => ({
@@ -90,6 +104,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		crumbs,
 		entries,
 		editing,
+		nbt,
+		nbtError,
 		listError,
 		// "Open in file manager": the folder shown, on this machine, over SSH.
 		sftp: await sftpAccess(),

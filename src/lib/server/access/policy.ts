@@ -317,6 +317,8 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/instances/[id]/files/usage': { load: on('files'), actions: { deleteOldLogs: on('files') } },
 	'/api/instances/[id]/files': { methods: { GET: on('files') } },
 	'/api/instances/[id]/file-history': { methods: { GET: on('files') } },
+	// The NBT editor: reading and changing files, as Files does.
+	'/api/instances/[id]/nbt': { methods: { GET: on('files'), POST: on('files') } },
 	// A client pack carries the server's configs.
 	'/instances/[id]/export': { load: on('files'), actions: { export: on('files') } },
 	'/api/instances/[id]/export': { methods: { GET: on('files') } },

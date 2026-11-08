@@ -1571,6 +1571,26 @@ Planned for the old MineShell and forgotten (user, 2026-10-26); the 1.3 headline
 
 What it leaves: ROADMAP, "Leftovers of built features" (Mod configs).
 
+### NBT editor (1.3, 2026-11-08)
+
+Agreed 2026-11-07 (found while comparing with the player editor), wanted in 1.3 (user). Built:
+- **Opened from Files** for any file that is NBT throughout (`nbtfiles.ts`, `NbtFileEditor.svelte`):
+  `level.dat`, `world_border.dat`, `game_rules.dat`, mods' files in `world/data/`, structures. The
+  listing offers it by name and first bytes; opening it parses the whole file, and a mod's own
+  binary `.dat` is refused with why.
+- **The player editor's tree** (`NbtNode`, the edits moved to `nbtedit.ts`), in parts for big
+  files: 2,000 entries breadth-first, 500 of a list at a time, more as it is opened. Search runs
+  on the server over the whole file; a match opens the tree to it. An SNBT edit of something held
+  in part is fetched whole first.
+- **Saving**: each change on its own, against the file's version, written back gzipped or not and
+  with its root name as it came, atomically. Earlier versions keep binary files: one per editing
+  session, with "Put back"; audited as `file.saved`.
+- **Safety**: read-only for the world a running server is on (it saves over those files).
+- Checked against every NBT file of the user's four dev servers (`tests/tools/nbt-sweep.ts`):
+  3,559 parse, all written back byte for byte.
+
+What it leaves: ROADMAP, "Leftovers of built features" (NBT editor).
+
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,

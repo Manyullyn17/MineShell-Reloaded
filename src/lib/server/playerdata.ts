@@ -3,10 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ServerInstance } from './db/schema';
 import { vanillaEnchantmentTable, type EnchantmentInfo } from './enchantnames';
-import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, NbtError, type Compound, type NbtFile, type Tag, type TagType } from './nbt';
+import { child, num, parseNbt, removeChild, setChild, shortestFloat, writeNbt, type Compound, type NbtFile, type Tag } from './nbt';
+import { applyTreeEdit, checkWritable, isPath, locate, parseTreeEdit, parseValue, toTree, type TreeEdit } from './nbtedit';
 import { serverWorldName } from './packworld';
 import { deleteToTrash } from './trash';
-import { parseSnbt, SnbtError } from './snbt';
 import { legacyItemIds, type ItemIds } from './itemids';
 import {
 	checkItem,
@@ -54,7 +54,7 @@ import { cachedProfileNames, isOfflineUuid, lookUpProfileNames, lookUpProfiles }
  * (at most one per editing session, the newest 10 per player).
  */
 
-export { PlayerDataError, shortestFloat };
+export { PlayerDataError, shortestFloat, toTree };
 export type { ContainerView, Format, ItemFields, ItemView, Section };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -222,25 +222,6 @@ export async function readPlayerData(
 
 // ------------------------------------------------------------------- view ---
 
-export function toTree(tag: Tag): TreeTag {
-	switch (tag.type) {
-		case 'long':
-			return { type: 'long', value: String(tag.value) };
-		case 'longArray':
-			return { type: 'longArray', value: tag.value.map(String) };
-		case 'float':
-			return { type: 'float', value: Number.isFinite(tag.value) ? shortestFloat(tag.value) : String(tag.value) };
-		case 'double':
-			return { type: 'double', value: Number.isFinite(tag.value) ? tag.value : String(tag.value) };
-		case 'list':
-			return { type: 'list', itemType: tag.itemType, value: tag.value.map(toTree) };
-		case 'compound':
-			return { type: 'compound', value: tag.value.map(([k, v]) => [k, toTree(v)]) };
-		default:
-			return tag as TreeTag;
-	}
-}
-
 export type PlayerView = {
 	dataVersion: number | null;
 	format: Format;
@@ -322,14 +303,7 @@ export function playerView(file: NbtFile, ids: ItemIds | null = null): PlayerVie
 // ------------------------------------------------------------------ edits ---
 
 export type Edit =
-	/** A new value; with `type`, also a new type (a value in a compound only). */
-	| { op: 'set'; path: Path; value: string; type?: TagType }
-	| { op: 'remove'; path: Path }
-	/** `type: 'snbt'` takes a whole structure as text. */
-	| { op: 'add'; path: Path; name?: string; type: TagType | 'snbt'; value?: string }
-	/** Replace any entry, compounds and lists included, with SNBT. */
-	| { op: 'replace'; path: Path; snbt: string }
-	| { op: 'rename'; path: Path; name: string }
+	| TreeEdit
 	| { op: 'item'; section: Section; slot: number; id: string; count: number; damage?: number | null }
 	| { op: 'removeItem'; section: Section; slot: number }
 	/** An item in a container (shulker box, bundle, backpack): `list` is the list holding it. */
@@ -342,8 +316,6 @@ export type Edit =
 	| { op: 'setList'; path: Path; values: string[] };
 
 const SECTIONS: Section[] = ['main', 'armor', 'offhand', 'ender'];
-const isPath = (p: unknown): p is Path =>
-	Array.isArray(p) && p.every((k) => typeof k === 'string' || (typeof k === 'number' && Number.isInteger(k)));
 
 /** Edits as the browser sent them, checked for shape (values are checked when applied). */
 export function parseEdits(raw: unknown): Edit[] {
@@ -351,22 +323,9 @@ export function parseEdits(raw: unknown): Edit[] {
 	return raw.map((e): Edit => {
 		const bad = () => new PlayerDataError('That change could not be read.');
 		if (!e || typeof e !== 'object') throw bad();
+		const tree = parseTreeEdit(e, bad);
+		if (tree) return tree;
 		switch (e.op) {
-			case 'set':
-				if (!isPath(e.path) || typeof e.value !== 'string' || (e.type !== undefined && !TAG_TYPES.has(e.type))) throw bad();
-				return { op: 'set', path: e.path, value: e.value, ...(e.type ? { type: e.type } : {}) };
-			case 'replace':
-				if (!isPath(e.path) || typeof e.snbt !== 'string') throw bad();
-				return { op: 'replace', path: e.path, snbt: e.snbt };
-			case 'rename':
-				if (!isPath(e.path) || typeof e.name !== 'string') throw bad();
-				return { op: 'rename', path: e.path, name: e.name };
-			case 'remove':
-				if (!isPath(e.path)) throw bad();
-				return { op: 'remove', path: e.path };
-			case 'add':
-				if (!isPath(e.path) || !(TAG_TYPES.has(e.type) || e.type === 'snbt')) throw bad();
-				return { op: 'add', path: e.path, type: e.type, name: String(e.name ?? ''), value: String(e.value ?? '') };
 			case 'item':
 				if (!SECTIONS.includes(e.section) || !Number.isInteger(e.slot) || typeof e.id !== 'string' || typeof e.count !== 'number') throw bad();
 				return { op: 'item', section: e.section, slot: e.slot, id: e.id, count: e.count, damage: typeof e.damage === 'number' ? e.damage : null };
@@ -418,96 +377,6 @@ function itemFieldsFrom(raw: Record<string, unknown>, bad: () => Error): Partial
 		out.damage = raw.damage as number | null;
 	}
 	return out;
-}
-
-const TAG_TYPES = new Set<TagType>(['byte', 'short', 'int', 'long', 'float', 'double', 'string', 'byteArray', 'intArray', 'longArray', 'list', 'compound']);
-
-const RANGES: Partial<Record<TagType, [number, number]>> = {
-	byte: [-128, 127],
-	short: [-32768, 32767],
-	int: [-2147483648, 2147483647]
-};
-
-function integer(raw: string, type: TagType): number {
-	const text = raw.trim();
-	const [min, max] = RANGES[type]!;
-	if (!/^-?\d+$/.test(text) || Number(text) < min || Number(text) > max) {
-		throw new PlayerDataError(`"${raw}" is not a whole number between ${min} and ${max}.`);
-	}
-	return Number(text);
-}
-
-function bigint(raw: string): bigint {
-	const text = raw.trim();
-	if (!/^-?\d+$/.test(text)) throw new PlayerDataError(`"${raw}" is not a whole number.`);
-	const value = BigInt(text);
-	if (value < -(2n ** 63n) || value >= 2n ** 63n) throw new PlayerDataError(`"${raw}" is out of range for a long.`);
-	return value;
-}
-
-function decimal(raw: string): number {
-	const value = Number(raw.trim());
-	if (raw.trim() === '' || !Number.isFinite(value)) throw new PlayerDataError(`"${raw}" is not a number.`);
-	return value;
-}
-
-const parts = (raw: string) => raw.split(/[\s,]+/).filter(Boolean);
-
-/** A tag of `type` from the text typed into the editor. Lists and compounds start empty. */
-export function parseValue(type: TagType, raw = ''): Tag {
-	switch (type) {
-		case 'byte':
-		case 'short':
-		case 'int':
-			return { type, value: integer(raw, type) };
-		case 'long':
-			return { type, value: bigint(raw) };
-		case 'float':
-		case 'double':
-			return { type, value: decimal(raw) };
-		case 'string':
-			return { type, value: raw };
-		case 'byteArray':
-		case 'intArray':
-			return { type, value: parts(raw).map((p) => integer(p, type === 'byteArray' ? 'byte' : 'int')) };
-		case 'longArray':
-			return { type, value: parts(raw).map(bigint) };
-		case 'list':
-			return { type, itemType: 'end', value: [] };
-		case 'compound':
-			return { type, value: [] };
-		default:
-			throw new PlayerDataError(`Cannot create a ${type} tag.`);
-	}
-}
-
-/** The tag at `at`, plus how to replace or remove it in its parent. */
-function locate(
-	root: Compound,
-	at: Path
-): { tag: Tag; parent: Tag; key: string | number; replace: (t: Tag) => void; remove: () => void } {
-	if (at.length === 0) throw new PlayerDataError('The root cannot be changed.');
-	let parent: Tag = root;
-	for (let i = 0; i < at.length - 1; i++) parent = step(parent, at[i]);
-	const key = at[at.length - 1];
-	const tag = step(parent, key);
-	const p = parent;
-	return {
-		tag,
-		parent: p,
-		key,
-		replace: (t) => (p.type === 'compound' ? setChild(p, String(key), t) : ((p as Extract<Tag, { type: 'list' }>).value[key as number] = t)),
-		remove: () => (p.type === 'compound' ? removeChild(p, String(key)) : (p as Extract<Tag, { type: 'list' }>).value.splice(key as number, 1))
-	};
-}
-
-function step(tag: Tag, key: string | number): Tag {
-	if (tag.type === 'compound' && typeof key === 'string') {
-		const found = child(tag, key);
-		if (found) return found;
-	}
-	if (tag.type === 'list' && typeof key === 'number' && key >= 0 && key < tag.value.length) return tag.value[key];
-	throw new PlayerDataError('That entry is no longer there. Reload the page and try again.');
 }
 
 /** Where an item for (section, slot) lives: a list and the slot number in it, or an equipment key. */
@@ -589,14 +458,6 @@ function applyItem(root: Compound, edit: Extract<Edit, { op: 'item' | 'removeIte
 	place(item);
 }
 
-function snbtValue(text: string): Tag {
-	try {
-		return parseSnbt(text);
-	} catch (err) {
-		throw new PlayerDataError(err instanceof SnbtError ? `That SNBT is not valid: ${err.message}.` : 'That SNBT is not valid.');
-	}
-}
-
 /**
  * Edits apply in order, each path meaning the file as the edits before it
  * left it: removing entry 0 of a list twice removes its first two entries.
@@ -610,56 +471,13 @@ export function applyEdits(file: NbtFile, edits: Edit[], ids: ItemIds | null = n
 	const equipment = usesEquipment(root, dataVersion);
 	for (const edit of edits) {
 		switch (edit.op) {
-			case 'set': {
-				const { tag, parent, replace } = locate(root, edit.path);
-				if (tag.type === 'list' || tag.type === 'compound') throw new PlayerDataError('Lists and compounds are edited entry by entry.');
-				const type = edit.type ?? tag.type;
-				if (type !== tag.type && parent.type === 'list') throw new PlayerDataError('Every entry of a list has the same type.');
-				replace(parseValue(type, edit.value));
-				break;
-			}
-			case 'replace': {
-				const { tag, parent, replace } = locate(root, edit.path);
-				const value = snbtValue(edit.snbt);
-				if (parent.type === 'list' && value.type !== tag.type) {
-					if (parent.value.length > 1) throw new PlayerDataError(`This list holds ${parent.itemType} entries.`);
-					parent.itemType = value.type;
-				}
-				replace(value);
-				break;
-			}
-			case 'rename': {
-				const { parent, key } = locate(root, edit.path);
-				const name = edit.name.trim();
-				if (parent.type !== 'compound') throw new PlayerDataError('Only entries of a compound have names.');
-				if (!name) throw new PlayerDataError('Give the entry a name.');
-				if (name !== key && child(parent, name)) throw new PlayerDataError(`There already is an entry called "${name}".`);
-				const at = parent.value.findIndex(([n]) => n === key);
-				parent.value[at] = [name, parent.value[at][1]];
-				break;
-			}
+			case 'set':
+			case 'replace':
+			case 'rename':
 			case 'remove':
-				locate(root, edit.path).remove();
+			case 'add':
+				applyTreeEdit(root, edit);
 				break;
-			case 'add': {
-				const parent = edit.path.length ? locate(root, edit.path).tag : root;
-				const value = edit.type === 'snbt' ? snbtValue(edit.value ?? '') : parseValue(edit.type, edit.value);
-				if (parent.type === 'compound') {
-					const name = (edit.name ?? '').trim();
-					if (!name) throw new PlayerDataError('Give the new entry a name.');
-					if (child(parent, name)) throw new PlayerDataError(`There already is an entry called "${name}".`);
-					parent.value.push([name, value]);
-				} else if (parent.type === 'list') {
-					if (parent.value.length && parent.itemType !== value.type) {
-						throw new PlayerDataError(`This list holds ${parent.itemType} entries.`);
-					}
-					parent.itemType = value.type;
-					parent.value.push(value);
-				} else {
-					throw new PlayerDataError('Entries can only be added to lists and compounds.');
-				}
-				break;
-			}
 			case 'item':
 			case 'removeItem':
 				applyItem(root, edit, style, equipment);
@@ -694,13 +512,9 @@ export function applyEdits(file: NbtFile, edits: Edit[], ids: ItemIds | null = n
 			}
 		}
 	}
-	// A typo must fail here, not leave a file the server cannot read.
-	try {
-		parseNbt(writeNbt(file));
-	} catch (err) {
-		throw new PlayerDataError(err instanceof NbtError ? err.message : 'The change would make the file unreadable.');
-	}
+	checkWritable(file);
 }
+
 
 // ----------------------------------------------------------------- saving ---
 

@@ -66,3 +66,17 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   1.21.1) and 1.12.2 (the user tested MeatballCraft, Cleanroom), 2026-10-09; 1.21.11
   (components/equipment) tested by the user. Not yet on real files: the flat 1.13-1.20 format
   and versions below 1.12.2 (1.7.10's numeric ids only on the throwaway server's level.dat).
+
+## NBT editor (Files)
+- What NBT files look like on real servers (`tests/tools/nbt-sweep.ts`, the four dev servers,
+  2026-11-08, 3,921 files): 2,471 gzipped and 144 plain `.dat`, 931 gzipped and 8 plain `.nbt`
+  (Open Parties and Claims writes plain), none zlib, none with bytes after the root tag, every one
+  written back byte for byte (gzipped ones compared unpacked: gzip's own bytes differ). 189 `.dat`
+  files are empty and 173 are not NBT at all (RedstoneEther's maps, JEI's ItemFavorites, AE2's
+  compass): the first byte rules most out, the whole-file parse the rest.
+- Sizes: ATM10's `level.dat` holds 230,000 tags (FML's registries; about 10 MB as JSON), 23 files
+  over 100,000; Twilight Forest's structure caches reach 39 MB unpacked and 2.7 million tags.
+  Parsed, a 19 MB file took 280 MB of heap and 2 s to write: hence the 8 MiB limit and the
+  partial tree.
+- The player editor's error class is the tree edits' (`PlayerDataError` is `NbtEditError`), so
+  its messages and `instanceof` checks are unchanged.

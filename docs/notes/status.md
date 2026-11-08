@@ -73,6 +73,12 @@ user before the beta):
    throwaway data 2026-11-08 (copies of ATM10's and MeatballCraft's configs: two settings saved,
    exactly those two lines changed, an earlier version kept, the save in the audit log; 1280 and
    390 px); not yet against a running server.
+5. **NBT editor** (Files, a `.dat` or `.nbt`): on a stopped server, change something visible in
+   `level.dat` (the time, the weather, the world's name) and start it to see it; on a running one,
+   the world's files read-only and another world's or a structure's changeable. Checked on
+   throwaway data 2026-11-08 (copies of ATM10's level.dat and data files, a Twilight Forest
+   structure cache: an edit saved with a version kept, a search match 1,150 entries into a list
+   revealed, whole SNBT of a partly loaded list; 390 px); not yet with a server started on it.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NbtNode from './NbtNode.svelte';
-	import { childMatches, selfMatches, treeToSnbt, type Path, type TreeTag } from '#lib/shared/nbt.js';
+	import { untrack } from 'svelte';
+	import { childMatches, entryCount, selfMatches, treeToSnbt, type Path, type TreeTag } from '#lib/shared/nbt.js';
 
 	/**
 	 * One entry of an NBT tree: a value that can be edited or removed in place,
@@ -17,7 +18,10 @@
 		fieldAction = null,
 		query = '',
 		mark = '',
-		open: startOpen = false
+		open: startOpen = false,
+		onLoad = null,
+		snbtOf = null,
+		reveal = null
 	}: {
 		name: string;
 		tag: TreeTag;
@@ -33,6 +37,15 @@
 		/** Highlighted without filtering: inside a compound shown whole because its key matched. */
 		mark?: string;
 		open?: boolean;
+		/**
+		 * A tree sent in part (the NBT editor, `more` on a list or compound): fetches more entries
+		 * of the one at `path`, through position `upTo` if given, into the tree this was given.
+		 */
+		onLoad?: ((path: Path, upTo?: number) => Promise<void>) | null;
+		/** The whole entry at `path` as SNBT, for one held only in part; null when it cannot be had. */
+		snbtOf?: ((path: Path) => Promise<string | null>) | null;
+		/** An entry to open the tree to and bring into view: its path and each step's position. */
+		reveal?: { path: Path; positions: number[] } | null;
 	} = $props();
 
 	const hit = $derived(!!query && selfMatches(inList ? null : String(name), tag, query));
@@ -59,13 +72,54 @@
 	let newValue = $state('');
 
 	const container = $derived(tag.type === 'compound' || tag.type === 'list');
+	const more = $derived(tag.type === 'compound' || tag.type === 'list' ? (tag.more ?? 0) : 0);
+	let loading = $state(false);
+	let row = $state<HTMLElement | null>(null);
+	/** Brought into view by `reveal`. */
+	let revealed = $state(false);
+
+	async function load(upTo?: number) {
+		if (!onLoad || loading) return;
+		loading = true;
+		try {
+			await onLoad(path, upTo);
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Opened (or refreshed after an edit) with none of its entries here yet: fetch the first ones.
+	$effect(() => {
+		if (open && more > 0 && entries.length === 0) untrack(() => void load());
+	});
+
+	const samePath = (a: Path, b: Path) => a.length === b.length && a.every((k, i) => k === b[i]);
+	$effect(() => {
+		const target = reveal;
+		untrack(() => {
+			revealed = false;
+			if (!target || !samePath(target.path.slice(0, path.length), path)) return;
+			if (target.path.length === path.length) {
+				revealed = true;
+				requestAnimationFrame(() => row?.scrollIntoView({ block: 'center' }));
+				return;
+			}
+			open = true;
+			const position = target.positions[path.length];
+			if (position >= entries.length && more > 0) void load(position);
+		});
+	});
+
+	/** Something in it is not here: only the server can give it whole. */
+	const partial = (t: TreeTag): boolean =>
+		t.type === 'compound' ? (t.more ?? 0) > 0 || t.value.some(([, v]) => partial(v)) : t.type === 'list' ? (t.more ?? 0) > 0 || t.value.some(partial) : false;
 	const entries = $derived<[string, TreeTag][]>(
 		tag.type === 'compound' ? tag.value : tag.type === 'list' ? tag.value.map((v, i) => [String(i), v]) : []
 	);
 	const isArray = $derived(tag.type === 'byteArray' || tag.type === 'intArray' || tag.type === 'longArray');
 	const shown = $derived(
 		container
-			? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
+			? `${entryCount(tag)} ${entryCount(tag) === 1 ? 'entry' : 'entries'}`
 			: isArray
 				? (tag.value as unknown[]).join(', ')
 				: String(tag.value)
@@ -75,10 +129,14 @@
 	const PLAIN = ['byte', 'short', 'int', 'long', 'float', 'double', 'string', 'end'];
 	const PRIMITIVES = ['string', 'byte', 'short', 'int', 'long', 'float', 'double', 'byteArray', 'intArray', 'longArray'];
 	const ADDABLE = ['snbt', ...PRIMITIVES, 'compound', 'list'];
-	const listType = $derived(tag.type === 'list' && tag.value.length ? tag.itemType : null);
+	const listType = $derived(tag.type === 'list' && entryCount(tag) ? tag.itemType : null);
 
-	function startEdit(mode: 'value' | 'snbt' | 'name') {
-		draft = mode === 'snbt' ? treeToSnbt(tag, 2) : mode === 'name' ? name : isArray ? (tag.value as unknown[]).join(', ') : String(tag.value);
+	async function startEdit(mode: 'value' | 'snbt' | 'name') {
+		if (mode === 'snbt' && snbtOf && partial(tag)) {
+			const whole = await snbtOf(path);
+			if (whole === null) return;
+			draft = whole;
+		} else draft = mode === 'snbt' ? treeToSnbt(tag, 2) : mode === 'name' ? name : isArray ? (tag.value as unknown[]).join(', ') : String(tag.value);
 		draftType = tag.type;
 		editing = mode;
 	}
@@ -114,6 +172,8 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (keyboards reach the actions by focus) -->
 	<div
 		class="row"
+		class:revealed
+		bind:this={row}
 		class:picked
 		onclick={(e) => {
 			if (!(e.target as HTMLElement).closest('button, input, select, textarea, form')) picked = !picked;
@@ -205,8 +265,20 @@
 					{fieldAction}
 					{locked}
 					{onEdit}
+					{onLoad}
+					{snbtOf}
+					{reveal}
 				/>
 			{/each}
+			{#if onLoad && more > 0 && entries.length > 0}
+				<li class="more">
+					<button type="button" class="button-quiet" disabled={loading} onclick={() => load()}>
+						{loading ? 'Loading…' : `Show more (${more} not shown)`}
+					</button>
+				</li>
+			{:else if more > 0 && loading}
+				<li class="more faint small">Loading…</li>
+			{/if}
 		</ul>
 	{/if}
 </li>
@@ -233,6 +305,18 @@
 
 	.row:hover {
 		background: var(--panel-raised);
+	}
+
+	.row.revealed {
+		background: color-mix(in srgb, var(--accent) 18%, transparent);
+	}
+
+	.more {
+		padding: var(--space-1) 0;
+	}
+
+	.more button {
+		font-size: 0.75rem;
 	}
 
 	.toggle {

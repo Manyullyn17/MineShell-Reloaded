@@ -1,6 +1,7 @@
 import { child, num, removeChild, setChild, str, type Compound, type Tag } from './nbt';
 import { fromJson, hasHex, parseCodes, plainText, toCodes, toJson } from '#lib/shared/mctext.js';
 import type { ItemIds } from './itemids';
+import { NbtEditError as PlayerDataError } from './nbtedit';
 import type { Path } from '#lib/shared/nbt.js';
 
 /**
@@ -17,7 +18,8 @@ import type { Path } from '#lib/shared/nbt.js';
  *   text is an NBT text component and enchantments are a plain map.
  */
 
-export class PlayerDataError extends Error {}
+/** The editor's refusals; tree edits (nbtedit.ts) throw the same class. */
+export { PlayerDataError };
 
 export const FLATTENING = 1519;
 export const COMPONENTS = 3837;

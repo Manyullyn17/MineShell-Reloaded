@@ -9,6 +9,7 @@
 	import CodeEditor from '#lib/components/CodeEditor.svelte';
 	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
 	import type ConfigFormComponent from '#lib/components/ConfigForm.svelte';
+	import NbtFileEditor from '#lib/components/NbtFileEditor.svelte';
 	import { configFormatOf, whenApplied } from '#lib/shared/configfiles.js';
 	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
 	import type { SubmitFunction } from '$app/forms';
@@ -379,6 +380,10 @@
 					<a href="{base}?path={encodeURIComponent(data.dir)}&edit={encodeURIComponent(entry.relPath)}" class="entry">
 						<span class="glyph" aria-hidden="true"></span>{entry.name}
 					</a>
+				{:else if entry.nbt}
+					<a href="{base}?path={encodeURIComponent(data.dir)}&nbt={encodeURIComponent(entry.relPath)}" class="entry" title="Open in the NBT editor">
+						<span class="glyph" aria-hidden="true"></span>{entry.name}
+					</a>
 				{:else}
 					<span class="entry"><span class="glyph" aria-hidden="true"></span>{entry.name}</span>
 				{/if}
@@ -463,6 +468,9 @@
 
 {#if data.listError}
 	<div class="notice error"><p>{data.listError}</p></div>
+{/if}
+{#if data.nbtError}
+	<div class="notice warning"><p>{data.nbtError}</p></div>
 {/if}
 
 {#if data.editing}
@@ -570,6 +578,27 @@
 				</ul>
 			</details>
 		{/if}
+	</section>
+{:else if data.nbt}
+	<section class="panel">
+		<div class="panel-head">
+			<div>
+				<h2 class="mono file-title">{data.nbt.path}</h2>
+				<p>
+					Saved straight to disk.
+					{data.nbt.inWorld
+						? 'The game reads it when the world loads: a change shows at the next start.'
+						: 'Whatever uses it reads it again when it next loads it, for most at the next start.'}
+				</p>
+			</div>
+			<div class="button-row">
+				<a class="button button-quiet" href="/api/instances/{data.instance.id}/files?path={encodeURIComponent(data.nbt.path)}">Download</a>
+				<a class="button button-quiet" href={href(data.dir)}>Close</a>
+			</div>
+		</div>
+		{#key `${data.nbt.path}:${data.nbt.version}`}
+			<NbtFileEditor instanceId={data.instance.id} view={data.nbt} />
+		{/key}
 	</section>
 {:else if data.trash}
 	<section class="panel">

@@ -1656,6 +1656,26 @@ files in config/, the world's serverconfig/ and defaultconfigs/ whose name (less
 `-client`, `-options` and the like) or folder under config/ is an id or name the jar declares,
 without case and punctuation; only for accounts that may use Files.
 
+**The NBT editor** (`nbtfiles.ts`, `NbtFileEditor.svelte`, `/api/instances/[id]/nbt`): Files
+opens a file in it when its name is one NBT files have (`.dat`, `.dat_old`, `.nbt`, `.schematic`,
+`.schem`, `.litematic`) and its first bytes are gzip's or a compound tag's (`mightBeNbt`, read with
+the listing); opening it parses the whole file and refuses anything left after the root tag, so a
+mod's own binary `.dat` says it is not NBT instead of showing nonsense. Up to 8 MiB unpacked (a
+19 MB structure cache took 280 MB of memory parsed). The tree is the player editor's (`NbtNode`)
+and so are its edits (`nbtedit.ts`, moved out of `playerdata.ts`), but a big file is never sent
+whole: breadth-first up to 2,000 entries, at most 500 of a list or compound at a time, the rest as
+an empty list or compound with `more` set, fetched when opened or by "Show more". Parsed files are
+kept two minutes while unchanged on disk (mtime and size) for those fetches. Search runs on the
+server over the whole file and answers with paths and each step's position, so "show" opens the
+tree that far and fetches the pages on the way; an SNBT edit of something held in part fetches it
+whole first, never from the part the page has. Each change is saved on its own: against the file's
+sha1, read fresh from disk (a refused batch must leave the cached tree untouched), written back
+gzipped or not and with its root name as it came, to a temp file renamed over it. Files' earlier
+versions keep binary files too (`keepVersion` takes a Buffer): one per editing session (ten
+minutes), audited as `file.saved`. Files under the world the running server is on are read-only
+(the unit in any state but inactive or failed): it holds what level.dat, data/ and player files
+say and saves over them.
+
 **Zips in Files** (`filezips.ts`): a folder's Download (`/api/instances/[id]/files?path=`
 on a folder) is a zip streamed while yazl makes it, entries named from inside the folder; it
 leaves out what a server copy leaves out (`cloneSkips`: snapshots, trash, file history) and

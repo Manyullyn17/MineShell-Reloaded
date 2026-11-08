@@ -22,14 +22,21 @@ export type TagType =
 /** A path into the tree: compound keys and list indices. */
 export type Path = (string | number)[];
 
-/** A tag in JSON: longs as strings, non-finite floats as strings. */
+/**
+ * A tag in JSON: longs as strings, non-finite floats as strings. A list or compound sent in
+ * part (the NBT editor's large files) has its first entries in `value` and the number of
+ * entries after them in `more`.
+ */
 export type TreeTag =
 	| { type: 'byte' | 'short' | 'int' | 'float' | 'double'; value: number | string }
 	| { type: 'long' | 'string'; value: string }
 	| { type: 'byteArray' | 'intArray'; value: number[] }
 	| { type: 'longArray'; value: string[] }
-	| { type: 'list'; itemType: TagType; value: TreeTag[] }
-	| { type: 'compound'; value: [string, TreeTag][] };
+	| { type: 'list'; itemType: TagType; value: TreeTag[]; more?: number }
+	| { type: 'compound'; value: [string, TreeTag][]; more?: number };
+
+/** How many entries a list or compound has, those not sent included. */
+export const entryCount = (tag: TreeTag): number => (tag.type === 'list' || tag.type === 'compound' ? tag.value.length + (tag.more ?? 0) : 0);
 
 const BARE_KEY = /^[A-Za-z0-9._+-]+$/;
 
@@ -71,7 +78,7 @@ export function treeToSnbt(tag: TreeTag, indent = 0, depth = 0): string {
 }
 
 /** The text a value searches as: strings as they are, numbers and arrays as shown. */
-function valueText(tag: TreeTag): string {
+export function valueText(tag: TreeTag): string {
 	if (tag.type === 'compound' || tag.type === 'list') return '';
 	return Array.isArray(tag.value) ? tag.value.join(', ') : String(tag.value);
 }

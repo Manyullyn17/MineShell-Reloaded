@@ -208,7 +208,11 @@ export type NbtFile = { name: string; root: Compound; gzipped: boolean };
  */
 export const NBT_MAX_BYTES = 64 * 1024 * 1024;
 
-export function parseNbt(data: Buffer, maxBytes = NBT_MAX_BYTES): NbtFile {
+/**
+ * `whole`: the file must end with the root tag. Minecraft stops reading there, so bytes after
+ * it are harmless to the game, but a file of another format can start like NBT by chance.
+ */
+export function parseNbt(data: Buffer, maxBytes = NBT_MAX_BYTES, whole = false): NbtFile {
 	const gzipped = data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b;
 	let raw: Buffer;
 	try {
@@ -222,6 +226,7 @@ export function parseNbt(data: Buffer, maxBytes = NBT_MAX_BYTES): NbtFile {
 	if (reader.tagType() !== 'compound') throw new NbtError('The file does not start with a compound tag.');
 	const name = reader.string();
 	const root = reader.payload('compound', 0) as Compound;
+	if (whole && reader.pos !== raw.length) throw new NbtError(`${raw.length - reader.pos} bytes follow the end of the NBT.`);
 	return { name, root, gzipped };
 }
 

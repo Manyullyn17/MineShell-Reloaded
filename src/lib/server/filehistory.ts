@@ -38,19 +38,25 @@ export async function listVersions(root: string, relative: string): Promise<File
 }
 
 export async function readVersion(root: string, relative: string, id: string): Promise<string> {
+	return (await readVersionBytes(root, relative, id)).toString('utf8');
+}
+
+/** A version as it was kept, for binary files (the NBT editor). */
+export async function readVersionBytes(root: string, relative: string, id: string): Promise<Buffer> {
 	if (!/^\d+$/.test(id)) throw new Error('No such version.');
-	return fs.readFile(path.join(versionsDir(root, relative), id), 'utf8');
+	return fs.readFile(path.join(versionsDir(root, relative), id));
 }
 
 /**
  * Before a save: keeps the file as it is now, unless it does not exist yet or
- * the save changes nothing (line endings aside, which the save keeps).
+ * the save changes nothing (for text, line endings aside, which the save keeps;
+ * a binary file, as bytes).
  */
-export async function keepVersion(root: string, relative: string, incoming: string, now = Date.now()): Promise<boolean> {
+export async function keepVersion(root: string, relative: string, incoming: string | Buffer, now = Date.now()): Promise<boolean> {
 	const current = await fs.readFile(safeJoin(root, relative)).catch(() => null);
 	if (!current) return false;
 	const lf = (text: string) => text.replace(/\r\n/g, '\n');
-	if (lf(current.toString('utf8')) === lf(incoming)) return false;
+	if (typeof incoming === 'string' ? lf(current.toString('utf8')) === lf(incoming) : current.equals(incoming)) return false;
 	const dir = versionsDir(root, relative);
 	await fs.mkdir(dir, { recursive: true });
 	let at = now;
