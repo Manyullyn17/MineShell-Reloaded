@@ -313,9 +313,23 @@ extra `server.properties` keys (`resource-pack`, `resource-pack-sha1`,
 `require-resource-pack`, `resource-pack-prompt`, `resource-pack-id` on newer versions).
 Typed fields in the server's settings, with MineShell downloading the pack once to work out
 the SHA-1 (and again when the URL changes), and the prompt as text. To check: which keys
-each Minecraft version reads (the prompt and `require-resource-pack` came in 1.17), and
-whether MineShell should also host an uploaded pack itself, which needs an address players
-can reach (playit.gg does not carry HTTP).
+each Minecraft version reads (the prompt and `require-resource-pack` came in 1.17).
+
+Split in two (user's call, 2026-11-08):
+1. **Now (1.3 if there is room)**: a resource pack browser like the mod browser (Modrinth's
+   and CurseForge's resource packs, for the server's Minecraft version), and the server
+   points players at the catalog's own download: `resource-pack` is the file's URL and
+   `resource-pack-sha1` comes from the catalog (Modrinth lists a sha1 per file; CurseForge's
+   file hashes include one). MineShell hosts nothing. A URL typed by hand stays possible, for
+   packs on other sites or the owner's own file hosting; then MineShell downloads it once for
+   the SHA-1. To check: CurseForge projects that refuse third-party downloads (no download
+   URL in the API), whether the modpacks.ch mirror lists resource packs (as for CurseForge
+   data packs, unchecked), and the update check (a newer pack version means a new URL and
+   SHA-1, so clients download it again).
+2. **Later**: MineShell hosting an uploaded pack, for custom packs no catalog has. The hard
+   part of the whole feature: it needs an address players' clients can reach over HTTP
+   (playit.gg does not carry HTTP; a port forward or Tailscale only reach some players), so
+   it is left until it is worth that.
 
 Settings' `initial-enabled-packs` and `initial-disabled-packs` are one long string of data pack
 ids: functional, not nice (user, 2026-11-05). Revisit them with this work, as a list to pick from.
