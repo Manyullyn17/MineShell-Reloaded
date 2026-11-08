@@ -67,6 +67,17 @@ diagnose_runs() {
 			if (e.SYSLOG_IDENTIFIER !== "systemd") continue;
 			console.log(JSON.stringify({ m: String(e.MESSAGE).slice(0, 60), t: e.__REALTIME_TIMESTAMP, uinv: e.USER_INVOCATION_ID, sinv: e._SYSTEMD_INVOCATION_ID, inv: e.INVOCATION_ID, uunit: e.USER_UNIT, sunit: e._SYSTEMD_USER_UNIT }));
 		}'
+	local cursor
+	cursor=$(node -e '
+		const db = new (require(process.argv[1] + "/node_modules/better-sqlite3"))(process.argv[2] + "/mineshell.db", { readonly: true });
+		console.log(db.prepare("select history_cursor from server_instances where id = ?").get(process.argv[3])?.history_cursor ?? "");
+	' "$APP" "$DATA" "$id")
+	echo "-- after the stored cursor (what the history reads next), its exit status and errors:"
+	journalctl --user --user-unit="$unit.service" "--after-cursor=$cursor" -o cat --no-pager 2>&1 | head -5; echo "exit ${PIPESTATUS[0]}"
+	echo "-- the cursors journalctl gives (s= is the file's sequence id):"
+	journalctl --user --user-unit="$unit.service" -o json --no-pager | node -e '
+		for (const line of require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean)) console.log(JSON.parse(line).__CURSOR.split(";")[0]);' | sort | uniq -c | sort -rn | head -5
+	journalctl --header --user --no-pager 2>&1 | grep -E "File path|Seqnum ID|State" | head -12
 	echo "-- the history's own read (newest entry, then the pattern search):"
 	journalctl --user --user-unit="$unit.service" -n 1 -o json --no-pager | head -c 400; echo
 	journalctl --user --user-unit="$unit.service" -o cat -g '^Started |Main process exited|Failed with result|service: Consumed |\]: Done \(' --no-pager | head -20
