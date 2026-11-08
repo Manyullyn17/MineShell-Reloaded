@@ -544,6 +544,13 @@ is open, and each needs a test setup.
   rollback only runs when the move fails); going back is moving again and, for a kept world,
   its snapshot. A one-click rollback of the last move, as a pack change has (user, 2026-11-02:
   a future feature, no version yet).
+- **Which targets a version move could reach** (user, 2026-11-08: later, no version yet; the
+  idea from modpacks.ch's mod compatibility checker, which finds the version and loader a whole
+  mod list shares): today the move panel answers the other way round, a chosen target then
+  what breaks. It could list targets with how many of the server's mods have a build for each
+  ("1.21.1 NeoForge: all 142", "1.21.4: 118 of 142"), from each mod's full version list (one
+  fetch per mod, the data the move fetches already). The checker has no API of its own (not in
+  docs/reference/modpacksch-openapi.json).
 - **The servers' sandbox** (ROADMAP-ARCHIVE, "The servers' sandbox", with its test list): a
   broken or missing AppArmor profile not tried (the user manager should still start, `doctor`
   warn, a server fail with `226/NAMESPACE`), nor a non-Ubuntu system (a Debian or Fedora VM).
