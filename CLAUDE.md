@@ -29,7 +29,9 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   `<outDir>/generated/dev/env/config.js` and every dev server watching that folder reloads
   with it, so a shared `.svelte-kit` let `npm test` or a throwaway server move a running
   `npm run dev` onto their data. Tests use `.svelte-kit-test`, a dev server given
-  `MINESHELL_DATA` on the command line `.svelte-kit-<hash>` (`vite.config.ts`). Flow tests in
+  `MINESHELL_DATA` on the command line `.svelte-kit-<hash>` (`vite.config.ts`), with its Vite
+  dependency bundles inside it: in the shared `node_modules/.vite` a throwaway server's new
+  bundles left a running `npm run dev` serving pages that ran no script. Flow tests in
   `tests/flows/` run whole operations on throwaway instances; API code replays recorded
   responses (`RECORD_HTTP=1` re-records). A bug fix gets a test that fails without it.
 - **Trying things against real loaders**: run a second dev server on a throwaway data dir,

@@ -37,6 +37,11 @@ const outDir = testing
   : explicitData
     ? `.svelte-kit-${createHash('sha256').update(path.resolve(explicitData)).digest('hex').slice(0, 8)}`
     : '.svelte-kit';
+// Vite's dependency bundles (node_modules/.vite) were shared the same way: a throwaway dev server
+// bundling a dependency it met first rewrote them under a running `npm run dev`, whose pages then
+// asked for bundles that were gone and ran no script at all (a phone's sidebar, skins and item
+// icons, 2026-11-08). Such a server keeps them in its own folder, removed with it.
+const cacheDir = explicitData ? `${outDir}/vite` : undefined;
 
 // A throwaway dev server's folder is of no use once it stops, so it removes
 // its own on the way out (only SIGKILL leaves one behind - delete those by
@@ -61,6 +66,7 @@ const mockingTests = allTests.filter((f) => !runeTests.includes(f) && /\bvi\.moc
 const otherTests = allTests.filter((f) => !runeTests.includes(f) && !mockingTests.includes(f));
 
 export default defineConfig({
+  cacheDir,
   define: { __MINESHELL_VERSION__: JSON.stringify(version) },
   plugins: [
     // SvelteKit 3 takes its configuration here; svelte.config.js is no longer read.
