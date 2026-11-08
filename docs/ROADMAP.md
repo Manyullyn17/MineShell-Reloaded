@@ -36,11 +36,16 @@ size, not a fixed list; entries move and get added along the way):
   upload), looking again when a CurseForge key is set, game mode and teleport for online
   players, game rules, world spawn and border (the four 1.21.9 settings back in Settings),
   server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
-- **1.3**: the mod config editor; the rest of step 5 (server list preview, server resource
-  pack, maintenance mode).
+- **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
+  order: the Fugue gaps and Java builds; formatted text (colour codes) with the server list
+  preview, also for item names and lore; the mod config editor (the headline); the NBT editor
+  (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
+  between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
+  Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
+  (not MineShell's own code).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
-  item icons and the status page as ordered below. Whenever convenient: the Fugue gaps,
-  Chunk Pregenerator, single files from a snapshot.
+  item icons and the status page as ordered below. Whenever convenient: Chunk Pregenerator,
+  single files from a snapshot.
 
 After 1.1 (user's calls, 2026-10-21 to 2026-10-27): everything under "Later", in the
 suggested order of its steps: upkeep and quick wins, files, mod configs, world, players,
@@ -202,10 +207,12 @@ CurseForge-only jars"). Left:
 Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges the jars
 declare (loaders.md, Cleanroom). Two gaps left:
 - An older Fugue that breaks on a newer Cleanroom: ranges only give a minimum
-  (`cleanroom@[min,)`), so nothing marks it. The one known case (Fugue <= 0.23.2 calling
-  `ReflectionHackery.getURL`, removed in Cleanroom 0.5.3) is a rule written by hand; the crash
-  then names the mod Fugue patched, not Fugue (Quantum Things). Crash diagnosis could tell
-  Fugue's patched classes failing from the trace and name Fugue and the Cleanroom version.
+  (`cleanroom@[min,)`), so nothing marks it before a start. The one known case (Fugue <= 0.23.2
+  calling `ReflectionHackery.getURL`, removed in Cleanroom 0.5.3) is looked for in the jar by
+  name. After a start the crash diagnosis already names Fugue (since 2026-10-11: a missing
+  method or field of `com.cleanroommc` called from another mod while Fugue is enabled; found
+  2026-11-08, this entry predated knowing it), but offers no fix: it could install the Fugue
+  `pickFugue` finds for the installed Cleanroom.
 - The Java a build needs is a constant (`FUGUE_JAVA25_FROM`, 0.23.4 needs 25), measured from
   the jars' class-file versions by hand. Read it from the jar instead (the class file's major
   version, as `inspectFugueJar` reads the range), so a later move to newer Java is seen.
@@ -252,6 +259,11 @@ the lines, not reprint the file), and a running server is told which configs it 
 at start. Where it lives: a Configs view per mod on the Mods tab, and the same editor from
 Files.
 
+Its saves go through Files' earlier versions (`filehistory.ts`), as the text editor's do, and
+are recorded per server with the file they changed (2026-11-08): config saves are one of the
+events "Change history per server" (step 7) lists, so recording them from the start saves
+going back for them.
+
 ### 4. World
 
 #### Game rules: what is left
@@ -297,6 +309,18 @@ its colours and styles, players online/max), with buttons that insert colour and
 codes. To check: how each version escapes `§` and `§` in `server.properties`, and
 that the two-line limit and width match the client.
 
+Formatted text beyond the description (user's call, 2026-11-08, with it in 1.3): the same
+colours and styles wherever Minecraft text is typed, item names and lore first. Minecraft keeps
+such text three ways: `§` codes in a string (the description, item names before 1.13), JSON
+text (names and lore 1.13 to 1.21.4) and NBT text (1.21.5 on); hex colours exist only in the
+last two. So one formatted-text model with a converter for each, a renderer and an input with
+the code buttons, shared by every place. Today the player editor reads names and lore as plain
+text (`textOf`) and writes plain text back (`textTag`): untouched items keep their colours,
+but renaming a coloured item, or editing one line of a coloured lore, loses all of it. Text the
+model cannot hold (translated names, click events, fonts) is kept and shown as such, never
+flattened. Later users: `resource-pack-prompt` (JSON text), `pack.mcmeta` descriptions on the
+Data packs tab (shown only), the status page.
+
 #### Server resource pack
 
 Nothing yet (user, 2026-10-26: long meant to, never mentioned): the pack is only reachable as
@@ -316,6 +340,11 @@ ids: functional, not nice (user, 2026-11-05). Revisit them with this work, as a 
 Agreed 2026-10-27 (was undecided). One switch that turns the whitelist on, kicks whoever is
 not on it with a message, and changes the description to say so; off puts all three back.
 For pack updates and other work players should stay out of.
+
+With pack changes (2026-11-08, a note, not a must): a "maintenance mode during this" tick on
+a pack change or version move. A pack change already stops the server, and nobody sees a
+stopped server's description, so it only helps work done with the server running (before the
+stop, or checking the result before letting players back in).
 
 #### More for online players
 
