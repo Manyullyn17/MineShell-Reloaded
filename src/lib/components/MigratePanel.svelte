@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { ComponentProps } from 'svelte';
+	import LostLoadersNotice from './LostLoadersNotice.svelte';
 	import { untrack } from 'svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import SnapshotChoice from './SnapshotChoice.svelte';
@@ -58,6 +60,8 @@
 		downgrade: boolean;
 		mods: ModPlan[];
 		datapacks: DatapackPlan[];
+		lostLoaders: ComponentProps<typeof LostLoadersNotice>['lostLoaders'];
+		world: string;
 		dependencies: {
 			install: { name: string; versionNumber: string; neededBy: string[] }[];
 			unresolved: { name: string; neededBy: string[]; reason: string }[];
@@ -156,6 +160,8 @@
 	}
 
 	const of = (action: ModPlan['action']) => plan?.mods.filter((m) => m.action === action) ?? [];
+	/** A pack in a folder a leaving data pack loader read (moved with the copy when that is ticked). */
+	const unreadAfter = (d: DatapackPlan) => !!d.folder && !!plan?.lostLoaders.some((l) => l.packs.includes(`${d.folder}/${d.fileName}`));
 	const packs = (action: DatapackPlan['action']) => plan?.datapacks.filter((d) => d.action === action) ?? [];
 	const canApply = $derived(!!plan && !running && !submitting && (!plan.minecraftChange || confirmMinecraft));
 </script>
@@ -334,6 +340,7 @@
 						<li class:off={d.action === 'stay'}>
 							<strong>{d.name}</strong>
 							{#if d.folder}<span class="muted small">in <code>{d.folder}</code></span>{/if}
+							{#if unreadAfter(d)}<span class="tag warn">its folder is not read after the move</span>{/if}
 							{#if d.action === 'update'}{d.from ?? '?'} → {d.to}
 							{:else if d.action === 'keep'}<span class="muted small">this build runs there too</span>
 							{:else}<span class="muted small">{d.reason} {plan.downgrade && newWorld && !d.folder ? 'Stays with the current world.' : 'Left as it is; it may not load on ' + plan.target.minecraft + '.'}</span>{/if}
@@ -342,6 +349,8 @@
 				</ul>
 			</details>
 		{/if}
+
+		<LostLoadersNotice lostLoaders={plan.lostLoaders} worldFolder={plan.world} during="move" target={plan.target.minecraft} />
 
 		<!-- A new world leaves the old one as it is: nothing to snapshot. -->
 		{#if !(plan.downgrade && newWorld)}

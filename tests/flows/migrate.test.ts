@@ -20,9 +20,11 @@ const BUILDS: Record<string, Record<string, { version: string; requires?: string
 	breeze: { 'datapack 1.20.1': { version: '1.0' }, 'datapack 1.21.1': { version: '1.1' }, 'datapack 1.19.2': { version: '0.9' } },
 	towers: { 'datapack 1.20.1': { version: '2.0' }, 'datapack 1.19.2': { version: '2.0' } },
 	oldonly: { 'datapack 1.20.1': { version: '1.0' } },
-	broken: { 'datapack 1.20.1': { version: '1.0' }, 'datapack 1.21.1': { version: '1.1' } }
+	broken: { 'datapack 1.20.1': { version: '1.0' }, 'datapack 1.21.1': { version: '1.1' } },
+	// A data pack loader whose 1.21 line reads config/openloader/packs instead of .../data (datapackloaders.ts).
+	openloader: { 'forge 1.20.1': { version: '20.0.1' }, 'neoforge 1.21.1': { version: '21.1.4' } }
 };
-const NAMES: Record<string, string> = { chunky: 'Chunky', corgilib: 'CorgiLib', lib: 'Lib', breeze: 'More Breeze', towers: 'Towers', oldonly: 'Old Only', broken: 'Broken' };
+const NAMES: Record<string, string> = { chunky: 'Chunky', corgilib: 'CorgiLib', lib: 'Lib', breeze: 'More Breeze', towers: 'Towers', oldonly: 'Old Only', broken: 'Broken', openloader: 'Open Loader' };
 const fileOf = (slug: string, version: string, loader?: string) => `${slug}-${version}${loader === 'datapack' ? '.zip' : '.jar'}`;
 const fakeModrinth: Partial<ModProvider> = {
 	getProject: async (slug: string) => ({
@@ -195,6 +197,58 @@ describe('moving a server to another Minecraft version and loader', () => {
 		expect(task.state).toBe('done');
 		expect(await packsIn(instance.path, 'world')).toEqual(['breeze-1.1.zip', 'handmade.zip', 'oldonly-1.0.zip', 'towers-2.0.zip']);
 		expect(await fs.readFile(path.join(instance.path, 'world/datapacks/breeze-1.1.zip'), 'utf8')).toBe('breeze 1.1');
+	});
+
+	// A version move disabled a data pack loader, or moved it to a build reading another folder,
+	// without a word: the packs in its folder were read by nothing after it, as the pack change
+	// already warned. Open Loader 20 reads config/openloader/data, 21 config/openloader/packs.
+	describe('a data pack loader leaving its folder', () => {
+		async function withOpenLoader() {
+			const instance = await forgeServer();
+			await fs.writeFile(path.join(instance.path, 'mods/openloader-20.0.1.jar'), 'openloader 20.0.1');
+			const modId = upsertMod({ source: 'modrinth', slug: 'openloader', name: 'Open Loader' });
+			recordInstanceMod({ instanceId: instance.id, modId, version: '20.0.1', versionId: 'openloader-20.0.1', filePath: 'mods/openloader-20.0.1.jar', hash: null, hashAlgo: null, fromPack: false });
+			await inLoaderFolder(instance, 'breeze', 'config/openloader/data');
+			await fs.writeFile(path.join(instance.path, 'config/openloader/data/mine.zip'), 'my own pack');
+			return reload(instance.id);
+		}
+
+		it('names the new build reading another folder, and carries the packs there: copied, or moved with their record from Add mods', async () => {
+			const instance = await withOpenLoader();
+			const plan = await planMigration(instance, TARGET);
+			expect(plan.lostLoaders).toEqual([
+				{
+					mod: 'Open Loader',
+					fileName: 'openloader-20.0.1.jar',
+					packs: ['config/openloader/data/breeze-1.0.zip', 'config/openloader/data/mine.zip'],
+					worldgen: false,
+					takenOverBy: { mod: 'Open Loader', sameMod: true, folder: 'config/openloader/packs' }
+				}
+			]);
+			const task = await waitForTask(await applyMigration(instance, TARGET, { confirmMinecraftChange: true, copyLostDatapacks: true }));
+			expect(task.state).toBe('done');
+			// Ours copied (the old one stays); the browser's moved, then updated where it is now.
+			expect((await fs.readdir(path.join(instance.path, 'config/openloader/packs'))).sort()).toEqual(['breeze-1.1.zip', 'mine.zip']);
+			expect(await fs.readdir(path.join(instance.path, 'config/openloader/data'))).toEqual(['mine.zip']);
+			const { trackedInFolders } = await import('#lib/server/mods/datapacks.js');
+			expect([...trackedInFolders(instance.id).keys()]).toEqual(['config/openloader/packs/breeze-1.1.zip']);
+		});
+
+		it('leaves the packs where they are when the copy is unticked', async () => {
+			const instance = await withOpenLoader();
+			const task = await waitForTask(await applyMigration(instance, TARGET, { confirmMinecraftChange: true }));
+			expect(task.state).toBe('done');
+			expect((await fs.readdir(path.join(instance.path, 'config/openloader/data'))).sort()).toEqual(['breeze-1.1.zip', 'mine.zip']);
+			expect(await fs.readdir(path.join(instance.path, 'config/openloader/packs')).catch(() => [])).toEqual([]);
+		});
+
+		it('names a loader the move disables, with nothing taking over', async () => {
+			const instance = await withOpenLoader();
+			// No Fabric build of it here.
+			const plan = await planMigration(instance, { minecraft: '1.20.1', loader: 'fabric', loaderVersion: '0.16.5' });
+			expect(plan.mods.find((m) => m.name === 'Open Loader')).toMatchObject({ action: 'disable' });
+			expect(plan.lostLoaders).toMatchObject([{ mod: 'Open Loader', packs: ['config/openloader/data/breeze-1.0.zip', 'config/openloader/data/mine.zip'], takenOverBy: null }]);
+		});
 	});
 
 	it('keeps the old build of a data pack whose new one fails to download, and says so', async () => {

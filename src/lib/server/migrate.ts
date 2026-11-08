@@ -27,6 +27,7 @@ import {
 } from './modupdates';
 import { getLoader, instanceLoader, loaderLabel, type ModloaderId } from './modloaders';
 import { datapacksDir, installDatapackVersion, listDatapacks, trackedDatapacks } from './mods/datapacks';
+import { copyLostDatapacks, lostDatapackLoaders, type LostDatapackLoader } from './datapackloaders';
 import { compareVersions, resolveJava } from './java';
 import { snapshotStep } from './snapshots';
 import { createWorld, deleteWorld, switchWorld, worldSeed } from './world';
@@ -122,8 +123,15 @@ export type MigrationPlan = {
 	/** To an older Minecraft than the server's. */
 	downgrade: boolean;
 	mods: MigrationModPlan[];
-	/** The active world's data packs. */
+	/** The active world's data packs, and the browser's in a data pack loader's folders. */
 	datapacks: MigrationDatapackPlan[];
+	/**
+	 * Data pack loaders the move disables, or moves to a build reading other folders, whose
+	 * folders hold data packs (datapackloaders.ts, as the pack change warns).
+	 */
+	lostLoaders: LostDatapackLoader[];
+	/** The active world's folder (level-name). */
+	world: string;
 	dependencies: DependencyPlan;
 	requiredJava: number;
 };
@@ -242,6 +250,15 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 	});
 	const packOrder = { update: 0, keep: 1, stay: 2 };
 	datapacks.sort((a, b) => packOrder[a.action] - packOrder[b.action] || a.name.localeCompare(b.name));
+	// A data pack loader leaving: disabled with no build, or its new build reading other folders
+	// (Open Loader 20 to 21 on 1.20.1 to 1.21.1). Nothing here was shipped by a pack, so all count.
+	const primaryFile = (v: ProjectVersion) => (v.files.find((f) => f.primary) ?? v.files[0])?.filename;
+	const lostLoaders = await lostDatapackLoaders(
+		instance.path,
+		[...disable, ...updates.keys()],
+		[...[...updates.values()].map((u) => primaryFile(u.version)), ...deps.resolved.map((d) => primaryFile(d.version))].filter((n): n is string => !!n),
+		null
+	);
 	const result: Prepared = {
 		plan: {
 			current: { minecraft: instance.minecraftVersion, loader: instance.modloader, loaderVersion: instance.modloaderVersion },
@@ -250,6 +267,8 @@ async function prepare(instance: ServerInstance, target: MigrationTarget): Promi
 			downgrade: compareVersions(target.minecraft, instance.minecraftVersion) < 0,
 			mods,
 			datapacks,
+			lostLoaders,
+			world: await serverWorldName(instance.path),
 			dependencies: deps.plan,
 			requiredJava: resolveJava({ minecraftVersion: target.minecraft, modloader: target.loader, modloaderVersion: target.loaderVersion }).requiredMajor
 		},
@@ -288,7 +307,7 @@ export async function applyMigration(
 	instance: ServerInstance,
 	target: MigrationTarget,
 	/** `newWorld`: going down, start a new world for the older version first (the old one stays under Worlds). */
-	opts: { confirmMinecraftChange: boolean; snapshot?: boolean; newWorld?: boolean; downloadJava?: JavaVendor }
+	opts: { confirmMinecraftChange: boolean; snapshot?: boolean; newWorld?: boolean; downloadJava?: JavaVendor; copyLostDatapacks?: boolean }
 ): Promise<string> {
 	await requireStopped(instance);
 	const { plan, updates, disable, dependencies, datapackUpdates } = await prepare(instance, target);
@@ -410,7 +429,19 @@ export async function applyMigration(
 		const problems: string[] = [];
 
 		// 4. Data packs into the world moved to. After the commit: installDatapackVersion
-		// downloads before it replaces anything, so one that fails keeps its old build.
+		// downloads before it replaces anything, so one that fails keeps its old build. First
+		// a lost loader's packs to where the one taking over reads, ticked as in a pack change:
+		// the browser's moved with their rows, so their updates below land there.
+		if (opts.copyLostDatapacks && plan.lostLoaders.length) {
+			try {
+				const { copied, moved, skipped } = await copyLostDatapacks(root, plan.lostLoaders, requireInstance(instance.id));
+				for (const to of copied) done.push(`Data pack copied to ${to}`);
+				for (const to of moved) done.push(`Data pack moved to ${to}`);
+				if (skipped.length) problems.push(`${plural(skipped.length, 'data pack')} not copied, as one of the same name is there already: ${skipped.join(', ')}.`);
+			} catch (err) {
+				problems.push(`Data packs were not copied to the new folder: ${err instanceof Error ? err.message : 'unknown error'}.`);
+			}
+		}
 		const packsTo = (await datapacksDir(root)).dir;
 		const rows = new Map(db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instance.id)).all().map((r) => [r.fileName, r]));
 		for (const pack of plan.datapacks) {

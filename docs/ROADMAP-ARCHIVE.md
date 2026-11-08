@@ -1375,8 +1375,11 @@ Taverns' data pack build into Open Loader's `config/openloader/packs`: installed
 found and applied in place, the folder choice in Add mods, 390 px; not yet loaded by a real Open
 Loader.
 
-What it leaves: a version move that drops the loader mod does not warn about its folder's packs
-(ROADMAP, Leftovers, "Data packs").
+A version move now warns, as the pack change did, when it disables a data pack loader or moves
+it to a build reading another folder (Open Loader 19 on 1.20.1 to 21 on 1.21.1: `data/` to
+`packs/`, seen against Modrinth's real builds), and copies the packs to the new folder when
+ticked; packs from Add mods are moved with their record instead, in a pack change too, so their
+updates follow.
 
 ### Server resource pack browser (1.3, 2026-11-08)
 

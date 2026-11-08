@@ -249,6 +249,27 @@ export async function trackedDatapacks(instance: ServerInstance): Promise<Tracke
 	return out;
 }
 
+/**
+ * A pack from the mod browser moved to another folder with its row: a data pack loader that
+ * reads a new folder after a pack change or version move takes it there, so its updates follow.
+ * False when it is not tracked there or a file of that name is in the way.
+ */
+export async function moveTrackedDatapack(instance: ServerInstance, from: string, fileName: string, to: string): Promise<boolean> {
+	const row = db
+		.select()
+		.from(instanceDatapacks)
+		.where(and(eq(instanceDatapacks.instanceId, instance.id), eq(instanceDatapacks.folder, from), eq(instanceDatapacks.fileName, fileName)))
+		.get();
+	if (!row || from === to) return false;
+	const dir = await datapackFolderDir(instance.path, to);
+	const destination = path.join(dir, fileName);
+	if (await fs.stat(destination).catch(() => null)) return false;
+	await fs.mkdir(dir, { recursive: true });
+	await fs.rename(path.join(await datapackFolderDir(instance.path, from), fileName), destination);
+	db.update(instanceDatapacks).set({ folder: to }).where(eq(instanceDatapacks.id, row.id)).run();
+	return true;
+}
+
 /** Where each project from the mod browser is, by "<source>:<projectId>": Add mods offers that folder first. */
 export function trackedFolderByProject(instanceId: string): Record<string, string> {
 	const rows = db.select().from(instanceDatapacks).where(eq(instanceDatapacks.instanceId, instanceId)).all();

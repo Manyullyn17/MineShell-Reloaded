@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describeModJar, indexMods } from './crashdiag';
-import { changesWorldgen } from './mods/datapacks';
+import { changesWorldgen, moveTrackedDatapack } from './mods/datapacks';
+import type { ServerInstance } from './db/schema';
 
 /**
  * Mods that load data packs from a folder of their own, for every world:
@@ -127,12 +128,19 @@ export async function lostDatapackLoaders(
 }
 
 /**
- * After a pack change: the lost loaders' data packs copied into the folder the loader that
- * took over reads. Copied, not moved: the old folder is read by nothing, and a copy cannot
- * lose a pack. One of the same name there already is left as it is. Returns what to report.
+ * After a pack change or version move: the lost loaders' data packs copied into the folder the
+ * loader that took over reads. Copied, not moved: the old folder is read by nothing, and a copy
+ * cannot lose a pack. One of the same name there already is left as it is. A pack from the mod
+ * browser (with `instance`) is moved instead, with its record: copied, its updates would go on
+ * landing in the folder nothing reads. Returns what to report.
  */
-export async function copyLostDatapacks(root: string, lost: LostDatapackLoader[]): Promise<{ copied: string[]; skipped: string[] }> {
+export async function copyLostDatapacks(
+	root: string,
+	lost: LostDatapackLoader[],
+	instance?: ServerInstance
+): Promise<{ copied: string[]; moved: string[]; skipped: string[] }> {
 	const copied: string[] = [];
+	const moved: string[] = [];
 	const skipped: string[] = [];
 	for (const loader of lost) {
 		const into = loader.takenOverBy?.folder;
@@ -140,6 +148,10 @@ export async function copyLostDatapacks(root: string, lost: LostDatapackLoader[]
 		await fs.mkdir(path.join(root, into), { recursive: true });
 		for (const rel of loader.packs) {
 			const to = `${into}/${path.basename(rel)}`;
+			if (instance && (await moveTrackedDatapack(instance, path.posix.dirname(rel), path.basename(rel), into))) {
+				moved.push(to);
+				continue;
+			}
 			if (await fs.stat(path.join(root, to)).catch(() => null)) {
 				skipped.push(to);
 				continue;
@@ -148,7 +160,7 @@ export async function copyLostDatapacks(root: string, lost: LostDatapackLoader[]
 			copied.push(to);
 		}
 	}
-	return { copied, skipped };
+	return { copied, moved, skipped };
 }
 export type LoaderDatapack = {
 	fileName: string;

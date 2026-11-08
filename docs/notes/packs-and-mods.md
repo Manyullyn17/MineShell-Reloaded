@@ -93,7 +93,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   from their documentation, not checked in a jar. Which folders an Open Loader build reads is
   told from its jar's name (the last dotted version's first number: 21 and up `packs/`, older
   `data/`), since a pack change's new jars are not downloaded at preview; a name without a
-  version counts as every folder, so no warning.
+  version counts as every folder, so no warning. Modrinth's real names fit (2026-11-08): Open
+  Loader for Forge 1.20.1 is the 19 line (`OpenLoader-Forge-1.20.1-19.0.5.jar`, `data/`), for
+  NeoForge 1.21.1 21.1.5 (`packs/`), so a version move between them is the folder case.
 
 ## CurseForge's official API
 - The user has a key: saved in Settings of both the dev and the installed MineShell (encrypted

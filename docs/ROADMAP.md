@@ -495,9 +495,7 @@ is open, and each needs a test setup.
   a list at the top (whitelists), now text only; YAML and `.properties` configs. A list of
   objects or an inline table is edited as its text, not field by field.
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
-  does not search; the mirror's coverage of it is unchecked). A version move that drops the
-  data pack loader (a loader change where it has no build) leaves its folder's packs read by
-  nothing; the plan does not say so yet.
+  does not search; the mirror's coverage of it is unchecked).
 - **Item icons and names**: 1.12 mod damage variants whose model names only the mod's code
   maps (AE2 material/part, IE metal, Botania manaresource; user's call: decide later), names
   a mod links to its id only in code (advancedrocketry:advrocketmotor is tile.advRocket),

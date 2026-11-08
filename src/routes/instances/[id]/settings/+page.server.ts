@@ -424,7 +424,8 @@ export const actions: Actions = {
 					// Going down with a new world leaves the old one as it is: nothing to snapshot.
 					snapshot: newWorld ? false : await decideSnapshot(instance, form.get('snapshot')),
 					newWorld,
-					downloadJava: downloadJavaFrom(form)
+					downloadJava: downloadJavaFrom(form),
+					copyLostDatapacks: form.get('copyLostDatapacks') === 'on'
 				}
 			);
 			return { ok: true, message: 'Moving the server. Follow it in Activity; it stays stopped until it finishes.' };

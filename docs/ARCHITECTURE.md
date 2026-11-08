@@ -714,7 +714,11 @@ world has loaded can stop it loading; the preview names them and the move into t
 `datapacks/`. So is another loader taking over (Open Loader for Paxi) or the same loader's
 new build reading other folders (Open Loader 21's `config/openloader/packs`): the preview
 names it, and a ticked option copies the packs into its folder after the change commits
-(copied, not moved, and one of the same name there is left alone).
+(copied, not moved, and one of the same name there is left alone; a pack from Add mods is
+moved with its `instance_datapacks` row, so its updates land where it is read). A version move
+(`migrate.ts`) runs the same check on the jars it disables or replaces and the new builds'
+file names, with the same warning (`LostLoadersNotice`) and tick; the copy runs before the
+data packs move to their builds, so those land in the folder read.
 
 **Rolling a pack change back** (`packrollback.ts`). Each committed change writes a
 `pack_changes` row in its commit transaction (`commitOperation`'s `also`): the version and

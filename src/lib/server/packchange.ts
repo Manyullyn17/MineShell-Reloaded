@@ -1051,8 +1051,9 @@ export async function applyPackChange(
 		}
 		try {
 			if (opts.copyLostDatapacks) {
-				const { copied, skipped } = await copyLostDatapacks(root, plan.lostLoaders);
+				const { copied, moved, skipped } = await copyLostDatapacks(root, plan.lostLoaders, requireInstance(instance.id));
 				for (const to of copied) task.log(`Copied data pack to ${to}`);
+				for (const to of moved) task.log(`Moved data pack to ${to}`);
 				if (skipped.length) problems.push(`${plural(skipped.length, 'data pack')} not copied, as one of the same name is there already: ${skipped.join(', ')}.`);
 			}
 			task.setProgress(null, 'Identifying mods');

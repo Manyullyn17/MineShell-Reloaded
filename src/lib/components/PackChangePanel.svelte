@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LostLoadersNotice from './LostLoadersNotice.svelte';
 	import { enhance } from '#lib/shared/forms.js';
 	import { dropzone } from '#lib/shared/dropzone.js';
 	import { plural } from '#lib/shared/format.js';
@@ -346,44 +347,7 @@
 				</p>
 			{/if}
 
-			{#each plan.lostLoaders as lost (lost.fileName)}
-				{@const one = lost.packs.length === 1}
-				{@const by = lost.takenOverBy}
-				<div class="notice warning small">
-					<p>
-						{#if by?.sameMod}
-							<strong>The new version's {lost.mod} reads another folder</strong>{by.folder ? ` (${by.folder})` : ''}: {one ? 'a data pack' : `${lost.packs.length} data packs`}
-							the installed version did not ship {one ? 'is' : 'are'} in one it no longer reads.
-						{:else if by}
-							<strong>The new version loads data packs with {by.mod} instead of {lost.mod}</strong>{by.folder ? `, from ${by.folder}` : ''}:
-							{one ? 'a data pack' : `${lost.packs.length} data packs`} the installed version did not ship {one ? 'is' : 'are'} in {lost.mod}'s folder.
-						{:else}
-							<strong>The new version drops {lost.mod}</strong>, which loads {one ? 'a data pack' : `${lost.packs.length} data packs`}
-							the installed version did not ship.
-						{/if}
-						{#if !by?.folder}
-							{one ? 'It stays' : 'They stay'} where {one ? 'it is' : 'they are'}, but nothing loads {one ? 'it' : 'them'} after the change: move
-							{one ? 'it' : 'them'} into <code>{plan.world.folder}/datapacks</code>{by ? '' : `, or add ${lost.mod} back`}.
-						{/if}
-						{#if lost.worldgen}
-							One adds world generation: if the world has loaded it, the world may not load without it, so {by?.folder ? 'keep it loaded' : 'move it before the next start'}.
-						{/if}
-					</p>
-					<ul class="files">
-						{#each lost.packs as f (f)}<li>{f}</li>{/each}
-					</ul>
-				</div>
-			{/each}
-			{#if plan.lostLoaders.some((l) => l.takenOverBy?.folder)}
-				{@const single = plan.lostLoaders.length === 1 && plan.lostLoaders[0].packs.length === 1}
-				<div class="check">
-					<input id="copy-lost-datapacks" type="checkbox" name="copyLostDatapacks" checked />
-					<label for="copy-lost-datapacks">
-						Copy {single ? 'it' : 'them'} to where {plan.lostLoaders.length === 1 ? plan.lostLoaders[0].takenOverBy?.mod : 'the new version'} reads data
-						packs, after the change. The old {single ? 'copy stays' : 'copies stay'}, read by nothing.
-					</label>
-				</div>
-			{/if}
+			<LostLoadersNotice lostLoaders={plan.lostLoaders} worldFolder={plan.world.folder} during="change" />
 
 			{#if datapackChanges}
 				<details>

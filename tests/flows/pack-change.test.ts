@@ -867,6 +867,24 @@ describe('your config edits across a pack change', () => {
 		expect(await fs.readFile(path.join(instance.path, 'config/paxi/datapacks/mine.zip'), 'utf8')).toBe('my data pack');
 	});
 
+	// Copied like the rest, a pack from Add mods kept its record in the folder nothing read, so
+	// its updates went on landing there.
+	it('moves a data pack from Add mods to the new folder with its record, not a copy', async () => {
+		const { instanceDatapacks } = await import('#lib/server/db/schema.js');
+		const { trackedInFolders } = await import('#lib/server/mods/datapacks.js');
+		const { instance, taskId } = await createFromPack('Paxi', PACKS.px1(), { source: 'modrinth', projectId: 'p', versionId: 'px1' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		await fs.writeFile(path.join(instance.path, 'config/paxi/datapacks/towers.zip'), 'towers');
+		db.insert(instanceDatapacks)
+			.values({ instanceId: instance.id, source: 'modrinth', projectId: 'towers', slug: 'towers', name: 'Towers', folder: 'config/paxi/datapacks', fileName: 'towers.zip', installedAt: 1 })
+			.run();
+		const task = await waitForTask(await applyPackChange(reload(instance.id), 'pxo', { updateMods: [], confirmMinecraftChange: false, copyLostDatapacks: true }));
+		expect(task.state).toBe('done');
+		expect(await fs.readFile(path.join(instance.path, 'config/openloader/packs/towers.zip'), 'utf8')).toBe('towers');
+		await expect(fs.access(path.join(instance.path, 'config/paxi/datapacks/towers.zip'))).rejects.toThrow();
+		expect([...trackedInFolders(instance.id).keys()]).toEqual(['config/openloader/packs/towers.zip']);
+	});
+
 	it('warns when the same loader’s new build reads another folder, not when it reads the same one', async () => {
 		const { instance, taskId } = await createFromPack('Open Loader', PACKS.ol19(), { source: 'modrinth', projectId: 'p', versionId: 'ol19' });
 		expect((await waitForTask(taskId)).state).toBe('done');
