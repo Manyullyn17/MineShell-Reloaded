@@ -134,6 +134,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   (x) managed by MineShell."), not "<unit>.service - <description>" as from 252 on
   (`isUnitStart`, consolelines' `SYSTEMD_LINE`; crash diagnosis read every run as one and the
   crash hold never applied). Checked in a `ubuntu:22.04` container with systemd as PID 1.
+- On a journal whose files share a sequence id (`s=` in cursors; all zeros on GitHub's Ubuntu
+  22.04 runners), `-n N` beside `--since` counts from the start: `-n 1 --since=...` gave the
+  first entry after that time, never a newer one, so the history's "newest entry" never
+  changed and it read nothing after its first poll, silently. `-r -n 1` is right on every
+  journal (`NEWEST` in journal.ts). The other `-n N --since` reads (console backlog, a run's
+  last 20000 lines, searches) would then give the oldest N, which only matters past N lines.
+  Reproduced in a `ubuntu:22.04` container by zeroing the 16 bytes at offset 72 (the header's
+  seqnum_id) of every `.journal` file with journald stopped. Found with `real-server.sh`'s
+  dump of what the history had to go on (four CI rounds; the reads one at a time all worked).
 - `listRuns`/`readRun` (Logs tab) keep what they read and continue with `--after-cursor`;
   `--show-cursor` puts the last entry's cursor at the end of `-o cat` output.
 - The journal outlives an instance; a recreated server with the same id shares it, so reads

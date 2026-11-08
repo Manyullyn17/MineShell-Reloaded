@@ -49,6 +49,17 @@ describe('readLastRun', () => {
 		expect(await readLastRun('pack-249')).toBe(RUN);
 	});
 
+	it('asks for the newest entry newest first, for the run check and the history alike', async () => {
+		// `-n 1` beside --since gave the first entry after that time on a journal whose files share
+		// a sequence id (GitHub's Ubuntu 22.04 runners), and the history never read past its first poll.
+		journal('s=1');
+		await readLastRun('pack-newest');
+		await readJournalEvents('pack-newest', 'x', { afterCursor: null, since: 0 });
+		const newestReads = spawnCalls.filter((c) => c.args.includes('json') && c.args.includes('-n'));
+		expect(newestReads).toHaveLength(2);
+		for (const read of newestReads) expect(read.args).toEqual(expect.arrayContaining(['-r', '-n', '1']));
+	});
+
 	it('ignores runs from before the instance existed', async () => {
 		// A server deleted and recreated under the same name shares the unit's journal.
 		fakeProcesses(() => ({ stdout: '' }));

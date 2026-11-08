@@ -120,6 +120,13 @@ function journalctl(args: string[]): Promise<string> {
 	});
 }
 
+/**
+ * The newest entry, newest first. Plain `-n 1` beside `--since` gave the first entry after
+ * that time instead on a journal whose files share a sequence id (GitHub's Ubuntu 22.04
+ * runners: all zeros, systemd 249), so the history saw nothing new after its first read.
+ */
+const NEWEST = ['-r', '-n', '1'];
+
 function unitMatch(id: string): string[] {
 	return [`--user-unit=${unitName(id)}`];
 }
@@ -144,7 +151,7 @@ const lastRuns = new Map<string, { cursor: string; text: string }>();
 
 /** The unit's newest entry: its cursor and the invocation (run) it belongs to. Null when there is none. */
 async function newestEntry(id: string, since: number): Promise<{ cursor: string | null; invocation: string | null } | null> {
-	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(since)])).trim();
+	const newest = (await journalctl([...unitMatch(id), ...NEWEST, '-o', 'json', sinceArg(since)])).trim();
 	if (!newest) return null;
 	let entry: Record<string, unknown> = {};
 	try {
@@ -351,7 +358,7 @@ export async function readJournalEvents(
 	pattern: string,
 	from: { afterCursor: string | null; since: number }
 ): Promise<{ events: JournalEvent[]; cursor: string | null }> {
-	const newest = (await journalctl([...unitMatch(id), '-n', '1', '-o', 'json', sinceArg(from.since)])).trim();
+	const newest = (await journalctl([...unitMatch(id), ...NEWEST, '-o', 'json', sinceArg(from.since)])).trim();
 	if (!newest) return { events: [], cursor: from.afterCursor };
 	let head: Record<string, unknown>;
 	try {
