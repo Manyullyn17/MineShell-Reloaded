@@ -40,9 +40,9 @@ size, not a fixed list; entries move and get added along the way):
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
   (wanted in 1.3 even if it makes the release larger; built 2026-11-08); more for online players (built 2026-11-08) anywhere in
-  between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
-  Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
-  (not MineShell's own code).
+  between. Then the server resource pack browser and Add mods choosing a data pack's folder
+  (user, 2026-11-08: both still go in; a larger release is fine). Maintenance mode to 1.4.
+  Scheduled CI during the beta (not user facing, so outside any release).
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
   item icons and the status page as ordered below. Whenever convenient: Chunk Pregenerator,
   single files from a snapshot.
@@ -255,8 +255,9 @@ Split in two (user's call, 2026-11-08):
    gives none for projects that opted out of third-party downloads, but the file's CDN path
    follows from its id and name (`curseforgeCdnUrl`), as pack installs and mods already use;
    give players `mediafilez.forgecdn.net` directly, since `edge.forgecdn.net` only redirects.
-   Whether pointing clients at an opted-out project's file is fine is the user's call (mods
-   are already downloaded that way). A pack found but with no usable file is still listed,
+   Not for this (user, 2026-11-08): clients are pointed only at a download URL the catalog
+   gives. CurseForge's API when a key is set, else the mirror for what it has of CurseForge;
+   no URL is made up from the CDN path for an opted-out file. A pack found but with no usable file is still listed,
    with a note saying CurseForge gives no download for it, so a search for it does not just
    come up empty (user, 2026-11-08). To check: whether the modpacks.ch mirror lists resource
    packs (searching without a key; as for CurseForge data packs, unchecked), and the update
@@ -733,7 +734,13 @@ Suggested, not yet confirmed or rejected:
   only: two-way needs a bot, which is what mods for it already do.
 - **Command completion in the console** (2026-10-27, user: maybe; raised again 2026-11-08,
   vanilla at least, with a PR on a similar project to look at): RCON cannot ask for
-  completions. Ways in, to check before deciding:
+  completions. The PR (anefzaoui/minecraft-server-manager#94, MIT, open, read 2026-11-08):
+  vanilla only, the command trees of the `minecraft-data` package (PrismarineJS, one per
+  version it covers, so a new Minecraft waits for a package update) with online player names,
+  selectors, enum values and the package's block/item/entity lists filled in, a one-line
+  description per command and per argument type, and a suggestions endpoint behind the console
+  permission; the console shows a list under the input (arrows, Tab) and the usage of the command
+  typed. Ways in, to check before deciding:
   - Vanilla, exactly: from 1.13 the data generator writes the whole command tree with argument
     types from the server jar, no running server (`--reports`, `generated/reports/commands.json`;
     1.18+ through the bundler, `-DbundlerMainClass=net.minecraft.data.Main`). Once per Minecraft
