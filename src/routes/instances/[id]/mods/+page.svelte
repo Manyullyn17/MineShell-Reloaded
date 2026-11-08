@@ -962,6 +962,9 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
+		/* A flex item of the heading: without these a long folder name in the select pushes it past a phone's edge. */
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.pack-upload select {
