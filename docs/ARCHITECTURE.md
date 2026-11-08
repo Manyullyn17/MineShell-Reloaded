@@ -246,6 +246,8 @@ modification time of what a start reads (the template, `sandbox.conf`, the env f
 before it is `restartToApply`: the overview and its card say to restart it. Those three are
 written only when their content changes, or every MineShell start would flag every server; the
 template by `scripts/setup.mjs` too (`writeUnitIfChanged`), which every install and update runs.
+Any change to the template counts, even one that changes nothing for a running server: 1.2.0
+dropping the inert `network-online.target` lines flagged every running server once.
 A link at the top of a server folder that leads out of it (a world moved to another disk)
 leads nowhere inside: the start warns, naming it. Its target is not bound in automatically,
 since a mod can make the same link to `~/.ssh`.
