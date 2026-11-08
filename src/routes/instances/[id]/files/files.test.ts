@@ -6,6 +6,9 @@ import { actions } from './+page.server';
 import { createInstance } from '../../../../../tests/helpers/instances';
 import { ls } from '../../../../../tests/helpers/fs';
 import { load, post } from '../../../../../tests/helpers/routes';
+import { db } from '#lib/server/db/index.js';
+import { auditLog } from '#lib/server/db/schema.js';
+import { and, eq } from 'drizzle-orm';
 
 /**
  * The Files tab reaches anything in a server folder, for anyone given file
@@ -116,5 +119,16 @@ describe('a link to a file', () => {
 
 		const shown = await load(page, { params, url: `${base}?path=.mineshell&show=.mineshell/pack-base.zip` });
 		expect(shown).toMatchObject({ dir: '.mineshell', show: '.mineshell/pack-base.zip', listError: null });
+	});
+});
+
+describe('saving a file', () => {
+	it('records a save that changed the file, with the file, for the server’s change history', async () => {
+		const { instance, params } = await server();
+		const saves = () => db.select().from(auditLog).where(and(eq(auditLog.instanceId, instance.id), eq(auditLog.action, 'file.saved'))).all();
+		expect(await post(actions.save, { params, fields: { path: 'config/x.toml', contents: 'x = 1\n' } })).toMatchObject({ ok: true, message: 'Saved.' });
+		expect(saves()).toEqual([]);
+		expect(await post(actions.save, { params, fields: { path: 'config/x.toml', contents: 'x = 2\n' } })).toMatchObject({ ok: true });
+		expect(saves().map((s) => s.detail)).toEqual(['config/x.toml']);
 	});
 });

@@ -38,7 +38,7 @@ size, not a fixed list; entries move and get added along the way):
   server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
   order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
-  preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline); the NBT editor
+  preview, also for item names and lore (built 2026-11-08); the mod config editor (the headline, built 2026-11-08); the NBT editor
   (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
   Add mods choosing a data pack's folder. Scheduled CI near the end or whenever convenient
@@ -211,21 +211,8 @@ also takes `world_border.dat`, `game_rules.dat` and mods' files in `world/data/`
 
 ### 3. Mod configs
 
-#### Mod config editor
-
-Planned for the old MineShell and forgotten (user, 2026-10-26). Today configs are edited as
-raw text in Files. A form view for the common formats: NeoForge/Forge TOML (with the
-comments above each key as hints, and their `# Range:`/`# Allowed Values:` lines as limits
-or choices), Forge 1.12 `.cfg` (typed `B:`/`I:`/`D:`/`S:` keys and `<...>` lists), and plain
-JSON/JSON5; anything else stays in the text editor. Writes keep comments and order (edit
-the lines, not reprint the file), and a running server is told which configs it only reads
-at start. Where it lives: a Configs view per mod on the Mods tab, and the same editor from
-Files.
-
-Its saves go through Files' earlier versions (`filehistory.ts`), as the text editor's do, and
-are recorded per server with the file they changed (2026-11-08): config saves are one of the
-events "Change history per server" (step 7) lists, so recording them from the start saves
-going back for them.
+Built 2026-11-08 (ROADMAP-ARCHIVE, "Mod config editor"); what it leaves is under "Leftovers of
+built features".
 
 ### 4. World
 
@@ -548,6 +535,10 @@ is open, and each needs a test setup.
 - **MineShell's database copies**: copying them to a backup folder along with the snapshots.
 - **playit.gg**: dedicated IPs and custom domains (set up on playit.gg); adopting tunnels
   made on playit's dashboard (listed, left alone).
+- **Mod configs**: FTB's SNBT configs (`config/ftb*.snbt`, comments above keys: the most
+  common format the form does not read, 2,265 files on the dev servers); JSON configs that are
+  a list at the top (whitelists), now text only; YAML and `.properties` configs. A list of
+  objects or an inline table is edited as its text, not field by field.
 - **Data packs**: CurseForge data packs (a separate class, "Data Packs", the mod browser
   does not search; the mirror's coverage of it is unchecked). Add mods choosing a data pack's
   folder (user's call, 2026-11-06: after 1.2): it always installs to `world/datapacks`, and

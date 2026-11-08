@@ -148,6 +148,16 @@
 	const requiredByInfo = streamed(() => data.requiredBy);
 	/** By file name, the enabled mods that need it. */
 	const neededBy = $derived((requiredByInfo.ready ? requiredByInfo.value : null) ?? {});
+	const configsInfo = streamed(() => data.configs);
+	/** By file name, the mod's config files. */
+	const configsOf = $derived((configsInfo.ready ? configsInfo.value : null) ?? {});
+	/** The mod whose configs are listed under its row. */
+	let configsFor = $state<string | null>(null);
+	/** A config in the Files editor, as a form where it can be one; Close goes back to its folder. */
+	function configHref(file: string) {
+		const params = new URLSearchParams({ path: file.slice(0, file.lastIndexOf('/')), edit: file, view: 'form' });
+		return `/instances/${data.instance.id}/files?${params}`;
+	}
 	/** "A, B and 3 more", for a row; the question before disabling or deleting names all of them. */
 	const nameList = (names: string[], max = names.length) =>
 		names.length <= max
@@ -483,6 +493,17 @@
 										{mod.enabled ? 'Needed by' : 'Off, but needed by'} {nameList(names, 3)}
 									</div>
 								{/if}
+								{#if configsOf[mod.fileName]?.length}
+									{@const count = configsOf[mod.fileName].length}
+									<button
+										type="button"
+										class="configs-toggle small hit-area"
+										aria-expanded={configsFor === mod.fileName}
+										onclick={() => (configsFor = configsFor === mod.fileName ? null : mod.fileName)}
+									>
+										{count} config file{count === 1 ? '' : 's'}
+									</button>
+								{/if}
 								</div>
 							</div>
 							</td>
@@ -595,6 +616,18 @@
 											</div>
 										</form>
 									{/if}
+								</td>
+							</tr>
+						{/if}
+						{#if configsFor === mod.fileName && configsOf[mod.fileName]?.length}
+							<tr class="config-row" use:reveal>
+								<td colspan="7">
+									<p class="small muted">Config files of {mod.name}, found by its name. Each opens in Files, as a form where it can be one.</p>
+									<ul class="config-list">
+										{#each configsOf[mod.fileName] as file (file)}
+											<li><a class="mono small" href={configHref(file)}>{file}</a></li>
+										{/each}
+									</ul>
 								</td>
 							</tr>
 						{/if}
@@ -1125,8 +1158,31 @@
 		color: var(--warning);
 	}
 
-	.version-row td {
+	.version-row td,
+	.config-row td {
 		background: var(--bg-sunken);
+	}
+
+	.configs-toggle {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--accent);
+		cursor: pointer;
+		text-align: left;
+	}
+
+	.configs-toggle:hover {
+		text-decoration: underline;
+	}
+
+	.config-list {
+		margin: var(--space-1) 0 0;
+		padding-left: var(--space-4);
+	}
+
+	.config-list a {
+		overflow-wrap: anywhere;
 	}
 
 	.version-row :global(.version-picker) {

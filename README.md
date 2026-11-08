@@ -175,6 +175,7 @@ Manage server configuration and files without needing direct shell access for ro
 - The server description with buttons for Minecraft's colour and format codes, and a preview of the server as the multiplayer list shows it, with the game's own line breaks.
 - Port availability checks, with options to swap ports with another server or move to a free port.
 - Browse, upload, download, rename, delete, and edit text files within an instance directory. The editor has line numbers and colours for JSON, TOML, YAML, Forge `.cfg`, `.properties`, scripts and shell files, marks a syntax error as you type, and before saving a broken JSON (with comments too: `.jsonc`), JSON5, TOML or YAML file names the line and asks (with "Save anyway").
+- Mod configs as a form: NeoForge/Forge TOML, Forge 1.12 `.cfg` and JSON/JSON5 settings with the mod's comments as hints, its ranges and allowed values as checks, and a switch back to the text. Only the changed values are rewritten, so comments and layout stay. Each mod on the Mods tab lists its config files, and the editor says whether the server reads a file again while running or only at start.
 - Every save in the editor keeps the version it replaced (the last 20 per file, up to 90 days), to load back and save again.
 - Search a server's configs and scripts for some text, or a folder of them, and open each matching line in the editor; file and folder names are matched too, mods and logs included.
 - Upload files and folders by dragging them into the file browser, or onto a folder opened in its tree to put them there.

@@ -199,3 +199,31 @@ Open Loader 21.1.5 picks up a new pack on `/reload`, from both its folders: its 
 reload (`CachedSupplier` holds only its config), tried on a copy of a real server and read in the
 journal of the real one (2026-11-06). A `/reload` that seems not to work has found nothing in the
 folder: "Located 0 packs" in the log. Paxi has not been tried.
+
+## Mod config form
+
+What the real files look like (`configform.ts`; `tests/tools/configform-sweep.ts` reads all of a
+server's configs through it, 2026-11-08 on the four dev servers: 9,073 of 9,276 files shown).
+
+- NeoForge's `# Range: > -2147483648` is an int range up to Integer.MAX_VALUE, printed short: the
+  bound is allowed (0 or more, not more than 0). `# Range: 5e-324 ~ 1.797...E308` is
+  Double.MIN_VALUE to MAX: above 0. Mods write their type's own limits on most numbers, so the
+  form hides limits at int/long/double extremes and still checks them.
+- NeoForge writes longs: Mekanism's `creativeCapacity = 9223372036854775807`, a Discord
+  application id in simple-rpc. smol-toml refuses those by default ("cannot be represented
+  losslessly"): `integersAsBigInt: 'asNeeded'`. Numbers are kept as their text in the form.
+- NeoForge writes `#.` for an empty comment line, and `# Default: 10` (1.21) beside the range.
+- Forge 1.12 writes a category's banner (rules of `#`, the name, `#---#`, the comment), then a
+  blank line, then `name {`: a blank line after a banner does not drop it. It reads a value as
+  everything after the `=` (trailing spaces included) and trims list items. The last
+  `Valid values:` block in a comment is the choices; a mod's own text can have an earlier one
+  with descriptions after each value.
+- Lists with comments between their items (darkmodeeverywhere's shader list) would lose them if
+  rewritten: such a list is edited as its text.
+- Not every `.cfg` is Forge's: PneumaticCraft's and others are refused with the line. 82 JSON
+  configs are a list at the top (whitelists), 20 hold no settings; FTB's are SNBT (2,265 files on
+  the dev servers), not read by the form yet.
+- NeoForge watches each config it opens (`ConfigTracker.openConfig` -> night-config's
+  `FileWatcher`, "Watching TOML config file {} for changes"), unless fml.toml's
+  `disableConfigWatcher`; a `-client.toml` is not loaded on a dedicated server. Read in FML
+  loader 4.0.44's bytecode (2026-11-08).

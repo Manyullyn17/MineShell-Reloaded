@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { requireInstance } from '#lib/server/instances.js';
+import { audit, requireInstance } from '#lib/server/instances.js';
 import {
 	createDirectory,
 	listDirectory,
@@ -116,6 +116,8 @@ export const actions: Actions = {
 			const contents = String(form.get('contents') ?? '');
 			const kept = await keepVersion(instance.path, file, contents);
 			await writeTextFile(instance.path, file, contents);
+			// The server's change history lists config saves with the file they changed.
+			if (kept) audit('file.saved', { instanceId: instance.id, detail: file });
 			return { ok: true, message: kept ? 'Saved. The version it replaced is kept under Earlier versions.' : 'Saved.' };
 		} catch (err) {
 			return fail(400, { ok: false, message: err instanceof Error ? err.message : 'Save failed.' });

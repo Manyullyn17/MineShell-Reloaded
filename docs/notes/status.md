@@ -67,6 +67,12 @@ user before the beta):
    file: a coloured name kept through an edit, one typed with codes showing in game as previewed,
    on 1.21.11 (JSON), a 26.x server (NBT text) and a 1.12 one. Checked on throwaway data
    2026-11-08 (a saved name read back from the file as intended); not yet against the game.
+4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
+   change a `-common.toml` setting in the form and see the server pick it up (its log says the
+   config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
+   throwaway data 2026-11-08 (copies of ATM10's and MeatballCraft's configs: two settings saved,
+   exactly those two lines changed, an earlier version kept, the save in the audit log; 1280 and
+   390 px); not yet against a running server.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

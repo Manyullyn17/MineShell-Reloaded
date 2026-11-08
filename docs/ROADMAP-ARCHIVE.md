@@ -1543,6 +1543,34 @@ Minecraft text is typed, item names and lore first. Built:
 
 What it leaves: ROADMAP, "Formatted text: what is left".
 
+### Mod config editor (1.3, 2026-11-08)
+
+Planned for the old MineShell and forgotten (user, 2026-10-26); the 1.3 headline. Built:
+- **A form in the Files editor** (`configform.ts`, `ConfigForm.svelte`) for NeoForge/Forge TOML,
+  Forge 1.12 `.cfg` and JSON/JSON5, beside the text (Form/Text). Sections and settings with the
+  comments above them as hints; `# Range:`, `# Allowed Values:`, `# Default:` and 1.12's
+  `[range: ..., default: ...]` and `Valid values:` as limits, choices and defaults, checked before
+  a value goes in. Switches, choice lists, number and text boxes, lists one item per line,
+  and values it cannot type edited as their text. A filter, links to the sections, changed
+  settings marked until saved.
+- **Edits the lines, not the file**: each setting knows where its value is, a change replaces
+  only that, numbers stay as written (`1.6E7`), lists keep their one-line or one-item-a-line shape
+  and a list with comments in it stays text. The form edits the editor's text, so saving, undo,
+  the syntax check and earlier versions are the text editor's.
+- **When it applies**: the header says it per file: NeoForge and Forge read their own configs again
+  when saved (they watch them), a `-client.toml` is not loaded on a server, defaultconfigs/ only
+  go into new worlds, the rest is read at start.
+- **Per mod**: the Mods tab lists each mod's config files under its name ("3 config files"),
+  matched by the ids and names its jar declares, each opening as a form; only for accounts that
+  may use Files.
+- **Recorded**: a save that changed a file goes in the audit log as `file.saved` with its path,
+  for "Change history per server".
+- Checked against every config of the user's four dev servers (`tests/tools/configform-sweep.ts`):
+  9,073 of 9,276 files shown, a few settings of each changed and read back with only that one
+  different.
+
+What it leaves: ROADMAP, "Leftovers of built features" (Mod configs).
+
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,

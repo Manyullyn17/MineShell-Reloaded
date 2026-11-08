@@ -24,6 +24,8 @@ import { modsChecked } from '#lib/server/updatecheck.js';
 import { findLoader, LOADER_FALLBACKS, unknownLoaderMessage, type ModloaderId } from '#lib/server/modloaders.js';
 import { datapacksDir, installDatapackVersion, isDatapackVersion, listDatapacks, removeDatapack } from '#lib/server/mods/datapacks.js';
 import { loaderDatapackFolders } from '#lib/server/datapackloaders.js';
+import { configFilesByMod } from '#lib/server/modconfigs.js';
+import { can } from '#lib/shared/access.js';
 import { saveUpload } from '#lib/server/files.js';
 import { db } from '#lib/server/db/index.js';
 import { serverInstances } from '#lib/server/db/schema.js';
@@ -40,7 +42,7 @@ function touchInstance(id: string) {
 	db.update(serverInstances).set({ updatedAt: Date.now() }).where(eq(serverInstances.id, id)).run();
 }
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const instance = requireInstance(params.id);
 	const summary = await summarise(instance);
 	const mods = await listInstanceMods(instance);
@@ -57,6 +59,8 @@ export const load: PageServerLoad = async ({ params }) => {
 		duplicates: jars.then(duplicateMods),
 		/** By file name, the enabled mods that need it to start; streamed with the duplicates. */
 		requiredBy: jars.then(requiredBy),
+		/** By file name, the mod's config files (the Configs button); for those who may open them in Files. */
+		configs: can(locals.access, instance.id, 'files') ? jars.then((j) => configFilesByMod(instance.path, j)).catch(() => ({}) as Record<string, string[]>) : Promise.resolve({} as Record<string, string[]>),
 		/** Disabled jars of a mod another jar provides, with that jar: an older copy a replacement left. */
 		disabledCopies: jars.then(disabledCopies),
 		/** On Cleanroom: disabled jars its must-remove list covers, by file name, with why. */

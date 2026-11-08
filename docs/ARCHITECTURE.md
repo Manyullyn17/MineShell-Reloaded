@@ -1633,6 +1633,29 @@ MineShell's own saves keep versions (user's call, 2026-10-29; outside changes ar
 Undecided). Left out of exports and copies (`cloneSkips`), named on the disk usage page. A
 renamed or deleted file's versions stay under its old path.
 
+**Mod configs as a form** (`configform.ts`, `ConfigForm.svelte`): the Files editor's Form/Text
+switch for `.toml`, `.cfg` and `.json`/`.json5`/`.jsonc` (`configfiles.ts`). Both show one text:
+the form reads it into sections and settings, each with its value's place in the text, and a
+change replaces only that value's text (`writeField`) and reads the whole text again; the form
+hands it to the editor (`setText`), so saving, undo, the syntax check and earlier versions are
+the text editor's. Hints are the comments above a setting; NeoForge/Forge `# Range:`,
+`# Allowed Values:` and `# Default:` lines and Forge 1.12's `[range: a ~ b, default: x]` and
+closing `Valid values:` list become the field's limits, checked before a value goes in. Forge
+1.12 `.cfg` is read line by line (`T:name=value`, `T:name <` lists, quoted names and
+categories); TOML and JSON5 with scanners that find each value's end, the values themselves read
+by smol-toml (`integersAsBigInt: 'asNeeded'`: longs) and json5. What it cannot read for certain
+(a `.cfg` in another format, a JSON list, more than 3000 settings) is refused with why, and the
+file stays text; values it cannot type (inline tables, lists of objects, a list with comments in
+it) are edited as their text. The view is the one a link asks for (`?view=form`), else the last
+one picked (localStorage), else the form; a search result opens the text at its line. The
+header says when the server takes a change in (`whenApplied`): Forge and NeoForge watch
+`-common.toml`, `-server.toml` and serverconfig/, the rest is read at start, defaultconfigs/
+only when a world is made. A save that changed a file is recorded (`file.saved`, with its path)
+for the change history per server. The Mods tab lists each mod's configs (`modconfigs.ts`):
+files in config/, the world's serverconfig/ and defaultconfigs/ whose name (less `-common`,
+`-client`, `-options` and the like) or folder under config/ is an id or name the jar declares,
+without case and punctuation; only for accounts that may use Files.
+
 **Zips in Files** (`filezips.ts`): a folder's Download (`/api/instances/[id]/files?path=`
 on a folder) is a zip streamed while yazl makes it, entries named from inside the folder; it
 leaves out what a server copy leaves out (`cloneSkips`: snapshots, trash, file history) and

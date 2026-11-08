@@ -7,6 +7,9 @@
 	import Flash from '#lib/components/Flash.svelte';
 	import RowMenu from '#lib/components/RowMenu.svelte';
 	import CodeEditor from '#lib/components/CodeEditor.svelte';
+	import SegmentedChoice from '#lib/components/SegmentedChoice.svelte';
+	import type ConfigFormComponent from '#lib/components/ConfigForm.svelte';
+	import { configFormatOf, whenApplied } from '#lib/shared/configfiles.js';
 	import { syntaxProblem, languageOf, type SyntaxProblem } from '#lib/shared/syntaxcheck.js';
 	import type { SubmitFunction } from '$app/forms';
 	import { formatBytes, formatDateTime, formatRelative } from '#lib/shared/format.js';
@@ -57,8 +60,59 @@
 			versionError = 'That version could not be read.';
 			return;
 		}
-		editor.setText(await res.text());
+		const text = await res.text();
+		editor.setText(text);
+		if (view === 'form') formText = text;
 		loadedVersion = Number(id);
+	}
+
+	// ---- a mod config as a form (ConfigForm): it edits the editor's text, which is what is saved
+	const editingPath = $derived(data.editing?.path ?? null);
+	const configFormat = $derived(editingPath ? configFormatOf(editingPath) : null);
+	let view = $state<'form' | 'text'>('text');
+	/** The text the form shows: the editor's when the form was opened, then the form's own edits. */
+	let formText = $state('');
+	let ConfigForm = $state<typeof ConfigFormComponent | null>(null);
+	const VIEW_KEY = 'mineshell:config-view';
+	const VIEWS = [
+		{ value: 'form', label: 'Form' },
+		{ value: 'text', label: 'Text' }
+	] as const;
+	function setView(next: 'form' | 'text', remember = true) {
+		if (next === 'form') {
+			formText = editor?.text() ?? data.editing?.contents ?? '';
+			if (!ConfigForm) void import('#lib/components/ConfigForm.svelte').then((m) => (ConfigForm = m.default));
+		}
+		view = next;
+		if (remember) {
+			try {
+				localStorage.setItem(VIEW_KEY, next);
+			} catch {
+				// Not kept: the form is offered first next time.
+			}
+		}
+		// The editor was out of sight: it measures its height again.
+		if (next === 'text') requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+	}
+	$effect(() => {
+		// Another file: the view a link asks for (?view=), else the one last picked, else the form.
+		// A search result opens the text, at the line found.
+		const path = editingPath;
+		untrack(() => {
+			if (!path || !configFormat) return void (view = 'text');
+			let remembered: string | null = null;
+			try {
+				remembered = localStorage.getItem(VIEW_KEY);
+			} catch {
+				// The form, then.
+			}
+			const asked = page.url.searchParams.get('view') ?? (data.editing?.line ? 'text' : remembered);
+			setView(asked === 'text' ? 'text' : 'form', false);
+		});
+	});
+	function formChanged(text: string) {
+		formText = text;
+		editor?.setText(text);
 	}
 	$effect(() => {
 		// A save, or another file: what is in the editor is no longer the loaded version.
@@ -416,24 +470,44 @@
 		<div class="panel-head">
 			<div>
 				<h2 class="mono file-title">{data.editing.path}</h2>
-				<p>Saved straight to disk. Restart the server if the file is read at startup.</p>
+				<p>
+					Saved straight to disk.
+					{configFormat || /^(config|defaultconfigs)\//.test(data.editing.path)
+						? whenApplied(data.editing.path, data.instance.modloader)
+						: 'Restart the server if the file is read at startup.'}
+				</p>
 			</div>
-			<a class="button button-quiet" href={href(data.dir)}>Close</a>
+			<div class="button-row">
+				{#if configFormat}
+					<SegmentedChoice options={VIEWS} label="Edit as" bind:value={() => view, (next) => setView(next)} />
+				{/if}
+				<a class="button button-quiet" href={href(data.dir)}>Close</a>
+			</div>
 		</div>
 		<form method="POST" action="?/save" use:enhance={checkBeforeSave} bind:this={saveForm}>
 			<input type="hidden" name="path" value={data.editing.path} />
-			{#key data.editing.path}
-				<CodeEditor
-					bind:this={editor}
-					bind:problem={liveProblem}
-					bind:checks
-					name="contents"
-					value={data.editing.contents}
-					fileName={data.editing.path}
-					line={data.editing.line}
-					find={data.editing.find}
-				/>
-			{/key}
+			{#if view === 'form' && configFormat}
+				{#if ConfigForm}
+					<ConfigForm format={configFormat} text={formText} saved={data.editing.contents} onchange={formChanged} />
+				{:else}
+					<p class="muted">Loading the form.</p>
+				{/if}
+			{/if}
+			<!-- Out of sight under the form, still what the form posts. -->
+			<div hidden={view === 'form'}>
+				{#key data.editing.path}
+					<CodeEditor
+						bind:this={editor}
+						bind:problem={liveProblem}
+						bind:checks
+						name="contents"
+						value={data.editing.contents}
+						fileName={data.editing.path}
+						line={data.editing.line}
+						find={data.editing.find}
+					/>
+				{/key}
+			</div>
 			{#if loadedVersion}
 				<p class="notice info loaded-version">
 					The version from {formatDateTime(loadedVersion)} is in the editor, not saved. Save to go back to it (the text it
@@ -447,7 +521,13 @@
 						next start may refuse it or fall back to its defaults.
 					</p>
 					<div class="button-row">
-						<button type="button" onclick={() => editor?.goToLine(blocked!.line)}>Go to line {blocked.line}</button>
+						<button
+							type="button"
+							onclick={() => {
+								if (view === 'form') setView('text');
+								editor?.goToLine(blocked!.line);
+							}}>Go to line {blocked.line}</button
+						>
 						<button
 							type="button"
 							class="button-quiet"
