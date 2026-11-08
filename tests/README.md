@@ -141,7 +141,8 @@ a push but for what breaks without a commit. `.github/workflows/nightly.yml`: `c
 `weekly.yml`, Mondays: on Ubuntu 22.04 and 24.04 (`ubuntu-latest` moves) the release archive
 installed with `install.sh` (24.04 first gets DEPLOYMENT's AppArmor fix, cut out of the doc
 itself), `/setup` answering, `real-server.sh` on the installed MineShell with sign-in turned
-off, then `doctor`, which must find the sandbox working; and `repeat-tests.sh 20`. A runner's
+off, then `doctor`, which must find the sandbox working on 24.04 (on 22.04 its sandbox line goes
+to the run's summary: no mount namespace there, cause not pinned down); and `repeat-tests.sh 20`. A runner's
 account has a user manager only after `loginctl enable-linger`. Both can be started from the
 Actions tab (workflow_dispatch). `scripts/release.sh` refuses while the last run of either
 failed (`--ignore-ci` overrides) and warns when the last is older than a few days: GitHub

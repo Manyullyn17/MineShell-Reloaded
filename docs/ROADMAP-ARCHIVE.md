@@ -1667,9 +1667,10 @@ offline, so the schedule is for what breaks without a commit (tests/README.md, "
   on 22.04 and 24.04 the release archive goes through `install.sh`, then `real-server.sh`
   (vanilla with Java downloaded, the console, Stop, Force stop, Java killed from outside and
   restarted by systemd, the recorded runs checked), then `doctor`, which must find the sandbox
-  working. 24.04 gets DEPLOYMENT's AppArmor fix cut out of the doc, so the recipe users copy is
+  working on 24.04 (22.04's runner makes none; ROADMAP, Leftovers). 24.04 gets DEPLOYMENT's AppArmor fix cut out of the doc, so the recipe users copy is
   the one tested. GitHub's runners give the account a user manager once lingering is on.
-  Tried on the throwaway dev server: about 90 s. A plain Stop goes over RCON, so systemd logs
+  Tried on the throwaway dev server: about 90 s. Its first runs found two 22.04 bugs in
+  reading the journal (runtime.md, "Journal"), fixed, and an order bug in a test. A plain Stop goes over RCON, so systemd logs
   no "Stopping" and `stop_asked_at` stays empty for it; only a Force stop sets it.
 - **Repeated tests**, weekly: `repeat-tests.sh 20`, the files shuffled with a seed each run,
   every fifth on one worker. Tests inside a file keep their order: flow tests build on the
