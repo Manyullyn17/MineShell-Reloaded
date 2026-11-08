@@ -1,20 +1,38 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The server, over RCON: `list` answers who is online, anything else is recorded and answered.
-const rcon = vi.hoisted(() => ({ commands: [] as string[], online: ['Steve', 'Alex'], fail: false, answer: '§eDone the thing', answers: {} as Record<string, string> }));
+const rcon = vi.hoisted(() => ({
+	commands: [] as string[],
+	online: ['Steve', 'Alex'],
+	fail: false,
+	answer: '§eDone the thing',
+	answers: {} as Record<string, string>,
+	/** The world `execute unless block` tests ask about (playercommands' standingSpot): a block's name, or null where it is not loaded. */
+	world: null as ((x: number, y: number, z: number) => string | null) | null
+}));
 vi.mock('#lib/server/rcon.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/rcon.js')>()),
 	rconExec: vi.fn(async (_target: unknown, commands: string[]) => {
 		if (rcon.fail) throw new Error('connection refused');
 		return commands.map((command) => {
 			if (command === 'list') return `There are ${rcon.online.length} of a max of 20 players online: ${rcon.online.join(', ')}`;
+			const test = rcon.world && /^execute in \S+ ((unless block -?\d+ -?\d+ -?\d+ minecraft:\w+ ?)+)$/.exec(command);
+			if (test && rcon.world) {
+				// As vanilla 1.21.11 answers: a failed test says nothing.
+				const [x, y, z] = command.split(' ').slice(5, 8).map(Number);
+				const block = rcon.world(x, y, z);
+				if (block === null) return 'That position is not loaded';
+				return [...test[1].matchAll(/minecraft:(\w+)/g)].some((m) => m[1] === block) ? '' : 'Test passed';
+			}
 			rcon.commands.push(command);
 			return rcon.answers[command] ?? rcon.answer;
 		});
 	})
 }));
 
-const { gameModeCommand, gameModesFor, ownSpawnCommand, playerState, readPlayerState, runPlayerCommand, teleportCommand, teleportTargetFrom } = await import('#lib/server/playercommands.js');
+const { gameModeCommand, gameModesFor, ownSpawnCommand, playerState, readPlayerState, runPlayerCommand, standingSpots, teleportCommand, teleportTargetFrom } = await import('#lib/server/playercommands.js');
 const { encryptSecret } = await import('#lib/server/crypto.js');
 const { createInstance } = await import('../helpers/instances');
 
@@ -73,10 +91,19 @@ describe("an online player's state", () => {
 		expect(readPlayerState(['No entity was found'])).toEqual({ gameMode: null, dimension: null, pos: null, spawn: null });
 	});
 
-	it('teleports onto a bed or anchor, and to a /spawnpoint spot itself', () => {
-		expect(ownSpawnCommand('Steve', { x: 10, y: 70, z: -20, dimension: 'minecraft:overworld', forced: true })).toBe('execute in minecraft:overworld run tp Steve 10 70 -20');
-		expect(ownSpawnCommand('Steve', { x: 10, y: 70, z: -20, dimension: 'minecraft:the_nether', forced: false })).toBe('execute in minecraft:the_nether run tp Steve 10 71 -20');
-		expect(() => ownSpawnCommand('Steve', { x: 0, y: 0, z: 0, dimension: 'x; op Steve', forced: true })).toThrow(/cannot name/);
+	it('looks for room on a bed or anchor, then beside it on a floor, and at a /spawnpoint spot itself first', () => {
+		const bed = standingSpots({ x: 10, y: 70, z: -20, dimension: 'minecraft:overworld', forced: false });
+		expect(bed[0]).toEqual({ x: 10, y: 71, z: -20, floor: false });
+		expect(bed.slice(1, 5)).toEqual([
+			{ x: 10, y: 70, z: -21, floor: true },
+			{ x: 11, y: 70, z: -20, floor: true },
+			{ x: 10, y: 70, z: -19, floor: true },
+			{ x: 9, y: 70, z: -20, floor: true }
+		]);
+		expect(bed).toHaveLength(9);
+		expect(standingSpots({ x: 10, y: 70, z: -20, dimension: 'minecraft:overworld', forced: true })[0]).toEqual({ x: 10, y: 70, z: -20, floor: false });
+		expect(ownSpawnCommand('Steve', 'minecraft:the_nether', { x: 10, y: 71, z: -20, floor: false })).toBe('execute in minecraft:the_nether run tp Steve 10 71 -20');
+		expect(() => ownSpawnCommand('Steve', 'x; op Steve', { x: 0, y: 0, z: 0, floor: false })).toThrow(/cannot name/);
 	});
 
 	it('takes the target from the teleport form', () => {
@@ -94,6 +121,8 @@ describe('running them on a server', () => {
 		rcon.fail = false;
 		rcon.answer = '§eDone the thing';
 		rcon.answers = {};
+		// Open air over stone up to y 64.
+		rcon.world = (_x, y) => (y <= 64 ? 'stone' : 'air');
 	});
 
 	it("reads a player's state and sends them to their own spawn point, which they must have", async () => {
@@ -112,7 +141,54 @@ describe('running them on a server', () => {
 		await expect(playerState(old, 'Steve')).rejects.toThrow(/1.12.2 has no command/);
 		await expect(runPlayerCommand(old, 'Steve', { kind: 'teleport', target: { kind: 'ownSpawn' } })).rejects.toThrow(/spawn point/);
 	});
-	const server = () => createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPort: 25598, rconPasswordEnc: encryptSecret('pw') });
+	const server = (files: Record<string, Buffer> = {}) =>
+		createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', rconPort: 25598, rconPasswordEnc: encryptSecret('pw') }, files);
+	const spawnAt = (x: number, y: number, z: number, forced: boolean) =>
+		(rcon.answers = Object.fromEntries(
+			FIELDS.map((f, i) => [`data get entity Steve ${f}`, answering({ respawn: `{pos: [I; ${x}, ${y}, ${z}], forced: ${forced ? 1 : 0}b, dimension: "minecraft:overworld"}` })[i]])
+		));
+	const toOwnSpawn = () => runPlayerCommand(server_, 'Steve', { kind: 'teleport', target: { kind: 'ownSpawn' } });
+	let server_: Awaited<ReturnType<typeof server>>;
+
+	it('never teleports into a wall: beside a bed under a low ceiling, and nowhere when there is no room', async () => {
+		server_ = await server();
+		// A bed at 10 70 -20 in a room two blocks high: standing on it, their head would be in the ceiling.
+		const bed = (x: number, y: number, z: number) => x === 10 && y === 70 && z === -20;
+		rcon.world = (x, y, z) => (bed(x, y, z) ? 'red_bed' : y >= 72 || y <= 69 ? 'stone' : 'air');
+		spawnAt(10, 70, -20, false);
+		await toOwnSpawn();
+		expect(rcon.commands.at(-1)).toBe('execute in minecraft:overworld run tp Steve 10 70 -21');
+		// A torch beside the bed is no wall; water under a spot is no floor.
+		rcon.world = (x, y, z) => (bed(x, y, z) ? 'red_bed' : y === 69 && z === -21 ? 'water' : y >= 72 || y <= 69 ? 'stone' : x === 11 && y === 70 ? 'wall_torch' : 'air');
+		await toOwnSpawn();
+		expect(rcon.commands.at(-1)).toBe('execute in minecraft:overworld run tp Steve 11 70 -20');
+		// Walled in all round: nothing is sent.
+		rcon.world = (x, y, z) => (bed(x, y, z) ? 'red_bed' : x === 10 && y === 71 && z === -20 ? 'air' : 'stone');
+		rcon.commands = [];
+		await expect(toOwnSpawn()).rejects.toThrow(/no room for Steve on or beside their spawn point at 10, 70, -20/);
+		expect(rcon.commands.some((c) => c.includes(' tp '))).toBe(false);
+		// A /spawnpoint spot built over since: beside it.
+		rcon.world = (x, y, z) => (y <= 64 || (x === 5 && z === 5) ? 'stone' : 'air');
+		spawnAt(5, 65, 5, true);
+		await toOwnSpawn();
+		expect(rcon.commands.at(-1)).toBe('execute in minecraft:overworld run tp Steve 5 65 4');
+	});
+
+	it('reads a part of the world the server does not have loaded from the region file it saved', async () => {
+		// Vanilla 1.21.11's chunk 0 0, saved after it was let go: a stone floor at y 100 and ceiling at 103
+		// over x and z 0-4, a bed's head at 2 101 2 (its foot at 2 101 3), a torch at 1 101 2.
+		server_ = await server({ 'world/region/r.0.0.mca': await fs.readFile(path.join(import.meta.dirname, '../fixtures/regions/bed-1.21.11.mca')) });
+		rcon.world = () => null;
+		spawnAt(2, 101, 2, false);
+		await toOwnSpawn();
+		expect(rcon.commands.at(-1)).toBe('execute in minecraft:overworld run tp Steve 2 101 1');
+		// In the floor itself, with the floor all round.
+		spawnAt(2, 100, 2, true);
+		await expect(toOwnSpawn()).rejects.toThrow(/no room/);
+		// A chunk the file does not have, or no file: not known to be clear, so not done.
+		spawnAt(200, 64, 200, false);
+		await expect(toOwnSpawn()).rejects.toThrow(/no room/);
+	});
 
 	it('acts on online players only, by their own spelling, and answers with what the server said', async () => {
 		const instance = await server();

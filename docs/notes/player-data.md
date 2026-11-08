@@ -73,6 +73,17 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   SpawnX/Y/Z/SpawnDimension/SpawnForced (before) exist only once a spawn point is set; a
   /spawnpoint one is `forced`. Dimension is a string from 1.16, a number (0, -1, 1) before. `tp`
   with whole numbers centres x and z on the block (10 -> 10.5).
+- A bed or anchor spawn point is the block's position (a bed's head), not where the player
+  stands: the game looks for a spot beside it only when they respawn. Teleporting on top of a bed
+  in a room two blocks high puts their head in the ceiling (the user, 2026-11-08), so MineShell
+  asks first: `execute in <dim> unless block x y z minecraft:air unless block ...` per block
+  (feet, head, and a floor under spots beside). Over RCON a passing test answers `Test passed`,
+  a failing one `Test failed` on 1.21.1 but nothing at all on 1.21.11, a chunk that is not loaded
+  `That position is not loaded` (common: a bed far from everyone), an unknown block name
+  `Unknown block type ...` for the whole command (so only names every version from 1.13 has).
+  Unloaded chunks are read from the region file instead (`savedBlocks`, world.ts): the server
+  saved them when it let them go. Probed on vanilla 1.21.1 and 1.21.11, 2026-11-08;
+  `tests/fixtures/regions/bed-1.21.11.mca` is 1.21.11's chunk with a bed under a low ceiling.
 
 ## NBT editor (Files)
 - What NBT files look like on real servers (`tests/tools/nbt-sweep.ts`, the four dev servers,

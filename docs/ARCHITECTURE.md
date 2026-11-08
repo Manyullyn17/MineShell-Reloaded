@@ -1521,7 +1521,10 @@ entries) only with `software`, the others learning just that it asks; Spark's pr
 `console.command`, and so do game mode and teleport for online players (`playercommands.ts`: as
 strong as a console command, like making an operator) and reading what they are doing (game mode,
 dimension, position, spawn point: `data get entity`, one field per command since a whole player
-passes RCON's 4096 bytes; `/api/instances/[id]/player-state`, asked when the drawer opens); Players' IP bans need `players.manage`; a server's scheduled commands need console access; the playit.gg account links,
+passes RCON's 4096 bytes; `/api/instances/[id]/player-state`, asked when the drawer opens; a
+teleport to their own spawn point first asks the game which blocks around it are clear, reading
+the region file for a chunk it does not have loaded, and goes beside a bed under a low ceiling or
+nowhere rather than into a wall); Players' IP bans need `players.manage`; a server's scheduled commands need console access; the playit.gg account links,
 link-up and routing, and tunnels made outside MineShell are the owner's (global admins see the
 status). A server the account may not see is "Another server" in port messages, and moving
 another server's port to make room needs `settings.edit` on it. Two server.properties settings

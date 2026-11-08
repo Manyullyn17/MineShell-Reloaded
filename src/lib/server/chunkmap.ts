@@ -266,6 +266,17 @@ function chunkSections(root: Tag, legacyIds: Map<number, string> | null): { sect
 	return { sections, visible };
 }
 
+/**
+ * The block at a spot of a 1.13+ chunk by its name (x and z within the chunk, y the world's): a
+ * section the chunk does not have is air. Null when the chunk has no block data.
+ */
+export function chunkBlocks(root: Tag): ((x: number, y: number, z: number) => string) | null {
+	const read = chunkSections(root, null);
+	if (!read) return null;
+	const byY = new Map(read.sections.map((s) => [s.y, s]));
+	return (x, y, z) => byY.get(Math.floor(y / 16))?.block((((y % 16) + 16) % 16) * 256 + z * 16 + x) ?? 'minecraft:air';
+}
+
 /** The 256 column tops of one chunk (index z*16 + x); null when it has no block data. */
 export function chunkTops(root: Tag, legacyIds: Map<number, string> | null): (Top | null)[] | null {
 	const read = chunkSections(root, legacyIds);

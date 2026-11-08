@@ -281,6 +281,9 @@ valid LZ4 stream of stored blocks, `lz4Stream`), in their own `.mcc` (`external`
 `tests/fixtures/regions/lz4-1.21.11.mca`: three chunks (one over 64 KiB, so two blocks) cut
 with `assembleRegion` from a vanilla 1.21.11 world made by
 `mc-probe.mjs 1.21.11 --file "server.properties=...region-file-compression=lz4" --keep <dir>`.
+`tests/fixtures/regions/bed-1.21.11.mca` is chunk 0 0 of a vanilla 1.21.11 world, cut the same
+way, with a bed under a low ceiling built by commands (`fill`, `setblock`; the layout is in
+`flows/player-commands.test.ts`) and saved after the chunk was let go.
 
 ## When fixing a bug
 
@@ -554,6 +557,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Online players could only be kicked, opped and banned: no game mode or teleport | `flows/player-commands.test.ts` |
 | A teleport Minecraft refused (an unknown dimension) came back as a success with its error as the message | `flows/player-commands.test.ts` |
 | The drawer could not show an online player's game mode, dimension or spawn point, or send them to it | `flows/player-commands.test.ts` ("an online player's state", answers recorded from vanilla 1.21.1 and 1.21.11) |
+| Teleporting to a bed under a low ceiling put the player's head in the ceiling | `flows/player-commands.test.ts` ("never teleports into a wall", and the region-file read with `fixtures/regions/bed-1.21.11.mca`) |
 | Game rules, the spawn and the border were only changeable by console command | `flows/world-rules.test.ts` |
 | From 1.21.9 PvP, monsters, the Nether and command blocks had no control in Settings, only a note to type the game rule in the console | `routes/instances/[id]/settings/game-rules.test.ts` |
 | The Connect box's Tailscale address was kept for as long as the clock had been set back, not a minute; in tests it made `tailscale.test.ts` fail whenever the overview tests had run first in the same worker | `tailscale.test.ts` ("asks again when the clock was set back") |

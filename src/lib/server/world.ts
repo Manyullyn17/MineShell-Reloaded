@@ -46,6 +46,8 @@ import { analyseRegions, applyPrune, planPrune } from './chunkprune';
 import { NO_CHUNK, prunes, UNREADABLE, type AnalysedRegion, type PruneRule } from '#lib/shared/chunkprune.js';
 import { assembleChunkRestore, planChunkRestore } from './chunkrestore';
 import { child, num, parseNbt, str, type Tag } from './nbt';
+import { chunkIndex, locationMap, readChunk, regionName } from './regionfile';
+import { chunkBlocks } from './chunkmap';
 import { constants as fsConstants } from 'node:fs';
 import {
 	finishSnapshot,
@@ -540,6 +542,38 @@ export async function worldSpawn(root: string): Promise<{ x: number; z: number; 
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Blocks by name from the region files of a dimension (by id), as last saved: for chunks the
+ * running server does not have loaded, which it saved when it let them go. A spot whose chunk
+ * cannot be read is left out. Spots are "x y z".
+ */
+export async function savedBlocks(root: string, dimensionId: string, spots: [number, number, number][]): Promise<Map<string, string>> {
+	const found = new Map<string, string>();
+	const dimension = (await listDimensions(root)).find((d) => d.id === dimensionId);
+	if (!dimension) return found;
+	const dir = path.join(dimensionBase(root, dimension), 'region');
+	const chunks = new Map<string, [number, number, number][]>();
+	for (const spot of spots) {
+		const key = `${Math.floor(spot[0] / 16)} ${Math.floor(spot[2] / 16)}`;
+		chunks.set(key, [...(chunks.get(key) ?? []), spot]);
+	}
+	for (const [key, inChunk] of chunks) {
+		const [cx, cz] = key.split(' ').map(Number);
+		const { region, index } = chunkIndex(cx, cz);
+		try {
+			const file = await fs.readFile(path.join(dir, regionName(...region)));
+			const loc = locationMap(file).get(index);
+			const data = loc ? await readChunk(dir, file, region, loc) : null;
+			const block = data ? chunkBlocks(parseNbt(data).root) : null;
+			if (!block) continue;
+			for (const [x, y, z] of inChunk) found.set(`${x} ${y} ${z}`, block(x - cx * 16, y, z - cz * 16));
+		} catch {
+			continue;
+		}
+	}
+	return found;
 }
 
 /** A border this wide is Minecraft's default, the edge of the world: no border set (1.12 kept 60,000,000). */

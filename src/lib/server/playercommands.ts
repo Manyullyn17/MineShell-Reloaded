@@ -4,7 +4,7 @@ import { REFUSED } from './players';
 import { rconExec } from './rcon';
 import { child, num, str, type Tag } from './nbt';
 import { parseSnbt } from './snbt';
-import { worldSpawn } from './world';
+import { savedBlocks, worldSpawn } from './world';
 import type { ServerInstance } from './db/schema';
 
 /**
@@ -139,12 +139,86 @@ export function readPlayerState(answers: (string | undefined)[]): PlayerState {
 }
 
 /**
- * To their spawn point. tp centres whole x and z on the block; a bed or anchor is the block
- * they stand on (a bed is shorter: they drop onto it), a /spawnpoint the spot itself.
+ * Blocks a player can stand in: air, and torches, which have nothing to bump into. Only names
+ * every version from 1.13 on knows: an unknown one fails the whole command.
  */
-export function ownSpawnCommand(name: string, spawn: PlayerSpawn): string {
-	if (!DIMENSION.test(spawn.dimension)) throw new InstanceError('Their spawn point is in a dimension MineShell cannot name.');
-	return `execute in ${spawn.dimension} run tp ${name} ${spawn.x} ${spawn.forced ? spawn.y : spawn.y + 1} ${spawn.z}`;
+const PASSABLE = ['air', 'cave_air', 'void_air', 'torch', 'wall_torch', 'redstone_torch', 'redstone_wall_torch'];
+/** Nothing to stand on, besides those. */
+const NO_FLOOR = ['water', 'lava', 'fire'];
+/** Beside the block, the sides first. */
+const AROUND = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+
+/** Where a player's feet go: on the spot, or beside it on a floor. */
+export type StandingSpot = { x: number; y: number; z: number; floor: boolean };
+
+/**
+ * Where to put a player at their spawn point, best first. A bed or anchor is the block saved, not
+ * where they stand: on top of it (a bed is shorter: they drop onto it), else beside it, as the
+ * game stands them up beside a bed whose top is under a ceiling. A /spawnpoint is the spot itself.
+ */
+export function standingSpots(spawn: PlayerSpawn): StandingSpot[] {
+	const first = { x: spawn.x, y: spawn.forced ? spawn.y : spawn.y + 1, z: spawn.z, floor: false };
+	return [first, ...AROUND.map(([dx, dz]) => ({ x: spawn.x + dx, y: spawn.y, z: spawn.z + dz, floor: true }))];
+}
+
+type Check = { at: [number, number, number]; floor: boolean };
+
+/** What each spot needs: room for the player's feet and head, and under a spot beside, a floor. */
+function spotChecks(spot: StandingSpot): Check[] {
+	const { x, y, z } = spot;
+	const checks: Check[] = [{ at: [x, y, z], floor: false }, { at: [x, y + 1, z], floor: false }];
+	if (spot.floor) checks.push({ at: [x, y - 1, z], floor: true });
+	return checks;
+}
+
+/** Passes ("Test passed") when the block is in the way, or, asked for a floor, is one. */
+function checkCommand(dimension: string, { at, floor }: Check): string {
+	const names = floor ? [...PASSABLE, ...NO_FLOOR] : PASSABLE;
+	return `execute in ${dimension} ${names.map((n) => `unless block ${at.join(' ')} minecraft:${n}`).join(' ')}`;
+}
+
+/** The same as checkCommand from a block's name; read from the region file. */
+const checkName = (name: string, floor: boolean) => {
+	const bare = name.replace(/^minecraft:/, '');
+	return !PASSABLE.includes(bare) && (!floor || !NO_FLOOR.includes(bare));
+};
+
+/**
+ * The first spot at their spawn point with room for them, asked of the game; a chunk it does not
+ * have loaded is read from the region file. A block neither can tell counts as in the way: never
+ * teleport someone into a wall.
+ */
+async function standingSpot(instance: ServerInstance, password: string, spawn: PlayerSpawn): Promise<StandingSpot | null> {
+	const spots = standingSpots(spawn);
+	const checks = [...new Map(spots.flatMap(spotChecks).map((c) => [`${c.at.join(' ')} ${c.floor}`, c])).values()];
+	let answers: (string | undefined)[];
+	try {
+		answers = await rconExec({ port: instance.rconPort, password }, checks.map((c) => checkCommand(spawn.dimension, c)));
+	} catch {
+		throw new InstanceError('The server is not reachable over RCON.');
+	}
+	const results = new Map<string, boolean | null>();
+	checks.forEach((c, i) => {
+		const said = plain(answers[i] ?? '');
+		// A failed test answers "Test failed" (vanilla 1.21.1) or nothing (1.21.11); "not loaded" is neither.
+		results.set(`${c.at.join(' ')} ${c.floor}`, /^Test passed/.test(said) ? true : said === '' || /^Test failed/.test(said) ? false : null);
+	});
+	const unknown = checks.filter((c) => results.get(`${c.at.join(' ')} ${c.floor}`) === null);
+	if (unknown.length) {
+		const saved = await savedBlocks(instance.path, spawn.dimension, unknown.map((c) => c.at));
+		for (const c of unknown) {
+			const name = saved.get(c.at.join(' '));
+			if (name) results.set(`${c.at.join(' ')} ${c.floor}`, checkName(name, c.floor));
+		}
+	}
+	const ok = (c: Check) => results.get(`${c.at.join(' ')} ${c.floor}`) === c.floor;
+	return spots.find((spot) => spotChecks(spot).every(ok)) ?? null;
+}
+
+/** To a spot at their spawn point (standingSpots). tp centres whole x and z on the block. */
+export function ownSpawnCommand(name: string, dimension: string, spot: StandingSpot): string {
+	if (!DIMENSION.test(dimension)) throw new InstanceError('Their spawn point is in a dimension MineShell cannot name.');
+	return `execute in ${dimension} run tp ${name} ${spot.x} ${spot.y} ${spot.z}`;
 }
 
 /** The online player's name as the server spells it, or an error. */
@@ -190,7 +264,10 @@ export async function runPlayerCommand(
 		if (!readsPlayers(instance.minecraftVersion)) throw new InstanceError(`Minecraft ${instance.minecraftVersion} has no command that reads a player's spawn point.`);
 		const { spawn } = await askState(instance, password, player);
 		if (!spawn) throw new InstanceError(`${player} has no spawn point of their own: they would respawn at the world spawn.`);
-		command = ownSpawnCommand(player, spawn);
+		if (!DIMENSION.test(spawn.dimension)) throw new InstanceError('Their spawn point is in a dimension MineShell cannot name.');
+		const spot = await standingSpot(instance, password, spawn);
+		if (!spot) throw new InstanceError(`There is no room for ${player} on or beside their spawn point at ${spawn.x}, ${spawn.y}, ${spawn.z}, so they were not teleported: it would put them in a wall.`);
+		command = ownSpawnCommand(player, spawn.dimension, spot);
 	} else {
 		let target = action.target;
 		if (target.kind === 'player') {

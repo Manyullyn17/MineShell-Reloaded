@@ -1367,7 +1367,9 @@ from Minecraft 1.13 (`data get entity`; before it no command reads a player): th
 they are in marked, their dimension and position shown, the coordinates' dimension preselected
 to theirs (a mod's dimension too) with their position as the boxes' hint, and "Their spawn
 point" to teleport to when they have one (`respawn` from 1.21.5, `SpawnX/Y/Z` before; onto a bed
-or anchor, to a /spawnpoint spot itself). The answers were read from vanilla 1.21.1 and 1.21.11
+or anchor, to a /spawnpoint spot itself; never into a wall: blocks are checked first, live with
+`execute unless block` or from the region file for a chunk not loaded, and a bed under a low
+ceiling is stood beside, as the game does). The answers were read from vanilla 1.21.1 and 1.21.11
 with a headless client joined (`mc-client.sh`), and the drawer tried on a vanilla 1.21.11 server
 under a throwaway MineShell with that client in it.
 
