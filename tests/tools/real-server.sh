@@ -78,6 +78,13 @@ diagnose_runs() {
 	journalctl --user --user-unit="$unit.service" -o json --no-pager | node -e '
 		for (const line of require("fs").readFileSync(0, "utf8").split("\n").filter(Boolean)) console.log(JSON.parse(line).__CURSOR.split(";")[0]);' | sort | uniq -c | sort -rn | head -5
 	journalctl --header --user --no-pager 2>&1 | grep -E "File path|Seqnum ID|State" | head -12
+	echo "-- journalctl processes still running (a history read that never ended):"
+	pgrep -a journalctl || echo none
+	local grep='^Started |Main process exited|Failed with result|service: Consumed |\]: Done \('
+	echo "-- the history's next read as it makes it (--after-cursor, -g, JSON), 20 s at most:"
+	timeout 20 journalctl --user --user-unit="$unit.service" "--after-cursor=$cursor" -o json -g "$grep" --no-pager | wc -l; echo "exit ${PIPESTATUS[0]} (124: timed out)"
+	echo "-- the same from a time instead of the cursor:"
+	timeout 20 journalctl --user --user-unit="$unit.service" "--since=@$(( $(date +%s) - 600 ))" -o json -g "$grep" --no-pager | wc -l; echo "exit ${PIPESTATUS[0]}"
 	echo "-- the history's own read (newest entry, then the pattern search):"
 	journalctl --user --user-unit="$unit.service" -n 1 -o json --no-pager | head -c 400; echo
 	journalctl --user --user-unit="$unit.service" -o cat -g '^Started |Main process exited|Failed with result|service: Consumed |\]: Done \(' --no-pager | head -20
