@@ -1,33 +1,40 @@
 {
- "GET https://api.adoptium.net/v3/assets/latest/16/hotspot?architecture=x64&image_type=jdk&os=linux&vendor=eclipse": {
+ "GET https://api.adoptium.net/v3/assets/feature_releases/16/ga?architecture=x64&image_type=jdk&jvm_impl=hotspot&os=linux&page_size=20&sort_order=DESC&vendor=eclipse": {
   "status": 200,
   "contentType": "application/json;charset=UTF-8",
   "json": [
    {
-    "binary": {
-     "architecture": "x64",
-     "download_count": 3216762,
-     "heap_size": "normal",
-     "image_type": "jdk",
-     "jvm_impl": "hotspot",
-     "os": "linux",
-     "package": {
-      "checksum": "323d6d7474a359a28eff7ddd0df8e65bd61554a8ed12ef42fd9365349e573c2c",
-      "checksum_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.sha256.txt",
-      "download_count": 3216762,
-      "link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
-      "metadata_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.json",
-      "name": "OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
-      "size": 205463525
-     },
-     "project": "jdk",
-     "scm_ref": "jdk-16.0.2+7_adopt",
-     "updated_at": "2021-07-30T17:08:32Z"
-    },
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 3286074,
+      "heap_size": "normal",
+      "image_type": "jdk",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "323d6d7474a359a28eff7ddd0df8e65bd61554a8ed12ef42fd9365349e573c2c",
+       "checksum_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.sha256.txt",
+       "download_count": 3286074,
+       "link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin16-binaries/releases/download/jdk-16.0.2%2B7/OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz.json",
+       "name": "OpenJDK16U-jdk_x64_linux_hotspot_16.0.2_7.tar.gz",
+       "size": 205463525
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-16.0.2+7_adopt",
+      "updated_at": "2021-07-30T17:08:32Z"
+     }
+    ],
+    "download_count": 5752527,
+    "id": "MDc6UmVsZWFzZTQ3MDYyNDE3.thCg2143ldcHOw==",
     "release_link": "https://github.com/adoptium/temurin16-binaries/releases/tag/jdk-16.0.2%2B7",
     "release_name": "jdk-16.0.2+7",
+    "release_type": "ga",
+    "timestamp": "2021-07-30T17:08:13Z",
+    "updated_at": "2021-10-18T14:21:05Z",
     "vendor": "eclipse",
-    "version": {
+    "version_data": {
      "build": 7,
      "major": 16,
      "minor": 0,
@@ -38,41 +45,110 @@
    }
   ]
  },
- "GET https://api.adoptium.net/v3/assets/latest/16/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse": {
-  "status": 200,
-  "contentType": "application/json;charset=UTF-8",
-  "json": []
+ "GET https://api.adoptium.net/v3/assets/feature_releases/16/ga?architecture=x64&image_type=jre&jvm_impl=hotspot&os=linux&page_size=20&sort_order=DESC&vendor=eclipse": {
+  "status": 404,
+  "contentType": null,
+  "body": ""
  },
- "GET https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse": {
+ "GET https://api.adoptium.net/v3/assets/feature_releases/21/ga?architecture=x64&image_type=jre&jvm_impl=hotspot&os=linux&page_size=20&sort_order=DESC&vendor=eclipse": {
   "status": 200,
   "contentType": "application/json;charset=UTF-8",
   "json": [
    {
-    "binary": {
-     "architecture": "x64",
-     "download_count": 339165,
-     "heap_size": "normal",
-     "image_type": "jre",
-     "jvm_impl": "hotspot",
-     "os": "linux",
-     "package": {
-      "checksum": "2413149700df0f7d440500a84a8f764c535f21e5a5e87d38328b64eec2c5b500",
-      "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sha256.txt",
-      "download_count": 339165,
-      "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
-      "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.json",
-      "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
-      "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sig",
-      "size": 52059408
-     },
-     "project": "jdk",
-     "scm_ref": "jdk-21.0.12.1+1_adopt",
-     "updated_at": "2026-08-19T17:12:57Z"
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 195517,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "a535a1df9c6284d9618872984e026ae0352d1f7e9e0605425c0e6114f47351dd",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.13_9.tar.gz.sha256.txt",
+       "download_count": 195517,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.13_9.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.13_9.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.13_9.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.13_9.tar.gz.sig",
+       "size": 52181297
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.13+9_adopt",
+      "updated_at": "2026-10-22T12:08:16Z"
+     }
+    ],
+    "download_count": 2835047,
+    "id": "RE_kwDOI-qQc84ZEFJG.xNVkJEbPZDe4Qg==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.13%2B9",
+    "release_name": "jdk-21.0.13+9",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21-jdk-release-notes_21.0.13_9.json",
+     "name": "OpenJDK21-jdk-release-notes_21.0.13_9.json",
+     "size": 50401
     },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk-sources_21.0.13_9.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.13_9.tar.gz",
+     "size": 115231532
+    },
+    "timestamp": "2026-10-22T08:58:06Z",
+    "updated_at": "2026-10-29T16:08:58Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 9,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.13+9-LTS",
+     "optional": "LTS",
+     "security": 13,
+     "semver": "21.0.13+9.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 591077,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "2413149700df0f7d440500a84a8f764c535f21e5a5e87d38328b64eec2c5b500",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sha256.txt",
+       "download_count": 591077,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_linux_hotspot_21.0.12.1_1.tar.gz.sig",
+       "size": 52059408
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.12.1+1_adopt",
+      "updated_at": "2026-08-19T17:12:57Z"
+     }
+    ],
+    "download_count": 11393656,
+    "id": "RE_kwDOI-qQc84WO9Zv.n5mI7i+Ystg5ug==",
     "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.12.1%2B1",
     "release_name": "jdk-21.0.12.1+1",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk-release-notes_21.0.12.1_01.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.12.1_01.json",
+     "size": 1728
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk-sources_21.0.12.1_1.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.12.1_1.tar.gz",
+     "size": 115126841
+    },
+    "timestamp": "2026-08-19T12:10:19Z",
+    "updated_at": "2026-08-25T15:19:44Z",
     "vendor": "eclipse",
-    "version": {
+    "version_data": {
      "build": 1,
      "major": 21,
      "minor": 0,
@@ -81,6 +157,688 @@
      "patch": 1,
      "security": 12,
      "semver": "21.0.12+101.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 174996,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "8a379a67c91a3ae61ffb33d46e0a40c7ba35e70713c4db31cfca30492f792eff",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jre_x64_linux_hotspot_21.0.12_8.tar.gz.sha256.txt",
+       "download_count": 174996,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jre_x64_linux_hotspot_21.0.12_8.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jre_x64_linux_hotspot_21.0.12_8.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.12_8.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jre_x64_linux_hotspot_21.0.12_8.tar.gz.sig",
+       "size": 52069757
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.12+8_adopt",
+      "updated_at": "2026-07-24T15:52:31Z"
+     }
+    ],
+    "download_count": 4005617,
+    "id": "RE_kwDOI-qQc84VbBQt.5r6HNbfYYukrZQ==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.12%2B8",
+    "release_name": "jdk-21.0.12+8",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk-release-notes_21.0.12_8.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.12_8.json",
+     "size": 90722
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12%2B8/OpenJDK21U-jdk-sources_21.0.12_8.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.12_8.tar.gz",
+     "size": 115041249
+    },
+    "timestamp": "2026-07-24T15:51:55Z",
+    "updated_at": "2026-07-31T15:13:15Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 8,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.12+8-LTS",
+     "optional": "LTS",
+     "security": 12,
+     "semver": "21.0.12+8.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 464448,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "e5038aae3ca9ff670bc696496b0728dbd23d280026bad30291cb919221ecfdcb",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.11_10.tar.gz.sha256.txt",
+       "download_count": 464448,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.11_10.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.11_10.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.11_10.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.11_10.tar.gz.sig",
+       "size": 52099793
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.11+10_adopt",
+      "updated_at": "2026-04-23T19:53:27Z"
+     }
+    ],
+    "download_count": 11636177,
+    "id": "RE_kwDOI-qQc84SoXyG.tEgifC1Ag1oTzw==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.11%2B10",
+    "release_name": "jdk-21.0.11+10",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jdk-release-notes_21.0.11_10.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.11_10.json",
+     "size": 51546
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jdk-sources_21.0.11_10.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.11_10.tar.gz",
+     "size": 114935577
+    },
+    "timestamp": "2026-04-23T06:32:33Z",
+    "updated_at": "2026-05-14T11:45:04Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 10,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.11+10-LTS",
+     "optional": "LTS",
+     "security": 11,
+     "semver": "21.0.11+10.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 278214,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "991be6ac6725e76109ecbd131d658f992dcbeacba3a8b4b6650302c8012b52fb",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.10_7.tar.gz.sha256.txt",
+       "download_count": 278214,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.10_7.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.10_7.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.10_7.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.10_7.tar.gz.sig",
+       "size": 51947513
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.10+7_adopt",
+      "updated_at": "2026-01-21T11:31:38Z"
+     }
+    ],
+    "download_count": 8232745,
+    "id": "RE_kwDOI-qQc84QmwMQ.gTLOTSgndZDaeA==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.10%2B7",
+    "release_name": "jdk-21.0.10+7",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jdk-release-notes_21.0.10_7.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.10_7.json",
+     "size": 110894
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jdk-sources_21.0.10_7.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.10_7.tar.gz",
+     "size": 114820169
+    },
+    "timestamp": "2026-01-21T11:30:56Z",
+    "updated_at": "2026-02-05T00:46:27Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 7,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.10+7-LTS",
+     "optional": "LTS",
+     "security": 10,
+     "semver": "21.0.10+7.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 226037,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "aeab55d064a1a27a3744b0880b9b414077b4ed2b1790817eea3df60aec946431",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz.sha256.txt",
+       "download_count": 226037,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz.sig",
+       "size": 51952734
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.9+10_adopt",
+      "updated_at": "2025-10-23T20:13:53Z"
+     }
+    ],
+    "download_count": 10641296,
+    "id": "RE_kwDOI-qQc84PTq2J.CSIS1fKdtOrSBQ==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.9%2B10",
+    "release_name": "jdk-21.0.9+10",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jdk-release-notes_21.0.9_10.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.9_10.json",
+     "size": 93850
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.9%2B10/OpenJDK21U-jdk-sources_21.0.9_10.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.9_10.tar.gz",
+     "size": 114646198
+    },
+    "timestamp": "2025-10-23T19:54:37Z",
+    "updated_at": "2026-01-23T17:11:23Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 10,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.9+10-LTS",
+     "optional": "LTS",
+     "security": 9,
+     "semver": "21.0.9+10.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 281858,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "968c283e104059dae86ea1d670672a80170f27a39529d815843ec9c1f0fa2a03",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz.sha256.txt",
+       "download_count": 281858,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz.sig",
+       "size": 51942501
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.8+9_adopt",
+      "updated_at": "2025-07-18T15:00:33Z"
+     }
+    ],
+    "download_count": 9416958,
+    "id": "RE_kwDOI-qQc84N5Gqk.yYNJgmgzq+4hTQ==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.8%2B9",
+    "release_name": "jdk-21.0.8+9",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk-release-notes_21.0.8_9.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.8_9.json",
+     "size": 118716
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.8%2B9/OpenJDK21U-jdk-sources_21.0.8_9.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.8_9.tar.gz",
+     "size": 114599750
+    },
+    "timestamp": "2025-07-17T08:02:15Z",
+    "updated_at": "2025-08-01T17:54:29Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 9,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.8+9-LTS",
+     "optional": "LTS",
+     "security": 8,
+     "semver": "21.0.8+9.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 207618,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "6d48379e00d47e6fdd417e96421e973898ac90765ea8ff2d09ae0af6d5d6a1c6",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz.sha256.txt",
+       "download_count": 207618,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jre_x64_linux_hotspot_21.0.7_6.tar.gz.sig",
+       "size": 51863597
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.7+6_adopt",
+      "updated_at": "2025-04-16T15:58:52Z"
+     }
+    ],
+    "download_count": 11823742,
+    "id": "RE_kwDOI-qQc84Mr3wU.huK+NdStksAwPA==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.7%2B6",
+    "release_name": "jdk-21.0.7+6",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jdk-release-notes_21.0.6_7.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.6_7.json",
+     "size": 79536
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.7%2B6/OpenJDK21U-jdk-sources_21.0.7_6.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.7_6.tar.gz",
+     "size": 114179704
+    },
+    "timestamp": "2025-04-16T14:21:40Z",
+    "updated_at": "2025-04-25T13:54:18Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 6,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.7+6-LTS",
+     "optional": "LTS",
+     "security": 7,
+     "semver": "21.0.7+6.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 266933,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "7fc9d6837da5fa1f12e0f41901fd70a73154914b8c8ecbbcad2d44176a989937",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz.sha256.txt",
+       "download_count": 266933,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz.sig",
+       "size": 51858210
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.6+7_adopt",
+      "updated_at": "2025-01-23T15:32:02Z"
+     }
+    ],
+    "download_count": 11536669,
+    "id": "RE_kwDOI-qQc84LsPZ-.yzZc7C32yBYddw==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.6%2B7",
+    "release_name": "jdk-21.0.6+7",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk-release-notes_21.0.6_7.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.6_7.json",
+     "size": 77762
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jdk-sources_21.0.6_7.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.6_7.tar.gz",
+     "size": 114041430
+    },
+    "timestamp": "2025-01-22T17:42:31Z",
+    "updated_at": "2025-01-28T17:06:40Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 7,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.6+7-LTS",
+     "optional": "LTS",
+     "security": 6,
+     "semver": "21.0.6+7.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 226624,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "553dda64b3b1c3c16f8afe402377ffebe64fb4a1721a46ed426a91fd18185e62",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jre_x64_linux_hotspot_21.0.5_11.tar.gz.sha256.txt",
+       "download_count": 226624,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jre_x64_linux_hotspot_21.0.5_11.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jre_x64_linux_hotspot_21.0.5_11.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.5_11.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jre_x64_linux_hotspot_21.0.5_11.tar.gz.sig",
+       "size": 51849867
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.5+11_adopt",
+      "updated_at": "2024-10-16T17:57:35Z"
+     }
+    ],
+    "download_count": 10994998,
+    "id": "RE_kwDOI-qQc84KvtIq.TIHoH+KLk6SDfw==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.5%2B11",
+    "release_name": "jdk-21.0.5+11",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk-release-notes_21.0.5_11.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.5_11.json",
+     "size": 106354
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk-sources_21.0.5_11.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.5_11.tar.gz",
+     "size": 113570167
+    },
+    "timestamp": "2024-10-16T16:34:23Z",
+    "updated_at": "2024-10-30T21:40:26Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 11,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.5+11-LTS",
+     "optional": "LTS",
+     "security": 5,
+     "semver": "21.0.5+11.0.LTS"
+    }
+   },
+   {
+    "aqavit_results_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/AQAvitTapFiles.tar.gz",
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 575554,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "d3affbb011ca6c722948f6345d15eba09bded33f9947d4d67e09723e2518c12a",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz.sha256.txt",
+       "download_count": 575554,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz.sig",
+       "size": 52466639
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.4+7_adopt",
+      "updated_at": "2024-07-17T15:31:12Z"
+     }
+    ],
+    "download_count": 30218989,
+    "id": "RE_kwDOI-qQc84J4xmL.E60VKAhYKTNV9A==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.4%2B7",
+    "release_name": "jdk-21.0.4+7",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk-release-notes_21.0.4_7.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.4_7.json",
+     "size": 110162
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk-sources_21.0.4_7.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.4_7.tar.gz",
+     "size": 113336757
+    },
+    "timestamp": "2024-07-17T15:29:34Z",
+    "updated_at": "2024-07-30T21:07:13Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 7,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.4+7-LTS",
+     "optional": "LTS",
+     "security": 4,
+     "semver": "21.0.4+7.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 185976,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "f1af100c4afca2035f446967323230150cfe5872b5a664d98c86963e5c066e0d",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.3_9.tar.gz.sha256.txt",
+       "download_count": 185976,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.3_9.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.3_9.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.3_9.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jre_x64_linux_hotspot_21.0.3_9.tar.gz.sig",
+       "size": 52430722
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.3+9_adopt",
+      "updated_at": "2024-04-18T17:27:33Z"
+     }
+    ],
+    "download_count": 10325530,
+    "id": "RE_kwDOI-qQc84JDDAC.NfaTTem3TYxcjw==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.3%2B9",
+    "release_name": "jdk-21.0.3+9",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk-release-notes_21.0.3_9.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.3_9.json",
+     "size": 86498
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk-sources_21.0.3_9.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.3_9.tar.gz",
+     "size": 113237856
+    },
+    "timestamp": "2024-04-18T17:23:34Z",
+    "updated_at": "2024-04-23T17:39:04Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 9,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.3+9-LTS",
+     "optional": "LTS",
+     "security": 3,
+     "semver": "21.0.3+9.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 144771,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "51141204fe01a9f9dd74eab621d5eca7511eac67315c9975dbde5f2625bdca55",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz.sha256.txt",
+       "download_count": 144771,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz.sig",
+       "size": 52914261
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.2+13_adopt",
+      "updated_at": "2024-01-18T18:27:04Z"
+     }
+    ],
+    "download_count": 7975977,
+    "id": "RE_kwDOI-qQc84IM10l.GpKksR021FRz2w==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.2%2B13",
+    "release_name": "jdk-21.0.2+13",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk-release-notes_21.0.2_13.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.2_13.json",
+     "size": 97807
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk-sources_21.0.2_13.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.2_13.tar.gz",
+     "size": 113080197
+    },
+    "timestamp": "2024-01-18T15:30:24Z",
+    "updated_at": "2024-03-13T12:53:35Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 13,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.2+13-LTS",
+     "optional": "LTS",
+     "security": 2,
+     "semver": "21.0.2+13.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 159119,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "277f4084bee875f127a978253cfbaad09c08df597feaf5ccc82d2206962279a3",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz.sha256.txt",
+       "download_count": 159119,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz.sig",
+       "size": 52453828
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21.0.1+12_adopt",
+      "updated_at": "2023-10-24T09:12:38Z"
+     }
+    ],
+    "download_count": 5375449,
+    "id": "RE_kwDOI-qQc84HiGV0.TznyTc3lpEbLRg==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.1%2B12",
+    "release_name": "jdk-21.0.1+12",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk-release-notes_21.0.1_12.json",
+     "name": "OpenJDK21U-jdk-release-notes_21.0.1_12.json",
+     "size": 134596
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jdk-sources_21.0.1_12.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21.0.1_12.tar.gz",
+     "size": 113042623
+    },
+    "timestamp": "2023-10-24T09:03:26Z",
+    "updated_at": "2023-11-07T19:00:24Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 12,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21.0.1+12-LTS",
+     "optional": "LTS",
+     "security": 1,
+     "semver": "21.0.1+12.0.LTS"
+    }
+   },
+   {
+    "binaries": [
+     {
+      "architecture": "x64",
+      "download_count": 16982,
+      "heap_size": "normal",
+      "image_type": "jre",
+      "jvm_impl": "hotspot",
+      "os": "linux",
+      "package": {
+       "checksum": "080a53a3f75b94450779199f09c8d91b53637d315f128c58a4f160fb6272502d",
+       "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jre_x64_linux_hotspot_21_35.tar.gz.sha256.txt",
+       "download_count": 16982,
+       "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jre_x64_linux_hotspot_21_35.tar.gz",
+       "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jre_x64_linux_hotspot_21_35.tar.gz.json",
+       "name": "OpenJDK21U-jre_x64_linux_hotspot_21_35.tar.gz",
+       "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jre_x64_linux_hotspot_21_35.tar.gz.sig",
+       "size": 52440953
+      },
+      "project": "jdk",
+      "scm_ref": "jdk-21+35_adopt",
+      "updated_at": "2023-10-10T13:56:39Z"
+     }
+    ],
+    "download_count": 2832175,
+    "id": "RE_kwDOI-qQc84HarGl.vKwkepil8yDHTw==",
+    "release_link": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21%2B35",
+    "release_name": "jdk-21+35",
+    "release_notes": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jdk-release-notes_21_35.json",
+     "name": "OpenJDK21U-jdk-release-notes_21_35.json",
+     "size": 756356
+    },
+    "release_type": "ga",
+    "source": {
+     "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21%2B35/OpenJDK21U-jdk-sources_21_35.tar.gz",
+     "name": "OpenJDK21U-jdk-sources_21_35.tar.gz",
+     "size": 112868667
+    },
+    "timestamp": "2023-10-10T13:55:52Z",
+    "updated_at": "2023-10-12T10:56:37Z",
+    "vendor": "eclipse",
+    "version_data": {
+     "build": 35,
+     "major": 21,
+     "minor": 0,
+     "openjdk_version": "21+35-LTS",
+     "optional": "LTS",
+     "security": 0,
+     "semver": "21.0.0+35.0.LTS"
     }
    }
   ]
@@ -93,21 +851,22 @@
     "availability_type": "CA",
     "distro_version": [
      21,
-     52,
-     203,
+     54,
+     109,
      0
     ],
-    "download_url": "https://cdn.azul.com/zulu/bin/zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu21.54.109-ca-jre21.0.13.0.3-linux_x64.tar.gz",
     "java_version": [
      21,
      0,
-     12,
-     1
+     13,
+     0,
+     3
     ],
     "latest": true,
-    "name": "zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+    "name": "zulu21.54.109-ca-jre21.0.13.0.3-linux_x64.tar.gz",
     "openjdk_build_number": 1,
-    "package_uuid": "f89c621b-7e5d-4147-b7f7-8dc832ad2413",
+    "package_uuid": "9a4992bb-7652-4303-8ce6-26e6849b1ead",
     "product": "zulu"
    },
    {
@@ -140,20 +899,20 @@
     "availability_type": "CA",
     "distro_version": [
      8,
-     96,
+     98,
      0,
-     205
+     111
     ],
-    "download_url": "https://cdn.azul.com/zulu/bin/zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+    "download_url": "https://cdn.azul.com/zulu/bin/zulu8.98.0.111-ca-jre8.0.512-linux_x64.tar.gz",
     "java_version": [
      8,
      0,
-     504
+     512
     ],
     "latest": true,
-    "name": "zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
-    "openjdk_build_number": 1,
-    "package_uuid": "59357c25-2fb2-4406-a453-9800f88cf50c",
+    "name": "zulu8.98.0.111-ca-jre8.0.512-linux_x64.tar.gz",
+    "openjdk_build_number": 9,
+    "package_uuid": "2d3b7f63-8263-4983-adb1-ffc38342f4bb",
     "product": "zulu"
    },
    {
@@ -178,7 +937,7 @@
    }
   ]
  },
- "GET https://api.azul.com/metadata/v1/zulu/packages/59357c25-2fb2-4406-a453-9800f88cf50c": {
+ "GET https://api.azul.com/metadata/v1/zulu/packages/2d3b7f63-8263-4983-adb1-ffc38342f4bb": {
   "status": 200,
   "contentType": "application/json",
   "json": {
@@ -186,7 +945,7 @@
    "arch": "x86",
    "archive_type": "tar.gz",
    "availability_type": "CA",
-   "build_date": "2026-08-07T21:11:30",
+   "build_date": "2026-11-05T15:52:19",
    "certifications": [
     "tck"
    ],
@@ -195,11 +954,11 @@
    "crs_supported": false,
    "distro_version": [
     8,
-    96,
+    98,
     0,
-    205
+    111
    ],
-   "download_url": "https://cdn.azul.com/zulu/bin/zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
+   "download_url": "https://cdn.azul.com/zulu/bin/zulu8.98.0.111-ca-jre8.0.512-linux_x64.tar.gz",
    "hw_bitness": 64,
    "java_package_features": [
     "headfull"
@@ -208,21 +967,21 @@
    "java_version": [
     8,
     0,
-    504
+    512
    ],
    "javafx_bundled": false,
-   "last_modified": "2026-08-17T13:41:25",
+   "last_modified": "2026-11-06T15:07:36",
    "latest": true,
    "lib_c_type": "glibc",
-   "md5_hash": "9eae624afc4100e6cc72198684df4ca5",
-   "name": "zulu8.96.0.205-ca-jre8.0.504-linux_x64.tar.gz",
-   "openjdk_build_number": 1,
+   "md5_hash": "3131a95b8c77bdbe3d2c67566af09395",
+   "name": "zulu8.98.0.111-ca-jre8.0.512-linux_x64.tar.gz",
+   "openjdk_build_number": 9,
    "os": "linux",
-   "package_uuid": "59357c25-2fb2-4406-a453-9800f88cf50c",
+   "package_uuid": "2d3b7f63-8263-4983-adb1-ffc38342f4bb",
    "product": "zulu",
    "release_status": "ga",
    "release_type": "PSU",
-   "sha256_hash": "f443c5f525d1fd6a1e51739f7ae589e8a8e142e8cdc5674375261f8889449db4",
+   "sha256_hash": "3844c96fd5305b96d0866551997d9a1b9cdabb8750a8c1ae844318caa36f5156",
    "signatures": [
     {
      "details": {
@@ -230,19 +989,19 @@
       "key_id": "B1998361219BD9C9",
       "sig_algo": "1",
       "sig_version": "4",
-      "timestamp": "2026-08-14T07:14:25"
+      "timestamp": "2026-11-05T18:06:16"
      },
-     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmp+wFEACgkQsZmDYSGb2cmprQ/+In9czuhk5IU6+t/LIA1RporNZlYWKFom44h6Kgkw4mY+4oDfChnyH4rSqegzayK65i5Q1IXpzMcpbgE9CjrKHSY884u9nH3vEzPYR+ANlRlf31C5WaKLDI1b9zIK3NR43Ex4PE+5oO1M/SW0Riit1JCHH1z1W8z4aRTVhz0Xq2xOSFtJkuybqrj2DZ+vYJ6zqRM7IGSiySWZ1RneGd+/IenPsFx2TrWlCbS/tY0ILflB5dSWL3dB6FjW6OqanyYrCIJS2dRDueDinPl/D6wkpk2Tnz20wEAWPEcAF9+6aCmTAjyUs3UcQcCZqTJ9gqOTTbjGWYRBYLJ3mf9hJUVWZ3Wh72ALbfldOj1qRFhfUjAfsG66E8yGI3q2VwSmCYHuziQ+/Wwuhi6DViJ9hRnVXlVVIF6S53Book5IkBAomILGLzfGJlmwnXNIV1I+jmPUhKsw6m4P7dx0V5nlF1ONixOcuJxd0VPtzrpNGs5vKvpz63Z5aZTSK9pRVqvK1bXhZYUydoXTTUEfk+LfznacyeYzSYi+ecO1rfvaq0+A5+yNMncmZ+L/PBTpJu0ge9VHlaMQvhQOLT6+kqI251uLq+iU8XDWESJIJZXph99m7Nz/w/WyEpsvQnywCSXzFxIPWNwMx+8KSMIBX+V24TaUQ3kfvMQRhLeXzaCXlLMlL6M=",
+     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmrsxZgACgkQsZmDYSGb2clZmw/+PSA+mS9Vtg0BpGikv0cr5KEgyVejjc7enQsSeipfNzbpPrRZK8deLqwcuJWnhrEBED+2Va0LyvW8QFrU17gMxv7fAVHEdl6xpCdyplCj01y3XS8bdaO8fqWQDbY84ujsgqvFTJs04cKd7DT4TgMROoNIDF8jWRKEz06MBSjcbNrPHzXRRDHMmmGPNmyTqsga9F9ItctNQ1uEOcrwOqIvSnZHCfzCVbyuXj6f4F7bF/Tm27fsaFTmhTaBRaHr07CEDesxL/MppMjlTdSxqJKLAPfZ1P0dIP+0O1cuDTp0Srgpug5ewYholLrxQxlKIdRr5bCGbU0BfuYqSrgbouXSotLzct+WoC7nHPanxygKpmoMt5D6kcFh7ys3Fmy2fMscek5aytPJ0qdrxD3GzY3CJSEEPurCYSIFgMkKjiqkEYSynD6yfRv5xvAxLQoFOVQxxc97H2fhFIjO7n89tQkke5N/+38S9pLmfgKF8tWmL15kNqypw1cgazKwYOm/TxJauQvBjFMh3WR//xxWqPudDQ/K8i8/2u15TNeuNS5t91RpLouwXKcbzlv8LZyW5YjhSBR61c9LsDbM4houl83QTnpBCzMmGsuJa4wggAEPyFdrlNN4p6AIkCLq9BaDJhPVjg1sUQfFiwVNlVCtoBSFzgoHoYCpg51TTl1M3YdhoiM=",
      "signature_index": 0,
      "type": "openpgp",
-     "url": "https://api.azul.com/metadata/v1/zulu/packages/59357c25-2fb2-4406-a453-9800f88cf50c/signature-binary?signature-index=0"
+     "url": "https://api.azul.com/metadata/v1/zulu/packages/2d3b7f63-8263-4983-adb1-ffc38342f4bb/signature-binary?signature-index=0"
     }
    ],
-   "size": 41950700,
+   "size": 41965800,
    "support_term": "lts"
   }
  },
- "GET https://api.azul.com/metadata/v1/zulu/packages/f89c621b-7e5d-4147-b7f7-8dc832ad2413": {
+ "GET https://api.azul.com/metadata/v1/zulu/packages/9a4992bb-7652-4303-8ce6-26e6849b1ead": {
   "status": 200,
   "contentType": "application/json",
   "json": {
@@ -250,7 +1009,7 @@
    "arch": "x86",
    "archive_type": "tar.gz",
    "availability_type": "CA",
-   "build_date": "2026-08-03T21:40:48",
+   "build_date": "2026-10-28T07:18:34",
    "certifications": [
     "tck"
    ],
@@ -259,11 +1018,11 @@
    "crs_supported": false,
    "distro_version": [
     21,
-    52,
-    203,
+    54,
+    109,
     0
    ],
-   "download_url": "https://cdn.azul.com/zulu/bin/zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+   "download_url": "https://cdn.azul.com/zulu/bin/zulu21.54.109-ca-jre21.0.13.0.3-linux_x64.tar.gz",
    "hw_bitness": 64,
    "java_package_features": [
     "headfull"
@@ -272,22 +1031,23 @@
    "java_version": [
     21,
     0,
-    12,
-    1
+    13,
+    0,
+    3
    ],
    "javafx_bundled": false,
-   "last_modified": "2026-08-17T13:41:25",
+   "last_modified": "2026-11-03T13:11:48",
    "latest": true,
    "lib_c_type": "glibc",
-   "md5_hash": "a77552184d7cdde8c68e086d33431971",
-   "name": "zulu21.52.203-ca-jre21.0.12.1-linux_x64.tar.gz",
+   "md5_hash": "6ad857efb2ff1468ed4894e76de080f8",
+   "name": "zulu21.54.109-ca-jre21.0.13.0.3-linux_x64.tar.gz",
    "openjdk_build_number": 1,
    "os": "linux",
-   "package_uuid": "f89c621b-7e5d-4147-b7f7-8dc832ad2413",
+   "package_uuid": "9a4992bb-7652-4303-8ce6-26e6849b1ead",
    "product": "zulu",
    "release_status": "ga",
    "release_type": "PSU",
-   "sha256_hash": "170f31af477726931543e91a5c44dfef4b7117382800dfd962aaea9fbbca4e50",
+   "sha256_hash": "250b9d7cdce91f88455fc3528aae4f46b4a516ed74676bbf51448eacc591e601",
    "signatures": [
     {
      "details": {
@@ -295,15 +1055,80 @@
       "key_id": "B1998361219BD9C9",
       "sig_algo": "1",
       "sig_version": "4",
-      "timestamp": "2026-08-14T06:37:07"
+      "timestamp": "2026-10-28T08:21:16"
      },
-     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmp+t5MACgkQsZmDYSGb2ckmMw//XABhSY7QPp6wfu2RfhTRu/3fFsuTevwsRvmLsDHWswJ+b4m8ITz+m6CBk6EH14A0DqrXCP25NdBINzxbShdaV1zs1FgKM3cd2nhkXGQwBJowcrosK4G7Z95jaKR2a33YHPO0e28gjkkAOH/1nElH1eGqSTYmD993NAZ4sho3XC0U4ZxHvnzm+X8od87BW1qRSQSU8mkDiX7whj5pNpZOKm2xaCjQ4ZMUlIXFWPuL6q6Wn1NOBcTDEWQw3m7OMITZh1FGLOsOw+mdQbE2aUt/u/RUKnxCcv+FVQLq9tF/3iAFlDADwGpXGEtoMjODgucUT7+9fLN3QRDRAFV3+9dgHnephg5NuzO7cAg2DDcBmBrx3ewFdfk7WK5QLz7Of8zfD/iDoq6iJ0d//MLjkBjhvMOg9Pue+1/boR314gS2rWSj95a2dJwiy23rBfvOkBylAZIC+G6s6S7K+ZIRl1Kpz92jgGGmLPDevSUWWheOmdOinoInj4ZsErbPs9mY+KGpmthg8vH+AKp+FYXCvz3lh8ZXud02eKBrT+olis3BLrOO70+VDkn98Y3KY34pQWwlhvM5xmJZo0KnQqWBjFGSQ1ROfIwrEIeIj1zKzClLYhSKxzQv0jJK3IUZBQD1+PUTZwPrhzKqyfjeOlHdo/N3ZFvPF1OrxupSiLNJUHbAYJ8=",
+     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmrhsHwACgkQsZmDYSGb2cnV7BAAy9eXV8v3dzsr+nfLr9RzwKKWfbTA7Xi1nUIrjkQF7aZ68C4WeDFCjoNFCYngOxl8nAAuHn+TE9QTFavm4Qvh0UXMVtM7fvRgz/ghmlLsIm3IIexK0QIPupYIO9XwYzv8kPQUhJXhETpIgHwK1I0I1WYx3k8wVYyVCEMqB+vRHdaO4wl0xEVJSKroZ2FuyJx+HXjFBoaGtRnULwaMCXDVRwVJ0/8ulXwSDQdXhV37hc9VvXxlgqiMMdDqDVpDc9m3FBvcCQ5naPE/J3NJilN4Js0DvcGkC959jB62ZtlJxNKBTTBkigLvJI2y/6clq0SUtLMcJvB3T0S0QgxmzD0lyrVjWOZehGe8VxFBDQOjcVjNtp/mU5Q8xcIdNLPwMK1Q3qEXwk+RqAjpbsDiOBRdoz80XpCc9az76eYg6jTcYCfyTsWKSWB1MKRnAOUcsg5d+GL9Jaj8r99gckFT6Cnv/nTlVEHRXrcvRAORH8zKyHuKHupl0Ub16NjQ7+SbVGwOf4q+Of4HxNZlC0cx7kZVw7wE/Kwikk0cWBXMnL54cvVB+iVTKLKEZsghARuWYxbTIVF9gd+VPk8U787W+XEczLs33GNhKgb7XWsFmTbD70uqMv0BoHGeOZWmSqUDJvXooflA33oez4Zy7UtRoQsf9pSpyWfa+ODddgMmHy/KGOo=",
      "signature_index": 0,
      "type": "openpgp",
-     "url": "https://api.azul.com/metadata/v1/zulu/packages/f89c621b-7e5d-4147-b7f7-8dc832ad2413/signature-binary?signature-index=0"
+     "url": "https://api.azul.com/metadata/v1/zulu/packages/9a4992bb-7652-4303-8ce6-26e6849b1ead/signature-binary?signature-index=0"
     }
    ],
-   "size": 52435200,
+   "size": 52543800,
+   "support_term": "lts"
+  }
+ },
+ "GET https://api.azul.com/metadata/v1/zulu/packages/bf43d8a0-e562-470e-9ca1-cf8ea8bcbeae": {
+  "status": 200,
+  "contentType": "application/json",
+  "json": {
+   "abi": "any",
+   "arch": "x86",
+   "archive_type": "tar.gz",
+   "availability_type": "CA",
+   "build_date": "2026-04-17T20:32:00",
+   "certifications": [
+    "tck"
+   ],
+   "cpu_gen": [],
+   "crac_supported": false,
+   "crs_supported": true,
+   "distro_version": [
+    21,
+    50,
+    19,
+    0
+   ],
+   "download_url": "https://cdn.azul.com/zulu/bin/zulu21.50.19-ca-jre21.0.11-linux_x64.tar.gz",
+   "hw_bitness": 64,
+   "java_package_features": [
+    "headfull",
+    "crs_supported"
+   ],
+   "java_package_type": "jre",
+   "java_version": [
+    21,
+    0,
+    11
+   ],
+   "javafx_bundled": false,
+   "last_modified": "2026-04-21T12:48:00",
+   "latest": true,
+   "lib_c_type": "glibc",
+   "md5_hash": "d6be0dd1f5fc417d0a6fcf515f5ea675",
+   "name": "zulu21.50.19-ca-jre21.0.11-linux_x64.tar.gz",
+   "openjdk_build_number": 10,
+   "os": "linux",
+   "package_uuid": "bf43d8a0-e562-470e-9ca1-cf8ea8bcbeae",
+   "product": "zulu",
+   "release_status": "ga",
+   "release_type": "PSU",
+   "sha256_hash": "a080f14957bf0f2951cc6e3fb7b3cbfc3c0a324b8ef7e23c714ef58ef0d76cbd",
+   "signatures": [
+    {
+     "details": {
+      "digest_algo": "8",
+      "key_id": "B1998361219BD9C9",
+      "sig_algo": "1",
+      "sig_version": "4",
+      "timestamp": "2026-04-18T09:19:34"
+     },
+     "signature": "iQIzBAABCAAdFiEEJ7wMjLPYFiP1m9rcsZmDYSGb2ckFAmnjTKYACgkQsZmDYSGb2cneTw/+OXMg7oCXC88iSQ8pXnH1wYTLjmCoFVRbHWXbBP+DmwWjbSC7gGaNJeBU65YWWHHznpO6db8WgHxbqGeb0Bo4tbGLehgkOnnEaz0T5PO1pf2ZyURPUJKp3hrfmbTOpEVlRVy6R1AOIR69ESKWv/2ny2SqidTnCYXx/qO2aTmVd1mB84PMcUKyjZSuksurax6TPXBtJAVLbncxm3I/EVCagUjsVNwiFK2xAeynkCmoR204LkWoIX8ruv8sqhwX6g03vimOnNLOxIomHsaq6VRYsobCQGm1ufljz57Fcou1/MjkNW3UZ8hzpktGOiRAcSvDtIfTdORjip7u8MepFvNH/fOYEZYtGCnRvrEjFETKwN2nB54EzVwtZ4PglG8/uT305F0qWlOLuDh16DK1D9ZG4KUmtNEfcNltXqYdolCKXTKOk18zzhNLWxpKRGb+c4AQQuZznx2kv2ElfO0iT4ZR3JacApL7d1w+HkJGxC1YkBH6MCTQu73CHgJCIER/yPGfmHBwexFv6cR5Zqu6qJeG7ftESubc7bMe1qk9t5dlRh1mDkuIBALFO5/SZhYK6LxKk7VGn1L809RlHttCx9c9ShQ4vVDJq5hxjsOzPudEzqvuD1sr7uFHUFjGmL1zZrw3Omaai9kjPxGhgHremhbB747IXLsgrm2OQ6a8CtrTBa8=",
+     "signature_index": 0,
+     "type": "openpgp",
+     "url": "https://api.azul.com/metadata/v1/zulu/packages/bf43d8a0-e562-470e-9ca1-cf8ea8bcbeae/signature-binary?signature-index=0"
+    }
+   ],
+   "size": 52836200,
    "support_term": "lts"
   }
  }

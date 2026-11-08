@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { javaRuntimes, serverInstances } from './db/schema';
 import { DATA_DIR, TMP_DIR } from './config';
-import { downloadFile, fetchJson } from './download';
+import { downloadFile, fetchJson, HttpError } from './download';
 import { probeJava, type ProbedJava } from './java';
 import { startTask, type TaskHandle } from './tasks';
 import { formatBytes } from '#lib/shared/format.js';
@@ -37,6 +37,14 @@ export const MANAGED_JAVA_DIR = path.join(DATA_DIR, 'java');
 
 export function isManagedJava(binary: string): boolean {
 	return path.resolve(binary).startsWith(MANAGED_JAVA_DIR + path.sep);
+}
+
+/** Which build a downloaded runtime is, from its folder (runtimeFolder); null for any other Java. */
+export function managedBuild(binary: string): { vendor: JavaVendor; version: string } | null {
+	if (!isManagedJava(binary)) return null;
+	const folder = path.relative(MANAGED_JAVA_DIR, path.resolve(binary)).split(path.sep)[0];
+	const m = folder.match(/^(temurin|zulu)-(.+)-(?:jre|jdk)$/);
+	return m ? { vendor: m[1] as JavaVendor, version: m[2] } : null;
 }
 
 /**
@@ -71,34 +79,65 @@ function usesMusl(): boolean {
 	return !report?.header?.glibcVersionRuntime;
 }
 
+// ----------------------------------------------------------------- builds ---
+
+/** One build a vendor offers for a major; `version` names it as runtimeFolder does. */
+export type JavaBuild = { version: string; imageType: 'jre' | 'jdk' };
+
+/** A listed build, and how to get its download (Zulu's URL and checksum are a request of their own). */
+type ListedBuild = JavaBuild & { fetchPackage: () => Promise<JavaPackage> };
+
+/** Not there for this machine: Temurin answers 404 where it has no build (no Java 16 JRE). */
+async function listing<T>(url: string): Promise<T[]> {
+	try {
+		return await fetchJson<T[]>(url);
+	} catch (err) {
+		if (err instanceof HttpError && err.status === 404) return [];
+		throw err;
+	}
+}
+
 // ---------------------------------------------------------------- Temurin ---
 
-type AdoptiumAsset = {
+type AdoptiumRelease = {
 	release_name: string;
-	version: { openjdk_version: string; semver: string };
-	binary: { image_type: string; package: { name: string; link: string; checksum: string; size: number } };
+	binaries: { image_type: string; package: { name: string; link: string; checksum: string; size: number } }[];
 };
 
-async function temurinPackage(major: number): Promise<JavaPackage | null> {
+/** Every GA build, newest first: Adoptium lists them all, 25.0.4.1 (a fix release) among them. */
+async function temurinBuilds(major: number): Promise<ListedBuild[]> {
 	const os = usesMusl() ? 'alpine-linux' : 'linux';
 	for (const imageType of ['jre', 'jdk'] as const) {
-		const params = new URLSearchParams({ architecture: architecture(), image_type: imageType, os, vendor: 'eclipse' });
-		const assets = await fetchJson<AdoptiumAsset[]>(`https://api.adoptium.net/v3/assets/latest/${major}/hotspot?${params}`);
-		const asset = assets.find((a) => a.binary.package.name.endsWith('.tar.gz'));
-		if (asset) {
-			return {
+		const params = new URLSearchParams({
+			architecture: architecture(),
+			image_type: imageType,
+			jvm_impl: 'hotspot',
+			os,
+			page_size: '20',
+			sort_order: 'DESC',
+			vendor: 'eclipse'
+		});
+		const releases = await listing<AdoptiumRelease>(`https://api.adoptium.net/v3/assets/feature_releases/${major}/ga?${params}`);
+		const builds: ListedBuild[] = [];
+		for (const release of releases) {
+			const archive = release.binaries.find((b) => b.image_type === imageType && b.package.name.endsWith('.tar.gz'))?.package;
+			if (!archive) continue;
+			const version = release.release_name.replace(/^jdk-?/, '');
+			const pkg: JavaPackage = {
 				vendor: 'temurin',
 				major,
-				version: asset.release_name.replace(/^jdk-?/, ''),
+				version,
 				imageType,
-				fileName: asset.binary.package.name,
-				url: asset.binary.package.link,
-				sha256: asset.binary.package.checksum,
-				size: asset.binary.package.size
+				fileName: archive.name,
+				url: archive.link,
+				sha256: archive.checksum,
+				size: archive.size
 			};
+			builds.push({ version, imageType, fetchPackage: async () => pkg });
 		}
+		if (builds.length) return builds;
 	}
-	return null;
+	return [];
 }
 
 // ------------------------------------------------------------------- Zulu ---
@@ -114,7 +153,12 @@ function compareNumbers(a: number[], b: number[]): number {
 	return 0;
 }
 
-async function zuluPackage(major: number): Promise<JavaPackage | null> {
+/**
+ * The builds Azul marks `latest`, newest first: what Prism offers too. Not every build: the
+ * flag sits on the newest and the one two quarters back (21.0.13 and 21.0.11, not 21.0.12 or
+ * its 21.0.12.1, on Java 17 and 25 alike, 2026-11-08), for reasons Azul does not give.
+ */
+async function zuluBuilds(major: number): Promise<ListedBuild[]> {
 	for (const imageType of ['jre', 'jdk'] as const) {
 		const params = new URLSearchParams({
 			java_version: String(major),
@@ -129,33 +173,59 @@ async function zuluPackage(major: number): Promise<JavaPackage | null> {
 			availability_types: 'CA'
 		});
 		const listed = await fetchJson<ZuluListing[]>(`https://api.azul.com/metadata/v1/zulu/packages/?${params}`);
-		// "latest" still lists the newest build of each update line.
-		const newest = listed
+		const builds = listed
 			.filter((p) => p.java_version[0] === major)
-			.sort((a, b) => compareNumbers(b.java_version, a.java_version) || compareNumbers(b.distro_version, a.distro_version))[0];
-		if (!newest) continue;
-		const detail = await fetchJson<ZuluDetail>(`https://api.azul.com/metadata/v1/zulu/packages/${newest.package_uuid}`);
-		return {
-			vendor: 'zulu',
-			major,
-			version: detail.java_version.join('.'),
-			imageType,
-			fileName: detail.name,
-			url: detail.download_url,
-			sha256: detail.sha256_hash,
-			size: detail.size
-		};
+			.sort((a, b) => compareNumbers(b.java_version, a.java_version) || compareNumbers(b.distro_version, a.distro_version))
+			.map((p): ListedBuild => {
+				const version = p.java_version.join('.');
+				return {
+					version,
+					imageType,
+					fetchPackage: async () => {
+						const detail = await fetchJson<ZuluDetail>(`https://api.azul.com/metadata/v1/zulu/packages/${p.package_uuid}`);
+						return { vendor: 'zulu', major, version, imageType, fileName: detail.name, url: detail.download_url, sha256: detail.sha256_hash, size: detail.size };
+					}
+				};
+			})
+			// The same Java version twice (two distro builds): the newer distro only.
+			.filter((b, i, all) => all.findIndex((o) => o.version === b.version) === i);
+		if (builds.length) return builds;
 	}
-	return null;
+	return [];
 }
 
-export async function findJavaPackage(vendor: JavaVendor, major: number): Promise<JavaPackage> {
-	const found = vendor === 'temurin' ? await temurinPackage(major) : await zuluPackage(major);
-	if (!found) {
-		const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
-		throw new Error(`${label} has no Java ${major} build for this machine.`);
-	}
-	return found;
+function vendorBuilds(vendor: JavaVendor, major: number): Promise<ListedBuild[]> {
+	return vendor === 'temurin' ? temurinBuilds(major) : zuluBuilds(major);
+}
+
+/** Lists change a few times a year, and Settings reads them on every load; a download asks afresh. */
+const BUILDS_TTL_MS = 60 * 60 * 1000;
+const buildCache = new Map<string, { at: number; builds: Promise<JavaBuild[]> }>();
+
+/** The builds a vendor offers for a major on this machine, newest first. */
+export function listJavaBuilds(vendor: JavaVendor, major: number): Promise<JavaBuild[]> {
+	const key = `${vendor}-${major}`;
+	const hit = buildCache.get(key);
+	if (hit && Date.now() - hit.at < BUILDS_TTL_MS) return hit.builds;
+	const builds = vendorBuilds(vendor, major).then((list) => list.map(({ version, imageType }) => ({ version, imageType })));
+	buildCache.set(key, { at: Date.now(), builds });
+	// A failed lookup is not kept: the next load asks again.
+	builds.catch(() => buildCache.delete(key));
+	return builds;
+}
+
+/** For tests: lists read again. */
+export function forgetJavaBuilds(): void {
+	buildCache.clear();
+}
+
+/** A build to download: the one named, else the newest. */
+export async function findJavaPackage(vendor: JavaVendor, major: number, version?: string): Promise<JavaPackage> {
+	const builds = await vendorBuilds(vendor, major);
+	const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
+	const build = version ? builds.find((b) => b.version === version) : builds[0];
+	if (!build) throw new Error(version ? `${label} has no Java ${version} build for this machine.` : `${label} has no Java ${major} build for this machine.`);
+	return build.fetchPackage();
 }
 
 // ---------------------------------------------------------------- install ---
@@ -190,19 +260,29 @@ const inFlight = new Map<string, Promise<ProbedJava>>();
  * Download, verify, unpack and register a runtime; resolves to it. A build
  * already installed is only registered again.
  */
-export function installJava(vendor: JavaVendor, major: number, task: Pick<TaskHandle, 'setProgress' | 'log'>): Promise<ProbedJava> {
-	const key = `${vendor}-${major}`;
+export function installJava(
+	vendor: JavaVendor,
+	major: number,
+	task: Pick<TaskHandle, 'setProgress' | 'log'>,
+	version?: string
+): Promise<ProbedJava> {
+	const key = `${vendor}-${major}-${version ?? 'newest'}`;
 	const running = inFlight.get(key);
 	if (running) return running;
-	const work = installUncached(vendor, major, task).finally(() => inFlight.delete(key));
+	const work = installUncached(vendor, major, task, version).finally(() => inFlight.delete(key));
 	inFlight.set(key, work);
 	return work;
 }
 
-async function installUncached(vendor: JavaVendor, major: number, task: Pick<TaskHandle, 'setProgress' | 'log'>): Promise<ProbedJava> {
+async function installUncached(
+	vendor: JavaVendor,
+	major: number,
+	task: Pick<TaskHandle, 'setProgress' | 'log'>,
+	version?: string
+): Promise<ProbedJava> {
 	const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
-	task.setProgress(null, `Looking up ${label} ${major}`);
-	const pkg = await findJavaPackage(vendor, major);
+	task.setProgress(null, `Looking up ${label} ${version ?? major}`);
+	const pkg = await findJavaPackage(vendor, major, version);
 	const home = path.join(MANAGED_JAVA_DIR, runtimeFolder(pkg));
 	const binary = path.join(home, 'bin', 'java');
 
@@ -241,11 +321,11 @@ async function installUncached(vendor: JavaVendor, major: number, task: Pick<Tas
 	return info;
 }
 
-/** Download from Settings, as a task of its own. */
-export function startJavaDownload(vendor: JavaVendor, major: number): string {
+/** Download from Settings, as a task of its own: a build picked there, else the newest. */
+export function startJavaDownload(vendor: JavaVendor, major: number, version?: string): string {
 	const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
-	return startTask({ label: `Download ${label} ${major}` }, async (task) => {
-		await installJava(vendor, major, task);
+	return startTask({ label: `Download ${label} ${version ?? major}` }, async (task) => {
+		await installJava(vendor, major, task, version);
 		task.setProgress(100, 'Done');
 	});
 }

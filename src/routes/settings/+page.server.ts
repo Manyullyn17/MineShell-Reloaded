@@ -56,9 +56,12 @@ import {
 	isJavaVendor,
 	isManagedJava,
 	JAVA_VENDORS,
+	listJavaBuilds,
+	managedBuild,
 	OFFERED_MAJORS,
 	removeManagedJava,
-	startJavaDownload
+	startJavaDownload,
+	type JavaVendor
 } from '#lib/server/javadownload.js';
 import { authEnabled, plainHttpWarning, setPlainHttpWarning } from '#lib/server/auth.js';
 import { db } from '#lib/server/db/index.js';
@@ -217,6 +220,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		/** MineShell's notification destination, without its address. */
 		notifications: targetView('global', globalTarget()),
 		javaDownloads: javaDownloads(),
+		// Streamed: it asks the vendors, and a slow or failed answer only leaves the note out.
+		javaNewer: url.searchParams.get('tab') === 'java' ? javaNewerBuilds() : null,
 		/** Saved JVM flag presets; the built-in ones are not edited. */
 		jvmPresets: listPresets().filter((p) => !p.builtIn),
 		/** The preset new servers get (New server defaults). */
@@ -299,9 +304,32 @@ function javaRuntimeRows() {
 			managed: isManagedJava(j.path),
 			inUse: pick?.runtime.path === j.path,
 			isDefault: defaults[j.majorVersion] === j.path,
-			siblings: installed.filter((o) => o.majorVersion === j.majorVersion).length
+			siblings: installed.filter((o) => o.majorVersion === j.majorVersion).length,
+			build: managedBuild(j.path)
 		};
 	});
+}
+
+/**
+ * Per downloaded vendor and major, the vendor's newest build when none of the downloaded ones
+ * is it. Runtimes from elsewhere (a package manager's) update by their own means.
+ */
+async function javaNewerBuilds(): Promise<{ vendor: JavaVendor; major: number; version: string }[]> {
+	const installed = new Map<string, { vendor: JavaVendor; major: number; versions: Set<string> }>();
+	for (const j of listJavaRuntimes()) {
+		const build = managedBuild(j.path);
+		if (!build) continue;
+		const key = `${build.vendor}-${j.majorVersion}`;
+		if (!installed.has(key)) installed.set(key, { vendor: build.vendor, major: j.majorVersion, versions: new Set() });
+		installed.get(key)!.versions.add(build.version);
+	}
+	const found = await Promise.all(
+		[...installed.values()].map(async ({ vendor, major, versions }) => {
+			const newest = (await listJavaBuilds(vendor, major).catch(() => []))[0];
+			return newest && !versions.has(newest.version) ? { vendor, major, version: newest.version } : null;
+		})
+	);
+	return found.filter((f) => f !== null);
 }
 
 /**
@@ -311,13 +339,19 @@ function javaRuntimeRows() {
 function javaDownloads() {
 	const instances = listInstances();
 	const needed = new Set(instances.map((i) => requiredJavaMajor(i.minecraftVersion, i.modloader, i.modloaderVersion)));
-	const missing = instances
-		.filter((i) => !resolveJava({ ...i, explicitPath: i.javaPath }).path)
-		.map((i) => ({ name: i.name, major: requiredJavaMajor(i.minecraftVersion, i.modloader, i.modloaderVersion) }));
+	const resolved = instances.map((i) => ({ name: i.name, java: resolveJava({ ...i, explicitPath: i.javaPath }) }));
+	const missing = resolved.filter((r) => !r.java.path).map((r) => ({ name: r.name, major: r.java.requiredMajor }));
+	// Servers matching Java by itself, per major a download of it can move them to: the one they
+	// run on (a newer build of it) and the one they ask for (it, where they run another).
+	const followers: Record<number, string[]> = {};
+	for (const { name, java } of resolved.filter((r) => r.java.origin === 'auto')) {
+		for (const major of new Set([java.majorVersion!, java.requiredMajor])) (followers[major] ??= []).push(name);
+	}
 	return {
 		vendors: JAVA_VENDORS,
 		majors: [...new Set([...OFFERED_MAJORS, ...needed])].sort((a, b) => b - a),
-		missing
+		missing,
+		followers
 	};
 }
 
@@ -336,11 +370,14 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const vendor = form.get('vendor');
 		const major = Number(form.get('major'));
+		// Empty: the newest build.
+		const version = String(form.get('version') ?? '').trim() || undefined;
 		if (!isJavaVendor(vendor)) return fail(400, { ok: false, message: 'Pick Temurin or Zulu.' });
 		if (!Number.isInteger(major) || major < 8 || major > 99) return fail(400, { ok: false, message: 'Pick a Java version.' });
-		startJavaDownload(vendor, major);
+		if (version !== undefined && !/^[\w.+-]{1,40}$/.test(version)) return fail(400, { ok: false, message: 'That is not a Java build.' });
+		startJavaDownload(vendor, major, version);
 		const label = JAVA_VENDORS.find((v) => v.id === vendor)!.label;
-		return { ok: true, message: `Downloading ${label} ${major}. Follow it in Activity; it shows up here when done.` };
+		return { ok: true, message: `Downloading ${label} ${version ?? major}. Follow it in Activity; it shows up here when done.` };
 	},
 
 	deleteJava: async ({ request }) => {

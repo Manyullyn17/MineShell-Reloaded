@@ -126,6 +126,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 	'/api/skins/[texture]': { methods: { GET: 'signedIn' } },
 	// Catalog searches (Modrinth, CurseForge through MineShell's key) for installing and creating.
 	'/api/loaders/versions': { methods: { GET: 'signedIn' } },
+	'/api/java/builds': { methods: { GET: 'globalAdmin' } },
 	'/api/mods/dependencies': { methods: { GET: 'signedIn' } },
 	'/api/mods/details': { methods: { GET: 'signedIn' } },
 	'/api/mods/filters': { methods: { GET: 'signedIn' } },

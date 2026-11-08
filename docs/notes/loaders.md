@@ -19,10 +19,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Java per Minecraft version comes from Mojang's version metadata (`javaVersion`), learned
   before installs/changes and at startup, stored in settings (`java.minecraftRequirements`);
   hard-coded rules in java.ts are only the offline fallback. 26.x needs Java 25.
-- Java downloads (`javadownload.ts`): Temurin via `api.adoptium.net/v3/assets/latest/{major}/hotspot`,
-  Zulu via `api.azul.com/metadata/v1/zulu/packages` (filter `crac_supported=false`, `os=linux-glibc`;
-  `latest=true` still lists one build per update line, so pick the newest; the SHA-256 is only on
-  `/packages/{uuid}`). Temurin has no Java 16 JRE (1.17 needs it): JDK fallback. Installed into
+- Java downloads (`javadownload.ts`): Temurin via `api.adoptium.net/v3/assets/feature_releases/{major}/ga`
+  (every GA build, newest first, 20 a page; 404 where there is no such image), Zulu via
+  `api.azul.com/metadata/v1/zulu/packages` (filter `crac_supported=false`, `os=linux-glibc`;
+  the SHA-256 is only on `/packages/{uuid}`). Azul's `latest=true` is not "newest": it marks the
+  newest build and the one two quarters back (21.0.13 and 21.0.11, never 21.0.12 or its .1;
+  17 and 25 alike, 2026-11-08). Prism lists exactly those (its meta, `com.azul.java/java25.json`),
+  and so does MineShell's picker; the newest is the first either way. Temurin has no Java 16 JRE (1.17 needs it): JDK fallback. Installed into
   `$DATA/java/<vendor>-<version>-<jre|jdk>/`, which is also a scan root.
 - Operations settle Java up front (`planJava`): missing throws `JavaMissingError(major)` before
   anything is created; with `downloadJava` the task downloads it first (`obtainJava`). Forms show

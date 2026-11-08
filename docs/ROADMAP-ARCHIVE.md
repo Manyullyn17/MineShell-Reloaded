@@ -1499,6 +1499,25 @@ Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges th
   another is in its place. Before a start, only the one known case (`getURL`) is caught by name:
   a general check would need every Cleanroom method a Fugue calls, left as it is.
 
+### Java builds (1.3, 2026-11-08)
+
+Found by the user 2026-11-06: Settings offered a vendor and a major and always installed that
+vendor's newest build, with nothing saying what it would install or whether it was news. Built:
+- **A newer build shown**: a downloaded runtime's row says "<vendor> <build> is out" with a
+  Download button when the vendor's newest build of its major is not among the downloaded ones
+  (streamed, the vendors' lists kept an hour). Runtimes from a package manager update by its
+  own means and get no note. Not notified: Settings only.
+- **What a download does to servers**: under the form, the servers matching Java by themselves
+  that would take the newest build of the picked major at their next start (`runtimeForMajor`),
+  and how to stay on the current one ("Use for Java N", or a pinned path).
+- **Picking a build**: a third select, "Newest" or a build from the vendor's list
+  (`/api/java/builds`); the download goes by version (`installJava`, `findJavaPackage`), each
+  build in a folder of its own as before. Temurin through `feature_releases` (every GA build,
+  25.0.4.1 among them; 404 where there is no JRE, so the JDKs). Zulu only the builds Azul marks
+  `latest`, which is exactly what Prism lists: the flag sits on the newest build and the one two
+  quarters back (21.0.13 and 21.0.11, not 21.0.12 or 21.0.12.1; Java 17 and 25 alike), for
+  reasons Azul does not give. Widening it to every Zulu build is a one-line change if wanted.
+
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,

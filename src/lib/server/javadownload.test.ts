@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import * as tar from 'tar';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { findJavaPackage, installJava, MANAGED_JAVA_DIR, removeManagedJava } from './javadownload';
+import { findJavaPackage, forgetJavaBuilds, installJava, listJavaBuilds, managedBuild, MANAGED_JAVA_DIR, removeManagedJava } from './javadownload';
 import { db } from './db';
 import { javaRuntimes, serverInstances } from './db/schema';
 import { TMP_DIR } from './config';
@@ -15,8 +15,10 @@ import { clearJava, createInstance, reload, systemdStopped, waitForTask } from '
 import { createFromLoader, JavaMissingError } from './instances';
 import { LOADERS } from './modloaders';
 
-const TEMURIN_21 = 'https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse';
+const TEMURIN_21 =
+	'https://api.adoptium.net/v3/assets/feature_releases/21/ga?architecture=x64&image_type=jre&jvm_impl=hotspot&os=linux&page_size=20&sort_order=DESC&vendor=eclipse';
 const FAKE_TARBALL = 'https://example.invalid/OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz';
+const OLDER_TARBALL = 'https://example.invalid/OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz';
 
 /** A JRE tarball as the vendors ship it: one top folder with bin/java in it. */
 async function fakeJre(): Promise<Buffer> {
@@ -29,17 +31,15 @@ async function fakeJre(): Promise<Buffer> {
 	return fs.readFile(file);
 }
 
-/** Temurin's metadata for Java 21, pointing at the fake tarball with the given checksum. */
+/** Temurin's builds of Java 21, newest first, both pointing at the fake tarball with the given checksum. */
 function temurinMetadata(sha256: string): Response {
+	const release = (name: string, file: string, link: string) => ({
+		release_name: name,
+		binaries: [{ image_type: 'jre', package: { name: file, link, checksum: sha256, size: 1234 } }]
+	});
 	return Response.json([
-		{
-			release_name: 'jdk-21.0.9+10',
-			version: { openjdk_version: '21.0.9+10-LTS', semver: '21.0.9+10' },
-			binary: {
-				image_type: 'jre',
-				package: { name: 'OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz', link: FAKE_TARBALL, checksum: sha256, size: 1234 }
-			}
-		}
+		release('jdk-21.0.9+10', 'OpenJDK21U-jre_x64_linux_hotspot_21.0.9_10.tar.gz', FAKE_TARBALL),
+		release('jdk-21.0.8+9', 'OpenJDK21U-jre_x64_linux_hotspot_21.0.8_9.tar.gz', OLDER_TARBALL)
 	]);
 }
 
@@ -77,6 +77,34 @@ describe('finding a Java download', () => {
 		expect(pkg.sha256).toMatch(/^[0-9a-f]{64}$/);
 		expect(await findJavaPackage('zulu', 8)).toMatchObject({ major: 8, imageType: 'jre' });
 	});
+
+	// Settings only ever offered the newest build: nothing said one was out, and an older one
+	// (a mod broken by a newer build) could not be had.
+	it('lists the builds to pick from, newest first, and downloads the one picked', async () => {
+		forgetJavaBuilds();
+		const temurin = await listJavaBuilds('temurin', 21);
+		expect(temurin.length).toBeGreaterThan(5);
+		expect(temurin[0].version).toBe((await findJavaPackage('temurin', 21)).version);
+		const older = temurin[3];
+		expect(await findJavaPackage('temurin', 21, older.version)).toMatchObject({ version: older.version, imageType: 'jre' });
+		// Only the builds Azul recommends, as Prism shows them: fewer than Temurin's.
+		const zulu = await listJavaBuilds('zulu', 21);
+		expect(zulu.length).toBeGreaterThan(0);
+		expect(zulu.length).toBeLessThan(temurin.length);
+		expect(zulu[0].version).toBe((await findJavaPackage('zulu', 21)).version);
+		expect((await findJavaPackage('zulu', 21, zulu.at(-1)!.version)).version).toBe(zulu.at(-1)!.version);
+		await expect(findJavaPackage('temurin', 21, '21.0.0-nope')).rejects.toThrow(/no Java 21\.0\.0-nope build/);
+		// Java 16 has no JRE: the JDKs, marked so.
+		expect((await listJavaBuilds('temurin', 16)).every((b) => b.imageType === 'jdk')).toBe(true);
+	});
+});
+
+describe('which build a runtime is', () => {
+	it('reads it from the folder a download made, and nothing from other Java', () => {
+		expect(managedBuild(path.join(MANAGED_JAVA_DIR, 'temurin-25.0.5+8-jre', 'bin', 'java'))).toEqual({ vendor: 'temurin', version: '25.0.5+8' });
+		expect(managedBuild(path.join(MANAGED_JAVA_DIR, 'zulu-21.0.13.0.3-jdk', 'bin', 'java'))).toEqual({ vendor: 'zulu', version: '21.0.13.0.3' });
+		expect(managedBuild('/usr/lib/jvm/java-21-openjdk-amd64/bin/java')).toBeNull();
+	});
 });
 
 describe('installing a downloaded Java', () => {
@@ -97,8 +125,17 @@ describe('installing a downloaded Java', () => {
 		useRecordedHttp('javadownload-install', {
 			extra: {
 				[TEMURIN_21]: () => temurinMetadata(sha),
-				[FAKE_TARBALL]: () => new Response(new Uint8Array(tarball))
+				[FAKE_TARBALL]: () => new Response(new Uint8Array(tarball)),
+				[OLDER_TARBALL]: () => new Response(new Uint8Array(tarball))
 			}
+		});
+
+		it('installs the build picked beside the newest, each in a folder of its own', async () => {
+			const newest = await installJava('temurin', 21, task);
+			const older = await installJava('temurin', 21, task, '21.0.8+9');
+			expect(older.path).toBe(path.join(MANAGED_JAVA_DIR, 'temurin-21.0.8+9-jre', 'bin', 'java'));
+			expect(newest.path).toBe(path.join(MANAGED_JAVA_DIR, 'temurin-21.0.9+10-jre', 'bin', 'java'));
+			expect((await fs.readdir(MANAGED_JAVA_DIR)).sort()).toEqual(['temurin-21.0.8+9-jre', 'temurin-21.0.9+10-jre']);
 		});
 
 		it('unpacks it into the data folder and registers it', async () => {

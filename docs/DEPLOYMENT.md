@@ -611,7 +611,9 @@ check the log for the mod named in the stack trace and disable it from the Mods 
 Download it in Settings → Java runtimes (Eclipse Temurin or Azul Zulu), or install it
 through your package manager and Scan again. If it is somewhere unusual, add it by path.
 Creating a server or changing its loader or pack offers the download when the Java it
-needs is missing.
+needs is missing. A downloaded runtime's row says when the vendor has a newer build; servers
+matching Java by themselves take the newest build of their version at their next start, so
+pick the one to keep with "Use for Java N" (or pin a server's Java) if a new build misbehaves.
 
 **Everything worked, then stopped after a reboot.**
 Lingering was never enabled, so your user services did not come back.

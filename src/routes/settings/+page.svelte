@@ -70,6 +70,42 @@
 		connection = connectionKind(location);
 	});
 
+	// ---- Java downloads: newer builds of downloaded runtimes, and the form's build picker
+	const javaNewerInfo = streamed(() => data.javaNewer);
+	const javaNewer = $derived(javaNewerInfo.ready ? (javaNewerInfo.value ?? []) : []);
+	/** The row a newer build is shown on: the first downloaded one of its vendor and major. */
+	function newerFor(java: (typeof data.javaRuntimes)[number]) {
+		if (!java.build) return null;
+		const first = data.javaRuntimes.find((j) => j.build?.vendor === java.build!.vendor && j.majorVersion === java.majorVersion);
+		if (first?.path !== java.path) return null;
+		return javaNewer.find((n) => n.vendor === java.build!.vendor && n.major === java.majorVersion) ?? null;
+	}
+	const vendorLabel = (id: string) => data.javaDownloads.vendors.find((v) => v.id === id)?.label ?? id;
+	let javaVendor = $state('temurin');
+	// The picks stay through reloads; the first one offers what a server lacks.
+	// svelte-ignore state_referenced_locally
+	let javaMajor = $state(data.javaDownloads.missing[0]?.major ?? 21);
+	let javaBuild = $state('');
+	let javaBuilds = $state<{ version: string; imageType: string }[] | null>(null);
+	$effect(() => {
+		if (tab !== 'java') return;
+		const query = new URLSearchParams({ vendor: javaVendor, major: String(javaMajor) });
+		let live = true;
+		javaBuild = '';
+		javaBuilds = null;
+		fetch(`/api/java/builds?${query}`)
+			.then((r) => (r.ok ? r.json() : { builds: [] }))
+			.then(
+				(d: { builds: { version: string; imageType: string }[] }) => live && (javaBuilds = d.builds),
+				() => live && (javaBuilds = [])
+			);
+		return () => {
+			live = false;
+		};
+	});
+	const installedBuilds = $derived(new Set(data.javaRuntimes.filter((j) => j.build?.vendor === javaVendor).map((j) => j.build!.version)));
+	const javaFollowers = $derived(data.javaDownloads.followers[javaMajor] ?? []);
+
 	const playitInfo = streamed(() => data.playit.status);
 	const playit = $derived(playitInfo.ready ? playitInfo.value : null);
 	const locationsInfo = streamed(() => data.playit.locations);
@@ -304,6 +340,16 @@
 						<td class="small faint">
 							{java.managed ? 'downloaded' : java.manual ? 'added by hand' : 'scanned'}
 							{#if java.vendor}<div class="small">{java.vendor}</div>{/if}
+							{#if newerFor(java)}
+								{@const newer = newerFor(java)!}
+								<form method="POST" action="?/downloadJava" use:enhance class="newer-java">
+									<input type="hidden" name="vendor" value={newer.vendor} />
+									<input type="hidden" name="major" value={newer.major} />
+									<input type="hidden" name="version" value={newer.version} />
+									<span class="tag">{vendorLabel(newer.vendor)} {newer.version} is out</span>
+									<button class="button-quiet">Download</button>
+								</form>
+							{/if}
 						</td>
 						<td class="small">
 							{#if java.inUse}
@@ -368,7 +414,7 @@
 	<form method="POST" action="?/downloadJava" use:enhance class="inline-form">
 		<div class="field">
 			<label for="java-vendor">From</label>
-			<select id="java-vendor" name="vendor">
+			<select id="java-vendor" name="vendor" bind:value={javaVendor}>
 				{#each data.javaDownloads.vendors as vendor (vendor.id)}
 					<option value={vendor.id}>{vendor.label}</option>
 				{/each}
@@ -376,19 +422,39 @@
 		</div>
 		<div class="field">
 			<label for="java-major">Version</label>
-			<select id="java-major" name="major">
+			<select id="java-major" name="major" bind:value={javaMajor}>
 				{#each data.javaDownloads.majors as major (major)}
-					<option value={major} selected={major === (data.javaDownloads.missing[0]?.major ?? 21)}>
+					<option value={major}>
 						Java {major}{data.javaRuntimes.some((j) => j.majorVersion === major) ? ' (installed)' : ''}
+					</option>
+				{/each}
+			</select>
+		</div>
+		<div class="field">
+			<label for="java-build">Build</label>
+			<select id="java-build" name="version" bind:value={javaBuild}>
+				<option value="">Newest{javaBuilds?.[0] ? ` (${javaBuilds[0].version}${installedBuilds.has(javaBuilds[0].version) ? ', installed' : ''})` : ''}</option>
+				{#each javaBuilds ?? [] as build (build.version)}
+					<option value={build.version}>
+						{build.version}{build.imageType === 'jdk' ? ' JDK' : ''}{installedBuilds.has(build.version) ? ' (installed)' : ''}
 					</option>
 				{/each}
 			</select>
 		</div>
 		<button type="submit">Download</button>
 	</form>
+	{#if javaFollowers.length}
+		<p class="small java-followers">
+			{javaFollowers.join(', ')} {javaFollowers.length === 1 ? 'takes' : 'take'} the newest Java {javaMajor} here at
+			{javaFollowers.length === 1 ? 'its' : 'their'} next start, so a newer build downloaded now is used from then on. To
+			stay on the current one, pick it with "Use for Java {javaMajor}" above after the download, or pin a server's Java in
+			its Settings (Java &amp; memory).
+		</p>
+	{/if}
 	<p class="muted small">
 		A JRE (the JDK where the vendor has no JRE for that version), checked against the vendor's SHA-256 and
-		kept in <code>{data.paths.data}/java</code>. Servers set to match Java automatically pick it up.
+		kept in <code>{data.paths.data}/java</code>, each build in a folder of its own. Zulu lists the builds Azul
+		recommends, as launchers do; Temurin every one.
 	</p>
 </section>
 
@@ -1994,6 +2060,16 @@
 
 	.default-form {
 		display: inline;
+	}
+	.java-followers {
+		margin-top: var(--space-2);
+	}
+	.newer-java {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+		margin-top: var(--space-1);
 	}
 
 	.list-toggle {

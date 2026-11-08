@@ -181,7 +181,7 @@ Manage server configuration and files without needing direct shell access for ro
 - Open server directories in a file manager through SFTP links, with the address to copy and what to change when the browser opens nothing.
 - Inspect disk usage, including world-map data stored outside the server directory, and delete archived logs and crash reports after a chosen number of days.
 - Spot a pack's own backup mod (AromaBackup, Simple Backups, FTB Backups, Textile Backup) copying the world beside MineShell's snapshots, with the folder it fills.
-- Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds.
+- Discover installed Java runtimes or download Eclipse Temurin and Azul Zulu builds (the newest, or one picked from the vendor's list), with a note when a newer build of a downloaded one is out and which servers would move to it.
 - Match Java versions to individual servers using Minecraft's version metadata, with configurable defaults when multiple runtimes are available.
 
 ### MineShell itself

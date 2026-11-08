@@ -37,7 +37,7 @@ size, not a fixed list; entries move and get added along the way):
   players, game rules, world spawn and border (the four 1.21.9 settings back in Settings),
   server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
-  order: the Fugue gaps (built 2026-11-08) and Java builds; formatted text (colour codes) with the server list
+  order: the Fugue gaps and Java builds (both built 2026-11-08); formatted text (colour codes) with the server list
   preview, also for item names and lore; the mod config editor (the headline); the NBT editor
   (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
@@ -167,28 +167,6 @@ vary too much).
 For one person: weekly unless there is a reason for nightly, `npm run release` warns or refuses
 when the last run failed so a red result cannot be missed, and GitHub pauses schedules after 60
 days without repo activity.
-
-#### Java builds
-
-Found by the user 2026-11-06, wanted for the version after 1.2; nothing decided yet. Settings
-offers a vendor and a major and always installs that vendor's newest build. Each build gets its
-own folder, so several of one major sit side by side, and it already goes well: a newer one
-stays beside the old, a click with nothing newer only registers what is there, and old builds
-go by hand. What is missing:
-- **Seeing a newer build**: the button is labelled with the major only, so nothing says what it
-  would install or whether that is news. This is the "newer Java update is not shown" of
-  "Update availability" (Leftovers). Only the lookup is needed, in `updatecheck.ts`.
-- **What a new build does to servers**: servers matching automatically move to it at their next
-  start, with no word about it (`runtimeForMajor`, newest across vendors); a default set for the
-  major or a pinned path stays on the old build. Say so at the download at least.
-- **Picking a build**: a version picker in the download. Both APIs list them (checked for 25:
-  Temurin 25 to 25.0.5 through `/v3/assets/feature_releases/25/ga`, Zulu 25.0.0 to 25.0.5 without
-  `latest=true`). The reasons to want an older one are few (a mod broken by a newer build), so
-  it is the least needed of the three. `installJava` and its shared run go by major today.
-- **To look into first**: Prism shows only 25.0.5 and 25.0.3 for Zulu 25, while Azul's API lists
-  more for a Linux x64 JRE (25.0.4 and 25.0.4.1 among them, 2026-11-06). The user suspects this
-  matters: find out why before building on those lists. It may be Prism's own filter, or builds
-  that are not meant to be picked.
 
 #### Mods from outside Modrinth's hash lookup
 
@@ -652,7 +630,8 @@ is open, and each needs a test setup.
   the server, with "<name>[/ip] logged in" for joins (the Logs tab and join detection are
   unchecked on it).
 - **Update availability**: pack versions, loader builds and (servers without a pack) mods
-  are checked periodically (`updatecheck.ts`); a newer Java update is not shown. Pack
+  are checked periodically (`updatecheck.ts`); a newer build of a downloaded Java shows in
+  MineShell settings (Java) only, with no notification (built 2026-11-08). Pack
   servers are not offered loader builds or single mod updates (the pack picks them; user's
   calls).
 
