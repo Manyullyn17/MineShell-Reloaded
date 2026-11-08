@@ -146,9 +146,12 @@ stopped 120 || fail "still $(state) 2 minutes after the last Stop"
 
 step "the runs MineShell recorded"
 # history.ts reads the journal every 30 s.
-want=$'ok|-|done\nok|9|done\ncrashed|9|done\nok|-|done'
+# Force stop's SIGKILL follows a stop job, whose SIGTERM can end Java first (it saves and exits
+# in under a second): then systemd logs no exit status for that run (GitHub's 22.04 runners).
+want=$'ok|-|done\nok|9 or -|done\ncrashed|9|done\nok|-|done'
+want_re=$'^ok\\|-\\|done\nok\\|(9|-)\\|done\ncrashed\\|9\\|done\nok\\|-\\|done$'
 deadline=$((SECONDS + 90))
-until [[ "$(runs)" == "$want" ]]; do
+until [[ "$(runs)" =~ $want_re ]]; do
 	if ((SECONDS >= deadline)); then
 		printf 'Expected (crashed|exit status|reached Done):\n%s\nRecorded:\n%s\n' "$want" "$(runs)" >&2
 		diagnose_runs >&2
