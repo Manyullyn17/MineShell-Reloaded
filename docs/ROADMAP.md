@@ -772,9 +772,17 @@ Suggested, not yet confirmed or rejected:
 - **Chat to Discord** (2026-10-27, user: maybe): players' chat, deaths and advancements sent
   to a channel through the notification setup (webhook), read from the console. One way
   only: two-way needs a bot, which is what mods for it already do.
-- **Command completion in the console** (2026-10-27, user: maybe): RCON cannot ask for
-  completions, so suggestions would come from a command list read from the server (`help`
-  over RCON), which modded commands make less complete.
+- **Command completion in the console** (2026-10-27, user: maybe; raised again 2026-11-08,
+  vanilla at least, with a PR on a similar project to look at): RCON cannot ask for
+  completions. Ways in, to check before deciding:
+  - Vanilla, exactly: from 1.13 the data generator writes the whole command tree with argument
+    types from the server jar, no running server (`--reports`, `generated/reports/commands.json`;
+    1.18+ through the bundler, `-DbundlerMainClass=net.minecraft.data.Main`). Once per Minecraft
+    version, kept in the cache.
+  - Modded, roughly: `help` over RCON on a running server lists every registered command's usage,
+    mods' included: names and argument hints, not types.
+  - Argument values MineShell already knows: online players, item ids (itemicons.ts), game rules.
+  - 1.12 and older: `help` pages only.
 - **Quick switcher** (2026-10-27, user: unsure): Ctrl+K and a few letters jump to a server,
   one of its tabs or a setting (the settings search already knows the settings).
 - **Permission presets** (2026-10-27): accounts' per-server permissions are ticked one by
