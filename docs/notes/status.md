@@ -58,6 +58,10 @@ user before the beta):
    a mod it patches (MeatballCraft 0.18.4-hotfix6's Quantum Things crashed so): the button on the
    overview's diagnosis, the task, the old Fugue disabled, the run then reading "in the mods folder
    since this crash", and a clean start clearing the crash. Only tested with fakes so far.
+2. **Java builds** (MineShell settings, Java): a downloaded runtime's "is out" note and its
+   Download, the Build picker for both vendors, and the note naming the servers that move.
+   Checked on throwaway data 2026-11-08 (an older Temurin 21 picked and downloaded for real, the
+   note on its row, 1280 and 390 px); not yet on prod's own runtimes.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
