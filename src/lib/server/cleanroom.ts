@@ -17,6 +17,7 @@ import {
 	modsDir,
 	setModEnabled,
 	type ProjectVersion,
+	type SearchHit,
 	type SourceId
 } from './mods';
 import { CLEANROOM_MINECRAFT, cleanroomJavaMajor } from '#lib/shared/cleanroom.js';
@@ -496,23 +497,30 @@ async function sourceFor(instance: ServerInstance, mod: RequiredMod): Promise<{ 
 	return count('curseforge') > count('modrinth') ? { source: 'curseforge', projectId: mod.curseforgeProjectId } : { source: mod.source, projectId: mod.projectId };
 }
 
-async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
+type ChosenMod = { source: SourceId; project: SearchHit; version: ProjectVersion | null };
+
+/** The build of a required mod for this server, from where its other mods come; Fugue's for its Cleanroom. */
+async function chooseRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<ChosenMod> {
 	const { source, projectId } = await sourceFor(instance, mod);
 	const provider = getModProvider(source);
 	const [project, all] = await Promise.all([
 		provider.getProject(projectId),
 		provider.listVersions(projectId, { minecraftVersion: CLEANROOM_MINECRAFT, loader: 'forge' })
 	]);
-	const java = cleanroomJavaMajor(instance.modloaderVersion);
 	const cleanroom = instance.modloaderVersion;
 	const version =
 		mod.label === 'Fugue' && cleanroom
 			? await pickFugue(all, cleanroom, await cleanroomHasGetUrl(instance.path, cleanroom))
 			: bestVersion(all);
-	if (!version) {
-		throw new Error(`no ${CLEANROOM_MINECRAFT} build for ${cleanroom ? `Cleanroom ${cleanroom}` : `Java ${java}`} found`);
-	}
+	return { source, project, version };
+}
 
+/** The Fugue build for the server's Cleanroom (pickFugue), or a null version when none runs on it. */
+export function chooseFugue(instance: ServerInstance): Promise<ChosenMod> {
+	return chooseRequiredMod(instance, REQUIRED_MODS.find((m) => m.label === 'Fugue')!);
+}
+
+export function installChosenMod(instance: ServerInstance, { source, project, version }: ChosenMod & { version: ProjectVersion }): Promise<string> {
 	return installModVersion(
 		instance,
 		source,
@@ -525,6 +533,16 @@ async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): P
 		},
 		version
 	);
+}
+
+async function installRequiredMod(instance: ServerInstance, mod: RequiredMod): Promise<string> {
+	const chosen = await chooseRequiredMod(instance, mod);
+	const { version } = chosen;
+	if (!version) {
+		const cleanroom = instance.modloaderVersion;
+		throw new Error(`no ${CLEANROOM_MINECRAFT} build for ${cleanroom ? `Cleanroom ${cleanroom}` : `Java ${cleanroomJavaMajor(cleanroom)}`} found`);
+	}
+	return installChosenMod(instance, { ...chosen, version });
 }
 
 export type CleanroomFixResult = {

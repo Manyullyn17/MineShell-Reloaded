@@ -14,6 +14,8 @@
 		related?: { fileName: string } | null;
 		fix?: { fileName: string; enable: boolean; label: string } | null;
 		install?: { modId: string; name: string } | null;
+		/** Fugue does not fit this Cleanroom: "Install a matching Fugue". */
+		matchFugue?: boolean;
 		/** Its "Install" was pressed and the task still runs. */
 		installing?: boolean;
 		/** Fixed since the crash (the dependency is there now): nothing to press. */
@@ -25,6 +27,7 @@
 		diagnosis,
 		fixAction = null,
 		installAction = null,
+		matchFugueAction = null,
 		tickLimitAction = null
 	}: {
 		diagnosis: Diagnosis[] | null | undefined;
@@ -32,6 +35,8 @@
 		fixAction?: string | null;
 		/** Where a missing dependency's "Install" posts (the overview's installDependency); null hides it. */
 		installAction?: string | null;
+		/** Where "Install a matching Fugue" posts (the overview's matchFugue); null hides it. */
+		matchFugueAction?: string | null;
 		/** Where the watchdog's "allow longer ticks" posts (the overview's tickLimit); null hides it. */
 		tickLimitAction?: string | null;
 	} = $props();
@@ -52,14 +57,19 @@
 			</p>
 		{/if}
 		{#if d.evidence}<p class="small muted evidence"><code>{d.evidence}</code></p>{/if}
-		{#if d.install && d.installing}
-			<p class="small">Installing {d.install.name}; follow it in Activity. Start the server once it is done.</p>
-		{:else if (d.install && installAction) || (d.fix && fixAction)}
+		{#if (d.install || d.matchFugue) && d.installing}
+			<p class="small">Installing {d.install?.name ?? 'Fugue'}; follow it in Activity. Start the server once it is done.</p>
+		{:else if (d.install && installAction) || (d.matchFugue && matchFugueAction) || (d.fix && fixAction)}
 			<div class="fixes">
 				{#if d.install && installAction}
 					<form method="POST" action={installAction} use:enhance>
 						<input type="hidden" name="modId" value={d.install.modId} />
 						<button type="submit" class="button-primary">Install {d.install.name}</button>
+					</form>
+				{/if}
+				{#if d.matchFugue && matchFugueAction}
+					<form method="POST" action={matchFugueAction} use:enhance>
+						<button type="submit" class="button-primary">Install a matching Fugue</button>
 					</form>
 				{/if}
 				{#if d.fix && fixAction}

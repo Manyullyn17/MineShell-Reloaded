@@ -9,7 +9,8 @@ const { curseforgeModProvider, listInstanceMods, modrinthProvider } = await impo
 const { db } = await import('#lib/server/db/index.js');
 const { instanceMods, mods, settings } = await import('#lib/server/db/schema.js');
 const { eq } = await import('drizzle-orm');
-const { createInstance, tree } = await import('../helpers/instances');
+const { installingDependency, installMatchingFugue } = await import('#lib/server/moddeps.js');
+const { createInstance, tree, waitForTask } = await import('../helpers/instances');
 
 const HACKERY = 'com/cleanroommc/hackery/ReflectionHackery';
 
@@ -199,5 +200,51 @@ describe('Cleanroom fixes and Fugue', () => {
 		const result = await applyCleanroomModFixes(instance);
 		expect(result.failures).toEqual([expect.stringMatching(/^Could not replace \+Fugue-0\.21\.0\.jar.*Modrinth is down/)]);
 		expect(await fs.readdir(path.join(instance.path, 'mods'))).toContain('+Fugue-0.21.0.jar');
+	});
+});
+
+describe("a crash diagnosis' Install a matching Fugue", () => {
+	/** Modrinth's Fugue builds, served by fakes; `ids` keep other tests' kept jar reads out. */
+	function fakeFugue(ids: string) {
+		globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+			const href = String(input instanceof Request ? input.url : input);
+			const release = RELEASES.find(([v]) => href === url(v));
+			if (!release) throw new Error(`unexpected fetch ${href}`);
+			return new Response(new Uint8Array(fugueJar(release[2], false)));
+		}) as typeof fetch;
+		vi.spyOn(modrinthProvider, 'getProject').mockResolvedValue({
+			source: 'modrinth', id: 'fugue', slug: 'fugue', name: 'Fugue', author: null, summary: null, iconUrl: null,
+			downloads: null, projectUrl: 'https://modrinth.com/mod/fugue', loaders: ['forge'], gameVersions: ['1.12.2']
+		});
+		vi.spyOn(modrinthProvider, 'listVersions').mockResolvedValue(versions().map((v) => ({ ...v, id: `${ids}-${v.id}` })));
+	}
+
+	const cleanroom = (mods: Record<string, Buffer>) =>
+		createInstance(
+			{ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: '0.5.17-alpha', launchArgs: '-jar cleanroom-0.5.17-alpha.jar nogui' },
+			{ 'cleanroom-0.5.17-alpha.jar': zipBuffer({ [`${HACKERY}.class`]: '\u0000setField\u0000' }), ...mods }
+		);
+
+	// The diagnosis named Fugue (0.21 on Cleanroom 0.5.17, Quantum Things crashing) and said
+	// to install another one, with nothing to press.
+	it('installs the build made for the Cleanroom, then disables the one that crashed', async () => {
+		fakeFugue('match');
+		const instance = await cleanroom({ 'mods/+Fugue-0.21.0.jar': fugueJar('[0.3.20-alpha,)', true) });
+		const id = await installMatchingFugue(instance);
+		expect(installingDependency(instance.id, 'fugue')).toBe(true);
+		expect((await waitForTask(id)).state).toBe('done');
+		expect(installingDependency(instance.id, 'fugue')).toBe(false);
+		expect(Object.keys(await tree(path.join(instance.path, 'mods'))).sort()).toEqual(['+Fugue-0.21.0.jar.disabled', '+Fugue-0.23.7.jar']);
+		expect((await listInstanceMods(instance)).find((m) => m.fileName === '+Fugue-0.23.7.jar')).toMatchObject({ version: '0.23.7', enabled: true });
+	});
+
+	it('says to change Cleanroom when the matching build is the one installed, or none fits', async () => {
+		fakeFugue('same');
+		const instance = await cleanroom({ 'mods/+Fugue-0.23.7.jar': fugueJar('[0.5.14-alpha,)', false) });
+		await expect(installMatchingFugue(instance)).rejects.toThrow(/Fugue 0\.23\.7 is installed, and it is the newest build made for Cleanroom 0\.5\.17-alpha: change Cleanroom/);
+		const old = await createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2', modloaderVersion: '0.3.0-alpha', launchArgs: '-jar cleanroom-0.3.0-alpha.jar nogui' });
+		await expect(installMatchingFugue(old)).rejects.toThrow(/No Fugue build runs on Cleanroom 0\.3\.0-alpha/);
+		const forge = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2', modloaderVersion: '14.23.5.2860' });
+		await expect(installMatchingFugue(forge)).rejects.toThrow(/only for Cleanroom/);
 	});
 });

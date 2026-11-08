@@ -458,6 +458,11 @@ export type Diagnosis = {
 	 * overview's "Install" looks it up (moddeps.ts, installDependency); this module stays offline.
 	 */
 	install?: { modId: string; name: string } | null;
+	/**
+	 * Fugue does not fit this Cleanroom (its range, its Java, a Cleanroom method its patches
+	 * call): the overview's "Install a matching Fugue" (moddeps.ts, installMatchingFugue).
+	 */
+	matchFugue?: boolean;
 	/** What stopped this run is no longer the case (a dependency installed or enabled since): no fix to offer. */
 	resolved?: boolean;
 	/** For the watchdog: the tick limit to raise `max-tick-time` to, when there is a higher step. */
@@ -581,6 +586,35 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 
 	function jarForMod(idOrName: string): ModJar | undefined {
 		return byId.get(idOrName.toLowerCase()) ?? byName.get(idOrName.toLowerCase());
+	}
+
+	// The Fugue that ran: FML names the jar it loads Fugue's coremod from. After "Install a
+	// matching Fugue" the folder holds two, the old one disabled, and either can own the id;
+	// the old one may also be gone.
+	const isFugue = (jar: ModJar | null | undefined) => !!jar && (jar.ids.includes('fugue') || /fugue/i.test(jar.fileName));
+	const enabledFugue = mods.find((j) => j.enabled && isFugue(j));
+	const ranFile = lines.map((l) => l.match(/Found FMLCorePluginContainsFMLMod marker in (\S*fugue\S*\.jar)\.\s*$/i)?.[1]).find(Boolean);
+	const ranJar = ranFile ? mods.find((j) => j.fileName.replace(/\.disabled$/i, '') === ranFile) : enabledFugue;
+	const fugueRan: ModRef | null = ref(ranJar) ?? (ranFile ? { fileName: ranFile, name: 'Fugue', enabled: false, clientOnly: false } : null);
+	// Another Fugue enabled in place of the one that ran.
+	const fugueNow = ranFile && !ranJar?.enabled ? enabledFugue : undefined;
+
+	/**
+	 * A crash caused by Fugue not fitting: blamed on the Fugue that ran, with "Install a
+	 * matching Fugue"; once another Fugue is enabled in its place, fixed since, nothing to press.
+	 */
+	function fugueCrash(d: Omit<Diagnosis, 'fatal'>): Omit<Diagnosis, 'fatal'> {
+		if (fugueRan && fugueNow) {
+			const name = `${ref(fugueNow)!.name}${fugueNow.version ? ` ${fugueNow.version}` : ''}`;
+			return {
+				...d,
+				culprit: fugueRan,
+				detail: `${name} is in the mods folder since this crash, in place of ${ranFile}. Start the server to try again.`,
+				fix: null,
+				resolved: true
+			};
+		}
+		return { ...d, culprit: fugueRan ?? d.culprit, matchFugue: true };
 	}
 
 	/**
@@ -769,18 +803,16 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 			if (loaderName) {
 				// Installed, but not in the version the mod asks for.
 				const name = ref(jar)?.name ?? who;
-				push(
-					{
-						kind: 'loader-version',
-						title: `${name} needs ${loaderName}${range ? ` ${range}` : ''}`,
-						detail: `The installed ${loaderName} does not match. Change the version in the server's Settings (General) to one in that range, or use a version of ${name} made for this setup.`,
-						culprit: ref(jar),
-						related: null,
-						evidence: line.trim(),
-						fix: null
-					},
-					`loaderdep:${who}:${needs}`
-				);
+				const found: Omit<Diagnosis, 'fatal'> = {
+					kind: 'loader-version',
+					title: `${name} needs ${loaderName}${range ? ` ${range}` : ''}`,
+					detail: `The installed ${loaderName} does not match. Change the version in the server's Settings (General) to one in that range, or use a version of ${name} made for this setup.`,
+					culprit: ref(jar),
+					related: null,
+					evidence: line.trim(),
+					fix: null
+				};
+				push(needs.toLowerCase() === 'cleanroom' && isFugue(jar) ? fugueCrash(found) : found, `loaderdep:${who}:${needs}`);
 				continue;
 			}
 			const provider = jarForMod(needs);
@@ -968,21 +1000,21 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 			const ownerJar = jarForClass(owner);
 			const jar = culpritFor(i, ownerJar);
 			if (!jar) continue;
-			const fugue = jarForMod('fugue');
-			if (/^com\.cleanroommc\.(?!fugue\.)/.test(owner) && fugue?.enabled && fugue !== jar) {
+			const fugue = fugueRan;
+			if (/^com\.cleanroommc\.(?!fugue\.)/.test(owner) && fugue && !isFugue(jar)) {
 				// Fugue rewrites other mods' calls into Cleanroom helpers while
 				// loading them, so its own classes are nowhere in the stack: Fugue
 				// 0.21 calls ReflectionHackery.getURL, which Cleanroom 0.5.3 removed.
 				push(
-					{
+					fugueCrash({
 						kind: 'loader-version',
-						title: `${ref(fugue)!.name} does not match this Cleanroom version`,
-						detail: `${ref(jar)!.name} crashed calling ${member}, which the installed Cleanroom does not have. ${ref(fugue)!.name} patches mods to call Cleanroom's helpers, so a ${ref(fugue)!.name} built for another Cleanroom version breaks them like this. Install a ${ref(fugue)!.name} version made for this Cleanroom (Fugue 0.21, for one, needs Cleanroom 0.5.2 or older), or change Cleanroom in the server's Settings.`,
-						culprit: ref(fugue),
+						title: `${fugue.name} does not match this Cleanroom version`,
+						detail: `${ref(jar)!.name} crashed calling ${member}, which the installed Cleanroom does not have. ${fugue.name} patches mods to call Cleanroom's helpers, so a ${fugue.name} built for another Cleanroom version breaks them like this. Install a ${fugue.name} version made for this Cleanroom (Fugue 0.21, for one, needs Cleanroom 0.5.2 or older), or change Cleanroom in the server's Settings.`,
+						culprit: fugue,
 						related: ref(jar),
 						evidence: line.trim(),
 						fix: null
-					},
+					}),
 					`fugue:${fugue.fileName}`
 				);
 				continue;
@@ -1038,18 +1070,18 @@ export function diagnoseLog(rawLog: string, mods: ModJar[], context: RunContext 
 			const running = Number(m[3]) - 44;
 			const jar = jarForClass(cls) ?? culpritFor(i);
 			const who = ref(jar)?.name ?? (/^(net\.minecraftforge|net\.neoforged|net\.fabricmc|org\.quiltmc|com\.cleanroommc|top\.outlands)/.test(cls) ? 'The mod loader' : 'A mod');
-			push(
-				{
-					kind: 'java-version',
-					title: `${who} needs Java ${needs}, but the server runs Java ${running}`,
-					detail: `${cls} was built for Java ${needs}. ${jar ? `Use a version of ${who} built for Java ${running}, or install` : 'Install'} Java ${needs} (for example \`sudo apt install openjdk-${needs}-jre-headless\`); MineShell picks it up after "Rescan for Java" in the server's Settings (Java & memory), or pin it there.`,
-					culprit: ref(jar),
-					related: null,
-					evidence: line.trim(),
-					fix: null
-				},
-				`java:${jar?.fileName ?? cls}`
-			);
+			// Fugue built for a newer Java than this Cleanroom runs on: an older build fits.
+			const fugueOwn = isFugue(jar) && /^com\.cleanroommc\.fugue\./.test(cls);
+			const found: Omit<Diagnosis, 'fatal'> = {
+				kind: 'java-version',
+				title: `${who} needs Java ${needs}, but the server runs Java ${running}`,
+				detail: `${cls} was built for Java ${needs}. ${jar ? `Use a version of ${who} built for Java ${running}, or install` : 'Install'} Java ${needs} (for example \`sudo apt install openjdk-${needs}-jre-headless\`); MineShell picks it up after "Rescan for Java" in the server's Settings (Java & memory), or pin it there.`,
+				culprit: ref(jar),
+				related: null,
+				evidence: line.trim(),
+				fix: null
+			};
+			push(fugueOwn ? fugueCrash(found) : found, `java:${jar?.fileName ?? cls}`);
 			continue;
 		}
 

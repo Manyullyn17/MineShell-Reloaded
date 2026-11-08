@@ -302,7 +302,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | RCON answers over 4096 characters cut off after the first packet | `rcon.test.ts` |
 | Rollback deleted originals not yet moved aside | `instances.test.ts` |
 | CurseForge install on Forge 1.12 instead of 1.12.2 | `mods/curseforge.test.ts` |
-| Fugue for Java 25 picked for a Java 21 Cleanroom | `mods/modrinth.test.ts` |
+| Fugue for Java 25 picked for a Java 21 Cleanroom; then a later Fugue for a newer Java would have been, by a hand-kept version | `cleanroom.test.ts` ("compiled for a newer Java", "Java 21 builds"), `flows/cleanroom-fugue.test.ts` ("kept before its Java") |
 | Fugue 0.24 (needs Cleanroom 0.6.10) added to 0.5.x servers; a pack's Fugue 0.21 kept on Cleanroom 0.5.17, where it crashes | `cleanroom.test.ts`, `flows/cleanroom-fugue.test.ts` |
 | Player count 0 on Minecraft 1.12 | `rcon.test.ts` |
 | Pack update kept old jars that changed under the same name | `flows/pack-change.test.ts` |
@@ -427,6 +427,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The Map tab ran BlueMap's and the map mods' pages on MineShell's own origin, where their scripts could do anything the viewer could: now sandboxed under a token path, the token following the session, the server and the account's access; the guard lets `/maps/` through without a session or the cross-site check, and nowhere else; pages get the storage shim | `server/mapframe.test.ts`, `routes/maps/[token]/view/[...path]/view.test.ts`, `routes/maps/[token]/live/[...path]/live.test.ts`, `server/guard.test.ts`, `server/access/policy.test.ts` |
 | A new plain Cleanroom server failed to install: the newest installer refuses `--installServer` and lays the server out with an @argfile | `server/installer-jar.test.ts`, `server/cleanroom.test.ts` ("libraries/") |
 | (feature) A new plain Cleanroom server gets Fugue and Scalar Legacy while it is set up, and is ready with a note when one cannot be added | `flows/cleanroom-create.test.ts` |
+| (feature) A crash blamed on Fugue offers "Install a matching Fugue", reads as fixed once another is in its place (the old one disabled or gone), refuses when nothing better fits | `crashdiag/crashdiag.test.ts` ("Fugue not fitting"), `flows/cleanroom-fugue.test.ts` ("Install a matching Fugue"), `routes/instances/[id]/overview.test.ts` |
 | `testPorts()` handed out a pair again after 25 (and from the start in an isolated file), so on CI the port overview's test met another server on its RCON port | `helpers/ports.test.ts` |
 | The Map tab installed Dynmap 3.7-beta-6 on plain Forge 1.12.2, where it stops the server at start | `flows/worldmap.test.ts` ("Forge's own 1.12.2") |
 | The BlueMap mod added to a Fabric server without a pack came without Fabric API, and the server did not start | `flows/worldmap-mod.test.ts` |

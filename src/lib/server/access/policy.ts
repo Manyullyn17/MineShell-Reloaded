@@ -155,6 +155,7 @@ export const POLICY: Record<string, PagePolicy | EndpointPolicy> = {
 			skipDatapackUpdates: on('datapacks'),
 			modFix: on('mods'),
 			installDependency: on('mods'),
+			matchFugue: on('mods'),
 			profile: on('console.command'),
 			profileStop: on('console.command'),
 			profileCancel: on('console.command'),

@@ -52,6 +52,13 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 
 ## Left for the user
 
+**1.3 beta checklist** (being collected while 1.3 is built; tried on throwaway data and by the
+user before the beta):
+1. **Install a matching Fugue** (crash diagnosis): a Cleanroom 0.5.17 server with Fugue 0.21 and
+   a mod it patches (MeatballCraft 0.18.4-hotfix6's Quantum Things crashed so): the button on the
+   overview's diagnosis, the task, the old Fugue disabled, the run then reading "in the mods folder
+   since this crash", and a clean start clearing the crash. Only tested with fakes so far.
+
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
 beta has run about three days with nothing big. Before beta.1: a quick pass on throwaway data

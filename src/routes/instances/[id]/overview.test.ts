@@ -89,6 +89,17 @@ describe("the watchdog diagnosis' button", () => {
 	});
 });
 
+describe("the Fugue diagnosis' button", () => {
+	// The install itself: tests/flows/cleanroom-fugue.test.ts.
+	it('says why it cannot, and waits for the server to stop', async () => {
+		systemdStopped();
+		const instance = await server();
+		expect(await post(actions.matchFugue, instance.id, {})).toMatchObject({ status: 400, data: { message: 'Fugue is only for Cleanroom servers.' } });
+		running();
+		expect(await post(actions.matchFugue, instance.id, {})).toMatchObject({ status: 400, data: { message: 'Stop the server first.' } });
+	});
+});
+
 describe("the overview's chart range", () => {
 	it('is one of its windows, else the last hour', async () => {
 		systemdStopped();

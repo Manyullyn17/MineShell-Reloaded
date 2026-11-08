@@ -530,7 +530,7 @@ today's peak and time online (overview), playtime and last seen (Players), start
 crashes can be cleared once a start after the newest one got to `Done (` (a time per server in
 settings, `crashes.cleared:<id>`; the runs stay, Logs lists them all), and clear on their own
 when the start after a one-click fix gets there (`crashes.fix:<id>`, set by `modFix`,
-`installDependency` and `tickLimit`). A missing dependency offers "Install <it>" beside
+`installDependency`, `matchFugue` and `tickLimit`). A missing dependency offers "Install <it>" beside
 disabling the mod that needs it: the diagnosis gives only the mod id the loader named (it stays
 offline), and `installDependency` (`moddeps.ts`) looks it up on Modrinth when pressed, through
 a short map for libraries whose project differs from their id (Fabric API's `fabric`, from
@@ -538,7 +538,13 @@ before 2021, which Chunky still declares), installs the build for the server's l
 version with what that needs, and refuses with the reason when Modrinth has none. While its
 task runs the banner says so in place of the buttons (`installingDependency`); once the
 dependency is in the mods folder (installed, or a disabled one enabled), the same run is
-diagnosed as fixed since, with nothing to press. The diagnosis is cached per run and mods
+diagnosed as fixed since, with nothing to press. A crash blamed on Fugue not fitting the
+Cleanroom (its declared range, its Java, a Cleanroom method its patches call) offers "Install a
+matching Fugue" the same way (`matchFugue` on the diagnosis, `installMatchingFugue`): the build
+`pickFugue` finds, the Fugue enabled before disabled once it is in, refused with the reason when
+none fits or the one that fits is the one installed. Which Fugue ran comes from the log (FML
+names the jar it loads Fugue's coremod from), so once another one is enabled in its place the
+run reads as fixed since. The diagnosis is cached per run and mods
 folder time (`lastcrash.ts`), so it changes when the jar lands, not when the button is pressed. Each crash's
 diagnosis is recorded with its run (`server_runs.cause`), so the list keeps the wording of the
 time.

@@ -37,7 +37,7 @@ size, not a fixed list; entries move and get added along the way):
   players, game rules, world spawn and border (the four 1.21.9 settings back in Settings),
   server.properties coverage (LZ4 chunks included), the Remote access follow-ups.
 - **1.3** (user's call, 2026-11-08; may grow, what joins is decided on the way), in this
-  order: the Fugue gaps and Java builds; formatted text (colour codes) with the server list
+  order: the Fugue gaps (built 2026-11-08) and Java builds; formatted text (colour codes) with the server list
   preview, also for item names and lore; the mod config editor (the headline); the NBT editor
   (wanted in 1.3 even if it makes the release larger); more for online players anywhere in
   between. At the end if there is room, else 1.4: maintenance mode, the server resource pack,
@@ -201,19 +201,6 @@ CurseForge-only jars"). Left:
   installs, so the update check could read it. Before offering or installing a newer one:
   boot it with Dynmap on Forge 1.12.2 (where Dynmap beta-6 itself does not load) and on
   Cleanroom, and check modded blocks are still drawn.
-
-#### Fugue on Cleanroom: what the jar range cannot say
-
-Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges the jars
-declare (loaders.md, Cleanroom). The Java a build needs is read from its jar since
-2026-11-08 (it was a constant). Left:
-- An older Fugue that breaks on a newer Cleanroom: ranges only give a minimum
-  (`cleanroom@[min,)`), so nothing marks it before a start. The one known case (Fugue <= 0.23.2
-  calling `ReflectionHackery.getURL`, removed in Cleanroom 0.5.3) is looked for in the jar by
-  name. After a start the crash diagnosis already names Fugue (since 2026-10-11: a missing
-  method or field of `com.cleanroommc` called from another mod while Fugue is enabled; found
-  2026-11-08, this entry predated knowing it), but offers no fix: it could install the Fugue
-  `pickFugue` finds for the installed Cleanroom.
 
 ### 2. Files
 

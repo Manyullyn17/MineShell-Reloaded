@@ -57,6 +57,63 @@ describe('missing libraries', () => {
 	});
 });
 
+/** A recorded case's log and mods folder, `change` applied to the folder. */
+async function recorded(name: string, change: (mods: ModJar[]) => ModJar[] = (m) => m) {
+	const log = await fs.readFile(path.join(here, 'fixtures', `${name}.log`), 'utf8');
+	const raw = JSON.parse(await fs.readFile(path.join(here, 'fixtures', `${name}.mods.json`), 'utf8'));
+	return { log, mods: change(raw.map((j: ModJar & { classes: string[] }) => ({ ...j, classes: new Set(j.classes) }))) };
+}
+
+describe('Fugue not fitting the Cleanroom', () => {
+	// Each said to install another Fugue, with nothing to press.
+	it.each([
+		['real-fugue-0.21-on-cleanroom-0.5.17', '+Fugue-0.21.0.jar'],
+		['real-fugue-on-cleanroom-0.4.3', '+Fugue-0.23.3.jar']
+	])('%s offers to install a matching Fugue', async (name, file) => {
+		const { log, mods } = await recorded(name);
+		const [top] = diagnoseLog(log, mods);
+		expect(top.matchFugue).toBe(true);
+		expect(top.culprit?.fileName).toBe(file);
+		expect(top.resolved).toBeFalsy();
+	});
+
+	it('offers it when the Fugue that ran is built for a newer Java', async () => {
+		// The log's Fugue 0.24.4 (Java 25) on Cleanroom 0.4.4; the recorded folder has 0.23.3,
+		// so put back what ran.
+		const { log, mods } = await recorded('real-fugue-0.24-on-java21', (m) =>
+			m.map((j) => (/fugue/i.test(j.fileName) ? { ...j, fileName: '+Fugue-0.24.4.jar' } : j))
+		);
+		const [top] = diagnoseLog(log, mods);
+		expect(top.kind).toBe('java-version');
+		expect(top.matchFugue).toBe(true);
+	});
+
+	// After the install the folder holds the old jar disabled and the new one: the diagnosis
+	// still offered the button, or blamed the new Fugue, whichever owned the id.
+	it('says it was replaced once another Fugue is enabled in its place, with nothing to press', async () => {
+		const replaced = (m: ModJar[]) => {
+			const old = m.find((j) => /fugue/i.test(j.fileName))!;
+			const now = { ...old, fileName: '+Fugue-0.23.7.jar', version: '0.23.7' };
+			// Both orders: the id goes to whichever jar comes last.
+			return [{ ...old, fileName: `${old.fileName}.disabled`, enabled: false }, ...m.filter((j) => j !== old), now];
+		};
+		for (const order of [(m: ModJar[]) => m, (m: ModJar[]) => [...m].reverse()]) {
+			const { log, mods } = await recorded('real-fugue-0.21-on-cleanroom-0.5.17', (m) => order(replaced(m)));
+			const [top] = diagnoseLog(log, mods);
+			expect(top.kind).toBe('loader-version');
+			expect(top.culprit?.fileName).toBe('+Fugue-0.21.0.jar.disabled');
+			expect(top.resolved).toBe(true);
+			expect(top.matchFugue).toBeUndefined();
+			expect(top.detail).toBe('Fugue 0.23.7 is in the mods folder since this crash, in place of +Fugue-0.21.0.jar. Start the server to try again.');
+		}
+		// The old jar deleted rather than disabled: the same.
+		const { log, mods } = await recorded('real-fugue-0.24-on-java21');
+		const [top] = diagnoseLog(log, mods);
+		expect(top.resolved).toBe(true);
+		expect(top.culprit?.fileName).toBe('+Fugue-0.24.4.jar');
+	});
+});
+
 describe('memory kills', () => {
 	// systemd's own lines, as journalctl -o cat prints them for a unit past MemoryMax.
 	const log = [

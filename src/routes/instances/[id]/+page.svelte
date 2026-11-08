@@ -296,6 +296,7 @@
 				diagnosis={diagnosis.value}
 				fixAction={data.running || !may('mods') ? null : '?/modFix'}
 				installAction={data.running || !may('mods') ? null : '?/installDependency'}
+				matchFugueAction={data.running || !may('mods') ? null : '?/matchFugue'}
 				tickLimitAction={data.running || !may('settings.edit') ? null : '?/tickLimit'}
 			/>
 		{/if}

@@ -1480,6 +1480,25 @@ screenshots show an invented tailnet.
 
 ---
 
+### Fugue on Cleanroom: what the jar range cannot say (1.3, 2026-11-08)
+
+Agreed 2026-10-29, after `pickFugue` moved to a binary search over the ranges the jars declare
+(loaders.md, Cleanroom). Two gaps, both closed:
+- **The Java a build needs** was a constant (0.23.4 on needs Java 25), measured by hand. Read
+  from the jar now: `inspectFugueJar` takes the highest class-file version (outside a
+  multi-release jar's `versions/`), and a build needing a newer Java than the Cleanroom runs on
+  is a mismatch, for `pickFugue` and the Cleanroom report alike. The release jars agree with the
+  old constant (65 in every class up to 0.23.3, 69 from 0.23.4). Build info kept by 1.2 lacks the
+  Java and is read once more.
+- **An older Fugue breaking on a newer Cleanroom**: the crash diagnosis already named Fugue for
+  it (since 2026-10-11; the roadmap entry predated knowing it), with nothing to press. Now its
+  three Fugue diagnoses (the declared range, the Java, a Cleanroom method its patches call) offer
+  "Install a matching Fugue": the build `pickFugue` finds, the old one disabled once it is in,
+  refused with the reason when none fits or the one that fits is installed (then Cleanroom's
+  version is what to change). Which Fugue ran comes from the log, so the run reads as fixed once
+  another is in its place. Before a start, only the one known case (`getURL`) is caught by name:
+  a general check would need every Cleanroom method a Fugue calls, left as it is.
+
 ## Near term
 
 Agreed order: the rest of this list roughly as written. (World snapshots, world tools,

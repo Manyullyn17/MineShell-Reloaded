@@ -1,6 +1,7 @@
+import { chooseFugue, installChosenMod, isFugueJar, scanModJars } from './cleanroom';
 import type { ServerInstance } from './db/schema';
 import { InstanceError } from './instances';
-import { bestVersion, getModProvider, hasEnabledMod, installModVersion, syncMods } from './mods';
+import { bestVersion, getModProvider, hasEnabledMod, installModVersion, setModEnabled, syncMods } from './mods';
 import type { ProjectVersion } from './mods/types';
 import { compatibleVersions, filterFor } from './modupdates';
 import { startTask, type TaskHandle } from './tasks';
@@ -72,7 +73,46 @@ export async function installDependency(instance: ServerInstance, modId: string)
 	});
 }
 
-/** `<instance id>:<mod id>` of the dependency installs whose task is still running. */
+/**
+ * A crash diagnosis' "Install a matching Fugue", for a crash it blames on Fugue not fitting
+ * the Cleanroom: the build pickFugue finds for the server's Cleanroom, and the Fugue jars
+ * enabled before disabled once it is in. Refused before the task when no build fits, or the
+ * one that fits is already the one enabled: then another Fugue cannot help, Cleanroom's
+ * version is what to change.
+ */
+export async function installMatchingFugue(instance: ServerInstance): Promise<string> {
+	const cleanroom = instance.modloader === 'cleanroom' ? instance.modloaderVersion : null;
+	if (!cleanroom) throw new InstanceError('Fugue is only for Cleanroom servers.');
+	const chosen = await chooseFugue(instance);
+	const { version } = chosen;
+	if (!version) throw new InstanceError(`No Fugue build runs on Cleanroom ${cleanroom}: change Cleanroom's version in the server's Settings.`);
+	const file = version.files.find((f) => f.primary) ?? version.files[0];
+	const enabled = (await scanModJars(instance.path)).filter((j) => j.enabled && (j.modids.includes('fugue') || isFugueJar(j.fileName)));
+	if (enabled.some((j) => j.fileName === file?.filename)) {
+		throw new InstanceError(
+			`Fugue ${version.versionNumber} is installed, and it is the newest build made for Cleanroom ${cleanroom}: change Cleanroom's version in the server's Settings, or disable the mod that crashed.`
+		);
+	}
+	const key = `${instance.id}:fugue`;
+	installing.add(key);
+	return startTask({ label: `Install Fugue ${version.versionNumber} on ${instance.name}`, instanceId: instance.id }, async (task) => {
+		try {
+			task.setProgress(null, `Installing Fugue ${version.versionNumber}`);
+			const added = await installChosenMod(instance, { ...chosen, version });
+			task.log(`Installed Fugue ${version.versionNumber}, made for Cleanroom ${cleanroom}.`);
+			// Only once the new one is in: a failed download keeps the old one.
+			for (const jar of enabled.filter((j) => j.fileName !== added)) {
+				await setModEnabled(instance, jar.fileName, false);
+				task.log(`Disabled ${jar.fileName}.`);
+			}
+			task.setProgress(100, `Installed; Fugue ${version.versionNumber} loads the next time the server starts`);
+		} finally {
+			installing.delete(key);
+		}
+	});
+}
+
+/** `<instance id>:<mod id>` of the dependency installs whose task is still running; `fugue` also for installMatchingFugue. */
 const installing = new Set<string>();
 
 /** The diagnosis' "Install" for this mod was pressed and its task has not ended: the banner says so instead. */

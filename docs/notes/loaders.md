@@ -84,6 +84,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   client-only, which AvaritiaItem calls while loading. So MeatballCraft 0.18.4-hotfix6 (ships
   Fugue 0.21) runs on no Cleanroom as shipped; 0.5.17 + Fugue 0.23.4 works (production, 2026-10-11).
   Checked on the release jars (binpatches applied to the vanilla server jar).
+- Which Fugue ran is in the log: `Found FMLCorePluginContainsFMLMod marker in +Fugue-0.21.0.jar.`
+  (in all three recorded Fugue crashes). The crash diagnosis goes by it, not by the mods folder,
+  which after "Install a matching Fugue" holds the old jar disabled beside the new one (either
+  can own the id).
 
 ## Forge's startup questions
 - `forgequery.ts`: Forge < 1.13 and Cleanroom ask on the console (missing registry entries,
