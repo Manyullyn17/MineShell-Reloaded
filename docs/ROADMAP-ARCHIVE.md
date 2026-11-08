@@ -1656,6 +1656,31 @@ Not covered by the install form's mod list: uploaded packs (installed straight f
 upload; the client-only check still runs afterwards), and client-only mods only the jar
 declares (known once downloaded; the same check catches them).
 
+### Scheduled CI (2026-11-08)
+
+Agreed 2026-11-06, after 1.2; not user facing, so in no release. The tests take seconds and run
+offline, so the schedule is for what breaks without a commit (tests/README.md, "Scheduled CI"):
+- **Real APIs**, nightly (`nightly.yml`): `check-apis.sh`, every recorded-API test file
+  against the live APIs. CurseForge's official API needs the repository secret
+  `CURSEFORGE_API_KEY`.
+- **A real server on real systemd**, weekly (`weekly.yml`), merged with **Ubuntu versions**:
+  on 22.04 and 24.04 the release archive goes through `install.sh`, then `real-server.sh`
+  (vanilla with Java downloaded, the console, Stop, Force stop, Java killed from outside and
+  restarted by systemd, the recorded runs checked), then `doctor`, which must find the sandbox
+  working. 24.04 gets DEPLOYMENT's AppArmor fix cut out of the doc, so the recipe users copy is
+  the one tested. GitHub's runners give the account a user manager once lingering is on.
+  Tried on the throwaway dev server: about 90 s. A plain Stop goes over RCON, so systemd logs
+  no "Stopping" and `stop_asked_at` stays empty for it; only a Force stop sets it.
+- **Repeated tests**, weekly: `repeat-tests.sh 20`, the files shuffled with a seed each run,
+  every fifth on one worker. Tests inside a file keep their order: flow tests build on the
+  test before, and shuffling those failed `playit.test.ts` (link, then use) at once. Six
+  shuffled runs and a one-worker run passed locally.
+- `scripts/release.sh` refuses while the last run of either workflow failed (`--ignore-ci`
+  overrides) and warns when the last is old, as a paused schedule (60 days without activity)
+  shows; `release-check.sh` covers both with a stand-in `gh`.
+
+Not built: see ROADMAP, "Leftovers of built features" (Scheduled CI).
+
 
 ---
 

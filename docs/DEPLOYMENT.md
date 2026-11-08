@@ -69,6 +69,7 @@ accounts. Ubuntu's restriction stays for every other program, and the servers th
 still make no namespaces (`RestrictNamespaces=yes` in the template). Run it as the account
 MineShell runs as (for a dedicated account, put its uid in place of `$(id -u)`):
 
+<!-- The Weekly workflow runs this block as written: keep it one sh block naming systemd-userns. -->
 ```sh
 sudo tee /etc/apparmor.d/systemd-userns >/dev/null <<'END'
 # Lets systemd's user manager make the user namespaces its units' sandboxing
@@ -329,7 +330,9 @@ all servers set, also `app-mineshell.slice` there).
 
 ### Publishing a release
 
-On `main`, with everything committed and CI green:
+On `main`, with everything committed and CI green, the scheduled checks too (`release.sh`
+reads their last runs with `gh` and refuses while one failed: look at it, or pass
+`--ignore-ci`; tests/README.md, "Scheduled CI"):
 
 ```sh
 npm run release -- beta                  # a beta of the next version: 1.1.0-beta.1, then -beta.2, ...

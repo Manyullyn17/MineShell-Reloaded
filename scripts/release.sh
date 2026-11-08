@@ -10,6 +10,7 @@
 #                                        # start from `scripts/release-notes.sh --draft > notes.md`
 #   npm run release -- patch|minor|major|1.2.3
 #   npm run release -- beta              # the next version's next beta: 1.1.0-beta.1, -beta.2, ...
+#   npm run release -- --ignore-ci       # even though the last scheduled check failed (below)
 #
 # The rules (DEPLOYMENT.md, "Publishing a release"), counted from the last release (not beta):
 #   fix: only                    -> patch
@@ -17,6 +18,8 @@
 #   feat!: / fix!: (breaking)    -> minor before 1.0, major from 1.0 on
 #   nothing but docs/test/ci/... -> no release (name a bump to release anyway)
 # After betas, `npm run release` without a bump releases the version they were betas of.
+# It refuses while the last run of a scheduled check (nightly.yml, weekly.yml: what breaks
+# without a commit) failed, read with gh, so a red result cannot go unnoticed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -24,18 +27,44 @@ fail() { printf 'release: %s\n' "$*" >&2; exit 1; }
 
 bump=""
 intro=""
+ignore_ci=no
 while [ $# -gt 0 ]; do
 	case "$1" in
 		-m) intro="${2:-}"; shift 2 ;;
 		-F) [ -f "${2:-}" ] || fail "no file ${2:-} for -F."; intro=$(cat "$2"); shift 2 ;;
 		# Marked so release-notes.sh prints them as written (its NOTES_MARK).
 		-N) [ -f "${2:-}" ] || fail "no file ${2:-} for -N."; intro="$(cat "$2")"$'\n\n<!-- release notes: as written -->'; shift 2 ;;
+		--ignore-ci) ignore_ci=yes; shift ;;
 		*) bump="$1"; shift ;;
 	esac
 done
 
 [ "$(git branch --show-current)" = main ] || fail "release from main."
 [ -z "$(git status --porcelain)" ] || fail "commit or stash your changes first."
+
+# A run older than this many days: the schedule may be paused (60 days without activity).
+scheduled_check() { # workflow, days
+	local line conclusion created url
+	line=$(gh run list --workflow "$1" --branch main --status completed --limit 1 \
+		--json conclusion,createdAt,url --jq '.[0] | "\(.conclusion) \(.createdAt) \(.url)"' 2>/dev/null) ||
+		{ printf 'release: could not read the runs of %s, so it was not looked at.\n' "$1" >&2; return 0; }
+	[ -n "$line" ] || { printf 'release: %s has not run yet.\n' "$1" >&2; return 0; }
+	read -r conclusion created url <<<"$line"
+	[ "$conclusion" = success ] ||
+		fail "the last $1 run ended $conclusion ($url). Look at it first, or release anyway with --ignore-ci."
+	if [ $(( ($(date +%s) - $(date -d "$created" +%s)) / 86400 )) -gt "$2" ]; then
+		printf 'release: the last %s run is from %s: is its schedule paused (Actions tab)?\n' "$1" "${created%T*}" >&2
+	fi
+	return 0
+}
+if [ "$ignore_ci" = no ]; then
+	if command -v gh >/dev/null; then
+		scheduled_check nightly.yml 3
+		scheduled_check weekly.yml 10
+	else
+		printf 'release: gh is not installed, so the scheduled checks were not looked at.\n' >&2
+	fi
+fi
 
 current=$(node -p "require('./package.json').version")
 last=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)

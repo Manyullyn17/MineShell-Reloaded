@@ -1,0 +1,36 @@
+# What can break without a commit, part one: the APIs MineShell calls. The tests replay
+# recorded responses (tests/README.md, "No network"), so Modrinth, CurseForge, the
+# modpacks.ch mirror or a loader's metadata changing shape leaves CI green; this runs every
+# recorded-API test file against the live APIs instead. A failure is an API that changed
+# (fix the code, re-record) or a test pinning data that moved on (re-record, adjust).
+# scripts/release.sh refuses to release while the last run failed. The weekly checks are in
+# weekly.yml. GitHub pauses schedules after 60 days without activity in the repository.
+name: Nightly
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  apis:
+    name: Real APIs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # CurseForge's official API needs a key (repository secret CURSEFORGE_API_KEY);
+      # without one its test file is skipped.
+      - name: Recorded-API tests against the live APIs
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: tests/tools/check-apis.sh

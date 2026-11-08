@@ -16,6 +16,8 @@ npm run dev          # uses .env: ~/mineshell-data, dev copies of the user's ser
 # anything only newer Node has.
 npm run check        # svelte-check, must stay at 0 errors / 0 warnings
 npm test             # Vitest, ~7s (parallel workers, a database each), fully offline; CI (GitHub Actions) runs check + test + build on Node 22 and 24
+                     # nightly.yml (live APIs) and weekly.yml (install + real server on Ubuntu 22.04/24.04,
+                     # shuffled repeats) catch what breaks without a commit; release.sh refuses while one is red
 git config core.hooksPath .githooks   # once per clone: pre-push runs check + the whole test suite
 ```
 

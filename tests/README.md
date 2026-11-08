@@ -121,8 +121,8 @@ flow tests rely on a request nothing stands in for failing (a download that cann
 and four of them failed when those went live.
 
 `tests/tools/check-apis.sh` runs every such file against the live APIs, recording into a
-temporary folder (`RECORD_HTTP_DIR`), so the fixtures stay as they are: run it before a release
-or when a provider seems to have changed. A failure is an API that changed shape, or a test
+temporary folder (`RECORD_HTTP_DIR`), so the fixtures stay as they are: the Nightly workflow runs
+it (see "Scheduled CI"), and by hand when a provider seems to have changed. A failure is an API that changed shape, or a test
 pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `updatedAt`, a JEI
 file past the mirror's newest 50; both tests since made to hold) - re-record that file with
 `RECORD_HTTP=1` and adjust (2026-11-01: NeoForge 26.3's first release and a Quilt beta; the
@@ -132,6 +132,20 @@ CurseForge's official API (`curseforge-official-api.test.ts`) needs a key to rec
 is saved in Settings of the dev MineShell (and the installed one), encrypted, not in `.env`;
 `tests/tools/curseforge-key.mjs <data dir>` prints it for the recording command, and
 `check-apis.sh` fetches it by itself. The fixtures hold URLs and bodies, never the key.
+
+## Scheduled CI
+
+The suite runs offline in seconds, so the scheduled workflows are not for what is too slow for
+a push but for what breaks without a commit. `.github/workflows/nightly.yml`: `check-apis.sh`
+(the CurseForge key from the repository secret `CURSEFORGE_API_KEY`; skipped without it).
+`weekly.yml`, Mondays: on Ubuntu 22.04 and 24.04 (`ubuntu-latest` moves) the release archive
+installed with `install.sh` (24.04 first gets DEPLOYMENT's AppArmor fix, cut out of the doc
+itself), `/setup` answering, `real-server.sh` on the installed MineShell with sign-in turned
+off, then `doctor`, which must find the sandbox working; and `repeat-tests.sh 20`. A runner's
+account has a user manager only after `loginctl enable-linger`. Both can be started from the
+Actions tab (workflow_dispatch). `scripts/release.sh` refuses while the last run of either
+failed (`--ignore-ci` overrides) and warns when the last is older than a few days: GitHub
+pauses schedules after 60 days without activity in the repository.
 
 Code with side effects beyond that is tested through its pure parts (planning, parsing,
 matching), which is why some modules export small helpers such as `targetModNames` in
@@ -178,18 +192,20 @@ value), reach its view: `document.querySelector('.cm-content').cmTile.view.dispa
 | `nbt-sweep.ts [--roundtrip] <server folders...>` | Every `.dat`, `.nbt`, schematic and litematic under them, read-only: gzipped, zlib or plain NBT, bytes after the root, or not NBT and why; `--roundtrip` writes each back in memory and compares. For the NBT editor's "is it NBT?" check (docs/notes/player-data.md) |
 | `configform-sweep.ts <server folder>...` (`npx tsx`) | Every TOML, Forge `.cfg` and JSON config of those servers (config/, defaultconfigs/, serverconfig/) through the mod config form, reading only: how many it shows, the kinds of settings, the files it refuses and why, and for each file a few settings changed and read back (only that setting may differ). On the user's four dev servers: 9,073 of 9,276 files, 234,818 settings, 30 s |
 | `analyse-bench.mjs <folder holding region/> [runs]` (`npx tsx`) | Times a prune analysis of one dimension (read only), and the longest the event loop was held meanwhile: what other requests wait. Point it at a copy of a real world; MeatballCraft's overworld (499 regions) took 10.8 s warm |
-| `check-apis.sh [file filter...] [--vitest-option...]` | Every recorded-API test file (or those whose path contains a filter) against the live APIs, recorded into a temporary folder (see "No network") |
+| `check-apis.sh [file filter...] [--vitest-option...]` | Every recorded-API test file (or those whose path contains a filter) against the live APIs, recorded into a temporary folder (see "No network"); the Nightly workflow runs it |
 | `curseforge-key.mjs <data dir>` | The CurseForge key saved in that MineShell's Settings, for recording the official API (see "No network") |
 | `jar-metadata-survey.mjs <data dir> [--list]` | What every jar of that MineShell's servers declares, the name and version `mainDeclaredMod` picks, and its catalog name beside it; read only (packs-and-mods.md) |
 | `gamerules-dump.mjs <world folder>` | Where a world keeps its game rules, spawn and border, and their values (with `mc-probe.mjs --keep`; worlds.md) |
 | `wait-start.sh <unit> [seconds]` | Waits until a server's run reaches "Done (" or stops, with its last lines on failure |
+| `real-server.sh` (env `U`, `PREFIX`, `DATA`, `APP`) | A real vanilla 1.21.1 server through a running MineShell (MINESHELL_AUTH=off; the throwaway dev server by default): created with Java downloaded, booted, `list` on the console, Stop, Force stop, Java killed from outside and restarted by systemd, then the runs MineShell recorded (crashed, exit status, reached Done). About 90 s; the Weekly workflow runs it on an installed MineShell on each Ubuntu |
+| `repeat-tests.sh [runs, default 20]` | The whole suite that many times with the test files shuffled (`--sequence.shuffle.files`, its own seed each run; every fifth on one worker), then the seeds that failed with the command repeating each: order bugs between files sharing a worker. Tests inside a file keep their order (flow tests build on the one before; shuffling those too fails `playit.test.ts` at once). The Weekly workflow runs it |
 | `rcon.mjs <server folder> <command...>` (or `--port N --password P`) | One RCON command to a running server, its answer printed |
 | `mc-client.sh start <player> <loader> <version> [--mods dir] [--server host:port] [--heap 4G] [--build n]`, `cmd <player> <command...>`, `stop <player>`, `clean` | A real client without a screen (HeadlessMC, offline account) for what needs a player online: join a test server, run `metrics ... --json` to read what the client itself sees, see whether a modded client is let in. Under `~/.cache/mineshell-mc-client`, never the real `~/.minecraft` |
 | `mem-guard.sh <min available MiB> <log file> <unit or path>...` | For a test big enough to matter (a whole pack with a client): logs memory, puts the test's Java first in line for the OOM killer and stops it under the minimum, so real servers are never what goes |
 | `snapshot-check.mjs <server folder>` | A server's snapshots checked on disk, reading only: each file its `hashes.json` records there with that size and SHA-256, the live world sharing no file with a snapshot, linked files per snapshot and the space all take (each file once). Safe on a real install (about 8 s for three snapshots of a 6 GB world); for checking shared snapshot files after one is deleted |
 | `sandbox-check.sh <unit> [path]...` | What a running server's sandbox lets it see, read from outside through `/proc`: its `sandbox.conf`, a mount namespace of its own, its AppArmor label (`systemd-userns` alone, not stacked with `unprivileged_userns`), its seccomp mode, and a listing of `$HOME`, its own folder and the data directory's `units/` as it sees them (or the paths given). Reading only, safe on a real install |
 | `caddy-check.sh` | `scripts/caddy.sh` against stand-ins for sudo, caddy, systemctl, getent and curl, with a throwaway Caddyfile and settings file: the package's Caddyfile replaced and kept, a rerun replacing only its own, someone else's Caddyfile left alone until it has the site, sign-in off and an unresolved name refused, `--remove` putting both back. Changes nothing on the machine; run it after changing the script (tests cannot start processes) |
-| `release-check.sh` | `scripts/release.sh` and `release-notes.sh` in a throwaway git repository: 1.0.0, a `feat:` then `beta` (1.1.0-beta.1), a `fix:` then `beta` (-beta.2, not 1.1.1), a plain release (1.1.0, notes since 1.0.0 with the betas' changes and the intro's headings), a fix after it (1.1.1), a breaking change's beta (2.0.0-beta.1), a named version. Pushes nothing; run it after changing either script |
+| `release-check.sh` | `scripts/release.sh` and `release-notes.sh` in a throwaway git repository: 1.0.0, a `feat:` then `beta` (1.1.0-beta.1), a `fix:` then `beta` (-beta.2, not 1.1.1), a plain release (1.1.0, notes since 1.0.0 with the betas' changes and the intro's headings), a fix after it (1.1.1), a breaking change's beta (2.0.0-beta.1), a named version, then the scheduled checks through a stand-in `gh` (a failed run refuses, `--ignore-ci` releases, an old run warns). Pushes nothing; run it after changing either script |
 | `scenarios.sh [forge-question\|watchdog\|missing-dep]...` | Real servers on the throwaway dev server left ready to try by hand, built through MineShell's own actions: Forge 1.12.2 that booted with Biomes O' Plenty, then had it removed (the next start asks Forge's missing-entries question), vanilla with `max-tick-time=1` (a watchdog crash after `Done (`), Fabric with Chunky but no Fabric API (the loader refuses). About 5 minutes; start each from the page |
 | `clean-install.sh run\|shell\|rm <debian12\|ubuntu2404\|fedora\|arch> [archive]` | A fresh distribution in a Docker container with systemd (privileged, its own cgroup namespace): DEPLOYMENT's dedicated account, lingering and `machinectl shell`, then the installer refusing the distribution's Node, installing with a current one, setup, sign-in, a vanilla server with Java downloaded, a container restart bringing both back, and doctor. Without an archive it installs GitHub's latest release |
 | `real-loader-checklist.md` | Not a script: the manual pass over every loader on real downloads (install, loader update, Minecraft move, export, import), with the commands to paste and the date of the last pass |

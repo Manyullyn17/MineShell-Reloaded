@@ -7,7 +7,8 @@
 #
 # The path: 1.0.0, a feat: -> beta gives 1.1.0-beta.1, a fix: -> beta gives -beta.2, then a
 # plain release gives 1.1.0 (notes: everything since 1.0.0, no betas' notes), a fix: then
-# 1.1.1, and a breaking change's beta 2.0.0-beta.1.
+# 1.1.1, and a breaking change's beta 2.0.0-beta.1. Then the scheduled checks (gh stood in for):
+# a failed run refuses, --ignore-ci overrides, an old run warns.
 set -uo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 work=$(mktemp -d)
@@ -68,5 +69,19 @@ check 'nothing since the beta: refused' 'grep -q "nothing since" "$work/out" && 
 commit 'fix: before 2.0'
 release 2.0.0
 check 'a named version wins' '[ "$(version)" = 2.0.0 ]'
+
+# The scheduled checks, read through a stand-in gh: its answer for every workflow is in $work/gh.
+mkdir "$work/bin"
+printf '#!/bin/sh\ncat "%s/gh"\n' "$work" > "$work/bin/gh" && chmod +x "$work/bin/gh"
+commit 'fix: after 2.0'
+echo "failure $(date -u +%FT%TZ) https://example.invalid/run/1" > "$work/gh"
+PATH="$work/bin:$PATH" release
+check 'a failed scheduled run: refused, with its address' 'grep -q "ended failure (https://example.invalid/run/1)" "$work/out" && [ "$(version)" = 2.0.0 ]'
+PATH="$work/bin:$PATH" release --ignore-ci
+check '--ignore-ci: released anyway' '[ "$(version)" = 2.0.1 ]'
+commit 'fix: one more after 2.0'
+echo "success 2026-01-01T03:23:00Z https://example.invalid/run/2" > "$work/gh"
+PATH="$work/bin:$PATH" release
+check 'passed long ago: released, asking whether the schedule is paused' '[ "$(version)" = 2.0.2 ] && grep -q "is its schedule paused" "$work/out"'
 
 [ "$failures" -eq 0 ] && echo "all passed" || { echo "$failures failed; the last output:"; cat "$work/out"; exit 1; }
