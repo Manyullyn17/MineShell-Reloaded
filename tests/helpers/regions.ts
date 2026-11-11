@@ -91,9 +91,16 @@ export async function writeRegion(dir: string, rx: number, rz: number, chunks: C
 	const header = Buffer.alloc(2 * SECTOR);
 	const bodies: Buffer[] = [];
 	let next = 2;
+	// A chunk's bytes do not depend on its index: a full region of alike chunks is encoded once.
+	const made = new Map<string, Buffer>();
 	for (const spec of chunks) {
 		const compression = spec.compression ?? 2;
-		const data = spec.damaged ? Buffer.from('not a chunk') : compress(compression, chunkNbt(spec));
+		const key = spec.root ? null : JSON.stringify({ ...spec, index: 0 });
+		let data = key === null ? undefined : made.get(key);
+		if (!data) {
+			data = spec.damaged ? Buffer.from('not a chunk') : compress(compression, chunkNbt(spec));
+			if (key !== null) made.set(key, data);
+		}
 		let payload: Buffer;
 		if (spec.external) {
 			await fs.writeFile(path.join(dir, `c.${rx * 32 + (spec.index % 32)}.${rz * 32 + Math.floor(spec.index / 32)}.mcc`), data);

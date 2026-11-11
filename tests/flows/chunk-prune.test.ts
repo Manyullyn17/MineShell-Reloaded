@@ -108,7 +108,9 @@ describe('chunk pruning', () => {
 	it('lets other requests in while it reads a region', async () => {
 		const root = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 		const base = path.join(root.path, 'world');
-		await writeRegion(path.join(base, 'region'), 0, 0, Array.from({ length: 300 }, (_, index) => ({ index, busy: 2000 })));
+		// A full region: the longer the read, the less one pause outside it (a garbage collection, a
+		// busy CI machine) weighs against it. With 300 chunks one 14 ms pause failed a 35 ms read.
+		await writeRegion(path.join(base, 'region'), 0, 0, Array.from({ length: 1024 }, (_, index) => ({ index, busy: 2000 })));
 		// Reading a region awaited only microtasks: nothing else ran until the next file, and the
 		// page waited seconds to learn an analysis had started. The longest wait is now a chunk's.
 		let longest = 0;
