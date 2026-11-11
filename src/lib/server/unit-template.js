@@ -59,7 +59,8 @@ SuccessExitStatus=143
 Restart=\${MS_RESTART_POLICY}
 RestartSec=15
 
-CPUAccounting=yes
+# CPU accounting is on without asking: the default since systemd 243 on cgroup v2, and from
+# 258 the option is gone (systemd 259 logged it as unknown on every load, Ubuntu 26.04).
 MemoryAccounting=yes
 # Every server shares this slice; a cap on all of them together is set on it.
 Slice=${serverSliceName(prefix)}

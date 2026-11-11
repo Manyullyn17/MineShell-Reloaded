@@ -86,6 +86,11 @@ describe('unit files', () => {
 		]);
 	});
 
+	it('names no option a current systemd has removed', () => {
+		// systemd 258 dropped CPUAccounting=; 259 (Ubuntu 26.04) warned about it on every load.
+		expect(renderTemplateUnit()).not.toMatch(/^CPUAccounting=/m);
+	});
+
 	it('writes nothing into the systemd folder while the template unit is not installed', async () => {
 		fakeProcesses(() => ({}));
 		// The unit folder is shared by the whole run; another test may have installed it.
