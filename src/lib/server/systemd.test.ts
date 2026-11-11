@@ -7,6 +7,7 @@ import {
 	javaHomeOf,
 	refreshTemplateUnit,
 	renderSandboxDropIn,
+	unitPath,
 	renderTemplateUnit,
 	startUnit,
 	unitState,
@@ -288,6 +289,26 @@ describe('a server’s sandbox drop-in', () => {
 		expect(outside).toContain('BindPaths=/srv/ms/instances/a\n');
 		expect(outside).toContain('BindPaths=-/srv/ms/units/once/a\n');
 		expect(renderSandboxDropIn({ ...paths, dataDir: '/home/u/.local/share/mineshell' })).not.toContain('TemporaryFileSystem');
+	});
+
+	// These lines are lists split at spaces: a data folder on "/media/u/My Disk" bound
+	// "/media/u/My" and ignored the rest, and no server there started.
+	it('quotes a path holding a space, a % or a colon, and leaves plain ones as they were written', () => {
+		const spaced = renderSandboxDropIn({
+			instanceDir: '/media/u/My Disk/ms/instances/a',
+			onceDir: '/media/u/My Disk/ms/units/once/a',
+			javaHome: '/opt/java 100%/jdk:21',
+			dataDir: '/media/u/My Disk/ms'
+		});
+		expect(spaced).toContain('TemporaryFileSystem="/media/u/My Disk/ms:ro"\n');
+		expect(spaced).toContain('BindPaths="/media/u/My Disk/ms/instances/a"\n');
+		expect(spaced).toContain('BindPaths="-/media/u/My Disk/ms/units/once/a"\n');
+		expect(spaced).toContain('BindReadOnlyPaths="-/opt/java 100%%/jdk\\:21"\n');
+		expect(unitPath('/a/say "hi"\\x')).toBe('"/a/say \\"hi\\"\\\\x"');
+		// Unchanged for what every install has had: a new sandbox.conf would tell every running server to restart.
+		expect(renderSandboxDropIn({ ...paths, dataDir: '/home/u/.local/share/mineshell' })).toContain(
+			'BindPaths=/srv/ms/instances/a\nBindPaths=-/srv/ms/units/once/a\nBindReadOnlyPaths=-/usr/lib/jvm/java-21\n'
+		);
 	});
 
 	it('warns about a link out of the server folder, which leads nowhere inside', async () => {

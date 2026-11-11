@@ -308,6 +308,22 @@ export function forgetSandboxProbe(): void {
  * ProtectHome=, and ProtectSystem=strict only makes it read-only: the database and secret.key
  * stay readable, so it is emptied the same way, the server's own parts put back over it.
  */
+/**
+ * A path as systemd reads one in BindPaths= and its like: those lines are lists split at
+ * spaces, a `%` starts a specifier and a `:` ends the path. Written as it was, a data folder
+ * on `/media/u/My Disk` bound `/media/u/My` (or failed the start, 226/NAMESPACE) and ignored
+ * the rest, so no server there started. Quoted then, `-` (skip when missing) inside the quotes,
+ * where systemd looks for it. A path of plain characters stays as it was: sandbox.conf changing
+ * tells every running server to restart (startSettingsChangedAt). Tried on systemd 255 and 249;
+ * a `"` in a path is beyond 255, whose executor fails on it whatever the quoting.
+ */
+export function unitPath(file: string, options: { optional?: boolean; suffix?: string } = {}): string {
+	const value = `${options.optional ? '-' : ''}${file}${options.suffix ?? ''}`;
+	if (/^[A-Za-z0-9/_.,+@=-]+$/.test(file)) return value;
+	const escaped = file.replace(/[\\"]/g, '\\$&').replace(/%/g, '%%').replace(/:/g, '\\:');
+	return `"${options.optional ? '-' : ''}${escaped}${options.suffix ?? ''}"`;
+}
+
 export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: string; javaHome: string | null; dataDir?: string }): string {
 	const dataDir = paths.dataDir ?? DATA_DIR;
 	const hidden = ['/home', '/root', '/run/user'].some((root) => dataDir === root || dataDir.startsWith(root + '/'));
@@ -321,11 +337,11 @@ export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: strin
 		'PrivateUsers=yes',
 		'ProtectSystem=strict',
 		'ProtectHome=tmpfs',
-		...(hidden ? [] : [`TemporaryFileSystem=${dataDir}:ro`]),
-		`BindPaths=${paths.instanceDir}`,
+		...(hidden ? [] : [`TemporaryFileSystem=${unitPath(dataDir, { suffix: ':ro' })}`]),
+		`BindPaths=${unitPath(paths.instanceDir)}`,
 		// "-": a path missing is skipped rather than failing the start.
-		`BindPaths=-${paths.onceDir}`,
-		...(paths.javaHome ? [`BindReadOnlyPaths=-${paths.javaHome}`] : []),
+		`BindPaths=${unitPath(paths.onceDir, { optional: true })}`,
+		...(paths.javaHome ? [`BindReadOnlyPaths=${unitPath(paths.javaHome, { optional: true })}`] : []),
 		'ProtectKernelTunables=yes',
 		'ProtectKernelModules=yes',
 		'ProtectKernelLogs=yes',
