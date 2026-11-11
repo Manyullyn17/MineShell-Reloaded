@@ -129,9 +129,20 @@ function storedEnergy(tag: Tag | undefined, depth = 0): number | null {
 
 // ------------------------------------------------------------------- text ---
 
+/**
+ * From 1.21.5 a list may mix types, and the game writes one that does as a list of compounds,
+ * every other element inside one under an empty name: a lore of a plain and a coloured line is
+ * `[{"": "plain"}, {text: "red", color: "red"}]` in the file (so are a name's `extra` parts).
+ * The element such a compound stands for; any other tag as it is.
+ */
+function unwrapped(tag: Tag): Tag {
+	return tag.type === 'compound' && tag.value.length === 1 && tag.value[0][0] === '' ? tag.value[0][1] : tag;
+}
+
 /** Plain text of a text component: JSON (1.13+), NBT (1.21.5+) or plain (1.12). */
 export function textOf(tag: Tag | undefined): string | null {
 	if (!tag) return null;
+	tag = unwrapped(tag);
 	if (tag.type === 'compound') {
 		const extra = child(tag, 'extra');
 		return (str(child(tag, 'text')) ?? '') + (extra?.type === 'list' ? extra.value.map((e) => textOf(e) ?? '').join('') : '');
@@ -186,6 +197,7 @@ function codesOf(tag: Tag, style: Style): string | null {
 
 /** NBT text as the JSON shape fromJson reads (bytes stay numbers; it takes 1 as true). */
 function nbtToPlain(tag: Tag): unknown {
+	tag = unwrapped(tag);
 	if (tag.type === 'compound') return Object.fromEntries(tag.value.map(([k, v]) => [k, nbtToPlain(v)]));
 	if (tag.type === 'list') return tag.value.map(nbtToPlain);
 	if (tag.type === 'long') return Number(tag.value);

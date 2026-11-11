@@ -38,8 +38,13 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   their text says otherwise (`italic: false`); 1.12 makes them italic whatever they say. So JSON
   and NBT text without `italic` reads as `§o`, and MineShell writes inside a non-italic root: an
   anvil name edited keeps looking italic, typed text is not. A 1.21.5+ name written as a plain
-  string tag (what MineShell wrote before 1.3) shows italic. NBT lists hold one type: lore with
-  mixed strings and compounds cannot exist, the converter writes compounds throughout.
+  string tag (what MineShell wrote before 1.3) shows italic. MineShell writes compounds
+  throughout. The game does not: from 1.21.5 it writes plain text as a string tag, and a list
+  mixing strings and compounds (a lore of a plain and a coloured line, a name's `extra`) as a
+  list of compounds with each string inside one under an empty name, `{"": "plain"}`
+  (`unwrapped`; seen in a 1.21.11 server's own file, `tests/fixtures/items/`: `/data modify
+  storage ... set from block` copies a chest's item into `data/command_storage_<ns>.dat`,
+  which shows what the game writes without a player).
 - `playeritems.ts`: item fields (name, lore, enchantments, unbreakable, durability) per format
   (legacy/flat/components, and 1.21.5's NBT text and plain enchantment map), and item lists:
   known ones (BlockEntityTag.Items, minecraft:container `{slot,item}`, bundle contents) plus any

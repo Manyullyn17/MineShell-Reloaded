@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseNbt, writeNbt, type Compound, type Tag } from './nbt';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { child, num, parseNbt, writeNbt, type Compound, type Tag } from './nbt';
 import { parseSnbt } from './snbt';
 import { describeItem, findContainers, readFields, setContainerItem, setKeyedItem, styleOf, writeFields, PlayerDataError } from './playeritems';
 
@@ -63,6 +65,24 @@ describe('item fields', () => {
 	it('leaves text it cannot edit as it is, saying so', () => {
 		const item = snbt('{id:"minecraft:stick",count:1,components:{"minecraft:custom_name":{translate:"item.minecraft.stick",color:"gold"},"minecraft:lore":[{text:"one"},{text:"two",click_event:{action:"open_url",url:"x"}}]}}');
 		expect(readFields(item, NBT_TEXT)).toMatchObject({ name: '', lore: ['one', 'two'], kept: ['name', 'lore'] });
+	});
+
+	// From 1.21.5 a list may mix types, and the game writes one that does as compounds, each other
+	// element inside one under an empty name: a lore of a plain and a coloured line is
+	// [{"": "plain"}, {text: "red", color: "red"}] in the file. Those read as text MineShell
+	// could not edit, with the plain parts blank. The fixture is a 1.21.11 server's own file.
+	it('reads names and lore whose plain parts 1.21.5+ wrapped to fit a list of compounds', async () => {
+		const file = parseNbt(await fs.readFile(path.join(import.meta.dirname, '../../../tests/fixtures/items/command_storage_1.21.11.dat')));
+		const contents = child(child(child(file.root, 'data'), 'contents'), 'x');
+		const style = styleOf(num(child(file.root, 'DataVersion')));
+		expect(style).toEqual(styleOf(4671));
+		const mixed = child(contents, 'mixed') as Compound;
+		expect(readFields(mixed, style)).toMatchObject({ name: '§oab§lc', lore: ['§oplain', '§c§ored'], kept: [] });
+		expect(describeItem(mixed, 'main', 0, [], style)?.name).toBe('abc');
+		expect(readFields(child(contents, 'plain') as Compound, style)).toMatchObject({ name: '§ojust text', lore: ['§oone', '§otwo'], kept: [] });
+		// Text the editor leaves alone still shows whole.
+		const kept = snbt('{id:"minecraft:stick",count:1,components:{"minecraft:lore":[{"":"plain"},{text:"two",click_event:{action:"open_url",url:"x"}}]}}');
+		expect(readFields(kept, style)).toMatchObject({ lore: ['plain', 'two'], kept: ['lore'] });
 	});
 
 	it('writes fields in the item’s own format and reads them back', () => {
