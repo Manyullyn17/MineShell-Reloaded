@@ -1,6 +1,6 @@
 import { fetchJson } from '../download';
 import { cached, CACHE_TTL } from '../cache';
-import type { FilterGroup, ModProvider, ProjectVersion, SearchHit, SearchQuery } from './types';
+import type { FilterGroup, ModProvider, ProjectKind, ProjectVersion, SearchHit, SearchQuery } from './types';
 
 const API = 'https://api.modrinth.com/v2';
 
@@ -30,6 +30,7 @@ type MrSearchResponse = {
 		versions: string[];
 		date_modified?: string;
 		license?: string;
+		project_type?: string;
 	}[];
 };
 
@@ -49,7 +50,14 @@ type MrProject = {
 	license?: { id: string; name: string };
 	/** A list, e.g. ["client_only"], despite the singular name. */
 	environment?: string[] | string;
+	project_type?: string;
 };
+
+function kindOf(projectType: string | undefined): ProjectKind | undefined {
+	if (!projectType) return undefined;
+	if (projectType === 'mod' || projectType === 'datapack') return 'mod';
+	return projectType === 'modpack' || projectType === 'resourcepack' ? projectType : 'other';
+}
 
 type MrVersion = {
 	id: string;
@@ -108,7 +116,8 @@ function toHit(project: MrProject | MrSearchResponse['hits'][number]): SearchHit
 		// real `loaders` array. Two different shapes for the same fact.
 		loaders: isSearch ? [] : project.loaders.map((l) => l.toLowerCase()),
 		gameVersions: isSearch ? project.versions : project.game_versions,
-		...(isSearch ? {} : { clientOnly: isClientOnly(project.environment) })
+		...(isSearch ? {} : { clientOnly: isClientOnly(project.environment) }),
+		kind: kindOf(project.project_type)
 	};
 }
 

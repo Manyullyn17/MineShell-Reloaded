@@ -36,7 +36,7 @@ Install and maintain modded Minecraft servers without having to manage every ste
 
 ![Browsing modpacks: Modrinth searched for Cobblemon, its official pack opened with its description and versions](docs/screenshots/packs.png)
 
-- **Multiple sources:** Browse Modrinth, CurseForge, and FTB, upload `.mrpack` or CurseForge archives, or create a server from a Minecraft version and loader.
+- **Multiple sources:** Browse Modrinth, CurseForge, and FTB, upload `.mrpack` or CurseForge archives, or create a server from a Minecraft version and loader. Every search (packs, mods, resource packs) also takes a project ID from the project's page, which finds a project the catalog's own search misses.
 - **Loader support:** Vanilla, Fabric, Quilt, Forge, NeoForge, and Cleanroom.
 - **Pack updates:** Update to a different pack version, including packs originally installed from uploaded files. Configuration changes are preserved or merged, with side-by-side review when both you and the pack changed the same lines. The preview lists files you added to the pack's folders and lets you keep yours where the new version ships its own. A pack change can be cancelled while it runs, which puts the server back exactly as it was; a cancelled pack install removes the half-made server.
 - **Update notices:** Each server is checked for a newer pack version (pack servers) or loader build and mod updates (servers set up from a loader), and for newer builds of the data packs added from the mod browser (any server, vanilla included), on a schedule you pick, with betas and alphas optional. The overview shows what is out, with a button to review and install it or to skip that version (a mod can also be held at its version for good), and the server list marks the servers that have one.

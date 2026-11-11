@@ -26,7 +26,12 @@ export type SearchHit = {
 	updatedAt?: string | null;
 	/** The licence's name or SPDX id; only Modrinth gives one. */
 	license?: string | null;
+	/** What it is, where the source says (a project looked up by its id may be any kind). */
+	kind?: ProjectKind;
 };
+
+/** `mod` takes in data packs, which Add mods installs too; `other` is anything else (shaders, worlds). */
+export type ProjectKind = 'mod' | 'modpack' | 'resourcepack' | 'other';
 
 export type VersionFile = {
 	filename: string;

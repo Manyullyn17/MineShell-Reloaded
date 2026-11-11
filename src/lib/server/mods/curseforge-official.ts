@@ -1,6 +1,6 @@
 import { cached, CACHE_TTL } from '../cache';
 import { getCurseforgeApiKey } from '../curseforge';
-import type { FilterGroup, ProjectVersion, SearchHit, SearchQuery } from './types';
+import type { FilterGroup, ProjectKind, ProjectVersion, SearchHit, SearchQuery } from './types';
 import { outboundFetch } from '../outbound';
 
 /**
@@ -81,6 +81,7 @@ type CfMod = {
 	categories?: CfCategory[];
 	latestFilesIndexes?: CfFilesIndex[];
 	dateModified?: string;
+	classId?: number;
 };
 
 type CfFile = {
@@ -137,9 +138,12 @@ function modToHit(mod: CfMod): SearchHit {
 		updatedAt: mod.dateModified ?? null,
 		projectUrl: mod.links?.websiteUrl ?? null,
 		loaders,
-		gameVersions
+		gameVersions,
+		kind: mod.classId === undefined ? undefined : (CLASS_KIND[mod.classId] ?? 'other')
 	};
 }
+
+const CLASS_KIND: Record<number, ProjectKind> = { [CLASS_ID.modpack]: 'modpack', [CLASS_ID.mod]: 'mod', [CLASS_ID.resourcePack]: 'resourcepack' };
 
 const RELEASE_TYPE: Record<number, string> = { 1: 'release', 2: 'beta', 3: 'alpha' };
 

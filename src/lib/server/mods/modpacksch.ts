@@ -1,6 +1,6 @@
 import { fetchJson } from '../download';
 import { cached, CACHE_TTL } from '../cache';
-import type { FilterGroup, ModProvider, ProjectVersion, SearchHit, SearchQuery, SourceId } from './types';
+import type { FilterGroup, ModProvider, ProjectKind, ProjectVersion, SearchHit, SearchQuery, SourceId } from './types';
 
 /**
  * modpacks.ch is the FTB App's public backend: it mirrors CurseForge project
@@ -81,7 +81,20 @@ type PackDetail = {
 	art?: ArtEntry[];
 	versions?: { id: number; name: string; type: string; updated: number; targets?: Target[] }[];
 	installs?: number;
+	links?: { link?: string; type?: string }[];
 };
+
+/**
+ * What a project is: FTB has only packs; for CurseForge the mirror says only through the
+ * project's page address (`/minecraft/modpacks/...`, `/mc-mods/...`, `/texture-packs/...`).
+ */
+function detailKind(source: SourceId, pack: PackDetail): ProjectKind | undefined {
+	if (source === 'ftb') return 'modpack';
+	const site = pack.links?.find((l) => l.type === 'website')?.link ?? '';
+	const section = site.match(/curseforge\.com\/minecraft\/([^/]+)\//)?.[1];
+	if (!section) return undefined;
+	return section === 'modpacks' ? 'modpack' : section === 'mc-mods' ? 'mod' : section === 'texture-packs' ? 'resourcepack' : 'other';
+}
 
 type VersionDetail = {
 	id: number;
@@ -154,7 +167,8 @@ function detailToHit(source: SourceId, pack: PackDetail): SearchHit {
 		updatedAt: newest(pack.versions?.map((v) => v.updated)),
 		projectUrl: projectUrl(source, pack.id),
 		loaders: targetsToLoaders(targets),
-		gameVersions: targetsToGameVersions(targets)
+		gameVersions: targetsToGameVersions(targets),
+		kind: detailKind(source, pack)
 	};
 }
 

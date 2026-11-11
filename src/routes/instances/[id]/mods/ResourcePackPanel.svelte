@@ -272,7 +272,7 @@
 							<button type="button" aria-pressed={source === s.id} onclick={() => (source = s.id)}>{s.label}</button>
 						{/each}
 					</div>
-					<span class="faint small">Leave the search blank to browse the most downloaded.</span>
+					<span class="faint small">A project ID from its page finds one the search misses.</span>
 				</div>
 				{#if note}<p class="notice info">{note}</p>{/if}
 				{#if searchError}<p class="notice warning">{searchError}</p>{/if}

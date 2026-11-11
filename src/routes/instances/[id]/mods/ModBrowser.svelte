@@ -337,7 +337,7 @@
 			{/each}
 		</div>
 		<span class="faint small">
-			Showing mods for {modloaderLabel} {minecraftVersion}. Leave the search blank to browse popular ones.
+			Showing mods for {modloaderLabel} {minecraftVersion}. A project ID from its page finds one the search misses.
 		</span>
 		<button type="button" class="button-quiet filters-toggle" aria-expanded={showFilters} onclick={() => (showFilters = !showFilters)}>
 			{showFilters ? 'Hide filters' : 'Filters'}

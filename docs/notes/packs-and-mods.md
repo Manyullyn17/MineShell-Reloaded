@@ -232,7 +232,10 @@ Since early November 2026 CurseForge's search no longer matches MeatballCraft (4
 name or slug: "meatballcraft" finds only Divine Evolution, `slug=meatballcraft` nothing, through
 the official API and the modpacks.ch mirror alike (the mirror passes CurseForge's search on), and
 Prism misses it too. By id (`/v1/mods/411966`, the mirror's `/public/curseforge/411966`) and by
-author it is there, approved and available. The live-API test's search uses RLCraft instead.
+author it is there, approved and available. The live-API test's search uses RLCraft instead, and every search box takes a project id
+(`mods/projectid.ts`): looked up beside the search and put first when it is the right kind.
+The mirror says pack or mod only through the project's page address (`/modpacks/`,
+`/mc-mods/`, `/texture-packs/`); the official API through `classId`, Modrinth `project_type`.
 Leave the sort in when probing by hand: without `sortField` CurseForge's own order put RLCraft
 off the first page, which looked like the same fault (MineShell always sends `sortField=2`).
 

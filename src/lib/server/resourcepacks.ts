@@ -10,6 +10,9 @@ import { curseforgeKeyValid, markCurseforgeKeyInvalid } from './curseforge';
 import * as official from './mods/curseforge-official';
 import { CurseforgeAuthError } from './mods/curseforge-official';
 import { curseforgeModProvider as mirror } from './mods/modpacksch';
+import { modrinthProvider } from './mods/modrinth';
+import { withProjectById } from './mods/projectid';
+import type { ProjectKind, SearchHit } from './mods/types';
 import { fromJson, parseCodes, toCodes, toJson } from '#lib/shared/mctext.js';
 
 /**
@@ -110,6 +113,10 @@ type MrVersion = {
 	files: { url: string; primary: boolean; size: number; hashes: { sha1?: string } }[];
 };
 
+function toPackHit(h: SearchHit): PackHit & { kind?: ProjectKind } {
+	return { id: h.id, name: h.name, author: h.author, summary: h.summary, iconUrl: h.iconUrl, downloads: h.downloads, projectUrl: h.projectUrl, kind: h.kind };
+}
+
 async function modrinthSearch(term: string, minecraftVersion: string, page: number, limit: number): Promise<PackHit[]> {
 	const facets = [['project_type:resourcepack'], ...(minecraftVersion ? [[`versions:${minecraftVersion}`]] : [])];
 	const params = new URLSearchParams({
@@ -203,20 +210,17 @@ export async function searchResourcePacks(source: PackSource, term: string, mine
 	if (source === 'curseforge' && !curseforgeKeyValid()) {
 		return { hits: [], note: "Searching CurseForge's resource packs needs a CurseForge API key (MineShell settings): the mirror MineShell uses without one does not find them." };
 	}
-	const hits = await cached(`resourcepacks:search:${source}:${minecraftVersion}:${page}:${term}`, CACHE_TTL.DEFAULT, () =>
+	const search = (): Promise<(PackHit & { kind?: ProjectKind })[]> =>
 		source === 'modrinth'
 			? modrinthSearch(term, minecraftVersion, page, limit)
-			: withKey(async () =>
-					(await official.searchResourcePacks(term, minecraftVersion, page, limit)).map((h) => ({
-						id: h.id,
-						name: h.name,
-						author: h.author,
-						summary: h.summary,
-						iconUrl: h.iconUrl,
-						downloads: h.downloads,
-						projectUrl: h.projectUrl
-					}))
-				),
+			: withKey(async () => (await official.searchResourcePacks(term, minecraftVersion, page, limit)).map(toPackHit));
+	// A pack's project id finds it where the catalog's search does not (projectid.ts).
+	const lookup = async (id: string) =>
+		toPackHit(source === 'modrinth' ? await modrinthProvider.getProject(id) : await withKey(() => official.getProject(id)));
+	const hits = await cached(
+		`resourcepacks:search:${source}:${minecraftVersion}:${page}:${term}`,
+		CACHE_TTL.DEFAULT,
+		() => withProjectById({ source, term, page, kind: 'resourcepack', lookup, search }).then((list) => list.map(({ kind: _kind, ...hit }) => hit)),
 		{ fresh }
 	);
 	return { hits, note: null };

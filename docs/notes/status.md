@@ -115,6 +115,9 @@ user before the beta):
    beta.1 there, doctor ok, `real-server.sh` passed, `sandbox-check.sh` showed the server in its
    own namespace seeing only its folder, and heap reads kept working.
 
+11. **Project ids in the searches** (beta.2): MeatballCraft found on New server by typing
+   `411966` with CurseForge picked (with and without the key), and a mod's id in Add mods.
+
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
 beta has run about three days with nothing big. Before beta.1: a quick pass on throwaway data

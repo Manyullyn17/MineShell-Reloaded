@@ -570,7 +570,7 @@
 					<input
 						type="search"
 						autocomplete="off"
-						placeholder="Search modpacks, or leave blank for popular ones"
+						placeholder="Name or project ID"
 						aria-label="Search modpacks"
 						bind:value={term}
 						onkeydown={(e) => {
