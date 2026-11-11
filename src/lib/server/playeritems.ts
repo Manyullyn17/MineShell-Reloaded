@@ -304,7 +304,8 @@ export function writeFields(item: Compound, fields: Partial<Omit<ItemFields, 'st
 	}
 	if (fields.lore !== undefined) {
 		const lines = fields.lore.map((l) => textTag(l, style));
-		const lore: Tag | null = lines.length ? { type: 'list', itemType: 'string', value: lines } : null;
+		// Strings up to 1.21.4 (codes or JSON), NBT text compounds from 1.21.5: a list says which.
+		const lore: Tag | null = lines.length ? { type: 'list', itemType: lines[0].type, value: lines } : null;
 		if (components) lore ? setChild(data, 'minecraft:lore', lore) : removeChild(data, 'minecraft:lore');
 		else lore ? setChild(display(), 'Lore', lore) : removeChild(display(), 'Lore');
 	}

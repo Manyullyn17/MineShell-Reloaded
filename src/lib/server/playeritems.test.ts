@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Compound, Tag } from './nbt';
+import { parseNbt, writeNbt, type Compound, type Tag } from './nbt';
 import { parseSnbt } from './snbt';
 import { describeItem, findContainers, readFields, setContainerItem, setKeyedItem, styleOf, writeFields, PlayerDataError } from './playeritems';
 
@@ -46,6 +46,18 @@ describe('item fields', () => {
 		const flat = snbt('{id:"minecraft:stick",Count:1b}');
 		writeFields(flat, { name: '§6Gold §lbold' }, FLAT);
 		expect(JSON.parse(readFlatName(flat))).toEqual({ text: '', italic: false, extra: [{ text: 'Gold ', color: 'gold' }, { text: 'bold', color: 'gold', bold: true }] });
+	});
+
+	// Lore was a list of strings holding 1.21.5's text compounds, which the file writer refused:
+	// "A compound in a list of string." for any lore saved on 1.21.5 and newer.
+	it('writes lore as a list of what its lines are, so the file can be saved', () => {
+		for (const style of [LEGACY, FLAT, COMPONENTS, NBT_TEXT]) {
+			const item = snbt(style.format === 'components' ? '{id:"minecraft:stick",count:1}' : '{id:"minecraft:stick",Count:1b}');
+			writeFields(item, { lore: ["Them's §l§owings§r§l§r lol", 'plain'] }, style);
+			const saved = parseNbt(writeNbt({ name: '', root: item, gzipped: false }));
+			// 1.12 keeps the codes as typed; the others store styles, which read back tidied.
+			expect(readFields(saved.root, style).lore).toEqual([style === LEGACY ? "Them's §l§owings§r§l§r lol" : "Them's §l§owings§r lol", 'plain']);
+		}
 	});
 
 	it('leaves text it cannot edit as it is, saying so', () => {
