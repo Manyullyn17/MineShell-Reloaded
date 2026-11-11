@@ -11,8 +11,9 @@ import type { Path } from '#lib/shared/nbt.js';
  * Where each field lives depends on the item format:
  * - legacy (before 1.13): `tag.display.Name` plain text, `tag.ench` with
  *   numeric ids, `Damage` is the metadata
- * - flat (1.13 to 1.20.4): `tag.display.Name`/`Lore` as JSON text,
- *   `tag.Enchantments` with string ids, `tag.Damage` the durability
+ * - flat (1.13 to 1.20.4): `tag.display.Name`/`Lore` as JSON text (lore only from 1.14:
+ *   1.13's lines are still plain strings with codes), `tag.Enchantments` with string ids,
+ *   `tag.Damage` the durability
  * - components (1.20.5+): `components["minecraft:custom_name"]` etc.; up to
  *   1.21.4 text is JSON and enchantments sit under `levels`, from 1.21.5
  *   text is an NBT text component and enchantments are a plain map.
@@ -25,15 +26,21 @@ export const FLATTENING = 1519;
 export const COMPONENTS = 3837;
 /** 1.21.5: text as NBT, enchantments without `levels`, armor in `equipment`. */
 export const NBT_TEXT = 4325;
+/**
+ * 1.14's snapshots: lore lines become JSON text, as names did in 1.13. The version of the
+ * game's own converter ("Item Lore componentize", read from 1.21.11's jar with javap); 1.13.2
+ * is 1631.
+ */
+export const JSON_LORE = 1803;
 
 export type Format = 'legacy' | 'flat' | 'components';
 /** `ids`: before 1.8 an item's id is a number, read and written through the world's table (itemids.ts). */
-export type Style = { format: Format; nbtText: boolean; ids?: ItemIds };
+export type Style = { format: Format; nbtText: boolean; /** 1.13: names are JSON, lore lines still plain strings with codes. */ plainLore?: boolean; ids?: ItemIds };
 
 export function styleOf(dataVersion: number | null): Style {
 	const format: Format =
 		dataVersion === null || dataVersion < FLATTENING ? 'legacy' : dataVersion < COMPONENTS ? 'flat' : 'components';
-	return { format, nbtText: (dataVersion ?? 0) >= NBT_TEXT };
+	return { format, nbtText: (dataVersion ?? 0) >= NBT_TEXT, ...(format === 'flat' && dataVersion! < JSON_LORE ? { plainLore: true } : {}) };
 }
 
 export type Section = 'main' | 'armor' | 'offhand' | 'ender' | 'other' | 'container';
@@ -216,7 +223,7 @@ function plainToNbt(value: unknown): Tag {
 /** `§`-coded text written the way the format stores it. */
 function textTag(codes: string, style: Style): Tag {
 	if (style.format === 'legacy') {
-		if (hasHex(codes)) throw new PlayerDataError('Minecraft 1.12 and older have only the 16 colours: no hex colours in names or lore.');
+		if (hasHex(codes)) throw new PlayerDataError(style.plainLore ? 'Minecraft 1.13 has only the 16 colours in lore: no hex colours.' : 'Minecraft 1.12 and older have only the 16 colours: no hex colours in names or lore.');
 		return { type: 'string', value: codes };
 	}
 	const json = toJson(parseCodes(codes), WRITE_ROOT);
@@ -233,6 +240,9 @@ export const LEGACY_ENCHANTMENTS: Record<number, string> = {
 	22: 'sweeping', 32: 'efficiency', 33: 'silk_touch', 34: 'unbreaking', 35: 'fortune', 48: 'power', 49: 'punch',
 	50: 'flame', 51: 'infinity', 61: 'luck_of_the_sea', 62: 'lure', 70: 'mending', 71: 'vanishing_curse'
 };
+
+/** How lore lines are stored: as names are, except on 1.13, which keeps them as 1.12 did. */
+const loreStyle = (style: Style): Style => (style.plainLore ? { ...style, format: 'legacy' } : style);
 
 const dataKey = (style: Style) => (style.format === 'components' ? 'components' : 'tag');
 const isBook = (item: Compound) => /enchanted_book$/.test(str(child(item, 'id')) ?? '');
@@ -274,7 +284,7 @@ export function readFields(item: Compound, style: Style): ItemFields {
 		}
 	}
 	const loreLines = loreTag?.type === 'list' ? loreTag.value : [];
-	let lore = loreLines.map((l) => codesOf(l, style));
+	let lore = loreLines.map((l) => codesOf(l, loreStyle(style)));
 	if (lore.some((l) => l === null)) {
 		kept.push('lore');
 		lore = loreLines.map((l) => textOf(l) ?? '');
@@ -315,7 +325,7 @@ export function writeFields(item: Compound, fields: Partial<Omit<ItemFields, 'st
 		else name ? setChild(display(), 'Name', name) : removeChild(display(), 'Name');
 	}
 	if (fields.lore !== undefined) {
-		const lines = fields.lore.map((l) => textTag(l, style));
+		const lines = fields.lore.map((l) => textTag(l, loreStyle(style)));
 		// Strings up to 1.21.4 (codes or JSON), NBT text compounds from 1.21.5: a list says which.
 		const lore: Tag | null = lines.length ? { type: 'list', itemType: lines[0].type, value: lines } : null;
 		if (components) lore ? setChild(data, 'minecraft:lore', lore) : removeChild(data, 'minecraft:lore');

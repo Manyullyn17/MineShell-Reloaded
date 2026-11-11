@@ -85,6 +85,22 @@ describe('item fields', () => {
 		expect(readFields(kept, style)).toMatchObject({ lore: ['plain', 'two'], kept: ['lore'] });
 	});
 
+	// 1.13 made names JSON; lore followed in 1.14 only. MineShell wrote JSON lore into a 1.13
+	// world, which shows there letter for letter: {"text":"sharp","italic":false}.
+	it('reads and writes 1.13 lore as the plain lines it still is there, names as JSON', () => {
+		const style = styleOf(1631);
+		const item = snbt('{id:"minecraft:diamond_sword",Count:1b,tag:{display:{Name:\'{"text":"Edge"}\',Lore:["§cred line","{braces}"]}}}');
+		expect(readFields(item, style)).toMatchObject({ name: '§oEdge', lore: ['§cred line', '{braces}'], kept: [] });
+		writeFields(item, { name: '§6Gold', lore: ['§asharp', 'plain'] }, style);
+		const display = child(child(item, 'tag'), 'display');
+		expect(child(display, 'Lore')).toEqual({ type: 'list', itemType: 'string', value: [{ type: 'string', value: '§asharp' }, { type: 'string', value: 'plain' }] });
+		expect(JSON.parse(readFlatName(item))).toEqual({ text: 'Gold', italic: false, color: 'gold' });
+		expect(() => writeFields(item, { lore: ['§#12abefhex'] }, style)).toThrow(/1\.13/);
+		// 1.14 on: JSON lines.
+		expect(styleOf(1952).plainLore).toBeUndefined();
+		expect(styleOf(1343).plainLore).toBeUndefined();
+	});
+
 	it('writes fields in the item’s own format and reads them back', () => {
 		const fields = { name: 'Edge', lore: ['one', 'two'], unbreakable: true, damage: 7 };
 		for (const [style, enchant] of [[LEGACY, '16'], [FLAT, 'minecraft:sharpness'], [COMPONENTS, 'minecraft:sharpness'], [NBT_TEXT, 'minecraft:sharpness']] as const) {

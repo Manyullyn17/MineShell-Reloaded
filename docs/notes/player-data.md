@@ -45,6 +45,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   (`unwrapped`; seen in a 1.21.11 server's own file, `tests/fixtures/items/`: `/data modify
   storage ... set from block` copies a chest's item into `data/command_storage_<ns>.dat`,
   which shows what the game writes without a player).
+- 1.13 lore: names became JSON in 1.13, lore lines only in 1.14 (the game's "Item Lore
+  componentize" converter is registered at data version 1803; 1.13.2 is 1631). Below that
+  lore is read and written as 1.12's plain strings with codes (`Style.plainLore`).
 - `playeritems.ts`: item fields (name, lore, enchantments, unbreakable, durability) per format
   (legacy/flat/components, and 1.21.5's NBT text and plain enchantment map), and item lists:
   known ones (BlockEntityTag.Items, minecraft:container `{slot,item}`, bundle contents) plus any
