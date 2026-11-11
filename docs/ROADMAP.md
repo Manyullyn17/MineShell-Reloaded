@@ -44,8 +44,8 @@ size, not a fixed list; entries move and get added along the way):
   (both built 2026-11-08; user, 2026-11-08: both still go in, a larger release is fine). Maintenance mode to 1.4.
   Scheduled CI during the beta (not user facing, so outside any release; built 2026-11-08).
   Last, formatted text in its other places (resource pack prompt, data pack descriptions; built
-  2026-11-08), then the beta (user, 2026-11-08: nothing else joins). Whether Ubuntu 22.04 can
-  sandbox the servers is tried during the beta, a fix going into it if needed.
+  2026-11-08), then the beta (user, 2026-11-08: nothing else joins). Ubuntu 22.04's sandbox, tried in
+  the beta on a VM (2026-11-11), got its fix there.
 - **1.4 or later**: schedules (step 6), diagnosis and copies (step 7), then GT New Horizons,
   item icons and the status page as ordered below. Whenever convenient: Chunk Pregenerator,
   single files from a snapshot.
@@ -456,11 +456,7 @@ is open, and each needs a test setup.
   again; it could refuse going below itself once its database has seen 1.x (optional). The
   release candidate can be that last 0.x, so going back lands on a tested release.
 - **MineShell's database copies**: copying them to a backup folder along with the snapshots.
-- **Scheduled CI**: whether Ubuntu 22.04 can sandbox the servers: on GitHub's 22.04 runner
-  (systemd 249, no AppArmor restriction) systemd made no mount namespace for a user unit, so
-  the weekly job only reports doctor's sandbox line there. A real 22.04 machine or VM would
-  tell systemd 249 from the runner (containers cannot: a 24.04 host's AppArmor restriction
-  reaches into them, Debian 12 showed no sandbox in one either). `page-sweep.mjs` (overflow, page errors) could join the weekly run.
+- **Scheduled CI**: `page-sweep.mjs` (overflow, page errors) could join the weekly run.
   Property-based tests belong in the normal suite (`snbt.ts`, NBT, zip: a parser bug can damage
   player data), with more random seeds on the schedule. Mutation testing only by hand now and
   then, on critical files (access policy, path safety). Not wanted: pixel diffs (they flag

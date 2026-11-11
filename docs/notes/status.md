@@ -109,10 +109,11 @@ user before the beta):
    its place, the update check offering v4.4.4 for that folder, the update, and v4.4.4 loaded.
 9. **Data pack descriptions** (Mods > Data packs): a real pack's description in its colours, as
    the game's own data pack screen shows it.
-10. **Ubuntu 22.04 sandbox**: on a real 22.04 machine or VM, does `doctor` find the servers
-   sandboxed? GitHub's 22.04 runner made no mount namespace for a user unit (ROADMAP,
-   Leftovers, Scheduled CI); if a normal install cannot either, doctor's wording and
-   DEPLOYMENT get a fix in the beta.
+10. **Ubuntu 22.04 sandbox**: **done 2026-11-11** on a 22.04.5 VM (`ms-jammy`, libvirt): beta.1's
+   doctor warned and servers ran unsandboxed, as on GitHub's runner: systemd 249 makes a user
+   unit's user namespace only when `PrivateUsers=yes` asks. Fixed for beta.2: installed over
+   beta.1 there, doctor ok, `real-server.sh` passed, `sandbox-check.sh` showed the server in its
+   own namespace seeing only its folder, and heap reads kept working.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a

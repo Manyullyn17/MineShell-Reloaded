@@ -58,8 +58,8 @@ one, it starts the server without it and says nothing. Ubuntu 23.10 and later (2
 and derivatives that kept its default) let AppArmor refuse those namespaces
 (`kernel.apparmor_restrict_unprivileged_userns = 1`), and it refuses them to systemd's user
 manager too. Other distributions (Debian, Fedora, Arch, openSUSE) do not restrict them, and
-there nothing needs doing. Ubuntu 22.04 has no such restriction, yet on GitHub's 22.04 machines
-systemd made no sandbox either; whether a normal 22.04 install does is not known yet. `doctor` says which: it warns "systemd can sandbox servers" when
+there nothing needs doing; nor on Ubuntu 22.04, whose systemd 249 MineShell asks for the user
+namespace by name (from 1.3; before, servers there ran unsandboxed). `doctor` says which: it warns "systemd can sandbox servers" when
 the sandbox does not apply (`npm run doctor`, or in the release folder
 `MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/doctor.mjs`).
 

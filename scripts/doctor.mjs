@@ -157,7 +157,9 @@ async function main() {
 	// then shares this account's mount namespace. DEPLOYMENT.md, "Sandboxing the servers".
 	if (version.ok) {
 		const own = await fs.readlink('/proc/self/ns/mnt').catch(() => '');
-		const probe = await tryRun('systemd-run', ['--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateTmp=yes', 'readlink', '/proc/self/ns/mnt']);
+		// PrivateUsers= said, as the servers' sandbox drop-in does: systemd 249 (Ubuntu 22.04) makes
+		// the user namespace only when asked.
+		const probe = await tryRun('systemd-run', ['--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateUsers=yes', '-p', 'PrivateTmp=yes', 'readlink', '/proc/self/ns/mnt']);
 		const sandboxed = probe.ok && probe.stdout.trim() !== '' && probe.stdout.trim() !== own;
 		const restricted = (await fs.readFile('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').catch(() => '')).trim() === '1';
 		const fix = restricted

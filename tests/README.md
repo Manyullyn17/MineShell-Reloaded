@@ -141,8 +141,7 @@ a push but for what breaks without a commit. `.github/workflows/nightly.yml`: `c
 `weekly.yml`, Mondays: on Ubuntu 22.04 and 24.04 (`ubuntu-latest` moves) the release archive
 installed with `install.sh` (24.04 first gets DEPLOYMENT's AppArmor fix, cut out of the doc
 itself), `/setup` answering, `real-server.sh` on the installed MineShell with sign-in turned
-off, then `doctor`, which must find the sandbox working on 24.04 (on 22.04 its sandbox line goes
-to the run's summary: no mount namespace there, cause not pinned down); and `repeat-tests.sh 20`. A runner's
+off, then `doctor`, which must find the sandbox working; and `repeat-tests.sh 20`. A runner's
 account has a user manager only after `loginctl enable-linger`. Both can be started from the
 Actions tab (workflow_dispatch). `scripts/release.sh` refuses while the last run of either
 failed (`--ignore-ci` overrides) and warns when the last is older than a few days: GitHub
@@ -592,6 +591,7 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | The sidebar kept "Starting" (or anything else) on pages that do not reload by themselves | `api/rail/rail.test.ts` for the endpoint; the timer with `pageshot.mjs --eval` on Settings during a start. Not with `invalidate`: new page data runs every page's effects on `data` again |
 | `ports.test.ts` got a voice or map port one higher than asked for on one worker when its pid put `base + 1700` past 25565, among the servers other files create from there (repeat-tests.sh on GitHub, seed 362610696; reproduced by pinning `base` high) | `flows/ports.test.ts` itself (keeps its ports under 23700) |
 | `mod-updates.test.ts` failed after files that had stored the project `sodium` under another name in the same worker: its rows were added with "do nothing on conflict" and found by slug alone (found by `repeat-tests.sh`, one worker, seeds 1037043331 and 232445472) | `flows/mod-updates.test.ts` itself (sets its rows' names) |
+| On Ubuntu 22.04 (systemd 249) no server was sandboxed and doctor warned: that systemd makes a user unit's user namespace only when `PrivateUsers=yes` says so, and neither the probe nor `sandbox.conf` did | `flows/unit-sync.test.ts` ("keeps a server to its own folder"); on a real 22.04, the Weekly workflow's doctor step and the `ms-jammy` VM |
 | On GitHub's Ubuntu 22.04 runners the history recorded a server's first start and nothing after: on a journal whose files share a sequence id, `-n 1 --since` gives the first entry after the time, so the newest entry never changed | `journal.test.ts` ("newest first"); on a real journal, the Weekly workflow's `real-server.sh` |
 | Ubuntu 22.04 (systemd 249) recorded no runs: the manager's lines carry its own `_SYSTEMD_INVOCATION_ID` beside the run's, and that was read first; its "Started" line names only the description, so crash diagnosis took all runs as one and the crash hold never applied (the weekly CI's first run) | `flows/history.test.ts` ("systemd 249"), `journal.test.ts`, `crashhold.test.ts`, `crashdiag/crashdiag.test.ts` ("the last run"), `consolelines.test.ts` |
 | A command reaching a stopping server hung it for good, on vanilla too, and MineShell's polling sent them; Force stop then only asked again, so a hung server took systemd's 3 minutes | `rcon.test.ts` ("after a stop"), `stop.test.ts` (the kill's order); on real shutdowns `rcon-stop-race.mjs`; the kill's result on a real unit is not a unit test: `--kill-whom=all` passed against a fake and failed for real |

@@ -277,13 +277,14 @@ let sandboxProbe: Promise<boolean> | null = null;
  * per MineShell run with a transient unit (as `doctor` does): Ubuntu 23.10+ refuses it unless
  * DEPLOYMENT's AppArmor exception is in place, and a unit then runs without it silently, or
  * with some options (ProtectHome=, PrivateDevices=) fails to start at all (218/CAPABILITIES).
- * So the confinement below is written only where this says yes.
+ * So the confinement below is written only where this says yes. With `PrivateUsers=yes` said:
+ * systemd 249 (Ubuntu 22.04) makes the user namespace only when asked; 255 implies it.
  */
 export function canSandbox(): Promise<boolean> {
 	sandboxProbe ??= (async () => {
 		const own = await fs.readlink('/proc/self/ns/mnt').catch(() => '');
 		const probe = await run(
-			['systemd-run', '--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateTmp=yes', '-p', 'ProtectHome=tmpfs', 'readlink', '/proc/self/ns/mnt'],
+			['systemd-run', '--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateUsers=yes', '-p', 'PrivateTmp=yes', '-p', 'ProtectHome=tmpfs', 'readlink', '/proc/self/ns/mnt'],
 			{ timeoutMs: 15_000 }
 		);
 		const theirs = probe.stdout.trim();
@@ -315,6 +316,9 @@ export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: strin
 		'# (ARCHITECTURE, "The servers\' sandbox"). Written only where systemd can make the',
 		'# namespaces it needs; removed otherwise.',
 		'[Service]',
+		// The user namespace the rest needs. Later systemd implies it in a user unit (255 on
+		// Ubuntu 24.04 does); 249 (Ubuntu 22.04) ran the unit unconfined without a word unless said.
+		'PrivateUsers=yes',
 		'ProtectSystem=strict',
 		'ProtectHome=tmpfs',
 		...(hidden ? [] : [`TemporaryFileSystem=${dataDir}:ro`]),

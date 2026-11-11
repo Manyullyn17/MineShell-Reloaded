@@ -97,6 +97,12 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   transient unit). Probe: `systemd-run --user --wait --pipe -p PrivateTmp=yes readlink
   /proc/self/ns/mnt`. `doctor` runs that probe; the fix is DEPLOYMENT, "Sandboxing the servers" (the rest:
   ROADMAP-ARCHIVE, "The servers' sandbox").
+- systemd 249 (Ubuntu 22.04) makes a user unit's user namespace only when `PrivateUsers=yes`
+  is said; 255 implies it for the mount options. Without it `PrivateTmp=` and the rest were
+  dropped without a word (no AppArmor restriction on 22.04, unprivileged user namespaces
+  allowed), the probe saw no namespace, and servers ran unsandboxed. The probe, doctor's and
+  `sandbox.conf` say it now. Found on a 22.04.5 VM (2026-11-11) after GitHub's 22.04 runner
+  showed it; containers on a 24.04 host cannot tell, its AppArmor restriction reaches into them.
 
 - The servers' sandbox (2026-10-31): HotSpot's attach listener (AttachListener::pd_init)
   `chown`s its socket file to its own euid; with `SystemCallFilter=~@privileged` that fails

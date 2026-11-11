@@ -37,6 +37,9 @@ describe('writing a server’s unit files', () => {
 			const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' });
 			await syncUnit(instance);
 			const conf = await fs.readFile(dropIn(instance.id), 'utf8');
+			// systemd 249 (Ubuntu 22.04) makes the user namespace the rest needs only when asked.
+			expect(conf).toMatch(/^PrivateUsers=yes$/m);
+			expect(spawnCalls.find((c) => c.cmd === 'systemd-run')!.args).toContain('PrivateUsers=yes');
 			expect(conf).toMatch(/^ProtectSystem=strict$/m);
 			expect(conf).toMatch(/^ProtectHome=tmpfs$/m);
 			expect(conf).toContain(`\nBindPaths=${instance.path}\n`);

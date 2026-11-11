@@ -69,19 +69,13 @@ jobs:
           for _ in $(seq 30); do curl -fs -o /dev/null http://127.0.0.1:3000/ && break; sleep 1; done
           U=http://127.0.0.1:3000 PREFIX=mineshell DATA=~/.local/share/mineshell APP=~/mineshell/current tests/tools/real-server.sh
 
-      # After the server, so the Java it downloaded is there. The sandbox has to apply on 24.04,
-      # which got DEPLOYMENT's fix; 22.04's runner has no AppArmor restriction and systemd still
-      # makes no mount namespace in a user unit (systemd 249 or the runner, not pinned down yet),
-      # so there its line goes to the summary instead of failing the job.
+      # After the server, so the Java it downloaded is there; the sandbox has to apply on both
+      # (22.04's systemd 249 makes the user namespace only when PrivateUsers= asks for it).
       - name: Doctor
         run: |
           cd ~/mineshell/current
           MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/doctor.mjs | tee "$RUNNER_TEMP/doctor.txt"
-          if [ '${{ matrix.ubuntu }}' = 24.04 ]; then
-            grep -q '^ ok   systemd can sandbox servers' "$RUNNER_TEMP/doctor.txt"
-          else
-            { echo "Ubuntu ${{ matrix.ubuntu }}, doctor's sandbox check:"; echo '```'; grep -A1 'systemd can sandbox servers' "$RUNNER_TEMP/doctor.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          grep -q '^ ok   systemd can sandbox servers' "$RUNNER_TEMP/doctor.txt"
 
       - name: MineShell's log
         if: failure()
