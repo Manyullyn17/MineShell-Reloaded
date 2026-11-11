@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { awaitStop, forceStop, GRACEFUL_STOP_MS, restart, start, stuckStopping } from './instances';
 import { invalidateUnitState } from './systemd';
@@ -52,6 +54,36 @@ describe('stopping over RCON', () => {
 });
 
 describe('Restart', () => {
+	const systemctlVerbs = () => spawnCalls.filter((c) => c.args[0] === '--user' && ['start', 'restart'].includes(c.args[1])).map((c) => c.args[1]);
+
+	// Only Start did these; a game port changed while the server ran left its playit tunnel
+	// on the old port after the Restart the page asked for.
+	it('sets up the next run as a start does: a 1.12 server gets its difficulty as a number', async () => {
+		const instance = await createInstance({ modloader: 'forge', minecraftVersion: '1.12.2' }, { 'eula.txt': 'eula=true', 'server.properties': 'difficulty=hard\ngamemode=creative\n' });
+		unit();
+		spawnCalls.length = 0;
+		expect(await restart(instance)).toMatchObject({ ok: true, message: 'Restarting.' });
+		expect(systemctlVerbs()).toEqual(['restart']);
+		const properties = await fs.readFile(path.join(instance.path, 'server.properties'), 'utf8');
+		expect(properties).toMatch(/^difficulty=3$/m);
+		expect(properties).toMatch(/^gamemode=1$/m);
+	});
+
+	// `systemctl restart` starts a stopped unit: on a server being migrated, or with its port taken.
+	it('is a start, with a start\'s checks, when the server is not running', async () => {
+		const settingUp = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', status: 'provisioning' }, { 'eula.txt': 'eula=true' });
+		unit().stopped();
+		spawnCalls.length = 0;
+		expect(await restart(settingUp)).toMatchObject({ ok: false, message: 'This instance is still being set up.' });
+		expect(systemctlVerbs()).toEqual([]);
+		const stopped = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1', serverPort: 0, rconPort: 0 }, { 'eula.txt': 'eula=true' });
+		unit().stopped();
+		spawnCalls.length = 0;
+		// Its message is the start's (here: no Java found for it).
+		expect(await restart(stopped)).toMatchObject({ ok: true });
+		expect(systemctlVerbs()).toEqual(['start']);
+	});
+
 	it('resets systemd\'s start limit first, so a third restart in ten minutes is not refused as a crash loop', async () => {
 		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'eula.txt': 'eula=true' });
 		unit();

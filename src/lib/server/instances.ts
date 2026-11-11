@@ -1298,16 +1298,7 @@ export async function start(
 	const voice = await voicePortProblem(instance, listInstances(), async (id) => (await unitState(id)).active === 'active').catch(() => null);
 	if (voice) return { ok: false, message: voice };
 	clearStopIntent(instance.id);
-	noteRestartHeld(instance.id, null);
-	// A map mod's web server on its own port, localhost only (MineShell passes it through).
-	await applyMapModConfig(instance).catch(() => undefined);
-	// Chunky continuing its unfinished tasks after this start, as set on the World tab.
-	await applyChunkyConfig(instance).catch(() => undefined);
-	// Difficulty and game mode as numbers on a server before 1.14, which reads no names.
-	await matchPropertiesToVersion(instance.path, instance.minecraftVersion).catch(() => undefined);
-	// A public server's playit tunnels follow its ports, which change only on a (re)start;
-	// voice chat's gets its address written into the mod's voice_host.
-	await syncTunnels(instance).catch((err) => console.warn(`playit tunnels for ${instance.id} not updated:`, err));
+	await prepareRun(instance);
 	const sync = await syncUnit(instance);
 	await writeOnceArgs(instance.id, opts.onceJvmArgs ?? null);
 	await resetFailed(instance.id);
@@ -1318,6 +1309,27 @@ export async function start(
 	audit('instance.start', { instanceId: instance.id });
 	setWantedRunning(instance.id, true);
 	return { ok: true, message: sync.warning ?? 'Starting.' };
+}
+
+/**
+ * What MineShell sets up for the run about to begin, by Start and by Restart alike. Restart
+ * used to leave all but Chunky's out: a game port changed while the server ran moved the
+ * server at its restart and left its playit tunnel on the old port, a map mod added while it
+ * ran kept its own port, and a pack's named difficulty reached a 1.12 server unread.
+ */
+async function prepareRun(instance: ServerInstance): Promise<void> {
+	noteRestartHeld(instance.id, null);
+	// A map mod's web server on its own port, localhost only (MineShell passes it through).
+	await applyMapModConfig(instance).catch(() => undefined);
+	// Chunky continuing its unfinished tasks after this start, as set on the World tab. On a
+	// restart too: Chunky 1.2 writes back the value it started with at shutdown, so there a
+	// change made while it runs applies from the next restart.
+	await applyChunkyConfig(instance).catch(() => undefined);
+	// Difficulty and game mode as numbers on a server before 1.14, which reads no names.
+	await matchPropertiesToVersion(instance.path, instance.minecraftVersion).catch(() => undefined);
+	// A public server's playit tunnels follow its ports, which change only on a (re)start;
+	// voice chat's gets its address written into the mod's voice_host.
+	await syncTunnels(instance).catch((err) => console.warn(`playit tunnels for ${instance.id} not updated:`, err));
 }
 
 /** Whether a server comes back after a reboot when it is set to "if it was running" (bootstart.ts). */
@@ -1452,15 +1464,19 @@ export async function stuckStopping(id: string, since: number): Promise<{ saved:
 
 export async function restart(instance: ServerInstance): Promise<{ ok: boolean; message: string }> {
 	if (bisecting(instance.id)) return { ok: false, message: BISECT_BUSY };
+	// Restart on a server that is not running (a page open since before it stopped or crashed,
+	// a countdown that ran out after it did) is a start, and gets a start's checks: `systemctl
+	// restart` starts a stopped unit too, and did so on a server still being set up or
+	// migrated, and without looking whether its ports are free.
+	const state = await unitState(instance.id, { fresh: true }).catch(() => null);
+	if (state && (state.active === 'inactive' || state.active === 'failed')) return start(instance);
 	// A stop still waiting for the old run to exit must not stop this one.
 	cancelPendingStop(instance.id);
 	if (!(await eulaIsAccepted(instance))) {
 		return { ok: false, message: 'Accept the Minecraft EULA before starting this server.' };
 	}
 	clearStopIntent(instance.id);
-	// Read by the start half of the restart. Chunky 1.2 writes back the value it started
-	// with at shutdown, so there a change made while it runs applies from the next restart.
-	await applyChunkyConfig(instance).catch(() => undefined);
+	await prepareRun(instance);
 	await syncUnit(instance);
 	await writeOnceArgs(instance.id, null);
 	rconStopping({ port: instance.rconPort });
