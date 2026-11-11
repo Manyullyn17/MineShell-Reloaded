@@ -77,14 +77,20 @@
 		};
 	});
 
-	// ---- options (1.17+): bound to local state, re-synced when the data changes
+	// ---- options (1.17+): bound to local state, re-synced when the saved values change. Through
+	// $derived values, not `pack` itself: a running or paused server's page reloads its data every
+	// few seconds, each time with a new `pack`, and that put the saved message back over the typing.
+	const savedRequired = $derived(pack.required ?? false);
+	const savedPrompt = $derived(pack.prompt ?? '');
 	let required = $state(false);
 	let prompt = $state('');
 	$effect(() => {
-		required = pack.required ?? false;
-		prompt = pack.prompt ?? '';
+		required = savedRequired;
 	});
-	const optionsChanged = $derived(required !== (pack.required ?? false) || prompt !== (pack.prompt ?? ''));
+	$effect(() => {
+		prompt = savedPrompt;
+	});
+	const optionsChanged = $derived(required !== savedRequired || prompt !== savedPrompt);
 
 	// ---- browsing
 	let hits = $state<Hit[]>([]);
