@@ -138,9 +138,9 @@ is saved in Settings of the dev MineShell (and the installed one), encrypted, no
 The suite runs offline in seconds, so the scheduled workflows are not for what is too slow for
 a push but for what breaks without a commit. `.github/workflows/nightly.yml`: `check-apis.sh`
 (the CurseForge key from the repository secret `CURSEFORGE_API_KEY`; skipped without it).
-`weekly.yml`, Mondays: on Ubuntu 22.04 and 24.04 (`ubuntu-latest` moves) the release archive
-installed with `install.sh` (24.04 first gets DEPLOYMENT's AppArmor fix, cut out of the doc
-itself), `/setup` answering, `real-server.sh` on the installed MineShell with sign-in turned
+`weekly.yml`, Mondays: on Ubuntu 22.04, 24.04 and 26.04 (`ubuntu-latest` moves) the release
+archive installed with `install.sh` (24.04 and 26.04 first get DEPLOYMENT's AppArmor fix for
+their version, cut out of the doc itself), `/setup` answering, `real-server.sh` on the installed MineShell with sign-in turned
 off, then `doctor`, which must find the sandbox working; and `repeat-tests.sh 20`. A runner's
 account has a user manager only after `loginctl enable-linger`. Both can be started from the
 Actions tab (workflow_dispatch). `scripts/release.sh` refuses while the last run of either

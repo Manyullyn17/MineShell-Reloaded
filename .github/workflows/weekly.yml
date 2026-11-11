@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ubuntu: ['22.04', '24.04']
+        ubuntu: ['22.04', '24.04', '26.04']
     steps:
       - uses: actions/checkout@v7
 
@@ -42,12 +42,16 @@ jobs:
           echo "No user manager for $USER." >&2
           exit 1
 
-      # Ubuntu 24.04 refuses systemd's user manager the user namespaces the servers' sandbox
-      # needs. The fix as DEPLOYMENT.md gives it, run from the doc itself so the two cannot drift.
+      # Ubuntu 24.04 and 26.04 refuse systemd's user manager the user namespaces the servers'
+      # sandbox needs. The fix as DEPLOYMENT.md gives it for each, run from the doc itself so the
+      # two cannot drift: 24.04's per-account drop-in, 26.04's profile attached by path (there
+      # the drop-in only stacks).
       - name: AppArmor exception from DEPLOYMENT.md
-        if: matrix.ubuntu == '24.04'
+        if: matrix.ubuntu != '22.04'
+        env:
+          BLOCK: ${{ matrix.ubuntu == '24.04' && 'AppArmorProfile=-systemd-userns' || 'profile systemd-userns /usr/lib/systemd/systemd' }}
         run: |
-          awk '/^```sh$/ { block = ""; inside = 1; next } /^```$/ { if (inside && block ~ /systemd-userns/) { printf "%s", block; exit } inside = 0; next } inside { block = block $0 "\n" }' docs/DEPLOYMENT.md > "$RUNNER_TEMP/apparmor.sh"
+          awk -v want="$BLOCK" '/^```sh$/ { block = ""; inside = 1; next } /^```$/ { if (inside && index(block, want)) { printf "%s", block; exit } inside = 0; next } inside { block = block $0 "\n" }' docs/DEPLOYMENT.md > "$RUNNER_TEMP/apparmor.sh"
           cat "$RUNNER_TEMP/apparmor.sh"
           grep -q apparmor_parser "$RUNNER_TEMP/apparmor.sh"
           bash -e "$RUNNER_TEMP/apparmor.sh"

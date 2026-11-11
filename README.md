@@ -219,7 +219,7 @@ Share MineShell with friends while controlling which servers and features each a
 - `journalctl`, provided by systemd.
 - A compatible Java runtime for each Minecraft version. MineShell can discover or download supported runtimes.
 
-Tested on Debian 12, Ubuntu 24.04, Fedora 44 and Arch Linux, on x86-64. ARM machines and musl-based distributions such as Alpine are untested.
+Tested on Debian 12, Ubuntu 22.04, 24.04 and 26.04, Fedora 44 and Arch Linux, on x86-64. ARM machines and musl-based distributions such as Alpine are untested.
 
 MineShell is intended for self-hosted use on a Linux machine. It is not a multi-tenant hosting panel: Minecraft servers run under the same Linux account as MineShell. Users granted access to files, mods, or Java and loader settings may be able to execute programs as that account. Only grant those permissions to people you trust.
 
