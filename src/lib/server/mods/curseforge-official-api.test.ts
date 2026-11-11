@@ -28,6 +28,7 @@ const { testCurseforgeApiKey } = await import('../curseforge');
 useRecordedHttp('curseforge-official');
 
 const MEATBALLCRAFT = '411966';
+const RLCRAFT = '285109';
 /** MeatballCraft 0.18.6.4, a release; 0.18.6.2 before it is a beta. */
 const PACK_FILE = '8665629';
 const BETA_FILE = '8557163';
@@ -39,17 +40,19 @@ describe.skipIf(recording && !KEY)("CurseForge's official API", () => {
 		expect(await testCurseforgeApiKey(KEY || 'replayed')).toEqual({ ok: true, message: 'CurseForge accepted the key.' });
 	});
 
+	// RLCraft, not MeatballCraft: since November 2026 CurseForge's text and slug search no longer
+	// match MeatballCraft at all (by id and author it is still there), and Prism misses it too.
 	it('finds a pack by name, with its author, picture, loader and Minecraft versions', async () => {
-		const hits = await official.search({ kind: 'modpack', term: 'meatballcraft' });
-		expect(hits.find((h) => h.id === MEATBALLCRAFT)).toMatchObject({
+		const hits = await official.search({ kind: 'modpack', term: 'rlcraft' });
+		expect(hits.find((h) => h.id === RLCRAFT)).toMatchObject({
 			source: 'curseforge',
-			slug: 'meatballcraft',
-			name: 'MeatballCraft, Dimensional Ascension',
-			author: 'sainagh',
+			slug: 'rlcraft',
+			name: 'RLCraft',
+			author: 'Shivaxi',
 			iconUrl: expect.stringMatching(/^https:\/\/media\.forgecdn\.net\//),
 			downloads: expect.any(Number),
 			updatedAt: expect.stringMatching(/^20\d\d-/),
-			projectUrl: 'https://www.curseforge.com/minecraft/modpacks/meatballcraft',
+			projectUrl: 'https://www.curseforge.com/minecraft/modpacks/rlcraft',
 			loaders: ['forge'],
 			gameVersions: expect.arrayContaining(['1.12.2'])
 		});

@@ -8210,42 +8210,30 @@
    "data": "<p>bug fixes</p>"
   }
  },
- "GET https://api.curseforge.com/v1/mods/search?gameId=432&classId=4471&searchFilter=meatballcraft&sortField=2&sortOrder=desc&pageSize=20&index=0": {
+ "GET https://api.curseforge.com/v1/mods/search?gameId=432&classId=4471&searchFilter=rlcraft&sortField=2&sortOrder=desc&pageSize=20&index=0": {
   "status": 200,
   "contentType": "application/json; charset=utf-8",
   "json": {
    "data": [
     {
      "screenshots": [],
-     "id": 411966,
+     "id": 285109,
      "gameId": 432,
-     "name": "MeatballCraft, Dimensional Ascension",
-     "slug": "meatballcraft",
+     "name": "RLCraft",
+     "slug": "rlcraft",
      "links": {
-      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/meatballcraft",
-      "wikiUrl": "https://github.com/sainagh/meatballcraft",
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraft",
+      "wikiUrl": "https://rlcraft.wiki.gg/",
       "issuesUrl": null,
-      "sourceUrl": "https://github.com/sainagh/meatballcraft"
+      "sourceUrl": null
      },
-     "summary": "An expert-level tech-RPG modpack",
+     "summary": "A modpack specially designed to bring an incredibly hardcore and semi-realism challenge revolving around survival, RPG elements, and adventure-like exploration.",
      "status": 4,
-     "downloadCount": 616250,
-     "favoriteCount": 626,
+     "downloadCount": 30568541,
+     "favoriteCount": 12700,
      "isFeatured": false,
-     "primaryCategoryId": 4474,
+     "primaryCategoryId": 4475,
      "categories": [
-      {
-       "id": 4482,
-       "gameId": 432,
-       "name": "Extra Large",
-       "slug": "extra-large",
-       "url": "https://www.curseforge.com/minecraft/modpacks/extra-large",
-       "iconUrl": "https://media.forgecdn.net/avatars/14/472/635596760403562826.png",
-       "dateModified": "2015-02-16T15:34:00.357Z",
-       "isClass": false,
-       "classId": 4471,
-       "parentCategoryId": 4471
-      },
       {
        "id": 4475,
        "gameId": 432,
@@ -8259,13 +8247,877 @@
        "parentCategoryId": 4471
       },
       {
-       "id": 4474,
+       "id": 4483,
        "gameId": 432,
-       "name": "Sci-Fi",
-       "slug": "sci-fi",
-       "url": "https://www.curseforge.com/minecraft/modpacks/sci-fi",
-       "iconUrl": "https://media.forgecdn.net/avatars/14/323/635591780581068715.png",
-       "dateModified": "2015-02-10T21:14:18.107Z",
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4473,
+       "gameId": 432,
+       "name": "Magic",
+       "slug": "magic",
+       "url": "https://www.curseforge.com/minecraft/modpacks/magic",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/474/635596760578719019.png",
+       "dateModified": "2015-02-16T15:34:17.873Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 11806322,
+       "name": "Shivaxi",
+       "url": "https://www.curseforge.com/members/shivaxi",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/41f3fd00-f746-4d74-bf89-e15dd5123d67-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 4,
+        "downloadsThreshold": 10000000
+       }
+      }
+     ],
+     "logo": {
+      "id": 468243,
+      "modId": 285109,
+      "title": "637751369169569212.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/468/243/256/256/637751369169569212.png",
+      "url": "https://media.forgecdn.net/avatars/468/243/637751369169569212.png"
+     },
+     "mainFileId": 4612979,
+     "latestFiles": [
+      {
+       "id": 2708027,
+       "gameId": 432,
+       "modId": 285109,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.12.2 - Alpha v2.0.zip",
+       "fileName": "RLCraft 1.12.2 - Alpha v2.0.zip",
+       "releaseType": 3,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "404470412ea021c8936a8267f21e3a72d361509b",
+         "algo": 1
+        },
+        {
+         "value": "f60b063ffaf0167730ae9f77e69eee27",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2019-05-06T18:46:15.887Z",
+       "fileLength": 1520136,
+       "downloadCount": 78979,
+       "downloadUrl": "https://edge.forgecdn.net/files/2708/27/RLCraft%201.12.2%20-%20Alpha%20v2.0.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3912887938,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 240131959
+        }
+       ]
+      },
+      {
+       "id": 2935316,
+       "gameId": 432,
+       "modId": 285109,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.12.2 - Beta v2.8.2.zip",
+       "fileName": "RLCraft 1.12.2 - Beta v2.8.2.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "7f2402916e448241f597cc66afff983458523228",
+         "algo": 1
+        },
+        {
+         "value": "6d72fea71eeceba791792d5b2c716b42",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2020-04-20T08:11:34.3Z",
+       "fileLength": 30627569,
+       "downloadCount": 4776187,
+       "downloadUrl": "https://edge.forgecdn.net/files/2935/316/RLCraft%201.12.2%20-%20Beta%20v2.8.2.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 2935323,
+       "fileFingerprint": 2523815034,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3991312357
+        }
+       ]
+      },
+      {
+       "id": 4487646,
+       "gameId": 432,
+       "modId": 285109,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.12.2 - Release v2.9.2d.zip",
+       "fileName": "RLCraft 1.12.2 - Release v2.9.2d.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "3517e6e5eed0bd65ecd35a9b2fc875ff3c2fddec",
+         "algo": 1
+        },
+        {
+         "value": "2d2222865fd3a230a820830457bb99a2",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-04-12T21:45:11.603Z",
+       "fileLength": 51345522,
+       "downloadCount": 938739,
+       "downloadUrl": "https://edge.forgecdn.net/files/4487/646/RLCraft%201.12.2%20-%20Release%20v2.9.2d.zip",
+       "gameVersions": [
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 4487650,
+       "fileFingerprint": 2676809031,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 2192261845
+        }
+       ]
+      },
+      {
+       "id": 4612979,
+       "gameId": 432,
+       "modId": 285109,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.12.2 - Release v2.9.3.zip",
+       "fileName": "RLCraft 1.12.2 - Release v2.9.3.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "11b0261e4dde9169173b24b88cbc1622859f4a68",
+         "algo": 1
+        },
+        {
+         "value": "1311977c2d75ec837a3e255a1ee75b98",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-06-27T23:31:57.797Z",
+       "fileLength": 51324367,
+       "downloadCount": 10536452,
+       "downloadUrl": "https://edge.forgecdn.net/files/4612/979/RLCraft%201.12.2%20-%20Release%20v2.9.3.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 4612990,
+       "fileFingerprint": 3659337089,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 4231431615
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 4612979,
+       "filename": "RLCraft 1.12.2 - Release v2.9.3.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 4487646,
+       "filename": "RLCraft 1.12.2 - Release v2.9.2d.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 2935316,
+       "filename": "RLCraft 1.12.2 - Beta v2.8.2.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 628
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 2708027,
+       "filename": "RLCraft 1.12.2 - Alpha v2.0.zip",
+       "releaseType": 3,
+       "gameVersionTypeId": 628
+      },
+      {
+       "gameVersion": "1.11.2",
+       "fileId": 2532808,
+       "filename": "RLCraft 1.11.2 - Beta v1.4.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 599
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2018-01-11T16:48:31.147Z",
+     "dateModified": "2025-04-02T07:44:02.187Z",
+     "dateReleased": "2023-12-16T18:44:42.473Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 2571,
+     "isAvailable": true,
+     "hasCommentsEnabled": false,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "socialLinks": [
+      {
+       "type": 10,
+       "url": "https://www.youtube.com/Shivaxi"
+      }
+     ],
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 964411,
+       "modId": 1003933,
+       "title": "Mods Included",
+       "description": "Mods Included Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/411/310/172/mods.png",
+       "url": "https://media.forgecdn.net/attachments/964/411/mods.png"
+      },
+      {
+       "id": 964404,
+       "modId": 1003933,
+       "title": "RLCraft Dregora Header",
+       "description": "RLCraft Dregora Header Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/404/310/172/rlcraft-dregora-curseforge-banner.png",
+       "url": "https://media.forgecdn.net/attachments/964/404/rlcraft-dregora-curseforge-banner.png"
+      },
+      {
+       "id": 964403,
+       "modId": 1003933,
+       "title": "Tips & Starting",
+       "description": "Tips & Starting Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/403/310/172/tips-starting.png",
+       "url": "https://media.forgecdn.net/attachments/964/403/tips-starting.png"
+      },
+      {
+       "id": 964402,
+       "modId": 1003933,
+       "title": "Summary",
+       "description": "Summary Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/402/310/172/summary.png",
+       "url": "https://media.forgecdn.net/attachments/964/402/summary.png"
+      },
+      {
+       "id": 964398,
+       "modId": 1003933,
+       "title": "Reporting Issues",
+       "description": "Reporting Issues Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/398/310/172/reporting.png",
+       "url": "https://media.forgecdn.net/attachments/964/398/reporting.png"
+      },
+      {
+       "id": 964394,
+       "modId": 1003933,
+       "title": "Installation",
+       "description": "Installation Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/394/310/172/installation.png",
+       "url": "https://media.forgecdn.net/attachments/964/394/installation.png"
+      },
+      {
+       "id": 964392,
+       "modId": 1003933,
+       "title": "Important",
+       "description": "Important Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/392/310/172/important.png",
+       "url": "https://media.forgecdn.net/attachments/964/392/important.png"
+      },
+      {
+       "id": 964391,
+       "modId": 1003933,
+       "title": "Future Changes",
+       "description": "Future Changes Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/391/310/172/future.png",
+       "url": "https://media.forgecdn.net/attachments/964/391/future.png"
+      },
+      {
+       "id": 964390,
+       "modId": 1003933,
+       "title": "Features",
+       "description": "Features Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/390/310/172/features.png",
+       "url": "https://media.forgecdn.net/attachments/964/390/features.png"
+      },
+      {
+       "id": 964389,
+       "modId": 1003933,
+       "title": "Credits",
+       "description": "Credits Banner",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/964/389/310/172/credits.png",
+       "url": "https://media.forgecdn.net/attachments/964/389/credits.png"
+      }
+     ],
+     "id": 1003933,
+     "gameId": 432,
+     "name": "RLCraft Dregora",
+     "slug": "rlcraft-dregora",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraft-dregora",
+      "wikiUrl": "https://dregorarl.wiki.gg",
+      "issuesUrl": "https://github.com/RLSquad/RLCraft-Dregora-Edition-Public/issues",
+      "sourceUrl": null
+     },
+     "summary": "RLCraft meets Dregora in this specially designed modpack to curate a special unique experience.",
+     "status": 4,
+     "downloadCount": 2099674,
+     "favoriteCount": 1770,
+     "isFeatured": false,
+     "primaryCategoryId": 10683,
+     "categories": [
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 10683,
+       "gameId": 432,
+       "name": "RLCraft",
+       "slug": "rlcraft",
+       "url": "https://www.curseforge.com/minecraft/modpacks/rlcraft",
+       "iconUrl": "https://media.forgecdn.net/avatars/1729/298/639100433200568522.png",
+       "dateModified": "2026-03-25T13:48:40.063Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 11806322,
+       "name": "Shivaxi",
+       "url": "https://www.curseforge.com/members/shivaxi",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/41f3fd00-f746-4d74-bf89-e15dd5123d67-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 4,
+        "downloadsThreshold": 10000000
+       }
+      }
+     ],
+     "logo": {
+      "id": 1100111,
+      "modId": 1003933,
+      "title": "638647210513856968.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1100/111/256/256/638647210513856968.png",
+      "url": "https://media.forgecdn.net/avatars/1100/111/638647210513856968.png"
+     },
+     "mainFileId": 7285701,
+     "latestFiles": [
+      {
+       "id": 7285701,
+       "gameId": 432,
+       "modId": 1003933,
+       "isAvailable": true,
+       "displayName": "RLCraft Dregora v1.1.2b.zip",
+       "fileName": "RLCraft Dregora v1.1.2b.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "73cbff325beff25f9c8dc8e2b87c481d71efbdec",
+         "algo": 1
+        },
+        {
+         "value": "2fa2918f1b22186a90205c2245ff7155",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-12-02T13:40:24.677Z",
+       "fileLength": 194705011,
+       "downloadCount": 233822,
+       "fileSizeOnDisk": 211395865,
+       "downloadUrl": "https://edge.forgecdn.net/files/7285/701/RLCraft%20Dregora%20v1.1.2b.zip",
+       "gameVersions": [
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 7285709,
+       "fileFingerprint": 2156001806,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 1618042789
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 2822350063
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 911330892
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 7285701,
+       "filename": "RLCraft Dregora v1.1.2b.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2024-10-18T17:01:37.023Z",
+     "dateModified": "2026-04-14T15:15:23.063Z",
+     "dateReleased": "2025-12-02T13:42:50.67Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 6897,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 1543935,
+       "modId": 1454212,
+       "title": "The lost cities generating in the undergarden",
+       "description": "The lost cities generating in the undergarden, special thanks to Velkhana! ",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1543/935/310/172/2026-02-20_14-04-13-jpg.jpg",
+       "url": "https://media.forgecdn.net/attachments/1543/935/2026-02-20_14-04-13-jpg.jpg"
+      },
+      {
+       "id": 1578414,
+       "modId": 1454212,
+       "title": "Custom chaos battle tower",
+       "description": "Custom chaos battle tower",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1578/414/310/172/2026-03-13_00-43-35-jpg.jpg",
+       "url": "https://media.forgecdn.net/attachments/1578/414/2026-03-13_00-43-35-jpg.jpg"
+      }
+     ],
+     "id": 1454212,
+     "gameId": 432,
+     "name": "Restless Horizons [3.2 IS OUT]",
+     "slug": "restless-horizons",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/restless-horizons",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "Modern and enjoyable take on RLCraft | Exclusive new items | Custom funded lycanites | Variety of new weapons, armor and baubles | Modernized battle towers | Custom blights | Event moons | Leveling, temperature and thirst | Rewarding quests |  Integration",
+     "status": 4,
+     "downloadCount": 186881,
+     "favoriteCount": 429,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 9243,
+       "gameId": 432,
+       "name": "Expert",
+       "slug": "expert",
+       "url": "https://www.curseforge.com/minecraft/modpacks/expert",
+       "iconUrl": "https://media.forgecdn.net/avatars/1585/295/639026019554106289.png",
+       "dateModified": "2025-12-29T10:45:55.42Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 10683,
+       "gameId": 432,
+       "name": "RLCraft",
+       "slug": "rlcraft",
+       "url": "https://www.curseforge.com/minecraft/modpacks/rlcraft",
+       "iconUrl": "https://media.forgecdn.net/avatars/1729/298/639100433200568522.png",
+       "dateModified": "2026-03-25T13:48:40.063Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 103001449,
+       "name": "ElocinDev",
+       "url": "https://www.curseforge.com/members/elocindev",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/1adaa417-890c-4d0d-af1b-cd59c34e56d5-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 6,
+        "downloadsThreshold": 500000000
+       }
+      },
+      {
+       "id": 113943618,
+       "name": "Lyzerrah",
+       "url": "https://www.curseforge.com/members/lyzerrah",
+       "avatarUrl": "https://media.forgecdn.net/avatars/1439/349/638933162029685803.jpeg",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 2008452,
+      "modId": 1454212,
+      "title": "639233522668049805.webp",
+      "description": "",
+      "thumbnailUrl": "",
+      "url": "https://media.forgecdn.net/avatars/2008/452/639233522668049805.webp"
+     },
+     "mainFileId": 9531949,
+     "latestFiles": [
+      {
+       "id": 9531949,
+       "gameId": 432,
+       "modId": 1454212,
+       "isAvailable": true,
+       "displayName": "Restless Horizons v3.2.1",
+       "fileName": "Restless-Horizons-v3.2.1.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "7e50a53a32f89919d21524136e37f895d4217fd3",
+         "algo": 1
+        },
+        {
+         "value": "dee98c4a1b57a1a66be18e3a60ee8a00",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2026-11-09T20:34:37.877Z",
+       "fileLength": 182786273,
+       "downloadCount": 384,
+       "fileSizeOnDisk": 231827603,
+       "downloadUrl": "https://edge.forgecdn.net/files/9531/949/Restless-Horizons-v3.2.1.zip",
+       "gameVersions": [
+        "1.20.1",
+        "Forge",
+        "1.20"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.20",
+         "gameVersionPadded": "0000000001.0000000020",
+         "gameVersion": "1.20",
+         "gameVersionReleaseDate": "2023-06-07T00:00:00Z",
+         "gameVersionTypeId": 75125
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 883292465,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 565028377
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 4251354163
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 3020062082
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 9531949,
+       "filename": "Restless-Horizons-v3.2.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.20",
+       "fileId": 9531949,
+       "filename": "Restless-Horizons-v3.2.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2026-02-05T11:49:52.243Z",
+     "dateModified": "2026-11-10T08:00:18.23Z",
+     "dateReleased": "2026-11-09T20:48:20.063Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 10651,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "serverAffiliation": {
+      "isEnabled": true,
+      "isDefaultBanner": false,
+      "hasDiscount": false,
+      "affiliationService": 2,
+      "customImageUrl": "https://media.forgecdn.net/banner/console-affiliation-banners/banner_46c078c0-40f8-4df7-8455-0dec0f22b608.webp",
+      "affiliationLink": "https://link.cinderstonestudios.com/server-banner-rh"
+     },
+     "socialLinks": [
+      {
+       "type": 2,
+       "url": "https://discord.gg/A4STw59GHP"
+      },
+      {
+       "type": 10,
+       "url": "https://www.youtube.com/@Lyzerrah"
+      }
+     ],
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 411531,
+     "gameId": 432,
+     "name": "RLCraft Recrafted",
+     "slug": "rlcraft-remastered",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraft-remastered",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "RLCraft with more mods, some may be unbalanced",
+     "status": 4,
+     "downloadCount": 199323,
+     "favoriteCount": 345,
+     "isFeatured": false,
+     "primaryCategoryId": 4476,
+     "categories": [
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
        "isClass": false,
        "classId": 4471,
        "parentCategoryId": 4471
@@ -8281,187 +9133,58 @@
        "isClass": false,
        "classId": 4471,
        "parentCategoryId": 4471
-      },
-      {
-       "id": 4478,
-       "gameId": 432,
-       "name": "Quests",
-       "slug": "quests",
-       "url": "https://www.curseforge.com/minecraft/modpacks/quests",
-       "iconUrl": "https://media.forgecdn.net/avatars/14/487/635596816137981263.png",
-       "dateModified": "2015-02-16T17:06:53.797Z",
-       "isClass": false,
-       "classId": 4471,
-       "parentCategoryId": 4471
       }
      ],
      "classId": 4471,
      "authors": [
       {
-       "id": 101456858,
-       "name": "sainagh",
-       "url": "https://www.curseforge.com/members/sainagh",
-       "avatarUrl": "https://static-cdn.jtvnw.net/user-default-pictures-uv/dbdc9198-def8-11e9-8681-784f43822e80-profile_image-150x150.png",
+       "id": 100670877,
+       "name": "kullixer",
+       "url": "https://www.curseforge.com/members/kullixer",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/8daf242a-16cd-4666-82bc-f49fd80d207f-profile_image-150x150.png",
        "userTierInfo": {
-        "tierLevel": 2,
-        "downloadsThreshold": 500000
+        "tierLevel": 1,
+        "downloadsThreshold": 100000
        }
       }
      ],
      "logo": {
-      "id": 533621,
-      "modId": 411966,
-      "title": "637856423394787271.png",
+      "id": 304137,
+      "modId": 411531,
+      "title": "637375494672183714.png",
       "description": "",
-      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/533/621/256/256/637856423394787271.png",
-      "url": "https://media.forgecdn.net/avatars/533/621/637856423394787271.png"
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/304/137/256/256/637375494672183714.png",
+      "url": "https://media.forgecdn.net/avatars/304/137/637375494672183714.png"
      },
-     "mainFileId": 8665629,
+     "mainFileId": 3078172,
      "latestFiles": [
       {
-       "id": 3075050,
+       "id": 3078172,
        "gameId": 432,
-       "modId": 411966,
+       "modId": 411531,
        "isAvailable": true,
-       "displayName": "MeatballCraft-0.1.0.zip",
-       "fileName": "MeatballCraft-0.1.0.zip",
-       "releaseType": 3,
-       "fileStatus": 4,
-       "hashes": [
-        {
-         "value": "ba05885ff964a7e98fe9c5f51d4677d8619d4273",
-         "algo": 1
-        },
-        {
-         "value": "8e3734ea926fe7c5dd9af5d41be847fd",
-         "algo": 2
-        }
-       ],
-       "fileDate": "2020-10-08T21:11:37.6Z",
-       "fileLength": 14901613,
-       "downloadCount": 513,
-       "downloadUrl": "https://edge.forgecdn.net/files/3075/50/MeatballCraft-0.1.0.zip",
-       "gameVersions": [
-        "1.12.2"
-       ],
-       "sortableGameVersions": [
-        {
-         "gameVersionName": "1.12.2",
-         "gameVersionPadded": "0000000001.0000000012.0000000002",
-         "gameVersion": "1.12.2",
-         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
-         "gameVersionTypeId": 628
-        }
-       ],
-       "dependencies": [],
-       "alternateFileId": 0,
-       "isServerPack": false,
-       "fileFingerprint": 1149404401,
-       "modules": [
-        {
-         "name": "manifest.json",
-         "fingerprint": 599252878
-        }
-       ]
-      },
-      {
-       "id": 3552901,
-       "gameId": 432,
-       "modId": 411966,
-       "isAvailable": true,
-       "displayName": "MeatballCraft-0.10.3.zip",
-       "fileName": "MeatballCraft-0.10.3.zip",
-       "releaseType": 3,
-       "fileStatus": 4,
-       "hashes": [
-        {
-         "value": "525f2ed0a0b54d11e54f90e6d307f6337ed5e087",
-         "algo": 1
-        },
-        {
-         "value": "32e68474b8dc1f16a5c9c4be2e9b9953",
-         "algo": 2
-        }
-       ],
-       "fileDate": "2021-12-06T19:47:17.097Z",
-       "fileLength": 209109306,
-       "downloadCount": 51,
-       "downloadUrl": "https://edge.forgecdn.net/files/3552/901/MeatballCraft-0.10.3.zip",
-       "gameVersions": [
-        "1.12",
-        "Forge",
-        "1.12.2"
-       ],
-       "sortableGameVersions": [
-        {
-         "gameVersionName": "1.12",
-         "gameVersionPadded": "0000000001.0000000012",
-         "gameVersion": "1.12",
-         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
-         "gameVersionTypeId": 628
-        },
-        {
-         "gameVersionName": "Forge",
-         "gameVersionPadded": "0",
-         "gameVersion": "",
-         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
-         "gameVersionTypeId": 68441
-        },
-        {
-         "gameVersionName": "1.12.2",
-         "gameVersionPadded": "0000000001.0000000012.0000000002",
-         "gameVersion": "1.12.2",
-         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
-         "gameVersionTypeId": 628
-        }
-       ],
-       "dependencies": [],
-       "alternateFileId": 0,
-       "isServerPack": false,
-       "fileFingerprint": 3810564581,
-       "modules": [
-        {
-         "name": "manifest.json",
-         "fingerprint": 3169683479
-        }
-       ]
-      },
-      {
-       "id": 6668739,
-       "gameId": 432,
-       "modId": 411966,
-       "isAvailable": true,
-       "displayName": "Meatballcraft-prerelease-0.18.1",
-       "fileName": "Meatballcraft-prepatch-0.18.1.zip",
+       "displayName": "RLCraft Remastered v1.1.1",
+       "fileName": "RLCraft Remastered v1.1.1-1.1.1.zip",
        "releaseType": 1,
        "fileStatus": 4,
        "hashes": [
         {
-         "value": "29d09ef5f36c9095abf1b974f9a875afb8981d31",
+         "value": "e39f35d05a56221900fe680298d78c644678e504",
          "algo": 1
         },
         {
-         "value": "76826bad4c9a60067ab26dda7433ee4c",
+         "value": "db332ef15e9631ecd12741b45d82dd97",
          "algo": 2
         }
        ],
-       "fileDate": "2025-06-18T23:03:56.197Z",
-       "fileLength": 143494167,
-       "downloadCount": 20692,
-       "fileSizeOnDisk": 202356665,
-       "downloadUrl": "https://edge.forgecdn.net/files/6668/739/Meatballcraft-prepatch-0.18.1.zip",
+       "fileDate": "2020-10-13T02:14:37.187Z",
+       "fileLength": 2107112,
+       "downloadCount": 119354,
+       "downloadUrl": "https://edge.forgecdn.net/files/3078/172/RLCraft%20Remastered%20v1.1.1-1.1.1.zip",
        "gameVersions": [
-        "1.12",
         "1.12.2"
        ],
        "sortableGameVersions": [
-        {
-         "gameVersionName": "1.12",
-         "gameVersionPadded": "0000000001.0000000012",
-         "gameVersion": "1.12",
-         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
-         "gameVersionTypeId": 628
-        },
         {
          "gameVersionName": "1.12.2",
          "gameVersionPadded": "0000000001.0000000012.0000000002",
@@ -8473,245 +9196,30 @@
        "dependencies": [],
        "alternateFileId": 0,
        "isServerPack": false,
-       "serverPackFileId": 6668808,
-       "fileFingerprint": 1779370488,
+       "fileFingerprint": 1728447239,
        "modules": [
         {
          "name": "manifest.json",
-         "fingerprint": 1690516602
-        },
-        {
-         "name": "modlist.html",
-         "fingerprint": 95765642
-        },
-        {
-         "name": "overrides",
-         "fingerprint": 531145161
-        }
-       ]
-      },
-      {
-       "id": 8557163,
-       "gameId": 432,
-       "modId": 411966,
-       "isAvailable": true,
-       "displayName": "Meatballcraft-prerelease-0.18.6.2.zip",
-       "fileName": "Meatballcraft-prerelease-0.18.6.2.zip",
-       "releaseType": 2,
-       "fileStatus": 4,
-       "hashes": [
-        {
-         "value": "1056eeaaff70cf5bec0e881d338bced227ad357c",
-         "algo": 1
-        },
-        {
-         "value": "a018f63c11d0b623c9035e5ea119ed45",
-         "algo": 2
-        }
-       ],
-       "fileDate": "2026-08-01T21:29:10.947Z",
-       "fileLength": 160554209,
-       "downloadCount": 187,
-       "fileSizeOnDisk": 226838171,
-       "downloadUrl": "https://edge.forgecdn.net/files/8557/163/Meatballcraft-prerelease-0.18.6.2.zip",
-       "gameVersions": [
-        "1.12",
-        "Forge",
-        "1.12.2"
-       ],
-       "sortableGameVersions": [
-        {
-         "gameVersionName": "1.12",
-         "gameVersionPadded": "0000000001.0000000012",
-         "gameVersion": "1.12",
-         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
-         "gameVersionTypeId": 628
-        },
-        {
-         "gameVersionName": "Forge",
-         "gameVersionPadded": "0",
-         "gameVersion": "",
-         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
-         "gameVersionTypeId": 68441
-        },
-        {
-         "gameVersionName": "1.12.2",
-         "gameVersionPadded": "0000000001.0000000012.0000000002",
-         "gameVersion": "1.12.2",
-         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
-         "gameVersionTypeId": 628
-        }
-       ],
-       "dependencies": [],
-       "alternateFileId": 0,
-       "isServerPack": false,
-       "serverPackFileId": 8557274,
-       "fileFingerprint": 2210987219,
-       "modules": [
-        {
-         "name": "manifest.json",
-         "fingerprint": 302845601
-        },
-        {
-         "name": "modlist.html",
-         "fingerprint": 1018361395
-        },
-        {
-         "name": "overrides",
-         "fingerprint": 3978823202
-        }
-       ]
-      },
-      {
-       "id": 8665629,
-       "gameId": 432,
-       "modId": 411966,
-       "isAvailable": true,
-       "displayName": "Meatballcraft-prerelease-0.18.6.4.zip",
-       "fileName": "Meatballcraft-prerelease-0.18.6.4.zip",
-       "releaseType": 1,
-       "fileStatus": 4,
-       "hashes": [
-        {
-         "value": "a1feda1439fbf64f2489f682ce2d042873fc3c9f",
-         "algo": 1
-        },
-        {
-         "value": "848066740fbefe14f0609ab6cf42fc5b",
-         "algo": 2
-        }
-       ],
-       "fileDate": "2026-08-16T21:30:42.46Z",
-       "fileLength": 160561084,
-       "downloadCount": 609,
-       "fileSizeOnDisk": 226856762,
-       "downloadUrl": "https://edge.forgecdn.net/files/8665/629/Meatballcraft-prerelease-0.18.6.4.zip",
-       "gameVersions": [
-        "1.12",
-        "Forge",
-        "1.12.2"
-       ],
-       "sortableGameVersions": [
-        {
-         "gameVersionName": "1.12",
-         "gameVersionPadded": "0000000001.0000000012",
-         "gameVersion": "1.12",
-         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
-         "gameVersionTypeId": 628
-        },
-        {
-         "gameVersionName": "Forge",
-         "gameVersionPadded": "0",
-         "gameVersion": "",
-         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
-         "gameVersionTypeId": 68441
-        },
-        {
-         "gameVersionName": "1.12.2",
-         "gameVersionPadded": "0000000001.0000000012.0000000002",
-         "gameVersion": "1.12.2",
-         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
-         "gameVersionTypeId": 628
-        }
-       ],
-       "dependencies": [],
-       "alternateFileId": 0,
-       "isServerPack": false,
-       "serverPackFileId": 8665734,
-       "fileFingerprint": 2552303250,
-       "modules": [
-        {
-         "name": "manifest.json",
-         "fingerprint": 357623445
-        },
-        {
-         "name": "modlist.html",
-         "fingerprint": 2816566980
-        },
-        {
-         "name": "overrides",
-         "fingerprint": 3650626524
+         "fingerprint": 3374979846
         }
        ]
       }
      ],
      "latestFilesIndexes": [
       {
-       "gameVersion": "1.12",
-       "fileId": 8665629,
-       "filename": "Meatballcraft-prerelease-0.18.6.4.zip",
+       "gameVersion": "1.12.2",
+       "fileId": 3078172,
+       "filename": "RLCraft Remastered v1.1.1-1.1.1.zip",
        "releaseType": 1,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12.2",
-       "fileId": 8665629,
-       "filename": "Meatballcraft-prerelease-0.18.6.4.zip",
-       "releaseType": 1,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12",
-       "fileId": 8557163,
-       "filename": "Meatballcraft-prerelease-0.18.6.2.zip",
-       "releaseType": 2,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12.2",
-       "fileId": 8557163,
-       "filename": "Meatballcraft-prerelease-0.18.6.2.zip",
-       "releaseType": 2,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12",
-       "fileId": 6668739,
-       "filename": "Meatballcraft-prepatch-0.18.1.zip",
-       "releaseType": 1,
-       "gameVersionTypeId": 628
-      },
-      {
-       "gameVersion": "1.12.2",
-       "fileId": 6668739,
-       "filename": "Meatballcraft-prepatch-0.18.1.zip",
-       "releaseType": 1,
-       "gameVersionTypeId": 628
-      },
-      {
-       "gameVersion": "1.12",
-       "fileId": 3552901,
-       "filename": "MeatballCraft-0.10.3.zip",
-       "releaseType": 3,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12.2",
-       "fileId": 3552901,
-       "filename": "MeatballCraft-0.10.3.zip",
-       "releaseType": 3,
-       "gameVersionTypeId": 628,
-       "modLoader": 1
-      },
-      {
-       "gameVersion": "1.12.2",
-       "fileId": 3075050,
-       "filename": "MeatballCraft-0.1.0.zip",
-       "releaseType": 3,
        "gameVersionTypeId": 628
       }
      ],
      "latestEarlyAccessFilesIndexes": [],
-     "dateCreated": "2020-10-08T22:13:57.163Z",
-     "dateModified": "2026-08-16T22:42:02.743Z",
-     "dateReleased": "2026-08-16T21:43:36.003Z",
+     "dateCreated": "2020-10-06T17:23:48.61Z",
+     "dateModified": "2020-10-15T23:55:38.107Z",
+     "dateReleased": "2020-10-13T02:14:37.187Z",
      "allowModDistribution": true,
-     "gamePopularityRank": 12095,
+     "gamePopularityRank": 14788,
      "isAvailable": true,
      "hasCommentsEnabled": true,
      "licenseType": "All Rights Reserved",
@@ -8719,23 +9227,128 @@
      "featuredProjectTag": 0
     },
     {
-     "screenshots": [],
-     "id": 1672484,
+     "screenshots": [
+      {
+       "id": 629276,
+       "modId": 830700,
+       "title": "Extra",
+       "description": "Over 60+ new baubles",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/629/276/310/172/2023-03-03_23.png",
+       "url": "https://media.forgecdn.net/attachments/629/276/2023-03-03_23.png"
+      },
+      {
+       "id": 629274,
+       "modId": 830700,
+       "title": "New lighting Dragons",
+       "description": "New lighting dragons + gear + weapons!",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/629/274/310/172/2023-03-03_23.png",
+       "url": "https://media.forgecdn.net/attachments/629/274/2023-03-03_23.png"
+      },
+      {
+       "id": 629262,
+       "modId": 830700,
+       "title": "New Battle Tower",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/629/262/310/172/2023-03-03_22.png",
+       "url": "https://media.forgecdn.net/attachments/629/262/2023-03-03_22.png"
+      },
+      {
+       "id": 629268,
+       "modId": 830700,
+       "title": "New Biomes",
+       "description": "Over +100 new bioms including the nether and end!",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/629/268/310/172/2023-03-03_23.png",
+       "url": "https://media.forgecdn.net/attachments/629/268/2023-03-03_23.png"
+      },
+      {
+       "id": 980615,
+       "modId": 830700,
+       "title": "Aptitudes (Skills)",
+       "description": "2024-10-02_09.56.16.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/615/310/172/2024-10-02_09.png",
+       "url": "https://media.forgecdn.net/attachments/980/615/2024-10-02_09.png"
+      },
+      {
+       "id": 980616,
+       "modId": 830700,
+       "title": "Attack Animation + Dragonsteel (Lightning)",
+       "description": "2024-10-02_10.03.12.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/616/310/172/2024-10-02_10.png",
+       "url": "https://media.forgecdn.net/attachments/980/616/2024-10-02_10.png"
+      },
+      {
+       "id": 980617,
+       "modId": 830700,
+       "title": "Lightning Dragon amor/Nunchaku",
+       "description": "2024-10-02_10.03.59.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/617/310/172/2024-10-02_10.png",
+       "url": "https://media.forgecdn.net/attachments/980/617/2024-10-02_10.png"
+      },
+      {
+       "id": 980618,
+       "modId": 830700,
+       "title": "Roll Skill",
+       "description": "2024-10-02_09.56.05.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/618/310/172/2024-10-02_09.png",
+       "url": "https://media.forgecdn.net/attachments/980/618/2024-10-02_09.png"
+      },
+      {
+       "id": 980619,
+       "modId": 830700,
+       "title": "Undershirt Skill",
+       "description": "2024-10-02_09.55.53.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/619/310/172/2024-10-02_09.png",
+       "url": "https://media.forgecdn.net/attachments/980/619/2024-10-02_09.png"
+      },
+      {
+       "id": 980620,
+       "modId": 830700,
+       "title": "Specialization (Combat)",
+       "description": "2024-10-02_09.56.26.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/620/310/172/2024-10-02_09.png",
+       "url": "https://media.forgecdn.net/attachments/980/620/2024-10-02_09.png"
+      },
+      {
+       "id": 980667,
+       "modId": 830700,
+       "title": "GamePlay 1",
+       "description": "2023-03-30_19.05.48.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/667/310/172/2023-03-30_19.png",
+       "url": "https://media.forgecdn.net/attachments/980/667/2023-03-30_19.png"
+      },
+      {
+       "id": 980668,
+       "modId": 830700,
+       "title": "GamePlay 2",
+       "description": "2023-07-11_15.10.13.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/668/310/172/2023-07-11_15.png",
+       "url": "https://media.forgecdn.net/attachments/980/668/2023-07-11_15.png"
+      },
+      {
+       "id": 980669,
+       "modId": 830700,
+       "title": "GamePlay 3",
+       "description": "2023-08-05_00.45.57.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/980/669/310/172/2023-08-05_00.png",
+       "url": "https://media.forgecdn.net/attachments/980/669/2023-08-05_00.png"
+      }
+     ],
+     "id": 830700,
      "gameId": 432,
-     "name": "Divine Evolution",
-     "slug": "divine-evolution",
+     "name": "RHCraft (RLCraft - Renewed) - Unofficial",
+     "slug": "rhcraft",
      "links": {
-      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/divine-evolution",
-      "wikiUrl": null,
-      "issuesUrl": null,
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rhcraft",
+      "wikiUrl": "https://discord.gg/heZHZRTnjW",
+      "issuesUrl": "",
       "sourceUrl": null
      },
-     "summary": "A modpack inspired by the good old kitchen sinks of 1.12.2 like divine journey 2 and meatballcraft",
+     "summary": "RHCraft is an unoffical version of Shivaxi's RLCraft in 1.16.5 with new features & tweaks!",
      "status": 4,
-     "downloadCount": 81,
-     "favoriteCount": 0,
+     "downloadCount": 127223,
+     "favoriteCount": 64,
      "isFeatured": false,
-     "primaryCategoryId": 4472,
+     "primaryCategoryId": 4475,
      "categories": [
       {
        "id": 4475,
@@ -8762,13 +9375,13 @@
        "parentCategoryId": 4471
       },
       {
-       "id": 4478,
+       "id": 4479,
        "gameId": 432,
-       "name": "Quests",
-       "slug": "quests",
-       "url": "https://www.curseforge.com/minecraft/modpacks/quests",
-       "iconUrl": "https://media.forgecdn.net/avatars/14/487/635596816137981263.png",
-       "dateModified": "2015-02-16T17:06:53.797Z",
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
        "isClass": false,
        "classId": 4471,
        "parentCategoryId": 4471
@@ -8786,13 +9399,13 @@
        "parentCategoryId": 4471
       },
       {
-       "id": 4472,
+       "id": 5128,
        "gameId": 432,
-       "name": "Tech",
-       "slug": "tech",
-       "url": "https://www.curseforge.com/minecraft/modpacks/tech",
-       "iconUrl": "https://media.forgecdn.net/avatars/14/479/635596761534662757.png",
-       "dateModified": "2015-02-16T15:35:53.467Z",
+       "name": "Vanilla+",
+       "slug": "vanilla",
+       "url": "https://www.curseforge.com/minecraft/modpacks/vanilla",
+       "iconUrl": "https://media.forgecdn.net/avatars/451/388/637713564446392425.png",
+       "dateModified": "2021-11-01T09:40:44.687Z",
        "isClass": false,
        "classId": 4471,
        "parentCategoryId": 4471
@@ -8801,50 +9414,714 @@
      "classId": 4471,
      "authors": [
       {
-       "id": 103703337,
-       "name": "panela_jogas",
-       "url": "https://www.curseforge.com/members/panela_jogas",
-       "avatarUrl": "https://media.forgecdn.net/avatars/1754/159/639116321356046602.png",
+       "id": 104401960,
+       "name": "xc_s0lo",
+       "url": "https://www.curseforge.com/members/xc_s0lo",
+       "avatarUrl": "https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-150x150.png",
        "userTierInfo": {
-        "tierLevel": 0,
-        "downloadsThreshold": 0
+        "tierLevel": 1,
+        "downloadsThreshold": 100000
        }
       }
      ],
      "logo": {
-      "id": 2013228,
-      "modId": 1672484,
-      "title": "639235530231315828.png",
+      "id": 1090883,
+      "modId": 830700,
+      "title": "638634735994218013.png",
       "description": "",
-      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/2013/228/256/256/639235530231315828.png",
-      "url": "https://media.forgecdn.net/avatars/2013/228/639235530231315828.png"
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1090/883/256/256/638634735994218013.png",
+      "url": "https://media.forgecdn.net/avatars/1090/883/638634735994218013.png"
      },
-     "mainFileId": 8764444,
+     "mainFileId": 6732078,
      "latestFiles": [
       {
-       "id": 8764444,
+       "id": 4719698,
        "gameId": 432,
-       "modId": 1672484,
+       "modId": 830700,
        "isAvailable": true,
-       "displayName": "divine evolution1.20.1.zip",
-       "fileName": "divine evolution.zip",
+       "displayName": " RHCraft - Release v1.5b",
+       "fileName": "RH Craft-1.5b.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "03c1161b509fae5a028673c478b0b027eaf5e1fa",
+         "algo": 1
+        },
+        {
+         "value": "d2a70f90bff379d0b123fd3d3168a66a",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-08-24T02:04:31.527Z",
+       "fileLength": 120233411,
+       "downloadCount": 1788,
+       "downloadUrl": "https://edge.forgecdn.net/files/4719/698/RH%20Craft-1.5b.zip",
+       "gameVersions": [
+        "1.16.5"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 4720619,
+       "fileFingerprint": 4005655094,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 2972628940
+        }
+       ]
+      },
+      {
+       "id": 6732078,
+       "gameId": 432,
+       "modId": 830700,
+       "isAvailable": true,
+       "displayName": "RHCraft - 1.7.1",
+       "fileName": "RHCraft (RLCraft - Renewed)-1.7.1.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "33f28d91e22b7755a34cc117d161c13c231551fc",
+         "algo": 1
+        },
+        {
+         "value": "0a2da5c6a142b0ab899ac84f392f02a5",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-07-05T06:11:38.673Z",
+       "fileLength": 125823685,
+       "downloadCount": 89911,
+       "fileSizeOnDisk": 131809668,
+       "downloadUrl": "https://edge.forgecdn.net/files/6732/78/RHCraft%20(RLCraft%20-%20Renewed)-1.7.1.zip",
+       "gameVersions": [
+        "1.16.5",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 6732084,
+       "fileFingerprint": 1567302497,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3435341775
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 1119960899
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 2960818951
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.16.5",
+       "fileId": 6732078,
+       "filename": "RHCraft (RLCraft - Renewed)-1.7.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.5",
+       "fileId": 4719698,
+       "filename": "RH Craft-1.5b.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2023-02-28T14:10:44.343Z",
+     "dateModified": "2026-09-27T20:11:29.163Z",
+     "dateReleased": "2026-09-18T22:52:52.883Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 21024,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "serverAffiliation": {
+      "isEnabled": true,
+      "isDefaultBanner": true,
+      "hasDiscount": true,
+      "affiliationService": 1,
+      "defaultBannerCustomTitle": "RHCraft",
+      "affiliationLink": "https://url-shortener.curseforge.com/bTclZ"
+     },
+     "socialLinks": [
+      {
+       "type": 2,
+       "url": "https://discord.gg/heZHZRTnjW"
+      }
+     ],
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 492451,
+       "modId": 536613,
+       "title": "spartan fire",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/492/451/310/172/2022-09-02_18.png",
+       "url": "https://media.forgecdn.net/attachments/492/451/2022-09-02_18.png"
+      },
+      {
+       "id": 492450,
+       "modId": 536613,
+       "title": "jungle_big_house",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/492/450/310/172/2022-05-21_10.png",
+       "url": "https://media.forgecdn.net/attachments/492/450/2022-05-21_10.png"
+      },
+      {
+       "id": 441283,
+       "modId": 536613,
+       "title": "ender_ship_structure",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/441/283/310/172/2022-03-17_20.png",
+       "url": "https://media.forgecdn.net/attachments/441/283/2022-03-17_20.png"
+      },
+      {
+       "id": 441282,
+       "modId": 536613,
+       "title": "big_house_structure",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/441/282/310/172/2022-03-17_20.png",
+       "url": "https://media.forgecdn.net/attachments/441/282/2022-03-17_20.png"
+      },
+      {
+       "id": 437206,
+       "modId": 536613,
+       "title": "1.8_a_3",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/437/206/310/172/2022-03-04_01.png",
+       "url": "https://media.forgecdn.net/attachments/437/206/2022-03-04_01.png"
+      },
+      {
+       "id": 437205,
+       "modId": 536613,
+       "title": "1.8_a_2",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/437/205/310/172/2022-03-04_01.png",
+       "url": "https://media.forgecdn.net/attachments/437/205/2022-03-04_01.png"
+      },
+      {
+       "id": 437204,
+       "modId": 536613,
+       "title": "1.8_a_1",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/437/204/310/172/2022-03-04_01.png",
+       "url": "https://media.forgecdn.net/attachments/437/204/2022-03-04_01.png"
+      },
+      {
+       "id": 422827,
+       "modId": 536613,
+       "title": "atlas_soul_sand",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/422/827/310/172/2022-01-15_00.png",
+       "url": "https://media.forgecdn.net/attachments/422/827/2022-01-15_00.png"
+      },
+      {
+       "id": 422826,
+       "modId": 536613,
+       "title": "atlas_magma",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/422/826/310/172/2022-01-15_00.png",
+       "url": "https://media.forgecdn.net/attachments/422/826/2022-01-15_00.png"
+      },
+      {
+       "id": 422825,
+       "modId": 536613,
+       "title": "atlas_nether",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/422/825/310/172/2022-01-15_00.png",
+       "url": "https://media.forgecdn.net/attachments/422/825/2022-01-15_00.png"
+      },
+      {
+       "id": 422824,
+       "modId": 536613,
+       "title": "atlas_warped",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/422/824/310/172/2022-01-15_00.png",
+       "url": "https://media.forgecdn.net/attachments/422/824/2022-01-15_00.png"
+      },
+      {
+       "id": 422823,
+       "modId": 536613,
+       "title": "atlas_crimson",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/422/823/310/172/2022-01-15_00.png",
+       "url": "https://media.forgecdn.net/attachments/422/823/2022-01-15_00.png"
+      },
+      {
+       "id": 419299,
+       "modId": 536613,
+       "title": "mobs animation with Fresh Animation",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/419/299/310/172/2021-12-30_18.png",
+       "url": "https://media.forgecdn.net/attachments/419/299/2021-12-30_18.png"
+      },
+      {
+       "id": 419167,
+       "modId": 536613,
+       "title": "custom loot in battletower",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/419/167/310/172/2021-12-30_14.png",
+       "url": "https://media.forgecdn.net/attachments/419/167/2021-12-30_14.png"
+      },
+      {
+       "id": 419166,
+       "modId": 536613,
+       "title": "battletower",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/419/166/310/172/2021-12-30_14.png",
+       "url": "https://media.forgecdn.net/attachments/419/166/2021-12-30_14.png"
+      },
+      {
+       "id": 418150,
+       "modId": 536613,
+       "title": "spawner drops list",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/418/150/310/172/2021-12-23_15.png",
+       "url": "https://media.forgecdn.net/attachments/418/150/2021-12-23_15.png"
+      },
+      {
+       "id": 418149,
+       "modId": 536613,
+       "title": "spawner drop",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/418/149/310/172/2021-12-23_15.png",
+       "url": "https://media.forgecdn.net/attachments/418/149/2021-12-23_15.png"
+      },
+      {
+       "id": 418148,
+       "modId": 536613,
+       "title": "locks interface",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/418/148/310/172/2021-12-23_14.png",
+       "url": "https://media.forgecdn.net/attachments/418/148/2021-12-23_14.png"
+      },
+      {
+       "id": 418147,
+       "modId": 536613,
+       "title": "new atlas texture for rlcraft-reimagined-1.5",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/418/147/310/172/2021-12-23_14.png",
+       "url": "https://media.forgecdn.net/attachments/418/147/2021-12-23_14.png"
+      },
+      {
+       "id": 418146,
+       "modId": 536613,
+       "title": "locks for rlcraft 1.16.5",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/418/146/310/172/2021-12-23_14.png",
+       "url": "https://media.forgecdn.net/attachments/418/146/2021-12-23_14.png"
+      }
+     ],
+     "id": 536613,
+     "gameId": 432,
+     "name": " RLCraft - Reimagined (not official)",
+     "slug": "reimagined-rlcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/reimagined-rlcraft",
+      "wikiUrl": "",
+      "issuesUrl": "https://github.com/Samlegamer/rlcraft-reimagined-1.16.5/issues",
+      "sourceUrl": null
+     },
+     "summary": "A port of the hardcore RLCraft modpack to version 1.16.5. This is a reimagined version and therefore NOT OFFICIAL.",
+     "status": 4,
+     "downloadCount": 63719,
+     "favoriteCount": 25,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 101022055,
+       "name": "Samlegamer_",
+       "url": "https://www.curseforge.com/members/samlegamer_",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/bf88b642-7946-4ae5-b5c8-b66376959b9f-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 4,
+        "downloadsThreshold": 10000000
+       }
+      }
+     ],
+     "logo": {
+      "id": 443840,
+      "modId": 536613,
+      "title": "637697592378568653.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/443/840/256/256/637697592378568653.png",
+      "url": "https://media.forgecdn.net/avatars/443/840/637697592378568653.png"
+     },
+     "mainFileId": 4489244,
+     "latestFiles": [
+      {
+       "id": 3490804,
+       "gameId": 432,
+       "modId": 536613,
+       "isAvailable": true,
+       "displayName": "RLCRAFT-Reimagined-beta-1.0",
+       "fileName": "RLCRAFT - Reimagined-beta-1.0.zip",
        "releaseType": 2,
        "fileStatus": 4,
        "hashes": [
         {
-         "value": "3cf978091019e38c5026de0b9c6d35e2aa8114dd",
+         "value": "d94dae599e421c570648b239067d4192c260b0be",
          "algo": 1
         },
         {
-         "value": "b369699efafc2a384e3fc96dd0ecc2c7",
+         "value": "6e607fa4298c325daaaf059f3e8b8657",
          "algo": 2
         }
        ],
-       "fileDate": "2026-08-29T20:53:59.22Z",
-       "fileLength": 91749830,
-       "downloadCount": 15,
-       "fileSizeOnDisk": 96174697,
-       "downloadUrl": "https://edge.forgecdn.net/files/8764/444/divine%20evolution.zip",
+       "fileDate": "2021-10-14T12:16:34.037Z",
+       "fileLength": 8024591,
+       "downloadCount": 352,
+       "downloadUrl": "https://edge.forgecdn.net/files/3490/804/RLCRAFT%20-%20Reimagined-beta-1.0.zip",
+       "gameVersions": [
+        "1.16.5",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 3490862,
+       "fileFingerprint": 1841868857,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3153458128
+        }
+       ]
+      },
+      {
+       "id": 4489244,
+       "gameId": 432,
+       "modId": 536613,
+       "isAvailable": true,
+       "displayName": "RLCraft-Reimagined-1.9",
+       "fileName": "RLCraft-Reimagined-1.9.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "a57b00f6839d4fb0b3d841c4ae10dad35c022194",
+         "algo": 1
+        },
+        {
+         "value": "16c086f543cb206384923b93ce51f9fd",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-04-13T22:08:51.047Z",
+       "fileLength": 90855948,
+       "downloadCount": 31674,
+       "downloadUrl": "https://edge.forgecdn.net/files/4489/244/RLCraft-Reimagined-1.9.zip",
+       "gameVersions": [
+        "1.16.5",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.5",
+         "gameVersionPadded": "0000000001.0000000016.0000000005",
+         "gameVersion": "1.16.5",
+         "gameVersionReleaseDate": "2021-01-15T14:14:48.91Z",
+         "gameVersionTypeId": 70886
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 4489249,
+       "fileFingerprint": 2518906732,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 1199364177
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.16.5",
+       "fileId": 4489244,
+       "filename": "RLCraft-Reimagined-1.9.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.5",
+       "fileId": 3490804,
+       "filename": "RLCRAFT - Reimagined-beta-1.0.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2021-10-17T13:33:40.743Z",
+     "dateModified": "2023-04-13T22:32:36.853Z",
+     "dateReleased": "2023-04-13T22:13:52.813Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 22219,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 1830607,
+       "modId": 1461931,
+       "title": "Village",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1830/607/310/172/picsart_26-07-30_21-07-22-405-png.png",
+       "url": "https://media.forgecdn.net/attachments/1830/607/picsart_26-07-30_21-07-22-405-png.png"
+      },
+      {
+       "id": 1830621,
+       "modId": 1461931,
+       "title": "home",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1830/621/310/172/picsart_26-07-30_21-08-54-086-png.png",
+       "url": "https://media.forgecdn.net/attachments/1830/621/picsart_26-07-30_21-08-54-086-png.png"
+      },
+      {
+       "id": 1830623,
+       "modId": 1461931,
+       "title": "tent",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1830/623/310/172/picsart_26-07-30_21-12-13-471-png.png",
+       "url": "https://media.forgecdn.net/attachments/1830/623/picsart_26-07-30_21-12-13-471-png.png"
+      },
+      {
+       "id": 1830624,
+       "modId": 1461931,
+       "title": "pillager",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1830/624/310/172/picsart_26-07-30_21-13-43-022-png.png",
+       "url": "https://media.forgecdn.net/attachments/1830/624/picsart_26-07-30_21-13-43-022-png.png"
+      },
+      {
+       "id": 1830622,
+       "modId": 1461931,
+       "title": "???",
+       "description": "",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1830/622/310/172/picsart_26-07-30_21-10-58-445-png.png",
+       "url": "https://media.forgecdn.net/attachments/1830/622/picsart_26-07-30_21-10-58-445-png.png"
+      },
+      {
+       "id": 1777462,
+       "modId": 1461931,
+       "title": "PLS DOWNLOAD",
+       "description": "yes",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1777/462/310/172/untitled-july-06-2026-at-17-39-13-png.png",
+       "url": "https://media.forgecdn.net/attachments/1777/462/untitled-july-06-2026-at-17-39-13-png.png"
+      }
+     ],
+     "id": 1461931,
+     "gameId": 432,
+     "name": "RLCraft Fanmade",
+     "slug": "rlcraft-fanmade",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraft-fanmade",
+      "wikiUrl": "https://github.com/kimohpang/RLCraft-Fanmade-Wiki",
+      "issuesUrl": "",
+      "sourceUrl": null
+     },
+     "summary": "The most challenging modpack for Minecraft, the legendary RLCraft, returns with its latest version. Enjoy endless adventures! With over 150 mods, countless monsters, and death pressing down on you, explore endlessly and challenge the final boss!",
+     "status": 4,
+     "downloadCount": 17111,
+     "favoriteCount": 47,
+     "isFeatured": false,
+     "primaryCategoryId": 10683,
+     "categories": [
+      {
+       "id": 10683,
+       "gameId": 432,
+       "name": "RLCraft",
+       "slug": "rlcraft",
+       "url": "https://www.curseforge.com/minecraft/modpacks/rlcraft",
+       "iconUrl": "https://media.forgecdn.net/avatars/1729/298/639100433200568522.png",
+       "dateModified": "2026-03-25T13:48:40.063Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 136266224,
+       "name": "AbyuaStudio",
+       "url": "https://www.curseforge.com/members/abyuastudio",
+       "avatarUrl": "https://media.forgecdn.net/avatars/1799/147/639139303681666028.jpeg",
+       "userTierInfo": {
+        "tierLevel": 1,
+        "downloadsThreshold": 100000
+       }
+      }
+     ],
+     "logo": {
+      "id": 2165173,
+      "modId": 1461931,
+      "title": "639291092173040232.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/2165/173/256/256/639291092173040232.png",
+      "url": "https://media.forgecdn.net/avatars/2165/173/639291092173040232.png"
+     },
+     "mainFileId": 9309715,
+     "latestFiles": [
+      {
+       "id": 8499733,
+       "gameId": 432,
+       "modId": 1461931,
+       "isAvailable": true,
+       "displayName": "RLCraft Fanmade 1.2.5",
+       "fileName": "RLCraft Fanmade-1.2.5.zip",
+       "releaseType": 3,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "960b5e04ed4c34e1c85f86efa47e1083d5998e07",
+         "algo": 1
+        },
+        {
+         "value": "59e4d4d0f9c8f4e559a548e81a3d85d6",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2026-07-24T13:11:03.077Z",
+       "fileLength": 257092986,
+       "downloadCount": 557,
+       "fileSizeOnDisk": 269547737,
+       "downloadUrl": null,
        "gameVersions": [
         "1.20.1",
         "Forge"
@@ -8868,19 +10145,82 @@
        "dependencies": [],
        "alternateFileId": 0,
        "isServerPack": false,
-       "fileFingerprint": 2959762978,
+       "fileFingerprint": 711260754,
        "modules": [
         {
-         "name": "modlist.html",
-         "fingerprint": 550935867
+         "name": "manifest.json",
+         "fingerprint": 2164060035
         },
         {
-         "name": "manifest.json",
-         "fingerprint": 2639355244
+         "name": "modlist.html",
+         "fingerprint": 2577000891
         },
         {
          "name": "overrides",
-         "fingerprint": 3969033169
+         "fingerprint": 2692362322
+        }
+       ]
+      },
+      {
+       "id": 9309715,
+       "gameId": 432,
+       "modId": 1461931,
+       "isAvailable": true,
+       "displayName": "RLCraft Fanmade 2.1,0",
+       "fileName": "RLCraft Fanmade-2.1,0.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "8c533ee8e6362a9a412792b8419036aec6428dbe",
+         "algo": 1
+        },
+        {
+         "value": "86768b9e79c5ea1facedf780135d2801",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2026-10-24T14:06:31.59Z",
+       "fileLength": 3879424,
+       "downloadCount": 550,
+       "fileSizeOnDisk": 6128695,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.20.1",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3659623594,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 812480096
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 1113813655
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 2964881396
         }
        ]
       }
@@ -8888,22 +10228,3003 @@
      "latestFilesIndexes": [
       {
        "gameVersion": "1.20.1",
-       "fileId": 8764444,
-       "filename": "divine evolution.zip",
-       "releaseType": 2,
+       "fileId": 9309715,
+       "filename": "RLCraft Fanmade-2.1,0.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 8499733,
+       "filename": "RLCraft Fanmade-1.2.5.zip",
+       "releaseType": 3,
        "gameVersionTypeId": 75125,
        "modLoader": 1
       }
      ],
      "latestEarlyAccessFilesIndexes": [],
-     "dateCreated": "2026-08-29T10:51:46.357Z",
-     "dateModified": "2026-08-30T12:13:26.66Z",
-     "dateReleased": "2026-08-29T20:53:59.22Z",
+     "dateCreated": "2026-02-18T13:39:34.017Z",
+     "dateModified": "2026-11-01T05:53:37.233Z",
+     "dateReleased": "2026-10-24T14:06:31.59Z",
+     "allowModDistribution": false,
+     "gamePopularityRank": 23309,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "serverAffiliation": {
+      "isEnabled": true,
+      "isDefaultBanner": false,
+      "hasDiscount": true,
+      "affiliationService": 1,
+      "customImageUrl": "https://media.forgecdn.net/banner/console-affiliation-banners/banner_f69fd514-1310-4a6c-b5c8-6fb96531a7a5.png",
+      "affiliationLink": "https://url-shortener.curseforge.com/LnWTp"
+     },
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 1358745,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-15 220522.png",
+       "description": "Screenshot 2025-10-15 220522.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/745/310/172/screenshot-2025-10-15-220522-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/745/screenshot-2025-10-15-220522-png.png"
+      },
+      {
+       "id": 1358744,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-15 221456.png",
+       "description": "Screenshot 2025-10-15 221456.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/744/310/172/screenshot-2025-10-15-221456-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/744/screenshot-2025-10-15-221456-png.png"
+      },
+      {
+       "id": 1358746,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-15 220535.png",
+       "description": "Screenshot 2025-10-15 220535.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/746/310/172/screenshot-2025-10-15-220535-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/746/screenshot-2025-10-15-220535-png.png"
+      },
+      {
+       "id": 1358747,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-08 193026.png",
+       "description": "Screenshot 2025-10-08 193026.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/747/310/172/screenshot-2025-10-08-193026-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/747/screenshot-2025-10-08-193026-png.png"
+      },
+      {
+       "id": 1358748,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-14 210248.png",
+       "description": "Screenshot 2025-10-14 210248.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/748/310/172/screenshot-2025-10-14-210248-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/748/screenshot-2025-10-14-210248-png.png"
+      },
+      {
+       "id": 1358749,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-11 221449.png",
+       "description": "Screenshot 2025-10-11 221449.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/749/310/172/screenshot-2025-10-11-221449-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/749/screenshot-2025-10-11-221449-png.png"
+      },
+      {
+       "id": 1358743,
+       "modId": 1361531,
+       "title": "Screenshot 2025-10-15 220841.png",
+       "description": "Screenshot 2025-10-15 220841.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1358/743/310/172/screenshot-2025-10-15-220841-png.png",
+       "url": "https://media.forgecdn.net/attachments/1358/743/screenshot-2025-10-15-220841-png.png"
+      },
+      {
+       "id": 1386649,
+       "modId": 1361531,
+       "title": "Screenshot 2025-11-08 223454.png",
+       "description": "Screenshot 2025-11-08 223454.png",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1386/649/310/172/screenshot-2025-11-08-223454-png.png",
+       "url": "https://media.forgecdn.net/attachments/1386/649/screenshot-2025-11-08-223454-png.png"
+      }
+     ],
+     "id": 1361531,
+     "gameId": 432,
+     "name": "RLcraft THE UNOFFICIAL SEQUAL discontinued for now",
+     "slug": "rlcraft-the-unofficial-sequal-wip",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraft-the-unofficial-sequal-wip",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "RLcraft THE UNOFFICIAL SEQUAL has been discontinued for now. we are working on a new project.",
+     "status": 4,
+     "downloadCount": 4628,
+     "favoriteCount": 5,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4484,
+       "gameId": 432,
+       "name": "Multiplayer",
+       "slug": "multiplayer",
+       "url": "https://www.curseforge.com/minecraft/modpacks/multiplayer",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/481/635596792838491141.png",
+       "dateModified": "2015-02-16T16:28:03.85Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4478,
+       "gameId": 432,
+       "name": "Quests",
+       "slug": "quests",
+       "url": "https://www.curseforge.com/minecraft/modpacks/quests",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/487/635596816137981263.png",
+       "dateModified": "2015-02-16T17:06:53.797Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 120843934,
+       "name": "not_billehbawb",
+       "url": "https://www.curseforge.com/members/not_billehbawb",
+       "avatarUrl": "https://media.forgecdn.net/avatars/1497/607/638972851024704421.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 1507454,
+      "modId": 1361531,
+      "title": "638978972281269434.jpg",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1507/454/256/256/638978972281269434.jpg",
+      "url": "https://media.forgecdn.net/avatars/1507/454/638978972281269434.jpg"
+     },
+     "mainFileId": 7196313,
+     "latestFiles": [
+      {
+       "id": 7196313,
+       "gameId": 432,
+       "modId": 1361531,
+       "isAvailable": true,
+       "displayName": "RLcraft THE UNOFFICIAL SEQUAL-0.1.3aaa.zip",
+       "fileName": "RLcraft THE UNOFFICIAL SEQUAL-0.1.3aaa.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "d511d02b5a0080669790109cc855d10296232c4f",
+         "algo": 1
+        },
+        {
+         "value": "50c1aa9d16ba879fef9d6a2cd16a7beb",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-11-07T18:46:11.373Z",
+       "fileLength": 9835547,
+       "downloadCount": 214,
+       "fileSizeOnDisk": 11578555,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.20.1",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 4094334666,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3274132749
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 3097220083
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 2338251324
+        }
+       ]
+      },
+      {
+       "id": 7212117,
+       "gameId": 432,
+       "modId": 1361531,
+       "isAvailable": true,
+       "displayName": "RLcraft THE UNOFFICIAL SEQUAL-INTO THE NETHER.zip",
+       "fileName": "RLcraft THE UNOFFICIAL SEQUAL-INTO THE NETHER.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "546f8ace10c95a72bb9fc5a0fffe08c28d0818b2",
+         "algo": 1
+        },
+        {
+         "value": "186802088018e2528d0560485bb2c182",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-11-11T21:33:01.173Z",
+       "fileLength": 9855539,
+       "downloadCount": 99,
+       "fileSizeOnDisk": 11663792,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.20.1",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3418797617,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3393709634
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 3969888890
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 1302315738
+        },
+        {
+         "name": "manifest.json",
+         "fingerprint": 3393709634
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 3969888890
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 1302315738
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 7212117,
+       "filename": "RLcraft THE UNOFFICIAL SEQUAL-INTO THE NETHER.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 7196313,
+       "filename": "RLcraft THE UNOFFICIAL SEQUAL-0.1.3aaa.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2025-10-09T12:51:00.79Z",
+     "dateModified": "2025-11-15T03:03:26.7Z",
+     "dateReleased": "2025-11-11T21:33:01.173Z",
+     "allowModDistribution": false,
+     "gamePopularityRank": 24310,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 364526,
+     "gameId": 432,
+     "name": "Craft For Life Edition (enhanced RLCraft experience)",
+     "slug": "craft-for-life-edition-craftforlife",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/craft-for-life-edition-craftforlife",
+      "wikiUrl": "",
+      "issuesUrl": "",
+      "sourceUrl": null
+     },
+     "summary": "The ultimate realistic survival experience, amazing mechanics in a zombie world.",
+     "status": 4,
+     "downloadCount": 220851,
+     "favoriteCount": 34,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4482,
+       "gameId": 432,
+       "name": "Extra Large",
+       "slug": "extra-large",
+       "url": "https://www.curseforge.com/minecraft/modpacks/extra-large",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/472/635596760403562826.png",
+       "dateModified": "2015-02-16T15:34:00.357Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4484,
+       "gameId": 432,
+       "name": "Multiplayer",
+       "slug": "multiplayer",
+       "url": "https://www.curseforge.com/minecraft/modpacks/multiplayer",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/481/635596792838491141.png",
+       "dateModified": "2015-02-16T16:28:03.85Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 100771573,
+       "name": "NyzokaProd",
+       "url": "https://www.curseforge.com/members/nyzokaprod",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/97c5dcb1-419f-4e3e-8846-7c2adcac47b5-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 1,
+        "downloadsThreshold": 100000
+       }
+      }
+     ],
+     "logo": {
+      "id": 426060,
+      "modId": 364526,
+      "title": "637655907737106572.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/426/60/256/256/637655907737106572.png",
+      "url": "https://media.forgecdn.net/avatars/426/60/637655907737106572.png"
+     },
+     "mainFileId": 3902092,
+     "latestFiles": [
+      {
+       "id": 3424504,
+       "gameId": 432,
+       "modId": 364526,
+       "isAvailable": true,
+       "displayName": "MC: CraftForLifeEdit-2.9.77",
+       "fileName": "CraftForLifeEdit-2.9.77.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "ec16002da5c2c73f33dc57ff443caf48e57c410f",
+         "algo": 1
+        },
+        {
+         "value": "a65aa5f1c2c729526cc5abad12edf588",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-08-13T19:02:37.45Z",
+       "fileLength": 40683552,
+       "downloadCount": 521,
+       "downloadUrl": "https://edge.forgecdn.net/files/3424/504/CraftForLifeEdit-2.9.77.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 3424508,
+       "fileFingerprint": 1926491024,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 257186160
+        }
+       ]
+      },
+      {
+       "id": 3902092,
+       "gameId": 432,
+       "modId": 364526,
+       "isAvailable": true,
+       "displayName": "MC: CraftForLifeEdit-2.9.83",
+       "fileName": "CraftForLifeEdit-2.9.83.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "9399169ad571c591d7c9a3d341851f7ea5bf96c2",
+         "algo": 1
+        },
+        {
+         "value": "4fc3d722868385e48ec47a4668ac8478",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2022-07-27T13:27:37.237Z",
+       "fileLength": 40822667,
+       "downloadCount": 25281,
+       "downloadUrl": "https://edge.forgecdn.net/files/3902/92/CraftForLifeEdit-2.9.83.zip",
+       "gameVersions": [
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 3902473,
+       "fileFingerprint": 2627839235,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 608005464
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 3902092,
+       "filename": "CraftForLifeEdit-2.9.83.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 3424504,
+       "filename": "CraftForLifeEdit-2.9.77.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2020-03-09T07:01:01.877Z",
+     "dateModified": "2022-07-27T18:16:24.71Z",
+     "dateReleased": "2022-07-27T17:56:06.603Z",
      "allowModDistribution": true,
-     "gamePopularityRank": 999999,
+     "gamePopularityRank": 28927,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 278357,
+       "modId": 362087,
+       "title": "Turtle",
+       "description": "It's a tiny turtle",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/357/310/172/2020-02-11_20.png",
+       "url": "https://media.forgecdn.net/attachments/278/357/2020-02-11_20.png"
+      },
+      {
+       "id": 278356,
+       "modId": 362087,
+       "title": "Guys look at the baby chicken",
+       "description": "It's so cute",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/356/310/172/2020-02-11_20.png",
+       "url": "https://media.forgecdn.net/attachments/278/356/2020-02-11_20.png"
+      },
+      {
+       "id": 278355,
+       "modId": 362087,
+       "title": "Village in the Night",
+       "description": "Enhanced village generation with bounty boards to give players unique fetch/kill quests with custom rewards.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/355/310/172/2020-02-11_19.png",
+       "url": "https://media.forgecdn.net/attachments/278/355/2020-02-11_19.png"
+      },
+      {
+       "id": 278354,
+       "modId": 362087,
+       "title": "Aurora  in the Plains",
+       "description": "Auroras light up the night sky. Snow has its own gravity system.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/354/310/172/2020-02-11_19.png",
+       "url": "https://media.forgecdn.net/attachments/278/354/2020-02-11_19.png"
+      },
+      {
+       "id": 278353,
+       "modId": 362087,
+       "title": "Cloudy Defiled Lands",
+       "description": "Weather2's dynamic weather system enhancing the atmosphere of the Defiled Lands.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/353/310/172/2020-02-11_19.png",
+       "url": "https://media.forgecdn.net/attachments/278/353/2020-02-11_19.png"
+      },
+      {
+       "id": 278352,
+       "modId": 362087,
+       "title": "Birds at the Beach",
+       "description": "World Generation, Populated Oceans, Birds",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/352/310/172/2020-02-11_19.png",
+       "url": "https://media.forgecdn.net/attachments/278/352/2020-02-11_19.png"
+      },
+      {
+       "id": 278351,
+       "modId": 362087,
+       "title": "World Generation",
+       "description": "Biomes O Plenty, Streams, Better Foliage, Dyanmic Trees",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/278/351/310/172/2020-02-11_19.png",
+       "url": "https://media.forgecdn.net/attachments/278/351/2020-02-11_19.png"
+      }
+     ],
+     "id": 362087,
+     "gameId": 432,
+     "name": "IRLCraft",
+     "slug": "irlcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/irlcraft",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "[1.12.2] Simulate real life - seasons and weather, exploration, fishing overhaul, darkness mechanics, and more",
+     "status": 4,
+     "downloadCount": 22188,
+     "favoriteCount": 13,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4473,
+       "gameId": 432,
+       "name": "Magic",
+       "slug": "magic",
+       "url": "https://www.curseforge.com/minecraft/modpacks/magic",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/474/635596760578719019.png",
+       "dateModified": "2015-02-16T15:34:17.873Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4484,
+       "gameId": 432,
+       "name": "Multiplayer",
+       "slug": "multiplayer",
+       "url": "https://www.curseforge.com/minecraft/modpacks/multiplayer",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/481/635596792838491141.png",
+       "dateModified": "2015-02-16T16:28:03.85Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 100810345,
+       "name": "Nasbey",
+       "url": "https://www.curseforge.com/members/nasbey",
+       "avatarUrl": "https://static-cdn.jtvnw.net/user-default-pictures-uv/ebb84563-db81-4b9c-8940-64ed33ccfc7b-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 248468,
+      "modId": 362087,
+      "title": "637168472566039781.jpeg",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/248/468/256/256/637168472566039781.jpeg",
+      "url": "https://media.forgecdn.net/avatars/248/468/637168472566039781.jpeg"
+     },
+     "mainFileId": 2915604,
+     "latestFiles": [
+      {
+       "id": 2915604,
+       "gameId": 432,
+       "modId": 362087,
+       "isAvailable": true,
+       "displayName": "IRLCraft-Client_1.1.5",
+       "fileName": "IRLCraft-1.1.5.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "a97092604e1c0a5a1005b96735018fb70855eb4f",
+         "algo": 1
+        },
+        {
+         "value": "6e0c338735616347768912ccb4e15823",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2020-03-29T10:50:11.38Z",
+       "fileLength": 1945713,
+       "downloadCount": 16461,
+       "downloadUrl": "https://edge.forgecdn.net/files/2915/604/IRLCraft-1.1.5.zip",
+       "gameVersions": [
+        "1.12.1",
+        "1.12",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.1",
+         "gameVersionPadded": "0000000001.0000000012.0000000001",
+         "gameVersion": "1.12.1",
+         "gameVersionReleaseDate": "2017-08-03T05:00:00Z",
+         "gameVersionTypeId": 628
+        },
+        {
+         "gameVersionName": "1.12",
+         "gameVersionPadded": "0000000001.0000000012",
+         "gameVersion": "1.12",
+         "gameVersionReleaseDate": "2017-06-07T05:00:00Z",
+         "gameVersionTypeId": 628
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 4122478747,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 1582895237
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.1",
+       "fileId": 2915604,
+       "filename": "IRLCraft-1.1.5.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      },
+      {
+       "gameVersion": "1.12",
+       "fileId": 2915604,
+       "filename": "IRLCraft-1.1.5.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 2915604,
+       "filename": "IRLCraft-1.1.5.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2020-02-10T19:39:27.377Z",
+     "dateModified": "2020-03-29T10:52:50.16Z",
+     "dateReleased": "2020-03-29T10:50:11.38Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 31516,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 1128177,
+     "gameId": 432,
+     "name": "MRL - Modern RLCraft",
+     "slug": "mrl-modern-rlcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/mrl-modern-rlcraft",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "Test your skill and strategy in a revamped RLCraft for newer Minecraft. Unlock skills for crafting, combat, or exploration while managing hunger, thirst, and temperature. Every decision matters—will you team up or brave the wild alone?",
+     "status": 4,
+     "downloadCount": 10364,
+     "favoriteCount": 23,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 103038803,
+       "name": "Quarzade",
+       "url": "https://www.curseforge.com/members/quarzade",
+       "avatarUrl": "https://media.forgecdn.net/avatars/1414/883/638916683002940262.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 1414387,
+      "modId": 1128177,
+      "title": "638916502186636842.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1414/387/256/256/638916502186636842.png",
+      "url": "https://media.forgecdn.net/avatars/1414/387/638916502186636842.png"
+     },
+     "mainFileId": 6923351,
+     "latestFiles": [
+      {
+       "id": 6923351,
+       "gameId": 432,
+       "modId": 1128177,
+       "isAvailable": true,
+       "displayName": "MRL V2.zip",
+       "fileName": "MRL V2.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "1e7a6dfd7d0c240d11a496c4131dcdf1acd8f589",
+         "algo": 1
+        },
+        {
+         "value": "4919b270c7d39d51d530da5e0004c4b6",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-08-24T16:50:51.113Z",
+       "fileLength": 980607,
+       "downloadCount": 1193,
+       "fileSizeOnDisk": 2287065,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.20.1",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3662790733,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3801787586
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 1092975567
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 234176890
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 6923351,
+       "filename": "MRL V2.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2024-10-26T11:21:16.307Z",
+     "dateModified": "2025-10-08T14:26:39.77Z",
+     "dateReleased": "2025-08-24T16:50:51.113Z",
+     "allowModDistribution": false,
+     "gamePopularityRank": 32338,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 475249,
+     "gameId": 432,
+     "name": "RLCraft Future Versions",
+     "slug": "a-1-16-version-of-rlcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/a-1-16-version-of-rlcraft",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "Inspired by RLCraft, but in 1.16",
+     "status": 4,
+     "downloadCount": 20816,
+     "favoriteCount": 4,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4473,
+       "gameId": 432,
+       "name": "Magic",
+       "slug": "magic",
+       "url": "https://www.curseforge.com/minecraft/modpacks/magic",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/474/635596760578719019.png",
+       "dateModified": "2015-02-16T15:34:17.873Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 101388820,
+       "name": "ravin026",
+       "url": "https://www.curseforge.com/members/ravin026",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/35ff44ce-876e-4879-a150-fa2e5e9dd66b-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 374482,
+      "modId": 475249,
+      "title": "637548258817061187.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/374/482/256/256/637548258817061187.png",
+      "url": "https://media.forgecdn.net/avatars/374/482/637548258817061187.png"
+     },
+     "mainFileId": 3392146,
+     "latestFiles": [
+      {
+       "id": 3294188,
+       "gameId": 432,
+       "modId": 475249,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.16.4-1.0.1",
+       "fileName": "RLCraft 1.16.4-1.0.1.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "84036ccfd3adc6ece6843f6a1673554bfed08935",
+         "algo": 1
+        },
+        {
+         "value": "92a2921b61adacf32a6214b2c91f07f2",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-04-30T19:18:07.757Z",
+       "fileLength": 188821,
+       "downloadCount": 354,
+       "downloadUrl": "https://edge.forgecdn.net/files/3294/188/RLCraft%201.16.4-1.0.1.zip",
+       "gameVersions": [
+        "1.16.4"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.4",
+         "gameVersionPadded": "0000000001.0000000016.0000000004",
+         "gameVersion": "1.16.4",
+         "gameVersionReleaseDate": "2020-11-02T18:40:51.49Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2562605398,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 233570852
+        }
+       ]
+      },
+      {
+       "id": 3392146,
+       "gameId": 432,
+       "modId": 475249,
+       "isAvailable": true,
+       "displayName": "RLCraft 1.16.4-1.2.2",
+       "fileName": "A Future Version Of RLCraft -1.2.1.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "574a89c0074a8d6907bf3f6da5a3cbbaea3f10fa",
+         "algo": 1
+        },
+        {
+         "value": "0b8d8b659b3341ce4f5f583b5f99ba5c",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-07-17T21:39:07.923Z",
+       "fileLength": 194717,
+       "downloadCount": 15745,
+       "downloadUrl": "https://edge.forgecdn.net/files/3392/146/A%20Future%20Version%20Of%20RLCraft%20-1.2.1.zip",
+       "gameVersions": [
+        "Forge",
+        "1.16.4"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.16.4",
+         "gameVersionPadded": "0000000001.0000000016.0000000004",
+         "gameVersion": "1.16.4",
+         "gameVersionReleaseDate": "2020-11-02T18:40:51.49Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3093755283,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 2906921648
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3392146,
+       "filename": "A Future Version Of RLCraft -1.2.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3294188,
+       "filename": "RLCraft 1.16.4-1.0.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 70886
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2021-04-26T13:50:00.963Z",
+     "dateModified": "2021-07-17T21:40:55.367Z",
+     "dateReleased": "2021-07-17T21:39:07.923Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 33240,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 955460,
+     "gameId": 432,
+     "name": "ARKCraft",
+     "slug": "arkcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/arkcraft",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "A Minecraft Modpack made to resemble the Ark experience. Sort of like RLCraft but in a newer version and different stuff...",
+     "status": 4,
+     "downloadCount": 5601,
+     "favoriteCount": 9,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4473,
+       "gameId": 432,
+       "name": "Magic",
+       "slug": "magic",
+       "url": "https://www.curseforge.com/minecraft/modpacks/magic",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/474/635596760578719019.png",
+       "dateModified": "2015-02-16T15:34:17.873Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 103393472,
+       "name": "SymbioteSpidey",
+       "url": "https://www.curseforge.com/members/symbiotespidey",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/ad9e9b1d-4dd6-4ae4-91b1-82435fdee20d-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 2,
+        "downloadsThreshold": 500000
+       }
+      }
+     ],
+     "logo": {
+      "id": 925498,
+      "modId": 955460,
+      "title": "638394139108555355.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/925/498/256/256/638394139108555355.png",
+      "url": "https://media.forgecdn.net/avatars/925/498/638394139108555355.png"
+     },
+     "mainFileId": 4991134,
+     "latestFiles": [
+      {
+       "id": 4991134,
+       "gameId": 432,
+       "modId": 955460,
+       "isAvailable": true,
+       "displayName": "ARKCraft 0.1",
+       "fileName": "ARKCraft-0.1.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "64a1eecd734cc7377912e48f9c93aaee629ab2ab",
+         "algo": 1
+        },
+        {
+         "value": "50c3870ff375894b9219e460c989e1f3",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-12-29T03:47:24.377Z",
+       "fileLength": 267354,
+       "downloadCount": 3325,
+       "downloadUrl": "https://edge.forgecdn.net/files/4991/134/ARKCraft-0.1.zip",
+       "gameVersions": [
+        "1.18.2",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.18.2",
+         "gameVersionPadded": "0000000001.0000000018.0000000002",
+         "gameVersion": "1.18.2",
+         "gameVersionReleaseDate": "2022-02-28T14:23:37.723Z",
+         "gameVersionTypeId": 73250
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 537975482,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 2086083431
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.18.2",
+       "fileId": 4991134,
+       "filename": "ARKCraft-0.1.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 73250,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2024-01-04T12:28:02.223Z",
+     "dateModified": "2024-01-04T12:30:52.7Z",
+     "dateReleased": "2023-12-29T03:47:24.377Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 33630,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 292320,
+       "modId": 381130,
+       "title": "v1.1.0 Tech Additions!",
+       "description": "ComputerCraft was the foot in the door, now features AE2, OpenComputers and more!",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/292/320/310/172/0.jpg",
+       "url": "https://media.forgecdn.net/attachments/292/320/0.jpg"
+      },
+      {
+       "id": 290496,
+       "modId": 381130,
+       "title": "Typing by the river",
+       "description": "Enjoying programming outside on a nice day. Avoid over exposure to sun, moderate temperatures, and dragons.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/290/496/310/172/modern_rlcraft_river.png",
+       "url": "https://media.forgecdn.net/attachments/290/496/modern_rlcraft_river.png"
+      }
+     ],
+     "id": 381130,
+     "gameId": 432,
+     "name": "Modern RLCraft",
+     "slug": "modern-rlcraft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/modern-rlcraft",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "The realism of RLCraft with a hint of Computers",
+     "status": 4,
+     "downloadCount": 40085,
+     "favoriteCount": 4,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4472,
+       "gameId": 432,
+       "name": "Tech",
+       "slug": "tech",
+       "url": "https://www.curseforge.com/minecraft/modpacks/tech",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/479/635596761534662757.png",
+       "dateModified": "2015-02-16T15:35:53.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 101072032,
+       "name": "TheInkedGaymer",
+       "url": "https://www.curseforge.com/members/theinkedgaymer",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/500e9454-601b-43f6-ab11-4e377fba9681-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      },
+      {
+       "id": 101131384,
+       "name": "darkwolfe5",
+       "url": "https://www.curseforge.com/members/darkwolfe5",
+       "avatarUrl": "https://static-cdn.jtvnw.net/user-default-pictures-uv/75305d54-c7cc-40d1-bb9c-91fbe85943c7-profile_image-150x150.png"
+      }
+     ],
+     "logo": {
+      "id": 269662,
+      "modId": 381130,
+      "title": "637242561089389881.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/269/662/256/256/637242561089389881.png",
+      "url": "https://media.forgecdn.net/avatars/269/662/637242561089389881.png"
+     },
+     "mainFileId": 3121611,
+     "latestFiles": [
+      {
+       "id": 3121611,
+       "gameId": 432,
+       "modId": 381130,
+       "isAvailable": true,
+       "displayName": "Modern RLCraft-1.12.2-1.5.2",
+       "fileName": "Modern RLCraft-1.5.2.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "9768ad8bfdd47eabd30fc8bdcbef0debec22dc41",
+         "algo": 1
+        },
+        {
+         "value": "852e1cfc8c3a13ff776d8a30ac184532",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2020-11-24T05:02:25.007Z",
+       "fileLength": 33757261,
+       "downloadCount": 28545,
+       "downloadUrl": "https://edge.forgecdn.net/files/3121/611/Modern%20RLCraft-1.5.2.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "serverPackFileId": 3121617,
+       "fileFingerprint": 341632962,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 600303621
+        }
+       ]
+      },
+      {
+       "id": 4744754,
+       "gameId": 432,
+       "modId": 381130,
+       "isAvailable": true,
+       "displayName": "Modern RLCraft-1.12.2-2.0.0b",
+       "fileName": "Modern RLCraft-2.0.0b.zip",
+       "releaseType": 3,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "183dff880c812b6e739ae06f836e94c94e7d0b0b",
+         "algo": 1
+        },
+        {
+         "value": "693642c09ec3fda00e14aa0b58c83114",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-09-09T04:58:28.78Z",
+       "fileLength": 52841768,
+       "downloadCount": 1622,
+       "downloadUrl": "https://edge.forgecdn.net/files/4744/754/Modern%20RLCraft-2.0.0b.zip",
+       "gameVersions": [
+        "Forge",
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3728522374,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 1754666976
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 4744754,
+       "filename": "Modern RLCraft-2.0.0b.zip",
+       "releaseType": 3,
+       "gameVersionTypeId": 628,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 3121611,
+       "filename": "Modern RLCraft-1.5.2.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2020-05-05T18:27:23.497Z",
+     "dateModified": "2023-09-09T05:07:55.267Z",
+     "dateReleased": "2023-09-09T04:58:28.78Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 35886,
      "isAvailable": true,
      "hasCommentsEnabled": true,
      "licenseType": "MIT License",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 1310352,
+     "gameId": 432,
+     "name": "Carlcraft MTR Server",
+     "slug": "carlcraft-server-modpack",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/carlcraft-server-modpack",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "Build you own transport with rich building blocks",
+     "status": 4,
+     "downloadCount": 2821,
+     "favoriteCount": 2,
+     "isFeatured": false,
+     "primaryCategoryId": 4472,
+     "categories": [
+      {
+       "id": 4472,
+       "gameId": 432,
+       "name": "Tech",
+       "slug": "tech",
+       "url": "https://www.curseforge.com/minecraft/modpacks/tech",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/479/635596761534662757.png",
+       "dateModified": "2015-02-16T15:35:53.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 107803000,
+       "name": "kellanlam",
+       "url": "https://www.curseforge.com/members/kellanlam",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_70x70.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 1363972,
+      "modId": 1310352,
+      "title": "638885829664516127.webp",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1363/972/256/256/638885829664516127.webp",
+      "url": "https://media.forgecdn.net/avatars/1363/972/638885829664516127.webp"
+     },
+     "mainFileId": 6889955,
+     "latestFiles": [
+      {
+       "id": 6889955,
+       "gameId": 432,
+       "modId": 1310352,
+       "isAvailable": true,
+       "displayName": "Carlcraft-1.20.1-1.0.6.zip",
+       "fileName": "Carlcraft 1.20.1 1.0.6.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "ce9322a6382e5343a7a8f368f24f45e92cbbdd9d",
+         "algo": 1
+        },
+        {
+         "value": "e34b5048655c4fd354f5a7136dda0e73",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-08-15T16:15:59.677Z",
+       "fileLength": 41058926,
+       "downloadCount": 0,
+       "fileSizeOnDisk": 41803152,
+       "downloadUrl": "https://edge.forgecdn.net/files/6889/955/Carlcraft%201.20.1%201.0.6.zip",
+       "gameVersions": [
+        "Fabric",
+        "1.20.1"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Fabric",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-09-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 545409751,
+       "modules": [
+        {
+         "name": "modlist.html",
+         "fingerprint": 1283926479
+        },
+        {
+         "name": "manifest.json",
+         "fingerprint": 3449423559
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 329255643
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 6889955,
+       "filename": "Carlcraft 1.20.1 1.0.6.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 4
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2025-07-20T10:23:33.51Z",
+     "dateModified": "2025-08-15T16:22:47.05Z",
+     "dateReleased": "2025-08-15T16:15:59.677Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 39248,
+     "isAvailable": true,
+     "hasCommentsEnabled": false,
+     "licenseType": "Attribution-NonCommercial-ShareAlike 4.0 International",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 1226381,
+     "gameId": 432,
+     "name": "Not So RLCraft (NSR)",
+     "slug": "not-so-rlcraft-nsr",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/not-so-rlcraft-nsr",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "Basically just principals of RLCraft on a newer version with some added mods",
+     "status": 4,
+     "downloadCount": 2435,
+     "favoriteCount": 0,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4484,
+       "gameId": 432,
+       "name": "Multiplayer",
+       "slug": "multiplayer",
+       "url": "https://www.curseforge.com/minecraft/modpacks/multiplayer",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/481/635596792838491141.png",
+       "dateModified": "2015-02-16T16:28:03.85Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4472,
+       "gameId": 432,
+       "name": "Tech",
+       "slug": "tech",
+       "url": "https://www.curseforge.com/minecraft/modpacks/tech",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/479/635596761534662757.png",
+       "dateModified": "2015-02-16T15:35:53.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 105420788,
+       "name": "SpaceFox5738",
+       "url": "https://www.curseforge.com/members/spacefox5738",
+       "avatarUrl": "https://media.forgecdn.net/avatars/1303/595/638847510395672121.jpeg",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 1205516,
+      "modId": 1226381,
+      "title": "638783548503820515.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1205/516/256/256/638783548503820515.png",
+      "url": "https://media.forgecdn.net/avatars/1205/516/638783548503820515.png"
+     },
+     "mainFileId": 6396796,
+     "latestFiles": [
+      {
+       "id": 6396796,
+       "gameId": 432,
+       "modId": 1226381,
+       "isAvailable": true,
+       "displayName": "Not So RLCraft 1.5-1.20.1",
+       "fileName": "Not So RLCraft (NSR)-1.5.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "0a085f6419c45784461b308c7525aaa2b440fb74",
+         "algo": 1
+        },
+        {
+         "value": "f470c756d7155a677205dfdc4552a7cd",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2025-04-07T21:23:19.31Z",
+       "fileLength": 486294,
+       "downloadCount": 1336,
+       "fileSizeOnDisk": 1554082,
+       "downloadUrl": "https://edge.forgecdn.net/files/6396/796/Not%20So%20RLCraft%20(NSR)-1.5.zip",
+       "gameVersions": [
+        "1.20.1",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.20.1",
+         "gameVersionPadded": "0000000001.0000000020.0000000001",
+         "gameVersion": "1.20.1",
+         "gameVersionReleaseDate": "2023-06-12T14:26:38.477Z",
+         "gameVersionTypeId": 75125
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 1700068326,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 2325422843
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 2627852025
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 100554807
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.20.1",
+       "fileId": 6396796,
+       "filename": "Not So RLCraft (NSR)-1.5.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 75125,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2025-04-05T09:59:25.537Z",
+     "dateModified": "2025-12-18T14:08:43.123Z",
+     "dateReleased": "2025-04-07T21:23:19.31Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 40910,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "serverAffiliation": {
+      "isEnabled": true,
+      "isDefaultBanner": false,
+      "hasDiscount": false,
+      "affiliationService": 2,
+      "customImageUrl": "https://media.forgecdn.net/banner/console-affiliation-banners/banner_fc5f46b7-0402-4faa-8f64-bac016f8dc50.png",
+      "affiliationLink": "https://billing.kinetichosting.net/aff.php?aff=1085"
+     },
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 476666,
+     "gameId": 432,
+     "name": "easy RLcraft from konstantin99999",
+     "slug": "easy-rlcraft-from-konstantin99999",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/easy-rlcraft-from-konstantin99999",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "easy RLcraft from konstantin99999",
+     "status": 4,
+     "downloadCount": 5020,
+     "favoriteCount": 1,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4478,
+       "gameId": 432,
+       "name": "Quests",
+       "slug": "quests",
+       "url": "https://www.curseforge.com/minecraft/modpacks/quests",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/487/635596816137981263.png",
+       "dateModified": "2015-02-16T17:06:53.797Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4473,
+       "gameId": 432,
+       "name": "Magic",
+       "slug": "magic",
+       "url": "https://www.curseforge.com/minecraft/modpacks/magic",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/474/635596760578719019.png",
+       "dateModified": "2015-02-16T15:34:17.873Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 102219349,
+       "name": "konstantin99999999",
+       "url": "https://www.curseforge.com/members/konstantin99999999",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/8eebc29b-9384-4df6-95f6-16314aadf3fd-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 376080,
+      "modId": 476666,
+      "title": "637552034165796828.jpeg",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/376/80/256/256/637552034165796828.jpeg",
+      "url": "https://media.forgecdn.net/avatars/376/80/637552034165796828.jpeg"
+     },
+     "mainFileId": 3298975,
+     "latestFiles": [
+      {
+       "id": 3298975,
+       "gameId": 432,
+       "modId": 476666,
+       "isAvailable": true,
+       "displayName": "easyRLcraftv1.0 mods",
+       "fileName": "easyRLcraft-2.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "ef35a0f58940706442187f0638fa553e9fc8e6ce",
+         "algo": 1
+        },
+        {
+         "value": "bcecd5acbd3326be05179c44a2920558",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-05-05T05:18:51.807Z",
+       "fileLength": 3165,
+       "downloadCount": 2945,
+       "downloadUrl": "https://edge.forgecdn.net/files/3298/975/easyRLcraft-2.zip",
+       "gameVersions": [
+        "1.12.2"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.12.2",
+         "gameVersionPadded": "0000000001.0000000012.0000000002",
+         "gameVersion": "1.12.2",
+         "gameVersionReleaseDate": "2017-09-18T05:00:00Z",
+         "gameVersionTypeId": 628
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2940547191,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3308535377
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.12.2",
+       "fileId": 3298975,
+       "filename": "easyRLcraft-2.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 628
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2021-04-29T09:40:02.747Z",
+     "dateModified": "2021-05-05T05:20:02.42Z",
+     "dateReleased": "2021-05-05T05:18:51.807Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 41291,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 470313,
+     "gameId": 432,
+     "name": "IRL Craft",
+     "slug": "irl-craft",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/irl-craft",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "A modpack inspired by RLCraft that makes minecraft more realistic and harder",
+     "status": 4,
+     "downloadCount": 7094,
+     "favoriteCount": 5,
+     "isFeatured": false,
+     "primaryCategoryId": 4476,
+     "categories": [
+      {
+       "id": 4472,
+       "gameId": 432,
+       "name": "Tech",
+       "slug": "tech",
+       "url": "https://www.curseforge.com/minecraft/modpacks/tech",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/479/635596761534662757.png",
+       "dateModified": "2015-02-16T15:35:53.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 101872031,
+       "name": "rockyers57",
+       "url": "https://www.curseforge.com/members/rockyers57",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/3a5a0c4d-1d1a-4191-aebd-dcc17e0b43f4-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 369926,
+      "modId": 470313,
+      "title": "637539826314636234.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/369/926/256/256/637539826314636234.png",
+      "url": "https://media.forgecdn.net/avatars/369/926/637539826314636234.png"
+     },
+     "mainFileId": 3305522,
+     "latestFiles": [
+      {
+       "id": 3275381,
+       "gameId": 432,
+       "modId": 470313,
+       "isAvailable": true,
+       "displayName": "IRL Craft (Alpha 1.1)",
+       "fileName": "IRL Craft-Alpha_1.1.zip",
+       "releaseType": 3,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "9816dd05b13265d214019c64895db78847658467",
+         "algo": 1
+        },
+        {
+         "value": "55f0f9b58fb7e44aadc3e4c5433378ff",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-04-13T23:38:15.027Z",
+       "fileLength": 841968,
+       "downloadCount": 53,
+       "downloadUrl": "https://edge.forgecdn.net/files/3275/381/IRL%20Craft-Alpha_1.1.zip",
+       "gameVersions": [
+        "1.16.4"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.4",
+         "gameVersionPadded": "0000000001.0000000016.0000000004",
+         "gameVersion": "1.16.4",
+         "gameVersionReleaseDate": "2020-11-02T18:40:51.49Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3728701122,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 413037613
+        }
+       ]
+      },
+      {
+       "id": 3289317,
+       "gameId": 432,
+       "modId": 470313,
+       "isAvailable": true,
+       "displayName": "IRL Craft (Beta 1.67)",
+       "fileName": "IRL Craft-Beta_1.67.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "0ceb3b3b649b80672b32324030d478633dcbab34",
+         "algo": 1
+        },
+        {
+         "value": "ff163c8114e990ac734fe5ce483321ee",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-04-26T01:45:16.947Z",
+       "fileLength": 222103,
+       "downloadCount": 88,
+       "downloadUrl": "https://edge.forgecdn.net/files/3289/317/IRL%20Craft-Beta_1.67.zip",
+       "gameVersions": [
+        "1.16.4"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.16.4",
+         "gameVersionPadded": "0000000001.0000000016.0000000004",
+         "gameVersion": "1.16.4",
+         "gameVersionReleaseDate": "2020-11-02T18:40:51.49Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 3546619476,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 118390969
+        }
+       ]
+      },
+      {
+       "id": 3305522,
+       "gameId": 432,
+       "modId": 470313,
+       "isAvailable": true,
+       "displayName": "IRL Craft (Beta 1.7.1 Menu Fix)",
+       "fileName": "IRL Craft-Beta_1.7.1.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "77ac6b400c238341bb7c008d76231cacda363263",
+         "algo": 1
+        },
+        {
+         "value": "7877a28fc077cb67721f8d01c4456cb1",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2021-05-11T05:28:53.927Z",
+       "fileLength": 257555,
+       "downloadCount": 4603,
+       "downloadUrl": "https://edge.forgecdn.net/files/3305/522/IRL%20Craft-Beta_1.7.1.zip",
+       "gameVersions": [
+        "Forge",
+        "1.16.4"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        },
+        {
+         "gameVersionName": "1.16.4",
+         "gameVersionPadded": "0000000001.0000000016.0000000004",
+         "gameVersion": "1.16.4",
+         "gameVersionReleaseDate": "2020-11-02T18:40:51.49Z",
+         "gameVersionTypeId": 70886
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 1935388471,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3804002584
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3305522,
+       "filename": "IRL Craft-Beta_1.7.1.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 70886,
+       "modLoader": 1
+      },
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3289317,
+       "filename": "IRL Craft-Beta_1.67.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 70886
+      },
+      {
+       "gameVersion": "1.16.4",
+       "fileId": 3275381,
+       "filename": "IRL Craft-Alpha_1.1.zip",
+       "releaseType": 3,
+       "gameVersionTypeId": 70886
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2021-04-13T12:05:09.697Z",
+     "dateModified": "2021-05-11T05:33:46.737Z",
+     "dateReleased": "2021-05-11T05:28:53.927Z",
+     "allowModDistribution": true,
+     "gamePopularityRank": 41695,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "GNU General Public License version 3 (GPLv3)",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [
+      {
+       "id": 1698391,
+       "modId": 1552503,
+       "title": "beautiful view",
+       "description": "beautiful view",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1698/391/310/172/base-profile-screenshot-2026-05-25-14-33-23-54-png.png",
+       "url": "https://media.forgecdn.net/attachments/1698/391/base-profile-screenshot-2026-05-25-14-33-23-54-png.png"
+      },
+      {
+       "id": 1772789,
+       "modId": 1552503,
+       "title": "Skills",
+       "description": "Skills",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1772/789/310/172/base-profile-screenshot-2026-07-04-18-23-47-85-png.png",
+       "url": "https://media.forgecdn.net/attachments/1772/789/base-profile-screenshot-2026-07-04-18-23-47-85-png.png"
+      },
+      {
+       "id": 1763726,
+       "modId": 1552503,
+       "title": "Tons of baubles waiting to be collected",
+       "description": "Tons of baubles waiting to be collected",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/726/310/172/base-profile-screenshot-2026-06-29-21-58-34-52-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/726/base-profile-screenshot-2026-06-29-21-58-34-52-png.png"
+      },
+      {
+       "id": 1797450,
+       "modId": 1552503,
+       "title": "Tons of armor, weapons and apocalypse items.",
+       "description": "Tons of armor, weapons and apocalypse items.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1797/450/310/172/11111-png.png",
+       "url": "https://media.forgecdn.net/attachments/1797/450/11111-png.png"
+      },
+      {
+       "id": 1797453,
+       "modId": 1552503,
+       "title": "Tons of potions(there are way more) healing drinking and temperature regulating items, and custom weapons.",
+       "description": "Tons of potions(there are way more) healing drinking and temperature regulating items, and custom weapons.",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1797/453/310/172/1111-png.png",
+       "url": "https://media.forgecdn.net/attachments/1797/453/1111-png.png"
+      },
+      {
+       "id": 1797480,
+       "modId": 1552503,
+       "title": "a tiny amount of the custom mobs and bosses",
+       "description": "a tiny amount of the custom mobs and bosses",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1797/480/310/172/2026-07-16_18-15-23-png.png",
+       "url": "https://media.forgecdn.net/attachments/1797/480/2026-07-16_18-15-23-png.png"
+      },
+      {
+       "id": 1765443,
+       "modId": 1552503,
+       "title": "reforge stuff",
+       "description": "reforge stuff",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1765/443/310/172/base-profile-screenshot-2026-06-30-19-21-53-15-png.png",
+       "url": "https://media.forgecdn.net/attachments/1765/443/base-profile-screenshot-2026-06-30-19-21-53-15-png.png"
+      },
+      {
+       "id": 1696970,
+       "modId": 1552503,
+       "title": "around 200 fps on average with these settings",
+       "description": "around 200 fps on average with these settings",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1696/970/310/172/base-profile-screenshot-2026-05-24-15-51-27-76-png.png",
+       "url": "https://media.forgecdn.net/attachments/1696/970/base-profile-screenshot-2026-05-24-15-51-27-76-png.png"
+      },
+      {
+       "id": 1763708,
+       "modId": 1552503,
+       "title": "scary dragons",
+       "description": "scary dragons",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/708/310/172/base-profile-screenshot-2026-06-29-21-55-40-77-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/708/base-profile-screenshot-2026-06-29-21-55-40-77-png.png"
+      },
+      {
+       "id": 1763715,
+       "modId": 1552503,
+       "title": "hes waiting...",
+       "description": "hes waiting...",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/715/310/172/base-profile-screenshot-2026-06-29-21-58-34-52-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/715/base-profile-screenshot-2026-06-29-21-58-34-52-png.png"
+      },
+      {
+       "id": 1763740,
+       "modId": 1552503,
+       "title": "nice town, a bit quiet though...",
+       "description": "nice town, a bit quiet though...",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/740/310/172/base-profile-screenshot-2026-06-29-22-05-49-07-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/740/base-profile-screenshot-2026-06-29-22-05-49-07-png.png"
+      },
+      {
+       "id": 1763751,
+       "modId": 1552503,
+       "title": "big scary bosses",
+       "description": "big scary bosses",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/751/310/172/base-profile-screenshot-2026-06-29-22-11-46-70-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/751/base-profile-screenshot-2026-06-29-22-11-46-70-png.png"
+      },
+      {
+       "id": 1763755,
+       "modId": 1552503,
+       "title": "THE NETHER",
+       "description": "THE NETHER",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/755/310/172/base-profile-screenshot-2026-06-29-22-16-45-06-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/755/base-profile-screenshot-2026-06-29-22-16-45-06-png.png"
+      },
+      {
+       "id": 1763760,
+       "modId": 1552503,
+       "title": "THE END",
+       "description": "THE END",
+       "thumbnailUrl": "https://media.forgecdn.net/attachments/thumbnails/1763/760/310/172/base-profile-screenshot-2026-06-29-22-19-41-78-png.png",
+       "url": "https://media.forgecdn.net/attachments/1763/760/base-profile-screenshot-2026-06-29-22-19-41-78-png.png"
+      }
+     ],
+     "id": 1552503,
+     "gameId": 432,
+     "name": "RLcraft.exe - Survivalist Horror",
+     "slug": "rlcraftexe",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/rlcraftexe",
+      "wikiUrl": null,
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "200 Mod Horror modpack, still having RLcrafts classic dragons, battle towers, item qualities, skill requierments, baubles, while turning minecraft into an apocalyptic world with mutated zombies. getting 200fps with shaders on an rtx 4070.",
+     "status": 4,
+     "downloadCount": 2419,
+     "favoriteCount": 16,
+     "isFeatured": false,
+     "primaryCategoryId": 10683,
+     "categories": [
+      {
+       "id": 10683,
+       "gameId": 432,
+       "name": "RLCraft",
+       "slug": "rlcraft",
+       "url": "https://www.curseforge.com/minecraft/modpacks/rlcraft",
+       "iconUrl": "https://media.forgecdn.net/avatars/1729/298/639100433200568522.png",
+       "dateModified": "2026-03-25T13:48:40.063Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 7418,
+       "gameId": 432,
+       "name": "Horror",
+       "slug": "horror",
+       "url": "https://www.curseforge.com/minecraft/modpacks/horror",
+       "iconUrl": "https://media.forgecdn.net/avatars/1062/213/638594627103104125.png",
+       "dateModified": "2024-08-18T10:11:59.67Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 132816769,
+       "name": "Hambfrk",
+       "url": "https://www.curseforge.com/members/hambfrk",
+       "avatarUrl": "https://cdn.discordapp.com/embed/avatars/NaN.png",
+       "userTierInfo": {
+        "tierLevel": 0,
+        "downloadsThreshold": 0
+       }
+      }
+     ],
+     "logo": {
+      "id": 1824524,
+      "modId": 1552503,
+      "title": "639152304457851108.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/1824/524/256/256/639152304457851108.png",
+      "url": "https://media.forgecdn.net/avatars/1824/524/639152304457851108.png"
+     },
+     "mainFileId": 8464597,
+     "latestFiles": [
+      {
+       "id": 8314113,
+       "gameId": 432,
+       "modId": 1552503,
+       "isAvailable": true,
+       "displayName": "Shared Health - RLcraft Horror Edition",
+       "fileName": "Shared Health - Survivalist Horror-3.0 - 33.1.0.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "5df681668dea146cd2d3a2e98bbdfefc0406171d",
+         "algo": 1
+        },
+        {
+         "value": "1850fc36cdbc5ea0535bb88a04f11258",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2026-06-24T19:12:32.607Z",
+       "fileLength": 29003964,
+       "downloadCount": 44,
+       "fileSizeOnDisk": 22506422,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.21.1",
+        "NeoForge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.21.1",
+         "gameVersionPadded": "0000000001.0000000021.0000000001",
+         "gameVersion": "1.21.1",
+         "gameVersionReleaseDate": "2024-08-08T15:17:53.787Z",
+         "gameVersionTypeId": 77784
+        },
+        {
+         "gameVersionName": "NeoForge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2023-07-25T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 2752939095,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 743155532
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 759156851
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 3345290495
+        }
+       ]
+      },
+      {
+       "id": 8464597,
+       "gameId": 432,
+       "modId": 1552503,
+       "isAvailable": true,
+       "displayName": "RLcraft.exe - tiny balancing -2.3.zip",
+       "fileName": "RLcraft.exe - Survivalist Horror -2.3.zip",
+       "releaseType": 1,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "9ba4e360e0ec05bb0ecf5b60fef657572e19f7d0",
+         "algo": 1
+        },
+        {
+         "value": "9f0959a29ef67287b958bc0c6939b2a3",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2026-07-19T12:35:21.737Z",
+       "fileLength": 30639809,
+       "downloadCount": 24,
+       "fileSizeOnDisk": 23798846,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.21.1",
+        "NeoForge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.21.1",
+         "gameVersionPadded": "0000000001.0000000021.0000000001",
+         "gameVersion": "1.21.1",
+         "gameVersionReleaseDate": "2024-08-08T15:17:53.787Z",
+         "gameVersionTypeId": 77784
+        },
+        {
+         "gameVersionName": "NeoForge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2023-07-25T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 1238282453,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 3440637328
+        },
+        {
+         "name": "modlist.html",
+         "fingerprint": 1850909309
+        },
+        {
+         "name": "overrides",
+         "fingerprint": 3287294755
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.21.1",
+       "fileId": 8464597,
+       "filename": "RLcraft.exe - Survivalist Horror -2.3.zip",
+       "releaseType": 1,
+       "gameVersionTypeId": 77784,
+       "modLoader": 6
+      },
+      {
+       "gameVersion": "1.21.1",
+       "fileId": 8314113,
+       "filename": "Shared Health - Survivalist Horror-3.0 - 33.1.0.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 77784,
+       "modLoader": 6
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2026-05-25T08:35:33.007Z",
+     "dateModified": "2026-07-19T12:56:15.393Z",
+     "dateReleased": "2026-07-19T12:35:21.737Z",
+     "allowModDistribution": false,
+     "gamePopularityRank": 45016,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
+     "thumbsUpCount": 0,
+     "featuredProjectTag": 0
+    },
+    {
+     "screenshots": [],
+     "id": 853171,
+     "gameId": 432,
+     "name": "Impossible Craft (an RLCraft Alternative)",
+     "slug": "impossible-craft-yt",
+     "links": {
+      "websiteUrl": "https://www.curseforge.com/minecraft/modpacks/impossible-craft-yt",
+      "wikiUrl": "",
+      "issuesUrl": null,
+      "sourceUrl": null
+     },
+     "summary": "A semi-realistic, hardcore modpack that aims to make Minecraft more challenging. An modern, reinterpreted version of RLCraft.",
+     "status": 4,
+     "downloadCount": 10499,
+     "favoriteCount": 39,
+     "isFeatured": false,
+     "primaryCategoryId": 4475,
+     "categories": [
+      {
+       "id": 4475,
+       "gameId": 432,
+       "name": "Adventure and RPG",
+       "slug": "adventure-and-rpg",
+       "url": "https://www.curseforge.com/minecraft/modpacks/adventure-and-rpg",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/480/635596775049811800.png",
+       "dateModified": "2015-02-16T15:58:24.98Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4483,
+       "gameId": 432,
+       "name": "Combat / PvP",
+       "slug": "combat-pvp",
+       "url": "https://www.curseforge.com/minecraft/modpacks/combat-pvp",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/313/635591779575605594.png",
+       "dateModified": "2015-02-10T21:12:37.56Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4476,
+       "gameId": 432,
+       "name": "Exploration",
+       "slug": "exploration",
+       "url": "https://www.curseforge.com/minecraft/modpacks/exploration",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/486/635596815896417213.png",
+       "dateModified": "2015-02-16T17:06:29.69Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 4479,
+       "gameId": 432,
+       "name": "Hardcore",
+       "slug": "hardcore",
+       "url": "https://www.curseforge.com/minecraft/modpacks/hardcore",
+       "iconUrl": "https://media.forgecdn.net/avatars/14/473/635596760504656528.png",
+       "dateModified": "2015-02-16T15:34:10.467Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      },
+      {
+       "id": 5128,
+       "gameId": 432,
+       "name": "Vanilla+",
+       "slug": "vanilla",
+       "url": "https://www.curseforge.com/minecraft/modpacks/vanilla",
+       "iconUrl": "https://media.forgecdn.net/avatars/451/388/637713564446392425.png",
+       "dateModified": "2021-11-01T09:40:44.687Z",
+       "isClass": false,
+       "classId": 4471,
+       "parentCategoryId": 4471
+      }
+     ],
+     "classId": 4471,
+     "authors": [
+      {
+       "id": 102959393,
+       "name": "OnMod",
+       "url": "https://www.curseforge.com/members/onmod",
+       "avatarUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/f0334df0-c260-4000-8aae-ec5b40311c2c-profile_image-150x150.png",
+       "userTierInfo": {
+        "tierLevel": 4,
+        "downloadsThreshold": 10000000
+       }
+      }
+     ],
+     "logo": {
+      "id": 807720,
+      "modId": 853171,
+      "title": "638177105591967069.png",
+      "description": "",
+      "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/807/720/256/256/638177105591967069.png",
+      "url": "https://media.forgecdn.net/avatars/807/720/638177105591967069.png"
+     },
+     "mainFileId": 4501221,
+     "latestFiles": [
+      {
+       "id": 4501221,
+       "gameId": 432,
+       "modId": 853171,
+       "isAvailable": true,
+       "displayName": "Impossible Craft - Version 1.0",
+       "fileName": "Impossible Craft-Version 1.0.zip",
+       "releaseType": 2,
+       "fileStatus": 4,
+       "hashes": [
+        {
+         "value": "53bb0e4d0b9681e32dd81d8124f31461f8012919",
+         "algo": 1
+        },
+        {
+         "value": "a0ed9b13a5e90aea9b7ac671c56bbe28",
+         "algo": 2
+        }
+       ],
+       "fileDate": "2023-04-21T21:38:15.807Z",
+       "fileLength": 484419,
+       "downloadCount": 6379,
+       "downloadUrl": null,
+       "gameVersions": [
+        "1.18.2",
+        "Forge"
+       ],
+       "sortableGameVersions": [
+        {
+         "gameVersionName": "1.18.2",
+         "gameVersionPadded": "0000000001.0000000018.0000000002",
+         "gameVersion": "1.18.2",
+         "gameVersionReleaseDate": "2022-02-28T14:23:37.723Z",
+         "gameVersionTypeId": 73250
+        },
+        {
+         "gameVersionName": "Forge",
+         "gameVersionPadded": "0",
+         "gameVersion": "",
+         "gameVersionReleaseDate": "2022-10-01T00:00:00Z",
+         "gameVersionTypeId": 68441
+        }
+       ],
+       "dependencies": [],
+       "alternateFileId": 0,
+       "isServerPack": false,
+       "fileFingerprint": 855870059,
+       "modules": [
+        {
+         "name": "manifest.json",
+         "fingerprint": 1016464130
+        }
+       ]
+      }
+     ],
+     "latestFilesIndexes": [
+      {
+       "gameVersion": "1.18.2",
+       "fileId": 4501221,
+       "filename": "Impossible Craft-Version 1.0.zip",
+       "releaseType": 2,
+       "gameVersionTypeId": 73250,
+       "modLoader": 1
+      }
+     ],
+     "latestEarlyAccessFilesIndexes": [],
+     "dateCreated": "2023-04-24T09:27:48.713Z",
+     "dateModified": "2024-04-19T04:04:39.813Z",
+     "dateReleased": "2023-04-21T21:38:15.807Z",
+     "allowModDistribution": false,
+     "gamePopularityRank": 49679,
+     "isAvailable": true,
+     "hasCommentsEnabled": true,
+     "licenseType": "All Rights Reserved",
      "thumbsUpCount": 0,
      "featuredProjectTag": 0
     }
@@ -8911,8 +13232,8 @@
    "pagination": {
     "index": 0,
     "pageSize": 20,
-    "resultCount": 2,
-    "totalCount": 2
+    "resultCount": 20,
+    "totalCount": 235
    }
   }
  },

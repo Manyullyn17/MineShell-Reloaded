@@ -226,6 +226,16 @@ reload (`CachedSupplier` holds only its config), tried on a copy of a real serve
 journal of the real one (2026-11-06). A `/reload` that seems not to work has found nothing in the
 folder: "Located 0 packs" in the log. Paxi has not been tried.
 
+## CurseForge search losing a pack
+
+Since early November 2026 CurseForge's search no longer matches MeatballCraft (411966) by its
+name or slug: "meatballcraft" finds only Divine Evolution, `slug=meatballcraft` nothing, through
+the official API and the modpacks.ch mirror alike (the mirror passes CurseForge's search on), and
+Prism misses it too. By id (`/v1/mods/411966`, the mirror's `/public/curseforge/411966`) and by
+author it is there, approved and available. The live-API test's search uses RLCraft instead.
+Leave the sort in when probing by hand: without `sortField` CurseForge's own order put RLCraft
+off the first page, which looked like the same fault (MineShell always sends `sortField=2`).
+
 ## Mod config form
 
 What the real files look like (`configform.ts`; `tests/tools/configform-sweep.ts` reads all of a
