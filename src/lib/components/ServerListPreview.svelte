@@ -2,35 +2,55 @@
 	import McText from './McText.svelte';
 	import ServerIcon from './ServerIcon.svelte';
 	import { parseCodes, wrapLines } from '#lib/shared/mctext.js';
+	import { dirtGrain, drawDefaultIcon } from '#lib/shared/mcdraw.js';
 
 	/**
 	 * The server as the multiplayer list draws it, from the 26.3 client's ServerSelectionList:
 	 * a 305 px row, the 32 px icon, the name at 35, the description broken to 267 px (the row's
 	 * content less the icon and gaps) with at most two lines shown, grey where it sets no colour.
-	 * Drawn at up to 2 CSS px a game pixel, smaller where the column is narrower.
+	 * Drawn in the previews' pixel font at up to 2 CSS px a game pixel, smaller where the column
+	 * is narrower; behind it a stand-in for what the version shows (a blurred world from 1.20.5,
+	 * dark dirt before), and for a server without an icon a stand-in for the game's default one.
 	 */
 	let {
 		motd,
 		name,
 		instanceId,
 		iconVersion,
-		maxPlayers
-	}: { motd: string; name: string; instanceId: string; iconVersion: number | null; maxPlayers: number } = $props();
+		maxPlayers,
+		menuBlur
+	}: { motd: string; name: string; instanceId: string; iconVersion: number | null; maxPlayers: number; menuBlur: boolean } = $props();
 
 	const MOTD_WIDTH = 267;
+	const GREY = '#808080';
 	const lines = $derived(wrapLines(parseCodes(motd), MOTD_WIDTH));
+
+	let dirt = $state('');
+	$effect(() => {
+		dirt = menuBlur ? '' : dirtGrain(true);
+	});
+	const defaultIcon = (canvas: HTMLCanvasElement) => drawDefaultIcon(canvas);
 </script>
 
 <div class="frame">
-	<div class="row" aria-label="Preview of the server in the multiplayer list">
-		<span class="icon"><ServerIcon id={instanceId} {name} {iconVersion} size={32} /></span>
+	<div
+		class="row"
+		class:blur={menuBlur}
+		style:background-image={dirt ? `url(${dirt})` : undefined}
+		aria-label="Preview of the server in the multiplayer list"
+	>
+		<span class="icon">
+			{#if iconVersion !== null}
+				<ServerIcon id={instanceId} {name} {iconVersion} size={32} />
+			{:else}
+				<canvas use:defaultIcon aria-hidden="true"></canvas>
+			{/if}
+		</span>
 		<span class="name"><McText spans={[{ text: name }]} measured /></span>
-		<span class="players"
-			><McText spans={[{ text: '0', color: 'gray' }, { text: '/', color: 'dark_gray' }, { text: String(maxPlayers), color: 'gray' }]} measured /></span
-		>
-		<span class="ping" aria-hidden="true">{#each [2, 3, 4, 6, 8] as h (h)}<i style="--h: {h}"></i>{/each}</span>
+		<span class="players"><McText spans={[{ text: `0/${maxPlayers}` }]} base={GREY} measured /></span>
+		<span class="ping" aria-hidden="true">{#each [2, 3, 4, 5, 7] as h (h)}<i style="--h: {h}"></i>{/each}</span>
 		{#each lines.slice(0, 2) as line, i (i)}
-			<span class="motd" style="--line: {i}"><McText spans={line} measured /></span>
+			<span class="motd" style="--line: {i}"><McText spans={line} base={GREY} measured /></span>
 		{/each}
 	</div>
 </div>
@@ -50,14 +70,30 @@
 		position: relative;
 		width: calc(305 * var(--mc-px));
 		height: calc(36 * var(--mc-px));
-		background: #101012;
-		border: 1px solid #3a3a3e;
+		/* Before 1.20.5: the list's dark dirt, 16 texels of 2 game px each. */
+		background-color: #16100b;
+		background-size: calc(32 * var(--mc-px)) calc(32 * var(--mc-px));
+		image-rendering: pixelated;
+		font-family: var(--font-mc);
 		font-size: calc(8 * var(--mc-px));
-		line-height: calc(9 * var(--mc-px));
-		color: #808080;
+		/* The font's own height, so a line's pixels start at its top. */
+		line-height: calc(8 * var(--mc-px));
+		color: #ffffff;
 		overflow: hidden;
 		white-space: nowrap;
 		box-sizing: content-box;
+	}
+	/* From 1.20.5: whatever is behind the menu, blurred and darkened; a stand-in, since that is the player's world. */
+	.row.blur::before {
+		content: '';
+		position: absolute;
+		inset: calc(-20 * var(--mc-px));
+		background:
+			radial-gradient(40% 60% at 20% 30%, #5d6b3a 0%, transparent 70%),
+			radial-gradient(35% 55% at 70% 60%, #7a5a32 0%, transparent 70%),
+			radial-gradient(30% 45% at 88% 15%, #56708a 0%, transparent 70%),
+			#3b3a30;
+		filter: blur(calc(6 * var(--mc-px))) brightness(0.7);
 	}
 	.row > span {
 		position: absolute;
@@ -68,14 +104,17 @@
 		width: calc(32 * var(--mc-px));
 		height: calc(32 * var(--mc-px));
 	}
-	.icon :global(.server-icon) {
+	.icon :global(.server-icon),
+	.icon canvas {
+		display: block;
 		width: 100%;
 		height: 100%;
+		border-radius: 0;
+		image-rendering: pixelated;
 	}
 	.name {
 		left: calc(37 * var(--mc-px));
 		top: calc(3 * var(--mc-px));
-		color: #ffffff;
 	}
 	.players {
 		right: calc(19 * var(--mc-px));
@@ -92,7 +131,8 @@
 	.ping i {
 		width: calc(1 * var(--mc-px));
 		height: calc(var(--h) * var(--mc-px));
-		background: #55ff55;
+		background: #00ff21;
+		box-shadow: var(--mc-px) var(--mc-px) 0 #004008;
 	}
 	.motd {
 		left: calc(37 * var(--mc-px));

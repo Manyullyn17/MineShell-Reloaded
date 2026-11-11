@@ -341,7 +341,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		hasIcon: await fs.access(path.join(instance.path, 'server-icon.png')).then(
 			() => true,
 			() => false
-		)
+		),
+		/** From 1.20.5 menus show a blurred world behind them, before it dirt (the server list preview). */
+		menuBlur: compareVersions(instance.minecraftVersion, '1.20.5') >= 0
 	};
 };
 

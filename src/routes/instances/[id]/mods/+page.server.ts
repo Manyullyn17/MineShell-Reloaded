@@ -3,6 +3,7 @@ import { requireAccess } from '#lib/server/access.js';
 import type { Actions, PageServerLoad } from './$types';
 import { bisectState, cancelBisect, clearBisectState, isBisecting, startBisect } from '#lib/server/bisect.js';
 import { OperationInProgressError } from '#lib/server/operations.js';
+import { compareVersions } from '#lib/server/java.js';
 import { cleanroomDisabledReasons, isCleanroomRequiredJar } from '#lib/server/cleanroom.js';
 import { InstanceError, requireInstance, summarise } from '#lib/server/instances.js';
 import { disabledCopies, duplicateMods, indexMods, requiredBy } from '#lib/server/crashdiag.js';
@@ -83,6 +84,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		datapacks,
 		/** The server resource pack players are offered (the Resource pack sub-tab). */
 		resourcePack,
+		/** From 1.20.5 menus show a blurred world behind them, before it dirt (the resource pack preview). */
+		menuBlur: compareVersions(instance.minecraftVersion, '1.20.5') >= 0,
 		/** The pack or its options changed after this run started: players get the change at the next start. */
 		resourcePackToApply: summary.running && summary.state.mainStartedAt > 0 && (resourcePack.changedAt ?? 0) > summary.state.mainStartedAt,
 		/**

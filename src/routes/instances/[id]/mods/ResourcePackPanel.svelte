@@ -20,6 +20,7 @@
 		pack,
 		running,
 		toApply,
+		menuBlur,
 		minecraftVersion,
 		canEdit,
 		source = $bindable('modrinth'),
@@ -31,6 +32,8 @@
 		running: boolean;
 		/** Changed since this run started: players get it at the next start. */
 		toApply: boolean;
+		/** The version shows a blurred world behind menus (1.20.5+), else dirt: the preview's backdrop. */
+		menuBlur: boolean;
 		minecraftVersion: string;
 		/** settings.edit: changing server.properties. */
 		canEdit: boolean;
@@ -270,7 +273,7 @@
 					>
 				</label>
 				<FormattedTextInput id="resource-pack-prompt" name="prompt" hex bind:value={prompt} labelledby="resource-pack-prompt-label" />
-				<ResourcePackPromptPreview {prompt} {required} />
+				<ResourcePackPromptPreview {prompt} {required} {menuBlur} />
 				<div class="row">
 					<button type="submit" disabled={!optionsChanged || !!saving}>{saving === 'options' ? 'Saving' : 'Save'}</button>
 				</div>

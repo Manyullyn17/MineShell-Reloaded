@@ -56,6 +56,11 @@ export function colorHex(color: string | undefined): string | undefined {
 	return HEX.test(color) ? color : COLORS.find((c) => c.name === color)?.hex;
 }
 
+/** The game's text shadow: the colour at a quarter, drawn one pixel down and right. */
+export function shadowColor(hex: string): string {
+	return '#' + [1, 3, 5].map((i) => Math.floor(parseInt(hex.slice(i, i + 2), 16) / 4).toString(16).padStart(2, '0')).join('');
+}
+
 // ----------------------------------------------------------------- § codes ---
 
 /**

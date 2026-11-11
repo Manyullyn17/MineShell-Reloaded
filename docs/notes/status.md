@@ -73,7 +73,10 @@ user before the beta):
    **The user, 2026-11-11** on a 26.3 server: the description works in the game. Found: §k in
    the previews changed length and stayed readable (fixed: same-width glyphs in fixed boxes);
    the browser's font is nothing like the game's, and a server without an icon shows initials
-   where the game shows its default icon (both open, to decide). Item names and lore not yet.
+   where the game shows its default icon. Both previews now draw in MineShell Pixel (a font drawn
+   for MineShell at the game's widths, picked by the user from a side-by-side with Pixel
+   Operator 8 and Monocraft), with the shadow, a backdrop by version, the stand-in icon and
+   buttons the user found close; the yellow bold required line. Item names and lore not yet.
 4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
    change a `-common.toml` setting in the form and see the server pick it up (its log says the
    config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
@@ -108,8 +111,8 @@ user before the beta):
    and No looked clickable; nothing on the tab said a restart was needed (only the mods banner);
    a third restart in ten minutes was refused by systemd (`start-limit-hit`, the "crash").
    Still to try: "Players must take the pack" (the client remembers the first answer: set the
-   server's "Server Resource Packs" back to Prompt under Multiplayer > Edit). The preview's look
-   against the game's screen is open, with the font (item 3).
+   server's "Server Resource Packs" back to Prompt under Multiplayer > Edit). The preview's look:
+   item 3.
 8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
    release into its folder from Add mods, start the server and see it loaded (Open Loader's
    "Located 1 packs"), then update it from the Data packs tab. Checked 2026-11-08 on a throwaway

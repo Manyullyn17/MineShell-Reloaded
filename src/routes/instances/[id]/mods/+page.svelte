@@ -878,6 +878,7 @@
 	pack={data.resourcePack}
 	running={data.running}
 	toApply={data.resourcePackToApply}
+	menuBlur={data.menuBlur}
 	minecraftVersion={data.minecraftVersion}
 	canEdit={may('settings.edit')}
 	bind:source={packSource}

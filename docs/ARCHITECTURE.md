@@ -1630,7 +1630,15 @@ code buttons), hex colours as MineShell's own `§#rrggbb`, which only JSON and N
 font) is never flattened: the item editor shows it read-only and leaves it as it is. The server
 list preview (`ServerListPreview.svelte`) uses the 26.3 client's layout and the glyph widths of
 its font (`mcfontwidths.ts`, measured from the font images), so the description breaks where the
-game breaks it; each line is drawn in the browser's font and scaled to the game's width.
+game breaks it. The previews (it and the resource pack question) draw in MineShell Pixel, a pixel
+font drawn for MineShell (`scripts/mcfont/glyphs.mjs`, built into `static/fonts/mcfont.otf` by
+`scripts/mcfont/build.mjs`; `mcfont.test.ts` holds the file to the glyphs), each glyph as wide as
+the game's, so lines are as long as in game; what it lacks (ASCII only) falls back and is scaled
+to the game's width. As the game: the shadow (the colour at a quarter, one pixel down and right),
+bold as a second copy one pixel right, obfuscated text as same-width glyphs. Behind them a
+stand-in for what the version shows (a blurred world from 1.20.5, dirt before), and the
+game's default server icon, button texture and dirt are MineShell's own drawings (`mcdraw.ts`):
+none of Mojang's textures or fonts are shipped.
 
 **The file editor** (`CodeEditor.svelte`, Files): CodeMirror 6, set up in
 `lib/shared/codemirror.ts` and imported when the editor mounts, so its ~115 KB (gzipped) load

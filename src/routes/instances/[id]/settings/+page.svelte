@@ -471,6 +471,7 @@
 					instanceId={data.instance.id}
 					iconVersion={data.iconVersion}
 					maxPlayers={Number(fieldValues['max-players'] || data.properties.values['max-players'] || 20)}
+					menuBlur={data.menuBlur}
 				/>
 				<p class="small muted">As the multiplayer list shows it, with its line breaks; the name is whatever each player calls the server.</p>
 			{:else if field.type === 'boolean'}
