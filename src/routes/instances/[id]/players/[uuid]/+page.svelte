@@ -929,6 +929,10 @@
 							{#each itemLore ? itemLore.split('\n') : [] as line, i (i)}<div class="tip-lore"><McText spans={parseCodes(line, textBase)} /></div>{/each}
 						</div>
 					{/if}
+					<!-- The game's italics for renamed items read as §o (playeritems.ts), which looked like something stray. -->
+					{#if !legacy && [itemName, ...itemLore.split('\n')].some((t) => t.startsWith('§o'))}
+						<p class="small muted"><span class="mono">§o</span> at the start is the game's own italics for renamed items and lore: remove it for upright text.</p>
+					{/if}
 					<div class="item-row">
 						<label class="check"><input type="checkbox" bind:checked={itemUnbreakable} disabled={locked} /> Unbreakable</label>
 						{#if !legacy}
