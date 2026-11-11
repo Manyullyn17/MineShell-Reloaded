@@ -845,7 +845,9 @@ exports) and counts only while `resource-pack` is still its URL; a newer file of
 offered on the tab. A URL typed by hand is streamed once for its SHA-1 through the download
 checks (`hashUrl`: local addresses refused, 250 MB at most) and not kept. From 1.17 the tab
 also sets `require-resource-pack` and `resource-pack-prompt` (written as JSON text from colour
-codes). The server reads all of it at start.
+codes). The server reads all of it at start: a change while it runs is noted
+(`resourcePack.changedAt:<id>` in `settings`), and while it is newer than the run's start the
+tab says a restart is needed, not only the save's message.
 
 **Mod list export** (`modlist.ts`, the Export page's "Mod list") lists the mods in the
 folder as text, like Prism Launcher's: the server sends the entries and the page formats

@@ -332,7 +332,8 @@
 	</div>
 {/if}
 
-{#if data.running}
+<!-- The resource pack tab says what a running server means for the pack itself. -->
+{#if data.running && view !== 'resourcepack'}
 	<div class="notice info">
 		<p>
 			The server is running. Adding, removing, enabling and disabling mods is written now and loads on the next
@@ -875,6 +876,8 @@
 	bind:this={packPanel}
 	active={view === 'resourcepack'}
 	pack={data.resourcePack}
+	running={data.running}
+	toApply={data.resourcePackToApply}
 	minecraftVersion={data.minecraftVersion}
 	canEdit={may('settings.edit')}
 	bind:source={packSource}

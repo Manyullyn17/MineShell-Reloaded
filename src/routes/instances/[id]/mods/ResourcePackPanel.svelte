@@ -18,6 +18,8 @@
 	let {
 		active,
 		pack,
+		running,
+		toApply,
 		minecraftVersion,
 		canEdit,
 		source = $bindable('modrinth'),
@@ -26,6 +28,9 @@
 	}: {
 		active: boolean;
 		pack: PageData['resourcePack'];
+		running: boolean;
+		/** Changed since this run started: players get it at the next start. */
+		toApply: boolean;
 		minecraftVersion: string;
 		/** settings.edit: changing server.properties. */
 		canEdit: boolean;
@@ -198,6 +203,13 @@
 	{#if !pack.supported}
 		<div class="notice info"><p>Minecraft {minecraftVersion} has no server resource pack: it came with 1.7.10 (1.6 had texture packs, which MineShell does not set).</p></div>
 	{:else}
+		{#if toApply}
+			<div class="notice warning">
+				<p>Changed since the server started: it reads the resource pack only when it starts. Restart it for players to get this.</p>
+			</div>
+		{:else if running}
+			<div class="notice info"><p>The server reads the resource pack when it starts: a change here reaches players after a restart.</p></div>
+		{/if}
 		<section class="current">
 			<h2>Offered to players</h2>
 			{#if pack.catalog}

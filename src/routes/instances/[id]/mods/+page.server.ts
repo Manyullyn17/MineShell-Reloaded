@@ -66,6 +66,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const loader = findLoader(instance.modloader);
 	const catalogLoader = loader ? (loader.catalogLoader ?? loader.id) : instance.modloader;
 	const jars = indexMods(modsDir(instance.path));
+	const resourcePack = await resourcePackState(instance);
 
 	return {
 		mods,
@@ -81,7 +82,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		cleanroomOff: instance.modloader === 'cleanroom' ? await cleanroomDisabledReasons(instance.path) : {},
 		datapacks,
 		/** The server resource pack players are offered (the Resource pack sub-tab). */
-		resourcePack: await resourcePackState(instance),
+		resourcePack,
+		/** The pack or its options changed after this run started: players get the change at the next start. */
+		resourcePackToApply: summary.running && summary.state.mainStartedAt > 0 && (resourcePack.changedAt ?? 0) > summary.state.mainStartedAt,
 		/**
 		 * Folders a data pack loader mod reads for every world (Open Loader, Paxi, Global Packs), with
 		 * their packs; ones from the mod browser with its name, version and link.

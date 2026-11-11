@@ -30,7 +30,7 @@ useRecordedHttp('resource-packs', {
 	}
 });
 
-const { removeResourcePack, resourcePackFiles, resourcePackState, searchResourcePacks, setResourcePackOptions, useCatalogPack, useUrlPack } = await import('#lib/server/resourcepacks.js');
+const { forgetResourcePackChange, removeResourcePack, resourcePackFiles, resourcePackState, searchResourcePacks, setResourcePackOptions, useCatalogPack, useUrlPack } = await import('#lib/server/resourcepacks.js');
 const { readProperties } = await import('#lib/server/properties.js');
 const { requireInstance } = await import('#lib/server/instances.js');
 const { createInstance } = await import('../helpers/instances');
@@ -140,5 +140,19 @@ describe('server.properties', () => {
 		await removeResourcePack(requireInstance(instance.id));
 		expect(await props(instance.path)).toMatchObject({ 'resource-pack': '', 'resource-pack-sha1': '' });
 		expect(await resourcePackState(requireInstance(instance.id))).toMatchObject({ url: '', catalog: null });
+	});
+
+	it('remembers when the pack or its options last changed, for the tab to say a running server needs a restart', async () => {
+		const instance = await server('1.21.1');
+		expect((await resourcePackState(instance)).changedAt).toBeNull();
+		const before = Date.now();
+		await useUrlPack(instance, 'https://packs.example.com/pack.zip');
+		const picked = (await resourcePackState(requireInstance(instance.id))).changedAt!;
+		expect(picked).toBeGreaterThanOrEqual(before);
+		await new Promise((r) => setTimeout(r, 5));
+		await setResourcePackOptions(requireInstance(instance.id), true, '');
+		expect((await resourcePackState(requireInstance(instance.id))).changedAt).toBeGreaterThan(picked);
+		forgetResourcePackChange(instance.id);
+		expect((await resourcePackState(requireInstance(instance.id))).changedAt).toBeNull();
 	});
 });

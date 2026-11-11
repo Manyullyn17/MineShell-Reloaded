@@ -84,6 +84,7 @@ import { pregenRunning } from './pregenstate';
 import type { ServerPhase } from '#lib/shared/format.js';
 import { doneStartingAt } from './startphase';
 import { deleteDimensionNames } from './dimensionnames';
+import { forgetResourcePackChange } from './resourcepacks';
 import { installJava, type JavaVendor } from './javadownload';
 import { copyScheduledCommands } from './scheduledcommands';
 import { copyCustomFields } from './playerfields';
@@ -1579,6 +1580,7 @@ async function removeServer(instance: ServerInstance, opts: { deleteFiles: boole
 	deleteSnapshotSchedule(instance.id);
 	deleteServerBackup(instance.id);
 	deleteCrashMarks(instance.id);
+	forgetResourcePackChange(instance.id);
 	deleteDimensionNames(instance.id);
 	clearDatapackNotice(instance.id);
 	await deleteMapData(instance.id).catch(() => undefined);

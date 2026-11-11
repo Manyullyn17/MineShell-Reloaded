@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { serverInstances, type ServerInstance } from './db/schema';
+import { serverInstances, settings, type ServerInstance } from './db/schema';
 import { fetchJson, hashUrl } from './download';
 import { cached, CACHE_TTL } from './cache';
 import { compareVersions } from './java';
@@ -81,6 +81,8 @@ export type ResourcePackState = {
 	prompt: string | null;
 	/** The catalog pack, while `resource-pack` is still its URL (not changed by hand since). */
 	catalog: CatalogPack | null;
+	/** When the pack or its options were last changed here (a running server reads them at start); null if never. */
+	changedAt: number | null;
 };
 
 /** Players' games refuse bigger packs (250 MB from 1.18; older versions took less). */
@@ -267,8 +269,23 @@ export async function resourcePackState(instance: ServerInstance): Promise<Resou
 		takesSha1: key !== null,
 		required: readsPrompt(minecraft) ? values['require-resource-pack'] === 'true' : null,
 		prompt: readsPrompt(minecraft) ? promptCodes(values['resource-pack-prompt'] ?? '') : null,
-		catalog: catalog && url && catalog.url === url ? catalog : null
+		catalog: catalog && url && catalog.url === url ? catalog : null,
+		changedAt: Number(db.select().from(settings).where(eq(settings.key, CHANGED_AT(instance.id))).get()?.value) || null
 	};
+}
+
+/**
+ * A change made while the server runs reaches players only after a restart: the server reads
+ * the pack and its options at start. Kept so the tab can say so for as long as it is true,
+ * not only in the save's message.
+ */
+const CHANGED_AT = (id: string) => `resourcePack.changedAt:${id}`;
+function noteChanged(id: string) {
+	const value = String(Date.now());
+	db.insert(settings).values({ key: CHANGED_AT(id), value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
+}
+export function forgetResourcePackChange(id: string): void {
+	db.delete(settings).where(eq(settings.key, CHANGED_AT(id))).run();
 }
 
 function checkSupported(instance: ServerInstance) {
@@ -291,6 +308,7 @@ async function writePack(instance: ServerInstance, url: string, sha1: string, ca
 		.set({ resourcePack: catalog ? JSON.stringify(catalog) : null, updatedAt: Date.now() })
 		.where(eq(serverInstances.id, instance.id))
 		.run();
+	noteChanged(instance.id);
 }
 
 /** A catalog pack's file, by the URL and SHA-1 the catalog gives. */
@@ -337,4 +355,5 @@ export async function setResourcePackOptions(instance: ServerInstance, required:
 	if (!readsPrompt(instance.minecraftVersion)) throw new InstanceError(`Minecraft ${instance.minecraftVersion} has no such settings for the pack.`);
 	const text = prompt.trim() ? JSON.stringify(toJson(parseCodes(prompt))) : '';
 	await patchProperties(instance.path, { 'require-resource-pack': required ? 'true' : 'false', 'resource-pack-prompt': text });
+	noteChanged(instance.id);
 }
