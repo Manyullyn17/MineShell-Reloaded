@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { colorHex, textWidth, type Span } from '#lib/shared/mctext.js';
+	import { colorHex, glyphWidth, obfuscatedGlyph, textWidth, type Span } from '#lib/shared/mctext.js';
 
 	/**
 	 * Formatted Minecraft text (mctext.ts) in its colours and styles. `measured` (one line)
@@ -10,20 +10,20 @@
 	let target = $state(0);
 	let natural = $state(0);
 
-	// Obfuscated text changes every frame in game; a few times a second is enough here.
-	const OBFUSCATE_FROM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789#$%&=?';
+	// Obfuscated text: a random glyph of the same width for each character, as the game draws it,
+	// in a box that width so the line does not move. The game picks anew every frame; 20 times a
+	// second reads the same (nothing legible) without keeping the page busy.
 	let tick = $state(0);
 	const obfuscated = $derived(spans.some((s) => s.obfuscated));
 	$effect(() => {
 		if (!obfuscated) return;
-		const timer = setInterval(() => tick++, 120);
+		const timer = setInterval(() => tick++, 50);
 		return () => clearInterval(timer);
 	});
 
-	function shown(text: string, span: Span): string {
-		if (!span.obfuscated) return text;
+	function scrambled(text: string): string[] {
 		void tick;
-		return [...text].map((c) => (c === ' ' ? c : OBFUSCATE_FROM[Math.floor(Math.random() * OBFUSCATE_FROM.length)])).join('');
+		return [...text].map(obfuscatedGlyph);
 	}
 
 	function styleOf(span: Span): string {
@@ -38,7 +38,9 @@
 			class:italic={span.italic}
 			class:underlined={span.underlined}
 			class:strikethrough={span.strikethrough}
-			style={styleOf(span)}>{shown(span.text, span)}</span
+			style={styleOf(span)}
+			>{#if span.obfuscated}{#each scrambled(span.text) as glyph, j (j)}<span class="glyph" style="--g: {glyphWidth([...span.text][j], span.bold)}">{glyph}</span
+					>{/each}{:else}{span.text}{/if}</span
 		>{/each}{/snippet}
 
 {#if measured}
@@ -67,6 +69,12 @@
 	}
 	.underlined.strikethrough {
 		text-decoration: underline line-through;
+	}
+	/* One game pixel is an eighth of the font size (the game's font is 8 high). */
+	.glyph {
+		display: inline-block;
+		width: calc(var(--g) * 0.125em);
+		text-align: center;
 	}
 	.measured {
 		display: inline-block;

@@ -237,6 +237,21 @@ export function glyphWidth(char: string, bold = false): number {
 	return width + (bold && width > 0 ? 1 : 0);
 }
 
+/**
+ * Obfuscated text in game: each character drawn as a random glyph of the same advance, a new one
+ * every frame, so the line keeps its length and nothing in it can be read. The glyphs of each
+ * width to pick from (6, the common one, is not in the table: a set of letters, digits and signs).
+ */
+const SAME_WIDTH = new Map<number, string[]>();
+for (const [width, chars] of Object.entries(GLYPH_WIDTHS)) SAME_WIDTH.set(Number(width), [...chars].filter((c) => c.trim()));
+SAME_WIDTH.set(6, [...'abcdeghjmnopqrsuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ0123456789#$%&=?/\\^_+-'].filter((c) => !WIDTHS.has(c.codePointAt(0)!)));
+
+export function obfuscatedGlyph(char: string): string {
+	if (!char.trim()) return char;
+	const pool = SAME_WIDTH.get(glyphWidth(char)) ?? SAME_WIDTH.get(6)!;
+	return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function textWidth(spans: Span[]): number {
 	let width = 0;
 	for (const span of spans) for (const c of span.text) width += glyphWidth(c, span.bold);

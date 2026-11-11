@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromJson, glyphWidth, hasHex, parseCodes, plainText, textWidth, toCodes, toJson, wrapLines } from './mctext';
+import { fromJson, glyphWidth, hasHex, obfuscatedGlyph, parseCodes, plainText, textWidth, toCodes, toJson, wrapLines } from './mctext';
 
 describe('§ codes', () => {
 	it('read as the game reads them', () => {
@@ -88,5 +88,17 @@ describe('widths and lines', () => {
 		expect(lines('one\ntwo', 200)).toEqual(['one', 'two']);
 		// Styles carry over the break.
 		expect(wrapLines(parseCodes('§caaaa bbbb'), 40)[1]).toEqual([{ color: 'red', text: 'bbbb' }]);
+	});
+});
+
+describe('obfuscated text', () => {
+	it('swaps each character for one of the same width, so the line keeps its length', () => {
+		for (const c of 'Hello, il.|W @ é§') {
+			for (let i = 0; i < 20; i++) {
+				const glyph = obfuscatedGlyph(c);
+				expect(glyphWidth(glyph)).toBe(glyphWidth(c));
+				if (c === ' ') expect(glyph).toBe(' ');
+			}
+		}
 	});
 });
