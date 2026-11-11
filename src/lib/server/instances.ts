@@ -1463,6 +1463,11 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 	await syncUnit(instance);
 	await writeOnceArgs(instance.id, null);
 	rconStopping({ port: instance.rconPort });
+	// As for a start: the restart drop-in's StartLimitBurst (3 in 10 minutes) is for crash
+	// loops, but systemd counts every start against it, so a third Restart in the window was
+	// refused (`start-limit-hit`) and left the server stopped. A restart asked for is no crash
+	// loop; systemd's own Restart=on-failure starts stay limited.
+	await resetFailed(instance.id);
 	const res = await restartUnit(instance.id);
 	audit('instance.restart', { instanceId: instance.id });
 	if (res.code === 0) setWantedRunning(instance.id, true);

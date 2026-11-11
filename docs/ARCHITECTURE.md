@@ -102,7 +102,10 @@ start, but its buffer outlives a run, so an answer could reach the next one.
 `Restart=` cannot come from an environment file — systemd reads unit directives before the
 environment file exists. So per-instance restart behaviour is written as a drop-in at
 `<unit>.d/restart.conf` next to the template instead, and `writeRestartPolicy()` owns that
-file. One case it cannot express: a crash while starting that a restart would only repeat (a
+file. Its `StartLimitBurst=` (restarts within `StartLimitIntervalSec=`) is for crash loops, but
+systemd counts every start against it, manual ones too: Start and Restart reset it first
+(`reset-failed`), or a third Restart within ten minutes is refused (`start-limit-hit`) and the
+server stays down. One case it cannot express: a crash while starting that a restart would only repeat (a
 missing dependency, a mod for another loader). With "Not after a crash while starting that
 has a fix" on (`crash_restart_skip_fixable`, the default), the monitor (every 10 s, so within
 `RestartSec=15`) diagnoses a unit in `auto-restart` whose crashed run never reached `Done (`,

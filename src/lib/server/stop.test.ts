@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { awaitStop, forceStop, GRACEFUL_STOP_MS, start, stuckStopping } from './instances';
+import { awaitStop, forceStop, GRACEFUL_STOP_MS, restart, start, stuckStopping } from './instances';
 import { invalidateUnitState } from './systemd';
 import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 import { createInstance } from '../../../tests/helpers/instances';
@@ -48,6 +48,17 @@ describe('stopping over RCON', () => {
 		spawnCalls.length = 0;
 		await vi.advanceTimersByTimeAsync(GRACEFUL_STOP_MS);
 		expect(systemctlStops()).toEqual([]);
+	});
+});
+
+describe('Restart', () => {
+	it('resets systemd\'s start limit first, so a third restart in ten minutes is not refused as a crash loop', async () => {
+		const instance = await createInstance({ modloader: 'vanilla', minecraftVersion: '1.21.1' }, { 'eula.txt': 'eula=true' });
+		unit();
+		spawnCalls.length = 0;
+		expect(await restart(instance)).toMatchObject({ ok: true });
+		const calls = spawnCalls.filter((c) => c.args[0] === '--user' && ['restart', 'reset-failed'].includes(c.args[1])).map((c) => c.args[1]);
+		expect(calls).toEqual(['reset-failed', 'restart']);
 	});
 });
 
