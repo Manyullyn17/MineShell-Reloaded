@@ -162,7 +162,14 @@ async function main() {
 		const probe = await tryRun('systemd-run', ['--user', '--wait', '--pipe', '--quiet', '-p', 'PrivateUsers=yes', '-p', 'PrivateTmp=yes', 'readlink', '/proc/self/ns/mnt']);
 		const sandboxed = probe.ok && probe.stdout.trim() !== '' && probe.stdout.trim() !== own;
 		const restricted = (await fs.readFile('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').catch(() => '')).trim() === '1';
-		const fix = restricted
+		// The user manager's AppArmor label, as its units inherit it. "systemd-userns//&unconfined":
+		// the per-account fix stacked instead of switching, which Ubuntu 26.04 does to a profile
+		// change made after the manager dropped root (apparmor_restrict_unprivileged_unconfined).
+		const label = sandboxed || !restricted ? null : await tryRun('systemd-run', ['--user', '--wait', '--pipe', '--quiet', 'cat', '/proc/self/attr/current']);
+		const stacked = /systemd-userns\/\/&/.test(label?.stdout ?? '');
+		const fix = stacked
+			? 'AppArmor stacks the systemd-userns profile on this account\'s user manager instead of switching to it (Ubuntu 26.04), so the per-account fix does nothing here. See DEPLOYMENT.md, "Sandboxing the servers", for the Ubuntu 26.04 fix.'
+			: restricted
 			? 'AppArmor keeps systemd from making user namespaces. See DEPLOYMENT.md, "Sandboxing the servers", for the fix (needs sudo once).'
 			: 'systemd ignores PrivateTmp= in user units here (no user namespaces?). See DEPLOYMENT.md, "Sandboxing the servers".';
 		record(sandboxed, 'systemd can sandbox servers', sandboxed ? '' : fix, true);

@@ -63,14 +63,15 @@ namespace by name (from 1.3; before, servers there ran unsandboxed). `doctor` sa
 the sandbox does not apply (`npm run doctor`, or in the release folder
 `MINESHELL_ENV_FILE=~/.config/mineshell/mineshell.env node scripts/doctor.mjs`).
 
-The fix needs root once. It is narrow: an AppArmor profile that lets a process make user
-namespaces and is unconfined otherwise, given only to this account's user manager (the
-process that runs its `systemctl --user` units), not to systemd as a whole or to other
-accounts. Ubuntu's restriction stays for every other program, and the servers themselves
-still make no namespaces (`RestrictNamespaces=yes` in the template). Run it as the account
+The fix needs root once. On Ubuntu 24.04 (and 23.10 to 25.10) it is narrow: an AppArmor
+profile that lets a process make user namespaces and is unconfined otherwise, given only to
+this account's user manager (the process that runs its `systemctl --user` units), not to
+systemd as a whole or to other accounts. Ubuntu's restriction stays for every other program,
+and the servers themselves still make no namespaces (`RestrictNamespaces=yes` in the
+template). On Ubuntu 26.04 this does nothing; see the next part. Run it as the account
 MineShell runs as (for a dedicated account, put its uid in place of `$(id -u)`):
 
-<!-- The Weekly workflow runs this block as written: keep it one sh block naming systemd-userns. -->
+<!-- The Weekly workflow runs this block as written on 24.04: keep it one sh block with AppArmorProfile=-systemd-userns. -->
 ```sh
 sudo tee /etc/apparmor.d/systemd-userns >/dev/null <<'END'
 # Lets systemd's user manager make the user namespaces its units' sandboxing
@@ -94,6 +95,46 @@ keeping the user manager, and with it MineShell and the servers, from starting. 
 manager takes the profile when it starts: reboot, or stop the servers and run
 `sudo systemctl restart user@$(id -u)` (which restarts MineShell too). `doctor` then shows
 `ok`. To undo it, remove both files and reboot.
+
+**Ubuntu 26.04.** It also sets `kernel.apparmor_restrict_unprivileged_unconfined = 1`, so
+an unconfined process that has already dropped root can no longer switch to another profile:
+the kernel stacks it instead. systemd applies `AppArmorProfile=` after the user manager has
+become the account, so the profile above lands as `systemd-userns//&unconfined`, and the
+`unconfined` half is still refused the namespace. The fix applies cleanly and the servers stay
+unsandboxed; `doctor` says so ("stacks the systemd-userns profile"), as it does after an
+upgrade from 24.04 with the fix in place.
+
+What works there is a profile that attaches by path to systemd's binary, which needs no
+switch. It is wider than the 24.04 fix: **every account's user manager** on the machine gets
+it, not only MineShell's, so any local account can make user namespaces through its own
+`systemctl --user` units (and through nothing else: programs it starts outside systemd stay
+restricted). systemd itself also takes the profile when it re-executes (an upgrade), which
+changes nothing for it: as root it is not restricted anyway. On a machine whose only users are
+you and MineShell, nothing is lost. On a shared one, this hands back part of what Ubuntu's
+restriction is for, for every account; still narrower than turning the restriction off, and
+the servers keep their sandbox, which they otherwise go without. It replaces the 24.04 fix
+(the drop-in, which would stack again, is removed):
+
+<!-- The Weekly workflow runs this block as written on 26.04: keep it one sh block with "profile systemd-userns /usr/lib/systemd/systemd". -->
+```sh
+sudo tee /etc/apparmor.d/systemd-userns >/dev/null <<'END'
+# Lets systemd's user managers make the user namespaces their units'
+# sandboxing needs (PrivateTmp= and the like). Attaches to systemd's binary,
+# so every account's user manager has it; unconfined otherwise.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile systemd-userns /usr/lib/systemd/systemd flags=(unconfined) {
+  userns,
+}
+END
+sudo apparmor_parser -r /etc/apparmor.d/systemd-userns
+sudo rm -f /etc/systemd/system/user@*.service.d/apparmor.conf
+sudo systemctl daemon-reload
+```
+
+Then restart the user manager as above (reboot, or `sudo systemctl restart user@$(id -u)`);
+`doctor` shows `ok`. To undo it, remove the profile file and reboot.
 
 Turning the restriction off for every program (`kernel.apparmor_restrict_unprivileged_userns
 = 0` in `/etc/sysctl.d/`) works too, but gives up what Ubuntu meant it for.

@@ -103,6 +103,16 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   allowed), the probe saw no namespace, and servers ran unsandboxed. The probe, doctor's and
   `sandbox.conf` say it now. Found on a 22.04.5 VM (2026-11-11) after GitHub's 22.04 runner
   showed it; containers on a 24.04 host cannot tell, its AppArmor restriction reaches into them.
+- Ubuntu 26.04 adds `apparmor_restrict_unprivileged_unconfined=1`: an unconfined process that
+  has dropped root asking to change profile gets a stack instead (kernel log: `change_profile
+  unprivileged unconfined converted to stacking`). systemd applies `AppArmorProfile=` after the
+  user manager became the account, so the 24.04 drop-in leaves it `systemd-userns//&unconfined`
+  (`/proc/<pid>/attr/current`), the `unconfined` half still transitions to
+  `unprivileged_userns` on the namespace, and the sandbox goes as on an unfixed 24.04. A
+  profile attached by path (`profile systemd-userns /usr/lib/systemd/systemd`) needs no change
+  and works, for every account's manager; sysctl `..._unconfined=0` would too, for everything.
+  Found on a 26.04.1 VM (`ms-resolute`, 2026-11-11); `doctor` names the stack. systemd 258
+  removed `CPUAccounting=` (always on), and 259 warned about the template on every load.
 
 - The servers' sandbox (2026-10-31): HotSpot's attach listener (AttachListener::pd_init)
   `chown`s its socket file to its own euid; with `SystemCallFilter=~@privileged` that fails

@@ -114,6 +114,12 @@ user before the beta):
    unit's user namespace only when `PrivateUsers=yes` asks. Fixed for beta.2: installed over
    beta.1 there, doctor ok, `real-server.sh` passed, `sandbox-check.sh` showed the server in its
    own namespace seeing only its folder, and heap reads kept working.
+   **Ubuntu 26.04** the same day on a 26.04.1 VM (`ms-resolute`): DEPLOYMENT's AppArmor fix only
+   stacked there (`apparmor_restrict_unprivileged_unconfined`), so servers stayed unsandboxed;
+   DEPLOYMENT now has a 26.04 fix (profile attached by path, every account's user manager:
+   accepted as better than no sandbox), doctor names the stack, the template lost the removed
+   `CPUAccounting=`. Doc's block run as written: doctor ok, `real-server.sh` passed,
+   `sandbox-check.sh` clean; sudo-rs and the Rust coreutils caused nothing. Weekly CI gained 26.04.
 
 11. **Project ids in the searches** (beta.2): MeatballCraft found on New server by typing
    `411966` with CurseForge picked (with and without the key), and a mod's id in Add mods.
