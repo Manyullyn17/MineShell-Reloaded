@@ -33,7 +33,7 @@
 			<p class="line"><McText spans={line} measured /></p>
 		{/each}
 		<div class="buttons" aria-hidden="true">
-			{#each buttons as label (label)}<span class="button"><McText spans={[{ text: label }]} measured /></span>{/each}
+			{#each buttons as label (label)}<span class="mc-button"><McText spans={[{ text: label }]} measured /></span>{/each}
 		</div>
 	</div>
 </div>
@@ -73,7 +73,8 @@
 		gap: calc(10 * var(--mc-px));
 		margin-top: calc(14 * var(--mc-px));
 	}
-	.button {
+	/* Not .button: that is the site's own button look, a pointer and a hover outline on what does nothing. */
+	.mc-button {
 		width: calc(150 * var(--mc-px));
 		line-height: calc(20 * var(--mc-px));
 		background: #6f6f6f;
