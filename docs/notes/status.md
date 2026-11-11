@@ -70,6 +70,10 @@ user before the beta):
    Quick pass 2026-11-08: a real 1.21.11 server's status answer (`tests/tools/status-ping.mjs`)
    sends the description exactly as saved, codes included; it carried a `\r` from the
    textarea's line break, fixed. How a client draws it is still to see.
+   **The user, 2026-11-11** on a 26.3 server: the description works in the game. Found: §k in
+   the previews changed length and stayed readable (fixed: same-width glyphs in fixed boxes);
+   the browser's font is nothing like the game's, and a server without an icon shows initials
+   where the game shows its default icon (both open, to decide). Item names and lore not yet.
 4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
    change a `-common.toml` setting in the form and see the server pick it up (its log says the
    config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
@@ -99,6 +103,13 @@ user before the beta):
    (with the key) on a real server, join with a client and take it (the prompt and "must take
    it" shown, matching the preview under the message field), and an address of your own. Checked 2026-11-08 on a throwaway dev server and
    against the live catalogs; no player has downloaded one yet.
+   **The user, 2026-11-11** on prod's `Test` (26.3): offered and taken in game. Found and fixed: the
+   message was emptied by the reloads of a paused server (as game rules were); the preview's Yes
+   and No looked clickable; nothing on the tab said a restart was needed (only the mods banner);
+   a third restart in ten minutes was refused by systemd (`start-limit-hit`, the "crash").
+   Still to try: "Players must take the pack" (the client remembers the first answer: set the
+   server's "Server Resource Packs" back to Prompt under Multiplayer > Edit). The preview's look
+   against the game's screen is open, with the font (item 3).
 8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
    release into its folder from Add mods, start the server and see it loaded (Open Loader's
    "Located 1 packs"), then update it from the Data packs tab. Checked 2026-11-08 on a throwaway
