@@ -49,6 +49,12 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   A dev server keeps running the code its timers started with (`boot.ts`: history, scheduler,
   heap sampling): pages pick up a change, what those record does not until it is restarted
   (crashes kept being recorded with an old diagnosis' wording).
+- **Outside behaviour is checked, not recalled**: how Minecraft, a mod or a browser behaves
+  (lang keys, what a command accepts on 1.12, a browser setting's name) gets checked against
+  something real (the MeatballCraft dev copy, a throwaway server and `tests/tools/rcon.mjs`,
+  the mod's jar) before it goes into an answer or code, or is said to be a guess. When the
+  answer depends on how the user has something set up, ask. Three such guesses were wrong
+  (a Firefox setting, a vis crystal's name, a 1.12 teleport).
 - **README screenshots**: `npm run screenshots` redraws `docs/screenshots/` from invented
   data (`tests/tools/screenshots/README.md`: scenes, shots, a fake server under real
   `msshot@` units, cleaned up afterwards). Redraw the affected shots when a page they show
@@ -71,7 +77,10 @@ git config core.hooksPath .githooks   # once per clone: pre-push runs check + th
   page: import `enhance` from `#lib/shared/forms.js`, never `$app/forms`. `crashdiag.ts` imports `./zip.ts` with the extension
   because `tests/crashdiag/capture.mjs` runs it under plain node.
 - **Releases** (built 2026-10-09): tag `v<package.json version>` -> Release workflow ->
-  archive + `install.sh` on GitHub (DEPLOYMENT.md). `scripts/install.sh` can be tried locally
+  archive + `install.sh` on GitHub (DEPLOYMENT.md). Where releases stand (the latest beta,
+  what is out) comes from `git tag` and `gh release list`, not from status.md or memory: a
+  summary from notes once said beta 4 was not out while prod ran it.
+  `scripts/install.sh` can be tried locally
   with `MINESHELL_ARCHIVE=dist/...` and throwaway `MINESHELL_HOME/CONFIG/SERVICE/DATA/
   UNIT_PREFIX/PORT` (remove the `mstest*` units afterwards). On this machine the real MineShell
   is the `mineshell` user service on port 3000 (data `~/.local/share/mineshell`, prefix
