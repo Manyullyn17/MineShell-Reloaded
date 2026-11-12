@@ -319,7 +319,7 @@ export function forgetSandboxProbe(): void {
  * the rest, so no server there started. Quoted then, `-` (skip when missing) inside the quotes,
  * where systemd looks for it. Any other path stays as it was (`+` in a Java's folder, letters
  * of any alphabet): sandbox.conf changing
- * tells every running server to restart (startSettingsChangedAt). Tried on systemd 255 and 249;
+ * tells every running server to restart (startSettingsChangedAt). Tried on systemd 249, 255 and 259;
  * a `"` in a path is beyond 255, whose executor fails on it whatever the quoting.
  */
 export function unitPath(file: string, options: { optional?: boolean; suffix?: string } = {}): string {
