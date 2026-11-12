@@ -50,6 +50,37 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 (worlds.md). A new plain Cleanroom server now gets Fugue and Scalar Legacy at once (Cleanroom
 0.7 asked about them at the first start).
 
+## Audit, 2026-11-12 (branch `audit/2026-11-12`, not merged)
+
+A quality pass over 1.3.0-beta.2: its fixes are that branch's commits (start times after a
+clock change, a data folder with a space, Restart's missing set-up, mixed text lists on
+1.21.5+, 1.13 lore, the world size walk). Run on it: `real-server.sh` on Ubuntu 22.04, 24.04
+and 26.04 with `sandbox-check.sh`, `clean-install.sh` on Fedora and Arch (systemd 262),
+`check-apis.sh`, the page sweep at 390 and 1280 px on the screenshot world (nothing past an
+edge, no spilled text), 23 shuffled runs. Seen and left as they are:
+
+- **A sandboxed server can signal every process of the account** (ARCHITECTURE says so): on
+  the 26.04 VM a unit sandboxed as the servers are killed another unit's process with
+  `kill -9`. `PrivatePIDs=yes` (systemd 257+: 26.04, Fedora, Arch) took that away there (it
+  saw 3 processes instead of 166). Not built: heap reads, `jcmd` and Force stop would need
+  trying inside it, and it must only be written where systemd has it.
+- Restart is `systemctl restart`: SIGTERM, then SIGKILL after `TimeoutStopSec=180`. Stop gives
+  a save five minutes over RCON first; a pack that saves for over three minutes is cut short
+  by Restart only.
+- `safeJoin` checks a path and the caller then uses it: a mod swapping a file for a link in
+  between is not caught. `assertPublicUrl` resolves a name and `fetch` resolves it again
+  (DNS rebinding). Both need a hostile mod or pack author and good timing.
+- The template unit writes the data folder's path as it is: a `%` in it worked on systemd 249
+  and 255 (`ms data 100%`), a `'` would end the start line's quoting, and a `"` fails in
+  systemd 255's own executor whatever is written.
+- Sandboxing on Fedora and Arch is untried: in a container the host's AppArmor restriction
+  applies, so `doctor` warns there.
+- A suspend could not be made in the VMs (s2idle only, both clocks ran on). The start-time
+  fix reads systemd's wall-clock stamps, which a suspend after the start does not touch; the
+  audit's first version (boot time worked out again at each read) would have moved every
+  running server's start at each wake (review, same day).
+- `crashhold.ts` keeps one entry per crash it looked at for as long as MineShell runs.
+
 ## Left for the user
 
 **1.3 beta checklist** (being collected while 1.3 is built; tried on throwaway data and by the
