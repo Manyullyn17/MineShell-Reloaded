@@ -23,5 +23,5 @@ echo "  seccomp:         $(awk '/^Seccomp:/{print $2}' /proc/$pid/status) (2 = f
 paths=("$@")
 (( ${#paths[@]} )) || paths=("$HOME" "$dir" "$(dirname "$(dirname "$dir")")/units")
 for p in "${paths[@]}"; do
-	echo "  sees $p: $(ls -A /proc/$pid/root$p 2>&1 | head -5 | tr '\n' ' ')"
+	echo "  sees $p: $(ls -A "/proc/$pid/root$p" 2>&1 | head -5 | tr '\n' ' ')"
 done
