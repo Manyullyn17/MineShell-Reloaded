@@ -32,7 +32,17 @@ IMAGE="ubuntu-$UBUNTU-server-cloudimg-amd64.img"
 KNOWN="$CACHE/known_hosts-$NAME"
 here="$(cd "$(dirname "$0")/../.." && pwd)"
 virsh() { sg libvirt -c "virsh -c qemu:///system $(printf '%q ' "$@")"; }
-ip() { virsh domifaddr "$NAME" | awk '/ipv4/ { sub("/.*", "", $4); print $4 }'; }
+# The address from libvirt's DHCP leases, else from the host's ARP table: a VM back from a
+# snapshot keeps the address it had, and after the host restarted (or its lease ran out)
+# libvirt has no lease for it, so `revert` waited three minutes and gave up ("No SSH").
+ip() {
+	local source addr
+	for source in lease arp; do
+		addr=$(virsh domifaddr "$NAME" --source "$source" 2>/dev/null | awk '/ipv4/ { sub("/.*", "", $4); print $4; exit }')
+		[ -n "$addr" ] && break
+	done
+	echo "$addr"
+}
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="$KNOWN" -o ConnectTimeout=3)
 ssh_vm() { ssh "${SSH_OPTS[@]}" "mineshell@$(ip)" "$@"; }
 
