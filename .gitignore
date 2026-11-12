@@ -11,3 +11,5 @@ data/
 dist/
 # Hand-written release notes (DEPLOYMENT, "Publishing a release"): release.sh wants a clean tree
 /notes.md
+# Claude Code: per-person permissions; the shared skills in .claude/skills are committed
+.claude/settings.local.json
