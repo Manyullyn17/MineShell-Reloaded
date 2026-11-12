@@ -303,6 +303,25 @@ export function forgetSandboxProbe(): void {
 }
 
 /**
+ * A path as systemd reads one in BindPaths= and its like: those lines are lists split at
+ * spaces, a `%` starts a specifier and a `:` ends the path. Written as it was, a data folder
+ * on `/media/u/My Disk` bound `/media/u/My` (or failed the start, 226/NAMESPACE) and ignored
+ * the rest, so no server there started. Quoted then, `-` (skip when missing) inside the quotes,
+ * where systemd looks for it. Any other path stays as it was (`+` in a Java's folder, letters
+ * of any alphabet): sandbox.conf changing tells every running server to restart
+ * (startSettingsChangedAt). Tried on systemd 249, 255 and 259; a `"` in a path is beyond 255,
+ * whose executor fails on it whatever the quoting. A `:` holds in BindPaths= only:
+ * TemporaryFileSystem= unquotes its value before splitting it at `:` again (from systemd's
+ * parser, not tried), so a data folder with one would need `\\:` there.
+ */
+export function unitPath(file: string, options: { optional?: boolean; suffix?: string } = {}): string {
+	const value = `${options.optional ? '-' : ''}${file}${options.suffix ?? ''}`;
+	if (!/[\s"'\\%:]/.test(file)) return value;
+	const escaped = file.replace(/[\\"]/g, '\\$&').replace(/%/g, '%%').replace(/:/g, '\\:');
+	return `"${options.optional ? '-' : ''}${escaped}${options.suffix ?? ''}"`;
+}
+
+/**
  * The server kept to its own folder: the system read-only, home folders (and with them
  * MineShell's data, other servers, ~/.ssh) hidden but for the server's folder, its one-start
  * arguments and its Java. Only where `canSandbox`; null otherwise. Not ProtectProc=: it hides
@@ -312,23 +331,6 @@ export function forgetSandboxProbe(): void {
  * ProtectHome=, and ProtectSystem=strict only makes it read-only: the database and secret.key
  * stay readable, so it is emptied the same way, the server's own parts put back over it.
  */
-/**
- * A path as systemd reads one in BindPaths= and its like: those lines are lists split at
- * spaces, a `%` starts a specifier and a `:` ends the path. Written as it was, a data folder
- * on `/media/u/My Disk` bound `/media/u/My` (or failed the start, 226/NAMESPACE) and ignored
- * the rest, so no server there started. Quoted then, `-` (skip when missing) inside the quotes,
- * where systemd looks for it. Any other path stays as it was (`+` in a Java's folder, letters
- * of any alphabet): sandbox.conf changing
- * tells every running server to restart (startSettingsChangedAt). Tried on systemd 249, 255 and 259;
- * a `"` in a path is beyond 255, whose executor fails on it whatever the quoting.
- */
-export function unitPath(file: string, options: { optional?: boolean; suffix?: string } = {}): string {
-	const value = `${options.optional ? '-' : ''}${file}${options.suffix ?? ''}`;
-	if (!/[\s"'\\%:]/.test(file)) return value;
-	const escaped = file.replace(/[\\"]/g, '\\$&').replace(/%/g, '%%').replace(/:/g, '\\:');
-	return `"${options.optional ? '-' : ''}${escaped}${options.suffix ?? ''}"`;
-}
-
 export function renderSandboxDropIn(paths: { instanceDir: string; onceDir: string; javaHome: string | null; dataDir?: string }): string {
 	const dataDir = paths.dataDir ?? DATA_DIR;
 	const hidden = ['/home', '/root', '/run/user'].some((root) => dataDir === root || dataDir.startsWith(root + '/'));
