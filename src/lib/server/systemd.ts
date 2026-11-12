@@ -317,13 +317,14 @@ export function forgetSandboxProbe(): void {
  * spaces, a `%` starts a specifier and a `:` ends the path. Written as it was, a data folder
  * on `/media/u/My Disk` bound `/media/u/My` (or failed the start, 226/NAMESPACE) and ignored
  * the rest, so no server there started. Quoted then, `-` (skip when missing) inside the quotes,
- * where systemd looks for it. A path of plain characters stays as it was: sandbox.conf changing
+ * where systemd looks for it. Any other path stays as it was (`+` in a Java's folder, letters
+ * of any alphabet): sandbox.conf changing
  * tells every running server to restart (startSettingsChangedAt). Tried on systemd 255 and 249;
  * a `"` in a path is beyond 255, whose executor fails on it whatever the quoting.
  */
 export function unitPath(file: string, options: { optional?: boolean; suffix?: string } = {}): string {
 	const value = `${options.optional ? '-' : ''}${file}${options.suffix ?? ''}`;
-	if (/^[A-Za-z0-9/_.,+@=-]+$/.test(file)) return value;
+	if (!/[\s"'\\%:]/.test(file)) return value;
 	const escaped = file.replace(/[\\"]/g, '\\$&').replace(/%/g, '%%').replace(/:/g, '\\:');
 	return `"${options.optional ? '-' : ''}${escaped}${options.suffix ?? ''}"`;
 }

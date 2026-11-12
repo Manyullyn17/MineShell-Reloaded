@@ -325,6 +325,8 @@ describe('a server’s sandbox drop-in', () => {
 		expect(spaced).toContain('BindPaths="-/media/u/My Disk/ms/units/once/a"\n');
 		expect(spaced).toContain('BindReadOnlyPaths="-/opt/java 100%%/jdk\\:21"\n');
 		expect(unitPath('/a/say "hi"\\x')).toBe('"/a/say \\"hi\\"\\\\x"');
+		expect(unitPath("/a/it's")).toBe('"/a/it\'s"');
+		expect(unitPath('/home/müller/.local/share/mineshell/java/temurin-21.0.13+9-jre', { optional: true })).toBe('-/home/müller/.local/share/mineshell/java/temurin-21.0.13+9-jre');
 		// Unchanged for what every install has had: a new sandbox.conf would tell every running server to restart.
 		expect(renderSandboxDropIn({ ...paths, dataDir: '/home/u/.local/share/mineshell' })).toContain(
 			'BindPaths=/srv/ms/instances/a\nBindPaths=-/srv/ms/units/once/a\nBindReadOnlyPaths=-/usr/lib/jvm/java-21\n'
