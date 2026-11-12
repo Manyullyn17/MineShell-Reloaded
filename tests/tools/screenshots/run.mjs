@@ -5,7 +5,7 @@
  * every shot in shots.mjs written to docs/screenshots/.
  *
  *   npm run screenshots                     every shot
- *   npm run screenshots -- overview mods    only these
+ *   npm run screenshots -- overview console only these (a wrong name lists them all)
  *   npm run screenshots -- --keep           leave it running to look around (http://localhost:5198)
  *   npm run screenshots -- --serve          only the world and its running servers, no pictures (kept)
  *   npm run screenshots -- --cleanup        end a --keep or --serve run
@@ -48,7 +48,25 @@ const args = process.argv.slice(2);
 const long = args.includes('--long');
 const serve = long || args.includes('--serve');
 const keep = serve || args.includes('--keep');
-const only = args.filter((a) => !a.startsWith('--'));
+const only = args.filter((a) => !a.startsWith('-'));
+// Anything it does not know stops it before it starts: an unknown flag (`--help`, a typo of
+// --serve) used to be ignored, and the run went on to redraw every picture in the README.
+{
+	const usage = () =>
+		fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith(' *   ')).map((l) => l.slice(3)).join('\n');
+	if (args.includes('--help') || args.includes('-h')) {
+		console.log(usage());
+		process.exit(0);
+	}
+	const unknownFlags = args.filter((a) => a.startsWith('-') && !['--long', '--serve', '--keep', '--cleanup'].includes(a));
+	const unknownShots = only.filter((name) => !shots.some((s) => s.name === name));
+	if (unknownFlags.length || unknownShots.length) {
+		if (unknownFlags.length) console.error(`Unknown option: ${unknownFlags.join(' ')}`);
+		if (unknownShots.length) console.error(`No such shot: ${unknownShots.join(' ')} (shots: ${shots.map((s) => s.name).join(' ')})`);
+		console.error(`\n${usage()}`);
+		process.exit(2);
+	}
+}
 
 /** @param {string} cmd @param {string[]} cmdArgs @param {Record<string, string>} [env] */
 const sh = (cmd, cmdArgs, env = {}) => {
