@@ -104,7 +104,8 @@ finished `feat:` commits are gathered into a minor every few days or more (DEPLO
 "Publishing a release"), not released one by one as in 0.x. Within a step, entries are
 in the order to build them where one needs another.
 
-1. **Upkeep and quick wins**: TypeScript 7 (waits for Kit); servers that are really
+1. **Upkeep and quick wins**: TypeScript 7 (waits for Kit); servers kept from each other's
+   processes (`PrivatePIDs=`, from the 2026-11-12 audit); servers that are really
    sandboxed and quoted JVM arguments built 2026-10-31 (two sandbox tests left, Leftovers). Small, mostly reading what MineShell already has: a calm first
    step after the freeze.
 2. **Files**: built (the better file editor, search in files, earlier versions of edited
@@ -145,6 +146,22 @@ Kit's `svelte-kit sync` reads tsconfig.json through that API, so `npm run check`
 `build` all fail ("Cannot read properties of undefined (reading 'readFile')"). Kit 3 declares
 `typescript: ^6.0.0` and svelte-check 4.7.7 `^5 || ^6`; `tsc --noEmit` alone runs. Check
 again when Kit and svelte-check list 7 in their peer ranges.
+
+#### Servers kept from each other's processes
+
+From the 2026-11-12 audit (user's call: on the roadmap, no version yet). The sandbox keeps a
+server to its own files, but every server runs as the same account, so one can signal any
+process of it: on the Ubuntu 26.04 VM a unit sandboxed as the servers are killed another
+unit's process with `kill -9` (a mod, or a pack author, could stop MineShell or the other
+servers). `PrivatePIDs=yes` gives the unit its own PID namespace; tried in the same VM, the
+unit then saw 3 processes instead of 166 and could not reach the other one.
+- Only systemd 257 and newer have it: Ubuntu 26.04, Fedora and Arch yes, Ubuntu 22.04 (249)
+  and 24.04 (255) no. Written into `sandbox.conf` only where the version has it (as the rest
+  of the sandbox is only written where `canSandbox`), and a new `sandbox.conf` tells every
+  running server to restart (`startSettingsChangedAt`): fine once, at the update that adds it.
+- To try inside it before building: heap reads (`/proc/<pid>` of the JVM from MineShell),
+  `jcmd`/Spark's attach, Force stop (`killUnit --kill-whom=main`), crash diagnosis reading the
+  JVM's pid, and whether the server's own process list (some mods read it) still works.
 
 #### Mods from outside Modrinth's hash lookup
 
@@ -532,8 +549,22 @@ is open, and each needs a test setup.
 - **The servers' sandbox** (ROADMAP-ARCHIVE, "The servers' sandbox", with its test list): a
   broken or missing AppArmor profile not tried (the user manager should still start, `doctor`
   warn, a server fail with `226/NAMESPACE`), nor a non-Ubuntu system (a Debian or Fedora VM).
-  Keeping a server from signalling MineShell or another server needs a PID namespace
-  (`PrivatePIDs=`, systemd 257; Ubuntu 24.04 has 255).
+  Keeping a server from signalling MineShell or another server needs a PID namespace (Later,
+  step 1, "Servers kept from each other's processes"). Fedora and Arch: install and a server's
+  lifecycle pass (audit, 2026-11-12, in containers), the sandbox itself is unverified there
+  (a container gets the host's AppArmor restriction): to try in a VM.
+- **Paths in unit files** (audit, 2026-11-12; user's call: keep, not high priority): a `'` in
+  the data folder's path ends the template's start line's quoting, so no server starts; a `:`
+  in it probably breaks `TemporaryFileSystem=` in `sandbox.conf` (that line is unquoted before
+  it is split at `:` again, so it would need `\\:`; read from systemd's parser, not tried); a
+  `"` fails inside systemd 255's own executor whatever is written. Spaces and `%` work.
+- **Seen in the 2026-11-12 audit and left** (low; each needs a hostile mod or pack author and
+  good timing, or is only slow): `safeJoin` checks a path and the caller then uses it, so a mod
+  swapping a file for a link in between is not caught; `assertPublicUrl` resolves a host name
+  and `fetch` resolves it again (DNS rebinding); Restart and Start write a map mod's config
+  while the old run may still be up, and a mod writing its config back at shutdown would undo
+  that run's change (as Chunky does, ARCHITECTURE); `crashhold.ts` keeps one entry per crash it
+  looked at for as long as MineShell runs.
 - **Dimension names**: Forge's answer is only asked while the server runs (no boot to ask).
 - **Roofs on the map**: decided per region, so a region at a roofed dimension's edge with too
   few columns under the roof shows its surface; a free height slider (caves anywhere) was
