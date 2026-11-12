@@ -60,8 +60,8 @@ and 26.04 with `sandbox-check.sh`, `clean-install.sh` on Fedora and Arch (system
 edge, no spilled text), 23 shuffled runs.
 
 What it saw and left is in ROADMAP: `PrivatePIDs=` (Later, step 1, "Servers kept from each
-other's processes"), paths in unit files, Fedora and Arch's sandbox and the low ones
-(Leftovers). A suspend could not be made in the VMs (s2idle only, both clocks ran on); the
+other's processes"), paths in unit files and the low ones (Leftovers). Fedora and Arch's
+sandbox, unverifiable in containers, passed the same day in VMs (`OS=fedora|arch vm.sh`). A suspend could not be made in the VMs (s2idle only, both clocks ran on); the
 start-time fix reads systemd's wall-clock stamps, which a suspend after the start does not
 touch (the audit's first version would have moved every running server's start at each wake;
 review, same day). Restart now stops as Stop does, then starts (review, same day).

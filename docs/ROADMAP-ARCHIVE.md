@@ -286,7 +286,12 @@ Tests, on Ubuntu with the exception in place:
 
 Also on a non-Ubuntu system (a Debian or Fedora VM or container), since every option added
 applies there straight away. MineShell's units are the only user units on this machine with
-sandbox options, so nothing else here changes.
+sandbox options, so nothing else here changes. Done 2026-11-12 on Fedora 45 and Arch VMs
+(`vm.sh`, systemd 262): `real-server.sh` passes, `sandbox-check.sh` shows the drop-in, a
+mount namespace of its own, seccomp filtered, only `.local` of the home folder and only its
+own `units/once`; `doctor` all ok. Fedora's SELinux (enforcing) leaves user units
+`unconfined_t`: it neither blocks the sandbox nor adds to it. Arch runs neither AppArmor nor
+SELinux.
 
 ### Moving a server to an older Minecraft
 

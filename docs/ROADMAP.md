@@ -548,11 +548,10 @@ is open, and each needs a test setup.
   docs/reference/modpacksch-openapi.json).
 - **The servers' sandbox** (ROADMAP-ARCHIVE, "The servers' sandbox", with its test list): a
   broken or missing AppArmor profile not tried (the user manager should still start, `doctor`
-  warn, a server fail with `226/NAMESPACE`), nor a non-Ubuntu system (a Debian or Fedora VM).
-  Keeping a server from signalling MineShell or another server needs a PID namespace (Later,
-  step 1, "Servers kept from each other's processes"). Fedora and Arch: install and a server's
-  lifecycle pass (audit, 2026-11-12, in containers), the sandbox itself is unverified there
-  (a container gets the host's AppArmor restriction): to try in a VM.
+  warn, a server fail with `226/NAMESPACE`), nor Debian (Fedora 45 and Arch pass in VMs,
+  2026-11-12: ROADMAP-ARCHIVE, its test list). Keeping a server from signalling MineShell or
+  another server needs a PID namespace (Later, step 1, "Servers kept from each other's
+  processes").
 - **Paths in unit files** (audit, 2026-11-12; user's call: keep, not high priority): a `'` in
   the data folder's path ends the template's start line's quoting, so no server starts; a `:`
   in it probably breaks `TemporaryFileSystem=` in `sandbox.conf` (that line is unquoted before

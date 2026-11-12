@@ -2,7 +2,8 @@
 # What a running server's sandbox lets it see, read from outside through /proc: whether it
 # has the sandbox drop-in, a mount namespace of its own, its AppArmor label (systemd-userns
 # alone, never stacked with Ubuntu's unprivileged_userns, which cuts a shim profile's network:
-# Launchpad #2168612), its seccomp mode, and what of the account's files it can list.
+# Launchpad #2168612; Fedora's SELinux label instead), its seccomp mode, and what of the
+# account's files it can list.
 #
 #   tests/tools/sandbox-check.sh <unit, e.g. mstest@fabric> [path to try]...
 #
@@ -18,7 +19,12 @@ own=$( [[ "$(readlink /proc/$pid/ns/mnt)" != "$(readlink /proc/self/ns/mnt)" ]] 
 echo "$unit (pid $pid)"
 echo "  sandbox.conf:    ${dropin:-none}"
 echo "  mount namespace: $own"
-echo "  AppArmor label:  $(cat /proc/$pid/attr/current)"
+# The label of whichever of AppArmor (Ubuntu) and SELinux (Fedora) runs; Arch has neither.
+# SELinux ends its label with a NUL.
+lsm=$(cat /sys/kernel/security/lsm 2>/dev/null)
+if [[ ",$lsm," == *,apparmor,* ]]; then echo "  AppArmor label:  $(cat /proc/$pid/attr/current)"
+elif [[ ",$lsm," == *,selinux,* ]]; then echo "  SELinux label:   $(tr -d '\0' < /proc/$pid/attr/current) ($(getenforce 2>/dev/null))"
+else echo "  label:           none (neither AppArmor nor SELinux runs)"; fi
 echo "  seccomp:         $(awk '/^Seccomp:/{print $2}' /proc/$pid/status) (2 = filtered)"
 paths=("$@")
 (( ${#paths[@]} )) || paths=("$HOME" "$dir" "$(dirname "$(dirname "$dir")")/units")
