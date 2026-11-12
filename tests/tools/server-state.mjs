@@ -29,6 +29,7 @@ if (!res.ok) {
 }
 // The first line is the data; what the page streams in later follows on lines of its own.
 const body = JSON.parse((await res.text()).split('\n')[0]);
+/** @param {number | null | undefined} at */
 const ago = (at) => (at ? Math.round((Date.now() - at) / 1000) : null);
 const out = {};
 for (const node of body.nodes) {
