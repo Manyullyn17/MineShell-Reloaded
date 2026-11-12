@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	forgetSandboxProbe,
 	invalidateUnitState,
@@ -25,7 +25,8 @@ import { fakeProcesses, spawnCalls } from '../../../tests/helpers/process';
 const SHOW_RUNNING = [
 	'ActiveState=active',
 	'SubState=running',
-	'ActiveEnterTimestampMonotonic=5000000',
+	'ActiveEnterTimestamp=Wed 2026-11-11 21:10:05.029405 UTC',
+	'ExecMainStartTimestamp=Wed 2026-11-11 21:10:05.029267 UTC',
 	'CPUUsageNSec=123456789',
 	'MemoryCurrent=2147483648',
 	'MainPID=4321',
@@ -48,14 +49,33 @@ describe('unitState', () => {
 			nRestarts: 2,
 			result: 'success'
 		});
-		// Monotonic 5s after boot -> a real wall-clock time in the past.
-		expect(state.activeEnterTimestamp).toBeGreaterThan(0);
-		expect(state.activeEnterTimestamp).toBeLessThanOrEqual(Date.now());
+		expect(state.activeEnterTimestamp).toBeCloseTo(Date.parse('2026-11-11T21:10:05Z') + 29.405, 6);
+		expect(state.mainStartedAt).toBeCloseTo(Date.parse('2026-11-11T21:10:05Z') + 29.267, 6);
 		expect(spawnCalls[0].args).toContain(unitName('alpha'));
 	});
 
-	it('treats [not set] and infinity as zero', async () => {
-		fakeProcesses(() => ({ stdout: 'ActiveState=inactive\nSubState=dead\nMemoryCurrent=[not set]\nCPUUsageNSec=infinity\nActiveEnterTimestampMonotonic=0\nResult=exit-code' }));
+	// Start times were systemd's monotonic stamps plus a boot time worked out once: after the
+	// clock was set, a start read an hour off and was flagged stuck starting. Worked out again at
+	// each read, a run already going at the change (or at a suspend) moved off its history row
+	// and journal lines instead. systemd's own wall-clock stamp is the clock as both have it.
+	it('gives a start the wall-clock time systemd stamped it with, whatever the clock says now', async () => {
+		fakeProcesses(() => ({ stdout: 'ActiveState=active\nActiveEnterTimestamp=Mi 2026-11-11 21:10:05.029405 UTC\nExecMainStartTimestamp=Wed 2026-11-11 21:10:05 UTC\n' }));
+		const before = await unitState('clock', { fresh: true });
+		expect(spawnCalls.at(-1)!.args).toContain('--timestamp=us+utc');
+		vi.useFakeTimers({ toFake: ['Date'], now: Date.now() + 3_600_000 });
+		try {
+			const after = await unitState('clock', { fresh: true });
+			expect(after.activeEnterTimestamp).toBe(before.activeEnterTimestamp);
+			// The weekday is the locale's; only the digits count.
+			expect(after.activeEnterTimestamp).toBeCloseTo(Date.parse('2026-11-11T21:10:05Z') + 29.405, 6);
+			expect(after.mainStartedAt).toBe(Date.parse('2026-11-11T21:10:05Z'));
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('treats [not set], infinity and an empty time as zero', async () => {
+		fakeProcesses(() => ({ stdout: 'ActiveState=inactive\nSubState=dead\nMemoryCurrent=[not set]\nCPUUsageNSec=infinity\nActiveEnterTimestamp=\nResult=exit-code' }));
 		expect(await unitState('beta')).toMatchObject({ active: 'inactive', memoryBytes: 0, cpuUsageNsec: 0, activeEnterTimestamp: 0, result: 'exit-code' });
 	});
 

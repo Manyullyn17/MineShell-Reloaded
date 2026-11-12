@@ -117,7 +117,7 @@ fs.rmSync(DATA, { recursive: true, force: true });
 fs.mkdirSync(DATA, { recursive: true });
 // Uptime: the fake servers start a minute before the pictures, so MineShell is
 // told they started earlier. Its systemctl, and only its, goes through this
-// wrapper, which moves a screenshot unit's start time (ActiveEnterTimestampMonotonic)
+// wrapper, which moves a screenshot unit's start time (ActiveEnterTimestamp)
 // back by the seconds in $DATA/uptime/<id>; the run that MineShell matches it
 // with is moved back the same way after the start (below).
 const realSystemctl = sh('bash', ['-c', 'command -v systemctl']).out.trim();
@@ -130,8 +130,15 @@ fs.writeFileSync(
 for a in "$@"; do case "$a" in ${PREFIX}@*.service) id="\${a#${PREFIX}@}"; id="\${id%.service}";; esac; done
 f="${DATA}/uptime/\${id:-}"
 if [[ " $* " == *" show "* && -n "\${id:-}" && -f "$f" ]]; then
-	"${realSystemctl}" "$@" | awk -v s="$(( $(cat "$f") * 1000000 ))" -F= 'BEGIN { OFS = "=" } $1 == "ActiveEnterTimestampMonotonic" && $2 > 0 { $2 = $2 - s } { print }'
-	exit "\${PIPESTATUS[0]}"
+	out="$("${realSystemctl}" "$@")"; code=$?; s="$(cat "$f")"
+	while IFS= read -r line; do
+		if [[ $line =~ ^ActiveEnterTimestamp=.*\ ([0-9-]+\ [0-9:]+)(\.[0-9]+)?\ UTC$ ]]; then
+			t="$(date -u -d "\${BASH_REMATCH[1]} UTC" +%s)"
+			line="ActiveEnterTimestamp=$(date -u -d "@$((t - s))" '+%a %Y-%m-%d %H:%M:%S')\${BASH_REMATCH[2]} UTC"
+		fi
+		printf '%s\n' "$line"
+	done <<<"$out"
+	exit "$code"
 fi
 exec "${realSystemctl}" "$@"
 `,
@@ -420,25 +427,19 @@ try {
 
 // The template unit, then the "running" servers.
 await act('/settings', 'installUnit');
-const bootMs = Date.now() - Number(fs.readFileSync('/proc/uptime', 'utf8').split(' ')[0]) * 1000;
-const machineUp = (Date.now() - bootMs) / 1000;
 for (const { id, uptimeMinutes, startSeconds } of toStart) {
-	// Never before the machine started: systemd's start times count from boot, and one moved
-	// past it is negative, which MineShell (rightly) takes for no start time: "Starting" for
-	// good. A scene's 2-day uptime shows as the machine's own after a recent reboot.
-	const offset = Math.min(uptimeMinutes * 60, Math.max(0, Math.floor(machineUp) - 600));
-	if (offset < uptimeMinutes * 60) console.log(`${id}: uptime cut to ${Math.round(offset / 3600)} h, this machine's own (it rebooted since)`);
+	const offset = uptimeMinutes * 60;
 	if (offset) fs.writeFileSync(path.join(DATA, 'uptime', id), String(offset));
 	await act(`/instances/${id}`, 'power', { verb: 'start', force: 'on' });
 	if (!offset) continue;
 	// The run MineShell matches the start time with (startphase.ts), moved back as
 	// far, with its "Done (" as long after as the fake's startup says. Written under the run's own invocation
 	// before the fake logs anything, so history.ts keeps it rather than adding its own.
-	const show = sh(realSystemctl, ['--user', 'show', `${PREFIX}@${id}.service`, '-pInvocationID', '-pActiveEnterTimestampMonotonic']).out;
+	const show = sh(realSystemctl, ['--user', 'show', '--timestamp=us+utc', `${PREFIX}@${id}.service`, '-pInvocationID', '-pActiveEnterTimestamp']).out;
 	const invocation = show.match(/^InvocationID=(\w+)/m)?.[1];
-	const monotonic = Number(show.match(/^ActiveEnterTimestampMonotonic=(\d+)/m)?.[1] ?? 0);
-	if (!invocation || !monotonic) throw new Error(`${id}: no start time from systemd:\n${show}`);
-	const startedAt = bootMs + monotonic / 1000 - offset * 1000;
+	const stamp = show.match(/^ActiveEnterTimestamp=.* (\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(\.\d+)? UTC$/m);
+	if (!invocation || !stamp) throw new Error(`${id}: no start time from systemd:\n${show}`);
+	const startedAt = Date.parse(`${stamp[1]}T${stamp[2]}Z`) + Number(stamp[3] ?? 0) * 1000 - offset * 1000;
 	db.prepare(
 		`INSERT INTO server_runs (instance_id, invocation, started_at, done_at) VALUES (?, ?, ?, ?)
 		ON CONFLICT (instance_id, invocation) DO UPDATE SET started_at = excluded.started_at, done_at = excluded.done_at`

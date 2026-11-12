@@ -22,6 +22,7 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 
 /** As Chunky sends it over RCON: its prefix in colour, then task_update. */
 const RUNNING =
@@ -191,7 +192,7 @@ describe('Chunky', () => {
 		invalidateUnitState();
 		fakeProcesses((cmd, args) => {
 			if (cmd === 'systemctl' && args.includes('show'))
-				return { stdout: 'ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=1000000\nResult=success\n' };
+				return { stdout: `ActiveState=active\nSubState=running\nActiveEnterTimestamp=${sinceBoot(1_000_000)}\nResult=success\n` };
 			if (cmd === 'journalctl' && args.includes('-g'))
 				return { stdout: JSON.stringify({ __REALTIME_TIMESTAMP: String(doneAt * 1000), _SYSTEMD_INVOCATION_ID: run, MESSAGE: '[10:00:00] [Server thread/INFO]: Done (9.1s)! For help, type "help"' }) + '\n' };
 			return {};

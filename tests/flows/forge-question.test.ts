@@ -9,6 +9,7 @@ const { unitOnceArgsFile } = await import('#lib/server/config.js');
 const { splitArgs } = await import('#lib/server/shellargs.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 const { testPorts } = await import('../helpers/ports');
 
 /** When Forge asked, in the journal's microseconds. */
@@ -62,7 +63,7 @@ function fakeSystemd() {
 		if (cmd === 'systemctl' && args.includes('show')) {
 			return {
 				stdout: active
-					? `ActiveState=active\nSubState=running\nResult=success\nActiveEnterTimestampMonotonic=${run * 1_000_000}\n`
+					? `ActiveState=active\nSubState=running\nResult=success\nActiveEnterTimestamp=${sinceBoot(run * 1_000_000)}\n`
 					: 'ActiveState=inactive\nSubState=dead\nResult=success\n'
 			};
 		}

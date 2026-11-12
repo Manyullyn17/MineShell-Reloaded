@@ -1,6 +1,5 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
 	DATA_DIR,
@@ -57,17 +56,22 @@ export const UNKNOWN_STATE: UnitState = {
 	invocation: ''
 };
 
-/** System boot wall-clock time, needed to turn systemd's monotonic stamps into dates. */
-let bootTimeMs = 0;
-function systemBootTimeMs(): number {
-	if (bootTimeMs) return bootTimeMs;
-	try {
-		const uptimeSec = Number(readFileSync('/proc/uptime', 'utf8').split(' ')[0]);
-		bootTimeMs = Date.now() - uptimeSec * 1000;
-	} catch {
-		bootTimeMs = Date.now();
-	}
-	return bootTimeMs;
+/**
+ * A time `systemctl show --timestamp=us+utc` prints ("Wed 2026-11-11 21:10:05.029405 UTC"), in
+ * ms; 0 when not set. The weekday is the locale's, so only the digits are read.
+ *
+ * systemd keeps each event's wall-clock time as the clock said it then, the clock the journal
+ * and the run history stamp with too. Not the monotonic stamps less the boot time: worked out
+ * once, the boot time went wrong when the clock was set later (a start after it read an hour
+ * off, and was flagged stuck); worked out again at each read, it moved every run already going
+ * at the change, and after every suspend (which the monotonic clock does not count), off its
+ * history row and its journal lines, back to "starting".
+ */
+export function systemdTime(value: string | undefined): number {
+	const m = value?.match(/(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(\.\d+)? UTC$/);
+	if (!m) return 0;
+	const ms = Date.parse(`${m[1]}T${m[2]}Z`);
+	return Number.isFinite(ms) ? ms + Number(m[3] ?? 0) * 1000 : 0;
 }
 
 export type RunResult = { code: number; stdout: string; stderr: string };
@@ -422,8 +426,8 @@ export async function removeUnitArtifacts(id: string): Promise<void> {
 const SHOW_PROPS = [
 	'ActiveState',
 	'SubState',
-	'ActiveEnterTimestampMonotonic',
-	'ExecMainStartTimestampMonotonic',
+	'ActiveEnterTimestamp',
+	'ExecMainStartTimestamp',
 	'CPUUsageNSec',
 	'MemoryCurrent',
 	'ControlGroup',
@@ -476,17 +480,14 @@ export function workingSet(current: number, stat: string | null): number {
 }
 
 async function readUnitState(id: string): Promise<UnitState> {
-	const res = await systemctl('show', unitName(id), ...SHOW_PROPS.map((p) => `-p${p}`));
+	const res = await systemctl('show', '--timestamp=us+utc', unitName(id), ...SHOW_PROPS.map((p) => `-p${p}`));
 	if (res.code !== 0 && !res.stdout) return { ...UNKNOWN_STATE };
 	const props = parseShow(res.stdout);
-	// Monotonic timestamps are relative to boot; convert to wall clock.
-	const monotonic = num(props.ActiveEnterTimestampMonotonic);
-	const mainStart = num(props.ExecMainStartTimestampMonotonic);
 	return {
 		active: props.ActiveState || 'unknown',
 		sub: props.SubState || 'unknown',
-		activeEnterTimestamp: monotonic > 0 ? systemBootTimeMs() + monotonic / 1000 : 0,
-		mainStartedAt: mainStart > 0 ? systemBootTimeMs() + mainStart / 1000 : 0,
+		activeEnterTimestamp: systemdTime(props.ActiveEnterTimestamp),
+		mainStartedAt: systemdTime(props.ExecMainStartTimestamp),
 		cpuUsageNsec: num(props.CPUUsageNSec),
 		memoryBytes: workingSet(
 			num(props.MemoryCurrent),

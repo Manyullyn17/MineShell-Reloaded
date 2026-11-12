@@ -17,6 +17,7 @@ const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, waitForTask } = await import('../helpers/instances');
 const { resetDimension } = await import('#lib/server/world.js');
 const { fakeProcesses } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 
 let active = true;
 let enteredAt = 1000;
@@ -24,7 +25,7 @@ function fakeUnit() {
 	invalidateUnitState();
 	fakeProcesses((cmd, args) => {
 		if (cmd === 'systemctl' && args.includes('show')) {
-			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=running\nActiveEnterTimestampMonotonic=${enteredAt}\n` };
+			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=running\nActiveEnterTimestamp=${sinceBoot(enteredAt)}\n` };
 		}
 		return {};
 	});

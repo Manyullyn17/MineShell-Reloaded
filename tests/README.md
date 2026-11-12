@@ -237,6 +237,10 @@ When something needed for a check would be written a second time, it goes here i
 
 `tests/helpers/process.ts`: `fakeProcesses(handler)` and `spawnCalls`, see above.
 
+`tests/helpers/systemd.ts`: `systemdStamp(ms)`, a time as `systemctl show --timestamp=us+utc`
+prints it, for a faked unit's `ActiveEnterTimestamp=`/`ExecMainStartTimestamp=`; `sinceBoot(us)`
+the same counted from a pretend boot a day ago (`BOOT_MS`).
+
 `tests/helpers/http.ts`: `useRecordedHttp(name, { extra })` and `fetchCalls`, see above.
 
 `tests/helpers/ports.ts`: `testPorts()`, a game and RCON port pair for a server a test
@@ -607,3 +611,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Lore saved on a 1.13 world showed in game as its JSON, letter for letter: lore lines became JSON text in 1.14, a version after names | `playeritems.test.ts` ("1.13 lore") |
 | With the data folder (or a Java) under a path holding a space, no sandboxed server started: `BindPaths=` is a list split at spaces, so `/media/u/My Disk/...` bound `/media/u/My` and ignored the rest | `systemd.test.ts` ("quotes a path"); the quoting itself on real units (systemd 255 and 249): a runtime unit with the same lines listed only what was bound |
 | Restart left out what Start sets up for a run (playit tunnels following a changed port, a map mod's port, numbered difficulty before 1.14), and on a stopped server started it without a start's checks: one still being set up or migrated, a port in use | `stop.test.ts` ("sets up the next run", "is a start") |
+| After the clock was set while MineShell ran (NTP correcting it after boot, a VM back from a snapshot) or a suspend, every later start read as that much earlier or later and was flagged stuck starting: start times were the monotonic stamps plus a boot time worked out once, from /proc/uptime | `systemd.test.ts` ("whatever the clock says now"): systemd's own wall-clock stamps, which also keep a run already going at the change on its history row |

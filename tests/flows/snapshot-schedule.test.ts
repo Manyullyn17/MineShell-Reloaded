@@ -22,6 +22,7 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, reload, waitForTask } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 const { restartMineShell } = await import('../helpers/crash');
 const { testPorts } = await import('../helpers/ports');
 const { evaluateRestart } = await import('#lib/server/scheduler.js');
@@ -58,7 +59,7 @@ function fakeUnit() {
 		if (cmd === 'journalctl') return { stdout: started ? '[12:00:00] [Server thread/INFO]: Done (3.1s)! For help, type "help"\n' : '' };
 		if (cmd !== 'systemctl') return {};
 		if (args.includes('show'))
-			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\nActiveEnterTimestampMonotonic=${enteredAt}\n` };
+			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\nActiveEnterTimestamp=${sinceBoot(enteredAt)}\n` };
 		if (args.includes('restart')) enteredAt += 1000;
 		if (args.includes('start')) active = true;
 		if (args.includes('stop')) active = false;

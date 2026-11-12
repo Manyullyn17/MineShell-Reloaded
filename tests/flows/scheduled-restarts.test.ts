@@ -17,6 +17,7 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance, reload } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 const { testPorts } = await import('../helpers/ports');
 const { db } = await import('#lib/server/db/index.js');
 const { auditLog, serverInstances } = await import('#lib/server/db/schema.js');
@@ -35,7 +36,7 @@ function fakeUnit() {
 		if (cmd === 'journalctl') return { stdout: '[12:00:00] [Server thread/INFO]: Done (3.1s)! For help, type "help"\n' };
 		if (cmd !== 'systemctl') return {};
 		if (args.includes('show'))
-			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\nActiveEnterTimestampMonotonic=1000\n` };
+			return { stdout: `ActiveState=${active ? 'active' : 'inactive'}\nSubState=${active ? 'running' : 'dead'}\nActiveEnterTimestamp=${sinceBoot(1000)}\n` };
 		invalidateUnitState();
 		return {};
 	});

@@ -7,13 +7,14 @@ const { invalidateUnitState, writeUnitEnv } = await import('#lib/server/systemd.
 const { systemdUnitDir, TEMPLATE_UNIT, unitEnvFile, unitName } = await import('#lib/server/config.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 
 /** systemd: running, its process started `mainUs` after boot. */
 function runningSince(mainUs: number) {
 	invalidateUnitState();
 	fakeProcesses((cmd, args) => {
 		if (cmd === 'systemctl' && args.includes('show'))
-			return { stdout: `ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=${mainUs}\nExecMainStartTimestampMonotonic=${mainUs}\nResult=success\n` };
+			return { stdout: `ActiveState=active\nSubState=running\nActiveEnterTimestamp=${sinceBoot(mainUs)}\nExecMainStartTimestamp=${sinceBoot(mainUs)}\nResult=success\n` };
 		return {};
 	});
 }

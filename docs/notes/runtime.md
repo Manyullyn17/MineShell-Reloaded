@@ -21,6 +21,16 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   next day); "every N minutes" walks real minutes as the clock shows them (counting from
   midnight put a slot in the repeated autumn hour before now, and the command ran at every
   check). Tested under `TZ=Europe/Vienna`, set inside the test.
+- Unit start times are systemd's own wall-clock stamps (`ActiveEnterTimestamp=`,
+  `ExecMainStartTimestamp=`, read with `--timestamp=us+utc`; `systemdTime`): the time as the
+  clock said it at the start, as the journal and the run history have it. They used to be the
+  monotonic stamps plus a boot time. Worked out once (now less /proc/uptime), a clock set later
+  (NTP correcting a hardware clock in local time; a VM back from a snapshot, `vm.sh revert`)
+  put every later start off by as much: one read "starting for 3604 s" and was flagged stuck.
+  Worked out again at each read (now less the monotonic clock), every run already going at the
+  change, and at every suspend (which the monotonic clock does not count), moved off its
+  history row (matched within 10 s) and its journal lines: back to "starting", pause and hang
+  lost. The weekday in the stamp is the locale's; only the digits are read.
 - Paused (empty), built 2026-10-18: 1.21.2+ logs only "Server empty for N seconds, pausing";
   nothing marks the wake-up, so a join clears `server_runs.paused_at` (history.ts). The game
   still reports 20 TPS while paused. Tried live on vanilla 1.21.11 (throwaway setup).

@@ -247,7 +247,7 @@ folder (2026-10-31); heap reads, RCON stops and one-start arguments work inside 
 A running server keeps the settings it started with. `startSettingsChangedAt` is the newest
 modification time of what a start reads (the template, `sandbox.conf`, the env file; not
 `restart.conf` or `limits.conf`, which systemd takes on reload), and a server whose process
-(`ExecMainStartTimestampMonotonic`, not the activation the screenshot tool moves back) started
+(`ExecMainStartTimestamp`, not the activation the screenshot tool moves back) started
 before it is `restartToApply`: the overview and its card say to restart it. Those three are
 written only when their content changes, or every MineShell start would flag every server; the
 template by `scripts/setup.mjs` too (`writeUnitIfChanged`), which every install and update runs.

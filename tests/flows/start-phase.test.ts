@@ -16,6 +16,7 @@ const { encryptSecret } = await import('#lib/server/crypto.js');
 const { invalidateUnitState } = await import('#lib/server/systemd.js');
 const { createInstance } = await import('../helpers/instances');
 const { fakeProcesses, spawnCalls } = await import('../helpers/process');
+const { sinceBoot } = await import('../helpers/systemd');
 
 const MIN = 60_000;
 const T0 = new Date('2026-10-07T10:00:00').getTime();
@@ -35,7 +36,7 @@ function running(monotonicUs: number, journal: () => string, up = () => true) {
 		if (cmd === 'systemctl' && args.includes('show'))
 			return {
 				stdout: up()
-					? `ActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=${monotonicUs}\nResult=success\n`
+					? `ActiveState=active\nSubState=running\nActiveEnterTimestamp=${sinceBoot(monotonicUs)}\nResult=success\n`
 					: 'ActiveState=inactive\nSubState=dead\nResult=success\n'
 			};
 		if (cmd === 'journalctl' && args.includes('-g')) return { stdout: journal() };
