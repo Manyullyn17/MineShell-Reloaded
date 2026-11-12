@@ -12,11 +12,13 @@ import {
 	saveServerSnapshotOverrides,
 	saveSnapshotPolicy,
 	SnapshotChoiceNeeded,
+	snapshotNeeds,
 	snapshotPrompt,
 	snapshotsToDelete,
 	takeSnapshot,
 	type Snapshot
 } from '#lib/server/snapshots.js';
+import { directorySize } from '#lib/server/files.js';
 import { snapshotNow } from '#lib/server/world.js';
 import { policyFormValues } from '#lib/shared/snapshots.js';
 import { createInstance, systemdStopped } from '../helpers/instances';
@@ -162,6 +164,23 @@ describe('free disk space', () => {
 		disk(5 * GB + 2 * MB);
 		expect((await snapshotPrompt(instance)).lowSpace).toBe(false);
 		await expect(takeSnapshot(instance, { reason: 'manual', label: 'second' })).resolves.toBeTruthy();
+	});
+
+	// The page's two numbers come from one walk now: they must stay what the two walks gave.
+	it('gives the world\'s size and what a snapshot would add as the separate walks did', async () => {
+		const instance = await world();
+		disk(50 * GB);
+		for (const [rel, bytes] of [['world/region/r.0.0.mca', 3000], ['world/DIM-1/region/r.0.0.mca', 2000], ['world/playerdata/a.dat', 500], ['world/data/deep/er/still.dat', 70]] as const) {
+			await fs.mkdir(path.dirname(path.join(instance.path, rel)), { recursive: true });
+			await fs.writeFile(path.join(instance.path, rel), 'x'.repeat(bytes));
+		}
+		const size = await directorySize(path.join(instance.path, 'world'));
+		expect(size).toBeGreaterThanOrEqual(5570);
+		expect(await snapshotPrompt(instance)).toMatchObject({ worldBytes: size, neededBytes: await snapshotNeeds(instance.path) });
+		await takeSnapshot(instance, { reason: 'manual', label: 'first' });
+		await fs.writeFile(path.join(instance.path, 'world/data/deep/er/still.dat'), 'y'.repeat(90));
+		expect(await snapshotPrompt(instance)).toMatchObject({ worldBytes: size + 20, neededBytes: 90 });
+		expect(await snapshotNeeds(instance.path)).toBe(90);
 	});
 
 	it('takes it when there is room, or when the check is off', async () => {

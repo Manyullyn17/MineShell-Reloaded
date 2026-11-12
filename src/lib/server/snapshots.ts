@@ -478,10 +478,43 @@ export function snapshotOfWorld(snapshot: Pick<Snapshot, 'world' | 'worlds'>, le
 	return snapshot.worlds.length > 0 && snapshot.worlds.every((p) => own.some((w) => p === w || p.startsWith(`${w}/`)));
 }
 
-export async function worldSize(root: string): Promise<number> {
-	let total = 0;
-	for (const world of await worldFolders(root)) total += await directorySize(path.join(root, world));
-	return total;
+/**
+ * The world's size and about what a snapshot of it would add (snapshotNeeds), from one walk
+ * of its files: the World, Mods and Settings pages ask for both on every load, a starting
+ * server's every three seconds, and each used to walk the world by itself, one file at a time
+ * (780 ms for 32,000 files, 139 for MeatballCraft's 4,900; 179 and 34 so).
+ */
+async function worldUsage(root: string): Promise<{ worldBytes: number; neededBytes: number }> {
+	let records: Record<string, FileRecord> | null = null;
+	for (const s of await listSnapshots(root)) {
+		if ((records = await readHashes(snapshotPath(root, s.id)))) break;
+	}
+	let worldBytes = 0;
+	let neededBytes = 0;
+	async function walk(dir: string): Promise<void> {
+		const folders: string[] = [];
+		await Promise.all(
+			(await fs.readdir(dir, { withFileTypes: true }).catch(() => [])).map(async (entry) => {
+				const full = path.join(dir, entry.name);
+				if (entry.isDirectory()) return void folders.push(full);
+				const stat = await fs.stat(full).catch(() => null);
+				if (!stat) return;
+				// As directorySize counts: whatever is not a folder. A snapshot copies files only.
+				worldBytes += stat.size;
+				if (entry.isFile() && changedSince(records, root, full, stat)) neededBytes += stat.size;
+			})
+		);
+		for (const folder of folders) await walk(folder);
+	}
+	for (const world of await worldFolders(root)) await walk(path.join(root, world));
+	return { worldBytes, neededBytes };
+}
+
+/** Whether a world file is not what the newest snapshot's records say: it would be copied, not linked. */
+function changedSince(records: Record<string, FileRecord> | null, root: string, full: string, stat: { size: number; mtimeMs: number }): boolean {
+	const record = records?.[path.relative(root, full).split(path.sep).join('/')];
+	// Times are kept to the millisecond (utimes), the live file's can be finer.
+	return !record || record[0] !== stat.size || Math.abs(record[1] - stat.mtimeMs) >= 1;
 }
 
 /**
@@ -538,9 +571,7 @@ export async function snapshotNeeds(root: string): Promise<number> {
 			const full = path.join(entry.parentPath, entry.name);
 			const stat = await fs.stat(full).catch(() => null);
 			if (!stat) continue;
-			const record = records?.[path.relative(root, full).split(path.sep).join('/')];
-			// Times are kept to the millisecond (utimes), the live file's can be finer.
-			if (!record || record[0] !== stat.size || Math.abs(record[1] - stat.mtimeMs) >= 1) needed += stat.size;
+			if (changedSince(records, root, full, stat)) needed += stat.size;
 		}
 	}
 	return needed;
@@ -548,9 +579,8 @@ export async function snapshotNeeds(root: string): Promise<number> {
 
 export async function snapshotPrompt(instance: Pick<ServerInstance, 'id' | 'path'>): Promise<SnapshotPrompt> {
 	const policy = getSnapshotPolicy(instance.id);
-	const worldBytes = await worldSize(instance.path);
+	const { worldBytes, neededBytes } = await worldUsage(instance.path);
 	const freeBytes = await freeSpace(instance.path);
-	const neededBytes = worldBytes ? await snapshotNeeds(instance.path) : 0;
 	const lowSpace = lacksSpace(policy, neededBytes, freeBytes);
 	const asksBySize = policy.askAboveMb !== -1 && worldBytes > policy.askAboveMb * 1024 * 1024;
 	return { worldBytes, neededBytes, ask: lowSpace || asksBySize, asksBySize, policy, freeBytes, lowSpace };
