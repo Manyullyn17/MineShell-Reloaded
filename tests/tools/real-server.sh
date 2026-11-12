@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # A real vanilla server through a running MineShell on real systemd: created with Java
-# downloaded, booted, a console command, Stop, Force stop, and a crash (the Java process
+# downloaded, booted, a console command, Restart, Stop, Force stop, and a crash (the Java process
 # killed from outside, as the OOM killer would) that systemd restarts by itself; then the runs
-# MineShell recorded are checked: the two asked-for stops are not crashes, the kill is one.
+# MineShell recorded are checked: the asked-for stops are not crashes, the kill is one, and
+# Restart's stop went over RCON (exit 0, no SIGTERM's 143).
 # Mocked tests cannot catch what only a real unit does (`--kill-whom=all` passed its test and
 # failed on a user unit; the RCON deadlock took a real server). The Scheduled CI workflow runs
 # it weekly on an installed MineShell; by hand, on the throwaway dev server:
@@ -114,6 +115,16 @@ step "a console command"
 answer=$(curl -s -X POST -H 'content-type: application/json' -H "origin: $U" -d '{"command":"list"}' "$U/api/instances/$id/command")
 grep -q 'players online' <<<"$answer" || fail "list answered: $answer"
 
+step "Restart: saved and stopped over RCON, then started by MineShell"
+pid=$(mainpid)
+act "$U/instances/$id?/power" verb=restart || fail "restart refused"
+deadline=$((SECONDS + 120))
+until [[ $(mainpid) -gt 0 && $(mainpid) != "$pid" ]]; do
+	((SECONDS < deadline)) || fail "no new process 2 minutes after Restart ($(state))"
+	sleep 2
+done
+"$tools/wait-start.sh" "$unit" 300 || fail "boot after Restart"
+
 step "Stop"
 act "$U/instances/$id?/power" verb=stop || fail "stop refused"
 stopped 120 || fail "still $(state) 2 minutes after Stop"
@@ -148,8 +159,8 @@ step "the runs MineShell recorded"
 # history.ts reads the journal every 30 s.
 # Force stop's SIGKILL follows a stop job, whose SIGTERM can end Java first (it saves and exits
 # in under a second): then systemd logs no exit status for that run (GitHub's 22.04 runners).
-want=$'ok|-|done\nok|9 or -|done\ncrashed|9|done\nok|-|done'
-want_re=$'^ok\\|-\\|done\nok\\|(9|-)\\|done\ncrashed\\|9\\|done\nok\\|-\\|done$'
+want=$'ok|-|done\nok|-|done\nok|9 or -|done\ncrashed|9|done\nok|-|done'
+want_re=$'^ok\\|-\\|done\nok\\|-\\|done\nok\\|(9|-)\\|done\ncrashed\\|9\\|done\nok\\|-\\|done$'
 deadline=$((SECONDS + 90))
 until [[ "$(runs)" =~ $want_re ]]; do
 	if ((SECONDS >= deadline)); then
@@ -159,4 +170,4 @@ until [[ "$(runs)" =~ $want_re ]]; do
 	fi
 	sleep 5
 done
-echo "Passed: boot, console, Stop, Force stop, a crash restarted by systemd, all recorded as such."
+echo "Passed: boot, console, Restart, Stop, Force stop, a crash restarted by systemd, all recorded as such."
