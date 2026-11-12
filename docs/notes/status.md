@@ -50,7 +50,7 @@ Forge 1.12.2, and the BlueMap mod on a Fabric server without a pack lacked Fabri
 (worlds.md). A new plain Cleanroom server now gets Fugue and Scalar Legacy at once (Cleanroom
 0.7 asked about them at the first start).
 
-## Audit, 2026-11-12 (branch `audit/2026-11-12`, not merged)
+## Audit, 2026-11-12 (merged into main the same day)
 
 A quality pass over 1.3.0-beta.2: its fixes are that branch's commits (start times after a
 clock change, a data folder with a space, Restart's missing set-up, mixed text lists on
