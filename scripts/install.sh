@@ -191,7 +191,7 @@ main() {
 		say "  journalctl --user -u $service -n 50"
 		exit 1
 	fi
-	say "MineShell $version is running: http://$(hostname 2>/dev/null || echo localhost):$port"
+	say "MineShell $version is running: http://$(uname -n 2>/dev/null || echo localhost):$port"
 	[ "$first_config" = yes ] && say "First visit: set the admin password there. Settings: $config"
 	# /setup asks for this code, so whoever finds the address first cannot take MineShell over.
 	local data setup_code
