@@ -107,7 +107,8 @@ systemd counts every start against it, manual ones too: Start and Restart reset 
 (`reset-failed`), or a third Restart within ten minutes is refused (`start-limit-hit`) and the
 server stays down. Restart sets up the run as Start does (`prepareRun`: playit tunnels, a map
 mod's port, Chunky, numbered difficulty before 1.14), and on a server that is not running it
-is a Start, with its checks (`systemctl restart` starts a stopped unit). One case it cannot express: a crash while starting that a restart would only repeat (a
+is a Start, with its checks (`systemctl restart` starts a stopped unit); a running one is
+stopped over RCON first (Stopping, below). One case it cannot express: a crash while starting that a restart would only repeat (a
 missing dependency, a mod for another loader). With "Not after a crash while starting that
 has a fix" on (`crash_restart_skip_fixable`, the default), the monitor (every 10 s, so within
 `RestartSec=15`) diagnoses a unit in `auto-restart` whose crashed run never reached `Done (`,
@@ -184,6 +185,14 @@ Minecraft's shutdown hook saves on that too. The template counts exit code 143 (
 success, because only a stop someone asked for sends it. Big packs can take minutes to
 save, which is why the wait is long: the old fixed 20 seconds cut saves off and could stop
 a server that had been started again in the meantime.
+
+Restart stops the same way and then starts the server as Start does (`startAgain`: Start's
+checks and set-up, on the server's settings as they are by then). It used to be `systemctl
+restart`, whose SIGTERM systemd follows with SIGKILL after `TimeoutStopSec` (three minutes):
+a pack still saving was cut short by Restart only. `systemctl restart` stays for a server
+whose RCON does not answer (still starting). The start half waits in memory as countdowns do:
+a Stop, Force stop or Start pressed meanwhile cancels it, and a MineShell restart in between
+leaves the server stopped. A start it cannot make goes on the overview as a notice.
 
 Nothing more goes over RCON once a server is told to stop (`isStopCommand`, `rconStopping`): a
 command reaching a stopping Minecraft hangs it for good (`docs/notes/runtime.md`). Force stop is

@@ -325,14 +325,17 @@ describe('scheduled snapshots', () => {
 		db.update(serverInstances).set({ restartSchedule: 'daily', restartDailyTime: '05:00', restartWarnMinutes: 0, restartNextAt: Date.now() - 1000 }).where(eq(serverInstances.id, s.id)).run();
 		beginOperation(s.id, { kind: 'scheduled-snapshot', mode: 'live', restart: false });
 		spawnCalls.length = 0;
+		rcon.commands = [];
+		// Over RCON, as Stop does, then started; systemd's restart without RCON.
+		const restarted = () => rcon.commands.includes('stop') || spawnCalls.some((c) => c.args.includes('restart'));
 		await evaluateRestart(reload(s.id));
-		expect(spawnCalls.some((c) => c.args.includes('restart'))).toBe(false);
+		expect(restarted()).toBe(false);
 		expect(reload(s.id).restartNextAt).toBeLessThan(Date.now());
 
 		const { endOperation } = await import('#lib/server/operations.js');
 		endOperation(s.id);
 		await evaluateRestart(reload(s.id));
-		expect(spawnCalls.some((c) => c.args.includes('restart'))).toBe(true);
+		expect(restarted()).toBe(true);
 	});
 
 	it('does not claim saving stayed off when the server restarted during the copy', async () => {

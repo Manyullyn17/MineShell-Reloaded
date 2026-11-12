@@ -95,6 +95,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   units after killing it; then reset-failed, or a stop that was asked for reads as a crash.
 - An RCON stop waits up to 5 min for the JVM to exit (`awaitStop`) before systemctl stop; it
   used to fire after a fixed 20 s, mid-save on big packs, and could stop a run started again.
+- Restart is that stop, then Start (`startAgain`, 2026-11-12); `systemctl restart` only when
+  RCON does not answer. Its SIGTERM got SIGKILL after `TimeoutStopSec=180`, while Stop gave the
+  save five minutes. The pending start is cancelled by any Stop, Force stop or Start
+  (`cancelPendingStop`), checked again after every wait: a Stop during systemd's own stop
+  (the five minutes ran out) would otherwise be started behind the user's back.
 - `pkill -f` in a shell whose own command line contains the pattern kills that shell.
 - User units' sandboxing (PrivateTmp, ProtectHome, ProtectSystem, PrivateUsers, ...) needs a
   user namespace, and Ubuntu 24.04's `apparmor_restrict_unprivileged_userns=1` moves systemd's

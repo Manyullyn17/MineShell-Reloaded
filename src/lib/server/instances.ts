@@ -1374,12 +1374,17 @@ export function clearStopIntent(id: string): void {
 export const GRACEFUL_STOP_MS = 5 * 60_000;
 const STOP_POLL_MS = 3000;
 
-/** Servers told to stop over RCON whose exit is being waited for: shown as stopping meanwhile. */
-const pendingStops = new Map<string, NodeJS.Timeout>();
+/**
+ * Servers told to stop over RCON whose exit is being waited for: shown as stopping meanwhile.
+ * `after` is what comes once it has exited (Restart's start); a Stop, Force stop or Start
+ * pressed in between cancels it, so the server they meant is not started behind their back.
+ */
+type PendingStop = { timer?: NodeJS.Timeout; after?: () => Promise<void> };
+const pendingStops = new Map<string, PendingStop>();
 
 function cancelPendingStop(id: string): void {
-	const timer = pendingStops.get(id);
-	if (timer) clearTimeout(timer);
+	const pending = pendingStops.get(id);
+	if (pending?.timer) clearTimeout(pending.timer);
 	pendingStops.delete(id);
 }
 
@@ -1389,23 +1394,36 @@ function cancelPendingStop(id: string): void {
  * stopped through systemd. This used to call systemctl stop after a fixed
  * 20 s, which on a big pack landed in the middle of its save.
  */
-export function awaitStop(id: string, deadline: number): void {
-	const check = async () => {
+export function awaitStop(id: string, deadline: number, after?: () => Promise<void>): void {
+	const pending: PendingStop = { after };
+	const current = () => pendingStops.get(id) === pending;
+	const finish = async () => {
+		if (!current()) return;
 		pendingStops.delete(id);
+		await pending.after?.();
+	};
+	const check = async () => {
+		pending.timer = undefined;
 		const state = await unitState(id, { fresh: true }).catch(() => null);
-		if (!state || state.active === 'inactive' || state.active === 'failed') return;
+		if (!current()) return;
+		if (!state) return void pendingStops.delete(id);
+		if (state.active === 'inactive' || state.active === 'failed') return finish();
 		if (Date.now() >= deadline) {
 			audit('instance.stop', { instanceId: id, detail: 'systemd after the RCON stop timed out', actor: 'system' });
+			// Still pending meanwhile (shown as stopping, cancelled by a Stop): systemctl stop
+			// waits up to TimeoutStopSec for the exit.
 			await stopUnit(id).catch(() => undefined);
-			return;
+			return finish();
 		}
-		const timer = setTimeout(() => void check(), STOP_POLL_MS);
-		timer.unref?.();
-		pendingStops.set(id, timer);
+		schedule();
 	};
-	const timer = setTimeout(() => void check(), STOP_POLL_MS);
-	timer.unref?.();
-	pendingStops.set(id, timer);
+	const schedule = () => {
+		pending.timer = setTimeout(() => void check().catch((err) => console.error(`[mineshell] waiting for ${id} to stop failed:`, err)), STOP_POLL_MS);
+		pending.timer.unref?.();
+	};
+	cancelPendingStop(id);
+	pendingStops.set(id, pending);
+	schedule();
 }
 
 export async function stop(
@@ -1475,6 +1493,24 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 	if (!(await eulaIsAccepted(instance))) {
 		return { ok: false, message: 'Accept the Minecraft EULA before starting this server.' };
 	}
+	// As Stop does: saved and stopped over RCON, given GRACEFUL_STOP_MS to exit by itself (then
+	// systemd's stop), then started as Start starts it. `systemctl restart` is SIGTERM, and
+	// systemd kills what has not exited after TimeoutStopSec (3 min): a big pack still saving
+	// was cut short by Restart only. SIGTERM stays the way when RCON does not answer (still
+	// starting, no password). In memory, as countdowns are: a MineShell restart in between
+	// leaves the server stopped.
+	const password = rconPassword(instance);
+	if (password) {
+		try {
+			await rconExec({ port: instance.rconPort, password }, ['save-all', 'stop']);
+			intentionalStops.set(instance.id, Date.now());
+			audit('instance.restart', { instanceId: instance.id, detail: 'rcon' });
+			awaitStop(instance.id, Date.now() + GRACEFUL_STOP_MS, () => startAgain(instance.id));
+			return { ok: true, message: 'Saving and restarting.' };
+		} catch {
+			/* systemd's restart, below */
+		}
+	}
 	clearStopIntent(instance.id);
 	await prepareRun(instance);
 	await syncUnit(instance);
@@ -1492,6 +1528,21 @@ export async function restart(instance: ServerInstance): Promise<{ ok: boolean; 
 		ok: res.code === 0,
 		message: res.code === 0 ? 'Restarting.' : res.stderr.trim() || 'Restart failed.'
 	};
+}
+
+/**
+ * The start half of a Restart over RCON, once the old run has exited: Start's own checks and
+ * set-up, on the server as it is now (settings saved while it was saving count). Nobody waits
+ * on the page by then, so a refusal goes on the overview as a notice.
+ */
+async function startAgain(id: string): Promise<void> {
+	const instance = getInstance(id);
+	if (!instance) return;
+	const res = await start(instance).catch((err: unknown) => ({ ok: false, message: err instanceof Error ? err.message : String(err) }));
+	if (res.ok) return;
+	console.warn(`[mineshell] ${id} stopped for its restart but did not start again: ${res.message}`);
+	audit('instance.restart', { instanceId: id, detail: `not started again: ${res.message}`, actor: 'system' });
+	setStatus(id, instance.status, `The server stopped for its restart but did not start again: ${res.message}`);
 }
 
 export async function sendCommand(instance: ServerInstance, command: string): Promise<string> {

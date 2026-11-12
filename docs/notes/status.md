@@ -64,9 +64,6 @@ edge, no spilled text), 23 shuffled runs. Seen and left as they are:
   `kill -9`. `PrivatePIDs=yes` (systemd 257+: 26.04, Fedora, Arch) took that away there (it
   saw 3 processes instead of 166). Not built: heap reads, `jcmd` and Force stop would need
   trying inside it, and it must only be written where systemd has it.
-- Restart is `systemctl restart`: SIGTERM, then SIGKILL after `TimeoutStopSec=180`. Stop gives
-  a save five minutes over RCON first; a pack that saves for over three minutes is cut short
-  by Restart only.
 - `safeJoin` checks a path and the caller then uses it: a mod swapping a file for a link in
   between is not caught. `assertPublicUrl` resolves a name and `fetch` resolves it again
   (DNS rebinding). Both need a hostile mod or pack author and good timing.

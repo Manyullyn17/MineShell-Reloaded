@@ -59,7 +59,8 @@ async function server(schedule: Partial<typeof serverInstances.$inferInsert> = {
 
 const setNextIn = (id: string, ms: number) =>
 	db.update(serverInstances).set({ restartNextAt: Date.now() + ms }).where(eq(serverInstances.id, id)).run();
-const restarted = () => spawnCalls.filter((c) => c.cmd === 'systemctl' && c.args.includes('restart')).length;
+/** Restarts asked for: over RCON, as Stop does (then started), or systemd's restart without RCON. */
+const restarted = () => rcon.commands.filter((c) => c === 'stop').length + spawnCalls.filter((c) => c.cmd === 'systemctl' && c.args.includes('restart')).length;
 const said = () => rcon.commands.filter((c) => c.startsWith('say '));
 const audits = (id: string, action: string) =>
 	db.select().from(auditLog).where(and(eq(auditLog.instanceId, id), eq(auditLog.action, action))).all();
