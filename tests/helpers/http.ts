@@ -39,6 +39,30 @@ function keyFor(method: string, url: string, body: unknown): string {
 
 const noBody = (status: number) => status === 204 || status === 205 || status === 304;
 
+/**
+ * A live request, asked again while the API answers 429. That is not an answer
+ * to record or test against: Mojang's session server refuses one in a few
+ * requests for the same profile in quick succession (no Retry-After, gone a
+ * second later), which failed the nightly live check and would have recorded a
+ * 429 into a fixture. The last answer is returned as it is, 429 or not.
+ */
+export async function fetchThroughRateLimit(
+	realFetch: typeof fetch,
+	input: Parameters<typeof fetch>[0],
+	init?: RequestInit,
+	wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))
+): Promise<Response> {
+	const delays = [1_000, 2_000, 4_000, 8_000];
+	for (const delay of delays) {
+		const res = await realFetch(input, init);
+		if (res.status !== 429) return res;
+		await res.body?.cancel();
+		const after = Number(res.headers.get('retry-after'));
+		await wait(after > 0 ? Math.min(after * 1_000, 30_000) : delay);
+	}
+	return realFetch(input, init);
+}
+
 export function useRecordedHttp(
 	name: string,
 	opts: { extra?: Record<string, (init?: RequestInit) => Response | Promise<Response>> } = {}
@@ -62,7 +86,7 @@ export function useRecordedHttp(
 		const key = keyFor(method, url, init?.body);
 
 		if (recording) {
-			const res = await realFetch(input, init);
+			const res = await fetchThroughRateLimit(realFetch, input, init);
 			const text = await res.text();
 			const contentType = res.headers.get('content-type');
 			let json: unknown;

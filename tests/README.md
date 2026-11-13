@@ -127,6 +127,9 @@ pinning live data that moved on (first run, 2026-10-20: a new Fugue release's `u
 file past the mirror's newest 50; both tests since made to hold) - re-record that file with
 `RECORD_HTTP=1` and adjust (2026-11-01: NeoForge 26.3's first release and a Quilt beta; the
 two loader tests since made to hold). Filters narrow it: `check-apis.sh curseforge`.
+A 429 while recording is asked again (1, 2, 4, 8 s, or the `Retry-After`) rather than tested
+against or recorded: Mojang's session server refuses one in a few quick requests for the same
+profile and lets the next through (nightly, 2026-11-13).
 
 CurseForge's official API (`curseforge-official-api.test.ts`) needs a key to record. The user's
 is saved in Settings of the dev MineShell (and the installed one), encrypted, not in `.env`;
@@ -614,3 +617,4 @@ Add a test that fails without the fix first. Each of these fails if its bug come
 | Restart left out what Start sets up for a run (playit tunnels following a changed port, a map mod's port, numbered difficulty before 1.14), and on a stopped server started it without a start's checks: one still being set up or migrated, a port in use | `stop.test.ts` ("sets up the next run", "is a start") |
 | Restart was `systemctl restart`: SIGTERM, then SIGKILL after three minutes, while Stop gives a save five minutes over RCON. A big pack still saving was cut short by Restart only | `restart-over-rcon.test.ts`: stops as Stop does, then starts; a Stop pressed meanwhile is not undone by the start |
 | After the clock was set while MineShell ran (NTP correcting it after boot, a VM back from a snapshot) or a suspend, every later start read as that much earlier or later and was flagged stuck starting: start times were the monotonic stamps plus a boot time worked out once, from /proc/uptime | `systemd.test.ts` ("whatever the clock says now"): systemd's own wall-clock stamps, which also keep a run already going at the change on its history row |
+| A live API check (Nightly) failed, and a re-record would have kept a 429, when Mojang's session server rate-limited one of several quick requests for the same profile | `helpers/http.test.ts`: a 429 while recording is asked again after a wait |
