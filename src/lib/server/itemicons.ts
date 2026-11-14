@@ -464,7 +464,9 @@ export class Resources {
 	 * pictures that are not items (a clock's 64 frames, armour trims, a bow
 	 * being drawn): where a namespace names its items in 1.13+'s lang keys
 	 * (item.<ns>.<id>, block.<ns>.<id>; the game shows the raw key without
-	 * one), only models with a name count.
+	 * one), only models with a name count. The loader's own (neoforge:default,
+	 * neoforge:bucket_drip) are templates mods' models build on, never items:
+	 * NeoForge's jar names none, so they count only with a name.
 	 */
 	async itemNames(): Promise<string[]> {
 		const defined = new Set<string>();
@@ -481,6 +483,7 @@ export class Resources {
 			const m = key.match(/^(?:item|block)\.([^.]+)\.([^.]+)$/);
 			if (m) named.add(m[1]);
 		}
+		for (const loader of ['neoforge', 'forge']) named.add(loader);
 		const withDefinitions = new Set([...defined].map((id) => id.split(':')[0]));
 		const items = [...modelled].filter((id) => {
 			const [ns, p] = id.split(':');

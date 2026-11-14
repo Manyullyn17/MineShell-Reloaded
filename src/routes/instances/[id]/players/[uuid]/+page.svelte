@@ -108,6 +108,9 @@
 		if (res.ok) {
 			pictured = {};
 			icons.reset();
+			// The picker's list was read without Minecraft's own items: emptied, the effect
+			// below that loads it (it reads allItems) reads it again with them.
+			allItems = null;
 			await refreshAll();
 		}
 	}
@@ -799,7 +802,7 @@
 		<p class="small faint"><span class="holds-key" aria-hidden="true"></span> in a corner marks an item that holds items; pick it to open what is inside.</p>
 		{#if data.icons && !data.iconsEula}
 			<p class="small muted icon-eula">
-				Pictures of Minecraft's own items come from its client, which means accepting the
+				Pictures of Minecraft's own items (and the item search's list of them) come from its client, which means accepting the
 				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab).
 				<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and show them</button>
 			</p>
@@ -880,6 +883,14 @@
 								{/each}
 								{#if found.total > found.items.length}
 									<li class="muted small">{found.total - found.items.length} more; type more to narrow it down.</li>
+								{/if}
+								{#if allItems && !data.iconsEula}
+									<!-- Without the client jar only mods' items (and those a loader redefines) are known. -->
+									<li class="muted small">
+										Minecraft's own items are listed once its
+										<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">EULA</a> is accepted for this server (the same answer as the Map tab).
+										<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and list them</button>
+									</li>
 								{/if}
 							</ul>
 						{/if}

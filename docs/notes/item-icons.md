@@ -33,6 +33,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   icons resolve side by side. Closed item sections render (and ask for icons) once opened.
 - Picker: `itemChoices` (1.12: level.dat FML registry minecraft:items; newer: items/
   definitions, else models/item minus base models), names via `itemName` (lang keys).
+  Vanilla's items come from the client jar, so without the per-server EULA answer the picker
+  knows only mods' items, plus the armour NeoForge 26.x redefines in its own jar (found
+  2026-11-14 on 26.3: "sword" found nothing, "diamond" only armour); it says so and offers the
+  answer. The loader's own namespace (`neoforge:default`, `neoforge:bucket_drip`: templates
+  mods' models build on) holds no items and no item names, so it counts only named models.
 - NeoForge 26.x's universal jar replaces vanilla's armour definitions
   (`assets/minecraft/items/*_helmet.json`...) with `type: neoforge:trimmed_armor`, the plain
   model under `base_model`; loaded before the client jar, they win (read in 26.3.0.101).

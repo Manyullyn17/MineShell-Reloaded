@@ -816,7 +816,12 @@ describe('item icons', () => {
 					'assets/a/models/item/wand_charged.json': '{}',
 					'assets/a/lang/en_us.json': JSON.stringify({ 'item.a.wand': 'Wand' })
 				}),
-				'mods/b.jar': zipBuffer({ 'assets/b/models/item/gear.json': '{}', 'assets/b/models/item/generated.json': '{}' })
+				'mods/b.jar': zipBuffer({ 'assets/b/models/item/gear.json': '{}', 'assets/b/models/item/generated.json': '{}' }),
+				// The loader's templates (NeoForge 21.1's jar holds just these under its own name) are not items.
+				'libraries/net/neoforged/neoforge/21.1.251/neoforge-21.1.251-universal.jar': zipBuffer({
+					'assets/neoforge/models/item/default.json': '{}',
+					'assets/neoforge/models/item/bucket_drip.json': '{}'
+				})
 			}
 		);
 		// a has 1.21.4 definitions: exactly those; b only models, its own base model left out.
