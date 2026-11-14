@@ -86,6 +86,8 @@ user before the beta):
    with it removed and the pack's 0.21 enabled, the crash and "Install a matching Fugue" came
    as described. Found and fixed: "Don't restart after a startup crash that has a fix" did not
    count that button as a fix, so systemd restarted it twice more first.
+   The button, its task, the old Fugue disabled and the clean start clearing the crash: **done**
+   (the user, 2026-11-14). The held restart is still to see on a build with ef6a8c8.
 2. **Java builds** (MineShell settings, Java): a downloaded runtime's "is out" note and its
    Download, the Build picker for both vendors, and the note naming the servers that move.
    Checked on throwaway data 2026-11-08 (an older Temurin 21 picked and downloaded for real, the
@@ -132,6 +134,8 @@ user before the beta):
    **The user, 2026-11-14**: seems good. In the player editor on 26.3 NeoForge, found and fixed:
    the item search knew no vanilla items without the EULA answer and did not say why, kept its
    list after accepting until a reload, and NeoForge 26.x's armour had no pictures.
+   Armour pictures **checked** by the user on beta.3. Also from beta.3: the config form's
+   switches on the left and its lists squeezed, the EULA notes' layout; fixed.
 6. **Online players** (the drawer's In game): with a real player on a 1.21.x server and a 1.16-1.20
    one, the game mode marked, the dimension and position shown, "Their spawn point" after
    sleeping in a bed (lands on the bed, or beside it under a low ceiling) and in the Nether with
@@ -149,6 +153,7 @@ user before the beta):
    Still to try: "Players must take the pack" (the client remembers the first answer: set the
    server's "Server Resource Packs" back to Prompt under Multiplayer > Edit). The preview's look:
    item 3.
+   "Players must take the pack": **done** (the user, 2026-11-14).
 8. **Data pack folders in Add mods**: on a server with Open Loader (or Paxi), install a data pack
    release into its folder from Add mods, start the server and see it loaded (Open Loader's
    "Located 1 packs"), then update it from the Data packs tab. Checked 2026-11-08 on a throwaway
@@ -175,6 +180,7 @@ user before the beta):
 
 11. **Project ids in the searches** (beta.2): MeatballCraft found on New server by typing
    `411966` with CurseForge picked (with and without the key), and a mod's id in Add mods.
+   **Done** (the user, 2026-11-14), MeatballCraft found by name again too.
 
 **1.2 beta checklist** (1.2.0-beta.1 released and installed on prod 2026-11-04; beta.2 released
 2026-11-04 afternoon with the fixes below). 1.2.0 once a
