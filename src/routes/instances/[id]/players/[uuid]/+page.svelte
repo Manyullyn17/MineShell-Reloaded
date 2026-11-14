@@ -35,10 +35,18 @@
 	// The item picker: every item the server knows, loaded the first time it is used.
 	let allItems = $state.raw<{ id: string; name: string }[] | null>(null);
 	let findQuery = $state('');
+	/** Whether the list has Minecraft's own items (they need its client jar; before 1.13 the world lists them). */
+	let vanillaListed = $state(true);
+	/** The latest list asked for: one asked before the EULA was accepted can answer after the new one. */
+	let itemsAsked = 0;
 	async function loadItems() {
 		if (allItems) return;
+		const asked = ++itemsAsked;
 		const res = await fetch(`/api/instances/${encodeURIComponent(data.instance.id)}/item-icons/items`);
-		allItems = res.ok ? (await res.json()).items : [];
+		const body: { items: { id: string; name: string }[]; vanilla: boolean } = res.ok ? await res.json() : { items: [], vanilla: true };
+		if (asked !== itemsAsked) return;
+		vanillaListed = body.vanilla;
+		allItems = body.items;
 	}
 	const FOUND_SHOWN = 60;
 	/**
@@ -108,10 +116,12 @@
 		if (res.ok) {
 			pictured = {};
 			icons.reset();
-			// The picker's list was read without Minecraft's own items: emptied, the effect
-			// below that loads it (it reads allItems) reads it again with them.
+			// The picker's list was read without Minecraft's own items: read it again with
+			// them, and drop the answer to any request still under way.
 			allItems = null;
+			itemsAsked++;
 			await refreshAll();
+			void loadItems();
 		}
 	}
 
@@ -859,6 +869,18 @@
 						/>
 						{#if findQuery.trim().length >= 2}
 							<ul class="found" role="listbox" aria-label="Items">
+								<!-- First: on a big pack 60 mod items fill the box before the end of the list is in sight. -->
+								{#if allItems && !vanillaListed}
+									<li class="muted small">
+										{#if data.iconsEula}
+											Minecraft's own items are missing: its client could not be downloaded from Mojang.
+										{:else}
+											Minecraft's own items are listed once its
+											<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">EULA</a> is accepted for this server.
+											<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and list them</button>
+										{/if}
+									</li>
+								{/if}
 								{#if !allItems}
 									<li class="muted small">Reading the server's items.</li>
 								{:else if !found.total}
@@ -883,14 +905,6 @@
 								{/each}
 								{#if found.total > found.items.length}
 									<li class="muted small">{found.total - found.items.length} more; type more to narrow it down.</li>
-								{/if}
-								{#if allItems && !data.iconsEula}
-									<!-- Without the client jar only mods' items (and those a loader redefines) are known. -->
-									<li class="muted small">
-										Minecraft's own items are listed once its
-										<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">EULA</a> is accepted for this server (the same answer as the Map tab).
-										<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and list them</button>
-									</li>
 								{/if}
 							</ul>
 						{/if}

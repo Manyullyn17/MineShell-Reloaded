@@ -1571,7 +1571,7 @@ function byWordsIn(ns: string, path: string, lang: Map<string, string>): Set<str
 	return byKey.get(words(path.replace(/^(item|tile)\./, '')).sort().join(' ')) ?? null;
 }
 
-const choicesCache = new WeakMap<Resources, Promise<ItemChoice[]>>();
+const choicesCache = new WeakMap<Resources, Promise<{ items: ItemChoice[]; vanilla: boolean }>>();
 
 /**
  * A 1.12 server without Forge's registry (vanilla) has only model names to go
@@ -1604,6 +1604,15 @@ async function vanilla112Ids(res: Resources, models: string[]): Promise<string[]
 
 /** Every item the server knows, with its name, for the picker. */
 export async function itemChoices(instance: ServerInstance): Promise<ItemChoice[]> {
+	return (await itemList(instance)).items;
+}
+
+/**
+ * The picker's items, and whether Minecraft's own are among them: they come from
+ * the client jar (the EULA answer, and Mojang's download), or before 1.13 from
+ * the world's registry, which lists them either way.
+ */
+export async function itemList(instance: ServerInstance): Promise<{ items: ItemChoice[]; vanilla: boolean }> {
 	const res = await serverResources(instance);
 	let hit = choicesCache.get(res);
 	if (!hit) {
@@ -1611,7 +1620,7 @@ export async function itemChoices(instance: ServerInstance): Promise<ItemChoice[
 			const registry = compareVersions(instance.minecraftVersion, '1.13') < 0 ? await registryItems(path.join(instance.path, await serverWorldName(instance.path))) : null;
 			const ids = registry ?? (compareVersions(instance.minecraftVersion, '1.13') < 0 ? await vanilla112Ids(res, await res.itemNames()) : await res.itemNames());
 			const lang = await res.lang();
-			return ids.map((id) => ({ id, name: itemName(id, lang) }));
+			return { items: ids.map((id) => ({ id, name: itemName(id, lang) })), vanilla: res.hasVanilla || registry !== null };
 		})();
 		choicesCache.set(res, hit);
 	}

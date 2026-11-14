@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * game reads them. The jars are built here, small; the logic is real.
  */
 
-const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, itemChoices, itemName, itemIconsEnabled, setItemIcons, CLIENT_DIR } = await import('#lib/server/itemicons.js');
+const { Resources, resolveIcon, variantModels, iconsFor, iconTexture, itemChoices, itemList, itemName, itemIconsEnabled, setItemIcons, CLIENT_DIR } = await import('#lib/server/itemicons.js');
 const { writeNbt } = await import('#lib/server/nbt.js');
 const { saveMapSettings } = await import('#lib/server/worldmap.js');
 const { createInstance } = await import('../helpers/instances');
@@ -803,6 +803,8 @@ describe('item icons', () => {
 			{ id: 'minecraft:stone', name: 'Stone' },
 			{ id: 'wiz:charm_flight', name: 'Charm of Flight' }
 		]);
+		// 1.12's registry lists Minecraft's own items without its client: the picker needs no EULA note.
+		expect((await itemList(old)).vanilla).toBe(true);
 		const { icons } = await iconsFor(old, [{ id: 'contenttweaker:core_of_undeath', damage: null }]);
 		expect(icons['contenttweaker:core_of_undeath'].spec).toEqual({ kind: 'flat', layers: [{ texture: 'contenttweaker:items/core_of_undeath', tint: null }] });
 		expect(await iconTexture(old, 'contenttweaker:items/core_of_undeath')).toEqual(PNG);
@@ -829,6 +831,8 @@ describe('item icons', () => {
 			{ id: 'a:wand', name: 'Wand' },
 			{ id: 'b:gear', name: 'Gear' }
 		]);
+		// Without the client jar (no EULA answer) a 1.13+ list has none of Minecraft's own: the picker says why.
+		expect((await itemList(modern)).vanilla).toBe(false);
 	});
 
 	it("draws vanilla items before 1.8 with 1.8.9's models over the version's own textures", async () => {
