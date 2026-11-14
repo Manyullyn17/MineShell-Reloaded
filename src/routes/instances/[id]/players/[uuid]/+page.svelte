@@ -819,9 +819,9 @@
 		<p class="small faint"><span class="holds-key" aria-hidden="true"></span> in a corner marks an item that holds items; pick it to open what is inside.</p>
 		{#if data.icons && !data.iconsEula}
 			<p class="small muted icon-eula">
-				Pictures of Minecraft's own items{vanillaListed ? '' : ' (and the item search’s list of them)'} come from its client, which means accepting the
-				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab).
-				<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and show them</button>
+				Minecraft's own items get their pictures{vanillaListed ? '' : ' and show in the item search'} once the
+				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> is accepted for this server.
+				<button type="button" class="button-quiet small inline-action" onclick={acceptIconEula}>Accept and show them</button>
 			</p>
 		{/if}
 	</div>
@@ -884,7 +884,7 @@
 										{:else}
 											Minecraft's own items are listed once its
 											<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">EULA</a> is accepted for this server.
-											<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and list them</button>
+											<button type="button" class="button-quiet small inline-action" onclick={acceptIconEula}>Accept and list them</button>
 										{/if}
 									</li>
 								{/if}
@@ -1342,12 +1342,12 @@
 		width: 6rem;
 	}
 
+	/* One line under the other: side by side, the EULA note was squeezed to the right half. */
 	.inv-head {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		flex-wrap: wrap;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1);
 		margin-bottom: var(--space-3);
 	}
 
@@ -1676,8 +1676,17 @@
 		white-space: nowrap;
 	}
 
+	/* A button after a sentence: as wide as its words (the picker's .found button rule fills the row). */
+	.found li button.inline-action,
+	.inline-action {
+		display: inline;
+		width: auto;
+		padding: 0.1rem 0.4rem;
+	}
+
+	/* Its button on the same line where the window allows. */
 	.icon-eula {
-		margin: var(--space-1) 0 0;
+		max-width: none;
 	}
 
 	.slot-label {
