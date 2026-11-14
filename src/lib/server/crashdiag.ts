@@ -474,6 +474,14 @@ export type Diagnosis = {
 	fatal: boolean;
 };
 
+/**
+ * Has a button that fixes it on the overview: enable/disable a mod, install a dependency, or
+ * install a matching Fugue. Not once fixed since (`resolved`): then a plain start is the answer.
+ */
+export function hasOneClickFix(d: Diagnosis): boolean {
+	return !d.resolved && !!(d.fix || d.install || d.matchFugue);
+}
+
 function ref(jar: ModJar | null | undefined): ModRef | null {
 	if (!jar) return null;
 	return {

@@ -11,6 +11,12 @@ vi.mock('#lib/server/journal.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('#lib/server/journal.js')>()),
 	readLastRun: async () => journal.log
 }));
+// A diagnosis in place of the real one, for kinds whose crash needs a whole pack's jars.
+const diagnosis = vi.hoisted(() => ({ instead: null as unknown[] | null }));
+vi.mock('#lib/server/lastcrash.js', async (importOriginal) => {
+	const real = await importOriginal<typeof import('#lib/server/lastcrash.js')>();
+	return { ...real, diagnoseLastRun: async (...args: Parameters<typeof real.diagnoseLastRun>) => diagnosis.instead ?? real.diagnoseLastRun(...args) };
+});
 const { holdFixableRestart } = await import('./crashhold');
 const { restartHeldAt } = await import('./history');
 
@@ -21,6 +27,7 @@ describe('a crash restart that would only fail again', () => {
 	beforeEach(() => {
 		fakeProcesses(() => ({}));
 		journal.log = started + crash;
+		diagnosis.instead = null;
 	});
 
 	// systemd restarted it up to the limit, each start failing the same way, before the
@@ -38,6 +45,18 @@ describe('a crash restart that would only fail again', () => {
 		const instance = await createInstance({ modloader: 'fabric', minecraftVersion: '1.20.1' });
 		journal.log = 'Started Minecraft server (x) managed by MineShell.\n' + crash;
 		expect(await holdFixableRestart(instance.id, 'run-1')).toBe(true);
+		expect(stops()).toHaveLength(1);
+	});
+
+	// The user, 2026-11-14: MeatballCraft's Fugue 0.21 on Cleanroom 0.5.17 restarted twice more
+	// before "Install a matching Fugue" could be used.
+	it('is cancelled for a Fugue that does not match, not once another Fugue is in its place', async () => {
+		const instance = await createInstance({ modloader: 'cleanroom', minecraftVersion: '1.12.2' });
+		const fugue = { kind: 'incompatible-method', title: 'Fugue does not match this Cleanroom version', detail: '', culprit: null, related: null, evidence: '', fix: null, fatal: true };
+		diagnosis.instead = [{ ...fugue, matchFugue: true }];
+		expect(await holdFixableRestart(instance.id, 'run-1')).toBe(true);
+		diagnosis.instead = [{ ...fugue, resolved: true }];
+		expect(await holdFixableRestart(instance.id, 'run-2')).toBe(false);
 		expect(stops()).toHaveLength(1);
 	});
 

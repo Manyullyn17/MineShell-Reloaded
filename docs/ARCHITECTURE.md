@@ -112,7 +112,8 @@ stopped over RCON first (Stopping, below). One case it cannot express: a crash w
 missing dependency, a mod for another loader). With "Not after a crash while starting that
 has a fix" on (`crash_restart_skip_fixable`, the default), the monitor (every 10 s, so within
 `RestartSec=15`) diagnoses a unit in `auto-restart` whose crashed run never reached `Done (`,
-and if the diagnosis that stopped it has a one-click fix, cancels the restart with a plain
+and if the diagnosis that stopped it has a one-click fix (`hasOneClickFix`: enable or disable a
+mod, install a dependency or a matching Fugue), cancels the restart with a plain
 `systemctl stop` (`crashhold.ts`; not MineShell's stop, so the crash still shows and counts).
 The overview says it was not restarted (`crashes.restartHeld:<id>`, cleared by the next
 start). Not the watchdog: it ends a server after `Done (`. Memory and CPU caps are a second drop-in, `limits.conf` (`MemoryMax=`, `CPUQuota=`),
