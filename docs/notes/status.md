@@ -82,6 +82,10 @@ user before the beta):
    a mod it patches (MeatballCraft 0.18.4-hotfix6's Quantum Things crashed so): the button on the
    overview's diagnosis, the task, the old Fugue disabled, the run then reading "in the mods folder
    since this crash", and a clean start clearing the crash. Only tested with fakes so far.
+   **The user, 2026-11-14** on MeatballCraft: a new install got the matching Fugue by itself;
+   with it removed and the pack's 0.21 enabled, the crash and "Install a matching Fugue" came
+   as described. Found and fixed: "Don't restart after a startup crash that has a fix" did not
+   count that button as a fix, so systemd restarted it twice more first.
 2. **Java builds** (MineShell settings, Java): a downloaded runtime's "is out" note and its
    Download, the Build picker for both vendors, and the note naming the servers that move.
    Checked on throwaway data 2026-11-08 (an older Temurin 21 picked and downloaded for real, the
