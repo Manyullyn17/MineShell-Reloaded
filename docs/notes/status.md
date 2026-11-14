@@ -86,6 +86,7 @@ user before the beta):
    Download, the Build picker for both vendors, and the note naming the servers that move.
    Checked on throwaway data 2026-11-08 (an older Temurin 21 picked and downloaded for real, the
    note on its row, 1280 and 390 px); not yet on prod's own runtimes.
+   **The user, 2026-11-14**: works.
 3. **Formatted text**: a server's description with the code buttons and the preview (does the
    real multiplayer list break and colour it the same?), and item names and lore on a real player
    file: a coloured name kept through an edit, one typed with codes showing in game as previewed,
@@ -101,6 +102,7 @@ user before the beta):
    for MineShell at the game's widths, picked by the user from a side-by-side with Pixel
    Operator 8 and Monocraft), with the shadow, a backdrop by version, the stand-in icon and
    buttons the user found close; the yellow bold required line. Item names and lore not yet.
+   **The user, 2026-11-14**: formatted text works fully on 1.21.11 and 26.x; 1.12.2 not yet.
 4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
    change a `-common.toml` setting in the form and see the server pick it up (its log says the
    config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
@@ -111,6 +113,9 @@ user before the beta):
    mod loaded no packs at the next start; found and fixed: Bookshelf-style JSON settings
    (`{"//", "//default", "value"}`, 209 files in ATM10) showed as three settings each. A NeoForge
    TOML reloading while running and a 1.12 `.cfg` still to try.
+   **The user, 2026-11-14**: seems to work. Found and fixed: the values sat far from their names
+   on a wide window (now Settings' width). HammerLib's own `.cfg` format (Expanded Equivalence
+   on MeatballCraft) is refused, left so unless a widely used mod needs it.
 5. **NBT editor** (Files, a `.dat` or `.nbt`): on a stopped server, change something visible in
    `level.dat` (the time, the weather, the world's name) and start it to see it; on a running one,
    the world's files read-only and another world's or a structure's changeable. Checked on
@@ -120,6 +125,9 @@ user before the beta):
    Quick pass 2026-11-08: a real 1.21.11 server started on an edited `level.dat` (DayTime 18000,
    LevelName): the game took both and kept them through its own save. Difficulty went back to
    server.properties' at the start, as Minecraft does: the editor now says so on level.dat.
+   **The user, 2026-11-14**: seems good. In the player editor on 26.3 NeoForge, found and fixed:
+   the item search knew no vanilla items without the EULA answer and did not say why, kept its
+   list after accepting until a reload, and NeoForge 26.x's armour had no pictures.
 6. **Online players** (the drawer's In game): with a real player on a 1.21.x server and a 1.16-1.20
    one, the game mode marked, the dimension and position shown, "Their spawn point" after
    sleeping in a bed (lands on the bed, or beside it under a low ceiling) and in the Nether with
@@ -147,6 +155,8 @@ user before the beta):
    its place, the update check offering v4.4.4 for that folder, the update, and v4.4.4 loaded.
 9. **Data pack descriptions** (Mods > Data packs): a real pack's description in its colours, as
    the game's own data pack screen shows it.
+   **The user, 2026-11-14**: seemed to work, not tried much (no pack with an elaborate
+   description found).
 10. **Ubuntu 22.04 sandbox**: **done 2026-11-11** on a 22.04.5 VM (`ms-jammy`, libvirt): beta.1's
    doctor warned and servers ran unsandboxed, as on GitHub's runner: systemd 249 makes a user
    unit's user namespace only when `PrivateUsers=yes` asks. Fixed for beta.2: installed over
