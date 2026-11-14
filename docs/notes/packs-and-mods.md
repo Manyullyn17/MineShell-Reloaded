@@ -264,7 +264,10 @@ server's configs through it, 2026-11-08 on the four dev servers: 9,073 of 9,276 
   settings of their own). Open Loader honoured `load_data_packs` set to false that way.
 - Lists with comments between their items (darkmodeeverywhere's shader list) would lose them if
   rewritten: such a list is edited as its text.
-- Not every `.cfg` is Forge's: PneumaticCraft's and others are refused with the line. 82 JSON
+- Not every `.cfg` is Forge's: PneumaticCraft's and others are refused with the line. HammerLib
+  writes its own (`~ Saved With Hammer Lib 2.0.6.13` on the first line, `+C:Base={` sections,
+  `+B:Enabled=true` / `+L:` settings, `(Default: ..., Range: [0;...])` in the comment; Expanded
+  Equivalence on MeatballCraft): refused too, the user's call (2026-11-14) to leave it. 82 JSON
   configs are a list at the top (whitelists), 20 hold no settings. FTB's settings are SNBT (`config/ftb*.snbt`,
   serverconfig's `ftbessentials.snbt`: about ten files a pack, with `# Default:`, `# Range:` and
   `# Valid values:` comments), not read by the form yet; the other 2,250 `.snbt` files on the dev
