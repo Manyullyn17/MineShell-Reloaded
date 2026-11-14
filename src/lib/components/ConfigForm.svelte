@@ -189,10 +189,13 @@
 {/if}
 
 <style>
+	/* As wide as a server's Settings, whose rows it copies: across a whole wide window the
+	   value sat far from the name it belongs to. */
 	.config-form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
+		max-width: 54rem;
 	}
 	.form-head {
 		display: flex;
