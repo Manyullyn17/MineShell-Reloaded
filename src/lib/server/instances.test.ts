@@ -1,8 +1,18 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SERVER_NAME_MAX, isLoaderInstallEntry, listEntries, removeEntries, serverName } from './instances';
+import { SERVER_NAME_MAX, eulaTextAccepted, isLoaderInstallEntry, listEntries, removeEntries, serverName } from './instances';
 import { ls, tempDir } from '../../../tests/helpers/fs';
+
+describe('eulaTextAccepted', () => {
+	// As Java's Properties and Boolean.parseBoolean read it: the answer also lets MineShell fetch Mojang's client jar.
+	it.each(['eula=true\n', '#Accepted\neula=TRUE\n', 'eula = true\r\n', 'eula:true'])('%j says yes', (text) => {
+		expect(eulaTextAccepted(text)).toBe(true);
+	});
+	it.each(['eula=false\n', 'eula=truely\n', 'eula=true # yes\n', '#eula=true\n', ''])('%j does not', (text) => {
+		expect(eulaTextAccepted(text)).toBe(false);
+	});
+});
 
 describe('isLoaderInstallEntry', () => {
 	it.each([

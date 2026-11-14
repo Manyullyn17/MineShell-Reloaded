@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { can } from '#lib/shared/access.js';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import PlayerFace from '#lib/components/PlayerFace.svelte';
 	import { streamed } from '#lib/shared/streamed.svelte.js';
 	import { deserialize } from '$app/forms';
@@ -113,17 +113,24 @@
 
 	async function acceptIconEula() {
 		const res = await fetch('?/iconEula', { method: 'POST', headers: { 'x-sveltekit-action': 'true' }, body: new FormData() });
-		if (res.ok) {
+		if (res.ok) await refreshAll();
+	}
+	// The EULA answered, here or anywhere else (the overview, another tab) and seen at a reload:
+	// pictures and the picker's list were read without Minecraft's own items. Read them again,
+	// dropping the answer to any list request still under way.
+	let readWithEula = untrack(() => data.iconsEula);
+	$effect(() => {
+		const now = data.iconsEula;
+		if (now === readWithEula) return;
+		readWithEula = now;
+		untrack(() => {
 			pictured = {};
 			icons.reset();
-			// The picker's list was read without Minecraft's own items: read it again with
-			// them, and drop the answer to any request still under way.
 			allItems = null;
 			itemsAsked++;
-			await refreshAll();
 			void loadItems();
-		}
-	}
+		});
+	});
 
 	type Item = (typeof data.view.items)[number];
 	type Container = Item['containers'][number];
@@ -812,7 +819,7 @@
 		<p class="small faint"><span class="holds-key" aria-hidden="true"></span> in a corner marks an item that holds items; pick it to open what is inside.</p>
 		{#if data.icons && !data.iconsEula}
 			<p class="small muted icon-eula">
-				Pictures of Minecraft's own items (and the item search's list of them) come from its client, which means accepting the
+				Pictures of Minecraft's own items{vanillaListed ? '' : ' (and the item search’s list of them)'} come from its client, which means accepting the
 				<a href="https://aka.ms/MinecraftEULA" target="_blank" rel="noreferrer">Minecraft EULA</a> (the same answer as the Map tab).
 				<button type="button" class="button-quiet small" onclick={acceptIconEula}>Accept and show them</button>
 			</p>

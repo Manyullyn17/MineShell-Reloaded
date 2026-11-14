@@ -1240,9 +1240,13 @@ export async function acceptEula(instance: ServerInstance): Promise<void> {
 	audit('instance.eula_accepted', { instanceId: instance.id });
 }
 
-/** An eula.txt's text says yes. */
+/**
+ * An eula.txt's text says yes, as Java reads it (Properties, Boolean.parseBoolean): exactly
+ * "true" in any case, so not `eula=truely` or `eula=true # yes`. It also answers for
+ * Mojang's client jar (worldmap.ts), so a near miss must not count.
+ */
 export function eulaTextAccepted(text: string): boolean {
-	return /^\s*eula\s*=\s*true/im.test(text);
+	return /^\s*eula\s*[=:]\s*true\s*$/im.test(text);
 }
 
 export async function eulaIsAccepted(instance: ServerInstance): Promise<boolean> {
