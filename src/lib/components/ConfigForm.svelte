@@ -64,6 +64,12 @@
 			.map((l) => l.trim())
 			.filter(Boolean);
 
+	/** Text areas and long text: under the name and the whole width, not squeezed into the value column. */
+	const wide = (field: ConfigField) =>
+		field.kind === 'list' ||
+		field.kind === 'raw' ||
+		(field.kind === 'string' && !field.choices?.length && (String(field.value).includes('\n') || String(field.value).length > 40));
+
 	/** Java's own limits of a type (int, long, float, double) say nothing: left out, still checked. */
 	const typeLimit = (n: number | undefined) => n === undefined || Math.abs(n) >= 2147483647;
 	function limits(field: ConfigField): string {
@@ -119,7 +125,7 @@
 				{#each section.fields as field (field.id)}
 					{@const id = domId(field)}
 					{@const problem = problems[field.id]}
-					<div class="setting" class:changed={changed(field)}>
+					<div class="setting" class:changed={changed(field)} class:wide={wide(field)}>
 						<div class="about">
 							<label class="key mono" for={id}>{field.key}</label>
 							{#if changed(field)}<span class="tag">not saved</span>{/if}
@@ -189,13 +195,24 @@
 {/if}
 
 <style>
-	/* As wide as a server's Settings, whose rows it copies: across a whole wide window the
-	   value sat far from the name it belongs to. */
 	.config-form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
+	}
+	/* Rows as wide as a server's Settings, whose layout they copy: across a whole wide window
+	   the value sat far from the name it belongs to. Text areas and long text go under the
+	   name instead and take the whole width, as Settings' text areas do. */
+	.setting,
+	.cfg-section > .hint {
 		max-width: 54rem;
+	}
+	.setting.wide {
+		max-width: none;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.setting.wide .control {
+		align-items: stretch;
 	}
 	.form-head {
 		display: flex;
@@ -255,6 +272,10 @@
 		align-items: flex-start;
 		gap: 2px;
 		min-width: 0;
+	}
+	/* On the right, as Settings' switches. */
+	.control .switch {
+		align-self: flex-end;
 	}
 	.control input:not([type='checkbox']),
 	.control select,
