@@ -33,6 +33,9 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   icons resolve side by side. Closed item sections render (and ask for icons) once opened.
 - Picker: `itemChoices` (1.12: level.dat FML registry minecraft:items; newer: items/
   definitions, else models/item minus base models), names via `itemName` (lang keys).
+- NeoForge 26.x's universal jar replaces vanilla's armour definitions
+  (`assets/minecraft/items/*_helmet.json`...) with `type: neoforge:trimmed_armor`, the plain
+  model under `base_model`; loaded before the client jar, they win (read in 26.3.0.101).
 - Vanilla chests (chest, trapped, ender) are drawn in the game's code (builtin/entity; 1.21.4's
   special `minecraft:chest` model): `chestSpec` builds base, lid and latch on the 64px entity
   texture by the game's box layout. 1.15 flipped those textures (jars with

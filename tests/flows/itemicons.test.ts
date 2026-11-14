@@ -83,6 +83,27 @@ describe('item icons', () => {
 		expect((await resolveIcon(res, 'minecraft:chest')).spec).toBeNull();
 	});
 
+	it("reads NeoForge 26.x's armour definitions, which put the plain model under base_model", async () => {
+		const res = await Resources.load(
+			[
+				await jar('neoforge-26.3.0.101-universal.jar', {
+					'assets/minecraft/items/diamond_chestplate.json': json({
+						model: {
+							type: 'neoforge:trimmed_armor',
+							base_model: { type: 'minecraft:model', model: 'minecraft:item/diamond_chestplate' },
+							base_trim_texture: 'minecraft:trims/items/chestplate_trim'
+						}
+					})
+				})
+			],
+			await jar('client.jar', {
+				'assets/minecraft/models/item/generated.json': json({ parent: 'builtin/generated' }),
+				'assets/minecraft/models/item/diamond_chestplate.json': json({ parent: 'minecraft:item/generated', textures: { layer0: 'minecraft:item/diamond_chestplate' } })
+			})
+		);
+		expect((await resolveIcon(res, 'minecraft:diamond_chestplate')).spec).toEqual({ kind: 'flat', layers: [{ texture: 'minecraft:item/diamond_chestplate', tint: null }] });
+	});
+
 	it("reads 1.12 mods' Forge blockstates, flagging a variant picked for a damage value", async () => {
 		const res = await Resources.load(
 			[

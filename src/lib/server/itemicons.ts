@@ -809,7 +809,7 @@ function specOf(model: Model, tints: Tints, fallbackTint: string | null): IconSp
 	return elements.length ? { kind: 'block', elements, rotation: model.gui ?? GUI_ROTATION, ...(scale ? { scale } : {}) } : null;
 }
 
-/** The model a 1.21.4+ item definition names: a plain or special model, or the fallback / first case of the rest. */
+/** The model a 1.21.4+ item definition names: a plain or special model, or the base / fallback / first case of the rest. */
 function definitionModel(def: Record<string, unknown> | undefined, depth = 0): Record<string, unknown> | null {
 	if (!def || depth > 6) return null;
 	const type = String(def.type ?? '').replace(/^minecraft:/, '');
@@ -822,7 +822,8 @@ function definitionModel(def: Record<string, unknown> | undefined, depth = 0): R
 		const gui = cases.find((c) => (Array.isArray(c.when) ? c.when : [c.when]).includes('gui'));
 		if (gui?.model) return definitionModel(gui.model, depth + 1);
 	}
-	const nested = (def.fallback ?? (def.cases as { model: Record<string, unknown> }[] | undefined)?.[0]?.model ?? (def.entries as { model: Record<string, unknown> }[] | undefined)?.[0]?.model) as
+	// NeoForge 26.x redefines vanilla's armour as neoforge:trimmed_armor, the plain model as its base_model.
+	const nested = (def.base_model ?? def.fallback ?? (def.cases as { model: Record<string, unknown> }[] | undefined)?.[0]?.model ?? (def.entries as { model: Record<string, unknown> }[] | undefined)?.[0]?.model) as
 		| Record<string, unknown>
 		| undefined;
 	return definitionModel(nested, depth + 1);
