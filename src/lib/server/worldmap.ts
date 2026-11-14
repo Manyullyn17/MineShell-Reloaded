@@ -1,17 +1,18 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cpus } from 'node:os';
 import { eq } from 'drizzle-orm';
 import { db } from './db';
-import { settings, type ServerInstance } from './db/schema';
+import { serverInstances, settings, type ServerInstance } from './db/schema';
 import { DATA_DIR } from './config';
 import { fetchJson, downloadFile } from './download';
 import { listDimensions } from './dimensions';
 import { directorySize } from './files';
 import { compareVersions, listJavaRuntimes, scanJavaRuntimes } from './java';
 import { installJava, type JavaVendor } from './javadownload';
-import { audit, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
+import { audit, eulaTextAccepted, InstanceError, JavaMissingError, sendCommand, summarise } from './instances';
 import { bestVersion, getModProvider, hasEnabledMod, installModVersion, modsDir, syncMods, trackManualJar } from './mods';
 import { compatibleVersions, filterFor } from './modupdates';
 import { installRequiredMods } from './moddeps';
@@ -58,7 +59,11 @@ export type MapSchedule = {
 };
 
 export type MapSettings = {
-	/** Mojang's EULA accepted for this server's map (BlueMap downloads the client jar). */
+	/**
+	 * Mojang's EULA accepted for this server, so the Minecraft client jar may be used (BlueMap's
+	 * textures, item pictures, the item search, the chunk map's colours): the server's own
+	 * eula.txt, or the answer given here before it (a server not yet allowed to start).
+	 */
 	eulaAccepted: boolean;
 	lastRenderAt: number | null;
 	schedule: MapSchedule;
@@ -88,7 +93,27 @@ export function validMapSchedule(raw: Record<string, unknown> | undefined): MapS
 const KEY = (id: string) => `map:${id}`;
 const DEFAULTS: MapSettings = { eulaAccepted: false, lastRenderAt: null, schedule: OFF, nextAt: null, modPort: null, sizeBytes: null };
 
+/**
+ * The server's eula.txt says yes: the same agreement as BlueMap's accept-download and the
+ * client jar's other uses, so it answers for them too (user's call, 2026-11-14: one answer).
+ */
+function serverEulaAccepted(instanceId: string): boolean {
+	const row = db.select({ path: serverInstances.path }).from(serverInstances).where(eq(serverInstances.id, instanceId)).get();
+	if (!row) return false;
+	try {
+		return eulaTextAccepted(readFileSync(path.join(row.path, 'eula.txt'), 'utf8'));
+	} catch {
+		return false;
+	}
+}
+
 export function getMapSettings(instanceId: string): MapSettings {
+	const own = storedMapSettings(instanceId);
+	return own.eulaAccepted ? own : { ...own, eulaAccepted: serverEulaAccepted(instanceId) };
+}
+
+/** As stored: the EULA answer given on the Map tab and the like, without the server's own. */
+function storedMapSettings(instanceId: string): MapSettings {
 	const raw = db.select().from(settings).where(eq(settings.key, KEY(instanceId))).get()?.value;
 	try {
 		const parsed = raw ? (JSON.parse(raw) as Partial<MapSettings>) : {};
@@ -106,7 +131,7 @@ export function getMapSettings(instanceId: string): MapSettings {
 }
 
 export function saveMapSettings(instanceId: string, changes: Partial<MapSettings>): MapSettings {
-	const next = { ...getMapSettings(instanceId), ...changes };
+	const next = { ...storedMapSettings(instanceId), ...changes };
 	const value = JSON.stringify(next);
 	db.insert(settings).values({ key: KEY(instanceId), value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
 	return next;

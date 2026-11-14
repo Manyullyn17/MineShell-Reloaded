@@ -217,6 +217,14 @@
 	{:else}
 		<div class="empty">
 			<p>{map.taskId ? 'The first render is running; the map shows here when it is done.' : 'Nothing rendered yet.'}</p>
+			{#if !map.taskId}
+				<!-- The setup panel says this when the EULA is still to accept; a server that accepted it comes straight here. -->
+				<p class="muted small">
+					<a href="https://bluemap.bluecolored.de/" target="_blank" rel="noreferrer">BlueMap</a> draws a 3D map straight from the world
+					files, modded blocks from the mods' own models. The first render downloads BlueMap, the Minecraft client for the vanilla
+					textures and a Java 21+ runtime if they are not here yet.
+				</p>
+			{/if}
 		</div>
 	{/if}
 	{#if !map.mods.blueMap}

@@ -1251,7 +1251,8 @@ jars (`-n mods/`, for modded blocks' models and textures) and writes a static we
 Everything per server is in `$DATA/maps/<id>/` - `config/` (written fresh before each
 render: one map per dimension with a namespaced id, BlueMap's own web server off),
 `data/` (caches and the Minecraft client jar BlueMap downloads, only with
-`accept-download`, which follows the per-server EULA answer), `web/`. MineShell serves
+`accept-download`, which follows the per-server EULA answer: the server's `eula.txt`, or the
+Map tab's tick for a server not yet accepted), `web/`. MineShell serves
 `web/` itself under `/maps/<token>/view/` (sandboxed, below), the way BlueMap's server
 would: a file, else its `.gz` with `Content-Encoding: gzip` (tiles and textures are stored
 compressed), else 204 for tiles and live data. A render is a task (one per server; a running

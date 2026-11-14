@@ -102,6 +102,11 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   52%. Player page seen in headless Chrome (CDP; `--screenshot` fires before the page draws).
 - Item pictures can be turned off (MineShell settings > System, `itemicons.enabled`): the icon
   endpoint then answers empty and the player page asks for nothing.
+- The EULA answer for the client jar (`getMapSettings().eulaAccepted`) is the server's own
+  `eula.txt`, or the tick the Map tab, chunk map and player editor ask for while that says no:
+  the same agreement (BlueMap's `accept-download` only asks it again), one answer since
+  2026-11-14 (user's call; before, a server needed both, and prod's `test` had only the first).
+  The ticks do not write `eula.txt`: they need other permissions than starting a server.
 - Without the EULA answer Minecraft's base models (item/generated, block/cube_all ...) come
   from BASE_MODELS (shapes only), so mod items still get pictures.
 - 1.12: vanilla variant table VANILLA_112 ("silver", dye reversed); Forge blockstates

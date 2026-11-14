@@ -196,7 +196,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - Chunks nobody loaded since an update keep old block names (1.21.11 irithyll still has
   `minecraft:grass`): `RENAMED` in chunkmap.ts. Vanilla 1.12 variants (granite = stone 1)
   come from the item table, not the blockstate's key order (`blockLook`).
-- Minecraft's own blocks need the client jar for their colours (per-server EULA tick, as
+- Minecraft's own blocks need the client jar for their colours (per-server EULA answer, as
   item pictures; without it `VANILLA_COLOURS` gives rough ones). The user's dev irithyll had
   no tick, which looked like a tint bug (grey grass and leaves). Testing
   needs a server folder with a world: copy one from a real server (read only) into the
@@ -212,7 +212,7 @@ Keep them current: a change that makes one wrong updates it in the same commit.
 - `worldmap.ts`, Map tab. 1.13+: BlueMap 5.28 CLI (`-c config -r -v <mc> -n mods/`), config
   rewritten before every render into `$DATA/maps/<id>/`, web app served statically by
   MineShell (`.gz` + Content-Encoding, 204 for missing tiles/live). Needs Java 21+.
-  `accept-download` only after the per-server EULA tick (also for the BlueMap mod: without it
+  `accept-download` only after the per-server EULA answer (also for the BlueMap mod: without it
   the mod draws nothing, so a mod from a pack gets its own EULA panel on the Map tab). BlueMap's web app paths are
   relative: its pages need the trailing slash (`trailingSlash = 'ignore'` + own redirect).
 - 1.12.2 Forge/Cleanroom: Dynmap + DynmapBlockScan (live, in the game); uNmINeD fails on

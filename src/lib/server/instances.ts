@@ -1240,10 +1240,14 @@ export async function acceptEula(instance: ServerInstance): Promise<void> {
 	audit('instance.eula_accepted', { instanceId: instance.id });
 }
 
+/** An eula.txt's text says yes. */
+export function eulaTextAccepted(text: string): boolean {
+	return /^\s*eula\s*=\s*true/im.test(text);
+}
+
 export async function eulaIsAccepted(instance: ServerInstance): Promise<boolean> {
 	try {
-		const text = await fs.readFile(path.join(instance.path, 'eula.txt'), 'utf8');
-		return /^\s*eula\s*=\s*true/im.test(text);
+		return eulaTextAccepted(await fs.readFile(path.join(instance.path, 'eula.txt'), 'utf8'));
 	} catch {
 		return false;
 	}

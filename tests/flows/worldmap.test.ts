@@ -106,6 +106,19 @@ describe('the world map', () => {
 		expect(await fs.readFile(path.join(config, 'core.conf'), 'utf8')).toContain('accept-download: true');
 	});
 
+	it("takes the server's own EULA answer for the client jar, without storing it as the map's", async () => {
+		const instance = await server();
+		expect(getMapSettings(instance.id).eulaAccepted).toBe(false);
+		await fs.writeFile(path.join(instance.path, 'eula.txt'), '#By hand\neula=true\n');
+		expect(getMapSettings(instance.id).eulaAccepted).toBe(true);
+		await writeBlueMapConfig(instance);
+		expect(await fs.readFile(path.join(mapDir(instance.id), 'config', 'core.conf'), 'utf8')).toContain('accept-download: true');
+		// Saving other settings does not turn it into the map's own answer.
+		saveMapSettings(instance.id, { modPort: 8123 });
+		await fs.writeFile(path.join(instance.path, 'eula.txt'), 'eula=false\n');
+		expect(getMapSettings(instance.id)).toMatchObject({ eulaAccepted: false, modPort: 8123 });
+	});
+
 	it('refuses to render before the EULA is accepted', async () => {
 		addJava(21);
 		await expect(renderMap(await server())).rejects.toThrow(/EULA/);
