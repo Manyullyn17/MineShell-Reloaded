@@ -1,5 +1,15 @@
 # MineShell
 
+[![Latest release][release-badge]][release] [![CI][ci-badge]][ci] [![Weekly install test][weekly-badge]][weekly] [![License: MIT][license-badge]](LICENSE)
+
+[release-badge]: https://img.shields.io/github/v/release/Manyullyn17/MineShell-Reloaded
+[release]: https://github.com/Manyullyn17/MineShell-Reloaded/releases/latest
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/Manyullyn17/MineShell-Reloaded/ci.yml?branch=main&label=CI
+[ci]: https://github.com/Manyullyn17/MineShell-Reloaded/actions/workflows/ci.yml
+[weekly-badge]: https://img.shields.io/github/actions/workflow/status/Manyullyn17/MineShell-Reloaded/weekly.yml?branch=main&label=install%20test%20%28Ubuntu%2022.04%2C%2024.04%2C%2026.04%29
+[weekly]: https://github.com/Manyullyn17/MineShell-Reloaded/actions/workflows/weekly.yml
+[license-badge]: https://img.shields.io/github/license/Manyullyn17/MineShell-Reloaded
+
 **A self-hosted web control panel for modded Minecraft servers on Linux.**
 
 MineShell brings modpack installation, server management, diagnostics, world administration, and player data editing into one web interface. It runs each Minecraft server as a systemd service, with per-server configuration, resource limits, snapshots, and automation.
