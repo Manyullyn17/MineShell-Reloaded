@@ -24,6 +24,7 @@ const { TMP_DIR } = await import('#lib/server/config.js');
 const { addJava, clearJava, createInstance, reload, systemdStopped, tree, waitForTask } = await import('../helpers/instances');
 const { useRecordedHttp } = await import('../helpers/http');
 const { zipEntryNames } = await import('#lib/server/zip.js');
+const defaults = await import('#lib/server/instance-defaults.js');
 
 const sha512 = (s: string) => crypto.createHash('sha512').update(s).digest('hex');
 
@@ -239,9 +240,14 @@ describe('importing a server', () => {
 		// The server's icon shows before the import, not only once it is done.
 		expect(preview.icon).toBe(`data:image/png;base64,${Buffer.from('the icon').toString('base64')}`);
 
-		const { instance, taskId } = await importServer(preview.id, { name: 'Home again' });
+		// New server defaults' players are for new servers: an import keeps its own lists.
+		const notch = { name: 'Notch', uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5' };
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), players: { whitelist: [notch], ops: [notch] } });
+		const { instance, taskId } = await importServer(preview.id, { name: 'Home again' }).finally(defaults.resetInstanceDefaults);
 		const task = await waitForTask(taskId);
 		expect(task.error).toBeNull();
+		expect(await fs.readFile(path.join(instance.path, 'whitelist.json'), 'utf8')).toBe('[]');
+		await expect(fs.access(path.join(instance.path, 'ops.json'))).rejects.toThrow();
 		expect(install).toHaveBeenCalledWith(expect.objectContaining({ minecraftVersion: '1.21.1', loaderVersion: '0.16.5' }));
 
 		const copy = reload(instance.id);

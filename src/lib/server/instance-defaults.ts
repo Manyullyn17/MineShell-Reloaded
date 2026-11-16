@@ -6,6 +6,7 @@ import { getPreset } from './jvm-presets';
 import { defaultProperties, PROPERTY_SCHEMA, type PropertyField } from './properties';
 import { suggestedMemoryLimitMb } from '#lib/shared/memorylimit.js';
 import { UPDATE_CHANNELS, UPDATE_CHECK_HOURS } from '#lib/shared/updatecheck.js';
+import { cleanDefaultPlayers, NO_DEFAULT_PLAYERS, type DefaultPlayers } from './defaultplayers';
 import { NEW_SERVER_SCHEDULE, validSchedule, type SnapshotSchedule } from '#lib/shared/snapshotschedule.js';
 
 /**
@@ -75,6 +76,8 @@ export type InstanceDefaults = {
 	snapshots: SnapshotSchedule;
 	/** server.properties values for DEFAULTABLE_PROPERTIES keys, every key present. */
 	properties: Record<string, string>;
+	/** Whitelisted and operators from the start (defaultplayers.ts). */
+	players: DefaultPlayers;
 };
 
 const DEFAULT_PRESET = 'aikar';
@@ -129,7 +132,8 @@ export const BUILT_IN_DEFAULTS: InstanceDefaults = {
 	limits: { memory: 'none', cpuPercent: null },
 	updates: { updateCheck: true, updateCheckHours: 24, updateChannel: 'release', modUpdateCheck: true },
 	snapshots: NEW_SERVER_SCHEDULE,
-	properties: builtInProperties()
+	properties: builtInProperties(),
+	players: NO_DEFAULT_PLAYERS
 };
 
 /**
@@ -286,7 +290,8 @@ function clean(input: Partial<InstanceDefaults>): InstanceDefaults {
 		limits: cleanLimits((input.limits ?? {}) as Record<string, unknown>, base.limits),
 		updates: cleanUpdates((input.updates ?? {}) as Record<string, unknown>, base.updates),
 		snapshots: input.snapshots && typeof input.snapshots === 'object' ? validSchedule(input.snapshots as Record<string, unknown>) : base.snapshots,
-		properties: cleanProperties(input.properties)
+		properties: cleanProperties(input.properties),
+		players: cleanDefaultPlayers(input.players)
 	};
 }
 

@@ -140,7 +140,7 @@ Administer players and inspect their saved data, including inventories containin
 
 ![A player's inventory with the game's own item pictures: armour, offhand, inventory and hotbar](docs/screenshots/player.png)
 
-- Manage whitelists, operators and operator levels, bans with reasons, and IP bans.
+- Manage whitelists, operators and operator levels, bans with reasons, and IP bans; players every new server starts with on its whitelist and as operators (New server defaults).
 - Change an online player's game mode, or teleport them to another player, the world spawn, their own spawn point (beside it if there is no room on it, never into a wall) or coordinates (into another dimension from Minecraft 1.13). From 1.13 the player's drawer shows the game mode, dimension and position they are in.
 - Remove a player from a world (their player file, stats and advancements go to the trash), for someone who joined once and should not stay in the list.
 - Update player lists through RCON while the server is running, or edit the relevant JSON files while it is stopped.

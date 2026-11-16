@@ -765,7 +765,8 @@ export async function importServer(stagedId: string, choices: ImportChoices): Pr
 		packVersionName: str(pack?.versionName, 400),
 		acceptEula: choices.acceptEula,
 		startWhenReady: choices.startWhenReady,
-		creatorId: choices.creatorId
+		creatorId: choices.creatorId,
+		defaultPlayers: false
 	});
 	staged.delete(stagedId);
 

@@ -10,6 +10,19 @@ import { db } from '#lib/server/db/index.js';
 import { settings } from '#lib/server/db/schema.js';
 import { formFields } from '../../../../tests/helpers/forms';
 import { post } from '../../../../tests/helpers/routes';
+import { fetchCalls, useRecordedHttp } from '../../../../tests/helpers/http';
+
+const NOTCH = { name: 'Notch', uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5' };
+const JEB = { name: 'jeb_', uuid: '853c80ef-3c37-49fd-aa49-938b674adae6' };
+const PROFILE = 'https://api.mojang.com/users/profiles/minecraft/';
+// Mojang's answers as its profile endpoint gives them: the name as the account spells it.
+useRecordedHttp('none', {
+	extra: {
+		[`${PROFILE}jeb_`]: () => Response.json({ id: JEB.uuid.replace(/-/g, ''), name: 'jeb_' }),
+		[`${PROFILE}JEB_`]: () => Response.json({ id: JEB.uuid.replace(/-/g, ''), name: 'jeb_' }),
+		[`${PROFILE}NoSuchPlayer1`]: () => new Response(null, { status: 404 })
+	}
+});
 
 afterEach(resetInstanceDefaults);
 
@@ -27,7 +40,8 @@ function distinct() {
 		console: { consoleBacklogLines: 500, consoleBufferLines: 4000 },
 		limits: { memory: 'none', cpuPercent: 50 },
 		snapshots: { every: 'interval', dailyTime: '03:15', intervalHours: 12, whileRunning: 'stop', warnMinutes: 10, skipIdle: false },
-		properties: { ...current.properties, difficulty: 'hard', pvp: 'false' }
+		properties: { ...current.properties, difficulty: 'hard', pvp: 'false' },
+		players: { whitelist: [NOTCH], ops: [NOTCH] }
 	});
 }
 
@@ -49,7 +63,9 @@ const ownFields = (d: ReturnType<typeof getInstanceDefaults>) => ({
 	jvmPreset: d.jvmPreset,
 	limitMemory: d.limits.memory,
 	limitCpuMode: d.limits.cpuPercent === null ? 'none' : 'limit',
-	limitCpuPercent: d.limits.cpuPercent === null ? '' : String(d.limits.cpuPercent)
+	limitCpuPercent: d.limits.cpuPercent === null ? '' : String(d.limits.cpuPercent),
+	whitelistNames: d.players.whitelist.map((p) => p.name).join('\n'),
+	opNames: d.players.ops.map((p) => p.name).join('\n')
 });
 
 describe('saving the new-server defaults', () => {
@@ -81,6 +97,28 @@ describe('saving the new-server defaults', () => {
 			...formFields(SnapshotScheduleFields, { values: scheduleValues(before.snapshots) })
 		};
 		expect(await post(actions.save, { fields })).toMatchObject({ ok: true });
+		expect(getInstanceDefaults()).toEqual(before);
+	});
+
+	it('looks up new players with Mojang and keeps the UUID of those already saved', async () => {
+		const before = distinct();
+		fetchCalls.length = 0;
+		const fields = { ...ownFields(before), whitelistNames: 'notch\nJEB_\n', opNames: 'Notch' };
+		expect(await post(actions.save, { fields })).toMatchObject({ ok: true });
+		expect(getInstanceDefaults().players).toEqual({ whitelist: [NOTCH, JEB], ops: [NOTCH] });
+		// Notch was saved already: only jeb_ was asked about.
+		expect(fetchCalls.map((c) => c.url)).toEqual([`${PROFILE}JEB_`]);
+	});
+
+	it('refuses a name Mojang does not know or that is no Java name, saving nothing', async () => {
+		const before = distinct();
+		for (const [fields, message] of [
+			[{ whitelistNames: 'Notch\nNoSuchPlayer1' }, 'Whitelist: Mojang knows no account called NoSuchPlayer1, or could not be asked. Check the spelling, or try again later.'],
+			[{ opNames: 'not-a-name' }, 'Operators: Not a Java player name: not-a-name.']
+		] as const) {
+			const result = await post(actions.save, { fields: { ...ownFields(before), ...fields } });
+			expect(result).toMatchObject({ status: 400, data: { message } });
+		}
 		expect(getInstanceDefaults()).toEqual(before);
 	});
 

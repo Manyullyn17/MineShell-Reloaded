@@ -93,6 +93,7 @@ import { deleteMacros, getMacros, setMacros } from './macros';
 import { applyChunkyConfig, deleteChunkySettings } from './chunky';
 import { copyDatapackRows } from './mods/datapacks';
 import { claimVoicePort, voicePortProblem } from './voicechat';
+import { writeDefaultPlayers } from './defaultplayers';
 
 export { InstanceError } from './instanceerror';
 
@@ -229,6 +230,8 @@ export type CreateInstanceInput = {
 	enableMods?: string[];
 	/** The account adding it, which becomes its admin (access.ts creatorId). */
 	creatorId?: string | null;
+	/** false: without New server defaults' whitelist and operators (an import). */
+	defaultPlayers?: boolean;
 };
 
 function jvmArgsFor(presetId: string, minMb: number, maxMb: number, javaMajor: number): string {
@@ -334,16 +337,16 @@ export async function insertInstanceRow(
 	// A failed install deletes the row, and the access goes with it.
 	if (input.creatorId) makeCreatorAdmin(input.creatorId, id);
 
-	await writeProperties(
-		dir,
-		newServerProperties({
-			port: serverPort,
-			rconPort,
-			rconPassword: password,
-			motd: input.name.trim(),
-			minecraftVersion: input.minecraftVersion
-		})
-	);
+	const properties = newServerProperties({
+		port: serverPort,
+		rconPort,
+		rconPassword: password,
+		motd: input.name.trim(),
+		minecraftVersion: input.minecraftVersion
+	});
+	await writeProperties(dir, properties);
+	// An import brings its own lists, or had none.
+	if (input.defaultPlayers !== false) await writeDefaultPlayers(dir, defaults.players, properties);
 
 	// Accepted on the form: written now, so the server's page does not ask again
 	// while it installs. The install checks it again at the end (a pack can ship

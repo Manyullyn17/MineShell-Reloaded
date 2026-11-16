@@ -40,6 +40,9 @@
 		};
 		values: Record<string, string>;
 		checks: Record<string, boolean>;
+		/** One name a line. */
+		whitelistNames: string;
+		opNames: string;
 	};
 	function fromData(): Values {
 		const d = data.defaults;
@@ -70,7 +73,9 @@
 				snapshotSkipIdle: d.snapshots.skipIdle
 			},
 			values,
-			checks
+			checks,
+			whitelistNames: d.players.whitelist.map((p) => p.name).join('\n'),
+			opNames: d.players.ops.map((p) => p.name).join('\n')
 		};
 	}
 	// svelte-ignore state_referenced_locally
@@ -84,6 +89,8 @@
 	// ---- what changed since the last save, as on a server's Settings
 	const saved = $derived(fromData());
 	const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+	/** A list's names as saved compares them: a blank line or a trailing space is no change. */
+	const namesOf = (text: string) => text.split(/[\s,;]+/).filter(Boolean).join(' ').toLowerCase();
 	const changedProperty = (key: string) => (key in v.checks ? v.checks[key] !== saved.checks[key] : v.values[key] !== saved.values[key]);
 	const sections = $derived([
 		{
@@ -99,6 +106,7 @@
 		{ label: 'Restarts', dirty: !same(v.restarts, saved.restarts) },
 		{ label: 'Scheduled snapshots', dirty: !same(v.snapshots, saved.snapshots) },
 		{ label: 'Console', dirty: !same(v.console, saved.console) },
+		{ label: 'Players', dirty: namesOf(v.whitelistNames) !== namesOf(saved.whitelistNames) || namesOf(v.opNames) !== namesOf(saved.opNames) },
 		{ label: 'Game settings', dirty: data.propertyGroups.some((g) => g.fields.some((f) => changedProperty(f.key))) }
 	]);
 	const dirty = $derived(sections.filter((s) => s.dirty));
@@ -256,6 +264,30 @@
 	<SettingsSection tab="defaults" title="Console" dirty={isDirty('Console')}>
 		<div class="rows">
 			<ConsoleFields bind:values={v.console} />
+		</div>
+	</SettingsSection>
+
+	<SettingsSection
+		tab="defaults"
+		title="Players"
+		dirty={isDirty('Players')}
+		description="Put on a new server's whitelist and made its operators when it is added, so you need not add yourself to every server. An imported server keeps its own lists."
+	>
+		<div class="rows">
+			<div class="field">
+				<label for="whitelistNames">Whitelist</label>
+				<textarea id="whitelistNames" name="whitelistNames" autocomplete="off" spellcheck="false" rows="3" class="mono" placeholder="One name a line" bind:value={v.whitelistNames}></textarea>
+				<p class="hint">Only keeps anyone out with "Whitelist only" on, under Game settings or in the server's Players tab.</p>
+			</div>
+			<div class="field">
+				<label for="opNames">Operators</label>
+				<textarea id="opNames" name="opNames" autocomplete="off" spellcheck="false" rows="3" class="mono" placeholder="One name a line" bind:value={v.opNames}></textarea>
+				<p class="hint">At the level "Operator permission level" gives, under Game settings.</p>
+			</div>
+			<p class="faint small">
+				Java account names, checked with Mojang when you save. A server with "Verify accounts with Mojang" off gets them under
+				the ids it gives those names itself.
+			</p>
 		</div>
 	</SettingsSection>
 

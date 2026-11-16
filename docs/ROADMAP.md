@@ -219,7 +219,9 @@ servers for the same group adds each player everywhere. A shared list (named, in
 settings) that servers follow: adding or removing there applies to each following server,
 over RCON while it runs and to its JSON file while stopped, as the Players tab already does
 for one. To decide: whether a following server can still have its own extra entries, and
-what joining a list does with the entries a server already has.
+what joining a list does with the entries a server already has. Built meanwhile (2026-11-16):
+New server defaults' Players, a whitelist and operators copied into each new server once, at
+creation; this is what keeps them in step afterwards.
 
 #### Formatted text: what is left
 

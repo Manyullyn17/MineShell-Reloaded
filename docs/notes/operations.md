@@ -65,6 +65,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   stored schedule reads as none (`DEFAULT_SCHEDULE`) and existing servers must stay that way.
   Defaults saved before it have no `snapshots` and get the built-in one. An import then puts the
   export's schedule in place; a copy takes its source's, "none" included.
+- Players (2026-11-16, `defaultplayers.ts`): whitelist and operators kept as Mojang UUIDs,
+  looked up when the defaults are saved (a name already saved keeps its UUID, so a save asks
+  only for new ones), so creating a server asks Mojang nothing. `insertInstanceRow` adds them to
+  `whitelist.json`/`ops.json` after `server.properties`; an import opts out (`defaultPlayers:
+  false`): its export carries its lists, and one without would otherwise gain them. With the
+  defaults' `online-mode=false` they are written under offline UUIDs (MD5 of
+  `OfflinePlayer:<name>`, version 3: Notch is `b50ad385-829d-3141-a216-7e7d7539ba7f`), since such a
+  server matches its lists by those. A pack's own server.properties arrives later, so a pack
+  that turns online-mode off still gets the Mojang UUIDs.
 - `server.properties` is Java's properties format, read and written as Java does
   (`readJavaProperties`, `serialiseProperties`; 2026-10-28). Minecraft rewrites it at every start
   with `\:` `\!` `\\` escaped (1.12.2 and 1.21.11 both), and up to 1.12 at least reads it as

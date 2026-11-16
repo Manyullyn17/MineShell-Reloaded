@@ -165,6 +165,16 @@ describe('defaults for new servers', () => {
 		expect(await newServer({ memoryMaxMb: 1536 })).toMatchObject({ memoryMaxMb: 1536, memoryMinMb: 1536 });
 	});
 
+	// Whoever runs MineShell added themselves to every new (test) server by hand.
+	it('puts the default players on a new server’s whitelist and makes them operators', async () => {
+		const notch = { name: 'Notch', uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5' };
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), players: { whitelist: [notch], ops: [notch] } });
+		const row = await newServer();
+		const read = async (file: string) => JSON.parse(await fs.readFile(path.join(row.path, file), 'utf8'));
+		expect(await read('whitelist.json')).toEqual([notch]);
+		expect(await read('ops.json')).toEqual([{ ...notch, level: 4, bypassesPlayerLimit: false }]);
+	});
+
 	it('keeps a pack’s own server.properties, filling gaps from the defaults', async () => {
 		defaults.setInstanceDefaults({
 			...defaults.getInstanceDefaults(),
