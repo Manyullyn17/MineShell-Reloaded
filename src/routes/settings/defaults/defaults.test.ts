@@ -103,9 +103,9 @@ describe('saving the new-server defaults', () => {
 	it('looks up new players with Mojang and keeps the UUID of those already saved', async () => {
 		const before = distinct();
 		fetchCalls.length = 0;
-		const fields = { ...ownFields(before), whitelistNames: 'notch\nJEB_\n', opNames: 'Notch' };
+		const fields = { ...ownFields(before), whitelistNames: 'notch\nJEB_\n', opNames: 'Notch jeb_' };
 		expect(await post(actions.save, { fields })).toMatchObject({ ok: true });
-		expect(getInstanceDefaults().players).toEqual({ whitelist: [NOTCH, JEB], ops: [NOTCH] });
+		expect(getInstanceDefaults().players).toEqual({ whitelist: [NOTCH, JEB], ops: [NOTCH, JEB] });
 		// Notch was saved already: only jeb_ was asked about.
 		expect(fetchCalls.map((c) => c.url)).toEqual([`${PROFILE}JEB_`]);
 	});

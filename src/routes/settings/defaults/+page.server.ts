@@ -81,9 +81,11 @@ export const actions: Actions = {
 		}
 		const jvmPreset = String(form.get('jvmPreset') ?? '');
 		if (!getPreset(jvmPreset)) return fail(400, { ok: false, message: 'That JVM preset no longer exists.' });
-		const whitelist = await playersFromText(String(form.get('whitelistNames') ?? ''), current.players.whitelist);
+		// A name saved in either list keeps its UUID in both: no second lookup for it.
+		const saved = [...current.players.whitelist, ...current.players.ops];
+		const whitelist = await playersFromText(String(form.get('whitelistNames') ?? ''), saved);
 		if ('problem' in whitelist) return fail(400, { ok: false, message: `Whitelist: ${whitelist.problem}` });
-		const ops = await playersFromText(String(form.get('opNames') ?? ''), current.players.ops);
+		const ops = await playersFromText(String(form.get('opNames') ?? ''), [...saved, ...whitelist.players]);
 		if ('problem' in ops) return fail(400, { ok: false, message: `Operators: ${ops.problem}` });
 
 		setInstanceDefaults({

@@ -27,6 +27,16 @@ describe("New server defaults' players", () => {
 		expect(await read('ops.json')).toEqual([{ ...NOTCH, level: 3, bypassesPlayerLimit: false }]);
 	});
 
+	it('leaves a list it cannot read as it is, and reads one with a BOM or another UUID spelling', async () => {
+		const odd = '{ "not": "a list" }';
+		await fs.writeFile(path.join(dir, 'whitelist.json'), odd);
+		const op = { uuid: NOTCH.uuid.toUpperCase().replace(/-/g, ''), name: 'Notch', level: 2, bypassesPlayerLimit: false };
+		await fs.writeFile(path.join(dir, 'ops.json'), '\uFEFF' + JSON.stringify([op]));
+		await writeDefaultPlayers(dir, { whitelist: [NOTCH], ops: [NOTCH, JEB] }, { 'online-mode': 'true' });
+		expect(await fs.readFile(path.join(dir, 'whitelist.json'), 'utf8')).toBe(odd);
+		expect(await read('ops.json')).toEqual([op, { ...JEB, level: 4, bypassesPlayerLimit: false }]);
+	});
+
 	it('lists them under offline UUIDs on a server that does not verify accounts', async () => {
 		await writeDefaultPlayers(dir, { whitelist: [NOTCH], ops: [] }, { 'online-mode': 'false' });
 		expect(await read('whitelist.json')).toEqual([{ uuid: offlineUuid('Notch'), name: 'Notch' }]);

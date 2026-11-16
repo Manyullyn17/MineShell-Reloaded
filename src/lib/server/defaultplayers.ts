@@ -60,14 +60,27 @@ export function offlineUuid(name: string): string {
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-async function readList(file: string): Promise<Record<string, unknown>[]> {
+/**
+ * A list as it is: [] for no file, null for one that is not a JSON array (Minecraft's lenient
+ * reader takes comments and trailing commas): that is left as it is, not replaced.
+ */
+async function readList(file: string): Promise<Record<string, unknown>[] | null> {
+	let text: string;
 	try {
-		const list = JSON.parse(await fs.readFile(file, 'utf8'));
-		return Array.isArray(list) ? list : [];
+		text = await fs.readFile(file, 'utf8');
 	} catch {
 		return [];
 	}
+	try {
+		const list = JSON.parse(text.replace(/^\uFEFF/, ''));
+		return Array.isArray(list) ? list : null;
+	} catch {
+		return null;
+	}
 }
+
+/** "069A79F444E9..." and "069a79f4-44e9-..." are the same player. */
+const sameUuid = (a: unknown, b: string) => String(a).toLowerCase().replace(/-/g, '') === b.replace(/-/g, '');
 
 /**
  * Adds the default players to a new server's whitelist.json and ops.json, keeping whatever
@@ -87,7 +100,8 @@ export async function writeDefaultPlayers(dir: string, players: DefaultPlayers, 
 		if (!wanted.length) continue;
 		const file = path.join(dir, name);
 		const existing = await readList(file);
-		const added = wanted.filter((p) => !existing.some((e) => String(e.uuid) === uuidOf(p))).map(entry);
+		if (!existing) continue;
+		const added = wanted.filter((p) => !existing.some((e) => sameUuid(e.uuid, uuidOf(p)))).map(entry);
 		if (added.length) await fs.writeFile(file, JSON.stringify([...existing, ...added], null, 2) + '\n', 'utf8');
 	}
 }
