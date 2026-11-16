@@ -175,6 +175,30 @@ describe('defaults for new servers', () => {
 		expect(await read('ops.json')).toEqual([{ ...notch, level: 4, bypassesPlayerLimit: false }]);
 	});
 
+	// A pack's overrides are copied in after creation: its lists replaced the defaults' players,
+	// and its offline-mode server.properties left them under UUIDs such a server does not match.
+	it('adds the default players to a pack’s own lists, under the UUIDs its server.properties calls for', async () => {
+		const notch = { name: 'Notch', uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5' };
+		const jeb = { uuid: '853c80ef-3c37-49fd-aa49-938b674adae6', name: 'jeb_' };
+		defaults.setInstanceDefaults({ ...defaults.getInstanceDefaults(), players: { whitelist: [notch], ops: [notch] } });
+		const shipped: Record<string, string> = {
+			'server.properties': 'online-mode=false\nop-permission-level=2\n',
+			'whitelist.json': JSON.stringify([jeb]),
+			'ops.json': '[]'
+		};
+		for (const [name, text] of Object.entries(shipped)) served[`https://files.test/lists/${name}`] = () => new Response(text);
+		const pack = packFromFileList({
+			name: 'P', version: '1', minecraftVersion: '1.21.1', modloader: 'fabric', modloaderVersion: null,
+			files: Object.keys(shipped).map((name) => ({ path: './', name, url: `https://files.test/lists/${name}` }))
+		});
+		const { instance, taskId } = await createFromPack('Lists', pack, { source: 'curseforge' });
+		expect((await waitForTask(taskId)).state).toBe('done');
+		const read = async (file: string) => JSON.parse(await fs.readFile(path.join(instance.path, file), 'utf8'));
+		const offline = { uuid: 'b50ad385-829d-3141-a216-7e7d7539ba7f', name: 'Notch' };
+		expect(await read('whitelist.json')).toEqual([jeb, offline]);
+		expect(await read('ops.json')).toEqual([{ ...offline, level: 2, bypassesPlayerLimit: false }]);
+	});
+
 	it('keeps a pack’s own server.properties, filling gaps from the defaults', async () => {
 		defaults.setInstanceDefaults({
 			...defaults.getInstanceDefaults(),

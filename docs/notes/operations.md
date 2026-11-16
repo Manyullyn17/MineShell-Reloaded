@@ -72,8 +72,10 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   false`): its export carries its lists, and one without would otherwise gain them. With the
   defaults' `online-mode=false` they are written under offline UUIDs (MD5 of
   `OfflinePlayer:<name>`, version 3: Notch is `b50ad385-829d-3141-a216-7e7d7539ba7f`), since such a
-  server matches its lists by those. A pack's own server.properties arrives later, so a pack
-  that turns online-mode off still gets the Mojang UUIDs.
+  server matches its lists by those. A pack server gets them in `provisionFromPack` instead,
+  after its overrides: those are a raw copy and replaced both the lists and server.properties
+  (the UUIDs then follow the pack's online-mode). Servers before 1.7.6 read `white-list.txt`
+  and `ops.txt` and ignore the JSON files: not covered.
 - `server.properties` is Java's properties format, read and written as Java does
   (`readJavaProperties`, `serialiseProperties`; 2026-10-28). Minecraft rewrites it at every start
   with `\:` `\!` `\\` escaped (1.12.2 and 1.21.11 both), and up to 1.12 at least reads it as

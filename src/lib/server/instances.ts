@@ -19,6 +19,7 @@ import {
 	patchProperties,
 	PROPERTY_SCHEMA,
 	propertiesForVersion,
+	readProperties,
 	writeProperties
 } from './properties';
 import { learnJavaRequirement, listJavaRuntimes, resolveJava, scanJavaRuntimes } from './java';
@@ -345,8 +346,9 @@ export async function insertInstanceRow(
 		minecraftVersion: input.minecraftVersion
 	});
 	await writeProperties(dir, properties);
-	// An import brings its own lists, or had none.
-	if (input.defaultPlayers !== false) await writeDefaultPlayers(dir, defaults.players, properties);
+	// An import brings its own lists, or had none; a pack's are added once its files are in
+	// (provisionFromPack), since they can replace both the lists and server.properties.
+	if (input.defaultPlayers !== false && !input.packSource) await writeDefaultPlayers(dir, defaults.players, properties);
 
 	// Accepted on the form: written now, so the server's page does not ask again
 	// while it installs. The install checks it again at the end (a pack can ship
@@ -616,6 +618,9 @@ function provisionFromPack(
 				'rcon.port': String(instance.rconPort),
 				...(password ? { 'rcon.password': password } : {})
 			});
+			// New server defaults' players, into the pack's own lists if it shipped any, under the
+			// UUIDs its server.properties calls for (a pack can turn account checks off).
+			await writeDefaultPlayers(instance.path, getInstanceDefaults().players, (await readProperties(instance.path)).values);
 
 			db.update(serverInstances)
 				.set({
