@@ -109,6 +109,7 @@ user before the beta):
    Operator 8 and Monocraft), with the shadow, a backdrop by version, the stand-in icon and
    buttons the user found close; the yellow bold required line. Item names and lore not yet.
    **The user, 2026-11-14**: formatted text works fully on 1.21.11 and 26.x; 1.12.2 not yet.
+   **The user, 2026-11-16**: works on 26.3 and 1.12.2 as well: **done**.
 4. **Mod config form** (Files, Form; the Mods tab's "config files"): on a running NeoForge server,
    change a `-common.toml` setting in the form and see the server pick it up (its log says the
    config reloaded), and a 1.12 `.cfg` on MeatballCraft read at the next start. Checked on
@@ -136,6 +137,9 @@ user before the beta):
    list after accepting until a reload, and NeoForge 26.x's armour had no pictures.
    Armour pictures **checked** by the user on beta.3. Also from beta.3: the config form's
    switches on the left and its lists squeezed, the EULA notes' layout; fixed.
+   **The user, 2026-11-16** asked for: the item search picked with the arrow keys and Enter
+   (built), and a whitelist every new server starts with (built: New server defaults, Players,
+   with operators). Both still for the user to try.
 6. **Online players** (the drawer's In game): with a real player on a 1.21.x server and a 1.16-1.20
    one, the game mode marked, the dimension and position shown, "Their spawn point" after
    sleeping in a bed (lands on the bed, or beside it under a low ceiling) and in the Nether with
