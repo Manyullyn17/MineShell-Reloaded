@@ -34,7 +34,28 @@ fail() {
 }
 step() { echo "== $*"; }
 act() { local out; out=$(node "$tools/act.mjs" "$@" 2>&1) || { echo "$out" >&2; return 1; }; }
-waittasks() { while curl -s "$U/api/tasks" | grep -q '"state":"running"'; do sleep 5; done; }
+# An answer that is no task list (401 with auth on, an error page) read as "nothing running".
+tasks() { curl -fs "$U/api/tasks"; }
+waittasks() {
+	local list
+	while :; do
+		list=$(tasks) || fail "the task list did not answer"
+		grep -q '"state":"running"' <<<"$list" || return 0
+		sleep 5
+	done
+}
+# The server's newest task finished, or its error and last log lines: server.properties is
+# written when it is added, so a failed install showed up only as "Unable to access jarfile".
+taskdone() {
+	local list
+	list=$(tasks) || { echo "the task list did not answer" >&2; return 1; }
+	node -e '
+		const t = JSON.parse(process.argv[2]).tasks.filter((t) => t.instanceId === process.argv[1]).sort((a, b) => b.startedAt - a.startedAt)[0];
+		if (t?.state === "done") process.exit(0);
+		console.error(t ? `${t.label}: ${t.state}${t.error ? ` (${t.error})` : ""}\n${t.log.slice(-15).join("\n")}` : "no task for it");
+		process.exit(1);
+	' "$id" "$list"
+}
 state() { systemctl --user is-active "$unit"; }
 # Inactive or failed for a few checks in a row, not between a crash and systemd's restart.
 stopped() {
@@ -104,6 +125,7 @@ step "create a vanilla 1.21.1 server, Java downloaded"
 act "$U/instances/new?/loader" name=Lifecycle minecraftVersion=1.21.1 modloader=vanilla downloadJava=temurin acceptEula=on memoryMaxMb=2048 memoryMinMb=512 ||
 	fail "creating it was refused"
 waittasks
+taskdone || fail "installing it"
 [[ -f "$DATA/instances/$id/server.properties" || -f "$DATA/instances/$id/eula.txt" ]] || fail "no server folder after creating it"
 
 step "start, wait for Done"
