@@ -100,10 +100,10 @@
 			event.preventDefault();
 			foundActive = (foundActive + (event.key === 'ArrowDown' ? 1 : -1) + shown.length) % shown.length;
 			void tick().then(() => document.getElementById(`found-${foundActive}`)?.scrollIntoView({ block: 'nearest' }));
-		} else if (event.key === 'Enter' && shown[foundActive]) {
-			// Picking, not saving the item around it.
+		} else if (event.key === 'Enter') {
+			// Picking, never saving the item around it: with no match (a typo) it did, at once.
 			event.preventDefault();
-			pickFound(shown[foundActive].id);
+			if (shown[foundActive]) pickFound(shown[foundActive].id);
 		} else if (event.key === 'Escape' && findQuery) {
 			// Clears the search; the editor stays open (the window's Escape closes it).
 			event.preventDefault();
