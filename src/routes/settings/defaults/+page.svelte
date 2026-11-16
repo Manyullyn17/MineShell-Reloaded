@@ -277,12 +277,15 @@
 			<div class="field">
 				<label for="whitelistNames">Whitelist</label>
 				<textarea id="whitelistNames" name="whitelistNames" autocomplete="off" spellcheck="false" rows="3" class="mono" placeholder="One name a line" bind:value={v.whitelistNames}></textarea>
-				<p class="hint">Only keeps anyone out with "Whitelist only" on, under Game settings or in the server's Players tab.</p>
+				<p class="hint">
+					One name a line (commas or spaces work too). Only keeps anyone out with "Whitelist only" on, under Game settings or in
+					the server's Players tab.
+				</p>
 			</div>
 			<div class="field">
 				<label for="opNames">Operators</label>
 				<textarea id="opNames" name="opNames" autocomplete="off" spellcheck="false" rows="3" class="mono" placeholder="One name a line" bind:value={v.opNames}></textarea>
-				<p class="hint">At the level "Operator permission level" gives, under Game settings.</p>
+				<p class="hint">One name a line, as the whitelist. At the level "Operator permission level" gives, under Game settings.</p>
 			</div>
 			<p class="faint small">
 				Java account names, checked with Mojang when you save. A server with "Verify accounts with Mojang" off gets them under
