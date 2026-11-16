@@ -81,16 +81,29 @@
 		itemId = id;
 		findQuery = '';
 	}
+	/**
+	 * The pointer's last spot: the list scrolling under a resting pointer (the arrow keys bring
+	 * the marked match into view) fires mouseenter and mousemove too, which pulled the mark back
+	 * to the row under it. Only a pointer that moved marks a row.
+	 */
+	let pointerAt = '';
+	function hoverFound(event: MouseEvent, i: number) {
+		const at = `${event.screenX},${event.screenY}`;
+		if (at === pointerAt) return;
+		pointerAt = at;
+		foundActive = i;
+	}
 	function onFindKeydown(event: KeyboardEvent) {
+		if (event.isComposing) return;
 		const shown = findQuery.trim().length >= 2 ? found.items : [];
 		if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && shown.length) {
 			event.preventDefault();
 			foundActive = (foundActive + (event.key === 'ArrowDown' ? 1 : -1) + shown.length) % shown.length;
 			void tick().then(() => document.getElementById(`found-${foundActive}`)?.scrollIntoView({ block: 'nearest' }));
-		} else if (event.key === 'Enter') {
+		} else if (event.key === 'Enter' && shown[foundActive]) {
 			// Picking, not saving the item around it.
 			event.preventDefault();
-			if (shown[foundActive]) pickFound(shown[foundActive].id);
+			pickFound(shown[foundActive].id);
 		} else if (event.key === 'Escape' && findQuery) {
 			// Clears the search; the editor stays open (the window's Escape closes it).
 			event.preventDefault();
@@ -932,7 +945,7 @@
 											class:active={i === foundActive}
 											aria-selected={choice.id === itemId}
 											onclick={() => pickFound(choice.id)}
-											onmouseenter={() => (foundActive = i)}
+											onmousemove={(event) => hoverFound(event, i)}
 										>
 											<span class="found-icon"><ItemIcon loader={icons} id={choice.id} size={24} /></span>
 											<span class="found-name">{choice.name}</span>
