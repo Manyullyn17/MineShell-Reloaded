@@ -528,17 +528,18 @@ export async function worldSeed(root: string): Promise<string | null> {
  * the dimension it is in, which can be another than the overworld),
  * Data.SpawnX/SpawnZ before; null when unreadable.
  */
-export async function worldSpawn(root: string): Promise<{ x: number; z: number; dimension: string } | null> {
+export async function worldSpawn(root: string): Promise<{ x: number; y: number; z: number; dimension: string } | null> {
 	try {
 		const level = parseNbt(await fs.readFile(path.join(root, await serverWorldName(root), 'level.dat')));
 		const data = child(level.root, 'Data');
 		const spawn = child(data, 'spawn');
 		const pos = child(spawn, 'pos');
 		const dimension = str(child(spawn, 'dimension')) ?? 'minecraft:overworld';
-		if (pos?.type === 'intArray' && pos.value.length === 3) return { x: pos.value[0], z: pos.value[2], dimension };
+		if (pos?.type === 'intArray' && pos.value.length === 3) return { x: pos.value[0], y: pos.value[1], z: pos.value[2], dimension };
 		const x = child(data, 'SpawnX');
+		const y = child(data, 'SpawnY');
 		const z = child(data, 'SpawnZ');
-		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, z: z.value, dimension } : null;
+		return x?.type === 'int' && z?.type === 'int' ? { x: x.value, y: y?.type === 'int' ? y.value : 64, z: z.value, dimension } : null;
 	} catch {
 		return null;
 	}

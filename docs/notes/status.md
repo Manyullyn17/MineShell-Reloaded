@@ -146,6 +146,10 @@ user before the beta):
    an anchor. Checked 2026-11-08 on
    vanilla 1.21.11 under a throwaway MineShell with a headless client (a /spawnpoint spot, the
    Nether, Creative marked after switching); a bed and a modded server not yet.
+   **The user, 2026-11-16** on 1.16.5 Forge: all of it works, but Teleport to the world spawn
+   from the Nether landed at the spawn's x and z in the Nether (fixed: a tp into the overworld
+   first; reproduced and the fix checked on vanilla 1.16.5 with a headless client). The fix is
+   for the user to see on a 1.16-1.20 server.
 7. **Server resource pack** (Mods > Resource pack): pick one from Modrinth and from CurseForge
    (with the key) on a real server, join with a client and take it (the prompt and "must take
    it" shown, matching the preview under the message field), and an address of your own. Checked 2026-11-08 on a throwaway dev server and

@@ -50,18 +50,26 @@ describe('the commands per Minecraft version', () => {
 
 	it('teleports into another dimension from 1.13 on, and within one before', () => {
 		const coords = (dimension: string | null) => ({ kind: 'coords' as const, x: 10, y: 64, z: -5, dimension });
-		expect(teleportCommand('1.20.1', 'Steve', coords('minecraft:the_nether'), null)).toBe('execute in minecraft:the_nether run tp Steve 10 64 -5');
-		expect(teleportCommand('1.12.2', 'Steve', coords(null), null)).toBe('tp Steve 10 64 -5');
+		expect(teleportCommand('1.20.1', 'Steve', coords('minecraft:the_nether'), null)).toEqual(['execute in minecraft:the_nether run tp Steve 10 64 -5']);
+		expect(teleportCommand('1.12.2', 'Steve', coords(null), null)).toEqual(['tp Steve 10 64 -5']);
 		expect(() => teleportCommand('1.12.2', 'Steve', coords('minecraft:the_nether'), null)).toThrow(/another dimension/);
 		expect(() => teleportCommand('1.20.1', 'Steve', coords('the nether; op Steve'), null)).toThrow(/dimension id/);
 		expect(() => teleportCommand('1.20.1', 'Steve', { ...coords(null), x: NaN }, null)).toThrow(/numbers/);
-		expect(teleportCommand('1.20.1', 'Steve', { kind: 'player', name: 'Alex' }, null)).toBe('tp Steve Alex');
+		expect(teleportCommand('1.20.1', 'Steve', { kind: 'player', name: 'Alex' }, null)).toEqual(['tp Steve Alex']);
 	});
 
-	it('puts a player on the surface at the spawn, in the overworld from 1.13 on', () => {
-		const spawn = { x: 100, z: -20 };
-		expect(teleportCommand('1.21.1', 'Steve', { kind: 'spawn' }, spawn)).toBe('execute in minecraft:overworld run spreadplayers 100 -20 0 1 false Steve');
-		expect(teleportCommand('1.12.2', 'Steve', { kind: 'spawn' }, spawn)).toBe('spreadplayers 100 -20 0 1 false Steve');
+	// spreadplayers kept a player in the Nether at the spawn's x and z there (1.16.5): a tp into
+	// the spawn's dimension goes first, then spreadplayers finds the surface.
+	it("puts a player on the surface at the spawn, in the spawn's dimension from 1.13 on", () => {
+		const spawn = { x: 100, y: 70, z: -20, dimension: 'minecraft:overworld' };
+		expect(teleportCommand('1.16.5', 'Steve', { kind: 'spawn' }, spawn)).toEqual([
+			'execute in minecraft:overworld run tp Steve 100 70 -20',
+			'execute in minecraft:overworld run spreadplayers 100 -20 0 1 false Steve'
+		]);
+		// 26.x can keep the spawn in another dimension; one MineShell cannot name is the overworld.
+		expect(teleportCommand('26.3', 'Steve', { kind: 'spawn' }, { ...spawn, dimension: 'minecraft:the_end' })[0]).toBe('execute in minecraft:the_end run tp Steve 100 70 -20');
+		expect(teleportCommand('26.3', 'Steve', { kind: 'spawn' }, { ...spawn, dimension: 'odd; op x' })[1]).toBe('execute in minecraft:overworld run spreadplayers 100 -20 0 1 false Steve');
+		expect(teleportCommand('1.12.2', 'Steve', { kind: 'spawn' }, spawn)).toEqual(['spreadplayers 100 -20 0 1 false Steve']);
 		expect(() => teleportCommand('1.7.10', 'Steve', { kind: 'spawn' }, spawn)).toThrow(/surface/);
 		expect(() => teleportCommand('1.21.1', 'Steve', { kind: 'spawn' }, null)).toThrow(/level.dat/);
 	});

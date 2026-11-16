@@ -48,25 +48,41 @@ export function gameModeCommand(minecraft: string, name: string, mode: GameMode)
 	return `gamemode ${mode} ${name}`;
 }
 
-/** Every target but their own spawn point, which needs the game asked first (ownSpawnCommand). */
-export function teleportCommand(minecraft: string, name: string, target: Exclude<TeleportTarget, { kind: 'ownSpawn' }>, spawn: { x: number; z: number } | null): string {
+/**
+ * Every target but their own spawn point, which needs the game asked first (ownSpawnCommand):
+ * the commands to send, in order.
+ *
+ * The spawn: spreadplayers finds the surface, but up to some version after 1.16.5 it moves a
+ * player within their own dimension whatever `execute in` says (26.3 moves them to the
+ * command's: Entity.teleportTo with the level). Someone in the Nether landed at the spawn's x
+ * and z in the Nether (the user, 1.16.5 Forge, 2026-11-16). A tp into the spawn's dimension
+ * first, which crosses on every version from 1.13, leaves spreadplayers one to find.
+ */
+export function teleportCommand(
+	minecraft: string,
+	name: string,
+	target: Exclude<TeleportTarget, { kind: 'ownSpawn' }>,
+	spawn: { x: number; y: number; z: number; dimension: string } | null
+): string[] {
 	if (target.kind === 'player') {
 		if (!NAME.test(target.name)) throw new InstanceError('That is not a player name.');
-		return `tp ${name} ${target.name}`;
+		return [`tp ${name} ${target.name}`];
 	}
 	if (target.kind === 'spawn') {
 		if (!reachesSpawn(minecraft)) throw new InstanceError(`Minecraft ${minecraft} has no command that finds the surface at the spawn.`);
 		if (!spawn) throw new InstanceError("The world's spawn could not be read from level.dat.");
 		const spread = `spreadplayers ${spawn.x} ${spawn.z} 0 1 false ${name}`;
-		return crossesDimensions(minecraft) ? `execute in minecraft:overworld run ${spread}` : spread;
+		if (!crossesDimensions(minecraft)) return [spread];
+		const dimension = DIMENSION.test(spawn.dimension) ? spawn.dimension : 'minecraft:overworld';
+		return [`execute in ${dimension} run tp ${name} ${spawn.x} ${spawn.y} ${spawn.z}`, `execute in ${dimension} run ${spread}`];
 	}
 	const { x, y, z, dimension } = target;
 	if (![x, y, z].every(Number.isFinite) || [x, y, z].some((n) => Math.abs(n) > 30_000_000)) throw new InstanceError('Give x, y and z as numbers.');
 	const tp = `tp ${name} ${x} ${y} ${z}`;
-	if (!dimension) return tp;
+	if (!dimension) return [tp];
 	if (!crossesDimensions(minecraft)) throw new InstanceError(`Minecraft ${minecraft} cannot teleport into another dimension.`);
 	if (!DIMENSION.test(dimension)) throw new InstanceError('That is not a dimension id.');
-	return `execute in ${dimension} run ${tp}`;
+	return [`execute in ${dimension} run ${tp}`];
 }
 
 /** The teleport form's target (`to` and its fields), or null for none. */
@@ -257,9 +273,9 @@ export async function runPlayerCommand(
 	action: { kind: 'gamemode'; mode: GameMode } | { kind: 'teleport'; target: TeleportTarget }
 ): Promise<string> {
 	const { player, password, online } = await onlineName(instance, name);
-	let command: string;
+	let commands: string[];
 	if (action.kind === 'gamemode') {
-		command = gameModeCommand(instance.minecraftVersion, player, action.mode);
+		commands = [gameModeCommand(instance.minecraftVersion, player, action.mode)];
 	} else if (action.target.kind === 'ownSpawn') {
 		if (!readsPlayers(instance.minecraftVersion)) throw new InstanceError(`Minecraft ${instance.minecraftVersion} has no command that reads a player's spawn point.`);
 		const { spawn } = await askState(instance, password, player);
@@ -267,7 +283,7 @@ export async function runPlayerCommand(
 		if (!DIMENSION.test(spawn.dimension)) throw new InstanceError('Their spawn point is in a dimension MineShell cannot name.');
 		const spot = await standingSpot(instance, password, spawn);
 		if (!spot) throw new InstanceError(`There is no room for ${player} on or beside their spawn point at ${spawn.x}, ${spawn.y}, ${spawn.z}, so they were not teleported: it would put them in a wall.`);
-		command = ownSpawnCommand(player, spawn.dimension, spot);
+		commands = [ownSpawnCommand(player, spawn.dimension, spot)];
 	} else {
 		let target = action.target;
 		if (target.kind === 'player') {
@@ -276,15 +292,16 @@ export async function runPlayerCommand(
 			target = { kind: 'player', name: other };
 		}
 		const spawn = target.kind === 'spawn' ? await worldSpawn(instance.path) : null;
-		command = teleportCommand(instance.minecraftVersion, player, target, spawn);
+		commands = teleportCommand(instance.minecraftVersion, player, target, spawn);
 	}
-	let response: string | undefined;
+	let responses: string[];
 	try {
-		[response] = await rconExec({ port: instance.rconPort, password }, [command]);
+		responses = await rconExec({ port: instance.rconPort, password }, commands);
 	} catch {
 		throw new InstanceError('The server is not reachable over RCON.');
 	}
-	const said = plain(response ?? '');
-	if (REFUSED.test(said)) throw new InstanceError(said);
-	return said || 'Done.';
+	const said = responses.map((r) => plain(r ?? ''));
+	const refused = said.find((s) => REFUSED.test(s));
+	if (refused) throw new InstanceError(refused);
+	return said.at(-1) || 'Done.';
 }

@@ -92,6 +92,15 @@ Keep them current: a change that makes one wrong updates it in the same commit.
   Unloaded chunks are read from the region file instead (`savedBlocks`, world.ts): the server
   saved them when it let them go. Probed on vanilla 1.21.1 and 1.21.11, 2026-11-08;
   `tests/fixtures/regions/bed-1.21.11.mca` is 1.21.11's chunk with a bed under a low ceiling.
+- Teleport to the world spawn: `spreadplayers` finds the surface but on 1.16.5 moves a player
+  within their own dimension, `execute in minecraft:overworld` or not (someone in the Nether
+  landed at the spawn's x/z in the Nether: the user on 1.16.5 Forge, then reproduced on vanilla
+  1.16.5 with a headless client, 2026-11-16). 26.3's `SpreadPlayersCommand` calls
+  `Entity.teleportTo(ServerLevel, ...)`, which crosses (javap); the version in between that
+  changed it is not known. So MineShell sends `execute in <spawn's dimension> run tp` to the
+  spawn's x/y/z first, then spreadplayers: on 1.16.5 that ended in the overworld on the surface,
+  from the Nether and from the overworld. 26.x level.dat names the spawn's dimension
+  (`Data.spawn.dimension`); before, it is the overworld.
 
 ## NBT editor (Files)
 - What NBT files look like on real servers (`tests/tools/nbt-sweep.ts`, the four dev servers,
