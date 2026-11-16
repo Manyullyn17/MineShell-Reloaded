@@ -71,6 +71,33 @@
 		const sorted = hits.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 		return { items: sorted.slice(0, FOUND_SHOWN), total: sorted.length };
 	});
+	/** The match the arrow keys are on, picked by Enter; back to the first as the words change. */
+	let foundActive = $state(0);
+	$effect(() => {
+		void findQuery;
+		foundActive = 0;
+	});
+	function pickFound(id: string) {
+		itemId = id;
+		findQuery = '';
+	}
+	function onFindKeydown(event: KeyboardEvent) {
+		const shown = findQuery.trim().length >= 2 ? found.items : [];
+		if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && shown.length) {
+			event.preventDefault();
+			foundActive = (foundActive + (event.key === 'ArrowDown' ? 1 : -1) + shown.length) % shown.length;
+			void tick().then(() => document.getElementById(`found-${foundActive}`)?.scrollIntoView({ block: 'nearest' }));
+		} else if (event.key === 'Enter') {
+			// Picking, not saving the item around it.
+			event.preventDefault();
+			if (shown[foundActive]) pickFound(shown[foundActive].id);
+		} else if (event.key === 'Escape' && findQuery) {
+			// Clears the search; the editor stays open (the window's Escape closes it).
+			event.preventDefault();
+			event.stopPropagation();
+			findQuery = '';
+		}
+	}
 
 	// ---- the tooltip, on hover (desktop): as the game shows it, with the id as F3+H does.
 	type Hovered = { item: NonNullable<ReturnType<typeof itemAt>>; x: number; y: number; variant: boolean };
@@ -873,9 +900,12 @@
 							aria-label="Find an item by name"
 							bind:value={findQuery}
 							onfocus={loadItems}
+							onkeydown={onFindKeydown}
+							aria-controls="found-items"
+							aria-activedescendant={findQuery.trim().length >= 2 && found.items[foundActive] ? `found-${foundActive}` : undefined}
 						/>
 						{#if findQuery.trim().length >= 2}
-							<ul class="found" role="listbox" aria-label="Items">
+							<ul class="found" id="found-items" role="listbox" aria-label="Items">
 								<!-- First: on a big pack 60 mod items fill the box before the end of the list is in sight. -->
 								{#if allItems && !vanillaListed}
 									<li class="muted small">
@@ -893,16 +923,16 @@
 								{:else if !found.total}
 									<li class="muted small">No item matches.</li>
 								{/if}
-								{#each found.items as choice (choice.id)}
+								{#each found.items as choice, i (choice.id)}
 									<li>
 										<button
 											type="button"
 											role="option"
+											id="found-{i}"
+											class:active={i === foundActive}
 											aria-selected={choice.id === itemId}
-											onclick={() => {
-												itemId = choice.id;
-												findQuery = '';
-											}}
+											onclick={() => pickFound(choice.id)}
+											onmouseenter={() => (foundActive = i)}
 										>
 											<span class="found-icon"><ItemIcon loader={icons} id={choice.id} size={24} /></span>
 											<span class="found-name">{choice.name}</span>
@@ -1651,6 +1681,12 @@
 	.found button:hover,
 	.found button[aria-selected='true'] {
 		background: var(--panel);
+	}
+
+	/* The match Enter picks: outlined, so it stays apart from the item already in the slot. */
+	.found button.active {
+		background: var(--panel);
+		box-shadow: inset 0 0 0 1px var(--accent);
 	}
 
 	.found-icon {
